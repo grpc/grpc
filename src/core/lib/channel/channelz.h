@@ -60,9 +60,8 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
-  // we track is_top_level_channel to support GetTopChannels
-  BaseNode(EntityType type) : type_(type) {}
-  virtual ~BaseNode() {}
+  BaseNode(EntityType type);
+  virtual ~BaseNode();
 
   // All children must implement this function.
   virtual grpc_json* RenderJson() GRPC_ABSTRACT;
@@ -72,11 +71,14 @@ class BaseNode : public RefCounted<BaseNode> {
   char* RenderJsonString();
 
   EntityType type() const { return type_; }
+  intptr_t uuid() const { return uuid_; }
 
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  friend class ChannelTrace;
   EntityType type_;
+  intptr_t uuid_;
 };
 
 // This class is the parent for the channelz entities that deal with Channels
@@ -135,8 +137,6 @@ class ChannelNode : public CallCountingAndTracingNode {
   }
 
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
-
-  intptr_t channel_uuid() { return channel_uuid_; }
 
  protected:
   ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,

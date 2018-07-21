@@ -79,8 +79,6 @@ class SubchannelNode : public CallCountingAndTracingNode {
 
   grpc_json* RenderJson() override;
 
-  intptr_t subchannel_uuid() { return subchannel_uuid_; }
-
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW

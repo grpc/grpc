@@ -158,7 +158,7 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   ValidateCounters(json_str, args);
   gpr_free(json_str);
   // also check that the core API formats this the correct way
-  char* core_api_json_str = grpc_channelz_get_channel(channel->channel_uuid());
+  char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);

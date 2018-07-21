@@ -108,8 +108,8 @@ grpc_json* ClientChannelNode::RenderJson() {
                                          GRPC_JSON_OBJECT, false);
   json = json_iterator;
   json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(
-      json, json_iterator, "channelId", channel_uuid());
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "channelId", uuid());
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
@@ -152,13 +152,9 @@ SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
                                  channel_tracer_max_nodes),
       subchannel_(subchannel),
       target_(UniquePtr<char>(
-          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {
-  subchannel_uuid_ = ChannelzRegistry::Register(this);
-}
+          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {}
 
-SubchannelNode::~SubchannelNode() {
-  ChannelzRegistry::Unregister(subchannel_uuid_);
-}
+SubchannelNode::~SubchannelNode() {}
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   grpc_connectivity_state state;
@@ -182,8 +178,8 @@ grpc_json* SubchannelNode::RenderJson() {
                                          GRPC_JSON_OBJECT, false);
   json = json_iterator;
   json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(
-      json, json_iterator, "subchannelId", subchannel_uuid_);
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "subchannelId", uuid());
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;

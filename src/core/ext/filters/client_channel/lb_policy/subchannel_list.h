@@ -196,7 +196,7 @@ class SubchannelList
         grpc_core::channelz::SubchannelNode* subchannel_node =
             grpc_subchannel_get_channelz_node(subchannels_[i].subchannel());
         if (subchannel_node != nullptr) {
-          refs_list->push_back(subchannel_node->subchannel_uuid());
+          refs_list->push_back(subchannel_node->uuid());
         }
       }
     }

@@ -41,6 +41,12 @@
 namespace grpc_core {
 namespace channelz {
 
+BaseNode::BaseNode(EntityType type) : type_(type) {
+  uuid_ = ChannelzRegistry::Register(this);
+}
+
+BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+
 char* BaseNode::RenderJsonString() {
   grpc_json* json = RenderJson();
   char* json_str = grpc_json_dump_to_string(json, 0);
@@ -103,11 +109,9 @@ ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
                                      : EntityType::kInternalChannel,
                                  channel_tracer_max_nodes),
       channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))) {
-  channel_uuid_ = ChannelzRegistry::Register(this);
-}
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))) {}
 
-ChannelNode::~ChannelNode() { ChannelzRegistry::Unregister(channel_uuid_); }
+ChannelNode::~ChannelNode() {}
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -120,7 +124,7 @@ grpc_json* ChannelNode::RenderJson() {
   json = json_iterator;
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "channelId", channel_uuid_);
+                                                    "channelId", uuid());
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
