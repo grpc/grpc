@@ -1365,14 +1365,18 @@ grpc_slice DefaultSslRootStore::CreateRootCertsBundle() {
       fseek(cert_file, 0, SEEK_END);
       size_t cert_file_size = ftell(cert_file);
       rewind(cert_file);
-      fread(bundle_string + bytes_read, cert_file_size,
-            /* nmemb */ 1, cert_file);
-      bytes_read += cert_file_size;
+      size_t nread = fread(bundle_string + bytes_read, cert_file_size,
+                           /* nmemb */ 1, cert_file);
+      if (nread == 1) {
+        bytes_read += cert_file_size;
+      } else {
+        gpr_log(GPR_ERROR, "failed to read a file using fread");
+      }
       fclose(cert_file);
     }
   }
   closedir(ca_directory);
-  bundle_slice = grpc_slice_new(bundle_string, total_bundle_size, gpr_free);
+  bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
   grpc_slice_unref(file_path);
   return bundle_slice;
 }
