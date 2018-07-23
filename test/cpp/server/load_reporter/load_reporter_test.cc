@@ -172,9 +172,9 @@ class LbFeedbackTest : public LoadReporterTest {
     // TODO(juanlishen): The error is big because we use sleep(). It should be
     // much smaller when we use fake clock.
     ASSERT_THAT(static_cast<double>(lb_feedback.calls_per_second()),
-                DoubleNear(expected_qps, expected_qps / 50));
+                DoubleNear(expected_qps, expected_qps * 0.05));
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
-                DoubleNear(expected_eps, expected_eps / 50));
+                DoubleNear(expected_eps, expected_eps * 0.05));
     gpr_log(GPR_INFO,
             "Verified LB feedback matches the samples of index [%lu, %lu).",
             start, start + count);

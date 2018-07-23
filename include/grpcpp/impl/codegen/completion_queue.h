@@ -367,7 +367,7 @@ class ServerCompletionQueue : public CompletionQueue {
 
  protected:
   /// Default constructor
-  ServerCompletionQueue() {}
+  ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
   /// \param is_frequently_polled Informs the GRPC library about whether the

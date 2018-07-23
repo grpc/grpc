@@ -69,6 +69,7 @@ static void test_gcp_environment_check_failure() {
   GPR_ASSERT(!check_bios_data_linux_test("Amazon"));
   GPR_ASSERT(!check_bios_data_linux_test("Google-Chrome\t\t"));
   GPR_ASSERT(!check_bios_data_linux_test("Amazon"));
+  GPR_ASSERT(!check_bios_data_linux_test("\n"));
 }
 
 int main(int argc, char** argv) {

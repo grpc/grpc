@@ -24,7 +24,7 @@
         "dest": "api"
       },
       {
-        "files": [ "toc.yml"],
+        "files": [ "toc.yml"]
       }
     ],
     "globalMetadata": {
