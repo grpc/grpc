@@ -33,12 +33,17 @@ namespace Grpc.Core.Internal
     internal static class PlatformApis
     {
         const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
+        const string XamarinAndroidApplicationClassName = "Android.App.Application, Mono.Android";
+        const string XamariniOSApplicationClassName = "UIKit.UIApplication, Xamarin.iOS";
+
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
         static readonly bool isNetCore;
         static readonly bool isUnity;
+        static readonly bool isXamariniOS;
+        static readonly bool isXamarinAndroid;
 
         static PlatformApis()
         {
@@ -58,6 +63,8 @@ namespace Grpc.Core.Internal
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
             isUnity = Type.GetType(UnityEngineApplicationClassName) != null;
+            isXamariniOS = Type.GetType(XamariniOSApplicationClassName) != null;
+            isXamarinAndroid = Type.GetType(XamarinAndroidApplicationClassName) != null;
         }
 
         public static bool IsLinux
@@ -86,6 +93,22 @@ namespace Grpc.Core.Internal
         public static bool IsUnity
         {
             get { return isUnity; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.iOS, false otherwise.
+        /// </summary>
+        public static bool IsXamariniOS
+        {
+            get { return isXamariniOS; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.Android, false otherwise.
+        /// </summary>
+        public static bool IsXamarinAndroid
+        {
+            get { return isXamarinAndroid; }
         }
 
         /// <summary>

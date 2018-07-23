@@ -51,6 +51,7 @@ namespace Grpc.Core.Internal
             }
         }
 
+        [MonoPInvokeCallback(typeof(GprLogDelegate))]
         private static void HandleWrite(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr)
         {
             try
@@ -85,5 +86,16 @@ namespace Grpc.Core.Internal
                 Console.WriteLine("Caught exception in native callback " + e);
             }
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    internal sealed class MonoPInvokeCallbackAttribute : Attribute
+    {
+        public MonoPInvokeCallbackAttribute(Type type)
+        {
+            Type = type;
+        }
+
+        public Type Type { get; private set; }
     }
 }
