@@ -39,30 +39,57 @@ mkdir -p "$LOCAL_BUILD_ROOT"
 
 find "$INPUT_ARTIFACTS" -type f
 
+# protoc Plugins
+PROTOC_PLUGINS_ZIPPED_PACKAGES=$(mktemp -d)
+for zip_dir in protoc_windows_{x86,x64}
+do
+  zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$zip_dir.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
+done
+for tar_dir in protoc_{linux,macos}_{x86,x64}
+do
+  chmod +x "$INPUT_ARTIFACTS/$tar_dir"/*
+  tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$tar_dir.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
+done
+
+PROTOC_PACKAGES=(
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_windows_{x86,x64}.zip
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_{linux,macos}_{x86,x64}.tar.gz
+)
+
+# C#
 UNZIPPED_CSHARP_PACKAGES=$(mktemp -d)
 unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
 CSHARP_PACKAGES=(
   "$UNZIPPED_CSHARP_PACKAGES"/*
 )
 
-PYTHON_PACKAGES=(
+# Python
+PYTHON_GRPCIO_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.tar.gz
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.whl
   "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio-[0-9]*.whl
-
+)
+PYTHON_GRPCIO_TOOLS_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-tools-[0-9]*.tar.gz
   "$INPUT_ARTIFACTS"/grpcio_tools-[0-9]*.whl
   "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio_tools-[0-9]*.whl
-
+)
+PYTHON_GRPCIO_HEALTH_CHECKING_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-health-checking-[0-9]*.tar.gz
+)
+PYTHON_GRPCIO_REFLECTION_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-reflection-[0-9]*.tar.gz
+)
+PYTHON_GRPCIO_TESTING_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-testing-[0-9]*.tar.gz
 )
 
+# PHP
 PHP_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpc-[0-9]*.tgz
 )
 
+# Ruby
 RUBY_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpc-[0-9]*.gem
   "$INPUT_ARTIFACTS"/grpc-tools-[0-9]*.gem
@@ -71,17 +98,21 @@ RUBY_PACKAGES=(
 function add_to_manifest() {
   local artifact_type=$1
   local artifact_file=$2
+  local artifact_prefix=$3
   local artifact_name
   artifact_name=$(basename "$artifact_file")
+  local artifact_size
+  artifact_size=$(stat -c%s "$artifact_file")
   local artifact_sha256
   artifact_sha256=$(openssl sha256 -r "$artifact_file" | cut -d " " -f 1)
-  local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type
+  local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type/$artifact_prefix
   mkdir -p "$artifact_target"
   cp "$artifact_file" "$artifact_target"
   cat <<EOF
     <artifact name='$artifact_name'
               type='$artifact_type'
-              path='$artifact_type/$artifact_name'
+              path='$artifact_type/$artifact_prefix$artifact_name'
+              size='$artifact_size'
               sha256='$artifact_sha256' />
 EOF
 }
@@ -90,7 +121,7 @@ EOF
   cat <<EOF
 <?xml version="1.0"?>
 <?xml-stylesheet href="/web-assets/build-201807.xsl" type="text/xsl"?>
-<build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP'>
+<build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP' version="201807">
   <metadata>
     <project>gRPC</project>
     <repository>https://github.com/grpc/grpc</repository>
@@ -100,9 +131,14 @@ EOF
   <artifacts>
 EOF
 
+  for pkg in "${PROTOC_PACKAGES[@]}"; do add_to_manifest protoc "$pkg"; done
   for pkg in "${CSHARP_PACKAGES[@]}"; do add_to_manifest csharp "$pkg"; done
   for pkg in "${PHP_PACKAGES[@]}"; do add_to_manifest php "$pkg"; done
-  for pkg in "${PYTHON_PACKAGES[@]}"; do add_to_manifest python "$pkg"; done
+  for pkg in "${PYTHON_GRPCIO_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio/; done
+  for pkg in "${PYTHON_GRPCIO_TOOLS_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-tools/; done
+  for pkg in "${PYTHON_GRPCIO_HEALTH_CHECKING_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-health-checking/; done
+  for pkg in "${PYTHON_GRPCIO_REFLECTION_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-reflection/; done
+  for pkg in "${PYTHON_GRPCIO_TESTING_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-testing/; done
   for pkg in "${RUBY_PACKAGES[@]}"; do add_to_manifest ruby "$pkg"; done
 
   cat <<EOF
@@ -111,6 +147,7 @@ EOF
 EOF
 }> "$LOCAL_BUILD_INDEX"
 
+LOCAL_BUILD_INDEX_SIZE=$(stat -c%s "$LOCAL_BUILD_INDEX")
 LOCAL_BUILD_INDEX_SHA256=$(openssl sha256 -r "$LOCAL_BUILD_INDEX" | cut -d " " -f 1)
 
 OLD_INDEX=$(mktemp)
@@ -133,12 +170,61 @@ gsutil cp "$GCS_INDEX" "$OLD_INDEX"
            branch='$BUILD_BRANCH_NAME'
            commit='$BUILD_GIT_COMMIT'
            path='$GCS_ARCHIVE_PREFIX$BUILD_RELPATH$INDEX_FILENAME'
+           size='$LOCAL_BUILD_INDEX_SIZE'
            sha256='$LOCAL_BUILD_INDEX_SHA256' />
 EOF
   tail --lines=+5 "$OLD_INDEX"
 }> "$NEW_INDEX"
 
+
+function generate_directory_index()
+{
+  local target_dir=$1
+  local current_directory_name
+  current_directory_name=$(basename "$target_dir")
+  cat <<EOF
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Index of $current_directory_name - packages.grpc.io</title>
+    <link rel="stylesheet" type="text/css" href="/web-assets/dirindex.css" />
+  </head>
+  <body>
+    <h1>Index of <a href="#"><code>$current_directory_name</code></a></h1>
+    <ul>
+      <li><a href="#">.</a></li>
+      <li><a href="..">..</a></li>
+EOF
+
+(
+  cd "$target_dir"
+  find * -maxdepth 0 -type d -print | sort | while read -r line
+  do
+    echo "      <li><a href='$line/'>$line/</a></li>"
+  done
+  find * -maxdepth 0 -type f -print | sort | while read -r line
+  do
+    echo "      <li><a href='$line'>$line</a></li>"
+  done
+)
+
+cat <<EOF
+    </ul>
+  </body>
+</html>
+EOF
+}
+
 # Upload the current build artifacts
 gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
+# Upload directory indicies for subdirectories
+(
+  cd "$LOCAL_BUILD_ROOT"
+  find * -type d | while read -r directory
+  do
+    generate_directory_index "$directory" | gsutil -h 'Content-Type:text/html' cp - "$GCS_ARCHIVE_ROOT$BUILD_RELPATH$directory/$INDEX_FILENAME"
+  done
+)
 # Upload the new /index.xml
 gsutil -h "Content-Type:application/xml" cp "$NEW_INDEX" "$GCS_INDEX"
