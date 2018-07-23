@@ -78,13 +78,24 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
 std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
   GrpcLibraryCodegen init;  // To call grpc_init().
-  grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
-      options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
+  grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
+  pem_key_cert_pair.cert_chain = options.pem_cert_chain.c_str();
+  pem_key_cert_pair.private_key = options.pem_private_key.empty() ? nullptr :
+      options.pem_private_key.c_str();
+
+  credential_options c_options;
+  memset(&c_options, 0, sizeof(c_options));
+  c_options.ssl_settings_callback.user_data = options.ssl_settings_callback
+      .user_data;
+  c_options.ssl_settings_callback.ssl_settings_callback = options
+      .ssl_settings_callback.ssl_settings_callback;
+
 
   grpc_channel_credentials* c_creds = grpc_ssl_credentials_create(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
-      nullptr);
+      options.pem_cert_chain.empty() ? nullptr : &pem_key_cert_pair,
+          &c_options, nullptr);
+
   return WrapChannelCredentials(c_creds);
 }
 

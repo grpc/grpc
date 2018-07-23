@@ -73,6 +73,12 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
 typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
 
+typedef void (*ssl_settings_callback_t)(void* ssl_ctx, void* user_data);
+typedef struct {
+  ssl_settings_callback_t ssl_settings_callback;
+  void *user_data;
+} tsi_ssl_settings_callback;
+
 /* Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {
   /* private_key is the NULL-terminated string containing the PEM encoding of
@@ -140,6 +146,8 @@ typedef struct {
   size_t num_alpn_protocols;
   /* ssl_session_cache is a cache for reusable client-side sessions. */
   tsi_ssl_session_cache* session_cache;
+  /* The callback to pass when creating SSL connection. */
+  tsi_ssl_settings_callback ssl_settings_callback;
 } tsi_ssl_client_handshaker_options;
 
 /* Creates a client handshaker factory.
@@ -255,6 +263,10 @@ typedef struct {
   const char* session_ticket_key;
   /* session_ticket_key_size is a size of session ticket encryption key. */
   size_t session_ticket_key_size;
+  /* key_method defines the use of a custom key. Used when private_key is
+      NULL. */
+  /* The callback to pass when creating SSL connection. */
+  tsi_ssl_settings_callback ssl_settings_callback;
 } tsi_ssl_server_handshaker_options;
 
 /* Creates a server handshaker factory.

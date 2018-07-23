@@ -1719,6 +1719,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return result;
   }
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  if (options->ssl_settings_callback.ssl_settings_callback != nullptr) {
+    options->ssl_settings_callback.ssl_settings_callback(
+        ssl_context, options->ssl_settings_callback.user_data);
+  }
   /* TODO(jboeuf): Add revocation verification. */
 
   *factory = impl;
@@ -1814,7 +1818,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                                     &options->pem_key_cert_pairs[i],
                                     options->cipher_suites);
       if (result != TSI_OK) break;
-
       // TODO(elessar): Provide ability to disable session ticket keys.
 
       // Allow client cache sessions (it's needed for OpenSSL only).
@@ -1872,6 +1875,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             break;
         }
         /* TODO(jboeuf): Add revocation verification. */
+      }
+      if (options->ssl_settings_callback.ssl_settings_callback!=nullptr) {
+        options->ssl_settings_callback.ssl_settings_callback(
+            impl->ssl_contexts[i], options->ssl_settings_callback.user_data);
       }
 
       result = extract_x509_subject_names_from_pem_cert(

@@ -152,6 +152,16 @@ typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
 GRPCAPI void grpc_set_ssl_roots_override_callback(
     grpc_ssl_roots_override_callback cb);
 
+/* Callback function immediatly after GRPC internal SSL context configuration.
+  */
+typedef void (*ssl_settings_callback_t)(void* ssl_ctx, void* user_data);
+/* Object that holds pointer to ssl_settings_callback and user_data associated
+   with it. */
+typedef struct {
+  ssl_settings_callback_t ssl_settings_callback;
+  void *user_data;
+} grpc_ssl_settings_callback;
+
 /** Object that holds a private key / certificate chain pair in PEM format. */
 typedef struct {
   /** private_key is the NULL-terminated string containing the PEM encoding of
@@ -183,6 +193,11 @@ typedef struct {
   void (*verify_peer_destruct)(void* userdata);
 } verify_peer_options;
 
+typedef struct {
+  grpc_ssl_settings_callback ssl_settings_callback;
+  verify_peer_options verifier_options;
+} credential_options;
+
 /** Creates an SSL credentials object.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
@@ -203,7 +218,7 @@ typedef struct {
      object can be released afterwards. */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const verify_peer_options* verify_options, void* reserved);
+    const credential_options* credential_options, void* reserved);
 
 /** --- grpc_call_credentials object.
 
@@ -393,6 +408,11 @@ grpc_ssl_server_certificate_config_create(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 
+grpc_ssl_settings_callback*  grpc_ssl_server_ssl_settings_callback_create(
+          ssl_settings_callback_t callback, void* user);
+void grpc_ssl_server_ssl_settings_callback_destroy(
+    grpc_ssl_settings_callback* key_method);
+
 /** Destroys a grpc_ssl_server_certificate_config object. */
 GRPCAPI void grpc_ssl_server_certificate_config_destroy(
     grpc_ssl_server_certificate_config* config);
@@ -443,7 +463,8 @@ typedef struct grpc_ssl_server_credentials_options
 GRPCAPI grpc_ssl_server_credentials_options*
 grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config* certificate_config);
+    grpc_ssl_server_certificate_config* certificate_config,
+    grpc_ssl_settings_callback* ssl_settings_callback);
 
 /** Creates an options object using a certificate config fetcher. Use this
    method to reload the certificates and keys of the SSL server without

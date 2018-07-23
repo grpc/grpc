@@ -48,9 +48,9 @@ static void ssl_destruct(grpc_channel_credentials* creds) {
   grpc_ssl_credentials* c = reinterpret_cast<grpc_ssl_credentials*>(creds);
   gpr_free(c->config.pem_root_certs);
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(c->config.pem_key_cert_pair, 1);
-  if (c->config.verify_options.verify_peer_destruct != nullptr) {
-    c->config.verify_options.verify_peer_destruct(
-        c->config.verify_options.verify_peer_callback_userdata);
+  if (c->config.options.verifier_options.verify_peer_destruct != nullptr) {
+    c->config.options.verifier_options.verify_peer_destruct(
+        c->config.options.verifier_options.verify_peer_callback_userdata);
   }
 }
 
@@ -91,13 +91,12 @@ static grpc_channel_credentials_vtable ssl_vtable = {
 
 static void ssl_build_config(const char* pem_root_certs,
                              grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-                             const verify_peer_options* verify_options,
+                             const credential_options* options,
                              grpc_ssl_config* config) {
   if (pem_root_certs != nullptr) {
     config->pem_root_certs = gpr_strdup(pem_root_certs);
   }
   if (pem_key_cert_pair != nullptr) {
-    GPR_ASSERT(pem_key_cert_pair->private_key != nullptr);
     GPR_ASSERT(pem_key_cert_pair->cert_chain != nullptr);
     config->pem_key_cert_pair = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(sizeof(tsi_ssl_pem_key_cert_pair)));
@@ -106,31 +105,30 @@ static void ssl_build_config(const char* pem_root_certs,
     config->pem_key_cert_pair->private_key =
         gpr_strdup(pem_key_cert_pair->private_key);
   }
-  if (verify_options != nullptr) {
-    memcpy(&config->verify_options, verify_options,
-           sizeof(verify_peer_options));
+  if (options != nullptr) {
+    memcpy(&config->options, options, sizeof(credential_options));
   } else {
     // Otherwise set all options to default values
-    memset(&config->verify_options, 0, sizeof(verify_peer_options));
+    memset(&config->options, 0, sizeof(credential_options));
   }
 }
 
 grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const verify_peer_options* verify_options, void* reserved) {
+    const credential_options* options, void* reserved) {
   grpc_ssl_credentials* c = static_cast<grpc_ssl_credentials*>(
       gpr_zalloc(sizeof(grpc_ssl_credentials)));
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
-      "verify_options=%p, "
+      "options=%p, "
       "reserved=%p)",
-      4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
+      4, (pem_root_certs, pem_key_cert_pair, options, reserved));
   GPR_ASSERT(reserved == nullptr);
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_vtable;
   gpr_ref_init(&c->base.refcount, 1);
-  ssl_build_config(pem_root_certs, pem_key_cert_pair, verify_options,
+  ssl_build_config(pem_root_certs, pem_key_cert_pair, options,
                    &c->config);
   return &c->base;
 }
@@ -143,6 +141,7 @@ struct grpc_ssl_server_credentials_options {
   grpc_ssl_client_certificate_request_type client_certificate_request;
   grpc_ssl_server_certificate_config* certificate_config;
   grpc_ssl_server_certificate_config_fetcher* certificate_config_fetcher;
+  grpc_ssl_settings_callback* ssl_settings_callback;
 };
 
 static void ssl_server_destruct(grpc_server_credentials* creds) {
@@ -171,7 +170,6 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(pem_key_cert_pairs[i].private_key != nullptr);
     GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != nullptr);
     tsi_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     tsi_pairs[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
@@ -183,6 +181,7 @@ static void ssl_build_server_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
+    const grpc_ssl_settings_callback* ssl_settings_callback,
     grpc_ssl_server_config* config) {
   config->client_certificate_request = client_certificate_request;
   if (pem_root_certs != nullptr) {
@@ -191,7 +190,32 @@ static void ssl_build_server_config(
   config->pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config->num_key_cert_pairs = num_key_cert_pairs;
+  if (ssl_settings_callback != nullptr) {
+    memcpy(&config->ssl_settings_callback, ssl_settings_callback,
+           sizeof(config->ssl_settings_callback));
+  } else {
+    memset(&config->ssl_settings_callback, 0,
+           sizeof(config->ssl_settings_callback));
+  }
 }
+
+grpc_ssl_settings_callback*  grpc_ssl_server_ssl_settings_callback_create(
+          ssl_settings_callback_t callback, void* user) {
+  grpc_ssl_settings_callback* ssl_settings_callback =
+      static_cast<grpc_ssl_settings_callback*>(
+          gpr_zalloc(sizeof(grpc_ssl_settings_callback)));
+  ssl_settings_callback->ssl_settings_callback = callback;
+  ssl_settings_callback->user_data = user;
+  return ssl_settings_callback;
+}
+
+void grpc_ssl_server_ssl_settings_callback_destroy(
+    grpc_ssl_settings_callback* ssl_settings_callback) {
+  if (ssl_settings_callback == nullptr) return;
+  gpr_free(ssl_settings_callback);
+}
+
+
 
 grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
     const char* pem_root_certs,
@@ -210,7 +234,6 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(pem_key_cert_pairs[i].private_key != nullptr);
     GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != nullptr);
     config->pem_key_cert_pairs[i].cert_chain =
         gpr_strdup(pem_key_cert_pairs[i].cert_chain);
@@ -235,7 +258,8 @@ void grpc_ssl_server_certificate_config_destroy(
 grpc_ssl_server_credentials_options*
 grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
-    grpc_ssl_server_certificate_config* config) {
+    grpc_ssl_server_certificate_config* config,
+    grpc_ssl_settings_callback* ssl_settings_callback) {
   grpc_ssl_server_credentials_options* options = nullptr;
   if (config == nullptr) {
     gpr_log(GPR_ERROR, "Certificate config must not be NULL.");
@@ -245,6 +269,7 @@ grpc_ssl_server_credentials_create_options_using_config(
       gpr_zalloc(sizeof(grpc_ssl_server_credentials_options)));
   options->client_certificate_request = client_certificate_request;
   options->certificate_config = config;
+  options->ssl_settings_callback = ssl_settings_callback;
 done:
   return options;
 }
@@ -303,7 +328,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
           pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs);
   grpc_ssl_server_credentials_options* options =
       grpc_ssl_server_credentials_create_options_using_config(
-          client_certificate_request, cert_config);
+          client_certificate_request, cert_config, nullptr);
 
   return grpc_ssl_server_credentials_create_with_options(options);
 }
@@ -344,7 +369,9 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
     ssl_build_server_config(options->certificate_config->pem_root_certs,
                             options->certificate_config->pem_key_cert_pairs,
                             options->certificate_config->num_key_cert_pairs,
-                            options->client_certificate_request, &c->config);
+                            options->client_certificate_request,
+                            options->ssl_settings_callback,
+                            &c->config);
   }
 
   retval = &c->base;
@@ -359,5 +386,7 @@ void grpc_ssl_server_credentials_options_destroy(
   if (o == nullptr) return;
   gpr_free(o->certificate_config_fetcher);
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
+  grpc_ssl_server_ssl_settings_callback_destroy(o->ssl_settings_callback);
+
   gpr_free(o);
 }

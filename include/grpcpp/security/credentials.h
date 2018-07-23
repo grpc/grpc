@@ -89,6 +89,13 @@ class CallCredentials : private GrpcLibraryCodegen {
   virtual SecureCallCredentials* AsSecureCredentials() = 0;
 };
 
+
+struct SSLSettingsCallback {
+  SSLSettingsCallback() : ssl_settings_callback(nullptr), user_data(nullptr) {}
+  void (*ssl_settings_callback)(void* ssl_ctx, void* user_data);
+  void* user_data;
+};
+
 /// Options used to build SslCredentials.
 struct SslCredentialsOptions {
   /// The buffer containing the PEM encoding of the server root certificates. If
@@ -106,6 +113,9 @@ struct SslCredentialsOptions {
   /// This parameter can be empty if the client does not have a certificate
   /// chain.
   grpc::string pem_cert_chain;
+
+  // Callback to define SSL settings
+  SSLSettingsCallback ssl_settings_callback;
 };
 
 // Factories for building different types of Credentials The functions may
