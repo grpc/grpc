@@ -868,7 +868,13 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+  // TODO(medinaandres) Additional infrastructure needs to be added
+  // to GRPC to pass disable_hostname_based_check from user API
+  // for both server and client. This is intended for users that are IP based
+  // and cannot have a hostname based check.
+  bool disable_hostname_based_check = true;
+  if (!disable_hostname_based_check && peer_name != nullptr &&
+      !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
@@ -1076,16 +1082,19 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   if (overridden_target_name != nullptr) {
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
-  c->verify_options = &config->verify_options;
+  c->verify_options = &config->options.verifier_options;
 
   has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
-                      config->pem_key_cert_pair->private_key != nullptr &&
                       config->pem_key_cert_pair->cert_chain != nullptr;
   if (has_key_cert_pair) {
     options.pem_key_cert_pair = config->pem_key_cert_pair;
   }
   options.cipher_suites = ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.ssl_settings_callback.ssl_settings_callback = config->options
+      .ssl_settings_callback.ssl_settings_callback;
+  options.ssl_settings_callback.user_data = config->options
+      .ssl_settings_callback.user_data;
   result = tsi_create_ssl_client_handshaker_factory_with_options(
       &options, &c->client_handshaker_factory);
   if (result != TSI_OK) {
@@ -1140,15 +1149,24 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     size_t num_alpn_protocols = 0;
     const char** alpn_protocol_strings =
         fill_alpn_protocol_strings(&num_alpn_protocols);
-    result = tsi_create_ssl_server_handshaker_factory_ex(
-        server_credentials->config.pem_key_cert_pairs,
-        server_credentials->config.num_key_cert_pairs,
-        server_credentials->config.pem_root_certs,
-        get_tsi_client_certificate_request_type(
-            server_credentials->config.client_certificate_request),
-        ssl_cipher_suites(), alpn_protocol_strings,
-        static_cast<uint16_t>(num_alpn_protocols),
-        &c->server_handshaker_factory);
+
+    tsi_ssl_server_handshaker_options options;
+    memset(&options, 0, sizeof(options));
+    options.pem_key_cert_pairs = server_credentials->config.pem_key_cert_pairs;
+    options.num_key_cert_pairs = server_credentials->config.num_key_cert_pairs;
+    options.pem_client_root_certs = server_credentials->config.pem_root_certs;
+    options.client_certificate_request = get_tsi_client_certificate_request_type(
+        server_credentials->config.client_certificate_request);
+    options.cipher_suites = ssl_cipher_suites();
+    options.alpn_protocols = alpn_protocol_strings;
+    options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+
+    options.ssl_settings_callback.user_data = server_credentials->config
+        .ssl_settings_callback.user_data;
+    options.ssl_settings_callback.ssl_settings_callback = server_credentials
+        ->config.ssl_settings_callback.ssl_settings_callback;
+    result =  tsi_create_ssl_server_handshaker_factory_with_options(
+        &options, &c->server_handshaker_factory);
     gpr_free((void*)alpn_protocol_strings);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",

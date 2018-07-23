@@ -110,18 +110,34 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
        key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
+    grpc_ssl_pem_key_cert_pair p;
+    p.private_key = key_cert_pair->private_key.empty() ? nullptr :
+        key_cert_pair->private_key.c_str();
+    p.cert_chain = key_cert_pair->cert_chain.c_str();
     pem_key_cert_pairs.push_back(p);
   }
-  grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create_ex(
-      options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
-      pem_key_cert_pairs.size(),
-      options.force_client_auth
-          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-          : options.client_certificate_request,
-      nullptr);
+
+  grpc_ssl_settings_callback* ssl_settings_callback =
+      grpc_ssl_server_ssl_settings_callback_create(
+            options.ssl_settings_callback.ssl_settings_callback,
+            options.ssl_settings_callback.user_data);
+
+  grpc_ssl_server_certificate_config* cert_config =
+        grpc_ssl_server_certificate_config_create(
+            options.pem_root_certs.empty() ?
+                nullptr : options.pem_root_certs.c_str(),
+                pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
+                    pem_key_cert_pairs.size());
+  grpc_ssl_server_credentials_options* server_credential_options =
+      grpc_ssl_server_credentials_create_options_using_config(
+          options.force_client_auth
+                    ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+                    : options.client_certificate_request,
+                cert_config, ssl_settings_callback);
+
+  grpc_server_credentials* c_creds =
+      grpc_ssl_server_credentials_create_with_options(
+          server_credential_options);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }

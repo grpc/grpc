@@ -63,6 +63,12 @@ struct SslServerCredentialsOptions {
       grpc_ssl_client_certificate_request_type request_type)
       : force_client_auth(false), client_certificate_request(request_type) {}
 
+  struct SSLSettingsCallback {
+    SSLSettingsCallback() : ssl_settings_callback(nullptr), user_data(nullptr) {}
+    void (*ssl_settings_callback)(void* ssl_ctx, void* user_data);
+    void *user_data;
+  };
+
   struct PemKeyCertPair {
     grpc::string private_key;
     grpc::string cert_chain;
@@ -71,6 +77,7 @@ struct SslServerCredentialsOptions {
   std::vector<PemKeyCertPair> pem_key_cert_pairs;
   /// \warning Deprecated
   bool force_client_auth;
+  SSLSettingsCallback ssl_settings_callback;
 
   /// If both \a force_client_auth and \a client_certificate_request
   /// fields are set, \a force_client_auth takes effect, i.e.
