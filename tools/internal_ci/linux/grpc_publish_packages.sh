@@ -64,17 +64,23 @@ CSHARP_PACKAGES=(
 )
 
 # Python
-PYTHON_PACKAGES=(
+PYTHON_GRPCIO_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.tar.gz
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.whl
   "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio-[0-9]*.whl
-
+)
+PYTHON_GRPCIO_TOOLS_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-tools-[0-9]*.tar.gz
   "$INPUT_ARTIFACTS"/grpcio_tools-[0-9]*.whl
   "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio_tools-[0-9]*.whl
-
+)
+PYTHON_GRPCIO_HEALTH_CHECKING_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-health-checking-[0-9]*.tar.gz
+)
+PYTHON_GRPCIO_REFLECTION_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-reflection-[0-9]*.tar.gz
+)
+PYTHON_GRPCIO_TESTING_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-testing-[0-9]*.tar.gz
 )
 
@@ -92,17 +98,18 @@ RUBY_PACKAGES=(
 function add_to_manifest() {
   local artifact_type=$1
   local artifact_file=$2
+  local artifact_prefix=$3
   local artifact_name
   artifact_name=$(basename "$artifact_file")
   local artifact_sha256
   artifact_sha256=$(openssl sha256 -r "$artifact_file" | cut -d " " -f 1)
-  local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type
+  local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type/$artifact_prefix
   mkdir -p "$artifact_target"
   cp "$artifact_file" "$artifact_target"
   cat <<EOF
     <artifact name='$artifact_name'
               type='$artifact_type'
-              path='$artifact_type/$artifact_name'
+              path='$artifact_type/$artifact_prefix$artifact_name'
               sha256='$artifact_sha256' />
 EOF
 }
@@ -124,7 +131,11 @@ EOF
   for pkg in "${PROTOC_PACKAGES[@]}"; do add_to_manifest protoc "$pkg"; done
   for pkg in "${CSHARP_PACKAGES[@]}"; do add_to_manifest csharp "$pkg"; done
   for pkg in "${PHP_PACKAGES[@]}"; do add_to_manifest php "$pkg"; done
-  for pkg in "${PYTHON_PACKAGES[@]}"; do add_to_manifest python "$pkg"; done
+  for pkg in "${PYTHON_GRPCIO_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio/; done
+  for pkg in "${PYTHON_GRPCIO_TOOLS_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-tools/; done
+  for pkg in "${PYTHON_GRPCIO_HEALTH_CHECKING_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-health-checking/; done
+  for pkg in "${PYTHON_GRPCIO_REFLECTION_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-reflection/; done
+  for pkg in "${PYTHON_GRPCIO_TESTING_PACKAGES[@]}"; do add_to_manifest python "$pkg" grpcio-testing/; done
   for pkg in "${RUBY_PACKAGES[@]}"; do add_to_manifest ruby "$pkg"; done
 
   cat <<EOF
