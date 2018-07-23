@@ -39,12 +39,31 @@ mkdir -p "$LOCAL_BUILD_ROOT"
 
 find "$INPUT_ARTIFACTS" -type f
 
+# protoc Plugins
+PROTOC_PLUGINS_ZIPPED_PACKAGES=$(mktemp -d)
+for zip_dir in protoc_windows_{x86,x64}
+do
+  zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$zip_dir.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
+done
+for tar_dir in protoc_{linux,macos}_{x86,x64}
+do
+  chmod +x "$INPUT_ARTIFACTS/$tar_dir"/*
+  tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$tar_dir.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
+done
+
+PROTOC_PACKAGES=(
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_windows_{x86,x64}.zip
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_{linux,macos}_{x86,x64}.tar.gz
+)
+
+# C#
 UNZIPPED_CSHARP_PACKAGES=$(mktemp -d)
 unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
 CSHARP_PACKAGES=(
   "$UNZIPPED_CSHARP_PACKAGES"/*
 )
 
+# Python
 PYTHON_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.tar.gz
   "$INPUT_ARTIFACTS"/grpcio-[0-9]*.whl
@@ -59,10 +78,12 @@ PYTHON_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpcio-testing-[0-9]*.tar.gz
 )
 
+# PHP
 PHP_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpc-[0-9]*.tgz
 )
 
+# Ruby
 RUBY_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpc-[0-9]*.gem
   "$INPUT_ARTIFACTS"/grpc-tools-[0-9]*.gem
@@ -100,6 +121,7 @@ EOF
   <artifacts>
 EOF
 
+  for pkg in "${PROTOC_PACKAGES[@]}"; do add_to_manifest protoc "$pkg"; done
   for pkg in "${CSHARP_PACKAGES[@]}"; do add_to_manifest csharp "$pkg"; done
   for pkg in "${PHP_PACKAGES[@]}"; do add_to_manifest php "$pkg"; done
   for pkg in "${PYTHON_PACKAGES[@]}"; do add_to_manifest python "$pkg"; done
