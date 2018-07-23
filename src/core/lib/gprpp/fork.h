@@ -24,16 +24,6 @@
  *       AROUND VERY SPECIFIC USE CASES.
  */
 
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-#define GRPC_GET_FORK_EPOCH(fd) fd->fork_epoch
-#define GRPC_SET_FORK_EPOCH(fd, val) fd->fork_epoch = val
-#else
-#define GRPC_GET_FORK_EPOCH(fd) 0
-#define GRPC_SET_FORK_EPOCH(fd, val) \
-  do {                               \
-  } while (0)
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
 namespace grpc_core {
 
 namespace internal {
