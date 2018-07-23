@@ -176,7 +176,55 @@ EOF
   tail --lines=+5 "$OLD_INDEX"
 }> "$NEW_INDEX"
 
+
+function generate_directory_index()
+{
+  local target_dir=$1
+  local current_directory_name
+  current_directory_name=$(basename "$target_dir")
+  cat <<EOF
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Index of $current_directory_name - packages.grpc.io</title>
+    <link rel="stylesheet" type="text/css" href="/web-assets/dirindex.css" />
+  </head>
+  <body>
+    <h1>Index of <a href="#"><code>$current_directory_name</code></a></h1>
+    <ul>
+      <li><a href="#">.</a></li>
+      <li><a href="..">..</a></li>
+EOF
+
+(
+  cd "$target_dir"
+  find * -maxdepth 0 -type d -print | sort | while read -r line
+  do
+    echo "      <li><a href='$line/'>$line/</a></li>"
+  done
+  find * -maxdepth 0 -type f -print | sort | while read -r line
+  do
+    echo "      <li><a href='$line'>$line</a></li>"
+  done
+)
+
+cat <<EOF
+    </ul>
+  </body>
+</html>
+EOF
+}
+
 # Upload the current build artifacts
 gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
+# Upload directory indicies for subdirectories
+(
+  cd "$LOCAL_BUILD_ROOT"
+  find * -type d | while read -r directory
+  do
+    generate_directory_index "$directory" | gsutil -h 'Content-Type:text/html' cp - "$GCS_ARCHIVE_ROOT$BUILD_RELPATH$directory/$INDEX_FILENAME"
+  done
+)
 # Upload the new /index.xml
 gsutil -h "Content-Type:application/xml" cp "$NEW_INDEX" "$GCS_INDEX"
