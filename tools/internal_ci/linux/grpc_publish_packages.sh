@@ -101,6 +101,8 @@ function add_to_manifest() {
   local artifact_prefix=$3
   local artifact_name
   artifact_name=$(basename "$artifact_file")
+  local artifact_size
+  artifact_size=$(stat -c%s "$artifact_file")
   local artifact_sha256
   artifact_sha256=$(openssl sha256 -r "$artifact_file" | cut -d " " -f 1)
   local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type/$artifact_prefix
@@ -110,6 +112,7 @@ function add_to_manifest() {
     <artifact name='$artifact_name'
               type='$artifact_type'
               path='$artifact_type/$artifact_prefix$artifact_name'
+              size='$artifact_size'
               sha256='$artifact_sha256' />
 EOF
 }
@@ -144,6 +147,7 @@ EOF
 EOF
 }> "$LOCAL_BUILD_INDEX"
 
+LOCAL_BUILD_INDEX_SIZE=$(stat -c%s "$LOCAL_BUILD_INDEX")
 LOCAL_BUILD_INDEX_SHA256=$(openssl sha256 -r "$LOCAL_BUILD_INDEX" | cut -d " " -f 1)
 
 OLD_INDEX=$(mktemp)
@@ -166,6 +170,7 @@ gsutil cp "$GCS_INDEX" "$OLD_INDEX"
            branch='$BUILD_BRANCH_NAME'
            commit='$BUILD_GIT_COMMIT'
            path='$GCS_ARCHIVE_PREFIX$BUILD_RELPATH$INDEX_FILENAME'
+           size='$LOCAL_BUILD_INDEX_SIZE'
            sha256='$LOCAL_BUILD_INDEX_SHA256' />
 EOF
   tail --lines=+5 "$OLD_INDEX"
