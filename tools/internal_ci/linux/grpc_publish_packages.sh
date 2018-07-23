@@ -111,7 +111,7 @@ EOF
   cat <<EOF
 <?xml version="1.0"?>
 <?xml-stylesheet href="/web-assets/build-201807.xsl" type="text/xsl"?>
-<build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP'>
+<build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP' version="201807">
   <metadata>
     <project>gRPC</project>
     <repository>https://github.com/grpc/grpc</repository>
