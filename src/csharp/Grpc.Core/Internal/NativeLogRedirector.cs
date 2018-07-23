@@ -88,6 +88,13 @@ namespace Grpc.Core.Internal
         }
     }
 
+    /// <summary>
+    /// Use this attribute to mark methods that will be called back from P/Invoke calls.
+    /// iOS (and probably other AOT platforms) needs to have delegates registered.
+    /// Instead of depending on Xamarin.iOS for this, we can just create our own,
+    /// the iOS runtime just checks for the type name.
+    /// See: https://docs.microsoft.com/en-gb/xamarin/ios/internals/limitations#reverse-callbacks
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     internal sealed class MonoPInvokeCallbackAttribute : Attribute
     {
