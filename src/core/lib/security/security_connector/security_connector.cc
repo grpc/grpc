@@ -20,8 +20,12 @@
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
+#ifndef _WIN32
 #include <dirent.h>
+#endif
 #include <stdbool.h>
+#include <string.h>
+#include <sys/stat.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -1315,14 +1319,16 @@ size_t DefaultSslRootStore::GetDirectoryTotalSize(const char* directory_path) {
   // TODO: add logging when using opendir.
   DIR* ca_directory = opendir(directory_path);
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
-    if (directory_entry->d_type == DT_DIR ||
+    struct stat dir_entry_stat;
+    const char* file_entry_name = directory_entry->d_name;
+    file_path = GetAbsoluteFilePath(directory_path, file_entry_name);
+    int stat_return = lstat(grpc_slice_to_c_string(file_path), &dir_entry_stat);
+    if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
       // no subdirectories.
       continue;
     }
-    const char* file_entry_name = directory_entry->d_name;
-    file_path = GetAbsoluteFilePath(directory_path, file_entry_name);
     cert_file = fopen(grpc_slice_to_c_string(file_path), "rb");
     if (cert_file != nullptr) {
       fseek(cert_file, 0L, SEEK_END);
@@ -1352,14 +1358,16 @@ grpc_slice DefaultSslRootStore::CreateRootCertsBundle() {
   grpc_slice file_path = grpc_empty_slice();
   size_t bytes_read = 0;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
-    if (directory_entry->d_type == DT_DIR ||
+    struct stat dir_entry_stat;
+    const char* file_entry_name = directory_entry->d_name;
+    file_path = GetAbsoluteFilePath(found_cert_dir, file_entry_name);
+    int stat_return = stat(grpc_slice_to_c_string(file_path), &dir_entry_stat);
+    if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
       // no subdirectories.
       continue;
     }
-    const char* file_entry_name = directory_entry->d_name;
-    file_path = GetAbsoluteFilePath(found_cert_dir, file_entry_name);
     cert_file = fopen(grpc_slice_to_c_string(file_path), "rb");
     if (cert_file != nullptr) {
       // Read file into bundle.
