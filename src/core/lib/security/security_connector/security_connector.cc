@@ -868,7 +868,13 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+  // TODO(medinaandres) Additional infrastructure needs to be added
+  // to GRPC to pass disable_hostname_based_check from user API
+  // for both server and client. This is intended for users that are IP based
+  // and cannot have a hostname based check.
+  bool disable_hostname_based_check = true;
+  if (!disable_hostname_based_check && peer_name != nullptr &&
+      !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
