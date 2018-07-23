@@ -33,8 +33,9 @@ namespace Grpc.Core.Internal
     internal static class PlatformApis
     {
         const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
-        const string XamarinAndroidActivityClassName = "Android.App.Activity, Mono.Android";
-        const string XamariniOSEnumClassName = "Mono.CSharp.Enum, Mono.CSharp";
+        const string XamarinAndroidObjectClassName = "Java.Lang.Object, Mono.Android";
+        const string XamarinIOSObjectClassName = "Foundation.NSObject, Xamarin.iOS";
+
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
@@ -42,7 +43,7 @@ namespace Grpc.Core.Internal
         static readonly bool isNetCore;
         static readonly bool isUnity;
         static readonly bool isXamarin;
-        static readonly bool isXamariniOS;
+        static readonly bool isXamarinIOS;
         static readonly bool isXamarinAndroid;
 
         static PlatformApis()
@@ -63,9 +64,9 @@ namespace Grpc.Core.Internal
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
             isUnity = Type.GetType(UnityEngineApplicationClassName) != null;
-            isXamariniOS = Type.GetType(XamariniOSEnumClassName) != null;
-            isXamarinAndroid = Type.GetType(XamarinAndroidActivityClassName) != null;
-            isXamarin = isXamariniOS || isXamarinAndroid;
+            isXamarinIOS = Type.GetType(XamarinIOSObjectClassName) != null;
+            isXamarinAndroid = Type.GetType(XamarinAndroidObjectClassName) != null;
+            isXamarin = isXamarinIOS || isXamarinAndroid;
         }
 
         public static bool IsLinux
@@ -108,9 +109,9 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// true if running on Xamarin.iOS, false otherwise.
         /// </summary>
-        public static bool IsXamariniOS
+        public static bool IsXamarinIOS
         {
-            get { return isXamariniOS; }
+            get { return isXamarinIOS; }
         }
 
         /// <summary>

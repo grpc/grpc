@@ -36,6 +36,7 @@ cd build
 # ANDROID_ABI in ('arm64-v8a', 'armeabi-v7a')
 # e.g. ANDROID_ABI=armeabi-v7a
 
+# android-19 corresponds to Kitkat 4.4
 ${ANDROID_SDK_CMAKE} ../.. \
   -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK_PATH}/build/cmake/android.toolchain.cmake" \
   -DCMAKE_ANDROID_NDK="${ANDROID_NDK_PATH}" \
@@ -44,7 +45,7 @@ ${ANDROID_SDK_CMAKE} ../.. \
   -DRUN_HAVE_STD_REGEX=0 \
   -DRUN_HAVE_STEADY_CLOCK=0 \
   -DCMAKE_BUILD_TYPE=Release \
-  -DANDROID_PLATFORM=android-28 \
+  -DANDROID_PLATFORM=android-19 \
   -DANDROID_ABI="${ANDROID_ABI}" \
   -DANDROID_NDK="${ANDROID_NDK_PATH}"
 
