@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gladiolus"
+g_stands_for = "glider"
 
 core_version = "6.0.0-dev"
 
-version = "1.14.0-dev"
+version = "1.15.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
