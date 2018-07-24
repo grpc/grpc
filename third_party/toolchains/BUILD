@@ -42,7 +42,7 @@ platform(
         }
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-standard-1"
+          value: "n1-highmem-2"
         }
         properties: {
           name: "gceMachineType_LARGE"  # Large machines for a small set of resource-consuming tests such as combiner_tests under TSAN.
