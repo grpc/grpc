@@ -784,6 +784,32 @@ Client asserts:
 * received status message is the same as the sent message for both Procedure
   steps 1 and 2
 
+### special_status_message
+
+This test verifies Unicode and whitespace is correctly processed in status
+message. "\t" is horizontal tab. "\r" is carriage return.  "\n" is line feed.
+
+Server features:
+* [UnaryCall][]
+* [Echo Status][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_status:{
+        code: 2
+        message: "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
+      }
+    }
+    ```
+
+Client asserts:
+* received status code is the same as the sent code for Procedure step 1
+* received status message is the same as the sent message for Procedure step 1,
+  including all whitespace characters
+
 ### unimplemented_method
 
 This test verifies that calling an unimplemented RPC method returns the
