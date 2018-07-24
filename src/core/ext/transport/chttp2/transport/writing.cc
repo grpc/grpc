@@ -641,6 +641,10 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
     }
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:end");
   }
+  while (grpc_chttp2_list_pop_waiting_for_write_stream(t, &s)) {
+    GRPC_CLOSURE_LIST_SCHED(&s->run_after_write);
+    GRPC_CHTTP2_STREAM_UNREF(s, "chttp2:write_closure_sched");
+  }
   grpc_slice_buffer_reset_and_unref_internal(&t->outbuf);
   GRPC_ERROR_UNREF(error);
 }

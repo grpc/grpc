@@ -54,6 +54,8 @@ typedef enum {
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
+  /** streams with closures waiting to be run on a write **/
+  GRPC_CHTTP2_LIST_WAITING_FOR_WRITE,
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
@@ -431,9 +433,6 @@ struct grpc_chttp2_transport {
    */
   grpc_error* close_transport_on_writes_finished;
 
-  /* a list of closures to run after writes are finished */
-  grpc_closure_list run_after_write;
-
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;
@@ -584,6 +583,7 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer flow_controlled_buffer;
 
+  grpc_closure_list run_after_write;
   grpc_chttp2_write_cb* on_flow_controlled_cbs;
   grpc_chttp2_write_cb* on_write_finished_cbs;
   grpc_chttp2_write_cb* finish_after_write;
@@ -685,6 +685,13 @@ bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport* t,
                                             grpc_chttp2_stream** s);
 bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s);
+
+bool grpc_chttp2_list_add_waiting_for_write_stream(grpc_chttp2_transport* t,
+                                                   grpc_chttp2_stream* s);
+bool grpc_chttp2_list_pop_waiting_for_write_stream(grpc_chttp2_transport* t,
+                                                   grpc_chttp2_stream** s);
+bool grpc_chttp2_list_remove_waiting_for_write_stream(grpc_chttp2_transport* t,
+                                                      grpc_chttp2_stream* s);
 
 /********* Flow Control ***************/
 

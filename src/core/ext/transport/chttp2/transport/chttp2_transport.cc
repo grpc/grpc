@@ -813,7 +813,6 @@ static void set_write_state(grpc_chttp2_transport* t,
                                  write_state_name(st), reason));
   t->write_state = st;
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
-    GRPC_CLOSURE_LIST_SCHED(&t->run_after_write);
     if (t->close_transport_on_writes_finished != nullptr) {
       grpc_error* err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = nullptr;
@@ -1205,10 +1204,16 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
-        !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
+        !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE) ||
+        closure->error_data.error != GRPC_ERROR_NONE || s->seen_error) {
+      // If the stream has failed, or this closure will fail, ignore
+      // CLOSURE_BARRIER_MAY_COVER_WRITE and run the callback immediately
       GRPC_CLOSURE_RUN(closure, closure->error_data.error);
     } else {
-      grpc_closure_list_append(&t->run_after_write, closure,
+      if (grpc_chttp2_list_add_waiting_for_write_stream(t, s)) {
+        GRPC_CHTTP2_STREAM_REF(s, "chttp2:pending_write_closure");
+      }
+      grpc_closure_list_append(&s->run_after_write, closure,
                                closure->error_data.error);
     }
   }
@@ -1989,7 +1994,9 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
       s->byte_stream_error = GRPC_ERROR_REF(error);
     }
   }
-
+  if (grpc_chttp2_list_remove_writable_stream(t, s)) {
+    GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:remove_stream");
+  }
   if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     post_benign_reclaimer(t);
     if (t->sent_goaway_state == GRPC_CHTTP2_GOAWAY_SENT) {
@@ -1998,10 +2005,6 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                  "Last stream closed after sending GOAWAY", &error, 1));
     }
   }
-  if (grpc_chttp2_list_remove_writable_stream(t, s)) {
-    GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:remove_stream");
-  }
-
   GRPC_ERROR_UNREF(error);
 
   maybe_start_some_streams(t);
@@ -2009,6 +2012,10 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error* due_to_error) {
+  GRPC_CLOSURE_LIST_SCHED(&s->run_after_write);
+  if (grpc_chttp2_list_remove_waiting_for_write_stream(t, s)) {
+    GRPC_CHTTP2_STREAM_UNREF(s, "chttp2:pending_write_closure");
+  }
   if (!t->is_client && !s->sent_trailing_metadata &&
       grpc_error_has_clear_grpc_status(due_to_error)) {
     close_from_api(t, s, due_to_error);
