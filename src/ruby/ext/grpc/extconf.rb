@@ -98,21 +98,3 @@ $CFLAGS << ' -pedantic '
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
 create_makefile(output)
-
-strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
-
-if grpc_config == 'opt'
-  File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
-    o.puts
-    File.foreach('Makefile') do |i|
-      o.puts i
-    end
-    o.puts
-    o.puts 'strip:'
-    o.puts "\t$(ECHO) Stripping $(DLLIB)"
-    o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
-  end
-  File.rename('Makefile.new', 'Makefile')
-end
