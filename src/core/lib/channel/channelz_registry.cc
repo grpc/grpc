@@ -123,7 +123,6 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::channelz::BaseNode* channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
   if (channel_node == nullptr ||
-
       (channel_node->type() !=
            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
        channel_node->type() !=
