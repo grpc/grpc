@@ -20,4 +20,4 @@ cd "$(dirname "$0")/../../.."
 src/csharp/experimental/build_native_ext_for_ios.sh
 
 mkdir -p "${ARTIFACTS_OUT}"
-cp libs/ios_arm64/libgrpc_csharp_ext.a libs/ios_arm64/libgrpc.a "${ARTIFACTS_OUT}"
+cp libs/ios/libgrpc_csharp_ext.a libs/ios/libgrpc.a "${ARTIFACTS_OUT}"
