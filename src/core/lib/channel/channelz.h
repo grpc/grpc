@@ -74,11 +74,9 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   friend class ChannelTrace;
   EntityType type_;
-  intptr_t uuid_;
+  const intptr_t uuid_;
 };
 
 // This class is the parent for the channelz entities that deal with Channels
@@ -109,9 +107,6 @@ class CallCountingAndTracingNode : public BaseNode {
   void PopulateCallData(grpc_json* json);
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
   // testing peer friend.
   friend class testing::CallCountingAndTracingNodePeer;
 
@@ -129,6 +124,10 @@ class ChannelNode : public CallCountingAndTracingNode {
       grpc_channel* channel, size_t channel_tracer_max_nodes,
       bool is_top_level_channel);
 
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+              bool is_top_level_channel);
+  ~ChannelNode() override;
+
   grpc_json* RenderJson() override;
 
   void MarkChannelDestroyed() {
@@ -139,19 +138,12 @@ class ChannelNode : public CallCountingAndTracingNode {
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
  protected:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-              bool is_top_level_channel);
-  ~ChannelNode() override;
   // provides view of target for child.
   char* target_view() { return target_.get(); }
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
-  intptr_t channel_uuid_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -162,10 +154,6 @@ class ServerNode : public CallCountingAndTracingNode {
       : CallCountingAndTracingNode(EntityType::kServer,
                                    channel_tracer_max_nodes) {}
   ~ServerNode() override {}
-
- private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 };
 
 // Handles channelz bookkeeping for sockets
@@ -176,8 +164,6 @@ class SocketNode : public BaseNode {
   ~SocketNode() override {}
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 };
 
 // Creation functions

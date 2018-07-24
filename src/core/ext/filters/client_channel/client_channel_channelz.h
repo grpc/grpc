@@ -45,20 +45,17 @@ class ClientChannelNode : public ChannelNode {
       grpc_channel* channel, size_t channel_tracer_max_nodes,
       bool is_top_level_channel);
 
+  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                    bool is_top_level_channel);
+  virtual ~ClientChannelNode() {}
+
   grpc_json* RenderJson() override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
   static grpc_arg CreateChannelArg();
 
- protected:
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                    bool is_top_level_channel);
-  virtual ~ClientChannelNode() {}
-
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   grpc_channel_element* client_channel_;
 
   // helpers
@@ -80,9 +77,6 @@ class SubchannelNode : public CallCountingAndTracingNode {
   grpc_json* RenderJson() override;
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  intptr_t subchannel_uuid_;
   grpc_subchannel* subchannel_;
   UniquePtr<char> target_;
 

@@ -41,9 +41,8 @@
 namespace grpc_core {
 namespace channelz {
 
-BaseNode::BaseNode(EntityType type) : type_(type) {
-  uuid_ = ChannelzRegistry::Register(this);
-}
+BaseNode::BaseNode(EntityType type)
+    : type_(type), uuid_(ChannelzRegistry::Register(this)) {}
 
 BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
 
