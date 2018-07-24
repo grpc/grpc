@@ -234,6 +234,11 @@ class CSharpExtArtifact:
                 environ={
                     'ANDROID_ABI': self.arch_abi
                 })
+        elif self.arch == 'ios':
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
+                use_workspace=True)
         elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
@@ -356,6 +361,7 @@ def targets():
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
+        CSharpExtArtifact('macos', 'ios'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
         PythonArtifact('linux', 'x86', 'cp34-cp34m'),

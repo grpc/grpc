@@ -1,4 +1,5 @@
-# Copyright 2015 gRPC authors.
+#!/bin/bash
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module GRPC
-  module Tools
-    VERSION = '1.15.0.dev'
-  end
-end
+set -ex
+
+cd "$(dirname "$0")/../../.."
+
+src/csharp/experimental/build_native_ext_for_ios.sh
+
+mkdir -p "${ARTIFACTS_OUT}"
+cp libs/ios/libgrpc_csharp_ext.a libs/ios/libgrpc.a "${ARTIFACTS_OUT}"

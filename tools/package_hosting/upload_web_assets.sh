@@ -1,4 +1,5 @@
-# Copyright 2015 gRPC authors.
+#!/bin/bash
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-module GRPC
-  module Tools
-    VERSION = '1.15.0.dev'
-  end
-end
+set -ex
+
+cd "$(dirname "$0")"
+
+GCS_WEB_ASSETS=gs://packages.grpc.io/web-assets/
+
+WEB_ASSETS=(
+  404.html
+  build-201807.xsl
+  dirindex.css
+  home.xsl
+  style.css
+)
+
+gsutil -m cp "${WEB_ASSETS[@]}" "$GCS_WEB_ASSETS"

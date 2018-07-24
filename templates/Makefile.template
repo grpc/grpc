@@ -921,6 +921,16 @@
   % endfor
 
 
+  static_csharp: static_c \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'csharp':
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+
+
   shared: shared_c shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
