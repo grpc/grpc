@@ -532,7 +532,7 @@ static void destroy_call(void* call, grpc_error* error) {
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(c->status_error, c->send_deadline,
                         &c->final_info.final_status, &slice, nullptr,
-                        c->final_info.error_string);
+                        &c->final_info.error_string);
   grpc_error* cancel_error =
       (grpc_error*)gpr_atm_no_barrier_load(&c->cancel_error);
   GRPC_ERROR_UNREF(cancel_error);
@@ -1445,10 +1445,10 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
 static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
-  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
   grpc_metadata_batch* md =
       &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
   recv_trailing_filter(call, md, GRPC_ERROR_REF(error));
+  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
   finish_batch_step(bctl);
 }
 
