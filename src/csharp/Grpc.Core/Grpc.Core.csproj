@@ -54,11 +54,11 @@
       <PackagePath>runtimes/monoandroid/arm64-v8a/libgrpc_csharp_ext.so</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\csharp_ext_macos_ios\arm64\libgrpc_csharp_ext.a">
+    <Content Include="..\nativelibs\csharp_ext_macos_ios\libgrpc_csharp_ext.a">
       <PackagePath>runtimes/ios/native/libgrpc_csharp_ext.a</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="..\nativelibs\csharp_ext_macos_ios\arm64\libgrpc.a">
+    <Content Include="..\nativelibs\csharp_ext_macos_ios\libgrpc.a">
       <PackagePath>runtimes/ios/native/libgrpc.a</PackagePath>
       <Pack>true</Pack>
     </Content>
