@@ -399,6 +399,7 @@ grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
 static void continue_connect_locked(grpc_subchannel* c) {
   grpc_connect_in_args args;
   args.interested_parties = c->pollset_set;
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   const grpc_millis min_deadline =
       c->min_connect_timeout_ms + grpc_core::ExecCtx::Get()->Now();
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
@@ -484,6 +485,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
   } else {
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = true;
+    grpc_core::ExecCtx::Get()->InvalidateNow();
     const grpc_millis time_til_next =
         c->next_attempt_deadline - grpc_core::ExecCtx::Get()->Now();
     if (time_til_next <= 0) {

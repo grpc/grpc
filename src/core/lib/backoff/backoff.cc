@@ -53,6 +53,7 @@ BackOff::BackOff(const Options& options)
 }
 
 grpc_millis BackOff::NextAttemptTime() {
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   if (initial_) {
     initial_ = false;
     return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
