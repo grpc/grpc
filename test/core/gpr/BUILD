@@ -86,6 +86,7 @@ grpc_cc_test(
         "//:gpr",
         "//test/core/util:gpr_test_util",
     ],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
 )
 
 grpc_cc_test(

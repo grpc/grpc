@@ -34,11 +34,13 @@ grpc_cc_library(
         "qps_worker.cc",
         "server_async.cc",
         "server_sync.cc",
+        "qps_server_builder.cc",
     ],
     hdrs = [
         "client.h",
         "qps_worker.h",
         "server.h",
+        "qps_server_builder.h",
     ],
     deps = [
         ":histogram",
@@ -55,6 +57,10 @@ grpc_cc_library(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//test/cpp/util:test_config",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
@@ -176,6 +182,7 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
 )
 
 grpc_cc_test(

@@ -543,6 +543,7 @@ static void destroy_call(void* call, grpc_error* error) {
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c), &c->final_info,
                           GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
+  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
 }
 
 void grpc_call_ref(grpc_call* c) { gpr_ref(&c->ext_ref); }

@@ -46,8 +46,20 @@
       <PackagePath>runtimes/win/native/grpc_csharp_ext.x86.dll</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="Grpc.Core.targets">
+    <Content Include="..\nativelibs\csharp_ext_linux_android_armeabi-v7a\libgrpc_csharp_ext.so">
+      <PackagePath>runtimes/monoandroid/armeabi-v7a/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_android_arm64-v8a\libgrpc_csharp_ext.so">
+      <PackagePath>runtimes/monoandroid/arm64-v8a/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="build\net45\Grpc.Core.targets">
       <PackagePath>build/net45/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="build\MonoAndroid\Grpc.Core.targets">
+      <PackagePath>build/MonoAndroid/</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
