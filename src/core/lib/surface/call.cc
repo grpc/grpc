@@ -509,26 +509,6 @@ static void destroy_call(void* call, grpc_error* error) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(c->channel);
-  if (c->is_client) {
-    if (channelz_channel != nullptr) {
-      if (*c->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
-      }
-    }
-  } else {
-    if (channelz_channel != nullptr) {
-      if (*c->final_op.server.cancelled || c->status_error != GRPC_ERROR_NONE) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
-      }
-    }
-  }
-
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(c->status_error, c->send_deadline,
                         &c->final_info.final_status, &slice, nullptr,
@@ -734,6 +714,15 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
                           error_string);
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
+    grpc_core::channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
+    if (channelz_channel != nullptr) {
+      if (code != GRPC_STATUS_OK) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
@@ -1683,6 +1672,15 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         call->status_error = status_error;
+        grpc_core::channelz::ChannelNode* channelz_channel =
+            grpc_channel_get_channelz_node(call->channel);
+        if (channelz_channel != nullptr) {
+          if (call->status_error != GRPC_ERROR_NONE) {
+            channelz_channel->RecordCallFailed();
+          } else {
+            channelz_channel->RecordCallSucceeded();
+          }
+        }
         if (!prepare_application_metadata(
                 call,
                 static_cast<int>(
