@@ -561,7 +561,7 @@ static void destroy_call(void* call, grpc_error* error) {
   }
 
   get_final_status(c, set_status_value_directly, &c->final_info.final_status,
-                   nullptr, c->final_info.error_string);
+                   nullptr, &(c->final_info.error_string));
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -573,6 +573,7 @@ static void destroy_call(void* call, grpc_error* error) {
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c), &c->final_info,
                           GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
+  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
 }
 
 void grpc_call_ref(grpc_call* c) { gpr_ref(&c->ext_ref); }
