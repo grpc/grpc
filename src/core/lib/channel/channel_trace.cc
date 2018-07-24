@@ -41,14 +41,25 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data,
-                                     RefCountedPtr<BaseNode> referenced_entity)
+ChannelTrace::TraceEvent::TraceEvent(
+    Severity severity, grpc_slice data,
+    RefCountedPtr<ChannelNode> referenced_channel)
     : severity_(severity),
       data_(data),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
       next_(nullptr),
-      referenced_entity_(std::move(referenced_entity)) {}
+      referenced_channel_(std::move(referenced_channel)) {}
+
+// ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data,
+//                                      RefCountedPtr<SubchannelNode>
+//                                      referenced_subchannel)
+//     : severity_(severity),
+//       data_(data),
+//       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
+//                                          GPR_CLOCK_REALTIME)),
+//       next_(nullptr),
+//       referenced_subchannel_(std::move(referenced_subchannel)) {}
 
 ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data)
     : severity_(severity),
@@ -110,12 +121,21 @@ void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
 
 void ChannelTrace::AddTraceEventReferencingChannel(
     Severity severity, grpc_slice data,
-    RefCountedPtr<BaseNode> referenced_entity) {
+    RefCountedPtr<ChannelNode> referenced_channel) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
   AddTraceEventHelper(
-      New<TraceEvent>(severity, data, std::move(referenced_entity)));
+      New<TraceEvent>(severity, data, std::move(referenced_channel)));
 }
+
+// void ChannelTrace::AddTraceEventReferencingSubchannel(
+//     Severity severity, grpc_slice data,
+//     RefCountedPtr<SubchannelNode> referenced_subchannel) {
+//   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
+//   // create and fill up the new event
+//   AddTraceEventHelper(
+//       New<TraceEvent>(severity, data, std::move(referenced_subchannel)));
+// }
 
 namespace {
 
@@ -145,27 +165,26 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   json_iterator = grpc_json_create_child(json_iterator, json, "timestamp",
                                          gpr_format_timespec(timestamp_),
                                          GRPC_JSON_STRING, true);
-  if (referenced_entity_ != nullptr) {
-    GPR_ASSERT(
-        referenced_entity_->type() == BaseNode::EntityType::kSubchannel ||
-        referenced_entity_->type() == BaseNode::EntityType::kTopLevelChannel ||
-        referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
+  if (referenced_channel_ != nullptr) {
     char* uuid_str;
-    gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_entity_->uuid());
+    gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_channel_->uuid());
     grpc_json* child_ref = grpc_json_create_child(
-        json_iterator, json,
-        (referenced_entity_->type() == BaseNode::EntityType::kSubchannel)
-            ? "subchannelRef"
-            : "channelRef",
-        nullptr, GRPC_JSON_OBJECT, false);
-    json_iterator = grpc_json_create_child(
-        nullptr, child_ref,
-        (referenced_entity_->type() == BaseNode::EntityType::kSubchannel)
-            ? "subchannelId"
-            : "channelId",
-        uuid_str, GRPC_JSON_STRING, true);
+        json_iterator, json, "channelRef", nullptr, GRPC_JSON_OBJECT, false);
+    json_iterator = grpc_json_create_child(nullptr, child_ref, "channelId",
+                                           uuid_str, GRPC_JSON_STRING, true);
     json_iterator = child_ref;
   }
+  // else {
+  //   char* uuid_str;
+  //   gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_subchannel_->uuid());
+  //   grpc_json* child_ref = grpc_json_create_child(
+  //       json_iterator, json, "subchannelRef",
+  //       nullptr, GRPC_JSON_OBJECT, false);
+  //   json_iterator = grpc_json_create_child(
+  //       nullptr, child_ref, "subchannelId",
+  //       uuid_str, GRPC_JSON_STRING, true);
+  //   json_iterator = child_ref;
+  // }
 }
 
 grpc_json* ChannelTrace::RenderJson() const {

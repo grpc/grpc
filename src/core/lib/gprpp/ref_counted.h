@@ -73,7 +73,8 @@ class RefCounted {
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
-  friend class RefCountedPtr<Child>;
+  template <typename T>
+  friend class RefCountedPtr;
 
   void IncrementRefCount() { gpr_ref(&refs_); }
 
