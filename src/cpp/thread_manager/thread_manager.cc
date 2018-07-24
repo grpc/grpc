@@ -22,8 +22,8 @@
 #include <mutex>
 
 #include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc {
 
@@ -55,7 +55,8 @@ ThreadManager::ThreadManager(const char* name,
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
-      num_threads_(0) {
+      num_threads_(0),
+      max_active_threads_sofar_(0) {
   resource_user_ = grpc_resource_user_create(resource_quota, name);
 }
 
@@ -65,6 +66,7 @@ ThreadManager::~ThreadManager() {
     GPR_ASSERT(num_threads_ == 0);
   }
 
+  grpc_core::ExecCtx exec_ctx;  // grpc_resource_user_unref needs an exec_ctx
   grpc_resource_user_unref(resource_user_);
   CleanupCompletedThreads();
 }
@@ -86,17 +88,27 @@ bool ThreadManager::IsShutdown() {
   return shutdown_;
 }
 
+int ThreadManager::GetMaxActiveThreadsSoFar() {
+  std::lock_guard<std::mutex> list_lock(list_mu_);
+  return max_active_threads_sofar_;
+}
+
 void ThreadManager::MarkAsCompleted(WorkerThread* thd) {
   {
     std::lock_guard<std::mutex> list_lock(list_mu_);
     completed_threads_.push_back(thd);
   }
 
-  std::lock_guard<std::mutex> lock(mu_);
-  num_threads_--;
-  if (num_threads_ == 0) {
-    shutdown_cv_.notify_one();
+  {
+    std::lock_guard<std::mutex> lock(mu_);
+    num_threads_--;
+    if (num_threads_ == 0) {
+      shutdown_cv_.notify_one();
+    }
   }
+
+  // Give a thread back to the resource quota
+  grpc_resource_user_free_threads(resource_user_, 1);
 }
 
 void ThreadManager::CleanupCompletedThreads() {
@@ -111,34 +123,24 @@ void ThreadManager::CleanupCompletedThreads() {
 }
 
 void ThreadManager::Initialize() {
+  if (!grpc_resource_user_alloc_threads(resource_user_, min_pollers_)) {
+    gpr_log(GPR_ERROR,
+            "No thread quota available to even create the minimum required "
+            "polling threads (i.e %d). Unable to start the thread manager",
+            min_pollers_);
+    abort();
+  }
+
   {
     std::unique_lock<std::mutex> lock(mu_);
     num_pollers_ = min_pollers_;
     num_threads_ = min_pollers_;
+    max_active_threads_sofar_ = min_pollers_;
   }
 
   for (int i = 0; i < min_pollers_; i++) {
-    if (!CreateNewThread(this)) {
-      gpr_log(GPR_ERROR,
-              "No quota available to create additional threads. Created %d (of "
-              "%d) threads",
-              i, min_pollers_);
-      break;
-    }
+    new WorkerThread(this);
   }
-}
-
-bool ThreadManager::CreateNewThread(ThreadManager* thd_mgr) {
-  if (!grpc_resource_user_alloc_threads(thd_mgr->resource_user_, 1)) {
-    return false;
-  }
-  // Create a new thread (which ends up calling the MainWorkLoop() function
-  new WorkerThread(thd_mgr);
-  return true;
-}
-
-void ThreadManager::ReleaseThread(ThreadManager* thd_mgr) {
-  grpc_resource_user_free_threads(thd_mgr->resource_user_, 1);
 }
 
 void ThreadManager::MainWorkLoop() {
@@ -162,14 +164,17 @@ void ThreadManager::MainWorkLoop() {
         done = true;
         break;
       case WORK_FOUND:
-        // If we got work and there are now insufficient pollers, start a new
-        // one
-        if (!shutdown_ && num_pollers_ < min_pollers_) {
+        // If we got work and there are now insufficient pollers and there is
+        // quota available to create a new thread,start a new poller thread
+        if (!shutdown_ && num_pollers_ < min_pollers_ &&
+            grpc_resource_user_alloc_threads(resource_user_, 1)) {
           num_pollers_++;
           num_threads_++;
+          max_active_threads_sofar_ =
+              std::max(max_active_threads_sofar_, num_threads_);
           // Drop lock before spawning thread to avoid contention
           lock.unlock();
-          CreateNewThread(this);
+          new WorkerThread(this);
         } else {
           // Drop lock for consistency with above branch
           lock.unlock();
@@ -219,10 +224,9 @@ void ThreadManager::MainWorkLoop() {
     }
   };
 
-  // This thread is exiting. Do some cleanup work (i.e delete already completed
-  // worker threads and also release 1 thread back to the resource quota)
+  // This thread is exiting. Do some cleanup work i.e delete already completed
+  // worker threads
   CleanupCompletedThreads();
-  ReleaseThread(this);
 
   // If we are here, either ThreadManager is shutting down or it already has
   // enough threads.

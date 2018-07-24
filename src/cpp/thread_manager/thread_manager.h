@@ -86,6 +86,11 @@ class ThreadManager {
   // all the threads have drained all the outstanding work
   virtual void Wait();
 
+  // Max number of concurrent threads that were ever active in this thread
+  // manager so far. This is useful for debugging purposes (and in unit tests)
+  // to check if resource_quota is properly being enforced.
+  int GetMaxActiveThreadsSoFar();
+
  private:
   // Helper wrapper class around grpc_core::Thread. Takes a ThreadManager object
   // and starts a new grpc_core::Thread to calls the Run() function.
@@ -93,6 +98,23 @@ class ThreadManager {
   // The Run() function calls ThreadManager::MainWorkLoop() function and once
   // that completes, it marks the WorkerThread completed by calling
   // ThreadManager::MarkAsCompleted()
+  //
+  // WHY IS THIS NEEDED?:
+  // When a thread terminates, some other tread *must* call Join() on that
+  // thread so that the resources are released. Having a WorkerThread wrapper
+  // will make this easier. Once Run() completes, each thread calls the
+  // following two functions:
+  //    ThreadManager::CleanupCompletedThreads()
+  //    ThreadManager::MarkAsCompleted()
+  //
+  //  - MarkAsCompleted() puts the WorkerThread object in the ThreadManger's
+  //    completed_threads_ list
+  //  - CleanupCompletedThreads() calls "Join()" on the threads that are already
+  //    in the completed_threads_ list  (since a thread cannot call Join() on
+  //    itself, it calls CleanupCompletedThreads() *before* calling
+  //    MarkAsCompleted())
+  // TODO: sreek - consider creating the threads 'detached' so that Join() need
+  // not be called
   class WorkerThread {
    public:
     WorkerThread(ThreadManager* thd_mgr);
@@ -113,15 +135,8 @@ class ThreadManager {
   void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();
 
-  // Checks the resource quota and if available, creates a thread and returns
-  // true. If quota is not available, returns false (and thread is not created)
-  static bool CreateNewThread(ThreadManager* thd_mgr);
-
-  // Give back a thread to the resource quota
-  static void ReleaseThread(ThreadManager* thd_mgr);
-
-  // Protects shutdown_, num_pollers_ and num_threads_
-  // TODO: sreek - Change num_pollers and num_threads_ to atomics
+  // Protects shutdown_, num_pollers_, num_threads_ and
+  // max_active_threads_sofar_
   std::mutex mu_;
 
   bool shutdown_;
@@ -142,9 +157,14 @@ class ThreadManager {
   int min_pollers_;
   int max_pollers_;
 
-  // The total number of threads (includes threads includes the threads that are
-  // currently polling i.e num_pollers_)
+  // The total number of threads currently active (includes threads includes the
+  // threads that are currently polling i.e num_pollers_)
   int num_threads_;
+
+  // See GetMaxActiveThreadsSoFar()'s description.
+  // To be more specific, this variable tracks the max value num_threads_ was
+  // ever set so far
+  int max_active_threads_sofar_;
 
   std::mutex list_mu_;
   std::list<WorkerThread*> completed_threads_;

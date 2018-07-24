@@ -547,6 +547,11 @@ static void ru_shutdown(void* ru, grpc_error* error) {
 static void ru_destroy(void* ru, grpc_error* error) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   GPR_ASSERT(gpr_atm_no_barrier_load(&resource_user->refs) == 0);
+  // Free all the remaining thread quota
+  grpc_resource_user_free_threads(
+      resource_user,
+      static_cast<int>(gpr_atm_no_barrier_load(&resource_user->num_threads)));
+
   for (int i = 0; i < GRPC_RULIST_COUNT; i++) {
     rulist_remove(resource_user, static_cast<grpc_rulist>(i));
   }
@@ -642,6 +647,7 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
 
 void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
   if (gpr_unref(&resource_quota->refs)) {
+    GPR_ASSERT(resource_quota->num_threads == 0);  // No outstanding thd quota
     GRPC_COMBINER_UNREF(resource_quota->combiner, "resource_quota");
     gpr_free(resource_quota->name);
     gpr_free(resource_quota);
@@ -846,6 +852,7 @@ void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
             "Releasing more threads (%d) that currently allocated (rq threads: "
             "%d, ru threads: %d)",
             thd_count, old_cnt, rq->num_threads + thd_count);
+    abort();
   }
   gpr_mu_unlock(&resource_user->resource_quota->thd_mu);
 }

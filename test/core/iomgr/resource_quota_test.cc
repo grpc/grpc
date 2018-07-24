@@ -798,6 +798,97 @@ static void test_negative_rq_free_pool(void) {
   }
 }
 
+// Simple test to check resource quota thread limits
+static void test_thread_limit() {
+  grpc_core::ExecCtx exec_ctx;
+
+  grpc_resource_quota* rq = grpc_resource_quota_create("test_thread_limit");
+  grpc_resource_user* ru1 = grpc_resource_user_create(rq, "ru1");
+  grpc_resource_user* ru2 = grpc_resource_user_create(rq, "ru2");
+
+  // Max threads = 100
+  grpc_resource_quota_set_max_threads(rq, 100);
+
+  // Request quota for 100 threads (50 for ru1, 50 for ru2)
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru1, 10));
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 10));
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru1, 40));
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 40));
+
+  // Threads exhaused. Next request must fail
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru2, 20));
+
+  // Free 20 threads from two different users
+  grpc_resource_user_free_threads(ru1, 10);
+  grpc_resource_user_free_threads(ru2, 10);
+
+  // Next request to 20 threads must succeed
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 20));
+
+  // No more thread quota again
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru1, 20));
+
+  // Free 10 more
+  grpc_resource_user_free_threads(ru1, 10);
+
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru1, 5));
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru2, 10));  // Only 5 available
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 5));
+
+  // Teardown (ru1 and ru2 release all the quota back to rq)
+  grpc_resource_user_unref(ru1);
+  grpc_resource_user_unref(ru2);
+  grpc_resource_quota_unref(rq);
+}
+
+// Change max quota in either directions dynamically
+static void test_thread_maxquota_change() {
+  grpc_core::ExecCtx exec_ctx;
+
+  grpc_resource_quota* rq =
+      grpc_resource_quota_create("test_thread_maxquota_change");
+  grpc_resource_user* ru1 = grpc_resource_user_create(rq, "ru1");
+  grpc_resource_user* ru2 = grpc_resource_user_create(rq, "ru2");
+
+  // Max threads = 100
+  grpc_resource_quota_set_max_threads(rq, 100);
+
+  // Request quota for 100 threads (50 for ru1, 50 for ru2)
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru1, 50));
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 50));
+
+  // Threads exhaused. Next request must fail
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru2, 20));
+
+  // Increase maxquota and retry
+  // Max threads = 150;
+  grpc_resource_quota_set_max_threads(rq, 150);
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 20));  // ru2 = 70, ru1 = 50
+
+  // Decrease maxquota (Note: Quota already given to ru1 and ru2 is unaffected)
+  // Max threads = 10;
+  grpc_resource_quota_set_max_threads(rq, 10);
+
+  // New requests will fail until quota is available
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru1, 10));
+
+  // Make quota available
+  grpc_resource_user_free_threads(ru1, 50);                // ru1 now has 0
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru1, 10));  // Still not enough
+
+  grpc_resource_user_free_threads(ru2, 70);  // ru2 now has 0
+
+  // Now we can get quota up-to 10, the current max
+  GPR_ASSERT(grpc_resource_user_alloc_threads(ru2, 10));
+  // No more thread quota again
+  GPR_ASSERT(!grpc_resource_user_alloc_threads(ru1, 10));
+
+  // Teardown (ru1 and ru2 release all the quota back to rq)
+  grpc_resource_user_unref(ru1);
+  grpc_resource_user_unref(ru2);
+  grpc_resource_quota_unref(rq);
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -827,6 +918,11 @@ int main(int argc, char** argv) {
   test_negative_rq_free_pool();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_cv);
+
+  // Resource quota thread related
+  test_thread_limit();
+  test_thread_maxquota_change();
+
   grpc_shutdown();
   return 0;
 }

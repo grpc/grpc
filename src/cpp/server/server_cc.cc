@@ -47,6 +47,12 @@
 namespace grpc {
 namespace {
 
+// The default value for maximum number of threads that can be created in the
+// sync server. This value of 1500 is empirically chosen. To increase the max
+// number of threads in a sync server, pass a custom ResourceQuota object (with
+// the desired number of max-threads set) to the server builder
+#define DEFAULT_MAX_SYNC_SERVER_THREADS 1500
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -395,7 +401,9 @@ Server::Server(
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
     if (server_rq == nullptr) {
-      server_rq = grpc_resource_quota_create("SyncServer-Default");
+      server_rq = grpc_resource_quota_create("SyncServer-default-rq");
+      grpc_resource_quota_set_max_threads(server_rq,
+                                          DEFAULT_MAX_SYNC_SERVER_THREADS);
       default_rq_created = true;
     }
 
