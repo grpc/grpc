@@ -183,7 +183,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
   if (c->channelz_subchannel != nullptr) {
-    c->channelz_subchannel->trace()->AddTraceEvent(
+    c->channelz_subchannel->counter_and_tracer()->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
     c->channelz_subchannel->MarkSubchannelDestroyed();
@@ -397,7 +397,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
     c->channelz_subchannel =
         grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
             c, channel_tracer_max_nodes);
-    c->channelz_subchannel->trace()->AddTraceEvent(
+    c->channelz_subchannel->counter_and_tracer()->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
@@ -857,7 +857,6 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       args.deadline,      /* deadline */
       args.arena,         /* arena */
       args.call_combiner, /* call_combiner */
-      args.call           /* call */
   };
   grpc_error* error = grpc_call_stack_init(
       channel_stack_, 1, subchannel_call_destroy, *call, &call_args);
@@ -865,10 +864,6 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
     return error;
-  }
-  if (channelz_subchannel_ != nullptr) {
-    channelz_subchannel_->RecordCallStarted();
-    grpc_call_set_channelz_subchannel(args.call, channelz_subchannel_);
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   return GRPC_ERROR_NONE;

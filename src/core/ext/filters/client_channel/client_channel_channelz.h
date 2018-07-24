@@ -64,7 +64,7 @@ class ClientChannelNode : public ChannelNode {
 };
 
 // Handles channelz bookkeeping for sockets
-class SubchannelNode : public CallCountingAndTracingNode {
+class SubchannelNode : public BaseNode {
  public:
   SubchannelNode(grpc_subchannel* subchannel, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
@@ -76,9 +76,14 @@ class SubchannelNode : public CallCountingAndTracingNode {
 
   grpc_json* RenderJson() override;
 
+  CallCountingAndTracingNode* counter_and_tracer() {
+    return &counter_and_tracer_;
+  }
+
  private:
   grpc_subchannel* subchannel_;
   UniquePtr<char> target_;
+  CallCountingAndTracingNode counter_and_tracer_;
 
   void PopulateConnectivityState(grpc_json* json);
 };

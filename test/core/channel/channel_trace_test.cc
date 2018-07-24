@@ -160,14 +160,14 @@ TEST_P(ChannelTracerTest, ComplexTest) {
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
   ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 6, GetParam());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  ValidateChannelTrace(sc1->counter_and_tracer()->trace(), 3, GetParam());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  ValidateChannelTrace(sc1->counter_and_tracer()->trace(), 6, GetParam());
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 5, GetParam());
@@ -191,55 +191,53 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   sc2.reset(nullptr);
 }
 
-// // Test a case in which the parent channel has subchannels and the
-// subchannels
-// // have connections. Ensures that everything lives as long as it should then
-// // gets deleted.
-// TEST_P(ChannelTracerTest, TestNesting) {
-//   grpc_core::ExecCtx exec_ctx;
-//   ChannelTrace tracer(GetParam());
-//   AddSimpleTrace(&tracer);
-//   AddSimpleTrace(&tracer);
-//   ValidateChannelTrace(&tracer, 2, GetParam());
-//   ChannelFixture channel1(GetParam());
-//   RefCountedPtr<ChannelNode> sc1 =
-//       MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-//   tracer.AddTraceEventReferencingChannel(
-//       ChannelTrace::Severity::Info,
-//       grpc_slice_from_static_string("subchannel one created"), sc1);
-//   ValidateChannelTrace(&tracer, 3, GetParam());
-//   AddSimpleTrace(sc1->trace());
-//   ChannelFixture channel2(GetParam());
-//   RefCountedPtr<ChannelNode> conn1 =
-//       MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
-//   // nesting one level deeper.
-//   sc1->trace()->AddTraceEventReferencingChannel(
-//       ChannelTrace::Severity::Info,
-//       grpc_slice_from_static_string("connection one created"), conn1);
-//   ValidateChannelTrace(&tracer, 3, GetParam());
-//   AddSimpleTrace(conn1->trace());
-//   AddSimpleTrace(&tracer);
-//   AddSimpleTrace(&tracer);
-//   ValidateChannelTrace(&tracer, 5, GetParam());
-//   ValidateChannelTrace(conn1->trace(), 1, GetParam());
-//   ChannelFixture channel3(GetParam());
-//   RefCountedPtr<ChannelNode> sc2 =
-//       MakeRefCounted<ChannelNode>(channel3.channel(), GetParam(), true);
-//   tracer.AddTraceEventReferencingChannel(
-//       ChannelTrace::Severity::Info,
-//       grpc_slice_from_static_string("subchannel two created"), sc2);
-//   // this trace should not get added to the parents children since it is
-//   already
-//   // present in the tracer.
-//   tracer.AddTraceEventReferencingChannel(
-//       ChannelTrace::Severity::Warning,
-//       grpc_slice_from_static_string("subchannel one inactive"), sc1);
-//   AddSimpleTrace(&tracer);
-//   ValidateChannelTrace(&tracer, 8, GetParam());
-//   sc1.reset(nullptr);
-//   sc2.reset(nullptr);
-//   conn1.reset(nullptr);
-// }
+// Test a case in which the parent channel has subchannels and the subchannels
+// have connections. Ensures that everything lives as long as it should then
+// gets deleted.
+TEST_P(ChannelTracerTest, TestNesting) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelTrace tracer(GetParam());
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  ValidateChannelTrace(&tracer, 2, GetParam());
+  ChannelFixture channel1(GetParam());
+  RefCountedPtr<ChannelNode> sc1 =
+      MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
+  tracer.AddTraceEventReferencingChannel(
+      ChannelTrace::Severity::Info,
+      grpc_slice_from_static_string("subchannel one created"), sc1);
+  ValidateChannelTrace(&tracer, 3, GetParam());
+  AddSimpleTrace(sc1->counter_and_tracer()->trace());
+  ChannelFixture channel2(GetParam());
+  RefCountedPtr<ChannelNode> conn1 =
+      MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
+  // nesting one level deeper.
+  sc1->counter_and_tracer()->trace()->AddTraceEventReferencingChannel(
+      ChannelTrace::Severity::Info,
+      grpc_slice_from_static_string("connection one created"), conn1);
+  ValidateChannelTrace(&tracer, 3, GetParam());
+  AddSimpleTrace(conn1->counter_and_tracer()->trace());
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  ValidateChannelTrace(&tracer, 5, GetParam());
+  ValidateChannelTrace(conn1->counter_and_tracer()->trace(), 1, GetParam());
+  ChannelFixture channel3(GetParam());
+  RefCountedPtr<ChannelNode> sc2 =
+      MakeRefCounted<ChannelNode>(channel3.channel(), GetParam(), true);
+  tracer.AddTraceEventReferencingChannel(
+      ChannelTrace::Severity::Info,
+      grpc_slice_from_static_string("subchannel two created"), sc2);
+  // this trace should not get added to the parents children since it is already
+  // present in the tracer.
+  tracer.AddTraceEventReferencingChannel(
+      ChannelTrace::Severity::Warning,
+      grpc_slice_from_static_string("subchannel one inactive"), sc1);
+  AddSimpleTrace(&tracer);
+  ValidateChannelTrace(&tracer, 8, GetParam());
+  sc1.reset(nullptr);
+  sc2.reset(nullptr);
+  conn1.reset(nullptr);
+}
 
 INSTANTIATE_TEST_CASE_P(ChannelTracerTestSweep, ChannelTracerTest,
                         ::testing::Values(0, 1, 2, 6, 10, 15));

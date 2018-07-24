@@ -125,7 +125,6 @@ static void test_create_channel_stack(void) {
       GRPC_MILLIS_INF_FUTURE,       /* deadline */
       nullptr,                      /* arena */
       nullptr,                      /* call_combiner */
-      nullptr                       /* call */
   };
   grpc_error* error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);

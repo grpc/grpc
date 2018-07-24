@@ -124,8 +124,8 @@ grpc_json* ClientChannelNode::RenderJson() {
   grpc_json_create_child(nullptr, json, "target", target_view(),
                          GRPC_JSON_STRING, false);
   // as CallCountingAndTracingNode to populate trace and call count data.
-  PopulateTrace(json);
-  PopulateCallData(json);
+  counter_and_tracer()->PopulateTrace(json);
+  counter_and_tracer()->PopulateCallData(json);
   // reset to the top level
   json = top_level_json;
   PopulateChildRefs(json);
@@ -148,11 +148,11 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
 
 SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
-    : CallCountingAndTracingNode(EntityType::kSubchannel,
-                                 channel_tracer_max_nodes),
+    : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(UniquePtr<char>(
-          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {}
+      target_(
+          UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)))),
+      counter_and_tracer_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
 
@@ -192,8 +192,8 @@ grpc_json* SubchannelNode::RenderJson() {
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
-  PopulateTrace(json);
-  PopulateCallData(json);
+  counter_and_tracer_.PopulateTrace(json);
+  counter_and_tracer_.PopulateCallData(json);
   return top_level_json;
 }
 

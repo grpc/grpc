@@ -201,16 +201,16 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   ChannelFixture channel(GetParam());
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
-  channelz_channel->RecordCallStarted();
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
+  channelz_channel->counter_and_tracer()->RecordCallStarted();
+  channelz_channel->counter_and_tracer()->RecordCallFailed();
+  channelz_channel->counter_and_tracer()->RecordCallSucceeded();
   ValidateChannel(channelz_channel, {1, 1, 1});
-  channelz_channel->RecordCallStarted();
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
-  channelz_channel->RecordCallStarted();
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
+  channelz_channel->counter_and_tracer()->RecordCallStarted();
+  channelz_channel->counter_and_tracer()->RecordCallFailed();
+  channelz_channel->counter_and_tracer()->RecordCallSucceeded();
+  channelz_channel->counter_and_tracer()->RecordCallStarted();
+  channelz_channel->counter_and_tracer()->RecordCallFailed();
+  channelz_channel->counter_and_tracer()->RecordCallSucceeded();
   ValidateChannel(channelz_channel, {3, 3, 3});
 }
 
@@ -220,23 +220,27 @@ TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
   // start a call to set the last call started timestamp
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
+  channelz_channel->counter_and_tracer()->RecordCallStarted();
+  grpc_millis millis1 =
+      GetLastCallStartedMillis(channelz_channel->counter_and_tracer());
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
-  grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
+  grpc_millis millis2 =
+      GetLastCallStartedMillis(channelz_channel->counter_and_tracer());
   EXPECT_EQ(millis1, millis2);
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
-  grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
+  channelz_channel->counter_and_tracer()->RecordCallFailed();
+  channelz_channel->counter_and_tracer()->RecordCallSucceeded();
+  grpc_millis millis3 =
+      GetLastCallStartedMillis(channelz_channel->counter_and_tracer());
   EXPECT_EQ(millis1, millis3);
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
+  channelz_channel->counter_and_tracer()->RecordCallStarted();
+  grpc_millis millis4 =
+      GetLastCallStartedMillis(channelz_channel->counter_and_tracer());
   EXPECT_NE(millis1, millis4);
 }
 

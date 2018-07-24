@@ -86,10 +86,10 @@ class BaseNode : public RefCounted<BaseNode> {
 //   - track last_call_started_timestamp
 //   - hold the channel trace.
 //   - perform common rendering.
-class CallCountingAndTracingNode : public BaseNode {
+class CallCountingAndTracingNode {
  public:
-  CallCountingAndTracingNode(EntityType type, size_t channel_tracer_max_nodes);
-  ~CallCountingAndTracingNode() override;
+  CallCountingAndTracingNode(size_t channel_tracer_max_nodes);
+  ~CallCountingAndTracingNode();
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -118,7 +118,7 @@ class CallCountingAndTracingNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for channels
-class ChannelNode : public CallCountingAndTracingNode {
+class ChannelNode : public BaseNode {
  public:
   static RefCountedPtr<ChannelNode> MakeChannelNode(
       grpc_channel* channel, size_t channel_tracer_max_nodes,
@@ -137,6 +137,10 @@ class ChannelNode : public CallCountingAndTracingNode {
 
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
+  CallCountingAndTracingNode* counter_and_tracer() {
+    return &counter_and_tracer_;
+  }
+
  protected:
   // provides view of target for child.
   char* target_view() { return target_.get(); }
@@ -144,15 +148,14 @@ class ChannelNode : public CallCountingAndTracingNode {
  private:
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
+  CallCountingAndTracingNode counter_and_tracer_;
 };
 
 // Handles channelz bookkeeping for servers
 // TODO(ncteisen): implement in subsequent PR.
-class ServerNode : public CallCountingAndTracingNode {
+class ServerNode : public BaseNode {
  public:
-  ServerNode(size_t channel_tracer_max_nodes)
-      : CallCountingAndTracingNode(EntityType::kServer,
-                                   channel_tracer_max_nodes) {}
+  ServerNode(size_t channel_tracer_max_nodes) : BaseNode(EntityType::kServer) {}
   ~ServerNode() override {}
 };
 
@@ -162,8 +165,6 @@ class SocketNode : public BaseNode {
  public:
   SocketNode() : BaseNode(EntityType::kSocket) {}
   ~SocketNode() override {}
-
- private:
 };
 
 // Creation functions

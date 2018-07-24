@@ -54,8 +54,7 @@ char* BaseNode::RenderJsonString() {
 }
 
 CallCountingAndTracingNode::CallCountingAndTracingNode(
-    EntityType type, size_t channel_tracer_max_nodes)
-    : BaseNode(type) {
+    size_t channel_tracer_max_nodes) {
   trace_.Init(channel_tracer_max_nodes);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
@@ -103,12 +102,11 @@ void CallCountingAndTracingNode::PopulateCallData(grpc_json* json) {
 
 ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
                          bool is_top_level_channel)
-    : CallCountingAndTracingNode(is_top_level_channel
-                                     ? EntityType::kTopLevelChannel
-                                     : EntityType::kInternalChannel,
-                                 channel_tracer_max_nodes),
+    : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
+                                    : EntityType::kInternalChannel),
       channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))) {}
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
+      counter_and_tracer_(channel_tracer_max_nodes) {}
 
 ChannelNode::~ChannelNode() {}
 
@@ -137,8 +135,8 @@ grpc_json* ChannelNode::RenderJson() {
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
   // as CallCountingAndTracingNode to populate trace and call count data.
-  PopulateTrace(json);
-  PopulateCallData(json);
+  counter_and_tracer_.PopulateTrace(json);
+  counter_and_tracer_.PopulateCallData(json);
   return top_level_json;
 }
 

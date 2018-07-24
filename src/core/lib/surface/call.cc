@@ -170,11 +170,6 @@ struct grpc_call {
   /* parent_call* */ gpr_atm parent_call_atm;
   child_call* child;
 
-  // the call holds onto this so that once the call knows if the RPC was
-  // a success or failure, it can update the channelz bookkeeping for the
-  // subchannel that sent it.
-  grpc_core::channelz::CallCountingAndTracingNode* channelz_subchannel_;
-
   /* client or server call */
   bool is_client;
   /** has grpc_call_unref been called */
@@ -273,11 +268,6 @@ struct grpc_call {
     For 2, 3: See receiving_stream_ready() function */
   gpr_atm recv_state;
 };
-
-void grpc_call_set_channelz_subchannel(
-    grpc_call* call, grpc_core::channelz::CallCountingAndTracingNode* node) {
-  call->channelz_subchannel_ = node;
-}
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
@@ -454,8 +444,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                       call->start_time,
                                       send_deadline,
                                       call->arena,
-                                      &call->call_combiner,
-                                      call};
+                                      &call->call_combiner};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, destroy_call,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
@@ -500,7 +489,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(call->channel);
   if (channelz_channel != nullptr) {
-    channelz_channel->RecordCallStarted();
+    channelz_channel->counter_and_tracer()->RecordCallStarted();
   }
 
   grpc_slice_unref_internal(path);
@@ -1279,17 +1268,9 @@ static void post_batch_completion(batch_control* bctl) {
         grpc_channel_get_channelz_node(call->channel);
     if (channelz_channel != nullptr) {
       if (*call->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->RecordCallFailed();
+        channelz_channel->counter_and_tracer()->RecordCallFailed();
       } else {
-        channelz_channel->RecordCallSucceeded();
-      }
-    }
-    // Record channelz data for the subchannel.
-    if (call->channelz_subchannel_ != nullptr) {
-      if (*call->final_op.client.status != GRPC_STATUS_OK) {
-        call->channelz_subchannel_->RecordCallFailed();
-      } else {
-        call->channelz_subchannel_->RecordCallSucceeded();
+        channelz_channel->counter_and_tracer()->RecordCallSucceeded();
       }
     }
     GRPC_ERROR_UNREF(error);

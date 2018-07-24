@@ -71,7 +71,6 @@ typedef struct {
   grpc_millis deadline;
   gpr_arena* arena;
   grpc_call_combiner* call_combiner;
-  grpc_call* call;
 } grpc_call_element_args;
 
 typedef struct {
