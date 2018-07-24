@@ -18,4 +18,11 @@
     </AndroidNativeLibrary>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == 'MonoAndroid'">
+    <AndroidNativeLibrary Include="$(_GrpcCoreNugetNativePath)runtimes\monoandroid\x86\libgrpc_csharp_ext.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Abi>x86</Abi>
+    </AndroidNativeLibrary>
+  </ItemGroup>
+
 </Project>
