@@ -28,7 +28,7 @@ BUILD_ID=${KOKORO_BUILD_ID:-$(uuidgen)}
 BUILD_BRANCH_NAME=master
 BUILD_GIT_COMMIT=${KOKORO_GIT_COMMIT:-unknown}
 BUILD_TIMESTAMP=$(date -Iseconds)
-BUILD_RELPATH=$(date "+%Y/%m")/$BUILD_ID/
+BUILD_RELPATH=$(date "+%Y/%m")/$BUILD_GIT_COMMIT-$BUILD_ID/
 
 GCS_ROOT=gs://packages.grpc.io/
 GCS_ARCHIVE_PREFIX=archive/
