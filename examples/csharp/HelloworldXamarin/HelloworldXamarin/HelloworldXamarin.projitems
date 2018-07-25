@@ -9,6 +9,7 @@
     <Import_RootNamespace>HelloworldXamarin</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)MyClass.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helloworld.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HelloworldGrpc.cs" />
   </ItemGroup>
 </Project>
