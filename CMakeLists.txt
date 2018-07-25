@@ -1136,6 +1136,10 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
+  src/core/lib/security/security_connector/load_system_roots_macos.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
@@ -1563,6 +1567,10 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
+  src/core/lib/security/security_connector/load_system_roots_macos.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
