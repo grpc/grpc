@@ -23,6 +23,10 @@
 
 #ifdef GPR_APPLE
 
+namespace grpc_core {
+
 grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
+
+}  // namespace grpc_core
 
 #endif /* GPR_APPLE */

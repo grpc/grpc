@@ -469,15 +469,15 @@ static void test_default_ssl_roots(void) {
   gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "");
 }
 
-/* TODO: update or delete test.
-   Test that the GetSystemRootCerts function returns an empty slice when the
-   platform variable doesn't match one of the options.
-static void test_system_cert_retrieval() {
-  grpc_core::SystemRootCerts::SetPlatformForTesting(PLATFORM_TEST);
-  grpc_slice cert_slice =
-      grpc_core::SystemRootCerts::GetSystemRootCertsForTesting();
-  GPR_ASSERT(GRPC_SLICE_IS_EMPTY(cert_slice));
-}*/
+  /* TODO: update or delete test.
+     Test that the GetSystemRootCerts function returns an empty slice when the
+     platform variable doesn't match one of the options.
+  static void test_system_cert_retrieval() {
+    grpc_core::SystemRootCerts::SetPlatformForTesting(PLATFORM_TEST);
+    grpc_slice cert_slice =
+        grpc_core::SystemRootCerts::GetSystemRootCertsForTesting();
+    GPR_ASSERT(GRPC_SLICE_IS_EMPTY(cert_slice));
+  }*/
 
 #ifdef GPR_LINUX
 // Test GetAbsoluteFilePath.
@@ -525,11 +525,11 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
-  // test_system_cert_retrieval(); TODO: update or delete test.
-  #ifdef GPR_LINUX
+// test_system_cert_retrieval(); TODO: update or delete test.
+#ifdef GPR_LINUX
   test_absolute_cert_path();
   test_cert_bundle_creation();
-  #endif /* GPR_LINUX */
+#endif /* GPR_LINUX */
 
   grpc_shutdown();
   return 0;

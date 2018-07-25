@@ -23,6 +23,10 @@
 
 #ifdef GRPC_PLATFORM_FALLBACK
 
+namespace grpc_core {
+
 grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
+
+}  // namespace grpc_core
 
 #endif /* GRPC_PLATFORM_FALLBACK */
