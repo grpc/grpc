@@ -125,6 +125,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "grpc_ipv6_loopback_available_test",
+    srcs = ["grpc_ipv6_loopback_available_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+
+grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
     language = "C++",
