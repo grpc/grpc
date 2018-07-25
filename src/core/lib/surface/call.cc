@@ -301,7 +301,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
       gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
-  gpr_atm_no_barrier_store(&call->cancel_error, (gpr_atm)GRPC_ERROR_NONE);
+  gpr_atm_no_barrier_store(&call->cancel_error, GRPC_ERROR_NONE);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
   *out_call = call;
