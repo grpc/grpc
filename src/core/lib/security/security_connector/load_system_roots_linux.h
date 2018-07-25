@@ -16,29 +16,53 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX
 
 namespace grpc_core {
 
-// Creates a bundle slice containing the contents of all certificate files in
-// a directory.
-// Returns such slice.
-// Exposed for testing purposes only.
-grpc_slice CreateRootCertsBundle(const char* certs_directory);
+class SystemRootCerts {
+  // Is this needed?
+ public:
+  // Returns a grpc_slice containing OS-specific root certificates.
+  // Protected for testing.
+  static grpc_slice GetSystemRootCerts();
 
-// Gets the absolute file path needed to load a certificate file.
-// Populates path_buffer, which must be of size MAXPATHLEN.
-// Exposed for testing purposes only.
-void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, char* path_buffer);
+  // Creates a bundle slice containing the contents of all certificate files in
+  // a directory.
+  // Returns such slice.
+  // Protected for testing.
+  static grpc_slice CreateRootCertsBundle();
+
+ protected:
+  // Detect the OS platform and set the platform variable to it.
+  // Protected for testing.
+  static void DetectPlatform();
+
+  // Looks for a valid directory to load multiple certificates from.
+  // Returns such path or nullptr otherwise.
+  // Protected for testing.
+  static const char* GetValidCertsDirectory();
+
+  // Gets the absolute file path needed to load a certificate file.
+  // This function is not thread-safe.
+  // Returns such path.
+  // Protected for testing.
+  static const char* GetAbsoluteFilePath(const char* valid_file_dir,
+                                         const char* file_entry_name);
+
+  // Computes the total size of a directory given a path to it.
+  // Returns such size.
+  // Protected for testing.
+  static size_t GetDirectoryTotalSize(const char* directory_path);
+
+ private:
+  // List of possible Linux certificate files and directories.
+  static const char* linux_cert_files_[];
+  static const char* linux_cert_directories_[];
+};
 
 }  // namespace grpc_core
 
 #endif /* GPR_LINUX */
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
-        */

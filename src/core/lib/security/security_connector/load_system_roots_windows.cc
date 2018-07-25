@@ -21,8 +21,8 @@
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 
-#ifdef GRPC_PLATFORM_FALLBACK
+#ifdef GPR_WINDOWS
 
 grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
 
-#endif /* GRPC_PLATFORM_FALLBACK */
+#endif /* GPR_WINDOWS */

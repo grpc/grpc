@@ -30,6 +30,10 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/security_connector/load_system_roots.h"
+#ifdef GPR_LINUX
+#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#endif /* GPR_LINUX */
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -373,31 +377,28 @@ static void test_ipv6_address_san(void) {
 namespace grpc_core {
 namespace {
 
-class TestDefaultSslRootStore : public DefaultSslRootStore {
+#ifdef GPR_LINUX
+class TestSystemRootCerts : public SystemRootCerts {
  public:
-  static grpc_slice ComputePemRootCertsForTesting() {
-    return ComputePemRootCerts();
-  }
-
   static grpc_slice GetSystemRootCertsForTesting() {
     return GetSystemRootCerts();
   }
-
-  static void SetPlatformForTesting(grpc_platform platform) {
-    SetPlatform(platform);
-  }
-
-  static grpc_platform GetPlatformForTesting() { return GetPlatform(); }
-
-  static void DetectPlatformForTesting() { DetectPlatform(); }
 
   static grpc_slice CreateRootCertsBundleForTesting() {
     return CreateRootCertsBundle();
   }
 
-  static grpc_slice GetAbsoluteFilePathForTesting(const char* directory,
-                                                  const char* filename) {
+  static const char* GetAbsoluteFilePathForTesting(const char* directory,
+                                                   const char* filename) {
     return GetAbsoluteFilePath(directory, filename);
+  }
+};
+#endif /* GPR_LINUX */
+
+class TestDefaultSslRootStore : public DefaultSslRootStore {
+ public:
+  static grpc_slice ComputePemRootCertsForTesting() {
+    return ComputePemRootCerts();
   }
 };
 
@@ -468,43 +469,26 @@ static void test_default_ssl_roots(void) {
   gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "");
 }
 
-/* Test that the GetSystemRootCerts function returns an empty slice when the
-   platform variable doesn't match one of the options. */
+/* TODO: update or delete test.
+   Test that the GetSystemRootCerts function returns an empty slice when the
+   platform variable doesn't match one of the options.
 static void test_system_cert_retrieval() {
-  grpc_core::TestDefaultSslRootStore::SetPlatformForTesting(PLATFORM_TEST);
+  grpc_core::SystemRootCerts::SetPlatformForTesting(PLATFORM_TEST);
   grpc_slice cert_slice =
-      grpc_core::TestDefaultSslRootStore::GetSystemRootCertsForTesting();
+      grpc_core::SystemRootCerts::GetSystemRootCertsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(cert_slice));
-}
+}*/
 
-/* Test that the DetectPlatform function correctly detects Linux, Windows,
-   and OSX/MacOS. */
-static void test_platform_detection() {
-  grpc_core::TestDefaultSslRootStore::DetectPlatformForTesting();
-  grpc_platform platform =
-      grpc_core::TestDefaultSslRootStore::GetPlatformForTesting();
-#if defined GPR_LINUX
-  // Linux environment (any GNU/Linux distribution).
-  GPR_ASSERT(platform == PLATFORM_LINUX);
-#elif defined GPR_WINDOWS
-  // Windows environment (32 and 64 bit).
-  GPR_ASSERT(platform == PLATFORM_WINDOWS);
-#elif defined __APPLE__ && __MACH__
-  // MacOS / OSX environment.
-  GPR_ASSERT(platform == PLATFORM_APPLE);
-#endif
-}
-
+#ifdef GPR_LINUX
 // Test GetAbsoluteFilePath.
 static void test_absolute_cert_path() {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
-  grpc_slice result_path =
-      grpc_core::TestDefaultSslRootStore::GetAbsoluteFilePathForTesting(
-          directory, filename);
-  GPR_ASSERT(strcmp(grpc_slice_to_c_string(result_path),
-                    "nonexistent/test/directory/doesnotexist.txt") == 0);
-  grpc_slice_unref(result_path);
+  const char* result_path =
+      grpc_core::TestSystemRootCerts::GetAbsoluteFilePathForTesting(directory,
+                                                                    filename);
+  GPR_ASSERT(
+      strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
 }
 
 static void test_cert_bundle_creation() {
@@ -518,7 +502,7 @@ static void test_cert_bundle_creation() {
   gpr_setenv("GRPC_SYSTEM_SSL_ROOTS_DIR", "test/core/security/etc/roots");
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
-      grpc_core::TestDefaultSslRootStore::CreateRootCertsBundleForTesting();
+      grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting();
   GPR_ASSERT(strcmp(grpc_slice_to_c_string(result_slice),
                     grpc_slice_to_c_string(roots_bundle)) == 0);
   /* TODO: add tests for branches in CreateRootCertsBundle that return empty
@@ -528,6 +512,7 @@ static void test_cert_bundle_creation() {
   unsetenv("GRPC_USE_SYSTEM_SSL_ROOTS");
   unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
 }
+#endif /* GPR_LINUX */
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
@@ -540,10 +525,11 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
-  test_system_cert_retrieval();
-  test_platform_detection();
+  // test_system_cert_retrieval(); TODO: update or delete test.
+  #ifdef GPR_LINUX
   test_absolute_cert_path();
   test_cert_bundle_creation();
+  #endif /* GPR_LINUX */
 
   grpc_shutdown();
   return 0;
