@@ -1,4 +1,6 @@
 ﻿using System;
+using Grpc.Core;
+using Helloworld;
 
 using UIKit;
 
@@ -20,7 +22,7 @@ namespace HelloworldXamarin.iOS
             Button.AccessibilityIdentifier = "myButton";
             Button.TouchUpInside += delegate
             {
-                var title = string.Format("{0} clicks!", count++);
+                var title = SayHello();
                 Button.SetTitle(title, UIControlState.Normal);
             };
         }
@@ -30,5 +32,21 @@ namespace HelloworldXamarin.iOS
             base.DidReceiveMemoryWarning();
             // Release any cached data, images, etc that aren't in use.		
         }
+
+            private string SayHello()
+            {
+
+              // use loopback on host machine: https://developer.android.com/studio/run/emulator-networking
+              Channel channel = new Channel("10.0.2.2:50051", ChannelCredentials.Insecure);
+
+              var client = new Greeter.GreeterClient(channel);
+              string user = "Xamarin";
+
+              var reply = client.SayHello(new HelloRequest { Name = user });
+
+              channel.ShutdownAsync().Wait();
+
+              return "Greeting: " + reply.Message;
+            }
     }
 }
