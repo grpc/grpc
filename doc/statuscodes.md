@@ -28,7 +28,7 @@ situations in which they are generated.
 | Could not decompress, but compression algorithm supported (Client -> Server)	| INTERNAL | Server |
 | Could not decompress, but compression algorithm supported (Server -> Client)	| INTERNAL | Client |
 | Compression mechanism used by client not supported at server	| UNIMPLEMENTED | Server |
-| Server temporarily out of resources (e.g., Flow-control resource limits reached) |	RESOURCE_EXHAUSTED | Server|
+| Server temporarily out of resources (e.g., Flow-control resource limits reached, no available server threads) |	RESOURCE_EXHAUSTED | Server|
 | Client does not have enough memory to hold the server response | RESOURCE_EXHAUSTED | Client |
 | Flow-control protocol violation |	INTERNAL | Both |
 | Error parsing returned status	| UNKNOWN | Client |
