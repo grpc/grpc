@@ -361,6 +361,7 @@ def targets():
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
+        CSharpExtArtifact('linux', 'android', arch_abi='x86'),
         CSharpExtArtifact('macos', 'ios'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
