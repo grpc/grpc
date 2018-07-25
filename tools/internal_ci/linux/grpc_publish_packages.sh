@@ -17,6 +17,10 @@ set -ex
 
 shopt -s nullglob
 
+cd "$(dirname "$0")/../../.."
+
+GRPC_VERSION=$(grep -e "^ *version: " build.yaml | head -n 1 | sed 's/.*: //')
+
 INPUT_ARTIFACTS=$KOKORO_GFILE_DIR/github/grpc/artifacts
 INDEX_FILENAME=index.xml
 
@@ -43,17 +47,17 @@ find "$INPUT_ARTIFACTS" -type f
 PROTOC_PLUGINS_ZIPPED_PACKAGES=$(mktemp -d)
 for zip_dir in protoc_windows_{x86,x64}
 do
-  zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$zip_dir.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
+  zip -jr "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$zip_dir-$GRPC_VERSION.zip" "$INPUT_ARTIFACTS/$zip_dir/"*
 done
 for tar_dir in protoc_{linux,macos}_{x86,x64}
 do
   chmod +x "$INPUT_ARTIFACTS/$tar_dir"/*
-  tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/$tar_dir.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
+  tar -cvzf "$PROTOC_PLUGINS_ZIPPED_PACKAGES/grpc-$tar_dir-$GRPC_VERSION.tar.gz" -C "$INPUT_ARTIFACTS/$tar_dir" .
 done
 
 PROTOC_PACKAGES=(
-  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_windows_{x86,x64}.zip
-  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/protoc_{linux,macos}_{x86,x64}.tar.gz
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_windows_{x86,x64}-"$GRPC_VERSION.zip"
+  "$PROTOC_PLUGINS_ZIPPED_PACKAGES"/grpc-protoc_{linux,macos}_{x86,x64}-"$GRPC_VERSION.tar.gz"
 )
 
 # C#
