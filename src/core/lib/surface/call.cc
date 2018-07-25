@@ -190,7 +190,7 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   grpc_closure receiving_trailing_metadata_ready;
   uint32_t test_only_last_message_flags;
-  gpr_atm cancel_error;
+  gpr_atm cancelled;
 
   grpc_closure release_call;
 
@@ -301,7 +301,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
       gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
-  gpr_atm_no_barrier_store(&call->cancel_error, GRPC_ERROR_NONE);
+  gpr_atm_no_barrier_store(&call->cancelled, 0);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
   *out_call = call;
@@ -509,33 +509,10 @@ static void destroy_call(void* call, grpc_error* error) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(c->channel);
-  if (c->is_client) {
-    if (channelz_channel != nullptr) {
-      if (*c->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
-      }
-    }
-  } else {
-    if (channelz_channel != nullptr) {
-      if (*c->final_op.server.cancelled || c->status_error != GRPC_ERROR_NONE) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
-      }
-    }
-  }
-
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(c->status_error, c->send_deadline,
                         &c->final_info.final_status, &slice, nullptr,
                         c->final_info.error_string);
-  grpc_error* cancel_error =
-      (grpc_error*)gpr_atm_no_barrier_load(&c->cancel_error);
-  GRPC_ERROR_UNREF(cancel_error);
   GRPC_ERROR_UNREF(c->status_error);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
@@ -668,12 +645,10 @@ static void done_termination(void* arg, grpc_error* error) {
 }
 
 static void cancel_with_error(grpc_call* c, grpc_error* error) {
-  if (!gpr_atm_rel_cas(&c->cancel_error, (gpr_atm)GRPC_ERROR_NONE,
-                       (gpr_atm)error)) {
+  if (!gpr_atm_rel_cas(&c->cancelled, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  GRPC_ERROR_REF(error);
   GRPC_CALL_INTERNAL_REF(c, "termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
@@ -707,26 +682,14 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
   cancel_with_error(c, error_from_status(status, description));
 }
 
-// The final status of a call is determined when the
-// recv_trailing_metadata_ready callback is invoked.  The status is determined
-// based on the following (in order).
-// 1.  The first cancellation error that has occured prior to the callback.
-// 2.  The error passed to the recv_trailing_metadata_ready callback.
-// 3.  The status from the metadata on the call (grpc-status).
 static void set_final_status(grpc_call* call, grpc_error* error) {
   if (grpc_call_error_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
-  grpc_error* cancel_error =
-      (grpc_error*)gpr_atm_no_barrier_load(&call->cancel_error);
-  if (cancel_error != GRPC_ERROR_NONE && error == GRPC_ERROR_NONE) {
-    error = GRPC_ERROR_REF(cancel_error);
-  } else if (cancel_error != GRPC_ERROR_NONE && cancel_error != error) {
-    error = grpc_error_add_child(GRPC_ERROR_REF(cancel_error), error);
-  }
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(call->channel);
   if (call->is_client) {
-    call->status_error = error;
     const char** error_string = call->final_op.client.error_string;
     grpc_status_code code;
     grpc_slice slice = grpc_empty_slice();
@@ -734,9 +697,24 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
                           error_string);
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
+    call->status_error = error;
+    if (channelz_channel != nullptr) {
+      if (*call->final_op.client.status != GRPC_STATUS_OK) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
+    if (channelz_channel != nullptr) {
+      if (*call->final_op.server.cancelled) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
     GRPC_ERROR_UNREF(error);
   }
 }
