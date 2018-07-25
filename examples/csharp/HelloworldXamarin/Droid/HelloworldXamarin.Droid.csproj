@@ -42,6 +42,17 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Loader">
+      <HintPath>..\packages\System.Runtime.Loader.4.0.0\lib\netstandard1.5\System.Runtime.Loader.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Interactive.Async">
+      <HintPath>..\packages\System.Interactive.Async.3.1.1\lib\netstandard1.3\System.Interactive.Async.dll</HintPath>
+    </Reference>
+    <Reference Include="Grpc.Core">
+      <HintPath>..\packages\Grpc.Core.1.15.0-dev\lib\netstandard1.5\Grpc.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
@@ -52,6 +63,7 @@
     <None Include="Resources\AboutResources.txt" />
     <None Include="Properties\AndroidManifest.xml" />
     <None Include="Assets\AboutAssets.txt" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\Main.axml" />
@@ -64,4 +76,5 @@
   </ItemGroup>
   <Import Project="..\HelloworldXamarin\HelloworldXamarin.projitems" Label="Shared" Condition="Exists('..\HelloworldXamarin\HelloworldXamarin.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
+  <Import Project="..\packages\Grpc.Core.1.15.0-dev\build\MonoAndroid\Grpc.Core.targets" Condition="Exists('..\packages\Grpc.Core.1.15.0-dev\build\MonoAndroid\Grpc.Core.targets')" />
 </Project>
