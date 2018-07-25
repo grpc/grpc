@@ -81,5 +81,8 @@ RUN /bin/bash -l -c "nvm alias default 10"
 
 RUN mkdir /var/local/jenkins
 
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
+
 # Define the default command.
 CMD ["bash"]

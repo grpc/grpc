@@ -23,6 +23,18 @@ git clone /var/local/jenkins/grpc-node /var/local/git/grpc-node
 && git submodule update --init --recursive --reference /var/local/jenkins/grpc-node/${name} \
 ${name}')
 
+# Use the pending c-core changes if possible
+if [ -d "/var/local/jenkins/grpc" ]; then
+  cd /var/local/jenkins/grpc
+  CURRENT_COMMIT="$(git rev-parse --verify HEAD)"
+  cd /var/local/git/grpc-node/packages/grpc-native-core/deps/grpc/
+  git fetch --tags --progress https://github.com/grpc/grpc.git +refs/pull/*:refs/remotes/origin/pr/*
+  git checkout $CURRENT_COMMIT
+  git submodule update --init --recursive --reference /var/local/jenkins/grpc
+  cd ../../../..
+  packages/grpc-native-core/tools/buildgen/generate_projects.sh
+fi
+
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
 
