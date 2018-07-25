@@ -141,8 +141,8 @@ struct grpc_resource_quota {
   /* Mutex to protect max_threads and num_threads */
   /* Note: We could have used gpr_atm for max_threads and num_threads and avoid
    * having this mutex; but in that case, each invocation of the function
-   * grpc_resource_user_alloc_threads() will have to do atleast two atomic loads
-   * (for max_threads and num_threads) followed by a CAS (on num_threads).
+   * grpc_resource_user_alloc_threads() would have had to do at least two atomic
+   * loads (for max_threads and num_threads) followed by a CAS (on num_threads).
    * Moreover, we expect grpc_resource_user_alloc_threads() to be often called
    * concurrently thereby increasing the chances of failing the CAS operation.
    * This additional complexity is not worth the tiny perf gain we may (or may
