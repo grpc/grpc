@@ -14,9 +14,15 @@
 
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python27;C:\Python37;%PATH%
 
-bash tools/internal_ci/helper_scripts/gen_report_index.sh
+@rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
+if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
+  chocolatey install -y jq
+  for /f "usebackq delims=" %%x in (`curl -s https://api.github.com/repos/grpc/grpc/pulls/%KOKORO_GITHUB_PULL_REQUEST_NUMBER% ^| jq -r .base.ref`) do ( 
+    set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --filter_pr_tests --base_branch origin/%%x
+  )
+)
 
 @rem Update DNS settings to:
 @rem 1. allow resolving metadata.google.internal hostname
@@ -27,5 +33,13 @@ netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client
+
+@rem Install Python 3.7
+chocolatey install -y -r python3 --version 3.7
+
+@rem Disable some unwanted dotnet options
+set NUGET_XMLDOC_MODE=skip
+set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 git submodule update --init

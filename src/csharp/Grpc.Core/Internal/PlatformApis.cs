@@ -23,6 +23,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -31,11 +32,19 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal static class PlatformApis
     {
+        const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
+        const string XamarinAndroidObjectClassName = "Java.Lang.Object, Mono.Android";
+        const string XamarinIOSObjectClassName = "Foundation.NSObject, Xamarin.iOS";
+
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
         static readonly bool isNetCore;
+        static readonly bool isUnity;
+        static readonly bool isXamarin;
+        static readonly bool isXamarinIOS;
+        static readonly bool isXamarinAndroid;
 
         static PlatformApis()
         {
@@ -54,6 +63,10 @@ namespace Grpc.Core.Internal
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
+            isUnity = Type.GetType(UnityEngineApplicationClassName) != null;
+            isXamarinIOS = Type.GetType(XamarinIOSObjectClassName) != null;
+            isXamarinAndroid = Type.GetType(XamarinAndroidObjectClassName) != null;
+            isXamarin = isXamarinIOS || isXamarinAndroid;
         }
 
         public static bool IsLinux
@@ -77,6 +90,39 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// true if running on Unity platform.
+        /// </summary>
+        public static bool IsUnity
+        {
+            get { return isUnity; }
+        }
+
+        /// <summary>
+        /// true if running on a Xamarin platform (either Xamarin.Android or Xamarin.iOS),
+        /// false otherwise.
+        /// </summary>
+        public static bool IsXamarin
+        {
+            get { return isXamarin; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.iOS, false otherwise.
+        /// </summary>
+        public static bool IsXamarinIOS
+        {
+            get { return isXamarinIOS; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.Android, false otherwise.
+        /// </summary>
+        public static bool IsXamarinAndroid
+        {
+            get { return isXamarinAndroid; }
+        }
+
+        /// <summary>
         /// true if running on .NET Core (CoreCLR), false otherwise.
         /// </summary>
         public static bool IsNetCore
@@ -87,6 +133,22 @@ namespace Grpc.Core.Internal
         public static bool Is64Bit
         {
             get { return IntPtr.Size == 8; }
+        }
+
+        /// <summary>
+        /// Returns <c>UnityEngine.Application.platform</c> as a string.
+        /// See https://docs.unity3d.com/ScriptReference/Application-platform.html for possible values.
+        /// Value is obtained via reflection to avoid compile-time dependency on Unity.
+        /// This method should only be called if <c>IsUnity</c> is <c>true</c>.
+        /// </summary>
+        public static string GetUnityRuntimePlatform()
+        {
+            GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
+#if NETSTANDARD1_5
+            return Type.GetType(UnityEngineApplicationClassName).GetTypeInfo().GetProperty("platform").GetValue(null).ToString();
+#else
+            return Type.GetType(UnityEngineApplicationClassName).GetProperty("platform").GetValue(null).ToString();
+#endif
         }
 
         [DllImport("libc")]

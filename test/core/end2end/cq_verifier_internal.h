@@ -23,10 +23,10 @@
 
 typedef struct expectation expectation;
 
-expectation *cq_verifier_get_first_expectation(cq_verifier *v);
+expectation* cq_verifier_get_first_expectation(cq_verifier* v);
 
-void cq_verifier_set_first_expectation(cq_verifier *v, expectation *e);
+void cq_verifier_set_first_expectation(cq_verifier* v, expectation* e);
 
-grpc_event cq_verifier_next_event(cq_verifier *v, int timeout_seconds);
+grpc_event cq_verifier_next_event(cq_verifier* v, int timeout_seconds);
 
 #endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_INTERNAL_H */

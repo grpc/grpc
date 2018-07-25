@@ -25,8 +25,6 @@ extern "C" {
 
 /** Connectivity state of a channel. */
 typedef enum {
-  /** channel has just been initialized */
-  GRPC_CHANNEL_INIT = -1,
   /** channel is idle */
   GRPC_CHANNEL_IDLE,
   /** channel is connecting */

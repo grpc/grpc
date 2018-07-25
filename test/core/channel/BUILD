@@ -12,21 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/channel")
 
 licenses(["notice"])  # Apache v2
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
-
 grpc_cc_test(
     name = "channel_args_test",
-    srcs = ["channel_args_test.c"],
-    language = "C",
+    srcs = ["channel_args_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -37,12 +32,99 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "channel_stack_test",
-    srcs = ["channel_stack_test.c"],
-    language = "C",
+    srcs = ["channel_stack_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_stack_builder_test",
+    srcs = ["channel_stack_builder_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "minimal_stack_is_minimal_test",
+    srcs = ["minimal_stack_is_minimal_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_trace_test",
+    srcs = ["channel_trace_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:channel_trace_proto_helper",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "channelz_test",
+    srcs = ["channelz_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:channel_trace_proto_helper",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "channelz_registry_test",
+    srcs = ["channelz_registry_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_util_test",
+    srcs = ["status_util_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )

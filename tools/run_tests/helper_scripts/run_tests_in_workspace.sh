@@ -19,15 +19,15 @@
 # newly created workspace)
 set -ex
 
-cd $(dirname $0)/../../..
-export repo_root=$(pwd)
+cd "$(dirname "$0")/../../.."
+export repo_root="$(pwd)"
 
 rm -rf "${WORKSPACE_NAME}"
 git clone . "${WORKSPACE_NAME}"
 # clone gRPC submodules, use data from locally cloned submodules where possible
+# shellcheck disable=SC2016,SC1004
 git submodule foreach 'cd "${repo_root}/${WORKSPACE_NAME}" \
     && git submodule update --init --reference ${repo_root}/${name} ${name}'
 
 echo "Running run_tests.py in workspace ${WORKSPACE_NAME}" 
-python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" $@
-
+python "${WORKSPACE_NAME}/tools/run_tests/run_tests.py" "$@"

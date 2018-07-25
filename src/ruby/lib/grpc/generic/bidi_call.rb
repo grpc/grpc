@@ -64,7 +64,7 @@ module GRPC
     # @param requests the Enumerable of requests to send
     # @param set_input_stream_done [Proc] called back when we're done
     #   reading the input stream
-    # @param set_input_stream_done [Proc] called back when we're done
+    # @param set_output_stream_done [Proc] called back when we're done
     #   sending data on the output stream
     # @return an Enumerator of requests to yield
     def run_on_client(requests,
@@ -87,23 +87,32 @@ module GRPC
     # This does not mean that must necessarily be one.  E.g, the replies
     # produced by gen_each_reply could ignore the received_msgs
     #
-    # @param gen_each_reply [Proc] generates the BiDi stream replies.
-    # @param set_input_steam_done [Proc] call back to call when
-    #   the reads have been completely read through.
-    def run_on_server(gen_each_reply, set_input_stream_done)
+    # @param [Proc] gen_each_reply generates the BiDi stream replies.
+    # @param [Enumerable] requests The enumerable of requests to run
+    def run_on_server(gen_each_reply, requests)
+      replies = nil
+
       # Pass in the optional call object parameter if possible
       if gen_each_reply.arity == 1
-        replys = gen_each_reply.call(
-          read_loop(set_input_stream_done, is_client: false))
+        replies = gen_each_reply.call(requests)
       elsif gen_each_reply.arity == 2
-        replys = gen_each_reply.call(
-          read_loop(set_input_stream_done, is_client: false),
-          @req_view)
+        replies = gen_each_reply.call(requests, @req_view)
       else
         fail 'Illegal arity of reply generator'
       end
 
-      write_loop(replys, is_client: false)
+      write_loop(replies, is_client: false)
+    end
+
+    ##
+    # Read the next stream iteration
+    #
+    # @param [Proc] finalize_stream callback to call when the reads have been
+    #   completely read through.
+    # @param [Boolean] is_client If this is a client or server request
+    #
+    def read_next_loop(finalize_stream, is_client = false)
+      read_loop(finalize_stream, is_client: is_client)
     end
 
     private
@@ -115,12 +124,18 @@ module GRPC
     def read_using_run_batch
       ops = { RECV_MESSAGE => nil }
       ops[RECV_INITIAL_METADATA] = nil unless @metadata_received
-      batch_result = @call.run_batch(ops)
-      unless @metadata_received
-        @call.metadata = batch_result.metadata
-        @metadata_received = true
+      begin
+        batch_result = @call.run_batch(ops)
+        unless @metadata_received
+          @call.metadata = batch_result.metadata
+          @metadata_received = true
+        end
+        batch_result
+      rescue GRPC::Core::CallError => e
+        GRPC.logger.warn('bidi call: read_using_run_batch failed')
+        GRPC.logger.warn(e)
+        nil
       end
-      batch_result
     end
 
     # set_output_stream_done is relevant on client-side
@@ -146,7 +161,12 @@ module GRPC
       GRPC.logger.debug("bidi-write-loop: #{count} writes done")
       if is_client
         GRPC.logger.debug("bidi-write-loop: client sent #{count}, waiting")
-        @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
+        begin
+          @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
+        rescue GRPC::Core::CallError => e
+          GRPC.logger.warn('bidi-write-loop: send close failed')
+          GRPC.logger.warn(e)
+        end
         GRPC.logger.debug('bidi-write-loop: done')
       end
       GRPC.logger.debug('bidi-write-loop: finished')
@@ -178,7 +198,7 @@ module GRPC
           batch_result = read_using_run_batch
 
           # handle the next message
-          if batch_result.message.nil?
+          if batch_result.nil? || batch_result.message.nil?
             GRPC.logger.debug("bidi-read-loop: null batch #{batch_result}")
 
             if is_client

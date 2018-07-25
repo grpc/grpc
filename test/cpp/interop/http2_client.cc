@@ -19,18 +19,18 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
 
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/http2_client.h"
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
@@ -42,16 +42,16 @@ const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 }  // namespace
 
-Http2Client::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel)
-    : channel_(channel) {
+Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel)
+    : channel_(std::move(channel)) {
   stub_ = TestService::NewStub(channel);
 }
 
 TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
 
-Http2Client::Http2Client(std::shared_ptr<Channel> channel)
+Http2Client::Http2Client(const std::shared_ptr<Channel>& channel)
     : serviceStub_(channel),
-      channel_(channel),
+      channel_(std::move(channel)),
       defaultRequest_(BuildDefaultRequest()) {}
 
 bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
@@ -140,7 +140,8 @@ bool Http2Client::DoPing() {
   return true;
 }
 
-void Http2Client::MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel) {
+void Http2Client::MaxStreamsWorker(
+    const std::shared_ptr<grpc::Channel>& channel) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==
@@ -194,7 +195,7 @@ int main(int argc, char** argv) {
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateTestChannel(host_port, false);
+      grpc::CreateTestChannel(host_port, grpc::testing::INSECURE);
   GPR_ASSERT(channel->WaitForConnected(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(300, GPR_TIMESPAN))));
   grpc::testing::Http2Client client(channel);
@@ -217,7 +218,7 @@ int main(int argc, char** argv) {
         "goaway",         "max_streams",      "ping",
         "rst_after_data", "rst_after_header", "rst_during_data"};
     char* joined_testcases =
-        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", NULL);
+        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", nullptr);
 
     gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
             FLAGS_test_case.c_str(), joined_testcases);

@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip" -d TestNugetFeed
 
@@ -26,3 +26,6 @@ nuget restore
 xbuild DistribTest.sln
 
 mono DistribTest/bin/Debug/DistribTest.exe
+
+# test that codegen work
+test_codegen/test_codegen.sh

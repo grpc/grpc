@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
   bzip2 \
   ccache \
   curl \
+  dnsutils \
   gcc \
   gcc-multilib \
   git \
@@ -70,6 +71,24 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 
 RUN nuget update -self
 
+# Install dotnet SDK based on https://www.microsoft.com/net/core#debian
+RUN apt-get update && apt-get install -y curl libunwind8 gettext
+# dotnet-dev-1.0.0-preview2-003131
+RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
+RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
+# dotnet-dev-1.0.1
+RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453
+RUN mkdir -p /opt/dotnet && tar zxf dotnet101.tar.gz -C /opt/dotnet
+RUN ln -s /opt/dotnet/dotnet /usr/local/bin
+
+# Trigger the population of the local package cache
+ENV NUGET_XMLDOC_MODE skip
+RUN mkdir warmup \
+    && cd warmup \
+    && dotnet new \
+    && cd .. \
+    && rm -rf warmup
+
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
@@ -81,11 +100,13 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 # Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm alias default 8"
+RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 9 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 10 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm alias default 10"
 #=================
 # PHP dependencies
 
@@ -120,21 +141,20 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install pip --upgrade
+RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+# Install pip and virtualenv for Python 3.4
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
+RUN python3.4 -m pip install virtualenv
 
 # Install coverage for Python test coverage reporting
 RUN pip install coverage
 ENV PATH ~/.local/bin:$PATH
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
 
 
 RUN mkdir /var/local/jenkins

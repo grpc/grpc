@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 def create_channel_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -37,17 +37,6 @@ def create_server_creds
     creds[0],
     [{ private_key: creds[1], cert_chain: creds[2] }],
     true) # force client auth
-end
-
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
 end
 
 # a test service that checks the cert of its peer
@@ -95,7 +84,7 @@ describe 'client-server auth' do
     server_opts = {
       poll_period: 1
     }
-    @srv = RpcServer.new(**server_opts)
+    @srv = new_rpc_server_for_testing(**server_opts)
     port = @srv.add_http2_port('0.0.0.0:0', create_server_creds)
     @srv.handle(SslTestService)
     @srv_thd = Thread.new { @srv.run }

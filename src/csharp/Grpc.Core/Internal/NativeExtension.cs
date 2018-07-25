@@ -37,9 +37,9 @@ namespace Grpc.Core.Internal
 
         private NativeExtension()
         {
-            this.nativeMethods = new NativeMethods(Load());
+            this.nativeMethods = LoadNativeMethods();
             
-            // Redirect the the native logs as the very first thing after loading the native extension
+            // Redirect the native logs as the very first thing after loading the native extension
             // to make sure we don't lose any logs.
             NativeLogRedirector.Redirect(this.nativeMethods);
 
@@ -77,7 +77,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Detects which configuration of native extension to load and load it.
         /// </summary>
-        private static UnmanagedLibrary Load()
+        private static UnmanagedLibrary LoadUnmanagedLibrary()
         {
             // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
             // See https://github.com/grpc/grpc/pull/7303 for one option.
@@ -96,9 +96,58 @@ namespace Grpc.Core.Internal
             var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
             var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
 
-            // Look for all native library in all possible locations in given order.
+            // Look for the native library in all possible locations in given order.
             string[] paths = new[] { classicPath, netCorePublishedAppStylePath, netCoreAppStylePath};
             return new UnmanagedLibrary(paths);
+        }
+
+        /// <summary>
+        /// Loads native extension and return native methods delegates.
+        /// </summary>
+        private static NativeMethods LoadNativeMethods()
+        {
+            if (PlatformApis.IsUnity)
+            {
+                return LoadNativeMethodsUnity();
+            }
+            if (PlatformApis.IsXamarin)
+            {
+                return LoadNativeMethodsXamarin();
+            }
+            return new NativeMethods(LoadUnmanagedLibrary());
+        }
+
+        /// <summary>
+        /// Return native method delegates when running on Unity platform.
+        /// Unity does not use standard NuGet packages and the native library is treated
+        /// there as a "native plugin" which is (provided it has the right metadata)
+        /// automatically made available to <c>[DllImport]</c> loading logic.
+        /// WARNING: Unity support is experimental and work-in-progress. Don't expect it to work.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsUnity()
+        {
+            switch (PlatformApis.GetUnityRuntimePlatform())
+            {
+                case "IPhonePlayer":
+                    return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
+                default:
+                    // most other platforms load unity plugins as a shared library
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            }
+        }
+
+        /// <summary>
+        /// Return native method delegates when running on the Xamarin platform.
+        /// WARNING: Xamarin support is experimental and work-in-progress. Don't expect it to work.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsXamarin()
+        {
+            if (PlatformApis.IsXamarinAndroid)
+            {
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            }
+            // not tested yet
+            return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
         }
 
         private static string GetAssemblyPath()

@@ -32,7 +32,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const grpc::testing::ServerConfig& server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
     const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type);
+    const grpc::string& credential_type, bool run_inproc);
 
 bool RunQuit(const grpc::string& credential_type);
 }  // namespace testing

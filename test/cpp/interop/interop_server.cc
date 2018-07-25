@@ -22,16 +22,15 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -39,6 +38,8 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
+DEFINE_bool(use_alts, false,
+            "Whether to use alts. Enable alts will disable tls.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");
@@ -51,8 +52,9 @@ using grpc::ServerCredentials;
 using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
-using grpc::WriteOptions;
 using grpc::SslServerCredentialsOptions;
+using grpc::Status;
+using grpc::WriteOptions;
 using grpc::testing::InteropServerContextInspector;
 using grpc::testing::Payload;
 using grpc::testing::SimpleRequest;
@@ -62,7 +64,6 @@ using grpc::testing::StreamingInputCallResponse;
 using grpc::testing::StreamingOutputCallRequest;
 using grpc::testing::StreamingOutputCallResponse;
 using grpc::testing::TestService;
-using grpc::Status;
 
 const char kEchoInitialMetadataKey[] = "x-grpc-test-echo-initial";
 const char kEchoTrailingBinMetadataKey[] = "x-grpc-test-echo-trailing-bin";
@@ -316,10 +317,31 @@ class TestServiceImpl : public TestService::Service {
 };
 
 void grpc::testing::interop::RunServer(
-    std::shared_ptr<ServerCredentials> creds) {
-  GPR_ASSERT(FLAGS_port != 0);
+    const std::shared_ptr<ServerCredentials>& creds) {
+  RunServer(creds, FLAGS_port, nullptr, nullptr);
+}
+
+void grpc::testing::interop::RunServer(
+    const std::shared_ptr<ServerCredentials>& creds,
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
+        server_options) {
+  RunServer(creds, FLAGS_port, nullptr, std::move(server_options));
+}
+
+void grpc::testing::interop::RunServer(
+    const std::shared_ptr<ServerCredentials>& creds, const int port,
+    ServerStartedCondition* server_started_condition) {
+  RunServer(creds, port, server_started_condition, nullptr);
+}
+
+void grpc::testing::interop::RunServer(
+    const std::shared_ptr<ServerCredentials>& creds, const int port,
+    ServerStartedCondition* server_started_condition,
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
+        server_options) {
+  GPR_ASSERT(port != 0);
   std::ostringstream server_address;
-  server_address << "0.0.0.0:" << FLAGS_port;
+  server_address << "0.0.0.0:" << port;
   TestServiceImpl service;
 
   SimpleRequest request;
@@ -328,11 +350,24 @@ void grpc::testing::interop::RunServer(
   ServerBuilder builder;
   builder.RegisterService(&service);
   builder.AddListeningPort(server_address.str(), creds);
+  if (server_options != nullptr) {
+    for (size_t i = 0; i < server_options->size(); i++) {
+      builder.SetOption(std::move((*server_options)[i]));
+    }
+  }
   if (FLAGS_max_send_message_size >= 0) {
     builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
   }
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+
+  // Signal that the server has started.
+  if (server_started_condition) {
+    std::unique_lock<std::mutex> lock(server_started_condition->mutex);
+    server_started_condition->server_started = true;
+    server_started_condition->condition.notify_all();
+  }
+
   while (!gpr_atm_no_barrier_load(&g_got_sigint)) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_seconds(5, GPR_TIMESPAN)));

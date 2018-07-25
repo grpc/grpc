@@ -14,9 +14,15 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM ubuntu:15.10
+  FROM debian:jessie
   
-  <%include file="../clang_format.include"/>
+  <%include file="../clang5.include"/>
   ADD clang_format_all_the_things.sh /
+  
+  # When running locally, we'll be impersonating the current user, so we need
+  # to make the script runnable by everyone.
+  RUN chmod a+rx /clang_format_all_the_things.sh
+  
   CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
+  
   

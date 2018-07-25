@@ -18,26 +18,11 @@
 
 #include "server_credentials.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include <ext/spl/spl_exceptions.h>
-#include "php_grpc.h"
-
 #include <zend_exceptions.h>
-#include <zend_hash.h>
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
 
 zend_class_entry *grpc_ce_server_credentials;
-#if PHP_MAJOR_VERSION >= 7
-static zend_object_handlers server_credentials_ce_handlers;
-#endif
+PHP_GRPC_DECLARE_OBJECT_HANDLER(server_credentials_ce_handlers)
 
 /* Frees and destroys an instace of wrapped_grpc_server_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
@@ -63,7 +48,8 @@ zval *grpc_php_wrap_server_credentials(grpc_server_credentials
   PHP_GRPC_MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);
   wrapped_grpc_server_credentials *server_credentials =
-    Z_WRAPPED_GRPC_SERVER_CREDS_P(server_credentials_object);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server_credentials,
+                                server_credentials_object);
   server_credentials->wrapped = wrapped;
   return server_credentials_object;
 }

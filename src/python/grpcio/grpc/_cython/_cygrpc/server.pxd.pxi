@@ -15,12 +15,15 @@
 
 cdef class Server:
 
+  cdef grpc_arg_pointer_vtable _vtable
+  cdef readonly _ArgumentsProcessor _arguments_processor
   cdef grpc_server *c_server
   cdef bint is_started  # start has been called
   cdef bint is_shutting_down  # shutdown has been called
   cdef bint is_shutdown  # notification of complete shutdown received
   # used at dealloc when user forgets to shutdown
   cdef CompletionQueue backup_shutdown_queue
+  # TODO(https://github.com/grpc/grpc/issues/15662): Elide this.
   cdef list references
   cdef list registered_completion_queues
 

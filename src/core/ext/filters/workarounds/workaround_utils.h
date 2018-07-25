@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 #define GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/workaround_list.h>
 
 #include "src/core/lib/transport/metadata.h"
@@ -28,7 +30,7 @@ typedef struct grpc_workaround_user_agent_md {
   bool workaround_active[GRPC_MAX_WORKAROUND_ID];
 } grpc_workaround_user_agent_md;
 
-grpc_workaround_user_agent_md *grpc_parse_user_agent(grpc_mdelem md);
+grpc_workaround_user_agent_md* grpc_parse_user_agent(grpc_mdelem md);
 
 typedef bool (*user_agent_parser)(grpc_mdelem);
 

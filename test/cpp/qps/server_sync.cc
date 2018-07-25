@@ -19,14 +19,15 @@
 #include <atomic>
 #include <thread>
 
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_context.h>
 
-#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
 
@@ -129,7 +130,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   template <class W>
   static Status ServerPush(ServerContext* context, W* stream,
                            const SimpleResponse& response,
-                           std::function<bool()> done) {
+                           const std::function<bool()>& done) {
     while ((done == nullptr) || !done()) {
       // TODO(vjpai): Add potential for rate-pacing on this
       if (!stream->Write(response)) {
@@ -154,20 +155,28 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 class SynchronousServer final : public grpc::testing::Server {
  public:
   explicit SynchronousServer(const ServerConfig& config) : Server(config) {
-    ServerBuilder builder;
+    std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
-    char* server_address = NULL;
+    auto port_num = port();
+    // Negative port number means inproc server, so no listen port needed
+    if (port_num >= 0) {
+      char* server_address = nullptr;
+      gpr_join_host_port(&server_address, "::", port_num);
+      builder->AddListeningPort(server_address,
+                                Server::CreateServerCredentials(config));
+      gpr_free(server_address);
+    }
 
-    gpr_join_host_port(&server_address, "::", port());
-    builder.AddListeningPort(server_address,
-                             Server::CreateServerCredentials(config));
-    gpr_free(server_address);
+    ApplyConfigToBuilder(config, builder.get());
 
-    ApplyConfigToBuilder(config, &builder);
+    builder->RegisterService(&service_);
 
-    builder.RegisterService(&service_);
+    impl_ = builder->BuildAndStart();
+  }
 
-    impl_ = builder.BuildAndStart();
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) override {
+    return impl_->InProcessChannel(args);
   }
 
  private:

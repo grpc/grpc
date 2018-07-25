@@ -23,26 +23,69 @@
 # each change must be ported from one to the other.
 #
 
+# The set of pollers to test against if a test exercises polling
+POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+
+def if_not_windows(a):
+  return select({
+      "//:windows": [],
+      "//:windows_msvc": [],
+      "//conditions:default": a,
+  })
+
+def _get_external_deps(external_deps):
+  ret = []
+  for dep in external_deps:
+    if dep == "address_sorting":
+      ret += ["//third_party/address_sorting"]
+    elif dep == "cares":
+      ret += select({"//:grpc_no_ares": [],
+                     "//conditions:default": ["//external:cares"],})
+    else:
+      ret += ["//external:" + dep]
+  return ret
+
+def _maybe_update_cc_library_hdrs(hdrs):
+  ret = []
+  hdrs_to_update = {
+      "third_party/objective_c/Cronet/bidirectional_stream_c.h": "//third_party:objective_c/Cronet/bidirectional_stream_c.h",
+  }
+  for h in hdrs:
+    if h in hdrs_to_update.keys():
+      ret.append(hdrs_to_update[h])
+    else:
+      ret.append(h)
+  return ret
+
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0):
+                    alwayslink = 0, data = []):
   copts = []
   if language.upper() == "C":
-    copts = ["-std=c99"]
+    copts = if_not_windows(["-std=c99"])
   native.cc_library(
     name = name,
     srcs = srcs,
-    hdrs = hdrs + public_hdrs,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
+                      "//conditions:default": [],}) +
+              select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
+                      "//conditions:default": [],}) +
+              select({"//:grpc_allow_exceptions":  ["GRPC_ALLOW_EXCEPTIONS=1"],
+                      "//:grpc_disallow_exceptions":
+                      ["GRPC_ALLOW_EXCEPTIONS=0"],
+                      "//conditions:default": [],}),
+    hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
     visibility = visibility,
     testonly = testonly,
-    linkopts = ["-pthread"],
+    linkopts = if_not_windows(["-pthread"]),
     includes = [
         "include"
     ],
     alwayslink = alwayslink,
+    data = data,
   )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -55,7 +98,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
 load("//:bazel/cc_grpc_library.bzl", "cc_grpc_library")
 
 def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
-                       has_services = True, use_external = False, generate_mock = False):
+                       has_services = True, use_external = False, generate_mocks = False):
   cc_grpc_library(
     name = name,
     srcs = srcs,
@@ -63,22 +106,43 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     well_known_protos = well_known_protos,
     proto_only = not has_services,
     use_external = use_external,
-    generate_mock = generate_mock,
+    generate_mocks = generate_mocks,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++"):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = []):
   copts = []
   if language.upper() == "C":
-    copts = ["-std=c99"]
-  native.cc_test(
-    name = name,
-    srcs = srcs,
-    args = args,
-    data = data,
-    deps = deps + ["//external:" + dep for dep in external_deps],
-    copts = copts,
-    linkopts = ["-pthread"],
-  )
+    copts = if_not_windows(["-std=c99"])
+  args = {
+    'name': name,
+    'srcs': srcs,
+    'args': args,
+    'data': data,
+    'deps': deps + _get_external_deps(external_deps),
+    'copts': copts,
+    'linkopts': if_not_windows(["-pthread"]),
+    'size': size,
+    'timeout': timeout,
+  }
+  if uses_polling:
+    native.cc_test(testonly=True, tags=['manual'], **args)
+    for poller in POLLERS:
+      native.sh_test(
+        name = name + '@poller=' + poller,
+        data = [name],
+        srcs = [
+          '//test/core/util:run_with_poller_sh',
+        ],
+        size = size,
+        timeout = timeout,
+        args = [
+          poller,
+          '$(location %s)' % name,
+        ] + args['args'],
+        tags = tags,
+      )
+  else:
+    native.cc_test(**args)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
   copts = []
@@ -91,13 +155,12 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     data = data,
     testonly = testonly,
     linkshared = linkshared,
-    deps = deps + ["//external:" + dep for dep in external_deps],
+    deps = deps + _get_external_deps(external_deps),
     copts = copts,
-    linkopts = ["-pthread"] + linkopts,
+    linkopts = if_not_windows(["-pthread"]) + linkopts,
   )
 
-def grpc_generate_one_off_targets():
-  pass
+def grpc_generate_one_off_targets(): pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
   native.sh_test(
@@ -105,3 +168,34 @@ def grpc_sh_test(name, srcs, args = [], data = []):
     srcs = srcs,
     args = args,
     data = data)
+
+def grpc_sh_binary(name, srcs, data = []):
+  native.sh_binary(
+    name = name,
+    srcs = srcs,
+    data = data)
+
+def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
+  native.py_binary(
+    name = name,
+    srcs = srcs,
+    testonly = testonly,
+    data = data,
+    deps = deps + _get_external_deps(external_deps)
+  )
+
+def grpc_package(name, visibility = "private", features = []):
+  if visibility == "tests":
+    visibility = ["//test:__subpackages__"]
+  elif visibility == "public":
+    visibility = ["//visibility:public"]
+  elif visibility == "private":
+    visibility = []
+  else:
+    fail("Unknown visibility " + visibility)
+
+  if len(visibility) != 0:
+    native.package(
+      default_visibility = visibility,
+      features = features
+    )

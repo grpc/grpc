@@ -14,20 +14,19 @@
 
 licenses(["notice"])  # Apache v2
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
+grpc_package(name = "testing", visibility = "public")
+
+exports_files([
+    "echo.proto",
+    "echo_messages.proto",
+])
 
 grpc_proto_library(
     name = "compiler_test_proto",
     srcs = ["compiler_test.proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -50,7 +49,7 @@ grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
     deps = ["echo_messages_proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -77,12 +76,26 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "services_proto",
-    srcs = ["services.proto"],
+    name = "benchmark_service_proto",
+    srcs = ["benchmark_service.proto"],
     deps = [
-        "control_proto",
-        "messages_proto",
-        "stats_proto",
+      "messages_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "report_qps_scenario_service_proto",
+    srcs = ["report_qps_scenario_service.proto"],
+    deps = [
+      "control_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "worker_service_proto",
+    srcs = ["worker_service.proto"],
+    deps = [
+      "control_proto",
     ],
 )
 
@@ -90,6 +103,9 @@ grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
     has_services = False,
+    deps = [
+        "//src/proto/grpc/core:stats_proto",
+    ]
 )
 
 grpc_proto_library(

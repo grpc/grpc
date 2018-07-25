@@ -23,18 +23,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_H
 
-#include "src/core/lib/iomgr/port.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef GRPC_UV
-#include <uv.h>
-#endif
-
-#ifdef GPR_WINDOWS
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-#endif
-
-#ifdef GRPC_POSIX_SOCKETADDR
+#include "src/core/lib/iomgr/sockaddr_custom.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
-#endif
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */

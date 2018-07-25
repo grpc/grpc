@@ -23,8 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include <grpc++/grpc++.h>
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {
@@ -38,7 +38,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
   explicit ProtoReflectionDescriptorDatabase(
-      std::shared_ptr<grpc::Channel> channel);
+      const std::shared_ptr<grpc::Channel>& channel);
 
   virtual ~ProtoReflectionDescriptorDatabase();
 

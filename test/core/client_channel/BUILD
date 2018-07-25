@@ -12,24 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/client_channel")
 
 licenses(["notice"])  # Apache v2
-
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "uri_fuzzer_test",
-    srcs = ["uri_fuzzer_test.c"],
-    language = "C",
+    srcs = ["uri_fuzzer_test.cc"],
     corpus = "uri_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -38,13 +33,37 @@ grpc_fuzzer(
 )
 
 grpc_cc_test(
-    name = "lb_policies_test",
-    srcs = ["lb_policies_test.c"],
-    language = "C",
+    name = "parse_address_test",
+    srcs = ["parse_address_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uri_parser_test",
+    srcs = ["uri_parser_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "retry_throttle_test",
+    srcs = ["retry_throttle_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],

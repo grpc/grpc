@@ -29,9 +29,15 @@ _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
 
 class RpcMethodHandler(
         collections.namedtuple('_RpcMethodHandler', (
-            'request_streaming', 'response_streaming', 'request_deserializer',
-            'response_serializer', 'unary_unary', 'unary_stream',
-            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming',
+            'response_streaming',
+            'request_deserializer',
+            'response_serializer',
+            'unary_unary',
+            'unary_stream',
+            'stream_unary',
+            'stream_stream',
+        )), grpc.RpcMethodHandler):
     pass
 
 
@@ -109,6 +115,8 @@ class _ChannelReadyFuture(grpc.Future):
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
                 done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+
+        return True
 
     def cancelled(self):
         with self._condition:

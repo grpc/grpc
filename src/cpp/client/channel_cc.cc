@@ -16,25 +16,33 @@
  *
  */
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 
+#include <chrono>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/rpc_method.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/config.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/time.h>
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/profiling/timers.h"
 
 namespace grpc {
@@ -52,11 +60,11 @@ namespace {
 grpc::string GetChannelInfoField(grpc_channel* channel,
                                  grpc_channel_info* channel_info,
                                  char*** channel_info_field) {
-  char* value = NULL;
+  char* value = nullptr;
   memset(channel_info, 0, sizeof(*channel_info));
   *channel_info_field = &value;
   grpc_channel_get_info(channel, channel_info);
-  if (value == NULL) return "";
+  if (value == nullptr) return "";
   grpc::string result = value;
   gpr_free(value);
   return result;
@@ -76,17 +84,18 @@ grpc::string Channel::GetServiceConfigJSON() const {
                              &channel_info.service_config_json);
 }
 
-Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
-                         CompletionQueue* cq) {
+internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                   ClientContext* context,
+                                   CompletionQueue* cq) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
-  grpc_call* c_call = NULL;
+  grpc_call* c_call = nullptr;
   if (kRegistered) {
     c_call = grpc_channel_create_registered_call(
         c_channel_, context->propagate_from_call_,
         context->propagation_options_.c_bitmask(), cq->cq(),
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
-    const char* host_str = NULL;
+    const char* host_str = nullptr;
     if (!context->authority().empty()) {
       host_str = context->authority_.c_str();
     } else if (!host_.empty()) {
@@ -109,10 +118,11 @@ Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
-  return Call(c_call, this, cq);
+  return internal::Call(c_call, this, cq);
 }
 
-void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
+void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                               internal::Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
@@ -123,7 +133,7 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
-      c_channel_, method, host_.empty() ? NULL : host_.c_str(), nullptr);
+      c_channel_, method, host_.empty() ? nullptr : host_.c_str(), nullptr);
 }
 
 grpc_connectivity_state Channel::GetState(bool try_to_connect) {
@@ -131,7 +141,8 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 }
 
 namespace {
-class TagSaver final : public CompletionQueueTag {
+
+class TagSaver final : public internal::CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}
@@ -159,10 +170,10 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                      gpr_timespec deadline) {
   CompletionQueue cq;
   bool ok = false;
-  void* tag = NULL;
-  NotifyOnStateChangeImpl(last_observed, deadline, &cq, NULL);
+  void* tag = nullptr;
+  NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  GPR_ASSERT(tag == NULL);
+  GPR_ASSERT(tag == nullptr);
   return ok;
 }
 

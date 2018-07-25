@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#include <grpc++/create_channel.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
@@ -68,19 +68,20 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 
 StressTestInteropClient::StressTestInteropClient(
     int test_id, const grpc::string& server_address,
-    std::shared_ptr<Channel> channel,
+    ChannelCreationFunc channel_creation_func,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
       server_address_(server_address),
-      channel_(channel),
-      interop_client_(new InteropClient(channel, false,
+      channel_creation_func_(channel_creation_func),
+      interop_client_(new InteropClient(channel_creation_func_, false,
                                         do_not_abort_on_transient_failures)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
       sleep_duration_ms_(sleep_duration_ms) {}
 
-void StressTestInteropClient::MainLoop(std::shared_ptr<QpsGauge> qps_gauge) {
+void StressTestInteropClient::MainLoop(
+    const std::shared_ptr<QpsGauge>& qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 

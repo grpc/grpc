@@ -19,15 +19,14 @@ rename C:\Python34_32bit Python34_32bits
 rename C:\Python35_32bit Python35_32bits
 rename C:\Python36_32bit Python36_32bits
 
-pacman -S --noconfirm mingw64/mingw-w64-x86_64-gcc mingw32/mingw-w64-i686-gcc
-
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
-python tools/run_tests/task_runner.py -f artifact windows || goto :error
-goto :EOF
+python tools/run_tests/task_runner.py -f artifact windows -j 4
+set RUNTESTS_EXITCODE=%errorlevel%
 
-:error
-exit /b %errorlevel%
+bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
+
+exit /b %RUNTESTS_EXITCODE%

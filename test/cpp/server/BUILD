@@ -14,11 +14,26 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/cpp/server")
 
 grpc_cc_test(
     name = "server_builder_test",
     srcs = ["server_builder_test.cc"],
+    deps = [
+        "//:grpc++_unsecure",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util_unsecure",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "server_builder_with_socket_mutator_test",
+    srcs = ["server_builder_with_socket_mutator_test.cc"],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",

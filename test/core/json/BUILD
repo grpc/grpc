@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/json")
 
 licenses(["notice"])  # Apache v2
-
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "json_fuzzer",
-    srcs = ["fuzzer.c"],
-    language = "C",
+    srcs = ["fuzzer.cc"],
+    language = "C++",
     corpus = "corpus",
     deps = [
         "//:gpr",
@@ -40,8 +35,8 @@ grpc_fuzzer(
 grpc_cc_binary(
     name = "json_rewrite",
     testonly = 1,
-    srcs = ["json_rewrite.c"],
-    language = "C",
+    srcs = ["json_rewrite.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -52,8 +47,8 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "json_rewrite_test",
-    srcs = ["json_rewrite_test.c"],
-    language = "C",
+    srcs = ["json_rewrite_test.cc"],
+    language = "C++",
     data = [
         "rewrite_test_input.json",
         "rewrite_test_output_condensed.json",
@@ -70,8 +65,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "json_stream_error_test",
-    srcs = ["json_stream_error_test.c"],
-    language = "C",
+    srcs = ["json_stream_error_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -82,8 +77,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "json_test",
-    srcs = ["json_test.c"],
-    language = "C",
+    srcs = ["json_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

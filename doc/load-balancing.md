@@ -129,10 +129,9 @@ works:
         by the resolver. It asks the balancer for the server addresses to
         use for the server name originally requested by the client (i.e.,
         the same one originally passed to the name resolver).
-        - Note: The `grpclb` policy currently ignores any non-balancer
-          addresses returned by the resolver. However, in the future, it
-          may be changed to use these addresses as a fallback in case no
-          balancers can be contacted.
+        - Note: In the `grpclb` policy, the non-balancer addresses returned
+          by the resolver are used as a fallback in case no balancers can be
+          contacted when the LB policy is started.
      2. The gRPC servers to which the load balancer is directing the client
         may report load to the load balancers, if that information is needed
         by the load balancer's configuration.

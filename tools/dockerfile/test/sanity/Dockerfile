@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:15.10
+FROM debian:jessie
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
   bzip2 \
   ccache \
   curl \
+  dnsutils \
   gcc \
   gcc-multilib \
   git \
@@ -63,9 +64,13 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install pip --upgrade
+RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #========================
 # Sanity test dependencies
@@ -76,33 +81,17 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       python-virtualenv \
-      python-lxml
+      python-lxml \
+      shellcheck
 RUN pip install simplejson mako
 
-#======================================
-# More sanity test dependencies (bazel)
-RUN apt-get install -y openjdk-8-jdk
-# Check out Bazel version 0.4.1 since this version allows running
-# ./compile.sh without a local protoc dependency
-# TODO(mattkwong): install dependencies to support latest Bazel version if newer
-# version is needed
-RUN git clone https://github.com/bazelbuild/bazel.git /bazel && \
-  cd /bazel && git checkout tags/0.4.1 && ./compile.sh
-RUN ln -s /bazel/output/bazel /bin/
-
-RUN apt-get update && apt-get -y install wget
-RUN echo deb http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
-RUN echo deb-src http://llvm.org/apt/wily/ llvm-toolchain-wily-3.8 main >> /etc/apt/sources.list
-RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key| apt-key add -
-RUN apt-get update && apt-get -y install clang-format-3.8
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+RUN apt-get update && apt-get -y install wget xz-utils
+RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
+ENV CLANG_FORMAT=clang-format
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
+ENV CLANG_TIDY=clang-tidy
 
 
 RUN mkdir /var/local/jenkins

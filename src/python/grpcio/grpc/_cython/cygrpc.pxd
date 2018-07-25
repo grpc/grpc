@@ -11,13 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# distutils: language=c++
 
 include "_cygrpc/grpc.pxi"
 
+include "_cygrpc/arguments.pxd.pxi"
 include "_cygrpc/call.pxd.pxi"
 include "_cygrpc/channel.pxd.pxi"
 include "_cygrpc/credentials.pxd.pxi"
 include "_cygrpc/completion_queue.pxd.pxi"
+include "_cygrpc/event.pxd.pxi"
+include "_cygrpc/metadata.pxd.pxi"
+include "_cygrpc/operation.pxd.pxi"
 include "_cygrpc/records.pxd.pxi"
 include "_cygrpc/security.pxd.pxi"
 include "_cygrpc/server.pxd.pxi"
+include "_cygrpc/tag.pxd.pxi"
+include "_cygrpc/time.pxd.pxi"
+
+include "_cygrpc/grpc_gevent.pxd.pxi"

@@ -1,0 +1,17 @@
+# boringssl stuff
+nonnull-attribute:bn_wexpand
+nonnull-attribute:CBB_add_bytes
+nonnull-attribute:rsa_blinding_get
+nonnull-attribute:ssl_copy_key_material
+alignment:CRYPTO_cbc128_encrypt
+alignment:CRYPTO_gcm128_encrypt
+alignment:poly1305_block_copy
+nonnull-attribute:google::protobuf::*
+alignment:google::protobuf::*
+nonnull-attribute:_tr_stored_block
+# The following 5 suppressors should be removed as part of C++ cleanup
+enum:client_fuzzer_one_entry
+enum:message_compress_test
+enum:transport_security_test
+enum:algorithm_test
+alignment:transport_security_test

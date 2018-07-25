@@ -39,7 +39,23 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
+typedef struct {
+  grpc_channel_credentials base;
+  grpc_channel_credentials* alts_creds;
+  grpc_channel_credentials* ssl_creds;
+} grpc_google_default_channel_credentials;
+
 void grpc_flush_cached_google_default_credentials(void);
 
+namespace grpc_core {
+namespace internal {
+
+typedef bool (*grpc_gce_tenancy_checker)(void);
+
+void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
+
+}  // namespace internal
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H \
-          */
+        */

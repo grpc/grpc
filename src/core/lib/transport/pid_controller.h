@@ -19,6 +19,10 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 #define GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H
 
+#include <grpc/support/port_platform.h>
+
+#include <limits>
+
 /* \file Simple PID controller.
    Implements a proportional-integral-derivative controller.
    Used when we want to iteratively control a variable to converge some other
@@ -26,37 +30,87 @@
    Gains can be set to adjust sensitivity to current error (p), the integral
    of error (i), and the derivative of error (d). */
 
-typedef struct {
-  double gain_p;
-  double gain_i;
-  double gain_d;
-  double initial_control_value;
-  double min_control_value;
-  double max_control_value;
-  double integral_range;
-} grpc_pid_controller_args;
+namespace grpc_core {
 
-typedef struct {
-  double last_error;
-  double error_integral;
-  double last_control_value;
-  double last_dc_dt;
-  grpc_pid_controller_args args;
-} grpc_pid_controller;
+class PidController {
+ public:
+  class Args {
+   public:
+    double gain_p() const { return gain_p_; }
+    double gain_i() const { return gain_i_; }
+    double gain_d() const { return gain_d_; }
+    double initial_control_value() const { return initial_control_value_; }
+    double min_control_value() const { return min_control_value_; }
+    double max_control_value() const { return max_control_value_; }
+    double integral_range() const { return integral_range_; }
 
-/** Initialize the controller */
-void grpc_pid_controller_init(grpc_pid_controller *pid_controller,
-                              grpc_pid_controller_args args);
+    Args& set_gain_p(double gain_p) {
+      gain_p_ = gain_p;
+      return *this;
+    }
+    Args& set_gain_i(double gain_i) {
+      gain_i_ = gain_i;
+      return *this;
+    }
+    Args& set_gain_d(double gain_d) {
+      gain_d_ = gain_d;
+      return *this;
+    }
+    Args& set_initial_control_value(double initial_control_value) {
+      initial_control_value_ = initial_control_value;
+      return *this;
+    }
+    Args& set_min_control_value(double min_control_value) {
+      min_control_value_ = min_control_value;
+      return *this;
+    }
+    Args& set_max_control_value(double max_control_value) {
+      max_control_value_ = max_control_value;
+      return *this;
+    }
+    Args& set_integral_range(double integral_range) {
+      integral_range_ = integral_range;
+      return *this;
+    }
 
-/** Reset the controller: useful when things have changed significantly */
-void grpc_pid_controller_reset(grpc_pid_controller *pid_controller);
+   private:
+    double gain_p_ = 0.0;
+    double gain_i_ = 0.0;
+    double gain_d_ = 0.0;
+    double initial_control_value_ = 0.0;
+    double min_control_value_ = std::numeric_limits<double>::min();
+    double max_control_value_ = std::numeric_limits<double>::max();
+    double integral_range_ = std::numeric_limits<double>::max();
+  };
 
-/** Update the controller: given a current error estimate, and the time since
-    the last update, returns a new control value */
-double grpc_pid_controller_update(grpc_pid_controller *pid_controller,
-                                  double error, double dt);
+  explicit PidController(const Args& args);
 
-/** Returns the last control value calculated */
-double grpc_pid_controller_last(grpc_pid_controller *pid_controller);
+  /// Reset the controller internal state: useful when the environment has
+  /// changed significantly
+  void Reset() {
+    last_error_ = 0.0;
+    last_dc_dt_ = 0.0;
+    error_integral_ = 0.0;
+  }
+
+  /// Update the controller: given a current error estimate, and the time since
+  /// the last update, returns a new control value
+  double Update(double error, double dt);
+
+  /// Returns the last control value calculated
+  double last_control_value() const { return last_control_value_; }
+
+  /// Returns the current error integral (mostly for testing)
+  double error_integral() const { return error_integral_; }
+
+ private:
+  double last_error_ = 0.0;
+  double error_integral_ = 0.0;
+  double last_control_value_;
+  double last_dc_dt_ = 0.0;
+  const Args args_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_PID_CONTROLLER_H */

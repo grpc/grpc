@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
@@ -27,47 +29,45 @@ typedef struct grpc_connector grpc_connector;
 typedef struct grpc_connector_vtable grpc_connector_vtable;
 
 struct grpc_connector {
-  const grpc_connector_vtable *vtable;
+  const grpc_connector_vtable* vtable;
 };
 
 typedef struct {
   /** set of pollsets interested in this connection */
-  grpc_pollset_set *interested_parties;
+  grpc_pollset_set* interested_parties;
   /** deadline for connection */
-  gpr_timespec deadline;
+  grpc_millis deadline;
   /** channel arguments (to be passed to transport) */
-  const grpc_channel_args *channel_args;
+  const grpc_channel_args* channel_args;
 } grpc_connect_in_args;
 
 typedef struct {
   /** the connected transport */
-  grpc_transport *transport;
+  grpc_transport* transport;
 
   /** channel arguments (to be passed to the filters) */
-  grpc_channel_args *channel_args;
+  grpc_channel_args* channel_args;
 } grpc_connect_out_args;
 
 struct grpc_connector_vtable {
-  void (*ref)(grpc_connector *connector);
-  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_connector *connector);
+  void (*ref)(grpc_connector* connector);
+  void (*unref)(grpc_connector* connector);
   /** Implementation of grpc_connector_shutdown */
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
-                   grpc_error *why);
+  void (*shutdown)(grpc_connector* connector, grpc_error* why);
   /** Implementation of grpc_connector_connect */
-  void (*connect)(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
-                  const grpc_connect_in_args *in_args,
-                  grpc_connect_out_args *out_args, grpc_closure *notify);
+  void (*connect)(grpc_connector* connector,
+                  const grpc_connect_in_args* in_args,
+                  grpc_connect_out_args* out_args, grpc_closure* notify);
 };
 
-grpc_connector *grpc_connector_ref(grpc_connector *connector);
-void grpc_connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *connector);
+grpc_connector* grpc_connector_ref(grpc_connector* connector);
+void grpc_connector_unref(grpc_connector* connector);
 /** Connect using the connector: max one outstanding call at a time */
-void grpc_connector_connect(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
-                            const grpc_connect_in_args *in_args,
-                            grpc_connect_out_args *out_args,
-                            grpc_closure *notify);
+void grpc_connector_connect(grpc_connector* connector,
+                            const grpc_connect_in_args* in_args,
+                            grpc_connect_out_args* out_args,
+                            grpc_closure* notify);
 /** Cancel any pending connection */
-void grpc_connector_shutdown(grpc_exec_ctx *exec_ctx, grpc_connector *connector,
-                             grpc_error *why);
+void grpc_connector_shutdown(grpc_connector* connector, grpc_error* why);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CONNECTOR_H */

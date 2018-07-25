@@ -21,11 +21,11 @@
 
 #include <map>
 
-#include <grpc++/channel.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/generic/generic_stub.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/string_ref.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 
@@ -42,7 +42,8 @@ class CliCall final {
   typedef std::multimap<grpc::string_ref, grpc::string_ref>
       IncomingMetadataContainer;
 
-  CliCall(std::shared_ptr<grpc::Channel> channel, const grpc::string& method,
+  CliCall(const std::shared_ptr<grpc::Channel>& channel,
+          const grpc::string& method,
           const OutgoingMetadataContainer& metadata);
   ~CliCall();
 

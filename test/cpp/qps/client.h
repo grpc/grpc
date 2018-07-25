@@ -24,22 +24,26 @@
 #include <unordered_map>
 #include <vector>
 
-#include <grpc++/channel.h>
-#include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/slice.h>
 
-#include "src/core/lib/surface/completion_queue.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
 
+#include "src/cpp/util/core_stats.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
+#include "test/cpp/qps/qps_worker.h"
+#include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
+
+#define INPROC_NAME_PREFIX "qpsinproc:"
 
 namespace grpc {
 namespace testing {
@@ -173,6 +177,9 @@ class Client {
       timer_result = timer_->Mark();
     }
 
+    grpc_stats_data core_stats;
+    grpc_stats_collect(&core_stats);
+
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
     for (StatusHistogram::const_iterator it = statuses.begin();
@@ -185,6 +192,7 @@ class Client {
     stats.set_time_system(timer_result.system);
     stats.set_time_user(timer_result.user);
     stats.set_cq_poll_count(poll_count);
+    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -222,7 +230,6 @@ class Client {
   }
 
   virtual void DestroyMultithreading() = 0;
-  virtual bool ThreadFunc(HistogramEntry* histogram, size_t thread_idx) = 0;
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
@@ -270,7 +277,6 @@ class Client {
                         : std::bind(&Client::NextIssueTime, this, thread_idx);
   }
 
- private:
   class Thread {
    public:
     Thread(Client* client, size_t idx)
@@ -290,39 +296,33 @@ class Client {
       MergeStatusHistogram(statuses_, s);
     }
 
+    void UpdateHistogram(HistogramEntry* entry) {
+      std::lock_guard<std::mutex> g(mu_);
+      if (entry->value_used()) {
+        histogram_.Add(entry->value());
+      }
+      if (entry->status_used()) {
+        statuses_[entry->status()]++;
+      }
+    }
+
    private:
     Thread(const Thread&);
     Thread& operator=(const Thread&);
 
     void ThreadFunc() {
+      int wait_loop = 0;
       while (!gpr_event_wait(
           &client_->start_requests_,
           gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(1, GPR_TIMESPAN)))) {
-        gpr_log(GPR_INFO, "Waiting for benchmark to start");
+                       gpr_time_from_seconds(20, GPR_TIMESPAN)))) {
+        gpr_log(GPR_INFO, "%" PRIdPTR ": Waiting for benchmark to start (%d)",
+                idx_, wait_loop);
+        wait_loop++;
       }
 
-      for (;;) {
-        // run the loop body
-        HistogramEntry entry;
-        const bool thread_still_ok = client_->ThreadFunc(&entry, idx_);
-        // lock, update histogram if needed and see if we're done
-        std::lock_guard<std::mutex> g(mu_);
-        if (entry.value_used()) {
-          histogram_.Add(entry.value());
-        }
-        if (entry.status_used()) {
-          statuses_[entry.status()]++;
-        }
-        if (!thread_still_ok) {
-          gpr_log(GPR_ERROR, "Finishing client thread due to RPC error");
-        }
-        if (!thread_still_ok ||
-            static_cast<bool>(gpr_atm_acq_load(&client_->thread_pool_done_))) {
-          client_->CompleteThread();
-          return;
-        }
-      }
+      client_->ThreadFunc(idx_, this);
+      client_->CompleteThread();
     }
 
     std::mutex mu_;
@@ -332,6 +332,12 @@ class Client {
     const size_t idx_;
     std::thread impl_;
   };
+
+  bool ThreadCompleted() {
+    return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
+  }
+
+  virtual void ThreadFunc(size_t thread_idx, Client::Thread* t) = 0;
 
   std::vector<std::unique_ptr<Thread>> threads_;
   std::unique_ptr<UsageTimer> timer_;
@@ -370,12 +376,18 @@ class ClientImpl : public Client {
   ClientImpl(const ClientConfig& config,
              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
                  create_stub)
-      : cores_(gpr_cpu_num_cores()),
-        channels_(config.client_channels()),
-        create_stub_(create_stub) {
+      : cores_(gpr_cpu_num_cores()), create_stub_(create_stub) {
     for (int i = 0; i < config.client_channels(); i++) {
-      channels_[i].init(config.server_targets(i % config.server_targets_size()),
-                        config, create_stub_, i);
+      channels_.emplace_back(
+          config.server_targets(i % config.server_targets_size()), config,
+          create_stub_, i);
+    }
+    std::vector<std::unique_ptr<std::thread>> connecting_threads;
+    for (auto& c : channels_) {
+      connecting_threads.emplace_back(c.WaitForReady());
+    }
+    for (auto& t : connecting_threads) {
+      t->join();
     }
 
     ClientRequestCreator<RequestType> create_req(&request_,
@@ -389,20 +401,11 @@ class ClientImpl : public Client {
 
   class ClientChannelInfo {
    public:
-    ClientChannelInfo() {}
-    ClientChannelInfo(const ClientChannelInfo& i) {
-      // The copy constructor is to satisfy old compilers
-      // that need it for using std::vector . It is only ever
-      // used for empty entries
-      GPR_ASSERT(!i.channel_ && !i.stub_);
-    }
-    void init(const grpc::string& target, const ClientConfig& config,
-              std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
-                  create_stub,
-              int shard) {
-      // We have to use a 2-phase init like this with a default
-      // constructor followed by an initializer function to make
-      // old compilers happy with using this in std::vector
+    ClientChannelInfo(
+        const grpc::string& target, const ClientConfig& config,
+        std::function<std::unique_ptr<StubType>(std::shared_ptr<Channel>)>
+            create_stub,
+        int shard) {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
@@ -415,22 +418,39 @@ class ClientImpl : public Client {
         type = config.security_params().cred_type();
       }
 
-      channel_ = CreateTestChannel(
-          target, type, config.security_params().server_host_override(),
-          !config.security_params().use_test_ca(),
-          std::shared_ptr<CallCredentials>(), args);
-      gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
-      GPR_ASSERT(channel_->WaitForConnected(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_seconds(300, GPR_TIMESPAN))));
+      grpc::string inproc_pfx(INPROC_NAME_PREFIX);
+      if (target.find(inproc_pfx) != 0) {
+        channel_ = CreateTestChannel(
+            target, type, config.security_params().server_host_override(),
+            !config.security_params().use_test_ca(),
+            std::shared_ptr<CallCredentials>(), args);
+        gpr_log(GPR_INFO, "Connecting to %s", target.c_str());
+        is_inproc_ = false;
+      } else {
+        grpc::string tgt = target;
+        tgt.erase(0, inproc_pfx.length());
+        int srv_num = std::stoi(tgt);
+        channel_ = (*g_inproc_servers)[srv_num]->InProcessChannel(args);
+        is_inproc_ = true;
+      }
       stub_ = create_stub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
     StubType* get_stub() { return stub_.get(); }
 
+    std::unique_ptr<std::thread> WaitForReady() {
+      return std::unique_ptr<std::thread>(new std::thread([this]() {
+        if (!is_inproc_) {
+          GPR_ASSERT(channel_->WaitForConnected(
+              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                           gpr_time_from_seconds(10, GPR_TIMESPAN))));
+        }
+      }));
+    }
+
    private:
     void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
-      for (auto channel_arg : config.channel_args()) {
+      for (const auto& channel_arg : config.channel_args()) {
         if (channel_arg.value_case() == ChannelArg::kStrValue) {
           args->SetString(channel_arg.name(), channel_arg.str_value());
         } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
@@ -443,6 +463,7 @@ class ClientImpl : public Client {
 
     std::shared_ptr<Channel> channel_;
     std::unique_ptr<StubType> stub_;
+    bool is_inproc_;
   };
   std::vector<ClientChannelInfo> channels_;
   std::function<std::unique_ptr<StubType>(const std::shared_ptr<Channel>&)>

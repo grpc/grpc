@@ -19,6 +19,9 @@
 /* Definition to make a library symbol externally visible. */
 #define CARES_SYMBOL_SCOPE_EXTERN __attribute__ ((__visibility__ ("default")))
 
+/* the signed version of size_t */
+#define CARES_TYPEOF_ARES_SSIZE_T ssize_t
+
 /* Use resolver library to configure cares */
 /* #undef CARES_USE_LIBRESOLV */
 
@@ -351,7 +354,7 @@
 /* #undef NEED_THREAD_SAFE */
 
 /* cpu-machine-OS */
-#define OS "amd64-unknown-freebsd10.3"
+#define OS "amd64-unknown-freebsd11.0"
 
 /* Name of package */
 #define PACKAGE "c-ares"
@@ -497,6 +500,3 @@
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
-
-/* the signed version of size_t */
-/* #undef ssize_t */

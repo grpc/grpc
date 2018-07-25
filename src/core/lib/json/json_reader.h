@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_JSON_JSON_READER_H
 
 #include <grpc/support/port_platform.h>
+
 #include "src/core/lib/json/json_common.h"
 
 typedef enum {
@@ -67,27 +68,27 @@ struct grpc_json_reader;
 
 typedef struct grpc_json_reader_vtable {
   /* Clears your internal string scratchpad. */
-  void (*string_clear)(void *userdata);
+  void (*string_clear)(void* userdata);
   /* Adds a char to the string scratchpad. */
-  void (*string_add_char)(void *userdata, uint32_t c);
+  void (*string_add_char)(void* userdata, uint32_t c);
   /* Adds a utf32 char to the string scratchpad. */
-  void (*string_add_utf32)(void *userdata, uint32_t c);
+  void (*string_add_utf32)(void* userdata, uint32_t c);
   /* Reads a character from your input. May be utf-8, 16 or 32. */
-  uint32_t (*read_char)(void *userdata);
+  uint32_t (*read_char)(void* userdata);
   /* Starts a container of type GRPC_JSON_ARRAY or GRPC_JSON_OBJECT. */
-  void (*container_begins)(void *userdata, grpc_json_type type);
+  void (*container_begins)(void* userdata, grpc_json_type type);
   /* Ends the current container. Must return the type of its parent. */
-  grpc_json_type (*container_ends)(void *userdata);
+  grpc_json_type (*container_ends)(void* userdata);
   /* Your internal string scratchpad is an object's key. */
-  void (*set_key)(void *userdata);
+  void (*set_key)(void* userdata);
   /* Your internal string scratchpad is a string value. */
-  void (*set_string)(void *userdata);
+  void (*set_string)(void* userdata);
   /* Your internal string scratchpad is a numerical value. Return 1 if valid. */
-  int (*set_number)(void *userdata);
+  int (*set_number)(void* userdata);
   /* Sets the values true, false or null. */
-  void (*set_true)(void *userdata);
-  void (*set_false)(void *userdata);
-  void (*set_null)(void *userdata);
+  void (*set_true)(void* userdata);
+  void (*set_false)(void* userdata);
+  void (*set_null)(void* userdata);
 } grpc_json_reader_vtable;
 
 typedef struct grpc_json_reader {
@@ -95,8 +96,8 @@ typedef struct grpc_json_reader {
    * The definition is public so you can put it on your stack.
    */
 
-  void *userdata;
-  grpc_json_reader_vtable *vtable;
+  void* userdata;
+  grpc_json_reader_vtable* vtable;
   int depth;
   int in_object;
   int in_array;
@@ -129,17 +130,17 @@ typedef enum {
  *    . GRPC_JSON_INTERNAL_ERROR if the parser somehow ended into an invalid
  *      internal state.
  */
-grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader);
+grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader);
 
 /* Call this function to initialize the reader structure. */
-void grpc_json_reader_init(grpc_json_reader *reader,
-                           grpc_json_reader_vtable *vtable, void *userdata);
+void grpc_json_reader_init(grpc_json_reader* reader,
+                           grpc_json_reader_vtable* vtable, void* userdata);
 
 /* You may call this from the read_char callback if you don't know where is the
  * end of your input stream, and you'd like the json reader to hint you that it
  * has completed reading its input, so you can return an EOF to it. Note that
  * there might still be trailing whitespaces after that point.
  */
-int grpc_json_reader_is_complete(grpc_json_reader *reader);
+int grpc_json_reader_is_complete(grpc_json_reader* reader);
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_READER_H */

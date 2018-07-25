@@ -9,107 +9,107 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Basic summary that can be computed from ClientStats and ServerStats
  * once the scenario has finished.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.ScenarioResultSummary</code>
+ * Generated from protobuf message <code>grpc.testing.ScenarioResultSummary</code>
  */
 class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Total number of operations per second over all clients.
-     * </pre>
      *
-     * <code>double qps = 1;</code>
+     * Generated from protobuf field <code>double qps = 1;</code>
      */
     private $qps = 0.0;
     /**
-     * <pre>
      * QPS per one server core.
-     * </pre>
      *
-     * <code>double qps_per_server_core = 2;</code>
+     * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
      */
     private $qps_per_server_core = 0.0;
     /**
-     * <pre>
-     * server load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on system_time (0.85 => 85%)
      *
-     * <code>double server_system_time = 3;</code>
+     * Generated from protobuf field <code>double server_system_time = 3;</code>
      */
     private $server_system_time = 0.0;
     /**
-     * <pre>
-     * server load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on user_time (0.85 => 85%)
      *
-     * <code>double server_user_time = 4;</code>
+     * Generated from protobuf field <code>double server_user_time = 4;</code>
      */
     private $server_user_time = 0.0;
     /**
-     * <pre>
-     * client load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on system_time (0.85 => 85%)
      *
-     * <code>double client_system_time = 5;</code>
+     * Generated from protobuf field <code>double client_system_time = 5;</code>
      */
     private $client_system_time = 0.0;
     /**
-     * <pre>
-     * client load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on user_time (0.85 => 85%)
      *
-     * <code>double client_user_time = 6;</code>
+     * Generated from protobuf field <code>double client_user_time = 6;</code>
      */
     private $client_user_time = 0.0;
     /**
-     * <pre>
      * X% latency percentiles (in nanoseconds)
-     * </pre>
      *
-     * <code>double latency_50 = 7;</code>
+     * Generated from protobuf field <code>double latency_50 = 7;</code>
      */
     private $latency_50 = 0.0;
     /**
-     * <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>
      */
     private $latency_90 = 0.0;
     /**
-     * <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>
      */
     private $latency_95 = 0.0;
     /**
-     * <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>
      */
     private $latency_99 = 0.0;
     /**
-     * <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>
      */
     private $latency_999 = 0.0;
     /**
-     * <pre>
      * server cpu usage percentage
-     * </pre>
      *
-     * <code>double server_cpu_usage = 12;</code>
+     * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
      */
     private $server_cpu_usage = 0.0;
     /**
-     * <pre>
      * Number of requests that succeeded/failed
-     * </pre>
      *
-     * <code>double successful_requests_per_second = 13;</code>
+     * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
      */
     private $successful_requests_per_second = 0.0;
     /**
-     * <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
      */
     private $failed_requests_per_second = 0.0;
+    /**
+     * Number of polls called inside completion queue per request
+     *
+     * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
+     */
+    private $client_polls_per_request = 0.0;
+    /**
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     */
+    private $server_polls_per_request = 0.0;
+    /**
+     * Queries per CPU-sec over all servers or clients
+     *
+     * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
+     */
+    private $server_queries_per_cpu_sec = 0.0;
+    /**
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     */
+    private $client_queries_per_cpu_sec = 0.0;
 
     public function __construct() {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
@@ -117,11 +117,10 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Total number of operations per second over all clients.
-     * </pre>
      *
-     * <code>double qps = 1;</code>
+     * Generated from protobuf field <code>double qps = 1;</code>
+     * @return float
      */
     public function getQps()
     {
@@ -129,24 +128,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Total number of operations per second over all clients.
-     * </pre>
      *
-     * <code>double qps = 1;</code>
+     * Generated from protobuf field <code>double qps = 1;</code>
+     * @param float $var
+     * @return $this
      */
     public function setQps($var)
     {
         GPBUtil::checkDouble($var);
         $this->qps = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * QPS per one server core.
-     * </pre>
      *
-     * <code>double qps_per_server_core = 2;</code>
+     * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
+     * @return float
      */
     public function getQpsPerServerCore()
     {
@@ -154,24 +154,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * QPS per one server core.
-     * </pre>
      *
-     * <code>double qps_per_server_core = 2;</code>
+     * Generated from protobuf field <code>double qps_per_server_core = 2;</code>
+     * @param float $var
+     * @return $this
      */
     public function setQpsPerServerCore($var)
     {
         GPBUtil::checkDouble($var);
         $this->qps_per_server_core = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
-     * server load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on system_time (0.85 => 85%)
      *
-     * <code>double server_system_time = 3;</code>
+     * Generated from protobuf field <code>double server_system_time = 3;</code>
+     * @return float
      */
     public function getServerSystemTime()
     {
@@ -179,24 +180,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
-     * server load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on system_time (0.85 => 85%)
      *
-     * <code>double server_system_time = 3;</code>
+     * Generated from protobuf field <code>double server_system_time = 3;</code>
+     * @param float $var
+     * @return $this
      */
     public function setServerSystemTime($var)
     {
         GPBUtil::checkDouble($var);
         $this->server_system_time = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
-     * server load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on user_time (0.85 => 85%)
      *
-     * <code>double server_user_time = 4;</code>
+     * Generated from protobuf field <code>double server_user_time = 4;</code>
+     * @return float
      */
     public function getServerUserTime()
     {
@@ -204,24 +206,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
-     * server load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * server load based on user_time (0.85 => 85%)
      *
-     * <code>double server_user_time = 4;</code>
+     * Generated from protobuf field <code>double server_user_time = 4;</code>
+     * @param float $var
+     * @return $this
      */
     public function setServerUserTime($var)
     {
         GPBUtil::checkDouble($var);
         $this->server_user_time = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
-     * client load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on system_time (0.85 => 85%)
      *
-     * <code>double client_system_time = 5;</code>
+     * Generated from protobuf field <code>double client_system_time = 5;</code>
+     * @return float
      */
     public function getClientSystemTime()
     {
@@ -229,24 +232,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
-     * client load based on system_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on system_time (0.85 => 85%)
      *
-     * <code>double client_system_time = 5;</code>
+     * Generated from protobuf field <code>double client_system_time = 5;</code>
+     * @param float $var
+     * @return $this
      */
     public function setClientSystemTime($var)
     {
         GPBUtil::checkDouble($var);
         $this->client_system_time = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
-     * client load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on user_time (0.85 => 85%)
      *
-     * <code>double client_user_time = 6;</code>
+     * Generated from protobuf field <code>double client_user_time = 6;</code>
+     * @return float
      */
     public function getClientUserTime()
     {
@@ -254,24 +258,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
-     * client load based on user_time (0.85 =&gt; 85%)
-     * </pre>
+     * client load based on user_time (0.85 => 85%)
      *
-     * <code>double client_user_time = 6;</code>
+     * Generated from protobuf field <code>double client_user_time = 6;</code>
+     * @param float $var
+     * @return $this
      */
     public function setClientUserTime($var)
     {
         GPBUtil::checkDouble($var);
         $this->client_user_time = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * X% latency percentiles (in nanoseconds)
-     * </pre>
      *
-     * <code>double latency_50 = 7;</code>
+     * Generated from protobuf field <code>double latency_50 = 7;</code>
+     * @return float
      */
     public function getLatency50()
     {
@@ -279,20 +284,23 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * X% latency percentiles (in nanoseconds)
-     * </pre>
      *
-     * <code>double latency_50 = 7;</code>
+     * Generated from protobuf field <code>double latency_50 = 7;</code>
+     * @param float $var
+     * @return $this
      */
     public function setLatency50($var)
     {
         GPBUtil::checkDouble($var);
         $this->latency_50 = $var;
+
+        return $this;
     }
 
     /**
-     * <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>
+     * @return float
      */
     public function getLatency90()
     {
@@ -300,16 +308,21 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>double latency_90 = 8;</code>
+     * Generated from protobuf field <code>double latency_90 = 8;</code>
+     * @param float $var
+     * @return $this
      */
     public function setLatency90($var)
     {
         GPBUtil::checkDouble($var);
         $this->latency_90 = $var;
+
+        return $this;
     }
 
     /**
-     * <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>
+     * @return float
      */
     public function getLatency95()
     {
@@ -317,16 +330,21 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>double latency_95 = 9;</code>
+     * Generated from protobuf field <code>double latency_95 = 9;</code>
+     * @param float $var
+     * @return $this
      */
     public function setLatency95($var)
     {
         GPBUtil::checkDouble($var);
         $this->latency_95 = $var;
+
+        return $this;
     }
 
     /**
-     * <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>
+     * @return float
      */
     public function getLatency99()
     {
@@ -334,16 +352,21 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>double latency_99 = 10;</code>
+     * Generated from protobuf field <code>double latency_99 = 10;</code>
+     * @param float $var
+     * @return $this
      */
     public function setLatency99($var)
     {
         GPBUtil::checkDouble($var);
         $this->latency_99 = $var;
+
+        return $this;
     }
 
     /**
-     * <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>
+     * @return float
      */
     public function getLatency999()
     {
@@ -351,20 +374,23 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>double latency_999 = 11;</code>
+     * Generated from protobuf field <code>double latency_999 = 11;</code>
+     * @param float $var
+     * @return $this
      */
     public function setLatency999($var)
     {
         GPBUtil::checkDouble($var);
         $this->latency_999 = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * server cpu usage percentage
-     * </pre>
      *
-     * <code>double server_cpu_usage = 12;</code>
+     * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
+     * @return float
      */
     public function getServerCpuUsage()
     {
@@ -372,24 +398,25 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * server cpu usage percentage
-     * </pre>
      *
-     * <code>double server_cpu_usage = 12;</code>
+     * Generated from protobuf field <code>double server_cpu_usage = 12;</code>
+     * @param float $var
+     * @return $this
      */
     public function setServerCpuUsage($var)
     {
         GPBUtil::checkDouble($var);
         $this->server_cpu_usage = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Number of requests that succeeded/failed
-     * </pre>
      *
-     * <code>double successful_requests_per_second = 13;</code>
+     * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
+     * @return float
      */
     public function getSuccessfulRequestsPerSecond()
     {
@@ -397,20 +424,23 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Number of requests that succeeded/failed
-     * </pre>
      *
-     * <code>double successful_requests_per_second = 13;</code>
+     * Generated from protobuf field <code>double successful_requests_per_second = 13;</code>
+     * @param float $var
+     * @return $this
      */
     public function setSuccessfulRequestsPerSecond($var)
     {
         GPBUtil::checkDouble($var);
         $this->successful_requests_per_second = $var;
+
+        return $this;
     }
 
     /**
-     * <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
+     * @return float
      */
     public function getFailedRequestsPerSecond()
     {
@@ -418,12 +448,112 @@ class ScenarioResultSummary extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>double failed_requests_per_second = 14;</code>
+     * Generated from protobuf field <code>double failed_requests_per_second = 14;</code>
+     * @param float $var
+     * @return $this
      */
     public function setFailedRequestsPerSecond($var)
     {
         GPBUtil::checkDouble($var);
         $this->failed_requests_per_second = $var;
+
+        return $this;
+    }
+
+    /**
+     * Number of polls called inside completion queue per request
+     *
+     * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
+     * @return float
+     */
+    public function getClientPollsPerRequest()
+    {
+        return $this->client_polls_per_request;
+    }
+
+    /**
+     * Number of polls called inside completion queue per request
+     *
+     * Generated from protobuf field <code>double client_polls_per_request = 15;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setClientPollsPerRequest($var)
+    {
+        GPBUtil::checkDouble($var);
+        $this->client_polls_per_request = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     * @return float
+     */
+    public function getServerPollsPerRequest()
+    {
+        return $this->server_polls_per_request;
+    }
+
+    /**
+     * Generated from protobuf field <code>double server_polls_per_request = 16;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setServerPollsPerRequest($var)
+    {
+        GPBUtil::checkDouble($var);
+        $this->server_polls_per_request = $var;
+
+        return $this;
+    }
+
+    /**
+     * Queries per CPU-sec over all servers or clients
+     *
+     * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
+     * @return float
+     */
+    public function getServerQueriesPerCpuSec()
+    {
+        return $this->server_queries_per_cpu_sec;
+    }
+
+    /**
+     * Queries per CPU-sec over all servers or clients
+     *
+     * Generated from protobuf field <code>double server_queries_per_cpu_sec = 17;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setServerQueriesPerCpuSec($var)
+    {
+        GPBUtil::checkDouble($var);
+        $this->server_queries_per_cpu_sec = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     * @return float
+     */
+    public function getClientQueriesPerCpuSec()
+    {
+        return $this->client_queries_per_cpu_sec;
+    }
+
+    /**
+     * Generated from protobuf field <code>double client_queries_per_cpu_sec = 18;</code>
+     * @param float $var
+     * @return $this
+     */
+    public function setClientQueriesPerCpuSec($var)
+    {
+        GPBUtil::checkDouble($var);
+        $this->client_queries_per_cpu_sec = $var;
+
+        return $this;
     }
 
 }

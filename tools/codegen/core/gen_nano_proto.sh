@@ -43,9 +43,9 @@ if [[ ! -f "$INPUT_PROTO" ]]; then
   echo "Input proto file '$INPUT_PROTO' doesn't exist."
   exit 2
 fi
+
 if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
-  echo "Expected nanopb options file '${EXPECTED_OPTIONS_FILE_PATH}' missing"
-  exit 3
+  echo "Input proto file may need .options file to be correctly compiled."
 fi
 
 if [[ "${OUTPUT_DIR:0:1}" != '/' ]]; then
@@ -68,25 +68,14 @@ popd
 
 # this should be the same version as the submodule we compile against
 # ideally we'd update this as a template to ensure that
-pip install protobuf==3.2.0
+pip install protobuf==3.5.2
 
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
 --plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
+--nanopb_out='-T -Q#include\ \"'"${GRPC_OUTPUT_DIR}"'/%s\" -L#include\ \"pb.h\"'":$OUTPUT_DIR" \
 "$(basename $INPUT_PROTO)"
-
-readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
-sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
-  "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
-
-# Fix up the include guards such that they pass the check_include_guards.py
-# test. Assumes that the generated files are being placed in gRPC src dir.
-readonly INCLUDE_GUARD_BASE=`echo $GRPC_OUTPUT_DIR | tr [a-z/] [A-Z_] | sed s:^.*SRC_::`
-readonly UC_PROTO_BASENAME=`echo $PROTO_BASENAME | tr [a-z] [A-Z]`
-sed -i "s:PB_${UC_PROTO_BASENAME}_PB_H_INCLUDED:GRPC_${INCLUDE_GUARD_BASE}_${UC_PROTO_BASENAME}_PB_H:g" \
-  "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 
 deactivate
 rm -rf $VENV_DIR

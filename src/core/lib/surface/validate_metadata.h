@@ -19,10 +19,12 @@
 #ifndef GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 #define GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include "src/core/lib/iomgr/error.h"
 
-grpc_error *grpc_validate_header_key_is_legal(grpc_slice slice);
-grpc_error *grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
+grpc_error* grpc_validate_header_key_is_legal(grpc_slice slice);
+grpc_error* grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
 
 #endif /* GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H */

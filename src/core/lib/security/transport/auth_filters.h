@@ -19,9 +19,19 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 
+#include <grpc/support/port_platform.h>
+
+#include <grpc/grpc_security.h>
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
+
+void grpc_auth_metadata_context_build(
+    const char* url_scheme, grpc_slice call_host, grpc_slice call_method,
+    grpc_auth_context* auth_context,
+    grpc_auth_metadata_context* auth_md_context);
+
+void grpc_auth_metadata_context_reset(grpc_auth_metadata_context* context);
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H */

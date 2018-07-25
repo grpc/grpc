@@ -52,23 +52,20 @@ namespace Grpc.Microbenchmarks
 
         private void ThreadBody(int iterations, int payloadSize)
         {
-            // TODO(jtattermusch): parametrize by number of pending completions.
-            // TODO(jtattermusch): parametrize by cached/non-cached BatchContextSafeHandle
-
-            var completionRegistry = new CompletionRegistry(environment);
+            var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => throw new NotImplementedException());
             var cq = CompletionQueueSafeHandle.CreateAsync(completionRegistry);
             var call = CreateFakeCall(cq);
 
-            var sendCompletionHandler = new SendCompletionHandler((success) => { });
+            var sendCompletionCallback = new NopSendCompletionCallback();
             var payload = new byte[payloadSize];
             var writeFlags = default(WriteFlags);
 
             var stopwatch = Stopwatch.StartNew();
             for (int i = 0; i < iterations; i++)
             {
-                call.StartSendMessage(sendCompletionHandler, payload, writeFlags, false);
+                call.StartSendMessage(sendCompletionCallback, payload, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
-                callback(true);
+                callback.OnComplete(true);
             }
             stopwatch.Stop();
             Console.WriteLine("Elapsed millis: " + stopwatch.ElapsedMilliseconds);
@@ -86,6 +83,14 @@ namespace Grpc.Microbenchmarks
                 call.DangerousAddRef(ref success);
             }
             return call;
+        }
+
+        private class NopSendCompletionCallback : ISendCompletionCallback
+        {
+            public void OnSendCompletion(bool success)
+            {
+                // NOP
+            }
         }
     }
 }

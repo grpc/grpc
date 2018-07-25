@@ -41,7 +41,7 @@ def run_gc_stress_test(test_proc)
   GC.enable
   construct_many(test_proc)
 
-  GC.start(full_mark: true, immediate_sweep: true)
+  GC.start
   construct_many(test_proc)
 end
 
@@ -54,7 +54,7 @@ def run_concurrency_stress_test(test_proc)
 
   test_proc.call
 
-  fail 'exception thrown while child thread initing class'
+  fail '(expected) exception thrown while child thread initing class'
 end
 
 # default (no gc_stress and no concurrency_stress)

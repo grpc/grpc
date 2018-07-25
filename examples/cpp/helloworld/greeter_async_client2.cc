@@ -20,7 +20,7 @@
 #include <memory>
 #include <string>
 
-#include <grpc++/grpc++.h>
+#include <grpcpp/grpcpp.h>
 #include <grpc/support/log.h>
 #include <thread>
 
@@ -49,11 +49,15 @@ class GreeterClient {
         // Call object to store rpc data
         AsyncClientCall* call = new AsyncClientCall;
 
-        // stub_->AsyncSayHello() performs the RPC call, returning an instance to
-        // store in "call". Because we are using the asynchronous API, we need to
-        // hold on to the "call" instance in order to get updates on the ongoing RPC.
-        call->response_reader = stub_->AsyncSayHello(&call->context, request, &cq_);
+        // stub_->PrepareAsyncSayHello() creates an RPC object, returning
+        // an instance to store in "call" but does not actually start the RPC
+        // Because we are using the asynchronous API, we need to hold on to
+        // the "call" instance in order to get updates on the ongoing RPC.
+        call->response_reader =
+            stub_->PrepareAsyncSayHello(&call->context, request, &cq_);
 
+        // StartCall initiates the RPC call
+        call->response_reader->StartCall();
 
         // Request that, upon completion of the RPC, "reply" be updated with the
         // server's response; "status" with the indication of whether the operation

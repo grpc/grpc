@@ -9,22 +9,24 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * presence of SecurityParams implies use of TLS
- * </pre>
  *
- * Protobuf type <code>grpc.testing.SecurityParams</code>
+ * Generated from protobuf message <code>grpc.testing.SecurityParams</code>
  */
 class SecurityParams extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <code>bool use_test_ca = 1;</code>
+     * Generated from protobuf field <code>bool use_test_ca = 1;</code>
      */
     private $use_test_ca = false;
     /**
-     * <code>string server_host_override = 2;</code>
+     * Generated from protobuf field <code>string server_host_override = 2;</code>
      */
     private $server_host_override = '';
+    /**
+     * Generated from protobuf field <code>string cred_type = 3;</code>
+     */
+    private $cred_type = '';
 
     public function __construct() {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
@@ -32,7 +34,8 @@ class SecurityParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>bool use_test_ca = 1;</code>
+     * Generated from protobuf field <code>bool use_test_ca = 1;</code>
+     * @return bool
      */
     public function getUseTestCa()
     {
@@ -40,16 +43,21 @@ class SecurityParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>bool use_test_ca = 1;</code>
+     * Generated from protobuf field <code>bool use_test_ca = 1;</code>
+     * @param bool $var
+     * @return $this
      */
     public function setUseTestCa($var)
     {
         GPBUtil::checkBool($var);
         $this->use_test_ca = $var;
+
+        return $this;
     }
 
     /**
-     * <code>string server_host_override = 2;</code>
+     * Generated from protobuf field <code>string server_host_override = 2;</code>
+     * @return string
      */
     public function getServerHostOverride()
     {
@@ -57,12 +65,38 @@ class SecurityParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>string server_host_override = 2;</code>
+     * Generated from protobuf field <code>string server_host_override = 2;</code>
+     * @param string $var
+     * @return $this
      */
     public function setServerHostOverride($var)
     {
         GPBUtil::checkString($var, True);
         $this->server_host_override = $var;
+
+        return $this;
+    }
+
+    /**
+     * Generated from protobuf field <code>string cred_type = 3;</code>
+     * @return string
+     */
+    public function getCredType()
+    {
+        return $this->cred_type;
+    }
+
+    /**
+     * Generated from protobuf field <code>string cred_type = 3;</code>
+     * @param string $var
+     * @return $this
+     */
+    public function setCredType($var)
+    {
+        GPBUtil::checkString($var, True);
+        $this->cred_type = $var;
+
+        return $this;
     }
 
 }

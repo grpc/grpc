@@ -14,15 +14,13 @@
 """Shared implementation."""
 
 import logging
-import threading
-import time
 
 import six
 
 import grpc
 from grpc._cython import cygrpc
 
-EMPTY_METADATA = cygrpc.Metadata(())
+_LOGGER = logging.getLogger(__name__)
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle:
@@ -77,33 +75,8 @@ def decode(b):
         try:
             return b.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on %s', b)
+            _LOGGER.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
-
-
-def channel_args(options):
-    cygrpc_args = []
-    for key, value in options:
-        if isinstance(value, six.string_types):
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
-        else:
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), value))
-    return cygrpc.ChannelArgs(cygrpc_args)
-
-
-def to_cygrpc_metadata(application_metadata):
-    return EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
-        cygrpc.Metadatum(encode(key), encode(value))
-        for key, value in application_metadata)
-
-
-def to_application_metadata(cygrpc_metadata):
-    if cygrpc_metadata is None:
-        return ()
-    else:
-        return tuple((decode(key), value
-                      if key[-4:] == b'-bin' else decode(value))
-                     for key, value in cygrpc_metadata)
 
 
 def _transform(message, transformer, exception_message):
@@ -113,7 +86,7 @@ def _transform(message, transformer, exception_message):
         try:
             return transformer(message)
         except Exception:  # pylint: disable=broad-except
-            logging.exception(exception_message)
+            _LOGGER.exception(exception_message)
             return None
 
 
@@ -128,35 +101,3 @@ def deserialize(serialized_message, deserializer):
 
 def fully_qualified_method(group, method):
     return '/{}/{}'.format(group, method)
-
-
-class CleanupThread(threading.Thread):
-    """A threading.Thread subclass supporting custom behavior on join().
-
-    On Python Interpreter exit, Python will attempt to join outstanding threads
-    prior to garbage collection.  We may need to do additional cleanup, and
-    we accomplish this by overriding the join() method.
-    """
-
-    def __init__(self, behavior, *args, **kwargs):
-        """Constructor.
-
-        Args:
-            behavior (function): Function called on join() with a single
-                argument, timeout, indicating the maximum duration of
-                `behavior`, or None indicating `behavior` has no deadline.
-                `behavior` must be idempotent.
-            args: Positional arguments passed to threading.Thread constructor.
-            kwargs: Keyword arguments passed to threading.Thread constructor.
-        """
-        super(CleanupThread, self).__init__(*args, **kwargs)
-        self._behavior = behavior
-
-    def join(self, timeout=None):
-        start_time = time.time()
-        self._behavior(timeout)
-        end_time = time.time()
-        if timeout is not None:
-            timeout -= end_time - start_time
-            timeout = max(timeout, 0)
-        super(CleanupThread, self).join(timeout)

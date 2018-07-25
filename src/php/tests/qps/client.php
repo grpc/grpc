@@ -37,6 +37,7 @@
  */
 
 require dirname(__FILE__).'/vendor/autoload.php';
+require dirname(__FILE__).'/histogram.php';
 
 /**
  * Assertion function that always exits with an error code if the assertion is
@@ -63,19 +64,19 @@ function hardAssertIfStatusOk($status)
 }
 
 /* Start the actual client */
-
-function qps_client_main($proxy_address) {
-    echo "Initiating php client\n";
+function qps_client_main($proxy_address, $server_ind) {
+    echo "[php-client] Initiating php client\n";
 
     $proxystubopts = [];
     $proxystubopts['credentials'] = Grpc\ChannelCredentials::createInsecure();
     $proxystub = new Grpc\Testing\ProxyClientServiceClient($proxy_address, $proxystubopts);
-    list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\Void())->wait();
+    list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\PBVoid())->wait();
     hardAssertIfStatusOk($status);
-    hardAssert($config->getClientChannels() == 1, "Only 1 channel supported");
     hardAssert($config->getOutstandingRpcsPerChannel() == 1, "Only 1 outstanding RPC supported");
 
-    echo "Got configuration from proxy, target is " . $config->getServerTargets()[0] . "\n";
+    echo "[php-client] Got configuration from proxy, target is '$server_ind'th server" . $config->getServerTargets()[$server_ind] . "\n";
+    $histres = $config->getHistogramParams()->getResolution();
+    $histmax = $config->getHistogramParams()->getMaxPossible();
 
     $stubopts = [];
     if ($config->getSecurityParams()) {
@@ -93,10 +94,10 @@ function qps_client_main($proxy_address) {
     } else {
         $stubopts['credentials'] = Grpc\ChannelCredentials::createInsecure();
     }
-    echo "Initiating php benchmarking client\n";
+    echo "[php-client] Initiating php benchmarking client\n";
 
     $stub = new Grpc\Testing\BenchmarkServiceClient(
-        $config->getServerTargets()[0], $stubopts);
+        $config->getServerTargets()[$server_ind], $stubopts);
     $req = new Grpc\Testing\SimpleRequest();
 
     $req->setResponseType(Grpc\Testing\PayloadType::COMPRESSABLE);
@@ -115,8 +116,11 @@ function qps_client_main($proxy_address) {
     } else {
         $poisson = false;
     }
-    $metric = new Grpc\Testing\ProxyStat;
-    $telemetry = $proxystub->ReportTime();
+    $histogram = new Histogram($histres, $histmax);
+    $histogram->clean();
+    $count = 0;
+    $histogram_result = new Grpc\Testing\HistogramData;
+    $telehist = $proxystub->ReportHist();
     if ($config->getRpcType() == Grpc\Testing\RpcType::UNARY) {
         while (1) {
             if ($poisson) {
@@ -126,8 +130,20 @@ function qps_client_main($proxy_address) {
             $startreq = microtime(true);
             list($resp,$status) = $stub->UnaryCall($req)->wait();
             hardAssertIfStatusOk($status);
-            $metric->setLatency(microtime(true)-$startreq);
-            $telemetry->write($metric);
+            $histogram->add((microtime(true)-$startreq)*1e9);
+            $count += 1;
+            if ($count == 2000) {
+              $contents = $histogram->contents();
+              $histogram_result->setBucket($contents);
+              $histogram_result->setMinSeen($histogram->minimum());
+              $histogram_result->setMaxSeen($histogram->maximum());
+              $histogram_result->setSum($histogram->sum());
+              $histogram_result->setSumOfSquares($histogram->sum_of_squares());
+              $histogram_result->setCount($histogram->count());
+              $telehist->write($histogram_result);
+              $histogram->clean();
+              $count = 0;
+            }
         }
     } else {
         $stream = $stub->StreamingCall();
@@ -139,8 +155,20 @@ function qps_client_main($proxy_address) {
             $startreq = microtime(true);
             $stream->write($req);
             $resp = $stream->read();
-            $metric->setLatency(microtime(true)-$startreq);
-            $telemetry->write($metric);
+            $histogram->add((microtime(true)-$startreq)*1e9);
+            $count += 1;
+            if ($count == 2000) {
+              $contents = $histogram->contents();
+              $histogram_result->setBucket($contents);
+              $histogram_result->setMinSeen($histogram->minimum());
+              $histogram_result->setMaxSeen($histogram->maximum());
+              $histogram_result->setSum($histogram->sum());
+              $histogram_result->setSumOfSquares($histogram->sum_of_squares());
+              $histogram_result->setCount($histogram->count());
+              $telehist->write($histogram_result);
+              $histogram->clean();
+              $count = 0;
+          }
         }
     }
 }
@@ -148,4 +176,4 @@ function qps_client_main($proxy_address) {
 ini_set('display_startup_errors', 1);
 ini_set('display_errors', 1);
 error_reporting(-1);
-qps_client_main($argv[1]);
+qps_client_main($argv[1], $argv[2]);

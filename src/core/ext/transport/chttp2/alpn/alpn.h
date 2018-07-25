@@ -19,16 +19,18 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 /* Retuns 1 if the version is supported, 0 otherwise. */
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size);
+int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size);
 
 /* Returns the number of protocol versions to advertise */
 size_t grpc_chttp2_num_alpn_versions(void);
 
 /* Returns the protocol version at index i (0 <= i <
  * grpc_chttp2_num_alpn_versions()) */
-const char *grpc_chttp2_get_alpn_version_index(size_t i);
+const char* grpc_chttp2_get_alpn_version_index(size_t i);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_ALPN_ALPN_H */

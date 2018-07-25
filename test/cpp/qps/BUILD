@@ -14,14 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
 
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
+grpc_package(name = "test/cpp/qps")
 
 grpc_cc_library(
     name = "parse_json",
@@ -39,11 +34,13 @@ grpc_cc_library(
         "qps_worker.cc",
         "server_async.cc",
         "server_sync.cc",
+        "qps_server_builder.cc",
     ],
     hdrs = [
         "client.h",
         "qps_worker.h",
         "server.h",
+        "qps_server_builder.h",
     ],
     deps = [
         ":histogram",
@@ -51,13 +48,19 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_core_stats",
+        "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
-        "//src/proto/grpc/testing:services_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//test/cpp/util:test_config",
+    ],
+    external_deps = [
+        "gflags",
     ],
 )
 
@@ -78,7 +81,8 @@ grpc_cc_library(
         "//:grpc++",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:services_proto",
+        "//src/proto/grpc/testing:report_qps_scenario_service_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
@@ -110,7 +114,19 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//:gpr"],
+    deps = ["//test/core/util:grpc_test_util"],
+)
+
+grpc_cc_test(
+    name = "inproc_sync_unary_ping_pong_test",
+    srcs = ["inproc_sync_unary_ping_pong_test.cc"],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 grpc_cc_library(
@@ -166,6 +182,7 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
 )
 
 grpc_cc_test(

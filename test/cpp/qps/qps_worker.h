@@ -21,16 +21,20 @@
 
 #include <memory>
 
-#include <grpc++/support/config.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/server.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
+
+#include "test/cpp/qps/server.h"
 
 namespace grpc {
-
-class Server;
 
 namespace testing {
 
 class WorkerServiceImpl;
+
+extern std::vector<grpc::testing::Server*>* g_inproc_servers;
 
 class QpsWorker {
  public:
@@ -41,9 +45,13 @@ class QpsWorker {
   bool Done() const;
   void MarkDone();
 
+  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args) {
+    return server_->InProcessChannel(args);
+  }
+
  private:
   std::unique_ptr<WorkerServiceImpl> impl_;
-  std::unique_ptr<Server> server_;
+  std::unique_ptr<grpc::Server> server_;
 
   gpr_atm done_;
 };

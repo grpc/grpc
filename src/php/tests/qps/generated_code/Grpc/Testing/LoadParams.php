@@ -9,7 +9,7 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Protobuf type <code>grpc.testing.LoadParams</code>
+ * Generated from protobuf message <code>grpc.testing.LoadParams</code>
  */
 class LoadParams extends \Google\Protobuf\Internal\Message
 {
@@ -21,7 +21,8 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * @return \Grpc\Testing\ClosedLoopParams
      */
     public function getClosedLoop()
     {
@@ -29,16 +30,21 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ClosedLoopParams closed_loop = 1;</code>
+     * @param \Grpc\Testing\ClosedLoopParams $var
+     * @return $this
      */
-    public function setClosedLoop(&$var)
+    public function setClosedLoop($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\ClosedLoopParams::class);
         $this->writeOneof(1, $var);
+
+        return $this;
     }
 
     /**
-     * <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * @return \Grpc\Testing\PoissonParams
      */
     public function getPoisson()
     {
@@ -46,14 +52,21 @@ class LoadParams extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.PoissonParams poisson = 2;</code>
+     * @param \Grpc\Testing\PoissonParams $var
+     * @return $this
      */
-    public function setPoisson(&$var)
+    public function setPoisson($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\PoissonParams::class);
         $this->writeOneof(2, $var);
+
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getLoad()
     {
         return $this->whichOneof("load");

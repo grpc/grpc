@@ -14,6 +14,12 @@ Builds gRPC in given language and runs unit tests. Use `tools/run_tests/run_test
 - `--use_docker` Builds a docker container containing all the prerequisites for given language and runs the tests under that container.
 - `--build_only` Only build, do not run the tests.
 
+Note: If you get an error such as `ImportError: No module named httplib2`, then you may be missing some Python modules. Install the module listed in the error and try again. 
+
+Note: some tests may be flaky. Check the "Issues" tab for known flakes and other issues.
+
+The full suite of unit tests will take many minutes to run.
+
 # Interop tests (run_interop_tests.py)
 
 Runs tests for cross-platform/cross-language interoperability. For more details, see [Interop tests descriptions](/doc/interop-test-descriptions.md)
@@ -37,15 +43,6 @@ to BigQuery.
 
 ###### Useful options
 - `--regex` use regex to select particular scenarios to run.
-
-# Stress tests (run_stress_tests.py)
-
-Runs modified interop tests clients and servers under heavy load for an extended period of time to discover potential stability issues.
-The tests are internally using Kubernetes to run the client and server on GKE and upload statistics to BigQuery.
-
-`tools/run_tests/stress_test/run_on_gke.py --gcp_project_id=<google-cloud-platform-project-id> --config_file=<path-to-config-file>` 
-
-The directory `tools/run_tests/stress_test/configs/` contains the config files for several scenarios
 
 # Artifacts & Packages (task_runner.py)
 

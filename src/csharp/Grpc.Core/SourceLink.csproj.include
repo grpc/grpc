@@ -1,0 +1,19 @@
+<!-- Ensure that debugging of the resulting NuGet packages work (we're using SourceLink). -->
+<Project>
+
+  <ItemGroup Label="dotnet pack instructions">
+    <Content Include="$(OutputPath)netstandard1.5\$(PackageId).pdb">
+      <Pack>true</Pack>
+      <PackagePath>lib/netstandard1.5</PackagePath>
+    </Content>
+    <Content Include="$(OutputPath)net45\$(PackageId).pdb">
+      <Pack>true</Pack>
+      <PackagePath>lib/net45</PackagePath>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.7.6" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

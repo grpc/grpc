@@ -1,7 +1,7 @@
 # gRPC over HTTP2
 
 ## Introduction
-This document serves as a detailed description for an implementation of gRPC carried over HTTP2 draft 17 framing. It assumes familiarity with the HTTP2 specification.
+This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
 
 ## Protocol
 Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
@@ -24,7 +24,7 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
-* **Path** → ":path" "/" Service-Name "/" {_method name_}
+* **Path** → ":path" "/" Service-Name "/" {_method name_}  # But see note below.
 * **Service-Name** → {_IDL-specific service name_}
 * **Authority** → ":authority" {_virtual host name of authority_}
 * **TE** → "te" "trailers"  # Used to detect incompatible proxies
@@ -170,6 +170,7 @@ HEADERS (flags = END_STREAM, END_HEADERS)
 grpc-status = 0 # OK
 trace-proto-bin = jher831yy13JHy3hc
 ```
+
 #### User Agents
 
 While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
@@ -190,14 +191,14 @@ grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 Unless explicitly defined to be, gRPC Calls are not assumed to be idempotent.  Specifically:
 
 * Calls that cannot be proven to have started will not be retried.
-* There is no mechanisim for duplicate suppression as it is not necessary.
+* There is no mechanism for duplicate suppression as it is not necessary.
 * Calls that are marked as idempotent may be sent multiple times.
 
 
 #### HTTP2 Transport Mapping
 
 ##### Stream Identification
-All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
+All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These ids are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
 
 ##### Data Frames
 DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
@@ -232,6 +233,7 @@ INADEQUATE_SECURITY| PERMISSION_DENIED … with additional detail indicating tha
 The HTTP2 specification mandates the use of TLS 1.2 or higher when TLS is used with HTTP2. It also places some additional constraints on the allowed ciphers in deployments to avoid known-problems as well as requiring SNI support. It is also expected that HTTP2 will be used in conjunction with proprietary transport security mechanisms about which the specification can make no meaningful recommendations.
 
 ##### Connection Management
+
 ###### GOAWAY Frame
 Sent by servers to clients to indicate that they will no longer accept any new streams on the associated connections. This frame includes the id of the last successfully accepted stream by the server. Clients should consider any stream initiated after the last successfully accepted stream as UNAVAILABLE and retry the call elsewhere. Clients are free to continue working with the already accepted streams until they complete or the connection is terminated.
 

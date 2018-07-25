@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'src/proto/grpc/testing/control_pb'
+require 'src/proto/grpc/testing/stats_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.ProxyStat" do
     optional :latency, :double, 1

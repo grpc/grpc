@@ -20,7 +20,8 @@ import time
 from concurrent import futures
 import grpc
 from src.proto.grpc.testing import control_pb2
-from src.proto.grpc.testing import services_pb2_grpc
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from src.proto.grpc.testing import stats_pb2
 
 from tests.qps import benchmark_client
@@ -28,9 +29,10 @@ from tests.qps import benchmark_server
 from tests.qps import client_runner
 from tests.qps import histogram
 from tests.unit import resources
+from tests.unit import test_common
 
 
-class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
+class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
     def __init__(self):
@@ -68,12 +70,11 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
             server_threads = multiprocessing.cpu_count() * 5
         else:
             server_threads = config.async_server_threads
-        server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=server_threads))
+        server = test_common.test_server(max_workers=server_threads)
         if config.server_type == control_pb2.ASYNC_SERVER:
             servicer = benchmark_server.BenchmarkServer()
-            services_pb2_grpc.add_BenchmarkServiceServicer_to_server(servicer,
-                                                                     server)
+            benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
+                servicer, server)
         elif config.server_type == control_pb2.ASYNC_GENERIC_SERVER:
             resp_size = config.payload_config.bytebuf_params.resp_size
             servicer = benchmark_server.GenericBenchmarkServer(resp_size)
@@ -87,12 +88,12 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
                 'grpc.testing.BenchmarkService', method_implementations)
             server.add_generic_rpc_handlers((handler,))
         else:
-            raise Exception(
-                'Unsupported server type {}'.format(config.server_type))
+            raise Exception('Unsupported server type {}'.format(
+                config.server_type))
 
         if config.HasField('security_params'):  # Use SSL
-            server_creds = grpc.ssl_server_credentials((
-                (resources.private_key(), resources.certificate_chain()),))
+            server_creds = grpc.ssl_server_credentials(
+                ((resources.private_key(), resources.certificate_chain()),))
             port = server.add_secure_port('[::]:{}'.format(config.port),
                                           server_creds)
         else:
@@ -156,8 +157,8 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
             else:
                 raise Exception('Async streaming client not supported')
         else:
-            raise Exception(
-                'Unsupported client type {}'.format(config.client_type))
+            raise Exception('Unsupported client type {}'.format(
+                config.client_type))
 
         # In multi-channel tests, we split the load across all channels
         load_factor = float(config.client_channels)

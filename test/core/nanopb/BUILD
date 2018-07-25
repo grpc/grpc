@@ -12,23 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/nanopb")
 
 licenses(["notice"])  # Apache v2
-
-package(
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
-)
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "fuzzer_response",
-    srcs = ["fuzzer_response.c"],
-    language = "C",
+    srcs = ["fuzzer_response.cc"],
+    language = "C++",
     corpus = "corpus_response",
     deps = [
         "//:gpr",
@@ -39,8 +34,8 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "fuzzer_serverlist",
-    srcs = ["fuzzer_serverlist.c"],
-    language = "C",
+    srcs = ["fuzzer_serverlist.cc"],
+    language = "C++",
     corpus = "corpus_serverlist",
     deps = [
         "//:gpr",

@@ -31,6 +31,10 @@ end if ENV['COVERAGE_NAME']
 require 'rspec'
 require 'logging'
 require 'rspec/logging_helper'
+require 'grpc'
+
+require_relative 'support/services'
+require_relative 'support/helpers'
 
 # GRPC is the general RPC module
 #
@@ -49,6 +53,7 @@ Logging.logger['GRPC::BidiCall'].level = :info
 RSpec.configure do |config|
   include RSpec::LoggingHelper
   config.capture_log_messages  # comment this out to see logs during test runs
+  include GRPC::Spec::Helpers
 end
 
 RSpec::Expectations.configuration.warn_about_potential_false_positives = false

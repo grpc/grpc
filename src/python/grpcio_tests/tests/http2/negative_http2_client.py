@@ -17,7 +17,7 @@ import argparse
 
 import grpc
 import time
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
 
@@ -32,14 +32,14 @@ def _validate_payload_type_and_length(response, expected_type, expected_length):
 
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' %
-                         (expected_code, call.code()))
+        raise ValueError('expected code %s, got %s' % (expected_code,
+                                                       call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' %
-                         (expected_details, call.details()))
+        raise ValueError('expected message %s, got %s' % (expected_details,
+                                                          call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):
@@ -147,7 +147,7 @@ def _stub(server_host, server_port):
     target = '{}:{}'.format(server_host, server_port)
     channel = grpc.insecure_channel(target)
     grpc.channel_ready_future(channel).result()
-    return test_pb2.TestServiceStub(channel)
+    return test_pb2_grpc.TestServiceStub(channel)
 
 
 def main():

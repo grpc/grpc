@@ -19,14 +19,15 @@
 #include <memory>
 #include <mutex>
 
-#include <grpc++/impl/codegen/method_handler_impl.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/method_handler_impl.h>
 
+#include "pb_decode.h"
+#include "pb_encode.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/server/health/health.pb.h"
-#include "third_party/nanopb/pb_decode.h"
-#include "third_party/nanopb/pb_encode.h"
 
 namespace grpc {
 namespace {
@@ -36,11 +37,12 @@ const char kHealthCheckMethodName[] = "/grpc.health.v1.Health/Check";
 DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
     DefaultHealthCheckService* service)
     : service_(service), method_(nullptr) {
-  MethodHandler* handler =
-      new RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer, ByteBuffer>(
+  internal::MethodHandler* handler =
+      new internal::RpcMethodHandler<HealthCheckServiceImpl, ByteBuffer,
+                                     ByteBuffer>(
           std::mem_fn(&HealthCheckServiceImpl::Check), this);
-  method_ = new RpcServiceMethod(kHealthCheckMethodName, RpcMethod::NORMAL_RPC,
-                                 handler);
+  method_ = new internal::RpcServiceMethod(
+      kHealthCheckMethodName, internal::RpcMethod::NORMAL_RPC, handler);
   AddMethod(method_);
 }
 

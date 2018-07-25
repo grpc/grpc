@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/ext/health_check_service_server_builder_option.h>
+#include <grpcpp/ext/health_check_service_server_builder_option.h>
 
 namespace grpc {
 

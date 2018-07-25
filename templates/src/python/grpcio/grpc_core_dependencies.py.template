@@ -20,7 +20,7 @@
   % for lib in libs:
   % if lib.name in python_dependencies.transitive_deps:
   % for src in lib.src:
-    '${src}',
+      '${src}',
   % endfor
   % endif
   % endfor

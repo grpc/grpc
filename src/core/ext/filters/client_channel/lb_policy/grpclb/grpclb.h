@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,18 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include <grpc/support/port_platform.h>
 
-/** Returns a load balancing factory for the glb policy, which tries to connect
- * to a load balancing server to decide the next successfully connected
- * subchannel to pick. */
-grpc_lb_policy_factory *grpc_glb_lb_factory_create();
+/** Channel arg indicating if a target corresponding to the address is grpclb
+ * loadbalancer. The type of this arg is an integer and the value is treated as
+ * a bool. */
+#define GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER \
+  "grpc.address_is_grpclb_load_balancer"
+/** Channel arg indicating if a target corresponding to the address is a backend
+ * received from a balancer. The type of this arg is an integer and the value is
+ * treated as a bool. */
+#define GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER \
+  "grpc.address_is_backend_from_grpclb_load_balancer"
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H \
+        */

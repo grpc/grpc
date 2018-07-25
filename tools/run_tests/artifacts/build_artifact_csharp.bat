@@ -15,15 +15,16 @@
 @rem Builds C# artifacts on Windows
 
 set ARCHITECTURE=%1
-
+set GRPC_SKIP_DOTNET_RESTORE=true
 @call tools\run_tests\helper_scripts\pre_build_csharp.bat %ARCHITECTURE% || goto :error
 
 cd cmake\build\%ARCHITECTURE%
-cmake --build . --target grpc_csharp_ext --config Release
+cmake --build . --target grpc_csharp_ext --config RelWithDebInfo
 cd ..\..\..
 
 mkdir -p %ARTIFACTS_OUT%
-copy /Y cmake\build\Win32\Release\grpc_csharp_ext.dll %ARTIFACTS_OUT% || copy /Y cmake\build\x64\Release\grpc_csharp_ext.dll %ARTIFACTS_OUT% || goto :error
+copy /Y cmake\build\Win32\RelWithDebInfo\grpc_csharp_ext.dll %ARTIFACTS_OUT% || copy /Y cmake\build\x64\RelWithDebInfo\grpc_csharp_ext.dll %ARTIFACTS_OUT% || goto :error
+copy /Y cmake\build\Win32\RelWithDebInfo\grpc_csharp_ext.pdb %ARTIFACTS_OUT% || copy /Y cmake\build\x64\RelWithDebInfo\grpc_csharp_ext.pdb %ARTIFACTS_OUT% || goto :error
 
 goto :EOF
 

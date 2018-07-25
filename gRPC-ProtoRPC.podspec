@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.7.0-dev'
+  version = '1.15.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -41,16 +41,30 @@ Pod::Spec.new do |s|
   s.header_dir = name
 
   src_dir = 'src/objective-c/ProtoRPC'
-  s.source_files = "#{src_dir}/*.{h,m}"
-  s.header_mappings_dir = "#{src_dir}"
 
-  s.dependency 'gRPC', version
-  s.dependency 'gRPC-RxLibrary', version
-  s.dependency 'Protobuf', '~> 3.0'
+  s.default_subspec = 'Main'
+
+  s.subspec 'Main' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.dependency 'gRPC', version
+    ss.dependency 'gRPC-RxLibrary', version
+    ss.dependency 'Protobuf', '~> 3.0'
+
+    ss.source_files = "#{src_dir}/*.{h,m}"
+  end
+  s.subspec 'CFStream' do |ss|
+    ss.dependency 'gRPC/CFStream', version
+    ss.dependency "#{s.name}/Main", version
+    ss.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+    }
+  end
+
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on Protobuf:
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 end

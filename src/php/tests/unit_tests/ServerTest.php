@@ -55,7 +55,10 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
         $channel = new Grpc\Channel('localhost:'.$port,
-             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
+             [
+                 'force_new' => true,
+                 'credentials' => Grpc\ChannelCredentials::createInsecure()
+             ]);
 
         $deadline = Grpc\Timeval::infFuture();
         $call = new Grpc\Call($channel, 'dummy_method', $deadline);
@@ -96,6 +99,24 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->assertNull($this->server);
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstructorWithNumKeyOfArray()
+    {
+        $this->server = new Grpc\Server([10 => '127.0.0.1',
+                                         20 => '8080', ]);
+        $this->assertNull($this->server);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstructorWithList()
+    {
+        $this->server = new Grpc\Server(['127.0.0.1', '8080']);
+        $this->assertNull($this->server);
+    }
     /**
      * @expectedException InvalidArgumentException
      */

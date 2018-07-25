@@ -21,20 +21,52 @@
 
 /* Lock free event notification for file descriptors */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
-void grpc_lfev_init(gpr_atm *state);
-void grpc_lfev_destroy(gpr_atm *state);
-bool grpc_lfev_is_shutdown(gpr_atm *state);
+namespace grpc_core {
 
-void grpc_lfev_notify_on(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         grpc_closure *closure, const char *variable);
-/* Returns true on first successful shutdown */
-bool grpc_lfev_set_shutdown(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                            grpc_error *shutdown_err);
-void grpc_lfev_set_ready(grpc_exec_ctx *exec_ctx, gpr_atm *state,
-                         const char *variable);
+class LockfreeEvent {
+ public:
+  LockfreeEvent();
+
+  LockfreeEvent(const LockfreeEvent&) = delete;
+  LockfreeEvent& operator=(const LockfreeEvent&) = delete;
+
+  // These methods are used to initialize and destroy the internal state. These
+  // cannot be done in constructor and destructor because SetReady may be called
+  // when the event is destroyed and put in a freelist.
+  void InitEvent();
+  void DestroyEvent();
+
+  // Returns true if fd has been shutdown, false otherwise.
+  bool IsShutdown() const {
+    return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
+  }
+
+  // Schedules \a closure when the event is received (see SetReady()) or the
+  // shutdown state has been set. Note that the event may have already been
+  // received, in which case the closure would be scheduled immediately.
+  // If the shutdown state has already been set, then \a closure is scheduled
+  // with the shutdown error.
+  void NotifyOn(grpc_closure* closure);
+
+  // Sets the shutdown state. If a closure had been provided by NotifyOn and has
+  // not yet been scheduled, it will be scheduled with \a error.
+  bool SetShutdown(grpc_error* error);
+
+  // Signals that the event has been received.
+  void SetReady();
+
+ private:
+  enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
+
+  gpr_atm state_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOCKFREE_EVENT_H */

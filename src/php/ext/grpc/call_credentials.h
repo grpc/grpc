@@ -19,17 +19,9 @@
 #ifndef NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
 #define NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
 #include "php_grpc.h"
 
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+#include <grpc/grpc_security.h>
 
 /* Class entry for the CallCredentials PHP class */
 extern zend_class_entry *grpc_ce_call_credentials;
@@ -40,23 +32,11 @@ PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call_credentials)
   grpc_call_credentials *wrapped;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call_credentials)
 
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_CALL_CREDS_P(zv) \
-  (wrapped_grpc_call_credentials *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
 static inline wrapped_grpc_call_credentials
 *wrapped_grpc_call_credentials_from_obj(zend_object *obj) {
   return (wrapped_grpc_call_credentials*)(
       (char*)(obj) - XtOffsetOf(wrapped_grpc_call_credentials, std));
 }
-
-#define Z_WRAPPED_GRPC_CALL_CREDS_P(zv) \
-  wrapped_grpc_call_credentials_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
 
 /* Struct to hold callback function for plugin creds API */
 typedef struct plugin_state {
@@ -65,9 +45,12 @@ typedef struct plugin_state {
 } plugin_state;
 
 /* Callback function for plugin creds API */
-void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data);
+int plugin_get_metadata(
+  void *ptr, grpc_auth_metadata_context context,
+  grpc_credentials_plugin_metadata_cb cb, void *user_data,
+  grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+  size_t *num_creds_md, grpc_status_code *status,
+  const char **error_details);
 
 /* Cleanup function for plugin creds API */
 void plugin_destroy_state(void *ptr);

@@ -12,21 +12,19 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-05-22</date>
+   <date>2018-01-19</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
     <api>${settings.php_version.php()}</api>
    </version>
    <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>${settings.php_version.php_stability()}</release>
+    <api>${settings.php_version.php_stability()}</api>
    </stability>
    <license>Apache 2.0</license>
    <notes>
-  - Channel are now by default persistent #11878
-  - Some bug fixes from 1.4 branch #12109, #12123
-  - Fixed hang bug when fork() was used #11814
+  - TBD
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">

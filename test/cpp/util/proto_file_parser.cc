@@ -23,7 +23,7 @@
 #include <sstream>
 #include <unordered_set>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -63,7 +63,7 @@ class ErrorPrinter : public protobuf::compiler::MultiFileErrorCollector {
   ProtoFileParser* parser_;  // not owned
 };
 
-ProtoFileParser::ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
+ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
                                  const grpc::string& proto_path,
                                  const grpc::string& protofiles)
     : has_error_(false),

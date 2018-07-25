@@ -1,0 +1,9 @@
+set noparent
+
+# These owners are in place to ensure that scenario_result_schema.json is not
+# modified without also running tools/run_tests/performance/patch_scenario_results_schema.py
+# to update the BigQuery schema
+
+@ncteisen
+@matt-kwong
+@jtattermusch

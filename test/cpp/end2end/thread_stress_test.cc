@@ -19,15 +19,14 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -50,23 +49,6 @@ const int kNumRpcs = 1000;  // Number of RPCs per thread
 namespace grpc {
 namespace testing {
 
-namespace {
-
-// When echo_deadline is requested, deadline seen in the ServerContext is set in
-// the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
-                       EchoResponse* response) {
-  if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    if (context->deadline() != system_clock::time_point::max()) {
-      Timepoint2Timespec(context->deadline(), &deadline);
-    }
-    response->mutable_param()->set_request_deadline(deadline.tv_sec);
-  }
-}
-
-}  // namespace
-
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false) {}
@@ -74,29 +56,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
-    MaybeEchoDeadline(context, request, response);
-    if (request->has_param() && request->param().client_cancel_after_us()) {
-      {
-        std::unique_lock<std::mutex> lock(mu_);
-        signal_client_ = true;
-      }
-      while (!context->IsCancelled()) {
-        gpr_sleep_until(gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
-                                 GPR_TIMESPAN)));
-      }
-      return Status::CANCELLED;
-    } else if (request->has_param() &&
-               request->param().server_cancel_after_us()) {
-      gpr_sleep_until(gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
-                               GPR_TIMESPAN)));
-      return Status::CANCELLED;
-    } else {
-      EXPECT_FALSE(context->IsCancelled());
-    }
     return Status::OK;
   }
 
@@ -305,7 +264,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)(intptr_t)i);
+                           cq_.get(), (void*)static_cast<intptr_t>(i));
     }
   }
   struct Context {
@@ -363,6 +322,7 @@ TYPED_TEST_CASE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs);
   }

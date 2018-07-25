@@ -15,6 +15,7 @@
 
 set -ex
 
+readonly NANOPB_ALTS_TMP_OUTPUT="$(mktemp -d)"
 readonly NANOPB_TMP_OUTPUT="$(mktemp -d)"
 readonly PROTOBUF_INSTALL_PREFIX="$(mktemp -d)"
 
@@ -50,8 +51,44 @@ readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/filters/client_channel/lb_
   "$NANOPB_TMP_OUTPUT" \
   "$LOAD_BALANCER_GRPC_OUTPUT_PATH"
 
+./tools/codegen/core/gen_nano_proto.sh \
+  third_party/protobuf/src/google/protobuf/duration.proto \
+  "$NANOPB_TMP_OUTPUT/google/protobuf" \
+  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
+
+./tools/codegen/core/gen_nano_proto.sh \
+  third_party/protobuf/src/google/protobuf/timestamp.proto \
+  "$NANOPB_TMP_OUTPUT/google/protobuf" \
+  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
+
 # compare outputs to checked compiled code
-if ! diff -r $NANOPB_TMP_OUTPUT src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1; then
+if ! diff -r "$NANOPB_TMP_OUTPUT" src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1; then
   echo "Outputs differ: $NANOPB_TMP_OUTPUT vs $LOAD_BALANCER_GRPC_OUTPUT_PATH"
   exit 2
 fi
+
+#
+# Checks for handshaker.proto and transport_security_common.proto
+#
+readonly HANDSHAKER_GRPC_OUTPUT_PATH='src/core/tsi/alts/handshaker'
+# nanopb-compile the proto to a temp location
+./tools/codegen/core/gen_nano_proto.sh \
+  src/core/tsi/alts/handshaker/proto/handshaker.proto \
+  "$NANOPB_ALTS_TMP_OUTPUT" \
+  "$HANDSHAKER_GRPC_OUTPUT_PATH"
+./tools/codegen/core/gen_nano_proto.sh \
+  src/core/tsi/alts/handshaker/proto/transport_security_common.proto \
+  "$NANOPB_ALTS_TMP_OUTPUT" \
+  "$HANDSHAKER_GRPC_OUTPUT_PATH"
+./tools/codegen/core/gen_nano_proto.sh \
+  src/core/tsi/alts/handshaker/proto/altscontext.proto \
+  "$NANOPB_ALTS_TMP_OUTPUT" \
+  "$HANDSHAKER_GRPC_OUTPUT_PATH"
+
+# compare outputs to checked compiled code
+for NANOPB_OUTPUT_FILE in $NANOPB_ALTS_TMP_OUTPUT/*.pb.*; do
+  if ! diff "$NANOPB_OUTPUT_FILE" "src/core/tsi/alts/handshaker/$(basename $NANOPB_OUTPUT_FILE)"; then
+    echo "Outputs differ: $NANOPB_ALTS_TMP_OUTPUT vs $HANDSHAKER_GRPC_OUTPUT_PATH"
+    exit 2
+  fi
+done

@@ -19,15 +19,18 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 #define GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <inttypes.h>
 #include <stdbool.h>  // TODO, do we need this?
 
 #include <grpc/support/sync.h>
+#include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_linked_error grpc_linked_error;
 
 struct grpc_linked_error {
-  grpc_error *err;
+  grpc_error* err;
   uint8_t next;
 };
 
@@ -55,6 +58,6 @@ struct grpc_error {
   intptr_t arena[0];
 };
 
-bool grpc_error_is_special(grpc_error *err);
+bool grpc_error_is_special(struct grpc_error* err);
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

@@ -19,6 +19,6 @@ FROM fedora:21
 # https://github.com/docker/docker/issues/10180
 RUN yum install -y yum-plugin-ovl
 
-RUN yum clean all && yum update -y && yum install -y ruby
+RUN yum clean all && yum update -y && yum install -y ruby findutils
 
 RUN gem install bundler
