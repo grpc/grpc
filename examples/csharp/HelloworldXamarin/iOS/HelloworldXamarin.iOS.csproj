@@ -92,6 +92,9 @@
     <Reference Include="Grpc.Core">
       <HintPath>..\packages\Grpc.Core.1.15.0-dev\lib\netstandard1.5\Grpc.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Google.Protobuf">
+      <HintPath>..\packages\Google.Protobuf.3.6.0\lib\netstandard1.0\Google.Protobuf.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\Contents.json" />
