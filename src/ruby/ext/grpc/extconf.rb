@@ -110,7 +110,7 @@ if grpc_config == 'opt'
       o.puts i
     end
     o.puts
-    o.puts 'strip:'
+    o.puts 'strip: $(DLLIB)'
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end

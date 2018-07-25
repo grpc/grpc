@@ -212,11 +212,15 @@ class RubyArtifact:
 class CSharpExtArtifact:
     """Builds C# native extension library"""
 
-    def __init__(self, platform, arch):
+    def __init__(self, platform, arch, arch_abi=None):
         self.name = 'csharp_ext_%s_%s' % (platform, arch)
         self.platform = platform
         self.arch = arch
+        self.arch_abi = arch_abi
         self.labels = ['artifact', 'csharp', platform, arch]
+        if arch_abi:
+            self.name += '_%s' % arch_abi
+            self.labels.append(arch_abi)
 
     def pre_build_jobspecs(self):
         return []
@@ -227,7 +231,14 @@ class CSharpExtArtifact:
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={})
+                environ={
+                    'ANDROID_ABI': self.arch_abi
+                })
+        elif self.arch == 'ios':
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
+                use_workspace=True)
         elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
@@ -348,7 +359,10 @@ def targets():
         for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
-        CSharpExtArtifact('linux', 'android'),
+        CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
+        CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
+        CSharpExtArtifact('linux', 'android', arch_abi='x86'),
+        CSharpExtArtifact('macos', 'ios'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
         PythonArtifact('linux', 'x86', 'cp34-cp34m'),

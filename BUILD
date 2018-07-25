@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gladiolus"
+g_stands_for = "glider"
 
 core_version = "6.0.0-dev"
 
-version = "1.14.0-dev"
+version = "1.15.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2049,6 +2049,26 @@ grpc_cc_library(
     deps = [
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_channelz",
+    srcs = [
+        "src/cpp/server/channelz/channelz_service.cc",
+        "src/cpp/server/channelz/channelz_service_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/channelz/channelz_service.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/channelz_service_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )

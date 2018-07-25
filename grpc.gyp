@@ -1586,6 +1586,19 @@
       ],
     },
     {
+      'target_name': 'grpcpp_channelz',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'grpc',
+      ],
+      'sources': [
+        'src/cpp/server/channelz/channelz_service.cc',
+        'src/cpp/server/channelz/channelz_service_plugin.cc',
+        'src/proto/grpc/channelz/channelz.proto',
+      ],
+    },
+    {
       'target_name': 'http2_client_main',
       'type': 'static_library',
       'dependencies': [
@@ -1705,6 +1718,7 @@
         'test/cpp/qps/client_sync.cc',
         'test/cpp/qps/driver.cc',
         'test/cpp/qps/parse_json.cc',
+        'test/cpp/qps/qps_server_builder.cc',
         'test/cpp/qps/qps_worker.cc',
         'test/cpp/qps/report.cc',
         'test/cpp/qps/server_async.cc',

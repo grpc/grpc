@@ -451,6 +451,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
              subchannel_list() == p->latest_pending_subchannel_list_.get());
+  GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
     if (grpc_lb_pick_first_trace.enabled()) {
@@ -480,14 +481,12 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                     "update"),
           "selected_not_ready+switch_to_update");
     } else {
-      // TODO(juanlishen): we re-resolve when the selected subchannel goes to
-      // TRANSIENT_FAILURE because we used to shut down in this case before
-      // re-resolution is introduced. But we need to investigate whether we
-      // really want to take any action instead of waiting for the selected
-      // subchannel reconnecting.
-      GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
       if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // If the selected channel goes bad, request a re-resolution.
+        // If the selected subchannel goes bad, request a re-resolution. We also
+        // set the channel state to IDLE and reset started_picking_. The reason
+        // is that if the new state is TRANSIENT_FAILURE due to a GOAWAY
+        // reception we don't want to connect to the re-resolved backends until
+        // we leave the IDLE state.
         grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_IDLE,
                                     GRPC_ERROR_NONE,
                                     "selected_changed+reresolve");
@@ -568,9 +567,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
       // all subchannels.
       if (sd->Index() == 0 && subchannel_list() == p->subchannel_list_.get()) {
+        p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
         grpc_connectivity_state_set(
             &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-            GRPC_ERROR_REF(error), "connecting_transient_failure");
+            GRPC_ERROR_REF(error), "exhausted_subchannels");
       }
       sd->StartConnectivityWatchLocked();
       break;
