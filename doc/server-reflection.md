@@ -15,19 +15,6 @@ This broadly involves two problems: determining what formats (which protobuf
 messages) a server’s method uses, and determining how to convert messages
 between human readable format and the (likely binary) wire format.
 
-## Enabling server reflection
-
-Enabling server reflection differs language-to-language. Here are links to docs relevant to
-each language:
-
-- [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
-- [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md#enable-server-reflection)
-- [C++](https://grpc.io/grpc/cpp/md_doc_server_reflection_tutorial.html)
-- Python: (tutorial not yet written)
-- C#: (tutorial not yet written)
-- Ruby: not yet implemented [#2567](https://github.com/grpc/grpc/issues/2567)
-- Node: not yet implemented [#2568](https://github.com/grpc/grpc/issues/2568)
-
 ## Method reflection
 
 We want to be able to answer the following queries:
@@ -194,3 +181,16 @@ will need to index those FileDescriptorProtos by file and symbol and imports.
 One issue is that some grpc implementations are very loosely coupled with
 protobufs; in such implementations it probably makes sense to split apart these
 reflection APIs so as not to take an additional proto dependency.
+
+## Known Implementations
+
+Enabling server reflection differs language-to-language. Here are links to docs relevant to
+each language:
+
+- [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
+- [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md#enable-server-reflection)
+- [C++](https://grpc.io/grpc/cpp/md_doc_server_reflection_tutorial.html)
+- Python: (tutorial not yet written)
+- C#: (tutorial not yet written)
+- Ruby: not yet implemented [#2567](https://github.com/grpc/grpc/issues/2567)
+- Node: not yet implemented [#2568](https://github.com/grpc/grpc/issues/2568)
