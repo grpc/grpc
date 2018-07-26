@@ -37,7 +37,9 @@ class RefCountedPtr {
 
   // If value is non-null, we take ownership of a ref to it.
   template <typename Y>
-  explicit RefCountedPtr(Y* value) { value_ = value; }
+  explicit RefCountedPtr(Y* value) {
+    value_ = value;
+  }
 
   // Move support.
   RefCountedPtr(RefCountedPtr&& other) {
@@ -128,7 +130,9 @@ class RefCountedPtr {
   }
 
   template <typename Y>
-  bool operator==(const Y* other) const { return value_ == other; }
+  bool operator==(const Y* other) const {
+    return value_ == other;
+  }
 
   bool operator==(std::nullptr_t) const { return value_ == nullptr; }
 
@@ -138,7 +142,9 @@ class RefCountedPtr {
   }
 
   template <typename Y>
-  bool operator!=(const Y* other) const { return value_ != other; }
+  bool operator!=(const Y* other) const {
+    return value_ != other;
+  }
 
   bool operator!=(std::nullptr_t) const { return value_ != nullptr; }
 
