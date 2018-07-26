@@ -169,9 +169,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             private_key=_PRIVATE_KEY,
             certificate_chain=_CERTIFICATE_CHAIN,
-            verify_options={
-                "checkServerIdentity": checkServerIdentity
-            }
+            verify_callback=checkServerIdentity
         )
         channel = grpc.secure_channel(
             'localhost:{}'.format(port),

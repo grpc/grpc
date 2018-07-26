@@ -153,11 +153,11 @@ cdef void _verify_peer_callback_destruct(void *userdata) with gil:
 cdef class SSLChannelCredentials(ChannelCredentials):
 
   def __cinit__(
-      self, pem_root_certificates, private_key, certificate_chain, verify_options):
+      self, pem_root_certificates, private_key, certificate_chain, verify_callback):
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
-    self._verify_options = verify_options
+    self._verify_callback = verify_callback
 
   cdef grpc_channel_credentials *c(self):
     cdef const char *c_pem_root_certificates
@@ -167,15 +167,13 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     vp_options.verify_peer_callback = NULL
     vp_options.verify_peer_callback_userdata = NULL
     vp_options.verify_peer_destruct = NULL
-    if self._verify_options is not None:
-      if "checkServerIdentity" in self._verify_options:
-        fn = self._verify_options["checkServerIdentity"]
-        if not callable(fn):
-          raise TypeError("checkServerIdentity parameter must be callable.")
-        cpython.Py_INCREF(fn)
-        vp_options.verify_peer_callback = _verify_peer_callback_wrapper
-        vp_options.verify_peer_callback_userdata = <void*>fn
-        vp_options.verify_peer_destruct = _verify_peer_callback_destruct
+    if self._verify_callback is not None:
+      if not callable(self._verify_callback):
+        raise TypeError("verify_callback parameter must be callable.")
+      cpython.Py_INCREF(self._verify_callback)
+      vp_options.verify_peer_callback = _verify_peer_callback_wrapper
+      vp_options.verify_peer_callback_userdata = <void*>self._verify_callback
+      vp_options.verify_peer_destruct = _verify_peer_callback_destruct
 
     if self._pem_root_certificates is None:
       c_pem_root_certificates = NULL

@@ -1379,7 +1379,7 @@ def method_handlers_generic_handler(service, method_handlers):
 def ssl_channel_credentials(root_certificates=None,
                             private_key=None,
                             certificate_chain=None,
-                            verify_options=None):
+                            verify_callback=None):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
     Args:
@@ -1390,13 +1390,19 @@ def ssl_channel_credentials(root_certificates=None,
         private key should be used.
       certificate_chain: The PEM-encoded certificate chain as a byte string
         to use or or None if no certificate chain should be used.
+      verify_callback: A function which will be called back during the TLS
+        handshake after hostname verification has been performed. This callback
+        can be used to perform additional custom verification of the server
+        certificate. The callback will receive two arguments: the expected
+        hostname of the server and the server's presented certificate as a
+        string in PEM format.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(root_certificates, private_key,
-                                      certificate_chain, verify_options))
+                                      certificate_chain, verify_callback))
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
