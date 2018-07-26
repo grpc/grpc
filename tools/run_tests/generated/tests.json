@@ -1319,32 +1319,6 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "grpc_ipv6_loopback_available_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
@@ -5736,8 +5710,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -5749,8 +5722,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "uses_polling": true
   }, 
@@ -5760,8 +5732,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -5773,8 +5744,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "uses_polling": true
   }, 
