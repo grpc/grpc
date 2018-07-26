@@ -16,7 +16,6 @@
  *
  */
 
-#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -458,7 +457,7 @@ static void test_default_ssl_roots(void) {
      and make override fail to trigger system roots branch in
      ComputePemRootCerts. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
-  gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "true");
+  gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "true");
   grpc_set_ssl_roots_override_callback(override_roots_fail);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(roots));
@@ -466,18 +465,8 @@ static void test_default_ssl_roots(void) {
   /* Cleanup. */
   remove(roots_env_var_file_path);
   gpr_free(roots_env_var_file_path);
-  gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "");
+  gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "");
 }
-
-  /* TODO: update or delete test.
-     Test that the GetSystemRootCerts function returns an empty slice when the
-     platform variable doesn't match one of the options.
-  static void test_system_cert_retrieval() {
-    grpc_core::SystemRootCerts::SetPlatformForTesting(PLATFORM_TEST);
-    grpc_slice cert_slice =
-        grpc_core::SystemRootCerts::GetSystemRootCertsForTesting();
-    GPR_ASSERT(GRPC_SLICE_IS_EMPTY(cert_slice));
-  }*/
 
 #ifdef GPR_LINUX
 // Test GetAbsoluteFilePath.
@@ -492,7 +481,7 @@ static void test_absolute_cert_path() {
 }
 
 static void test_cert_bundle_creation() {
-  gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "true");
+  gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "true");
 
   /* Test that CreateRootCertsBundle returns a correct slice. */
   grpc_slice roots_bundle = grpc_empty_slice();
@@ -509,7 +498,7 @@ static void test_cert_bundle_creation() {
    * slices. */
 
   /* Cleanup. */
-  unsetenv("GRPC_USE_SYSTEM_SSL_ROOTS");
+  unsetenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
   unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
 }
 #endif /* GPR_LINUX */
@@ -525,7 +514,6 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
-// test_system_cert_retrieval(); TODO: update or delete test.
 #ifdef GPR_LINUX
   test_absolute_cert_path();
   test_cert_bundle_creation();

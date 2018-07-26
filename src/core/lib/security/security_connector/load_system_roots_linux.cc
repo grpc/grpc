@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
 #ifdef GPR_LINUX
