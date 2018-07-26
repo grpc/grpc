@@ -127,7 +127,7 @@ TEST(RefCountedPtr, ResetFromNonNullToNull) {
 TEST(RefCountedPtr, ResetFromNullToNull) {
   RefCountedPtr<Foo> foo;
   EXPECT_EQ(nullptr, foo.get());
-  foo.reset(nullptr);
+  foo.reset();
   EXPECT_EQ(nullptr, foo.get());
 }
 
@@ -173,6 +173,30 @@ TEST(RefCountedPtr, RefCountedWithTracing) {
   RefCountedPtr<FooWithTracing> foo2 = foo->Ref(DEBUG_LOCATION, "foo");
   foo2.release();
   foo->Unref(DEBUG_LOCATION, "foo");
+}
+
+class Parent : public RefCounted<Parent> {
+ public:
+  Parent() {}
+};
+
+class Child : public Parent {
+ public:
+  Child() {}
+};
+
+void FunctionTakingParent(RefCountedPtr<Parent> o) {}
+
+void FunctionTakingChild(RefCountedPtr<Child> o) {}
+
+TEST(RefCountedPtr, CanPassChildToFunctionExpectingParent) {
+  RefCountedPtr<Child> child = MakeRefCounted<Child>();
+  FunctionTakingParent(child);
+}
+
+TEST(RefCountedPtr, CanPassChildToFunctionExpectingChild) {
+  RefCountedPtr<Child> child = MakeRefCounted<Child>();
+  FunctionTakingChild(child);
 }
 
 }  // namespace
