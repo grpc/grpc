@@ -550,6 +550,12 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   fd->error_closure->NotifyOn(closure);
 }
 
+static void fd_set_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
+
+static void fd_set_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
+
+static void fd_set_error(grpc_fd* fd) { fd->error_closure->SetReady(); }
+
 /*******************************************************************************
  * Pollable Definitions
  */
@@ -1636,6 +1642,9 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_set_readable,
+    fd_set_writable,
+    fd_set_error,
     fd_is_shutdown,
     fd_get_read_notifier_pollset,
 

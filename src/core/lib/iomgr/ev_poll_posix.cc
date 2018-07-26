@@ -557,6 +557,23 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   abort();
 }
 
+static void fd_set_readable(grpc_fd* fd) {
+  gpr_mu_lock(&fd->mu);
+  set_ready_locked(fd, &fd->read_closure);
+  gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_set_writable(grpc_fd* fd) {
+  gpr_mu_lock(&fd->mu);
+  set_ready_locked(fd, &fd->write_closure);
+  gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_set_error(grpc_fd* fd) {
+  gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
+  abort();
+}
+
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
                               grpc_pollset_worker* worker, uint32_t read_mask,
                               uint32_t write_mask, grpc_fd_watcher* watcher) {
@@ -1723,6 +1740,9 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_set_readable,
+    fd_set_writable,
+    fd_set_error,
     fd_is_shutdown,
     fd_get_read_notifier_pollset,
 

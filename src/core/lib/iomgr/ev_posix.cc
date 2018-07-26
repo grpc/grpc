@@ -239,6 +239,12 @@ void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_error(fd, closure);
 }
 
+void grpc_fd_set_readable(grpc_fd* fd) { g_event_engine->fd_set_readable(fd); }
+
+void grpc_fd_set_writable(grpc_fd* fd) { g_event_engine->fd_set_writable(fd); }
+
+void grpc_fd_set_error(grpc_fd* fd) { g_event_engine->fd_set_error(fd); }
+
 static size_t pollset_size(void) { return g_event_engine->pollset_size; }
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
