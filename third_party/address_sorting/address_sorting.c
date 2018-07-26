@@ -55,15 +55,10 @@ static const int kIPv6AddrScopeGlobal = 3;
 static address_sorting_source_addr_factory* g_current_source_addr_factory =
     NULL;
 
-static bool address_sorting_get_source_addr(const address_sorting_address* dest,
-                                            address_sorting_address* source) {
+static int address_sorting_get_source_addr(const address_sorting_address* dest,
+                                           address_sorting_address* source) {
   return g_current_source_addr_factory->vtable->get_source_addr(
       g_current_source_addr_factory, dest, source);
-}
-
-bool address_sorting_get_source_addr_for_testing(
-    const address_sorting_address* dest, address_sorting_address* source) {
-  return address_sorting_get_source_addr(dest, source);
 }
 
 static int ipv6_prefix_match_length(const struct sockaddr_in6* sa,
