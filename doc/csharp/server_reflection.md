@@ -10,8 +10,9 @@ C# Server Reflection is an add-on library.
 To use it, first install the [Grpc.Reflection](https://www.nuget.org/packages/Grpc.Reflection/)
 Nuget package into your project.
 
-Unlike in other languages, with C# you need to manually register the service
-descriptors with the reflection service implementation when creating a server.
+Note that with C# you need to manually register the service
+descriptors with the reflection service implementation when creating a server
+(this isn't necessary with e.g. C++ or Java)
 ```csharp
 // the reflection service will be aware of "Greeter" and "ServerReflection" services.
 var reflectionServiceImpl = new ReflectionServiceImpl(Greeter.Descriptor, ServerReflection.Descriptor);
