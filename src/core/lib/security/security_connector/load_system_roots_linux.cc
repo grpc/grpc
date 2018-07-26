@@ -167,13 +167,14 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
 
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  // Use user-specified custom directory if flag is set
+  // Prioritize user-specified custom directory if flag is set.
   const bool use_custom_dir =
       gpr_is_true(gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR"));
   if (use_custom_dir) {
     result = SystemRootCerts::CreateRootCertsBundle();
   }
-  // Fallback to default, distribution-specific directory
+  /* If the custom directory is empty/invalid/not specified, fallback to
+     distribution-specific directory. */
   if (GRPC_SLICE_IS_EMPTY(result)) {
     result = SystemRootCerts::GetSystemRootCerts();
   }
