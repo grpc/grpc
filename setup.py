@@ -279,9 +279,6 @@ INSTALL_REQUIRES = (
     'six>=1.5.2',
 )
 
-if not PY3:
-  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
-
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',
     'sphinx_rtd_theme>=0.1.8',
@@ -346,4 +343,10 @@ setuptools.setup(
   install_requires=INSTALL_REQUIRES,
   setup_requires=SETUP_REQUIRES,
   cmdclass=COMMAND_CLASS,
+  extra_requires={
+    ':python_version < "3"': [
+      'futures>=2.2.0',
+      'enum34>=1.0.4'
+    ]
+  },
 )
