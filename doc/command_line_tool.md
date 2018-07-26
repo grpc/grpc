@@ -38,7 +38,7 @@ In order to build the grpc command line tool from a fresh clone of the grpc
 repository, you need to run the following command to update submodules:
 
 ```
-git submodule update --init
+git submodule update --init --recursive
 ```
 
 You also need to have the gflags library installed on your system. On Linux
