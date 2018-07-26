@@ -645,8 +645,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/security_connector/alts_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_fallback.cc )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots_linux.cc )
-  s.files += %w( src/core/lib/security/security_connector/load_system_roots_macos.cc )
-  s.files += %w( src/core/lib/security/security_connector/load_system_roots_windows.cc )
   s.files += %w( src/core/lib/security/security_connector/local_security_connector.cc )
   s.files += %w( src/core/lib/security/security_connector/security_connector.cc )
   s.files += %w( src/core/lib/security/transport/client_auth_filter.cc )

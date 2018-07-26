@@ -58,14 +58,8 @@ static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
-/* --- Flag to enable/disable system root certificates feature --- */
-#ifndef GRPC_USE_SYSTEM_SSL_ROOTS
-#define GRPC_USE_SYSTEM_SSL_ROOTS "GRPC_USE_SYSTEM_SSL_ROOTS"
-#endif
-
-/* --- Flag to specify custom directory for system certs testing --- */
-#ifndef GRPC_SYSTEM_SSL_ROOTS_DIR
-#define GRPC_SYSTEM_SSL_ROOTS_DIR "GRPC_SYSTEM_SSL_ROOTS_DIR"
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
 #endif
 
 /* -- Overridden default roots. -- */
@@ -1194,7 +1188,7 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   const bool use_system_roots =
-      gpr_is_true(gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS));
+      gpr_is_true(gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR));
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
