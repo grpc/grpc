@@ -455,12 +455,14 @@ static void test_default_ssl_roots(void) {
 
   /* Set default roots env var to invalid value, activate system roots flag,
      and make override fail to trigger system roots branch in
-     ComputePemRootCerts. */
+     ComputePemRootCerts. This test is Linux-specific. */
+#ifdef GPR_LINUX
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "true");
   grpc_set_ssl_roots_override_callback(override_roots_fail);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(roots));
+#endif /* GPR_LINUX */
 
   /* Cleanup. */
   remove(roots_env_var_file_path);
