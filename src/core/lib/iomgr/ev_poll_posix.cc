@@ -570,8 +570,9 @@ static void fd_set_writable(grpc_fd* fd) {
 }
 
 static void fd_set_error(grpc_fd* fd) {
-  gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
-  abort();
+  if (grpc_polling_trace.enabled()) {
+    gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
+  }
 }
 
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
