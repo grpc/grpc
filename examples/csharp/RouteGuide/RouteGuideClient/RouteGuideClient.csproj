@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>RouteGuideClient</AssemblyTitle>
+    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <AssemblyName>RouteGuideClient</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>RouteGuideClient</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RouteGuide\RouteGuide.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -3,6 +3,11 @@ gRPC in 3 minutes (C#)
 
 BACKGROUND
 -------------
+This is a different version of the helloworld example, using the old-style .csproj
+files supported by VS2013 and VS2015 (and older versions of mono).
+You can still use gRPC with the old-style .csproj files, but [using the new-style
+.csproj projects](../helloworld/README.md) (supported by VS2017 and dotnet SDK) is recommended.
+
 For this sample, we've already generated the server and client stubs from [helloworld.proto][].
 
 Example projects depend on the [Grpc](https://www.nuget.org/packages/Grpc/), [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/)
@@ -28,7 +33,7 @@ BUILD
 # Using Monodevelop or Xamarin Studio
 
 The nuget add-in available for Xamarin Studio and Monodevelop IDEs is too old to 
-download all of the nuget dependencies of gRPC. One alternative to is to use the dotnet command line tools instead (see [helloworld-from-cli]).
+download all of the nuget dependencies of gRPC.
 
 Using these IDEs, a workaround is as follows:
 * Obtain a nuget executable for your platform and update it with
@@ -62,6 +67,5 @@ Tutorial
 
 You can find a more detailed tutorial in [gRPC Basics: C#][]
 
-[helloworld-from-cli]:../helloworld-from-cli/README.md
 [helloworld.proto]:../../protos/helloworld.proto
 [gRPC Basics: C#]:https://grpc.io/docs/tutorials/basic/csharp.html

@@ -3,9 +3,6 @@ gRPC in 3 minutes (C#)
 
 BACKGROUND
 -------------
-This is a different version of the helloworld example, using the dotnet sdk
-tools to build and run.
-
 For this sample, we've already generated the server and client stubs from [helloworld.proto][].
 
 Example projects in this directory depend on the [Grpc](https://www.nuget.org/packages/Grpc/)
@@ -15,16 +12,18 @@ which have been already added to the project for you.
 PREREQUISITES
 -------------
 
-- The [.NET Core SDK](https://www.microsoft.com/net/core).
+- The [.NET Core SDK](https://www.microsoft.com/net/core) (version 2+ is recommended)
+
+You can also build the example directly using Visual Studio 2017, but it's not a requirement.
 
 BUILD
 -------
 
-From the `examples/csharp/helloworld-from-cli` directory:
-
-- `dotnet restore Greeter.sln`
+From the `examples/csharp/Helloworld` directory:
 
 - `dotnet build Greeter.sln`
+
+(if you're using dotnet SDK 1.x you need to run `dotnet restore Greeter.sln` first)
 
 Try it!
 -------
