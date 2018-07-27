@@ -135,7 +135,7 @@ struct pollable {
   //     underlying epoll set (i.e whenever fd_orphan() is called).
   //
   // Implementing (2) above (i.e removing fds from cache on fd_orphan) adds a
-  // lot of complexity since an fd can be present in multiple pollalbles. So our
+  // lot of complexity since an fd can be present in multiple pollables. So our
   // implementation ONLY DOES (1) and NOT (2).
   //
   // The cache_fd.salt variable helps here to maintain correctness (it serves as
