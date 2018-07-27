@@ -518,6 +518,20 @@ grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
   return new_err;
 }
 
+grpc_error* grpc_error_maybe_add_child(grpc_error* src, grpc_error* child) {
+  if (src != GRPC_ERROR_NONE) {
+    if (child == GRPC_ERROR_NONE) {
+      return GRPC_ERROR_REF(src);
+    } else if (child != src) {
+      return grpc_error_add_child(src, GRPC_ERROR_REF(child));
+    } else {
+      return GRPC_ERROR_REF(src);
+    }
+  } else {
+    return GRPC_ERROR_REF(child);
+  }
+}
+
 static const char* no_error_string = "\"No Error\"";
 static const char* oom_error_string = "\"Out of memory\"";
 static const char* cancelled_error_string = "\"Cancelled\"";

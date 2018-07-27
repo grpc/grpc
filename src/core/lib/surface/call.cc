@@ -512,7 +512,7 @@ static void destroy_call(void* call, grpc_error* error) {
   grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(c->status_error, c->send_deadline,
                         &c->final_info.final_status, &slice, nullptr,
-                        &c->final_info.error_string);
+                        &(c->final_info.error_string));
   GRPC_ERROR_UNREF(c->status_error);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);

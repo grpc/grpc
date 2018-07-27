@@ -155,17 +155,7 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->error != GRPC_ERROR_NONE) {
-    if (error == GRPC_ERROR_NONE) {
-      error = GRPC_ERROR_REF(calld->error);
-    } else if (error != calld->error) {
-      error = grpc_error_add_child(error, GRPC_ERROR_REF(calld->error));
-    } else {
-      error = GRPC_ERROR_REF(error);
-    }
-  } else {
-    error = GRPC_ERROR_REF(error);
-  }
+  error = grpc_error_maybe_add_child(error, calld->error);
   // Invoke the next callback.
   GRPC_CLOSURE_RUN(calld->next_recv_trailing_metadata_ready, error);
 }
