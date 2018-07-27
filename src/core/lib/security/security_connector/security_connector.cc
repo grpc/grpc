@@ -1187,8 +1187,10 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  const bool use_system_roots =
-      gpr_is_true(gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR));
+  char* use_system_roots_env_value =
+      gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
+  const bool use_system_roots = gpr_is_true(use_system_roots_env_value);
+  gpr_free(use_system_roots_env_value);
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
