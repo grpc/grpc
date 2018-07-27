@@ -41,21 +41,23 @@ class RefCountedPtr {
     value_ = value;
   }
 
-  // Move support.
+  // Move ctors.
   RefCountedPtr(RefCountedPtr&& other) {
     value_ = other.value_;
     other.value_ = nullptr;
-  }
-  RefCountedPtr& operator=(RefCountedPtr&& other) {
-    if (value_ != nullptr) value_->Unref();
-    value_ = other.value_;
-    other.value_ = nullptr;
-    return *this;
   }
   template <typename Y>
   RefCountedPtr(RefCountedPtr<Y>&& other) {
     value_ = other.value_;
     other.value_ = nullptr;
+  }
+
+  // Move assignment.
+  RefCountedPtr& operator=(RefCountedPtr&& other) {
+    if (value_ != nullptr) value_->Unref();
+    value_ = other.value_;
+    other.value_ = nullptr;
+    return *this;
   }
   template <typename Y>
   RefCountedPtr& operator=(RefCountedPtr<Y>&& other) {
@@ -65,11 +67,18 @@ class RefCountedPtr {
     return *this;
   }
 
-  // Copy support.
+  // Copy ctors.
   RefCountedPtr(const RefCountedPtr& other) {
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = other.value_;
   }
+  template <typename Y>
+  RefCountedPtr(const RefCountedPtr<Y>& other) {
+    if (other.value_ != nullptr) other.value_->IncrementRefCount();
+    value_ = other.value_;
+  }
+
+  // Copy assignment.
   RefCountedPtr& operator=(const RefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
@@ -77,11 +86,6 @@ class RefCountedPtr {
     if (value_ != nullptr) value_->Unref();
     value_ = other.value_;
     return *this;
-  }
-  template <typename Y>
-  RefCountedPtr(const RefCountedPtr<Y>& other) {
-    if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    value_ = other.value_;
   }
   template <typename Y>
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
