@@ -342,11 +342,13 @@ static grpc_ssl_roots_override_result override_roots_success(
 
 // Return GRPC_SSL_ROOTS_OVERRIDE_FAIL so the ComputePemRootCerts function
 // executes the system roots branch for testing.
+#ifdef GPR_LINUX
 static grpc_ssl_roots_override_result override_roots_fail(
     char** pem_root_certs) {
   *pem_root_certs = gpr_strdup(roots_for_override_api);
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
 }
+#endif //GPR_LINUX
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
     char** pem_root_certs) {
@@ -462,6 +464,7 @@ static void test_default_ssl_roots(void) {
   grpc_set_ssl_roots_override_callback(override_roots_fail);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(roots));
+  grpc_slice_unref(roots);
 #endif /* GPR_LINUX */
 
   /* Cleanup. */
@@ -494,14 +497,19 @@ static void test_cert_bundle_creation() {
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
       grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting();
-  GPR_ASSERT(strcmp(grpc_slice_to_c_string(result_slice),
-                    grpc_slice_to_c_string(roots_bundle)) == 0);
+  const char* result_str = grpc_slice_to_c_string(result_slice);
+  const char* bundle_str = grpc_slice_to_c_string(roots_bundle);
+  GPR_ASSERT(strcmp(result_str, bundle_str) == 0);
   /* TODO: add tests for branches in CreateRootCertsBundle that return empty
    * slices. */
 
   /* Cleanup. */
   unsetenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
   unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+  gpr_free(result_str);
+  gpr_free(bundle_str);
+  grpc_slice_unref(roots_bundle);
+  grpc_slice_unref(result_slice);
 }
 #endif /* GPR_LINUX */
 
