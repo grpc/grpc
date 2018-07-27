@@ -75,7 +75,7 @@ struct grpc_ares_ev_driver {
   /** request object that's using this ev driver */
   grpc_ares_request* request;
   /** Owned by the ev_driver. Creates new GrpcPolledFd's */
-  grpc_core::GrpcPolledFdFactory* polled_fd_factory;
+  grpc_core::UniquePtr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
 };
 
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
@@ -94,9 +94,8 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
     GPR_ASSERT(ev_driver->fds == nullptr);
     GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
     ares_destroy(ev_driver->channel);
-    grpc_core::Delete(ev_driver->polled_fd_factory);
     grpc_ares_complete_request_locked(ev_driver->request);
-    gpr_free(ev_driver);
+    grpc_core::Delete(ev_driver);
   }
 }
 
@@ -121,8 +120,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               grpc_combiner* combiner,
                                               grpc_ares_request* request) {
-  *ev_driver = static_cast<grpc_ares_ev_driver*>(
-      gpr_malloc(sizeof(grpc_ares_ev_driver)));
+  *ev_driver = grpc_core::New<grpc_ares_ev_driver>();
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;

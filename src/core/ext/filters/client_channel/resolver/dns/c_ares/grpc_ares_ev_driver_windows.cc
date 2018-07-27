@@ -525,8 +525,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-GrpcPolledFdFactory* NewGrpcPolledFdFactory(grpc_combiner* combiner) {
-  return New<GrpcPolledFdFactoryWindows>(combiner);
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
+  return UniquePtr<GrpcPolledFdFactory>(
+      New<GrpcPolledFdFactoryWindows>(combiner));
 }
 
 }  // namespace grpc_core

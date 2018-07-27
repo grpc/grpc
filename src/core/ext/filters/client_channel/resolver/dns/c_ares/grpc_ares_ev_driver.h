@@ -98,7 +98,7 @@ class GrpcPolledFdFactory {
   GRPC_ABSTRACT_BASE_CLASS
 };
 
-GrpcPolledFdFactory* NewGrpcPolledFdFactory(grpc_combiner* combiner);
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner);
 
 }  // namespace grpc_core
 
