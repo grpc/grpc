@@ -89,6 +89,7 @@ void ValidateChannelTrace(ChannelTrace* tracer,
   grpc_json* json = tracer->RenderJson();
   EXPECT_NE(json, nullptr);
   char* json_str = grpc_json_dump_to_string(json, 0);
+  gpr_log(GPR_ERROR, "%s", json_str);
   grpc_json_destroy(json);
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
   grpc_json* parsed_json = grpc_json_parse_string(json_str);
@@ -156,7 +157,7 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   ChannelFixture channel1(GetParam());
   RefCountedPtr<ChannelNode> sc1 =
       MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
   ValidateChannelTrace(&tracer, 3, GetParam());
@@ -174,10 +175,10 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   ChannelFixture channel2(GetParam());
   RefCountedPtr<ChannelNode> sc2 =
       MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("LB channel two created"), sc2);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   ValidateChannelTrace(&tracer, 7, GetParam());
@@ -203,7 +204,7 @@ TEST_P(ChannelTracerTest, TestNesting) {
   ChannelFixture channel1(GetParam());
   RefCountedPtr<ChannelNode> sc1 =
       MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
   ValidateChannelTrace(&tracer, 3, GetParam());
@@ -212,7 +213,7 @@ TEST_P(ChannelTracerTest, TestNesting) {
   RefCountedPtr<ChannelNode> conn1 =
       MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
   // nesting one level deeper.
-  sc1->counter_and_tracer()->trace()->AddTraceEventReferencingChannel(
+  sc1->counter_and_tracer()->trace()->AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("connection one created"), conn1);
   ValidateChannelTrace(&tracer, 3, GetParam());
@@ -224,12 +225,12 @@ TEST_P(ChannelTracerTest, TestNesting) {
   ChannelFixture channel3(GetParam());
   RefCountedPtr<ChannelNode> sc2 =
       MakeRefCounted<ChannelNode>(channel3.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel two created"), sc2);
   // this trace should not get added to the parents children since it is already
   // present in the tracer.
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   AddSimpleTrace(&tracer);
