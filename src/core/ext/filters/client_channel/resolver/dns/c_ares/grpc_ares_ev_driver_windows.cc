@@ -509,7 +509,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
                                       grpc_combiner* combiner) override {
-    GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_->LookupPolledFd(as);
+    GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->OnGottenIntoDriverList();
