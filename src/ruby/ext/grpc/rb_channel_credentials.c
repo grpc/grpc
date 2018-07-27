@@ -125,70 +125,82 @@ static ID id_pem_private_key;
 /* The attribute used on the mark object to hold the pem_private_key. */
 static ID id_pem_cert_chain;
 
-/* The attribute used on the mark object to hold the checkServerIdentity callback. */
+/* The attribute used on the mark object to hold the checkServerIdentity
+ * callback. */
 static ID id_check_server_identity_cb;
 
-
 struct verify_callback_params {
-    VALUE cb;
-    const char *servername;
-    const char *cert;
+  VALUE cb;
+  const char* servername;
+  const char* cert;
 };
 
 static VALUE verify_peer_callback_try_wrapper(VALUE arg) {
-    VALUE cb;
-    VALUE servername;
-    VALUE cert;
+  VALUE cb;
+  VALUE servername;
+  VALUE cert;
 
-    cb = rb_ary_entry(arg, 0);
-    servername = rb_ary_entry(arg, 1);
-    cert = rb_ary_entry(arg, 2);
+  cb = rb_ary_entry(arg, 0);
+  servername = rb_ary_entry(arg, 1);
+  cert = rb_ary_entry(arg, 2);
 
-    if (rb_class_of(cb) == rb_cProc) {
-        rb_funcall(cb, rb_intern("call"), 2, servername, cert);
-    } else if (rb_class_of(cb) == rb_cSymbol) {
-        rb_funcall(rb_class_of(cb), rb_to_id(cb), 2, servername, cert);
-    } else {
-        printf("Callback argument in verify_peer_callback_try_wrapper is an invalid type!\n");
-        return INT2NUM(1);
-    }
-    return INT2NUM(0);
-}
-
-static VALUE verify_peer_callback_catch_wrapper(VALUE arg, VALUE exception_object) {
-    // Catch just always returns a failure signal.
+  if (rb_class_of(cb) == rb_cProc) {
+    rb_funcall(cb, rb_intern("call"), 2, servername, cert);
+  } else if (rb_class_of(cb) == rb_cSymbol) {
+    rb_funcall(rb_class_of(cb), rb_to_id(cb), 2, servername, cert);
+  } else {
+    printf(
+        "Callback argument in verify_peer_callback_try_wrapper is an invalid "
+        "type!\n");
     return INT2NUM(1);
+  }
+  return INT2NUM(0);
 }
 
-/* Before we jump back from native code (which doesn't have the GVL), it's important
-   to re-acquire it otherwise badness can happen. So this method should be invoked
-   with the GVL (i.e. by using the rb_thread_call_with_gvl() method). */
-static void* invoke_rb_verify_callback_with_gvl(void *arg) {
-    VALUE result;
-    VALUE passthrough;
-    struct verify_callback_params* params = (struct verify_callback_params*)arg;
-
-    passthrough = rb_ary_new();
-    rb_ary_store(passthrough, 0, params->cb);
-    rb_ary_store(passthrough, 1, params->servername != NULL ? rb_str_new2(params->servername) : Qnil);
-    rb_ary_store(passthrough, 2, params->cert != NULL ? rb_str_new2(params->cert) : Qnil);
-
-    result = rb_rescue(verify_peer_callback_try_wrapper, passthrough, verify_peer_callback_catch_wrapper, Qnil);
-    return NUM2INT(result) == 0 ? NULL : arg;
+static VALUE verify_peer_callback_catch_wrapper(VALUE arg,
+                                                VALUE exception_object) {
+  // Catch just always returns a failure signal.
+  return INT2NUM(1);
 }
 
-static int verify_peer_callback_wrapper(const char* servername, const char* cert, void* userdata) {
-    struct verify_callback_params params;
-    if (userdata == NULL) {
-        printf("Error! Callback function wasn't set!\n");
-        return 1;
-    }
+/* Before we jump back from native code (which doesn't have the GVL), it's
+   important to re-acquire it otherwise badness can happen. So this method
+   should be invoked with the GVL (i.e. by using the rb_thread_call_with_gvl()
+   method). */
+static void* invoke_rb_verify_callback_with_gvl(void* arg) {
+  VALUE result;
+  VALUE passthrough;
+  struct verify_callback_params* params = (struct verify_callback_params*)arg;
 
-    params.cb = (VALUE)userdata;
-    params.servername = servername;
-    params.cert = cert;
+  passthrough = rb_ary_new();
+  rb_ary_store(passthrough, 0, params->cb);
+  rb_ary_store(
+      passthrough, 1,
+      params->servername != NULL ? rb_str_new2(params->servername) : Qnil);
+  rb_ary_store(passthrough, 2,
+               params->cert != NULL ? rb_str_new2(params->cert) : Qnil);
 
-    return rb_thread_call_with_gvl(invoke_rb_verify_callback_with_gvl, &params) == NULL ? 0 : 1;
+  result = rb_rescue(verify_peer_callback_try_wrapper, passthrough,
+                     verify_peer_callback_catch_wrapper, Qnil);
+  return NUM2INT(result) == 0 ? NULL : arg;
+}
+
+static int verify_peer_callback_wrapper(const char* servername,
+                                        const char* cert, void* userdata) {
+  struct verify_callback_params params;
+  if (userdata == NULL) {
+    printf("Error! Callback function wasn't set!\n");
+    return 1;
+  }
+
+  params.cb = (VALUE)userdata;
+  params.servername = servername;
+  params.cert = cert;
+
+  return rb_thread_call_with_gvl(invoke_rb_verify_callback_with_gvl, &params) ==
+                 NULL
+             ? 0
+             : 1;
 }
 
 /*
@@ -205,8 +217,8 @@ static int verify_peer_callback_wrapper(const char* servername, const char* cert
     pem_root_certs: (optional) PEM encoding of the server root certificate
     pem_private_key: (optional) PEM encoding of the client's private key
     pem_cert_chain: (optional) PEM encoding of the client's cert chain
-    verify_options: (optional) A Hash with key-value pairs defining additional peer verification options
-    Initializes Credential instances. */
+    verify_options: (optional) A Hash with key-value pairs defining additional
+  peer verification options Initializes Credential instances. */
 static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
                                               VALUE self) {
   VALUE pem_root_certs = Qnil;
@@ -233,22 +245,26 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
     pem_root_certs_cstr = RSTRING_PTR(pem_root_certs);
   }
   if (options_hash != Qnil) {
-    option_value = rb_hash_aref(options_hash, rb_str_new2("checkServerIdentity"));
+    option_value =
+        rb_hash_aref(options_hash, rb_str_new2("checkServerIdentity"));
     if (option_value != Qnil) {
-      if (rb_class_of(option_value) != rb_cProc && rb_class_of(option_value) != rb_cSymbol) {
-          rb_raise(rb_eTypeError, "Expected Proc or Symbol callback");
-          return Qnil;
+      if (rb_class_of(option_value) != rb_cProc &&
+          rb_class_of(option_value) != rb_cSymbol) {
+        rb_raise(rb_eTypeError, "Expected Proc or Symbol callback");
+        return Qnil;
       }
       vp_options.verify_peer_callback = verify_peer_callback_wrapper;
       vp_options.verify_peer_callback_userdata = (void*)option_value;
-      // The userdata object is marked on the credentials object as a hidden private member, so it will be automatically
-      // garbage collected by ruby (same as the PEM certs on the credentials object).
+      // The userdata object is marked on the credentials object as a hidden
+      // private member, so it will be automatically garbage collected by ruby
+      // (same as the PEM certs on the credentials object).
       vp_options.verify_peer_destruct = NULL;
       rb_ivar_set(self, id_check_server_identity_cb, option_value);
     }
   }
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, &vp_options, NULL);
+    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, &vp_options,
+                                        NULL);
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);

@@ -156,10 +156,8 @@ class AuthContextTest(unittest.TestCase):
         server.start()
 
         callbackResult = True
-        callbackReceiver = {
-            "host": None,
-            "cert": None
-        }
+        callbackReceiver = {"host": None, "cert": None}
+
         def checkServerIdentity(host, cert):
             callbackReceiver["host"] = host
             callbackReceiver["cert"] = cert
@@ -169,8 +167,7 @@ class AuthContextTest(unittest.TestCase):
             root_certificates=_TEST_ROOT_CERTIFICATES,
             private_key=_PRIVATE_KEY,
             certificate_chain=_CERTIFICATE_CHAIN,
-            verify_callback=checkServerIdentity
-        )
+            verify_callback=checkServerIdentity)
         channel = grpc.secure_channel(
             'localhost:{}'.format(port),
             channel_creds,
@@ -183,7 +180,8 @@ class AuthContextTest(unittest.TestCase):
                 channel_creds,
                 options=_PROPERTY_OPTIONS)
             response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackReceiver["host"].decode('utf-8'))
+            self.assertEqual(_SERVER_HOST_OVERRIDE,
+                             callbackReceiver["host"].decode('utf-8'))
             self.assertEqual(_CERTIFICATE_CHAIN, callbackReceiver["cert"])
 
             # Run a failure connect and verify we got an exception and saw expected values
@@ -196,11 +194,11 @@ class AuthContextTest(unittest.TestCase):
                 options=_PROPERTY_OPTIONS)
             with self.assertRaises(Exception):
                 response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackReceiver["host"].decode('utf-8'))
+            self.assertEqual(_SERVER_HOST_OVERRIDE,
+                             callbackReceiver["host"].decode('utf-8'))
             self.assertEqual(_CERTIFICATE_CHAIN, callbackReceiver["cert"])
         finally:
             server.stop(None)
-
 
     def _do_one_shot_client_rpc(self, channel_creds, channel_options, port,
                                 expect_ssl_session_reused):
