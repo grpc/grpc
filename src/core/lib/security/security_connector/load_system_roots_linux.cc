@@ -161,6 +161,7 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
     }
   }
   closedir(ca_directory);
+  gpr_free((char*)found_cert_dir);  // Casting to non-const to fix memory leak.
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
   return bundle_slice;
 }
