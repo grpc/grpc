@@ -185,10 +185,6 @@ class Subclass : public BaseClass {
   Subclass() {}
 };
 
-void FunctionTakingBaseClass(RefCountedPtr<BaseClass> p) {}
-
-void FunctionTakingSubclass(RefCountedPtr<Subclass> p) {}
-
 TEST(RefCountedPtr, ConstructFromSubclass) {
   RefCountedPtr<BaseClass> p(New<Subclass>());
 }
@@ -222,9 +218,17 @@ TEST(RefCountedPtr, EqualityWithSubclass) {
   EXPECT_EQ(b, s);
 }
 
+void FunctionTakingBaseClass(RefCountedPtr<BaseClass> p) {
+  p.reset();  // To appease clang-tidy.
+}
+
 TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingBaseClass) {
   RefCountedPtr<Subclass> p = MakeRefCounted<Subclass>();
   FunctionTakingBaseClass(p);
+}
+
+void FunctionTakingSubclass(RefCountedPtr<Subclass> p) {
+  p.reset();  // To appease clang-tidy.
 }
 
 TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingSubclass) {
