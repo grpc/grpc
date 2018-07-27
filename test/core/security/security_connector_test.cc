@@ -497,8 +497,8 @@ static void test_cert_bundle_creation() {
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
       grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting();
-  const char* result_str = grpc_slice_to_c_string(result_slice);
-  const char* bundle_str = grpc_slice_to_c_string(roots_bundle);
+  char* result_str = grpc_slice_to_c_string(result_slice);
+  char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   GPR_ASSERT(strcmp(result_str, bundle_str) == 0);
   /* TODO: add tests for branches in CreateRootCertsBundle that return empty
    * slices. */
