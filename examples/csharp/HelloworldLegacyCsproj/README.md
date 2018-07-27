@@ -5,8 +5,8 @@ BACKGROUND
 -------------
 This is a different version of the helloworld example, using the old-style .csproj
 files supported by VS2013 and VS2015 (and older versions of mono).
-You can still use gRPC with the old-style .csproj files, but using the new-style
-.csproj projects (supported by VS2017 and dotnet SDK) is recommended.
+You can still use gRPC with the old-style .csproj files, but [using the new-style
+.csproj projects](../helloworld/README.md) (supported by VS2017 and dotnet SDK) is recommended.
 
 For this sample, we've already generated the server and client stubs from [helloworld.proto][].
 
