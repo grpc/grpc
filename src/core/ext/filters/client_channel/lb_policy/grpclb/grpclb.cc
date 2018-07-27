@@ -1222,8 +1222,8 @@ bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
       gpr_log(GPR_INFO, "[grpclb %p] about to PICK from RR %p", this,
               rr_policy_.get());
     }
-    pick_done = PickFromRoundRobinPolicyLocked(false /* force_async */, pp,
-                                               error);
+    pick_done =
+        PickFromRoundRobinPolicyLocked(false /* force_async */, pp, error);
   } else {  // rr_policy_ == NULL
     if (pick->on_complete == nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
