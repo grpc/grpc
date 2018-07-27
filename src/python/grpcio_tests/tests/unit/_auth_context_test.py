@@ -156,13 +156,13 @@ class AuthContextTest(unittest.TestCase):
         server.start()
 
         callbackResult = True
-        callbackHost = None
-        callbackCert = None
+        callbackReceiver = {
+            "host": None,
+            "cert": None
+        }
         def checkServerIdentity(host, cert):
-            nonlocal callbackHost
-            nonlocal callbackCert
-            callbackHost = host
-            callbackCert = cert
+            callbackReceiver["host"] = host
+            callbackReceiver["cert"] = cert
             return callbackResult
 
         channel_creds = grpc.ssl_channel_credentials(
@@ -183,21 +183,21 @@ class AuthContextTest(unittest.TestCase):
                 channel_creds,
                 options=_PROPERTY_OPTIONS)
             response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackHost.decode('utf-8'))
-            self.assertEqual(_CERTIFICATE_CHAIN, callbackCert)
+            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackReceiver["host"].decode('utf-8'))
+            self.assertEqual(_CERTIFICATE_CHAIN, callbackReceiver["cert"])
 
             # Run a failure connect and verify we got an exception and saw expected values
             callbackResult = False
-            callbackHost = None
-            callbackCert = None
+            callbackReceiver["host"] = None
+            callbackReceiver["cert"] = None
             channel = grpc.secure_channel(
                 'localhost:{}'.format(port),
                 channel_creds,
                 options=_PROPERTY_OPTIONS)
             with self.assertRaises(Exception):
                 response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackHost.decode('utf-8'))
-            self.assertEqual(_CERTIFICATE_CHAIN, callbackCert)
+            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackReceiver["host"].decode('utf-8'))
+            self.assertEqual(_CERTIFICATE_CHAIN, callbackReceiver["cert"])
         finally:
             server.stop(None)
 
