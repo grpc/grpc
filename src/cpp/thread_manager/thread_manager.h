@@ -100,7 +100,7 @@ class ThreadManager {
   // ThreadManager::MarkAsCompleted()
   //
   // WHY IS THIS NEEDED?:
-  // When a thread terminates, some other tread *must* call Join() on that
+  // When a thread terminates, some other thread *must* call Join() on that
   // thread so that the resources are released. Having a WorkerThread wrapper
   // will make this easier. Once Run() completes, each thread calls the
   // following two functions:
@@ -113,8 +113,9 @@ class ThreadManager {
   //    in the completed_threads_ list  (since a thread cannot call Join() on
   //    itself, it calls CleanupCompletedThreads() *before* calling
   //    MarkAsCompleted())
-  // TODO: sreek - consider creating the threads 'detached' so that Join() need
-  // not be called
+  //
+  // TODO(sreek): Consider creating the threads 'detached' so that Join() need
+  // not be called (and the need for this WorkerThread class is eliminated)
   class WorkerThread {
    public:
     WorkerThread(ThreadManager* thd_mgr);

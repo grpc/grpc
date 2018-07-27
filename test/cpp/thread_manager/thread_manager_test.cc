@@ -124,16 +124,18 @@ static void TestPollAndWork() {
       2 /* min_pollers */, 10 /* max_pollers */, 10 /* poll_duration_ms */,
       1 /* work_duration_ms */, 50 /* max_poll_calls */};
 
-  grpc::ThreadManagerTest test_thd_mgr("TestThreadManager", rq, settings);
+  grpc::ThreadManagerTest test_thread_mgr("TestThreadManager", rq, settings);
   grpc_resource_quota_unref(rq);
 
-  test_thd_mgr.Initialize();  // Start the thread manager
-  test_thd_mgr.Wait();        // Wait for all threads to finish
+  test_thread_mgr.Initialize();  // Start the thread manager
+  test_thread_mgr.Wait();        // Wait for all threads to finish
 
   // Verify that The number of times DoWork() was called is equal to the number
   // of times WORK_FOUND was returned
-  gpr_log(GPR_DEBUG, "DoWork() called %d times", test_thd_mgr.GetNumDoWork());
-  GPR_ASSERT(test_thd_mgr.GetNumDoWork() == test_thd_mgr.GetNumWorkFound());
+  gpr_log(GPR_DEBUG, "DoWork() called %d times",
+          test_thread_mgr.GetNumDoWork());
+  GPR_ASSERT(test_thread_mgr.GetNumDoWork() ==
+             test_thread_mgr.GetNumWorkFound());
 }
 
 static void TestThreadQuota() {
@@ -151,18 +153,20 @@ static void TestThreadQuota() {
   // Create two thread managers (but with same resource quota). This means
   // that the max number of active threads across BOTH the thread managers
   // cannot be greater than kMaxNumthreads
-  grpc::ThreadManagerTest test_thd_mgr_1("TestThreadManager-1", rq, settings);
-  grpc::ThreadManagerTest test_thd_mgr_2("TestThreadManager-2", rq, settings);
+  grpc::ThreadManagerTest test_thread_mgr_1("TestThreadManager-1", rq,
+                                            settings);
+  grpc::ThreadManagerTest test_thread_mgr_2("TestThreadManager-2", rq,
+                                            settings);
   // It is ok to unref resource quota before starting thread managers.
   grpc_resource_quota_unref(rq);
 
   // Start both thread managers
-  test_thd_mgr_1.Initialize();
-  test_thd_mgr_2.Initialize();
+  test_thread_mgr_1.Initialize();
+  test_thread_mgr_2.Initialize();
 
   // Wait for both to finish
-  test_thd_mgr_1.Wait();
-  test_thd_mgr_2.Wait();
+  test_thread_mgr_1.Wait();
+  test_thread_mgr_2.Wait();
 
   // Now verify that the total number of active threads in either thread manager
   // never exceeds kMaxNumThreads
@@ -173,8 +177,8 @@ static void TestThreadQuota() {
   // Its okay to not test this case here. The resource quota c-core tests
   // provide enough coverage to resource quota object with multiple resource
   // users
-  int max1 = test_thd_mgr_1.GetMaxActiveThreadsSoFar();
-  int max2 = test_thd_mgr_2.GetMaxActiveThreadsSoFar();
+  int max1 = test_thread_mgr_1.GetMaxActiveThreadsSoFar();
+  int max2 = test_thread_mgr_2.GetMaxActiveThreadsSoFar();
   gpr_log(
       GPR_DEBUG,
       "MaxActiveThreads in TestThreadManager_1: %d, TestThreadManager_2: %d",

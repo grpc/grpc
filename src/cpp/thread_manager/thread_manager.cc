@@ -123,7 +123,7 @@ void ThreadManager::CleanupCompletedThreads() {
 }
 
 void ThreadManager::Initialize() {
-  if (!grpc_resource_user_alloc_threads(resource_user_, min_pollers_)) {
+  if (!grpc_resource_user_allocate_threads(resource_user_, min_pollers_)) {
     gpr_log(GPR_ERROR,
             "No thread quota available to even create the minimum required "
             "polling threads (i.e %d). Unable to start the thread manager",
@@ -165,9 +165,9 @@ void ThreadManager::MainWorkLoop() {
         break;
       case WORK_FOUND:
         // If we got work and there are now insufficient pollers and there is
-        // quota available to create a new thread,start a new poller thread
+        // quota available to create a new thread, start a new poller thread
         if (!shutdown_ && num_pollers_ < min_pollers_ &&
-            grpc_resource_user_alloc_threads(resource_user_, 1)) {
+            grpc_resource_user_allocate_threads(resource_user_, 1)) {
           num_pollers_++;
           num_threads_++;
           max_active_threads_sofar_ =
