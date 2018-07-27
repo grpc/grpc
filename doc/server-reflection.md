@@ -190,7 +190,7 @@ each language:
 - [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
 - [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md#enable-server-reflection)
 - [C++](https://grpc.io/grpc/cpp/md_doc_server_reflection_tutorial.html)
+- [C#](https://github.com/grpc/grpc/blob/master/doc/csharp/server_reflection.md)
 - Python: (tutorial not yet written)
-- C#: (tutorial not yet written)
 - Ruby: not yet implemented [#2567](https://github.com/grpc/grpc/issues/2567)
 - Node: not yet implemented [#2568](https://github.com/grpc/grpc/issues/2568)
