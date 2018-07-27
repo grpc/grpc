@@ -378,10 +378,10 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
 struct SockToPolledFdEntry {
   SockToPolledFdEntry(SOCKET s, GrpcPolledFdWindows* fd)
-      : socket(s), polled_fd(fd), next(nullptr) {}
+      : socket(s), polled_fd(fd) {}
   SOCKET socket;
   GrpcPolledFdWindows* polled_fd;
-  struct SockToPolledFdEntry* next;
+  SockToPolledFdEntry* next = nullptr;
 };
 
 /* A SockToPolledFdMap can make ares_socket_t types (SOCKET's on windows)
@@ -391,7 +391,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  SockToPolledFdMap(grpc_combiner* combiner) : head_(nullptr) {
+  SockToPolledFdMap(grpc_combiner* combiner) {
     combiner_ = GRPC_COMBINER_REF(combiner, "sock to polled fd map");
   }
 
@@ -401,8 +401,7 @@ class SockToPolledFdMap {
   }
 
   void AddNewSocket(SOCKET s, GrpcPolledFdWindows* polled_fd) {
-    SockToPolledFdEntry* new_node =
-        grpc_core::New<SockToPolledFdEntry>(s, polled_fd);
+    SockToPolledFdEntry* new_node = New<SockToPolledFdEntry>(s, polled_fd);
     new_node->next = head_;
     head_ = new_node;
   }
@@ -420,30 +419,24 @@ class SockToPolledFdMap {
 
   void RemoveEntry(SOCKET s) {
     GPR_ASSERT(head_ != nullptr);
-    SockToPolledFdEntry* prev = nullptr;
-    if (head_->socket == s) {
-      prev = head_;
-      head_ = head_->next;
-      grpc_core::Delete(prev);
-      return;
-    }
-    SockToPolledFdEntry* cur = head_;
-    while (cur->next != nullptr) {
-      if (cur->next->socket == s) {
-        prev = cur->next;
-        cur->next = cur->next->next;
-        grpc_core::Delete(prev);
+    SockToPolledFdEntry** prev = &head_;
+    for (SockToPolledFdEntry* node = head_; node != nullptr;
+         node = node->next) {
+      if (node->socket == s) {
+        *prev = node->next;
+        Delete(node);
         return;
       }
-      cur = cur->next;
+      prev = &node->next;
     }
     abort();
   }
 
-  /* These virtual socket functions called from within c-ares
+  /* These virtual socket functions are called from within the c-ares
    * library. These methods generally dispatch those socket calls to the
-   * appropriate GrpcPolledFdWindows. The virtual "socket" and "close" functions
-   * are special and instead create/add and remove/destroy GrpcPolledFdWindows.
+   * appropriate GrpcPolledFdWindows. The virtual "socket" and "close" methods
+   * are special and instead create/add and remove/destroy GrpcPolledFdWindows
+   * objects.
    */
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
@@ -451,9 +444,9 @@ class SockToPolledFdMap {
     if (s == INVALID_SOCKET) {
       return s;
     }
-    set_non_block(s);
+    grpc_tcp_set_non_block(s);
     GrpcPolledFdWindows* polled_fd =
-        grpc_core::New<GrpcPolledFdWindows>(s, map->combiner_);
+        New<GrpcPolledFdWindows>(s, map->combiner_);
     map->AddNewSocket(s, polled_fd);
     return s;
   }
@@ -496,11 +489,11 @@ class SockToPolledFdMap {
   }
 
  private:
-  SockToPolledFdEntry* head_;
+  SockToPolledFdEntry* head_ = nullptr;
   grpc_combiner* combiner_;
 };
 
-struct ares_socket_functions custom_ares_sock_funcs = {
+const struct ares_socket_functions custom_ares_sock_funcs = {
     &SockToPolledFdMap::Socket /* socket */,
     &SockToPolledFdMap::CloseSocket /* close */,
     &SockToPolledFdMap::Connect /* connect */,
@@ -511,30 +504,29 @@ struct ares_socket_functions custom_ares_sock_funcs = {
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
   GrpcPolledFdFactoryWindows(grpc_combiner* combiner)
-      : sock_to_polled_fd_map_(grpc_core::UniquePtr<SockToPolledFdMap>(
-            grpc_core::New<SockToPolledFdMap>(combiner))) {}
+      : sock_to_polled_fd_map_(combiner) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
                                       grpc_combiner* combiner) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_->LookupPolledFd(as);
-    // Set a flag so that the virtual socket "close" function knows it
-    // it doesn't need to call ShutdownLocked, since the now driver will.
+    // Set a flag so that the virtual socket "close" method knows it
+    // doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->OnGottenIntoDriverList();
     return polled_fd;
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &custom_ares_sock_funcs,
-                              sock_to_polled_fd_map_.get());
+                              &sock_to_polled_fd_map_);
   }
 
  private:
-  grpc_core::UniquePtr<SockToPolledFdMap> sock_to_polled_fd_map_;
+  SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
 GrpcPolledFdFactory* NewGrpcPolledFdFactory(grpc_combiner* combiner) {
-  return grpc_core::New<GrpcPolledFdFactoryWindows>(combiner);
+  return New<GrpcPolledFdFactoryWindows>(combiner);
 }
 
 }  // namespace grpc_core

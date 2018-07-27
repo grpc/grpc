@@ -220,8 +220,8 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   TestCancelActiveDNSQuery(&args);
   // TODO(apolcyn): This test relies on the assumption
   // that cancelling a c-ares query will flush out all callbacks on the
-  // current exec ctx, which is true on posix platforms but not on Windows
-  // ,because fd shutdown on Windows requires a trip through the
+  // current exec ctx, which is true on posix platforms but not on Windows,
+  // because fd shutdown on Windows requires a trip through the
   // polling loop to schedule the callback.
 #ifndef GPR_WINDOWS
   EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
