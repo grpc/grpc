@@ -16,6 +16,9 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
+
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX
@@ -65,4 +68,5 @@ class SystemRootCerts {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
+#endif
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H */
