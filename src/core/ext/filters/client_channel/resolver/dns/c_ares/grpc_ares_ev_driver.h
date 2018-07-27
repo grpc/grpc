@@ -82,7 +82,7 @@ class GrpcPolledFd {
 };
 
 /* A GrpcPolledFdFactory is 1-to-1 with and owned by the
- * ares event driver. It knows how to create and destroy GrpcPolledFd's
+ * ares event driver. It knows how to create GrpcPolledFd's
  * for the current platform, and the ares driver uses it for all of
  * its fd's. */
 class GrpcPolledFdFactory {
@@ -92,8 +92,6 @@ class GrpcPolledFdFactory {
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
       grpc_combiner* combiner) GRPC_ABSTRACT;
-  /* Destroys a GrpcPolledFd */
-  virtual void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) GRPC_ABSTRACT;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) GRPC_ABSTRACT;
 

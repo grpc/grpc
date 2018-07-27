@@ -263,22 +263,25 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
     }
     std::vector<int> sockets;
     for (size_t i = 0; i < 50; i++) {
-      SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+      SOCKET s = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+                           WSA_FLAG_OVERLAPPED);
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
       gpr_log(GPR_DEBUG, "Opened socket: %d", s);
       char val = 1;
-      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != SOCKET_ERROR)
-          << "Failed to set socketopt reuseaddr. WSA error: " + std::to_string(WSAGetLastError());
+      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
+                  SOCKET_ERROR)
+          << "Failed to set socketopt reuseaddr. WSA error: " +
+                 std::to_string(WSAGetLastError());
       ASSERT_TRUE(set_non_block(s) == GRPC_ERROR_NONE)
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +
-             " to [::1]:" + std::to_string(dummy_port) +
-             ". WSA error: " + std::to_string(WSAGetLastError());
-      ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR) << "Failed to listen on socket " +
-             std::to_string(s) +
-             ". WSA error: " + std::to_string(WSAGetLastError());
+                 " to [::1]:" + std::to_string(dummy_port) +
+                 ". WSA error: " + std::to_string(WSAGetLastError());
+      ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR)
+          << "Failed to listen on socket " + std::to_string(s) +
+                 ". WSA error: " + std::to_string(WSAGetLastError());
       sockets.push_back(s);
     }
     // Do a non-blocking accept followed by a close on all of those sockets.

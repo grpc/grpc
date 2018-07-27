@@ -105,8 +105,7 @@ static void fd_node_destroy_locked(fd_node* fdn) {
   GPR_ASSERT(!fdn->readable_registered);
   GPR_ASSERT(!fdn->writable_registered);
   GPR_ASSERT(fdn->already_shutdown);
-  fdn->ev_driver->polled_fd_factory->DestroyGrpcPolledFdLocked(
-      fdn->grpc_polled_fd);
+  grpc_core::Delete(fdn->grpc_polled_fd);
   gpr_free(fdn);
 }
 

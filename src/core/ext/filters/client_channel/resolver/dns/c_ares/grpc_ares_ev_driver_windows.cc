@@ -50,16 +50,15 @@ struct iovec {
 
 namespace grpc_core {
 
-/* c-ares creates its own sockets and is meant to read
- * them when readable and write them when writeable. To fit this socket usage
- * into the grpc windows poller (which gives notifications when attempted reads
- * and
- * writes are actually fulfilled rather than possible), this GrpcPolledFdWindows
- * class takes advantage of the ares_set_socket_functions API and acts as a
- * virtual socket. It holds its own read and write buffers which are written
- * to and read from c-ares and are used with the grpc windows poller, and it,
- * e.g., manufactures virtual socket error codes when it e.g. needs to do an
- * async read. */
+/* c-ares creates its own sockets and is meant to read them when readable and
+ * write them when writeable. To fit this socket usage model into the grpc
+ * windows poller (which gives notifications when attempted reads and writes are
+ * actually fulfilled rather than possible), this GrpcPolledFdWindows class
+ * takes advantage of the ares_set_socket_functions API and acts as a virtual
+ * socket. It holds its own read and write buffers which are written to and read
+ * from c-ares and are used with the grpc windows poller, and it, e.g.,
+ * manufactures virtual socket error codes when it e.g. needs to tell the c-ares
+ * library to wait for an async read. */
 class GrpcPolledFdWindows : public GrpcPolledFd {
  public:
   enum WriteState {
@@ -69,8 +68,11 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as, grpc_combiner* combiner) {
-    name_ = nullptr;
+  GrpcPolledFdWindows(ares_socket_t as, grpc_combiner* combiner)
+      : read_buf_(grpc_empty_slice()),
+        write_buf_(grpc_empty_slice()),
+        write_state_(WRITE_IDLE),
+        has_gotten_into_driver_list_(false) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, as);
     winsocket_ = grpc_winsocket_create(as, name_);
     combiner_ = GRPC_COMBINER_REF(combiner, name_);
@@ -80,12 +82,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     GRPC_CLOSURE_INIT(&outer_write_closure_,
                       &GrpcPolledFdWindows::OnIocpWriteable, this,
                       grpc_combiner_scheduler(combiner_));
-    read_buf_ = grpc_empty_slice();
-    write_buf_ = grpc_empty_slice();
-    write_state_ = WRITE_IDLE;
-    has_gotten_into_driver_list_ = false;
-    read_closure_ = nullptr;
-    write_closure_ = nullptr;
   }
 
   ~GrpcPolledFdWindows() {
@@ -370,13 +366,13 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
   grpc_slice write_buf_;
-  grpc_closure* read_closure_;
-  grpc_closure* write_closure_;
+  grpc_closure* read_closure_ = nullptr;
+  grpc_closure* write_closure_ = nullptr;
   grpc_closure outer_read_closure_;
   grpc_closure outer_write_closure_;
   grpc_winsocket* winsocket_;
   WriteState write_state_;
-  char* name_;
+  char* name_ = nullptr;
   bool has_gotten_into_driver_list_;
 };
 
@@ -531,10 +527,6 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &custom_ares_sock_funcs,
                               sock_to_polled_fd_map_.get());
-  }
-
-  void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) override {
-    grpc_core::Delete(polled_fd);
   }
 
  private:

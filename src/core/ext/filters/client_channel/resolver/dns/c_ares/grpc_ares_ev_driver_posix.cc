@@ -95,10 +95,6 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
-
-  void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) override {
-    grpc_core::Delete(polled_fd);
-  }
 };
 
 GrpcPolledFdFactory* NewGrpcPolledFdFactory(grpc_combiner* combiner) {
