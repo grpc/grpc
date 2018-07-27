@@ -18,11 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#if GRPC_ARES == 1 && !defined(GRPC_UV)
 
 #include <ares.h>
 #include <string.h>
-#include <sys/ioctl.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
@@ -32,7 +31,6 @@
 #include <grpc/support/time.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -314,4 +312,4 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   }
 }
 
-#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) */
+#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
