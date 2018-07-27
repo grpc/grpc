@@ -187,8 +187,8 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  sc1.reset(nullptr);
-  sc2.reset(nullptr);
+  sc1.reset();
+  sc2.reset();
 }
 
 // Test a case in which the parent channel has subchannels and the subchannels
@@ -234,9 +234,9 @@ TEST_P(ChannelTracerTest, TestNesting) {
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 8, GetParam());
-  sc1.reset(nullptr);
-  sc2.reset(nullptr);
-  conn1.reset(nullptr);
+  sc1.reset();
+  sc2.reset();
+  conn1.reset();
 }
 
 INSTANTIATE_TEST_CASE_P(ChannelTracerTestSweep, ChannelTracerTest,

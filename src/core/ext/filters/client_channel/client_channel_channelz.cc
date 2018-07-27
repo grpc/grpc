@@ -142,8 +142,8 @@ grpc_arg ClientChannelNode::CreateChannelArg() {
 RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
     grpc_channel* channel, size_t channel_tracer_max_nodes,
     bool is_top_level_channel) {
-  return MakePolymorphicRefCounted<ChannelNode, ClientChannelNode>(
-      channel, channel_tracer_max_nodes, is_top_level_channel);
+  return MakeRefCounted<ClientChannelNode>(channel, channel_tracer_max_nodes,
+                                           is_top_level_channel);
 }
 
 SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
