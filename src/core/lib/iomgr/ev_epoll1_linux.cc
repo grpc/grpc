@@ -140,10 +140,6 @@ struct grpc_fd {
 
   struct grpc_fd* freelist_next;
 
-  /* The pollset that last noticed that the fd is readable. The actual type
-   * stored in this is (grpc_pollset *) */
-  gpr_atm read_notifier_pollset;
-
   grpc_iomgr_object iomgr_object;
 };
 
@@ -293,7 +289,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = nullptr;
 
@@ -376,11 +371,6 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   gpr_mu_unlock(&fd_freelist_mu);
 }
 
-static grpc_pollset* fd_get_read_notifier_pollset(grpc_fd* fd) {
-  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
-  return (grpc_pollset*)notifier;
-}
-
 static bool fd_is_shutdown(grpc_fd* fd) {
   return fd->read_closure->IsShutdown();
 }
@@ -397,17 +387,7 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   fd->error_closure->NotifyOn(closure);
 }
 
-static void fd_set_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
-
-static void fd_set_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
-
-static void fd_set_error(grpc_fd* fd) { fd->error_closure->SetReady(); }
-
-static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
-  fd->read_closure->SetReady();
-  /* Use release store to match with acquire load in fd_get_read_notifier */
-  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
-}
+static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
 
 static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
@@ -648,7 +628,7 @@ static grpc_error* process_epoll_events(grpc_pollset* pollset) {
       }
 
       if (read_ev || cancel || err_fallback) {
-        fd_become_readable(fd, pollset);
+        fd_become_readable(fd);
       }
 
       if (write_ev || cancel || err_fallback) {
@@ -1223,11 +1203,10 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
-    fd_set_readable,
-    fd_set_writable,
-    fd_set_error,
+    fd_become_readable,
+    fd_become_writable,
+    fd_has_errors,
     fd_is_shutdown,
-    fd_get_read_notifier_pollset,
 
     pollset_init,
     pollset_shutdown,

@@ -55,7 +55,6 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_set_writable)(grpc_fd* fd);
   void (*fd_set_error)(grpc_fd* fd);
   bool (*fd_is_shutdown)(grpc_fd* fd);
-  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
@@ -159,9 +158,6 @@ void grpc_fd_set_writable(grpc_fd* fd);
  * grpc_fd_notify_on_error being invoked.
  */
 void grpc_fd_set_error(grpc_fd* fd);
-
-/* Return the read notifier pollset from the fd */
-grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);
 
 /* pollset_posix functions */
 
