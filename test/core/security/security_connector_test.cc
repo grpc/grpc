@@ -348,7 +348,7 @@ static grpc_ssl_roots_override_result override_roots_fail(
   *pem_root_certs = gpr_strdup(roots_for_override_api);
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL;
 }
-#endif //GPR_LINUX
+#endif  // GPR_LINUX
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
     char** pem_root_certs) {

@@ -223,6 +223,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/ssl/ssl_credentials.h )
   s.files += %w( src/core/lib/security/security_connector/alts_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/load_system_roots.h )
+  s.files += %w( src/core/lib/security/security_connector/load_system_roots_linux.h )
   s.files += %w( src/core/lib/security/security_connector/local_security_connector.h )
   s.files += %w( src/core/lib/security/security_connector/security_connector.h )
   s.files += %w( src/core/lib/security/transport/auth_filters.h )
