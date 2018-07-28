@@ -72,7 +72,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       : read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
         write_state_(WRITE_IDLE),
-        has_gotten_into_driver_list_(false) {
+        gotten_into_driver_list_(false) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, as);
     winsocket_ = grpc_winsocket_create(as, name_);
     combiner_ = GRPC_COMBINER_REF(combiner, name_);
@@ -358,8 +358,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     ScheduleAndNullWriteClosure(error);
   }
 
-  bool HasGottenIntoDriverList() { return has_gotten_into_driver_list_; }
-  void OnGottenIntoDriverList() { has_gotten_into_driver_list_ = true; }
+  bool GottenIntoDriverList() { return gotten_into_driver_list_; }
+  void SetGottenIntoDriverList() { gotten_into_driver_list_ = true; }
 
   grpc_combiner* combiner_;
   char recv_from_source_addr_[200];
@@ -373,7 +373,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   grpc_winsocket* winsocket_;
   WriteState write_state_;
   char* name_ = nullptr;
-  bool has_gotten_into_driver_list_;
+  bool gotten_into_driver_list_;
 };
 
 struct SockToPolledFdEntry {
@@ -479,7 +479,7 @@ class SockToPolledFdMap {
     map->RemoveEntry(s);
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
-    if (!polled_fd->HasGottenIntoDriverList()) {
+    if (!polled_fd->GottenIntoDriverList()) {
       polled_fd->ShutdownLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
@@ -510,9 +510,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                                       grpc_pollset_set* driver_pollset_set,
                                       grpc_combiner* combiner) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
-    // Set a flag so that the virtual socket "close" method knows it
+    // Set a flag so that the virtual socket "close" method knows it 
     // doesn't need to call ShutdownLocked, since now the driver will.
-    polled_fd->OnGottenIntoDriverList();
+    polled_fd->SetGottenIntoDriverList();
     return polled_fd;
   }
 
