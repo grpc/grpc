@@ -170,8 +170,9 @@ void ThreadManager::MainWorkLoop() {
             grpc_resource_user_allocate_threads(resource_user_, 1)) {
           num_pollers_++;
           num_threads_++;
-          max_active_threads_sofar_ =
-              std::max(max_active_threads_sofar_, num_threads_);
+          if (num_threads_ > max_active_threads_sofar_) {
+            max_active_threads_sofar_ = num_threads_;
+          }
           // Drop lock before spawning thread to avoid contention
           lock.unlock();
           new WorkerThread(this);
