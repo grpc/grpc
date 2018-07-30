@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+
 using Grpc.Core;
 using Helloworld;
 
@@ -8,6 +10,7 @@ namespace HelloworldXamarin.iOS
 {
     public partial class ViewController : UIViewController
     {
+        const int Port = 50051;
         int count = 1;
 
         public ViewController(IntPtr handle) : base(handle)
@@ -33,20 +36,38 @@ namespace HelloworldXamarin.iOS
             // Release any cached data, images, etc that aren't in use.		
         }
 
-            private string SayHello()
+        private string SayHello()
+        {
+            Server server = new Server
             {
+                Services = { Greeter.BindService(new GreeterImpl()) },
+                Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }
+            };
+            server.Start();
 
-              // use loopback on host machine: https://developer.android.com/studio/run/emulator-networking
-              Channel channel = new Channel("10.0.2.2:50051", ChannelCredentials.Insecure);
+            Channel channel = new Channel("localhost:50051", ChannelCredentials.Insecure);
 
-              var client = new Greeter.GreeterClient(channel);
-              string user = "Xamarin";
+            var client = new Greeter.GreeterClient(channel);
+            string user = "Xamarin " + count;
 
-              var reply = client.SayHello(new HelloRequest { Name = user });
+            var reply = client.SayHello(new HelloRequest { Name = user });
 
-              channel.ShutdownAsync().Wait();
+            channel.ShutdownAsync().Wait();
+            server.ShutdownAsync().Wait();
 
-              return "Greeting: " + reply.Message;
+            count++;
+
+            return "Greeting: " + reply.Message;
+        }
+
+
+        class GreeterImpl : Greeter.GreeterBase
+        {
+            // Server side handler of the SayHello RPC
+            public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+            {
+              return Task.FromResult(new HelloReply { Message = "Hello " + request.Name });
             }
+        }
     }
 }
