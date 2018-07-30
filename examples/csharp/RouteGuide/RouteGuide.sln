@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.4
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuide", "RouteGuide\RouteGuide.csproj", "{49954D9C-5F17-4662-96B2-73BE833DD81A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RouteGuide", "RouteGuide\RouteGuide.csproj", "{49954D9C-5F17-4662-96B2-73BE833DD81A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuideClient", "RouteGuideClient\RouteGuideClient.csproj", "{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RouteGuideClient", "RouteGuideClient\RouteGuideClient.csproj", "{D47BE663-4DE3-4206-B7A8-EA3FA066DADC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RouteGuideServer", "RouteGuideServer\RouteGuideServer.csproj", "{4B7C7794-BE24-4477-ACE7-18259EB73D27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RouteGuideServer", "RouteGuideServer\RouteGuideServer.csproj", "{4B7C7794-BE24-4477-ACE7-18259EB73D27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
