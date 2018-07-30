@@ -68,5 +68,6 @@ class SystemRootCerts {
 
 }  // namespace grpc_core
 
-#endif
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H */
+#endif /* GPR_LINUX */
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
+        */

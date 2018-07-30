@@ -139,6 +139,8 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
   DIR* ca_directory = opendir(found_cert_dir);
   size_t bytes_read = 0;
   if (ca_directory == nullptr) {
+    gpr_free(bundle_string);
+    gpr_free((char*)found_cert_dir);  // Casting to char* to fix memory leak.
     return bundle_slice;
   }
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
