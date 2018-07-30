@@ -588,12 +588,6 @@ GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
 /** --- Local channel/server credentials --- **/
 
 /**
- * Type of local connection for which local channel/server credentials will be
- * applied. It only supports UDS for now.
- */
-typedef enum { UDS = 0 } grpc_local_connect_type;
-
-/**
  * This method creates a local channel credential object. It is used for
  * experimental purpose for now and subject to change.
  *

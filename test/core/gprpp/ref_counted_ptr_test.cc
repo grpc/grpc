@@ -175,28 +175,65 @@ TEST(RefCountedPtr, RefCountedWithTracing) {
   foo->Unref(DEBUG_LOCATION, "foo");
 }
 
-class Parent : public RefCounted<Parent> {
+class BaseClass : public RefCounted<BaseClass> {
  public:
-  Parent() {}
+  BaseClass() {}
 };
 
-class Child : public Parent {
+class Subclass : public BaseClass {
  public:
-  Child() {}
+  Subclass() {}
 };
 
-void FunctionTakingParent(RefCountedPtr<Parent> o) {}
-
-void FunctionTakingChild(RefCountedPtr<Child> o) {}
-
-TEST(RefCountedPtr, CanPassChildToFunctionExpectingParent) {
-  RefCountedPtr<Child> child = MakeRefCounted<Child>();
-  FunctionTakingParent(child);
+TEST(RefCountedPtr, ConstructFromSubclass) {
+  RefCountedPtr<BaseClass> p(New<Subclass>());
 }
 
-TEST(RefCountedPtr, CanPassChildToFunctionExpectingChild) {
-  RefCountedPtr<Child> child = MakeRefCounted<Child>();
-  FunctionTakingChild(child);
+TEST(RefCountedPtr, CopyAssignFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  RefCountedPtr<Subclass> s = MakeRefCounted<Subclass>();
+  b = s;
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, MoveAssignFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  RefCountedPtr<Subclass> s = MakeRefCounted<Subclass>();
+  b = std::move(s);
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, ResetFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  b.reset(New<Subclass>());
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, EqualityWithSubclass) {
+  Subclass* s = New<Subclass>();
+  RefCountedPtr<BaseClass> b(s);
+  EXPECT_EQ(b, s);
+}
+
+void FunctionTakingBaseClass(RefCountedPtr<BaseClass> p) {
+  p.reset();  // To appease clang-tidy.
+}
+
+TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingBaseClass) {
+  RefCountedPtr<Subclass> p = MakeRefCounted<Subclass>();
+  FunctionTakingBaseClass(p);
+}
+
+void FunctionTakingSubclass(RefCountedPtr<Subclass> p) {
+  p.reset();  // To appease clang-tidy.
+}
+
+TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingSubclass) {
+  RefCountedPtr<Subclass> p = MakeRefCounted<Subclass>();
+  FunctionTakingSubclass(p);
 }
 
 }  // namespace
