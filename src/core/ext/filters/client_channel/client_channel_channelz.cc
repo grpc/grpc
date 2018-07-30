@@ -123,9 +123,14 @@ grpc_json* ClientChannelNode::RenderJson() {
   GPR_ASSERT(target_view() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_view(),
                          GRPC_JSON_STRING, false);
-  // as CallCountingAndTracingNode to populate trace and call count data.
-  counter_and_tracer()->PopulateTrace(json);
-  counter_and_tracer()->PopulateCallData(json);
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace()->RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter()->PopulateCallData(json);
   // reset to the top level
   json = top_level_json;
   PopulateChildRefs(json);
@@ -150,11 +155,12 @@ SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(
-          UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)))),
-      counter_and_tracer_(channel_tracer_max_nodes) {}
+      target_(UniquePtr<char>(
+          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {
+  trace_.Init(channel_tracer_max_nodes);
+}
 
-SubchannelNode::~SubchannelNode() {}
+SubchannelNode::~SubchannelNode() { trace_.Destroy(); }
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   grpc_connectivity_state state;
@@ -192,8 +198,14 @@ grpc_json* SubchannelNode::RenderJson() {
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
-  counter_and_tracer_.PopulateTrace(json);
-  counter_and_tracer_.PopulateCallData(json);
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_->RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallData(json);
   return top_level_json;
 }
 

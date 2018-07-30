@@ -53,33 +53,20 @@ char* BaseNode::RenderJsonString() {
   return json_str;
 }
 
-CallCountingAndTracingNode::CallCountingAndTracingNode(
-    size_t channel_tracer_max_nodes) {
-  trace_.Init(channel_tracer_max_nodes);
+CallCountingHelper::CallCountingHelper() {
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-CallCountingAndTracingNode::~CallCountingAndTracingNode() { trace_.Destroy(); }
+CallCountingHelper::~CallCountingHelper() {}
 
-void CallCountingAndTracingNode::RecordCallStarted() {
+void CallCountingHelper::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-void CallCountingAndTracingNode::PopulateTrace(grpc_json* json) {
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_->RenderJson();
-  if (trace_json != nullptr) {
-    // we manually link up and fill the child since it was created for us in
-    // ChannelTrace::RenderJson
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
-  }
-}
-
-void CallCountingAndTracingNode::PopulateCallData(grpc_json* json) {
+void CallCountingHelper::PopulateCallData(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
   if (calls_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
@@ -105,10 +92,11 @@ ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
     : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
                                     : EntityType::kInternalChannel),
       channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
-      counter_and_tracer_(channel_tracer_max_nodes) {}
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))) {
+  trace_.Init(channel_tracer_max_nodes);
+}
 
-ChannelNode::~ChannelNode() {}
+ChannelNode::~ChannelNode() { trace_.Destroy(); }
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -134,9 +122,14 @@ grpc_json* ChannelNode::RenderJson() {
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
-  // as CallCountingAndTracingNode to populate trace and call count data.
-  counter_and_tracer_.PopulateTrace(json);
-  counter_and_tracer_.PopulateCallData(json);
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_->RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallData(json);
   return top_level_json;
 }
 

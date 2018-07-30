@@ -489,7 +489,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(call->channel);
   if (channelz_channel != nullptr) {
-    channelz_channel->counter_and_tracer()->RecordCallStarted();
+    channelz_channel->RecordCallStarted();
   }
 
   grpc_slice_unref_internal(path);
@@ -1269,9 +1269,9 @@ static void post_batch_completion(batch_control* bctl) {
         grpc_channel_get_channelz_node(call->channel);
     if (channelz_channel != nullptr) {
       if (*call->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->counter_and_tracer()->RecordCallFailed();
+        channelz_channel->RecordCallFailed();
       } else {
-        channelz_channel->counter_and_tracer()->RecordCallSucceeded();
+        channelz_channel->RecordCallSucceeded();
       }
     }
     GRPC_ERROR_UNREF(error);

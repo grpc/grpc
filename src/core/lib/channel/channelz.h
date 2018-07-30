@@ -43,7 +43,7 @@ namespace grpc_core {
 namespace channelz {
 
 namespace testing {
-class CallCountingAndTracingNodePeer;
+class CallCountingHelperPeer;
 }
 
 // base class for all channelz entities
@@ -60,7 +60,7 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
-  BaseNode(EntityType type);
+  explicit BaseNode(EntityType type);
   virtual ~BaseNode();
 
   // All children must implement this function.
@@ -74,22 +74,20 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
 
  private:
-  friend class ChannelTrace;
-  EntityType type_;
+  const EntityType type_;
   const intptr_t uuid_;
 };
 
-// This class is the parent for the channelz entities that deal with Channels
+// This class is a helper class for channelz entities that deal with Channels
 // Subchannels, and Servers, since those have similar proto definitions.
 // This class has the ability to:
 //   - track calls_{started,succeeded,failed}
 //   - track last_call_started_timestamp
-//   - hold the channel trace.
-//   - perform common rendering.
-class CallCountingAndTracingNode {
+//   - perform rendering of the above items
+class CallCountingHelper {
  public:
-  CallCountingAndTracingNode(size_t channel_tracer_max_nodes);
-  ~CallCountingAndTracingNode();
+  CallCountingHelper();
+  ~CallCountingHelper();
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -98,23 +96,18 @@ class CallCountingAndTracingNode {
   void RecordCallSucceeded() {
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
-  ChannelTrace* trace() { return trace_.get(); }
-
-  // Common rendering of the channel trace.
-  void PopulateTrace(grpc_json* json);
 
   // Common rendering of the call count data and last_call_started_timestamp.
   void PopulateCallData(grpc_json* json);
 
  private:
   // testing peer friend.
-  friend class testing::CallCountingAndTracingNodePeer;
+  friend class testing::CallCountingHelperPeer;
 
   gpr_atm calls_started_ = 0;
   gpr_atm calls_succeeded_ = 0;
   gpr_atm calls_failed_ = 0;
   gpr_atm last_call_started_millis_ = 0;
-  ManualConstructor<ChannelTrace> trace_;
 };
 
 // Handles channelz bookkeeping for channels
@@ -137,25 +130,31 @@ class ChannelNode : public BaseNode {
 
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
-  CallCountingAndTracingNode* counter_and_tracer() {
-    return &counter_and_tracer_;
-  }
+  // proxy methods to composed classes.
+  ChannelTrace* trace() { return trace_.get(); }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  protected:
   // provides view of target for child.
   char* target_view() { return target_.get(); }
+  // provides access to call_counter_ for child.
+  CallCountingHelper* call_counter() { return &call_counter_; }
 
  private:
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
-  CallCountingAndTracingNode counter_and_tracer_;
+  CallCountingHelper call_counter_;
+  ManualConstructor<ChannelTrace> trace_;
 };
 
 // Handles channelz bookkeeping for servers
 // TODO(ncteisen): implement in subsequent PR.
 class ServerNode : public BaseNode {
  public:
-  ServerNode(size_t channel_tracer_max_nodes) : BaseNode(EntityType::kServer) {}
+  explicit ServerNode(size_t channel_tracer_max_nodes)
+      : BaseNode(EntityType::kServer) {}
   ~ServerNode() override {}
 };
 

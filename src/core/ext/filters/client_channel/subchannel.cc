@@ -183,7 +183,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
   if (c->channelz_subchannel != nullptr) {
-    c->channelz_subchannel->counter_and_tracer()->trace()->AddTraceEvent(
+    c->channelz_subchannel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
     c->channelz_subchannel->MarkSubchannelDestroyed();
@@ -397,7 +397,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
     c->channelz_subchannel =
         grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
             c, channel_tracer_max_nodes);
-    c->channelz_subchannel->counter_and_tracer()->trace()->AddTraceEvent(
+    c->channelz_subchannel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }

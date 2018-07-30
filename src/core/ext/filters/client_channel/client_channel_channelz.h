@@ -76,14 +76,17 @@ class SubchannelNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  CallCountingAndTracingNode* counter_and_tracer() {
-    return &counter_and_tracer_;
-  }
+  // proxy methods to composed classes.
+  ChannelTrace* trace() { return trace_.get(); }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
   grpc_subchannel* subchannel_;
   UniquePtr<char> target_;
-  CallCountingAndTracingNode counter_and_tracer_;
+  CallCountingHelper call_counter_;
+  ManualConstructor<ChannelTrace> trace_;
 
   void PopulateConnectivityState(grpc_json* json);
 };
