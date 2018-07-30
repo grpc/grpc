@@ -571,15 +571,27 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
 
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
     if (chand->lb_policy == nullptr) {
-      GRPC_CLOSURE_SCHED(
-          op->send_ping.on_initiate,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
-      GRPC_CLOSURE_SCHED(
-          op->send_ping.on_ack,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing");
+      GRPC_CLOSURE_SCHED(op->send_ping.on_initiate, GRPC_ERROR_REF(error));
+      GRPC_CLOSURE_SCHED(op->send_ping.on_ack, error);
     } else {
-      chand->lb_policy->PingOneLocked(op->send_ping.on_initiate,
-                                      op->send_ping.on_ack);
+      grpc_error* error = GRPC_ERROR_NONE;
+      grpc_core::LoadBalancingPolicy::PickState pick_state;
+      memset(&pick_state, 0, sizeof(pick_state));
+      // Pick must return synchronously, because pick_state.on_complete is null.
+      GPR_ASSERT(chand->lb_policy->PickLocked(&pick_state, &error));
+      if (pick_state.connected_subchannel != nullptr) {
+        pick_state.connected_subchannel->Ping(op->send_ping.on_initiate,
+                                              op->send_ping.on_ack);
+      } else {
+        if (error == GRPC_ERROR_NONE) {
+          error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "LB policy dropped call on ping");
+        }
+        GRPC_CLOSURE_SCHED(op->send_ping.on_initiate, GRPC_ERROR_REF(error));
+        GRPC_CLOSURE_SCHED(op->send_ping.on_ack, error);
+      }
       op->bind_pollset = nullptr;
     }
     op->send_ping.on_initiate = nullptr;
@@ -2684,14 +2696,15 @@ class LbPicker {
                       grpc_combiner_scheduler(chand->combiner));
     calld->pick.on_complete = &calld->pick_closure;
     GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback");
-    const bool pick_done = chand->lb_policy->PickLocked(&calld->pick);
+    grpc_error* error = GRPC_ERROR_NONE;
+    const bool pick_done = chand->lb_policy->PickLocked(&calld->pick, &error);
     if (GPR_LIKELY(pick_done)) {
       // Pick completed synchronously.
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: pick completed synchronously",
                 chand, calld);
       }
-      pick_done_locked(elem, GRPC_ERROR_NONE);
+      pick_done_locked(elem, error);
       GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
     } else {
       // Pick will be returned asynchronously.
