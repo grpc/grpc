@@ -20,7 +20,7 @@
 
 #include "src/core/tsi/alts_transport_security.h"
 
-#include <string.h>
+#include <new>
 
 static alts_shared_resource *g_alts_resource;
 
