@@ -543,6 +543,47 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstWatchReffedSubchannel) {
+  // TODO(juanlishen): Add comments about the mechanism behind the scene once
+  // the behavior after disconnection is clear.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  StartServers(1, ports);
+  auto channel_1 = BuildChannel("pick_first");
+  auto stub_1 = BuildStub(channel_1);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 1 *******");
+  WaitForServer(stub_1, 0, DEBUG_LOCATION);
+  gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
+  servers_[0]->Shutdown();
+  // Channel 1 will receive a re-resolution containing the same server. It will
+  // hold a ref to the subchannel, and WATCH it.
+  servers_.clear();
+  StartServers(1, ports);
+  sleep(1);
+  gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
+  auto channel_2 = BuildChannel("pick_first");
+  auto stub_2 = BuildStub(channel_2);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
+  gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING FIRST CALL *******");
+  WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
+  // Now both channels ref and watch the subchannel.
+  gpr_log(GPR_INFO, "****** CHANNEL 2 FINISHED FIRST CALL *******");
+  servers_[0]->Shutdown();
+  servers_.clear();
+  StartServers(1, ports);
+  sleep(1);
+  gpr_log(GPR_INFO, "****** SERVER RESTARTED AGAIN *******");
+  gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING SECOND CALL*******");
+  // The first call after the server restart will succeed.
+  CheckRpcSendOk(stub_2, DEBUG_LOCATION);
+  gpr_log(GPR_INFO, "****** CHANNEL 2 FINISHED SECOND CALL *******");
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_1->GetLoadBalancingPolicyName());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_2->GetLoadBalancingPolicyName());
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;

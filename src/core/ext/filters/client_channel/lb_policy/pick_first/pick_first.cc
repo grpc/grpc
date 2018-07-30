@@ -120,7 +120,7 @@ class PickFirst : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void StartPickingLocked();
-  void DestroyUnselectedSubchannelsLocked();
+  void ShutdownUnselectedSubchannelsLocked();
   void UpdateChildRefsLocked();
 
   // All our subchannels.
@@ -246,7 +246,7 @@ void PickFirst::StartPickingLocked() {
   if (subchannel_list_ != nullptr) {
     for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
       if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        subchannel_list_->subchannel(i)->StartConnectivityWatchLocked();
+        subchannel_list_->subchannel(i)->ConnectLocked();
         break;
       }
     }
@@ -274,11 +274,17 @@ bool PickFirst::PickLocked(PickState* pick) {
   return false;
 }
 
-void PickFirst::DestroyUnselectedSubchannelsLocked() {
+void PickFirst::ShutdownUnselectedSubchannelsLocked() {
+  if (grpc_lb_pick_first_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "Pick First %p shutting down unselected subchannels in "
+            "subchannel_list %p",
+            this, subchannel_list_.get());
+  }
   for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
     PickFirstSubchannelData* sd = subchannel_list_->subchannel(i);
     if (selected_ != sd) {
-      sd->UnrefSubchannelLocked("selected_different_subchannel");
+      sd->ShutdownLocked();
     }
   }
 }
@@ -381,10 +387,11 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     // We don't yet have a selected subchannel, so replace the current
     // subchannel list immediately.
     subchannel_list_ = std::move(subchannel_list);
+    subchannel_list_->StartWatchingLocked();
     // If we've started picking, start trying to connect to the first
     // subchannel in the new list.
     if (started_picking_) {
-      subchannel_list_->subchannel(0)->StartConnectivityWatchLocked();
+      subchannel_list_->subchannel(0)->ConnectLocked();
     }
   } else {
     // We do have a selected subchannel.
@@ -409,7 +416,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
         if (sd->CheckConnectivityStateLocked(&error) == GRPC_CHANNEL_READY) {
           selected_ = sd;
           subchannel_list_ = std::move(subchannel_list);
-          DestroyUnselectedSubchannelsLocked();
+          ShutdownUnselectedSubchannelsLocked();
           sd->StartConnectivityWatchLocked();
           // If there was a previously pending update (which may or may
           // not have contained the currently selected subchannel), drop
@@ -434,11 +441,11 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
       }
     }
     latest_pending_subchannel_list_ = std::move(subchannel_list);
+    latest_pending_subchannel_list_->StartWatchingLocked();
     // If we've started picking, start trying to connect to the first
     // subchannel in the new list.
     if (started_picking_) {
-      latest_pending_subchannel_list_->subchannel(0)
-          ->StartConnectivityWatchLocked();
+      latest_pending_subchannel_list_->subchannel(0)->ConnectLocked();
     }
   }
 }
@@ -494,8 +501,13 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
         // In transient failure. Rely on re-resolution to recover.
         p->selected_ = nullptr;
-        UnrefSubchannelLocked("pf_selected_shutdown");
+        // We should stop watching this subchannel to prevent the subchannel
+        // from starting to reconnect itself.
+        // TODO(juanlishen): Actually, the subchannel is not reconnecting after
+        // disconnection because the connected_subchannel callback will run
+        // after the watchers are cleared.
         StopConnectivityWatchLocked();
+        UnrefSubchannelLocked("pf_selected_shutdown");
       } else {
         grpc_connectivity_state_set(&p->state_tracker_, connectivity_state,
                                     GRPC_ERROR_REF(error), "selected_changed");
@@ -515,6 +527,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    for a subchannel in p->latest_pending_subchannel_list_.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
+  RenewConnectivityWatchLocked();
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       // Case 2.  Promote p->latest_pending_subchannel_list_ to
@@ -538,7 +551,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 subchannel());
       }
       // Drop all other subchannels, since we are now connected.
-      p->DestroyUnselectedSubchannelsLocked();
+      p->ShutdownUnselectedSubchannelsLocked();
       // Update any calls that were waiting for a pick.
       PickState* pick;
       while ((pick = p->pending_picks_)) {
@@ -552,12 +565,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         }
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
-      // Renew notification.
-      RenewConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      StopConnectivityWatchLocked();
       PickFirstSubchannelData* sd = this;
       do {
         size_t next_index =
@@ -572,7 +582,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "exhausted_subchannels");
       }
-      sd->StartConnectivityWatchLocked();
+      // TODO(juanlishen): We should only connect if we have started picking.
+      // But then the problem is that we may continuously re-resolve without
+      // connecting.
+      if (p->started_picking_) sd->ConnectLocked();
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
@@ -583,8 +596,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                                     GRPC_ERROR_REF(error),
                                     "connecting_changed");
       }
-      // Renew notification.
-      RenewConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_SHUTDOWN:

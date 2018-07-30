@@ -152,7 +152,7 @@ class RoundRobin : public LoadBalancingPolicy {
     }
 
     // Starts watching the subchannels in this list.
-    void StartWatchingLocked();
+    void StartWatchingLocked() override;
 
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
@@ -437,6 +437,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
+      subchannel(i)->ConnectLocked();
     }
   }
 }

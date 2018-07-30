@@ -452,7 +452,7 @@ static void on_alarm(void* arg, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void maybe_start_connecting_locked(grpc_subchannel* c) {
+void grpc_subchannel_maybe_start_connecting_locked(grpc_subchannel* c) {
   if (c->disconnected) {
     /* Don't try to connect if we're already disconnected */
     return;
@@ -529,7 +529,6 @@ void grpc_subchannel_notify_on_state_change(
     w->next->prev = w->prev->next = w;
     grpc_connectivity_state_notify_on_state_change(&c->state_tracker, state,
                                                    &w->closure);
-    maybe_start_connecting_locked(c);
     gpr_mu_unlock(&c->mu);
   }
 }
@@ -560,7 +559,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                                     GRPC_ERROR_REF(error), "reflect_child");
         c->backoff_begun = false;
         c->backoff->Reset();
-        maybe_start_connecting_locked(c);
+        grpc_subchannel_maybe_start_connecting_locked(c);
       } else {
         connected_subchannel_watcher->connectivity_state =
             GRPC_CHANNEL_SHUTDOWN;
@@ -667,7 +666,7 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
     const char* errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
 
-    maybe_start_connecting_locked(c);
+    grpc_subchannel_maybe_start_connecting_locked(c);
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   }
   gpr_mu_unlock(&c->mu);

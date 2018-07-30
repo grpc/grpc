@@ -125,6 +125,11 @@ grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
 void* grpc_connected_subchannel_call_get_parent_data(
     grpc_subchannel_call* subchannel_call);
 
+/** Tries to start connecting. If it's necessary to connect but the subchannel
+ * is in backoff due to a previous connection failure, we will delay the
+ * connecting until backoff finishes. */
+void grpc_subchannel_maybe_start_connecting_locked(grpc_subchannel* c);
+
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel* channel, grpc_error** error);

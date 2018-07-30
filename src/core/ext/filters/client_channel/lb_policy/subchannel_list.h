@@ -112,6 +112,9 @@ class SubchannelData {
   // connectivity state changes.
   void StartConnectivityWatchLocked();
 
+  // Tries to start connecting on the subchannel.
+  void ConnectLocked();
+
   // Renews watching the connectivity state of the subchannel.
   void RenewConnectivityWatchLocked();
 
@@ -201,6 +204,9 @@ class SubchannelList
       }
     }
   }
+
+  // Starts watching all the subchannels.
+  void virtual StartWatchingLocked();
 
   // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
@@ -317,6 +323,19 @@ void SubchannelData<SubchannelListType,
   grpc_subchannel_notify_on_state_change(
       subchannel_, subchannel_list_->policy()->interested_parties(),
       &pending_connectivity_state_unsafe_, &connectivity_changed_closure_);
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelData<SubchannelListType, SubchannelDataType>::ConnectLocked() {
+  if (subchannel_list_->tracer()->enabled()) {
+    gpr_log(GPR_INFO,
+            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+            " (subchannel %p): trying to start connecting",
+            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
+            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+            subchannel_);
+  }
+  grpc_subchannel_maybe_start_connecting_locked(subchannel_);
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -518,6 +537,15 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     subchannels_.emplace_back(static_cast<SubchannelListType*>(this),
                               addresses->user_data_vtable,
                               addresses->addresses[i], subchannel, combiner);
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelList<SubchannelListType,
+                    SubchannelDataType>::StartWatchingLocked() {
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    SubchannelDataType* sd = &subchannels_[i];
+    if (sd->subchannel() != nullptr) sd->StartConnectivityWatchLocked();
   }
 }
 
