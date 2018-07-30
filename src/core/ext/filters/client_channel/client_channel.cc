@@ -1154,16 +1154,6 @@ static void pending_batches_add(grpc_call_element* elem,
                     grpc_connected_subchannel_call_get_parent_data(
                         calld->subchannel_call));
       retry_commit(elem, retry_state);
-      // If we are not going to retry and have not yet started, pretend
-      // retries are disabled so that we don't bother with retry overhead.
-      if (calld->num_attempts_completed == 0) {
-        if (grpc_client_channel_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "chand=%p calld=%p: disabling retries before first attempt",
-                  chand, calld);
-        }
-        calld->enable_retries = false;
-      }
     }
   }
 }
@@ -1942,6 +1932,12 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_mdelem* server_pushback_md = nullptr;
   get_call_status(batch_data, GRPC_ERROR_REF(error), &status,
                   &server_pushback_md);
+  if (status == GRPC_STATUS_OK) {
+    calld->pick.connected_subchannel->channelz_subchannel()
+        ->RecordCallSucceeded();
+  } else {
+    calld->pick.connected_subchannel->channelz_subchannel()->RecordCallFailed();
+  }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
             calld, grpc_status_code_to_string(status));
@@ -2796,12 +2792,6 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
         }
       }
     }
-  }
-  // If no retry policy, disable retries.
-  // TODO(roth): Remove this when adding support for transparent retries.
-  if (calld->method_params == nullptr ||
-      calld->method_params->retry_policy() == nullptr) {
-    calld->enable_retries = false;
   }
 }
 

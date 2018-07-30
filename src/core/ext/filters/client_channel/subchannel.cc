@@ -865,6 +865,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     gpr_log(GPR_ERROR, "error: %s", error_string);
     return error;
   }
+  if (channelz_subchannel_ != nullptr) {
+    channelz_subchannel_->RecordCallStarted();
+  }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   return GRPC_ERROR_NONE;
 }
