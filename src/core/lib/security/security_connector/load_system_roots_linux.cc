@@ -103,6 +103,9 @@ size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
   size_t total_size = 0;
   // TODO: add logging when using opendir.
   DIR* ca_directory = opendir(directory_path);
+  if (ca_directory == nullptr) {
+    return total_size;
+  }
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
@@ -135,6 +138,9 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
 
   DIR* ca_directory = opendir(found_cert_dir);
   size_t bytes_read = 0;
+  if (ca_directory == nullptr) {
+    return bundle_slice;
+  }
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
