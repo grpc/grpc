@@ -452,7 +452,10 @@ static void on_alarm(void* arg, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void maybe_start_connecting_locked(grpc_subchannel* c) {
+static void maybe_start_connecting_locked(grpc_subchannel* c,
+                                          bool connection_lost = false) {
+  if (connection_lost)
+    GPR_ASSERT(!grpc_connectivity_state_has_watchers(&c->state_tracker));
   if (c->disconnected) {
     /* Don't try to connect if we're already disconnected */
     return;
@@ -560,7 +563,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                                     GRPC_ERROR_REF(error), "reflect_child");
         c->backoff_begun = false;
         c->backoff->Reset();
-        maybe_start_connecting_locked(c);
+        maybe_start_connecting_locked(c, true);
       } else {
         connected_subchannel_watcher->connectivity_state =
             GRPC_CHANNEL_SHUTDOWN;
