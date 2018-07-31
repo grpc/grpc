@@ -66,7 +66,7 @@ void CallCountingHelper::RecordCallStarted() {
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-void CallCountingHelper::PopulateCallData(grpc_json* json) {
+void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
   if (calls_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
@@ -128,7 +128,7 @@ grpc_json* ChannelNode::RenderJson() {
     grpc_json_link_child(json, trace_json, nullptr);
   }
   // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallData(json);
+  call_counter_.PopulateCallCounts(json);
   return top_level_json;
 }
 

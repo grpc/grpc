@@ -1942,11 +1942,14 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_mdelem* server_pushback_md = nullptr;
   get_call_status(batch_data, GRPC_ERROR_REF(error), &status,
                   &server_pushback_md);
-  if (status == GRPC_STATUS_OK) {
-    calld->pick.connected_subchannel->channelz_subchannel()
-        ->RecordCallSucceeded();
-  } else {
-    calld->pick.connected_subchannel->channelz_subchannel()->RecordCallFailed();
+  grpc_core::channelz::SubchannelNode* channelz_subchannel =
+      calld->pick.connected_subchannel->channelz_subchannel();
+  if (channelz_subchannel != nullptr) {
+    if (status == GRPC_STATUS_OK) {
+      channelz_subchannel->RecordCallSucceeded();
+    } else {
+      channelz_subchannel->RecordCallFailed();
+    }
   }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
@@ -2581,6 +2584,11 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
     new_error = grpc_error_add_child(new_error, error);
     pending_batches_fail(elem, new_error, true /* yield_call_combiner */);
   } else {
+    grpc_core::channelz::SubchannelNode* channelz_subchannel =
+        calld->pick.connected_subchannel->channelz_subchannel();
+    if (channelz_subchannel != nullptr) {
+      channelz_subchannel->RecordCallStarted();
+    }
     if (parent_data_size > 0) {
       subchannel_call_retry_state* retry_state =
           static_cast<subchannel_call_retry_state*>(

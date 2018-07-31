@@ -130,7 +130,7 @@ grpc_json* ClientChannelNode::RenderJson() {
     grpc_json_link_child(json, trace_json, nullptr);
   }
   // ask CallCountingHelper to populate trace and call count data.
-  call_counter()->PopulateCallData(json);
+  call_counter()->PopulateCallCounts(json);
   // reset to the top level
   json = top_level_json;
   PopulateChildRefs(json);
@@ -204,7 +204,7 @@ grpc_json* SubchannelNode::RenderJson() {
     grpc_json_link_child(json, trace_json, nullptr);
   }
   // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallData(json);
+  call_counter_.PopulateCallCounts(json);
   return top_level_json;
 }
 

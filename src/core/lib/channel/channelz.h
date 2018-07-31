@@ -99,7 +99,7 @@ class CallCountingHelper {
   }
 
   // Common rendering of the call count data and last_call_started_timestamp.
-  void PopulateCallData(grpc_json* json);
+  void PopulateCallCounts(grpc_json* json);
 
  private:
   // testing peer friend.
