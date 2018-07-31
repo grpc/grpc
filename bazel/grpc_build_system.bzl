@@ -71,6 +71,9 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                       "//conditions:default": [],}) +
               select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
                       "//conditions:default": [],}) +
+              select({":grpc_use_tracers": ["GRPC_USE_TRACERS=1"],
+                      ":grpc_no_tracers": ["GRPC_USE_TRACERS=0"],
+                      "//conditions:default": ["GRPC_USE_TRACERS=1"],}) +
               select({"//:grpc_allow_exceptions":  ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions":
                       ["GRPC_ALLOW_EXCEPTIONS=0"],

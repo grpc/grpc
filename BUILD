@@ -54,6 +54,16 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_use_tracers",
+    values = {"define": "GRPC_USE_TRACERS=1"},
+)
+
+config_setting(
+    name = "grpc_no_tracers",
+    values = {"define": "GRPC_USE_TRACERS=0"},
+)
+
+config_setting(
     name = "windows",
     values = {"cpu": "x64_windows"},
 )

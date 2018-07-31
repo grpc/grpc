@@ -27,9 +27,18 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/gpr/env.h"
 
-int grpc_tracer_set_enabled(const char* name, int enabled);
-
+#if GRPC_USE_TRACERS
 namespace grpc_core {
+
+class TraceFlagList {
+ public:
+  static bool Set(const char* name, bool enabled);
+  static void Add(TraceFlag* flag);
+
+ private:
+  static void LogAllTracers();
+  static TraceFlag* root_tracer_;
+};
 
 TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 
@@ -143,3 +152,15 @@ void grpc_tracer_shutdown(void) {}
 int grpc_tracer_set_enabled(const char* name, int enabled) {
   return grpc_core::TraceFlagList::Set(name, enabled != 0);
 }
+
+#else  // GRPC_USE_TRACERS
+
+void grpc_tracer_init(const char* env_var) {}
+
+void grpc_tracer_shutdown(void) {}
+
+int grpc_tracer_set_enabled(const char* name, int enabled) {
+  return 0;
+}
+
+#endif  // GRPC_USE_TRACERS
