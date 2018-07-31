@@ -71,6 +71,7 @@ class LoadBalancingPolicy
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
+    /// If null, pick will fail if a result is not available synchronously.
     grpc_closure* on_complete;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
@@ -99,10 +100,15 @@ class LoadBalancingPolicy
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.
   ///
-  /// If the pick succeeds and a result is known immediately, returns true.
-  /// Otherwise, \a pick->on_complete will be invoked once the pick is
-  /// complete with its error argument set to indicate success or failure.
-  virtual bool PickLocked(PickState* pick) GRPC_ABSTRACT;
+  /// If a result is known immediately, returns true, setting \a *error
+  /// upon failure.  Otherwise, \a pick->on_complete will be invoked once
+  /// the pick is complete with its error argument set to indicate success
+  /// or failure.
+  ///
+  /// If \a pick->on_complete is null and no result is known immediately,
+  /// a synchronous failure will be returned (i.e., \a *error will be
+  /// set and true will be returned).
+  virtual bool PickLocked(PickState* pick, grpc_error** error) GRPC_ABSTRACT;
 
   /// Cancels \a pick.
   /// The \a on_complete callback of the pending pick will be invoked with
@@ -132,12 +138,6 @@ class LoadBalancingPolicy
   /// Hands off pending picks to \a new_policy.
   virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
       GRPC_ABSTRACT;
-
-  /// Performs a connected subchannel ping via \a ConnectedSubchannel::Ping()
-  /// against one of the connected subchannels managed by the policy.
-  /// Note: This is intended only for use in tests.
-  virtual void PingOneLocked(grpc_closure* on_initiate,
-                             grpc_closure* on_ack) GRPC_ABSTRACT;
 
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,
