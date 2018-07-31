@@ -92,11 +92,10 @@ ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
     : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
                                     : EntityType::kInternalChannel),
       channel_(channel),
-      target_(UniquePtr<char>(grpc_channel_get_target(channel_))) {
-  trace_.Init(channel_tracer_max_nodes);
-}
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
+      trace_(channel_tracer_max_nodes) {}
 
-ChannelNode::~ChannelNode() { trace_.Destroy(); }
+ChannelNode::~ChannelNode() {}
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -123,7 +122,7 @@ grpc_json* ChannelNode::RenderJson() {
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_->RenderJson();
+  grpc_json* trace_json = trace_.RenderJson();
   if (trace_json != nullptr) {
     trace_json->key = "trace";  // this object is named trace in channelz.proto
     grpc_json_link_child(json, trace_json, nullptr);

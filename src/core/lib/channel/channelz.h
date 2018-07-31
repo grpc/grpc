@@ -133,12 +133,12 @@ class ChannelNode : public BaseNode {
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
-    trace_->AddTraceEvent(severity, data);
+    trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   grpc_slice data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
-    trace_->AddTraceEventWithReference(severity, data, referenced_channel);
+    trace_.AddTraceEventWithReference(severity, data, referenced_channel);
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
@@ -150,7 +150,7 @@ class ChannelNode : public BaseNode {
   // provides access to call_counter_ for child.
   CallCountingHelper* call_counter() { return &call_counter_; }
   // provides access to channel trace for child.
-  ChannelTrace* trace() { return trace_.get(); }
+  ChannelTrace* trace() { return &trace_; }
 
  private:
   // to allow the channel trace test to access trace();
@@ -158,7 +158,7 @@ class ChannelNode : public BaseNode {
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
-  ManualConstructor<ChannelTrace> trace_;
+  ChannelTrace trace_;
 };
 
 // Handles channelz bookkeeping for servers

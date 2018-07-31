@@ -155,12 +155,11 @@ SubchannelNode::SubchannelNode(grpc_subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(UniquePtr<char>(
-          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {
-  trace_.Init(channel_tracer_max_nodes);
-}
+      target_(
+          UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)))),
+      trace_(channel_tracer_max_nodes) {}
 
-SubchannelNode::~SubchannelNode() { trace_.Destroy(); }
+SubchannelNode::~SubchannelNode() {}
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   grpc_connectivity_state state;
@@ -199,7 +198,7 @@ grpc_json* SubchannelNode::RenderJson() {
   grpc_json_create_child(nullptr, json, "target", target_.get(),
                          GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_->RenderJson();
+  grpc_json* trace_json = trace_.RenderJson();
   if (trace_json != nullptr) {
     trace_json->key = "trace";  // this object is named trace in channelz.proto
     grpc_json_link_child(json, trace_json, nullptr);

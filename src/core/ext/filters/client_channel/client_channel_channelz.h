@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 
@@ -78,12 +79,12 @@ class SubchannelNode : public BaseNode {
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
-    trace_->AddTraceEvent(severity, data);
+    trace_.AddTraceEvent(severity, data);
   }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   grpc_slice data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
-    trace_->AddTraceEventWithReference(severity, data, referenced_channel);
+    trace_.AddTraceEventWithReference(severity, data, referenced_channel);
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
@@ -93,7 +94,7 @@ class SubchannelNode : public BaseNode {
   grpc_subchannel* subchannel_;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
-  ManualConstructor<ChannelTrace> trace_;
+  ChannelTrace trace_;
 
   void PopulateConnectivityState(grpc_json* json);
 };
