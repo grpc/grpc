@@ -177,8 +177,7 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  const bool use_custom_dir =
-      gpr_is_true(gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR"));
+  const char* use_custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
   if (use_custom_dir) {
     result = SystemRootCerts::CreateRootCertsBundle();
   }
@@ -190,6 +189,7 @@ grpc_slice LoadSystemRootCerts() {
   if (GRPC_SLICE_IS_EMPTY(result)) {
     result = SystemRootCerts::CreateRootCertsBundle();
   }
+  gpr_free((char*)use_custom_dir);  // Casting to non-const to fix memory leak.
   return result;
 }
 
