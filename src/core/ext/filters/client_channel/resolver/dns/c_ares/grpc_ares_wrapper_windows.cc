@@ -16,24 +16,14 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
-#define GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
+#include <grpc/support/port_platform.h>
 
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/config.h>
+#include "src/core/lib/iomgr/port.h"
+#if GRPC_ARES == 1 && defined(GPR_WINDOWS)
 
-namespace grpc {
-namespace testing {
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/iomgr/socket_windows.h"
 
-class CliCredentials {
- public:
-  virtual ~CliCredentials() {}
-  virtual std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const;
-  virtual const grpc::string GetCredentialUsage() const;
-  virtual const grpc::string GetSslTargetNameOverride() const;
-};
+bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
-}  // namespace testing
-}  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
+#endif /* GRPC_ARES == 1 && defined(GPR_WINDOWS) */
