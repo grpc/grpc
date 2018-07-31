@@ -892,7 +892,6 @@ typedef struct client_channel_call_data {
   grpc_millis deadline;
   gpr_arena* arena;
   grpc_call_stack* owning_call;
-  grpc_call* call;
   grpc_call_combiner* call_combiner;
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
@@ -2571,8 +2570,7 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       calld->arena,                         // arena
       calld->pick.subchannel_call_context,  // context
       calld->call_combiner,                 // call_combiner
-      parent_data_size,                     // parent_data_size
-      calld->call                           // call
+      parent_data_size                      // parent_data_size
   };
   grpc_error* new_error = calld->pick.connected_subchannel->CreateCall(
       call_args, &calld->subchannel_call);

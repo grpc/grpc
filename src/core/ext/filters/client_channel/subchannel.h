@@ -83,7 +83,6 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     grpc_call_context_element* context;
     grpc_call_combiner* call_combiner;
     size_t parent_data_size;
-    grpc_call* call;
   };
 
   explicit ConnectedSubchannel(grpc_channel_stack* channel_stack,
