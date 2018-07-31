@@ -40,10 +40,14 @@ cdef class _GrpcArgWrapper:
 
 
 cdef tuple _wrap_grpc_arg(grpc_arg arg):
-
   wrapped = _GrpcArgWrapper()
   wrapped.arg = arg
   return ("grpc.python._cygrpc._GrpcArgWrapper", wrapped)
+
+
+cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg):
+  cdef _GrpcArgWrapper wrapped = wrapped_arg[1]
+  return wrapped.arg
 
 
 cdef class _ArgumentProcessor:
