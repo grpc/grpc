@@ -215,8 +215,11 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     buf.len = GRPC_SLICE_LENGTH(write_buf_);
     buf.buf = (char*)GRPC_SLICE_START_PTR(write_buf_);
     DWORD flags = 0;
-    return WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
-                   bytes_sent_ptr, flags, overlapped, nullptr);
+    int out = WSASend(grpc_winsocket_wrapped_socket(winsocket_), &buf, 1,
+                      bytes_sent_ptr, flags, overlapped, nullptr);
+    GRPC_CARES_TRACE_LOG(
+        "WSASend: name:%s. buf len:%d. bytes sent: %d. overlapped %p. return val: %d", GetName(), buf.len, *bytes_sent_ptr, overlapped, out);
+    return out;
   }
 
   ares_ssize_t TrySendWriteBufSyncNonBlocking() {
