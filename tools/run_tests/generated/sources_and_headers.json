@@ -1795,6 +1795,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "parse_address_with_named_scope_id_test", 
+    "src": [
+      "test/core/client_channel/parse_address_with_named_scope_id_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "percent_decode_fuzzer", 
     "src": [
       "test/core/slice/percent_decode_fuzzer.cc"
@@ -1846,7 +1863,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "resolve_address_posix_test", 
+    "name": "resolve_address_using_ares_resolver_posix_test", 
     "src": [
       "test/core/iomgr/resolve_address_posix_test.cc"
     ], 
@@ -1866,6 +1883,23 @@
     "name": "resolve_address_using_ares_resolver_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resolve_address_using_native_resolver_posix_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_posix_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

@@ -3238,6 +3238,21 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: parse_address_with_named_scope_id_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/parse_address_with_named_scope_id_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -3275,7 +3290,7 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: resolve_address_posix_test
+- name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
   src:
@@ -3285,6 +3300,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --resolver=ares
   exclude_iomgrs:
   - uv
   platforms:
@@ -3303,6 +3320,24 @@ targets:
   - gpr
   args:
   - --resolver=ares
+- name: resolve_address_using_native_resolver_posix_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --resolver=native
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: resolve_address_using_native_resolver_test
   build: test
   language: c
