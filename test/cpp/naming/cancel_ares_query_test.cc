@@ -203,16 +203,15 @@ TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
 }
 
 void PollArbitraryPollsetTwice() {
-  grpc_pollset *pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
-  gpr_mu *mu;
+  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  gpr_mu* mu;
   grpc_pollset_init(pollset, &mu);
   grpc_pollset_worker* worker = nullptr;
   // Make a zero timeout poll
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker,
-                        grpc_core::ExecCtx::Get->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get->Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   // Make a second zero-timeout poll (in case the first one
@@ -220,8 +219,7 @@ void PollArbitraryPollsetTwice() {
   gpr_mu_lock(mu);
   GRPC_LOG_IF_ERROR(
       "pollset_work",
-      grpc_pollset_work(pollset, &worker,
-                        grpc_core::ExecCtx::Get->Now()));
+      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get->Now()));
   gpr_mu_unlock(mu);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(pollset);

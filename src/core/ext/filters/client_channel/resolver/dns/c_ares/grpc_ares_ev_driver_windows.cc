@@ -358,8 +358,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     ScheduleAndNullWriteClosure(error);
   }
 
-  bool GottenIntoDriverList() { return gotten_into_driver_list_; }
-  void SetGottenIntoDriverList() { gotten_into_driver_list_ = true; }
+  bool gotten_into_driver_list() { return gotten_into_driver_list_; }
+  void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
   grpc_combiner* combiner_;
   char recv_from_source_addr_[200];
@@ -434,8 +434,8 @@ class SockToPolledFdMap {
 
   /* These virtual socket functions are called from within the c-ares
    * library. These methods generally dispatch those socket calls to the
-   * appropriate GrpcPolledFdWindows. The virtual "socket" and "close" methods
-   * are special and instead create/add and remove/destroy GrpcPolledFdWindows
+   * appropriate methods. The virtual "socket" and "close" methods are
+   * special and instead create/add and remove/destroy GrpcPolledFdWindows
    * objects.
    */
   static ares_socket_t Socket(int af, int type, int protocol, void* user_data) {
@@ -479,7 +479,7 @@ class SockToPolledFdMap {
     map->RemoveEntry(s);
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
-    if (!polled_fd->GottenIntoDriverList()) {
+    if (!polled_fd->gotten_into_driver_list()) {
       polled_fd->ShutdownLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
@@ -510,9 +510,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                                       grpc_pollset_set* driver_pollset_set,
                                       grpc_combiner* combiner) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
-    // Set a flag so that the virtual socket "close" method knows it 
+    // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
-    polled_fd->SetGottenIntoDriverList();
+    polled_fd->set_gotten_into_driver_list();
     return polled_fd;
   }
 
