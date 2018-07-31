@@ -44,7 +44,8 @@ namespace channelz {
 
 namespace testing {
 class CallCountingHelperPeer;
-}
+class ChannelNodePeer;
+}  // namespace testing
 
 // base class for all channelz entities
 class BaseNode : public RefCounted<BaseNode> {
@@ -131,7 +132,14 @@ class ChannelNode : public BaseNode {
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
   // proxy methods to composed classes.
-  ChannelTrace* trace() { return trace_.get(); }
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_->AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_->AddTraceEventWithReference(severity, data, referenced_channel);
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
@@ -141,8 +149,12 @@ class ChannelNode : public BaseNode {
   char* target_view() { return target_.get(); }
   // provides access to call_counter_ for child.
   CallCountingHelper* call_counter() { return &call_counter_; }
+  // provides access to channel trace for child.
+  ChannelTrace* trace() { return trace_.get(); }
 
  private:
+  // to allow the channel trace test to access trace();
+  friend class testing::ChannelNodePeer;
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;

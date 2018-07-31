@@ -77,7 +77,14 @@ class SubchannelNode : public BaseNode {
   grpc_json* RenderJson() override;
 
   // proxy methods to composed classes.
-  ChannelTrace* trace() { return trace_.get(); }
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_->AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_->AddTraceEventWithReference(severity, data, referenced_channel);
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
