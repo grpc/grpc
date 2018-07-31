@@ -202,6 +202,32 @@ TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   TestCancelActiveDNSQuery(&args);
 }
 
+void PollArbitraryPollsetTwice() {
+  grpc_pollset *pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  gpr_mu *mu;
+  grpc_pollset_init(pollset, &mu);
+  grpc_pollset_worker* worker = nullptr;
+  // Make a zero timeout poll
+  gpr_mu_lock(mu);
+  GRPC_LOG_IF_ERROR(
+      "pollset_work",
+      grpc_pollset_work(pollset, &worker,
+                        grpc_core::ExecCtx::Get->Now()));
+  gpr_mu_unlock(mu);
+  grpc_core::ExecCtx::Get()->Flush();
+  // Make a second zero-timeout poll (in case the first one
+  // short-circuited by picking up a previous "kick")
+  gpr_mu_lock(mu);
+  GRPC_LOG_IF_ERROR(
+      "pollset_work",
+      grpc_pollset_work(pollset, &worker,
+                        grpc_core::ExecCtx::Get->Now()));
+  gpr_mu_unlock(mu);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(pollset);
+  gpr_free(pollset);
+}
+
 TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
@@ -218,14 +244,15 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // this test. This test only cares about what happens to fd's that c-ares
   // opens.
   TestCancelActiveDNSQuery(&args);
-  // TODO(apolcyn): This test relies on the assumption
-  // that cancelling a c-ares query will flush out all callbacks on the
-  // current exec ctx, which is true on posix platforms but not on Windows,
-  // because fd shutdown on Windows requires a trip through the
-  // polling loop to schedule the callback.
-#ifndef GPR_WINDOWS
-  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
+  // This test relies on the assumption that cancelling a c-ares query
+  // will flush out all callbacks on the current exec ctx, which is true
+  // on posix platforms but not on Windows, because fd shutdown on Windows
+  // requires a trip through the polling loop to schedule the callback.
+  // So we need to do extra polling work on Windows to free things up.
+#ifdef GPR_WINDOWS
+  PollArbitraryPollsetTwice();
 #endif
+  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
