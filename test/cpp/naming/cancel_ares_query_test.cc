@@ -202,7 +202,9 @@ TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   TestCancelActiveDNSQuery(&args);
 }
 
-void PollArbitraryPollsetTwice() {
+#ifdef GPR_WINDOWS
+
+void MaybePollArbitraryPollsetTwice() {
   grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   gpr_mu* mu;
   grpc_pollset_init(pollset, &mu);
@@ -226,6 +228,12 @@ void PollArbitraryPollsetTwice() {
   gpr_free(pollset);
 }
 
+#else
+
+void MaybePollArbitraryPollsetTwice() {}
+
+#endif
+
 TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
@@ -247,9 +255,7 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // on posix platforms but not on Windows, because fd shutdown on Windows
   // requires a trip through the polling loop to schedule the callback.
   // So we need to do extra polling work on Windows to free things up.
-#ifdef GPR_WINDOWS
-  PollArbitraryPollsetTwice();
-#endif
+  MaybePollArbitraryPollsetTwice();
   EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
