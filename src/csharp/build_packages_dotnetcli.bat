@@ -21,18 +21,12 @@ set DOTNET=dotnet
 
 mkdir ..\..\artifacts
 
-@rem Collect the artifacts built by the previous build step if running on Jenkins
+@rem Collect the artifacts built by the previous build step
 mkdir nativelibs
-@rem Jenkins flow (deprecated)
-powershell -Command "cp -r ..\..\platform=*\artifacts\csharp_ext_* nativelibs"
-@rem Kokoro flow
 powershell -Command "cp -r ..\..\input_artifacts\csharp_ext_* nativelibs"
 
 @rem Collect protoc artifacts built by the previous build step
 mkdir protoc_plugins
-@rem Jenkins flow (deprecated)
-powershell -Command "cp -r ..\..\platform=*\artifacts\protoc_* protoc_plugins"
-@rem Kokoro flow
 powershell -Command "cp -r ..\..\input_artifacts\protoc_* protoc_plugins"
 
 %DOTNET% restore Grpc.sln || goto :error
