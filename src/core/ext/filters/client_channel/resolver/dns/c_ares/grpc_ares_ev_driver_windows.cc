@@ -363,7 +363,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     ScheduleAndNullWriteClosure(error);
   }
 
-  const bool gotten_into_driver_list() { return gotten_into_driver_list_; }
+  bool gotten_into_driver_list() const { return gotten_into_driver_list_; }
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
   grpc_combiner* combiner_;
