@@ -43,7 +43,7 @@ enum {
   // priority, such as auth filters.
   GRPC_CHANNEL_INIT_PRIORITY_MED = 10000,
   // For filters that need to be close to top or bottom, such as protocol-level
-  // filters (client_authority, http-client, http-server) and stats (census).
+  // filters (client_authority, http-client, http-server).
   GRPC_CHANNEL_INIT_PRIORITY_HIGH = 20000,
   // For filters that need to be very close to the wire or surface.
   GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH = 30000,
