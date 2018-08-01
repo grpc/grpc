@@ -144,7 +144,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
-         int min_pollers, int max_pollers, int sync_cq_timeout_msec);
+         grpc_resource_quota* server_rq, int min_pollers, int max_pollers,
+         int sync_cq_timeout_msec);
 
   /// Start the server.
   ///
