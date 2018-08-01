@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <limits.h>
-
 #include <grpc/support/port_platform.h>
+
+#include <limits.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
