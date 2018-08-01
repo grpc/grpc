@@ -531,12 +531,15 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
 - (void)connectivityChanged:(NSNotification *)note {
   // Cancel underlying call upon this notification
-  [self cancelCall];
-  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                 code:GRPCErrorCodeUnavailable
-                                             userInfo:@{
-                                               NSLocalizedDescriptionKey : @"Connectivity lost."
-                                             }]];
+  __strong GRPCCall *strongSelf = self;
+  if (strongSelf) {
+    [self cancelCall];
+    [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                   code:GRPCErrorCodeUnavailable
+                                               userInfo:@{
+                                                 NSLocalizedDescriptionKey : @"Connectivity lost."
+                                               }]];
+  }
 }
 
 @end
