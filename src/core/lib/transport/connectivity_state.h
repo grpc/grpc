@@ -62,11 +62,6 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
                                  grpc_error* associated_error,
                                  const char* reason);
 
-/** Return true if this connectivity state has watchers.
-    Access must be serialized with an external lock. */
-bool grpc_connectivity_state_has_watchers(
-    grpc_connectivity_state_tracker* tracker);
-
 /** Return the last seen connectivity state. No need to synchronize access. */
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker* tracker);

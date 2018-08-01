@@ -465,10 +465,6 @@ void grpc_subchannel_maybe_start_connecting_locked(grpc_subchannel* c) {
     /* Already connected: don't restart */
     return;
   }
-  if (!grpc_connectivity_state_has_watchers(&c->state_tracker)) {
-    /* Nobody is interested in connecting: so don't just yet */
-    return;
-  }
   c->connecting = true;
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
   if (!c->backoff_begun) {
@@ -547,8 +543,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
       if (!c->disconnected && c->connected_subchannel != nullptr) {
         if (grpc_trace_stream_refcount.enabled()) {
           gpr_log(GPR_INFO,
-                  "Connected subchannel %p of subchannel %p has gone into %s. "
-                  "Attempting to reconnect.",
+                  "Connected subchannel %p of subchannel %p has gone into %s. ",
                   c->connected_subchannel.get(), c,
                   grpc_connectivity_state_name(
                       connected_subchannel_watcher->connectivity_state));
@@ -559,7 +554,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                                     GRPC_ERROR_REF(error), "reflect_child");
         c->backoff_begun = false;
         c->backoff->Reset();
-        grpc_subchannel_maybe_start_connecting_locked(c);
+        // The re-connection will happen upon request.
       } else {
         connected_subchannel_watcher->connectivity_state =
             GRPC_CHANNEL_SHUTDOWN;
@@ -646,7 +641,6 @@ static bool publish_transport_locked(grpc_subchannel* c) {
 static void on_subchannel_connected(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
   grpc_channel_args* delete_channel_args = c->connecting_result.channel_args;
-
   GRPC_SUBCHANNEL_WEAK_REF(c, "on_subchannel_connected");
   gpr_mu_lock(&c->mu);
   c->connecting = false;
@@ -662,12 +656,10 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
                                "Connect Failed", &error, 1),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
         "connect_failed");
-
     const char* errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-
-    grpc_subchannel_maybe_start_connecting_locked(c);
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
+    // The re-connection will happen upon request.
   }
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(c, "connected");

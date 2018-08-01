@@ -98,11 +98,6 @@ grpc_connectivity_state grpc_connectivity_state_get(
   return cur;
 }
 
-bool grpc_connectivity_state_has_watchers(
-    grpc_connectivity_state_tracker* connectivity_state) {
-  return connectivity_state->watchers != nullptr;
-}
-
 bool grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker* tracker, grpc_connectivity_state* current,
     grpc_closure* notify) {

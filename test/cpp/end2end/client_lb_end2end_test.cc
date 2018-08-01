@@ -544,8 +544,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstWatchReffedSubchannel) {
-  // TODO(juanlishen): Add comments about the mechanism behind the scene once
-  // the behavior after disconnection is clear.
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
   auto channel_1 = BuildChannel("pick_first");
@@ -556,20 +554,38 @@ TEST_F(ClientLbEnd2endTest, PickFirstWatchReffedSubchannel) {
   gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
   servers_[0]->Shutdown();
   // Channel 1 will receive a re-resolution containing the same server. It will
-  // hold a ref to the subchannel, and WATCH it.
+  // create a new subchannel, hold a ref to it, and WATCH it.
   servers_.clear();
   StartServers(1, ports);
   sleep(1);
+  // Even though the server is up now, channel 1 doesn't know it yet because no
+  // pick has kicked off the connecting.
   gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
   auto channel_2 = BuildChannel("pick_first");
   auto stub_2 = BuildStub(channel_2);
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
   gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING FIRST CALL *******");
-  WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
-  // Now both channels ref and watch the subchannel.
+  CheckRpcSendOk(stub_2, DEBUG_LOCATION);
+  // Now both channels ref and watch the subchannel as selected subchannel.
+  // Channel 2 requested the connection while channel 1 got a free ride because
+  // it's WATCHING.
   gpr_log(GPR_INFO, "****** CHANNEL 2 FINISHED FIRST CALL *******");
   servers_[0]->Shutdown();
+  // Two cases may happen after the server is down.
+  // 1. If there is no channel reffing the subchannel at some point because both
+  // connectivity notifications are done before any re-resolution is done (which
+  // is more likely for real resolvers), the subchannel will be removed from
+  // subchannel index. When re-resolution result arrives, a new subchannel is
+  // created from IDLE state.
+  // 2. If there is always some channel reffing the subchannel because
+  // re-resolution is done before the other channel receives the connectivity
+  // notification (which is what we are seeing in this test with fake resolver),
+  // the failed subchannel isn't removed from subchannel index but it stays in
+  // TRANSIENT_FAILURE state. Both channels start watching the subchannel from
+  // TRANSIENT_FAILURE state.
+  // In either case, the channels know the latest connectivity state of the
+  // subchannel.
   servers_.clear();
   StartServers(1, ports);
   sleep(1);
