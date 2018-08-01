@@ -56,7 +56,7 @@ void grpc_client_channel_init(void) {
   grpc_register_http_proxy_mapper();
   grpc_subchannel_index_init();
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_MAX, append_filter,
       (void*)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
 }

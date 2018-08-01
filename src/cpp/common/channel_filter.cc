@@ -78,8 +78,13 @@ bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
         grpc_channel_stack_builder_get_channel_arguments(builder);
     if (!filter.include_filter(*args)) return true;
   }
-  return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
-                                                   nullptr, nullptr);
+  if (filter.prepend) {
+    return grpc_channel_stack_builder_prepend_filter(builder, &filter.filter,
+                                                     nullptr, nullptr);
+  } else {
+    return grpc_channel_stack_builder_append_filter(builder, &filter.filter,
+                                                    nullptr, nullptr);
+  }
 }
 
 }  // namespace

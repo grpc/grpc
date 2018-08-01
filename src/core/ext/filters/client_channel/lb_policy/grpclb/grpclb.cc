@@ -1880,7 +1880,7 @@ void grpc_lb_policy_grpclb_init() {
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::GrpcLbFactory>()));
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_client_load_reporting_filter,
                                    (void*)&grpc_client_load_reporting_filter);
 }
