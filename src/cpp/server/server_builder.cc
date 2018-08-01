@@ -261,7 +261,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   std::unique_ptr<Server> server(new Server(
-      max_receive_message_size_, &args, sync_server_cqs,
+      max_receive_message_size_, &args, sync_server_cqs, resource_quota_,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
       sync_server_settings_.cq_timeout_msec));
 

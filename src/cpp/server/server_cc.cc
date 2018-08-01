@@ -47,6 +47,12 @@
 namespace grpc {
 namespace {
 
+// The default value for maximum number of threads that can be created in the
+// sync server. This value of 500 is empirically chosen. To increase the max
+// number of threads in a sync server, pass a custom ResourceQuota object (with
+// the desired number of max-threads set) to the server builder
+#define DEFAULT_MAX_SYNC_SERVER_THREADS 500
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -266,9 +272,9 @@ class Server::SyncRequestThreadManager : public ThreadManager {
  public:
   SyncRequestThreadManager(Server* server, CompletionQueue* server_cq,
                            std::shared_ptr<GlobalCallbacks> global_callbacks,
-                           int min_pollers, int max_pollers,
-                           int cq_timeout_msec)
-      : ThreadManager(min_pollers, max_pollers),
+                           grpc_resource_quota* rq, int min_pollers,
+                           int max_pollers, int cq_timeout_msec)
+      : ThreadManager("SyncServer", rq, min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -376,7 +382,8 @@ Server::Server(
     int max_receive_message_size, ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
-    int min_pollers, int max_pollers, int sync_cq_timeout_msec)
+    grpc_resource_quota* server_rq, int min_pollers, int max_pollers,
+    int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
@@ -392,10 +399,22 @@ Server::Server(
   global_callbacks_->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
+    bool default_rq_created = false;
+    if (server_rq == nullptr) {
+      server_rq = grpc_resource_quota_create("SyncServer-default-rq");
+      grpc_resource_quota_set_max_threads(server_rq,
+                                          DEFAULT_MAX_SYNC_SERVER_THREADS);
+      default_rq_created = true;
+    }
+
     for (const auto& it : *sync_server_cqs_) {
       sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-          this, it.get(), global_callbacks_, min_pollers, max_pollers,
-          sync_cq_timeout_msec));
+          this, it.get(), global_callbacks_, server_rq, min_pollers,
+          max_pollers, sync_cq_timeout_msec));
+    }
+
+    if (default_rq_created) {
+      grpc_resource_quota_unref(server_rq);
     }
   }
 
