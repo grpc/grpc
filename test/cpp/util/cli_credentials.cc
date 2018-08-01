@@ -31,9 +31,8 @@ DEFINE_string(
     ssl_target, "",
     "If not empty, treat the server host name as this for ssl/tls certificate "
     "validation.");
-DEFINE_string(
-    channel_creds_type, "",
-    "The channel creds type: insecure, ssl, or alts.");
+DEFINE_string(channel_creds_type, "",
+              "The channel creds type: insecure, ssl, or alts.");
 
 namespace grpc {
 namespace testing {
@@ -41,7 +40,8 @@ namespace testing {
 grpc::string CliCredentials::GetDefaultChannelCredsType() const {
   // Compatibility logic for --enable_ssl.
   if (FLAGS_enable_ssl) {
-    fprintf(stderr, "warning: --enable_ssl is deprecated. Use "
+    fprintf(stderr,
+            "warning: --enable_ssl is deprecated. Use "
             "--channel_creds_type=ssl.\n");
     return "ssl";
   }
@@ -53,7 +53,7 @@ grpc::string CliCredentials::GetDefaultChannelCredsType() const {
 }
 
 std::shared_ptr<grpc::ChannelCredentials>
-    CliCredentials::GetChannelCredentials() const {
+CliCredentials::GetChannelCredentials() const {
   if (FLAGS_channel_creds_type.compare("insecure") == 0) {
     return grpc::InsecureChannelCredentials();
   } else if (FLAGS_channel_creds_type.compare("ssl") == 0) {
@@ -86,7 +86,8 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
   if (FLAGS_channel_creds_type.empty()) {
     FLAGS_channel_creds_type = GetDefaultChannelCredsType();
   } else if (FLAGS_enable_ssl && FLAGS_channel_creds_type.compare("ssl") != 0) {
-    fprintf(stderr, "warning: ignoring --enable_ssl because "
+    fprintf(stderr,
+            "warning: ignoring --enable_ssl because "
             "--channel_creds_type already set to %s.\n",
             FLAGS_channel_creds_type.c_str());
   }
@@ -112,8 +113,9 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
   }
   // Composite any call-type credentials on top of the base channel.
   std::shared_ptr<grpc::CallCredentials> call_creds = GetCallCredentials();
-  return (channel_creds == nullptr || call_creds == nullptr) ? channel_creds :
-      grpc::CompositeChannelCredentials(channel_creds, call_creds);
+  return (channel_creds == nullptr || call_creds == nullptr)
+             ? channel_creds
+             : grpc::CompositeChannelCredentials(channel_creds, call_creds);
 }
 
 const grpc::string CliCredentials::GetCredentialUsage() const {
@@ -128,7 +130,7 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
 
 const grpc::string CliCredentials::GetSslTargetNameOverride() const {
   bool use_ssl = FLAGS_channel_creds_type.compare("ssl") == 0 ||
-      (FLAGS_access_token.empty() && FLAGS_use_auth);
+                 (FLAGS_access_token.empty() && FLAGS_use_auth);
   return use_ssl ? FLAGS_ssl_target : "";
 }
 
