@@ -32,12 +32,17 @@
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #ifdef GPR_LINUX
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#include <sys/param.h>
 #endif /* GPR_LINUX */
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
+
+#ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
+#endif
 
 static int check_transport_security_type(const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -385,13 +390,15 @@ class TestSystemRootCerts : public SystemRootCerts {
     return GetSystemRootCerts();
   }
 
-  static grpc_slice CreateRootCertsBundleForTesting() {
-    return CreateRootCertsBundle();
+  static grpc_slice CreateRootCertsBundleForTesting(
+      const char* certs_directory) {
+    return CreateRootCertsBundle(certs_directory);
   }
 
-  static const char* GetAbsoluteFilePathForTesting(const char* directory,
-                                                   const char* filename) {
-    return GetAbsoluteFilePath(directory, filename);
+  static void GetAbsoluteFilePathForTesting(const char* path_buffer,
+                                            const char* directory,
+                                            const char* filename) {
+    GetAbsoluteFilePath(path_buffer, directory, filename);
   }
 };
 #endif /* GPR_LINUX */
@@ -478,11 +485,12 @@ static void test_default_ssl_roots(void) {
 static void test_absolute_cert_path() {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
-  const char* result_path =
-      grpc_core::TestSystemRootCerts::GetAbsoluteFilePathForTesting(directory,
-                                                                    filename);
+  const char* result_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
+  grpc_core::TestSystemRootCerts::GetAbsoluteFilePathForTesting(
+      result_path, directory, filename);
   GPR_ASSERT(
       strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
+  gpr_free((char*)result_path);
 }
 
 static void test_cert_bundle_creation() {
@@ -493,10 +501,10 @@ static void test_cert_bundle_creation() {
   GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file("test/core/security/etc/bundle/bundle.pem", 1,
                                   &roots_bundle));
-  gpr_setenv("GRPC_SYSTEM_SSL_ROOTS_DIR", "test/core/security/etc/roots");
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
-      grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting();
+      grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting(
+          "test/core/security/etc/roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   GPR_ASSERT(strcmp(result_str, bundle_str) == 0);

@@ -37,10 +37,6 @@ extern "C" {
 #define GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR \
   "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"
 
-/** Environment variable used as a flag to enable/disable loading system root
-    certificates from the OS trust store. */
-#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
-
 /** Environment variable that points to the google default application
    credentials json key or refresh token. Used in the
    grpc_google_default_credentials_create function. */
