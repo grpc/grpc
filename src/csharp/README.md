@@ -32,11 +32,11 @@ HOW TO USE
 
 - To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
 
-**Xamarin.Android and Xamarin.iOS (Experimental only) **
+**Xamarin.Android and Xamarin.iOS (Experimental only)**
 
 See [Experimentally supported platforms](experimental) for instructions.
 
-**Unity (Experimental only) **
+**Unity (Experimental only)**
 
 See [Experimentally supported platforms](experimental) for instructions.
 
