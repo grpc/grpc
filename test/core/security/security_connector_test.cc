@@ -31,7 +31,6 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #ifdef GPR_LINUX
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 #include <sys/param.h>
 #endif /* GPR_LINUX */
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -384,7 +383,7 @@ namespace grpc_core {
 namespace {
 
 #ifdef GPR_LINUX
-class TestSystemRootCerts : public SystemRootCerts {
+class TestSystemRootCerts {
  public:
   static grpc_slice GetSystemRootCertsForTesting() {
     return GetSystemRootCerts();
