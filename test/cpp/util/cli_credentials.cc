@@ -20,7 +20,9 @@
 
 #include <gflags/gflags.h>
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
+DEFINE_bool(
+    enable_ssl, false,
+    "Whether to use ssl/tls. Deprecated. Use --channel_creds_type=ssl.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
 DEFINE_string(
     access_token, "",
@@ -29,47 +31,105 @@ DEFINE_string(
     ssl_target, "",
     "If not empty, treat the server host name as this for ssl/tls certificate "
     "validation.");
+DEFINE_string(
+    channel_creds_type, "",
+    "The channel creds type: insecure, ssl, or alts.");
 
 namespace grpc {
 namespace testing {
 
-std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
+grpc::string CliCredentials::GetDefaultChannelCredsType() const {
+  // Compatibility logic for --enable_ssl.
+  if (FLAGS_enable_ssl) {
+    fprintf(stderr, "warning: --enable_ssl is deprecated. Use "
+            "--channel_creds_type=ssl.\n");
+    return "ssl";
+  }
+  // Implicit channel for GoogleDefaultCredentials is SSL.
+  if (FLAGS_access_token.empty() && FLAGS_use_auth) {
+    return "ssl";
+  }
+  return "insecure";
+}
+
+std::shared_ptr<grpc::ChannelCredentials>
+    CliCredentials::GetChannelCredentials() const {
+  if (FLAGS_channel_creds_type.compare("insecure") == 0) {
+    return grpc::InsecureChannelCredentials();
+  } else if (FLAGS_channel_creds_type.compare("ssl") == 0) {
+    return grpc::SslCredentials(grpc::SslCredentialsOptions());
+  } else if (FLAGS_channel_creds_type.compare("alts") == 0) {
+    return grpc::experimental::AltsCredentials(
+        grpc::experimental::AltsCredentialsOptions());
+  }
+  fprintf(stderr,
+          "--channel_creds_type=%s invalid; must be insecure, ssl or alts.\n",
+          FLAGS_channel_creds_type.c_str());
+  return std::shared_ptr<grpc::ChannelCredentials>();
+}
+
+std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials()
     const {
   if (!FLAGS_access_token.empty()) {
     if (FLAGS_use_auth) {
       fprintf(stderr,
               "warning: use_auth is ignored when access_token is provided.");
     }
-
-    return grpc::CompositeChannelCredentials(
-        grpc::SslCredentials(grpc::SslCredentialsOptions()),
-        grpc::AccessTokenCredentials(FLAGS_access_token));
+    return grpc::AccessTokenCredentials(FLAGS_access_token);
   }
+  // TODO(@capstan): Support GoogleDefaultCredentials on other channel types.
+  return std::shared_ptr<grpc::CallCredentials>();
+}
 
-  if (FLAGS_use_auth) {
-    return grpc::GoogleDefaultCredentials();
+std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
+    const {
+  if (FLAGS_channel_creds_type.empty()) {
+    FLAGS_channel_creds_type = GetDefaultChannelCredsType();
+  } else if (FLAGS_enable_ssl && FLAGS_channel_creds_type.compare("ssl") != 0) {
+    fprintf(stderr, "warning: ignoring --enable_ssl because "
+            "--channel_creds_type already set to %s.\n",
+            FLAGS_channel_creds_type.c_str());
   }
-
-  if (FLAGS_enable_ssl) {
-    return grpc::SslCredentials(grpc::SslCredentialsOptions());
+  std::shared_ptr<grpc::ChannelCredentials> channel_creds;
+  if (FLAGS_access_token.empty() && FLAGS_use_auth) {
+    // Today, GoogleDefaultCredentials implies SSL and service account.
+    if (FLAGS_channel_creds_type.compare("ssl") != 0) {
+      fprintf(stderr,
+              "warning: ignoring --channel_creds_type=%s because --use_auth.",
+              FLAGS_channel_creds_type.c_str());
+    }
+    channel_creds = grpc::GoogleDefaultCredentials();
+  } else {
+    // Legacy transport upgrade logic for insecure requests.
+    if (!FLAGS_access_token.empty() &&
+        FLAGS_channel_creds_type.compare("insecure") == 0) {
+      fprintf(stderr,
+              "warning: --channel_creds_type=insecure upgraded to ssl because "
+              "an access token was provided.\n");
+      FLAGS_channel_creds_type = "ssl";
+    }
+    channel_creds = GetChannelCredentials();
   }
-
-  return grpc::InsecureChannelCredentials();
+  // Composite any call-type credentials on top of the base channel.
+  std::shared_ptr<grpc::CallCredentials> call_creds = GetCallCredentials();
+  return (channel_creds == nullptr || call_creds == nullptr) ? channel_creds :
+      grpc::CompositeChannelCredentials(channel_creds, call_creds);
 }
 
 const grpc::string CliCredentials::GetCredentialUsage() const {
-  return "    --enable_ssl             ; Set whether to use tls\n"
+  return "    --enable_ssl             ; Set whether to use ssl (deprecated)\n"
          "    --use_auth               ; Set whether to create default google"
          " credentials\n"
          "    --access_token           ; Set the access token in metadata,"
          " overrides --use_auth\n"
-         "    --ssl_target             ; Set server host for tls validation\n";
+         "    --ssl_target             ; Set server host for ssl validation\n"
+         "    --channel_creds_type     ; Set to insecure, ssl, alts\n";
 }
 
 const grpc::string CliCredentials::GetSslTargetNameOverride() const {
-  bool use_tls =
-      FLAGS_enable_ssl || (FLAGS_access_token.empty() && FLAGS_use_auth);
-  return use_tls ? FLAGS_ssl_target : "";
+  bool use_ssl = FLAGS_channel_creds_type.compare("ssl") == 0 ||
+      (FLAGS_access_token.empty() && FLAGS_use_auth);
+  return use_ssl ? FLAGS_ssl_target : "";
 }
 
 }  // namespace testing
