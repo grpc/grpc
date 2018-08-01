@@ -71,7 +71,7 @@
   
   @rem create a zipfile that will act as a Unity package
   powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('unitypackage\unitypackage_skeleton', 'grpc_unity_package.zip');"
-  copy /Y grpc_unity_package.zip ..\..\artifacts\grpc_unity_package.%%VERSION%.zip || goto :error
+  copy /Y grpc_unity_package.zip ..\..\artifacts\grpc_unity_package.%VERSION%.zip || goto :error
   
   goto :EOF
   
