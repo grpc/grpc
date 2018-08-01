@@ -21,7 +21,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include <stdbool.h>
-#include <string.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -60,6 +59,12 @@ static const char* installed_roots_path =
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
+
+/** Environment variable used as a flag to enable/disable loading system root
+    certificates from the OS trust store. */
+#ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
 #endif
 
 /* -- Overridden default roots. -- */

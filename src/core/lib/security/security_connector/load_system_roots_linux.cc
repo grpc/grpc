@@ -66,36 +66,18 @@ grpc_slice SystemRootCerts::GetSystemRootCerts() {
   return grpc_empty_slice();
 }
 
-const char* SystemRootCerts::GetValidCertsDirectory() {
-  // TODO: this function can return a slice to avoid opening the dir twice.
-  const char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
-  if (custom_dir != nullptr) {
-    return custom_dir;
-  }
-  size_t num_cert_dirs_ =
-      GPR_ARRAY_SIZE(SystemRootCerts::linux_cert_directories_);
-  struct stat dir_stat;
-  for (size_t i = 0; i < num_cert_dirs_; i++) {
-    int stat_return = stat(linux_cert_directories_[i], &dir_stat);
-    if (stat_return == 0 && S_ISDIR(dir_stat.st_mode)) {
-      return linux_cert_directories_[i];
-    }
-  }
-  return nullptr;
-}
-
-const char* SystemRootCerts::GetAbsoluteFilePath(const char* valid_file_dir,
-                                                 const char* file_entry_name) {
+void SystemRootCerts::GetAbsoluteFilePath(const char* path_buffer,
+                                          const char* valid_file_dir,
+                                          const char* file_entry_name) {
   if (valid_file_dir == nullptr || file_entry_name == nullptr) {
-    return nullptr;
+    path_buffer = nullptr;
   }
-  static char absolute_path[MAXPATHLEN];
-  int path_len = snprintf(absolute_path, GPR_ARRAY_SIZE(absolute_path) - 1,
-                          "%s/%s", valid_file_dir, file_entry_name);
+  // static char absolute_path[MAXPATHLEN];
+  int path_len = snprintf((char*)path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
+                          file_entry_name);
   if (path_len == 0) {
-    return nullptr;
+    path_buffer = nullptr;
   }
-  return absolute_path;
 }
 
 size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
@@ -109,9 +91,10 @@ size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
-    const char* file_path =
-        GetAbsoluteFilePath(directory_path, file_entry_name);
+    const char* file_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
+    GetAbsoluteFilePath(file_path, directory_path, file_entry_name);
     int stat_return = stat(file_path, &dir_entry_stat);
+    gpr_free((char*)file_path);
     if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
@@ -124,34 +107,33 @@ size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
   return total_size;
 }
 
-grpc_slice SystemRootCerts::CreateRootCertsBundle() {
+grpc_slice SystemRootCerts::CreateRootCertsBundle(const char* certs_directory) {
   grpc_slice bundle_slice = grpc_empty_slice();
-  const char* found_cert_dir = GetValidCertsDirectory();
-  if (found_cert_dir == nullptr) {
+  if (certs_directory == nullptr) {
     return bundle_slice;
   }
-
   struct dirent* directory_entry;
   char* bundle_string = nullptr;
-  size_t total_bundle_size = GetDirectoryTotalSize(found_cert_dir);
+  size_t total_bundle_size = GetDirectoryTotalSize(certs_directory);
   bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
-
-  DIR* ca_directory = opendir(found_cert_dir);
+  DIR* ca_directory = opendir(certs_directory);
   size_t bytes_read = 0;
   if (ca_directory == nullptr) {
     gpr_free(bundle_string);
-    gpr_free((char*)found_cert_dir);  // Casting to char* to fix memory leak.
     return bundle_slice;
   }
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
-    const char* file_path =
-        GetAbsoluteFilePath(found_cert_dir, file_entry_name);
+    const char* file_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
+    GetAbsoluteFilePath(file_path, certs_directory, file_entry_name);
     int stat_return = stat(file_path, &dir_entry_stat);
     if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
+        if (file_path != nullptr) {
+          gpr_free((char*)file_path);
+        }
       // no subdirectories.
       continue;
     }
@@ -164,12 +146,12 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        gpr_log(GPR_ERROR, "failed to read a file using fread");
+        gpr_log(GPR_ERROR, "failed to read a file");
       }
     }
+    gpr_free((char*)file_path);
   }
   closedir(ca_directory);
-  gpr_free((char*)found_cert_dir);  // Casting to non-const to fix memory leak.
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
   return bundle_slice;
 }
@@ -177,19 +159,26 @@ grpc_slice SystemRootCerts::CreateRootCertsBundle() {
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  const char* use_custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
-  if (use_custom_dir) {
-    result = SystemRootCerts::CreateRootCertsBundle();
+  const char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+  if (custom_dir != nullptr) {
+    result = SystemRootCerts::CreateRootCertsBundle(custom_dir);
+    gpr_free((char*)custom_dir);
   }
-  /* If the custom directory is empty/invalid/not specified, fallback to
-     distribution-specific directory. */
+  // If the custom directory is empty/invalid/not specified, fallback to
+  // distribution-specific directory.
   if (GRPC_SLICE_IS_EMPTY(result)) {
     result = SystemRootCerts::GetSystemRootCerts();
   }
   if (GRPC_SLICE_IS_EMPTY(result)) {
-    result = SystemRootCerts::CreateRootCertsBundle();
+    for (size_t i = 0;
+         i < GPR_ARRAY_SIZE(SystemRootCerts::linux_cert_directories_); i++) {
+      result = SystemRootCerts::CreateRootCertsBundle(
+          SystemRootCerts::linux_cert_directories_[i]);
+      if (!GRPC_SLICE_IS_EMPTY(result)) {
+        break;
+      }
+    }
   }
-  gpr_free((char*)use_custom_dir);  // Casting to non-const to fix memory leak.
   return result;
 }
 
