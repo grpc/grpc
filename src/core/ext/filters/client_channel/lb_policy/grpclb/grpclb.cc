@@ -134,6 +134,7 @@ class GrpcLb : public LoadBalancingPolicy {
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                 ChildRefsList* child_channels) override;
 
@@ -1211,6 +1212,15 @@ void GrpcLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
 void GrpcLb::ExitIdleLocked() {
   if (!started_picking_) {
     StartPickingLocked();
+  }
+}
+
+void GrpcLb::ResetBackoffLocked() {
+  if (lb_channel_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_channel_);
+  }
+  if (rr_policy_ != nullptr) {
+    rr_policy_->ResetBackoffLocked();
   }
 }
 

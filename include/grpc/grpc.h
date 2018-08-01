@@ -269,6 +269,9 @@ GRPCAPI char* grpc_channel_get_target(grpc_channel* channel);
 GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
                                    const grpc_channel_info* channel_info);
 
+/** Resets the channel's connect backoff. */
+GRPCAPI void grpc_channel_reset_connect_backoff(grpc_channel* channel);
+
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
     clients will want to simply pass NULL. The user data in 'args' need only
