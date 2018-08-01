@@ -1,16 +1,22 @@
 This directory contains useful resources for getting gRPC C# to work on
-not-yet-supported platforms.
+platforms that are not yet fully supported.
 
-# Unity & Xamarin
-gRPC C# currently doesn't support Unity or Xamarin, but some proof-of-concept
-work has been done. Some of the resources are shared in this directory to
-ease community work on Unity & Xamarin support.
+# Xamarin
 
-## Crosscompiling `grpc_csharp_ext` for Android
+gRPC C# now has experimental support for Xamarin.
+See [HelloworldXamarin](/examples/csharp/HelloworldXamarin) for an example how to use it.
 
-* Install [Android NDK](https://developer.android.com/ndk/index.html)
-* Run `./build_native_ext_for_android.sh` to crosscompile using cmake.
+What's currently supported:
 
-## Crosscompiling `grpc_csharp_ext` for iOS
+Xamarin.Android
+- supported API level: Kitkat 4.4+ (= API level 19)
+- supported ABIs: `armeabi-v7a` (vast majority of Android devices out there), 
+  `arm64-v8a` (some newer Android devices), `x86` (for emulator)
 
-TBD
+Xamarin.iOS
+- supported architectures: arm64 (iPhone 6+) and x86_64 (iPhone simulator)
+
+# Unity
+gRPC C# currently doesn't support Unity, but some proof-of-concept
+work has been done. There is in-progress effort to provide users
+with a pre-built gRPC package that can be used in their projects.

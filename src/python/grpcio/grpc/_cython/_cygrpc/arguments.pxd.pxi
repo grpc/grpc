@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,12 @@ cdef void _destroy_pointer(void* pointer)
 
 
 cdef int _compare_pointer(void* first_pointer, void* second_pointer)
+
+
+cdef tuple _wrap_grpc_arg(grpc_arg arg)
+
+
+cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg)
 
 
 cdef class _ArgumentProcessor:

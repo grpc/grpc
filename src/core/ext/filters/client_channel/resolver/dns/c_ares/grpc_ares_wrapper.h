@@ -70,6 +70,10 @@ void grpc_ares_cleanup(void);
  * and destroys the grpc_ares_request */
 void grpc_ares_complete_request_locked(grpc_ares_request* request);
 
+/* Indicates whether or not AAAA queries should be attempted. */
+/* E.g., return false if ipv6 is known to not be available. */
+bool grpc_ares_query_ipv6();
+
 /* Exposed only for testing */
 void grpc_cares_wrapper_test_only_address_sorting_sort(
     grpc_lb_addresses* lb_addrs);

@@ -21,16 +21,10 @@ mkdir -p ../../artifacts/
 
 # Collect the artifacts built by the previous build step
 mkdir -p nativelibs
-# Jenkins flow (deprecated)
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/csharp_ext_* nativelibs || true
-# Kokoro flow
 cp -r $EXTERNAL_GIT_ROOT/input_artifacts/csharp_ext_* nativelibs || true
 
 # Collect protoc artifacts built by the previous build step
 mkdir -p protoc_plugins
-# Jenkins flow (deprecated)
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/protoc_* protoc_plugins || true
-# Kokoro flow
 cp -r $EXTERNAL_GIT_ROOT/input_artifacts/protoc_* protoc_plugins || true
 
 dotnet restore Grpc.sln
