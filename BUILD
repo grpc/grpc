@@ -66,9 +66,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "gladiolus"
 
-core_version = "6.0.0-pre2"
+core_version = "6.0.0"
 
-version = "1.14.0-pre2"
+version = "1.14.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
