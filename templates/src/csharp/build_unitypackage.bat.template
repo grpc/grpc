@@ -37,14 +37,11 @@
   xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release${"\\"}
   
   %%DOTNET% build --configuration Release Grpc.Core || goto :error
-  %%DOTNET% build --configuration Release Grpc.Auth || goto :error
   @rem build HealthCheck to get hold of Google.Protobuf.dll assembly
   %%DOTNET% build --configuration Release Grpc.HealthCheck || goto :error
   
-  @rem copy assemblies to the unity package skeleton
-  copy /Y Grpc.Auth\bin\Release\net45\Grpc.Auth.dll unitypackage\unitypackage_skeleton\Plugins\Grpc.Auth\lib\net45\Grpc.Auth.dll || goto :error
-  copy /Y Grpc.Auth\bin\Release\net45\Grpc.Auth.pdb unitypackage\unitypackage_skeleton\Plugins\Grpc.Auth\lib\net45\Grpc.Auth.pdb || goto :error
-  copy /Y Grpc.Auth\bin\Release\net45\Grpc.Auth.xml unitypackage\unitypackage_skeleton\Plugins\Grpc.Auth\lib\net45\Grpc.Auth.xml || goto :error
+  @rem copy Grpc assemblies to the unity package skeleton
+  @rem TODO(jtattermusch): Add Grpc.Auth assembly and its dependencies
   copy /Y Grpc.Core\bin\Release\net45\Grpc.Core.dll unitypackage\unitypackage_skeleton\Plugins\Grpc.Core\lib\net45\Grpc.Core.dll || goto :error
   copy /Y Grpc.Core\bin\Release\net45\Grpc.Core.pdb unitypackage\unitypackage_skeleton\Plugins\Grpc.Core\lib\net45\Grpc.Core.dll || goto :error
   copy /Y Grpc.Core\bin\Release\net45\Grpc.Core.xml unitypackage\unitypackage_skeleton\Plugins\Grpc.Core\lib\net45\Grpc.Core.dll || goto :error
