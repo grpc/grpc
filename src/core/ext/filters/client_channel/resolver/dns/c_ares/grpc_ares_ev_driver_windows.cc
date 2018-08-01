@@ -126,7 +126,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
           "RegisterForOnReadableLocked: WSARecvFrom error:|%s|. fd:|%s|", msg,
           GetName());
       gpr_free(msg);
-      if (WSAGetLastError() != ERROR_IO_PENDING) {
+      if (WSAGetLastError() != WSA_IO_PENDING) {
         ScheduleAndNullReadClosure(error);
         return;
       }
@@ -288,9 +288,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       GRPC_CARES_TRACE_LOG("Connect error code:|%d|, msg:|%s|. fd:|%s|",
                            WSAGetLastError(), msg, GetName());
       gpr_free(msg);
-      if (WSAGetLastError() == WSAEWOULDBLOCK) {
-        WSASetLastError(WSAEWOULDBLOCK);
-      }
       // c-ares expects a posix-style connect API
       out = -1;
     }
