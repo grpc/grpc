@@ -25,40 +25,19 @@
 
 namespace grpc_core {
 
-class SystemRootCerts {
- public:
-  // Returns a grpc_slice containing OS-specific root certificates.
-  // Protected for testing.
-  static grpc_slice GetSystemRootCerts();
-
   // Creates a bundle slice containing the contents of all certificate files in
   // a directory.
   // Returns such slice.
   // Protected for testing.
-  static grpc_slice CreateRootCertsBundle(const char* certs_directory);
-
-  // List of possible Linux certificate files and directories.
-  static const char* linux_cert_files_[];
-  static const char* linux_cert_directories_[];
-
- protected:
-  // Detect the OS platform and set the platform variable to it.
-  // Protected for testing.
-  static void DetectPlatform();
+  grpc_slice CreateRootCertsBundle(const char* certs_directory);
 
   // Gets the absolute file path needed to load a certificate file.
   // This function is not thread-safe.
   // Returns such path.
   // Protected for testing.
-  static void GetAbsoluteFilePath(const char* path_buffer,
+  void GetAbsoluteFilePath(const char* path_buffer,
                                   const char* valid_file_dir,
                                   const char* file_entry_name);
-
-  // Computes the total size of a directory given a path to it.
-  // Returns such size.
-  // Protected for testing.
-  static size_t GetDirectoryTotalSize(const char* directory_path);
-};
 
 }  // namespace grpc_core
 

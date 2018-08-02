@@ -383,25 +383,25 @@ static void test_ipv6_address_san(void) {
 namespace grpc_core {
 namespace {
 
-#ifdef GPR_LINUX
-class TestSystemRootCerts : public SystemRootCerts {
- public:
-  static grpc_slice GetSystemRootCertsForTesting() {
-    return GetSystemRootCerts();
-  }
+// #ifdef GPR_LINUX
+// class TestSystemRootCerts : public SystemRootCerts {
+//  public:
+//   static grpc_slice GetSystemRootCertsForTesting() {
+//     return GetSystemRootCerts();
+//   }
 
-  static grpc_slice CreateRootCertsBundleForTesting(
-      const char* certs_directory) {
-    return CreateRootCertsBundle(certs_directory);
-  }
+//   static grpc_slice CreateRootCertsBundleForTesting(
+//       const char* certs_directory) {
+//     return CreateRootCertsBundle(certs_directory);
+//   }
 
-  static void GetAbsoluteFilePathForTesting(const char* path_buffer,
-                                            const char* directory,
-                                            const char* filename) {
-    GetAbsoluteFilePath(path_buffer, directory, filename);
-  }
-};
-#endif /* GPR_LINUX */
+//   static void GetAbsoluteFilePathForTesting(const char* path_buffer,
+//                                             const char* directory,
+//                                             const char* filename) {
+//     GetAbsoluteFilePath(path_buffer, directory, filename);
+//   }
+// };
+// #endif /* GPR_LINUX */
 
 class TestDefaultSslRootStore : public DefaultSslRootStore {
  public:
@@ -486,7 +486,7 @@ static void test_absolute_cert_path() {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
   const char* result_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
-  grpc_core::TestSystemRootCerts::GetAbsoluteFilePathForTesting(
+  grpc_core::GetAbsoluteFilePath(
       result_path, directory, filename);
   GPR_ASSERT(
       strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
@@ -503,7 +503,7 @@ static void test_cert_bundle_creation() {
                                   &roots_bundle));
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
-      grpc_core::TestSystemRootCerts::CreateRootCertsBundleForTesting(
+      grpc_core::CreateRootCertsBundle(
           "test/core/security/etc/roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);

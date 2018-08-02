@@ -45,17 +45,17 @@
 
 namespace grpc_core {
 
-const char* SystemRootCerts::linux_cert_files_[] = {
+const char* linux_cert_files_[] = {
     "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
     "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
-const char* SystemRootCerts::linux_cert_directories_[] = {
+const char* linux_cert_directories_[] = {
     "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
     "/etc/pki/tls/certs", "/etc/openssl/certs"};
 
-grpc_slice SystemRootCerts::GetSystemRootCerts() {
+grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
-  size_t num_cert_files_ = GPR_ARRAY_SIZE(SystemRootCerts::linux_cert_files_);
+  size_t num_cert_files_ = GPR_ARRAY_SIZE(linux_cert_files_);
   for (size_t i = 0; i < num_cert_files_; i++) {
     grpc_error* error =
         grpc_load_file(linux_cert_files_[i], 1, &valid_bundle_slice);
@@ -66,7 +66,7 @@ grpc_slice SystemRootCerts::GetSystemRootCerts() {
   return grpc_empty_slice();
 }
 
-void SystemRootCerts::GetAbsoluteFilePath(const char* path_buffer,
+void GetAbsoluteFilePath(const char* path_buffer,
                                           const char* valid_file_dir,
                                           const char* file_entry_name) {
   if (valid_file_dir == nullptr || file_entry_name == nullptr) {
@@ -80,7 +80,7 @@ void SystemRootCerts::GetAbsoluteFilePath(const char* path_buffer,
   }
 }
 
-size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
+size_t GetDirectoryTotalSize(const char* directory_path) {
   struct dirent* directory_entry;
   size_t total_size = 0;
   // TODO: add logging when using opendir.
@@ -107,7 +107,7 @@ size_t SystemRootCerts::GetDirectoryTotalSize(const char* directory_path) {
   return total_size;
 }
 
-grpc_slice SystemRootCerts::CreateRootCertsBundle(const char* certs_directory) {
+grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   grpc_slice bundle_slice = grpc_empty_slice();
   if (certs_directory == nullptr) {
     return bundle_slice;
@@ -161,19 +161,19 @@ grpc_slice LoadSystemRootCerts() {
   // Prioritize user-specified custom directory if flag is set.
   const char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
   if (custom_dir != nullptr) {
-    result = SystemRootCerts::CreateRootCertsBundle(custom_dir);
+    result = CreateRootCertsBundle(custom_dir);
     gpr_free((char*)custom_dir);
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.
   if (GRPC_SLICE_IS_EMPTY(result)) {
-    result = SystemRootCerts::GetSystemRootCerts();
+    result = GetSystemRootCerts();
   }
   if (GRPC_SLICE_IS_EMPTY(result)) {
     for (size_t i = 0;
-         i < GPR_ARRAY_SIZE(SystemRootCerts::linux_cert_directories_); i++) {
-      result = SystemRootCerts::CreateRootCertsBundle(
-          SystemRootCerts::linux_cert_directories_[i]);
+         i < GPR_ARRAY_SIZE(linux_cert_directories_); i++) {
+      result = CreateRootCertsBundle(
+          linux_cert_directories_[i]);
       if (!GRPC_SLICE_IS_EMPTY(result)) {
         break;
       }
