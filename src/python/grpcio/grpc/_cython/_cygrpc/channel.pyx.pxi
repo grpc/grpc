@@ -300,7 +300,7 @@ cdef class SegregatedCall:
   def next_event(self):
     def on_success(tag):
       _process_segregated_call_tag(
-          self._channel_state, self._call_state, self._c_completion_queue, tag)
+        self._channel_state, self._call_state, self._c_completion_queue, tag)
     return _next_call_event(
         self._channel_state, self._c_completion_queue, on_success)
 
