@@ -1,7 +1,7 @@
 gRPC - An RPC library and framework
 ===================================
 
-gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can run anywhere. It enables client and server applications to communicate transparently, and makes it easier to build connected systems.
+gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can be used and run anywhere and anytime. It not only enables client and server applications to communicate transparently, but also makes it easier to build connected systems.
 
 <table>
   <tr>
@@ -14,14 +14,15 @@ gRPC is a modern, open source, high-performance remote procedure call (RPC) fram
   </tr>
 </table>
 
-[![Join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Feel free to join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # To start using gRPC
 
-To maximize usability, gRPC supports the standard way of adding dependencies in your language of choice (if there is one).
+For your information, gRPC supports the standard way of adding dependencies in your language of choice (if there is one) in order to  maximize its usability.
+
 In most languages, the gRPC runtime comes in form of a package available in your language's package manager.
 
-For instructions on how to use the language-specific gRPC runtime in your project, please refer to these documents
+For instructions on how to use the language-specific gRPC runtime in your project, please refer to these documents:
 
  * [C++](src/cpp): follow the instructions under the `src/cpp` directory
  * [C#](src/csharp): NuGet package `Grpc`
@@ -43,13 +44,12 @@ Precompiled bleeding-edge package builds of gRPC `master` branch's `HEAD` are up
 
 Contributions are welcome!
 
-Please read [How to contribute](CONTRIBUTING.md) which will guide you through the entire workflow of how to build the source code, how to run the tests and how to contribute your changes to
-the gRPC codebase.
+Please read [How to contribute](CONTRIBUTING.md) which will guide you through the entire workflow of how to build the source code, how to run the tests and how to contribute your changes tothe gRPC codebase.
 The document also contains info on how the contributing process works and contains best practices for creating contributions.
 
 # Troubleshooting
 
-Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLESHOOTING.md) if you are experiencing issues with gRPC.
+If you find out there are errors or issues, feel free to check out the [Troubleshooting guide](TROUBLESHOOTING.md) if you are experiencing issues with gRPC.
 
 # Performance 
 
@@ -57,7 +57,7 @@ See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/expl
 
 # Concepts
 
-See [gRPC Concepts](CONCEPTS.md)
+Check out [gRPC Concepts](CONCEPTS.md) to understand more about the concept of gRPC.
 
 # About This Repository
 
