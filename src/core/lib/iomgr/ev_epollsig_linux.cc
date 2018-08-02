@@ -948,6 +948,12 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   fd->error_closure->NotifyOn(closure);
 }
 
+static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
+
+static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
+
+static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
+
 /*******************************************************************************
  * Pollset Definitions
  */
@@ -1104,12 +1110,6 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   else
     return static_cast<int>(delta);
 }
-
-static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
-
-static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
-
-static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
 
 static void pollset_release_polling_island(grpc_pollset* ps,
                                            const char* reason) {
@@ -1647,6 +1647,9 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_become_readable,
+    fd_become_writable,
+    fd_has_errors,
     fd_is_shutdown,
 
     pollset_init,
