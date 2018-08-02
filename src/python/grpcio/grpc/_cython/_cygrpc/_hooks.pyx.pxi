@@ -13,5 +13,5 @@
 # limitations under the License.
 
 
-cdef object _custom_op_on_c_call(grpc_call *call):
-  return None
+cdef object _custom_op_on_c_call(int op, grpc_call *call):
+  raise NotImplementedError("No custom hooks are implemented")
