@@ -236,29 +236,30 @@ TEST_F(ChannelzServerTest, FailedRequestTest) {
   EXPECT_EQ(response.channel().data().calls_failed(), 1);
 }
 
-TEST_F(ChannelzServerTest, ManyRequestsTest) {
-  ResetStubs();
-  ConfigureProxy(1);
-  // send some RPCs
-  const int kNumSuccess = 10;
-  const int kNumFailed = 11;
-  for (int i = 0; i < kNumSuccess; ++i) {
-    SendSuccessfulEcho(0);
-  }
-  for (int i = 0; i < kNumFailed; ++i) {
-    SendFailedEcho(0);
-  }
-  GetChannelRequest request;
-  GetChannelResponse response;
-  request.set_channel_id(1);
-  ClientContext context;
-  Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
-  EXPECT_EQ(response.channel().data().calls_started(),
-            kNumSuccess + kNumFailed);
-  EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
-  EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
-}
+// TODO(ncteisen): re-enable. https://github.com/grpc/grpc/issues/16211
+// TEST_F(ChannelzServerTest, ManyRequestsTest) {
+//   ResetStubs();
+//   ConfigureProxy(1);
+//   // send some RPCs
+//   const int kNumSuccess = 10;
+//   const int kNumFailed = 11;
+//   for (int i = 0; i < kNumSuccess; ++i) {
+//     SendSuccessfulEcho(0);
+//   }
+//   for (int i = 0; i < kNumFailed; ++i) {
+//     SendFailedEcho(0);
+//   }
+//   GetChannelRequest request;
+//   GetChannelResponse response;
+//   request.set_channel_id(1);
+//   ClientContext context;
+//   Status s = channelz_stub_->GetChannel(&context, request, &response);
+//   EXPECT_TRUE(s.ok());
+//   EXPECT_EQ(response.channel().data().calls_started(),
+//             kNumSuccess + kNumFailed);
+//   EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
+//   EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
+// }
 
 TEST_F(ChannelzServerTest, ManyChannels) {
   ResetStubs();
@@ -273,74 +274,75 @@ TEST_F(ChannelzServerTest, ManyChannels) {
   EXPECT_EQ(response.channel_size(), kNumChannels);
 }
 
-TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
-  ResetStubs();
-  const int kNumChannels = 4;
-  ConfigureProxy(kNumChannels);
-  const int kNumSuccess = 10;
-  const int kNumFailed = 11;
-  for (int i = 0; i < kNumSuccess; ++i) {
-    SendSuccessfulEcho(0);
-    SendSuccessfulEcho(2);
-  }
-  for (int i = 0; i < kNumFailed; ++i) {
-    SendFailedEcho(1);
-    SendFailedEcho(2);
-  }
+// TODO(ncteisen): re-enable. https://github.com/grpc/grpc/issues/16211
+// TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
+//   ResetStubs();
+//   const int kNumChannels = 4;
+//   ConfigureProxy(kNumChannels);
+//   const int kNumSuccess = 10;
+//   const int kNumFailed = 11;
+//   for (int i = 0; i < kNumSuccess; ++i) {
+//     SendSuccessfulEcho(0);
+//     SendSuccessfulEcho(2);
+//   }
+//   for (int i = 0; i < kNumFailed; ++i) {
+//     SendFailedEcho(1);
+//     SendFailedEcho(2);
+//   }
 
-  // the first channel saw only successes
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(1);
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
-    EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_failed(), 0);
-  }
+//   // the first channel saw only successes
+//   {
+//     GetChannelRequest request;
+//     GetChannelResponse response;
+//     request.set_channel_id(1);
+//     ClientContext context;
+//     Status s = channelz_stub_->GetChannel(&context, request, &response);
+//     EXPECT_TRUE(s.ok());
+//     EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
+//     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
+//     EXPECT_EQ(response.channel().data().calls_failed(), 0);
+//   }
 
-  // the second channel saw only failures
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(2);
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
-    EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
-    EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
-  }
+//   // the second channel saw only failures
+//   {
+//     GetChannelRequest request;
+//     GetChannelResponse response;
+//     request.set_channel_id(2);
+//     ClientContext context;
+//     Status s = channelz_stub_->GetChannel(&context, request, &response);
+//     EXPECT_TRUE(s.ok());
+//     EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
+//     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
+//     EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
+//   }
 
-  // the third channel saw both
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(3);
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
-    EXPECT_EQ(response.channel().data().calls_started(),
-              kNumSuccess + kNumFailed);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
-  }
+//   // the third channel saw both
+//   {
+//     GetChannelRequest request;
+//     GetChannelResponse response;
+//     request.set_channel_id(3);
+//     ClientContext context;
+//     Status s = channelz_stub_->GetChannel(&context, request, &response);
+//     EXPECT_TRUE(s.ok());
+//     EXPECT_EQ(response.channel().data().calls_started(),
+//               kNumSuccess + kNumFailed);
+//     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
+//     EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
+//   }
 
-  // the fourth channel saw nothing
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(4);
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
-    EXPECT_EQ(response.channel().data().calls_started(), 0);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
-    EXPECT_EQ(response.channel().data().calls_failed(), 0);
-  }
-}
+//   // the fourth channel saw nothing
+//   {
+//     GetChannelRequest request;
+//     GetChannelResponse response;
+//     request.set_channel_id(4);
+//     ClientContext context;
+//     Status s = channelz_stub_->GetChannel(&context, request, &response);
+//     EXPECT_TRUE(s.ok());
+//     EXPECT_EQ(response.channel().data().calls_started(), 0);
+//     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
+//     EXPECT_EQ(response.channel().data().calls_failed(), 0);
+//   }
+// }
 
 }  // namespace testing
 }  // namespace grpc
