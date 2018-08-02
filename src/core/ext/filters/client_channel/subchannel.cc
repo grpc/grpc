@@ -453,17 +453,18 @@ static void on_alarm(void* arg, grpc_error* error) {
 }
 
 void grpc_subchannel_maybe_start_connecting_locked(grpc_subchannel* c) {
+  gpr_mu_lock(&c->mu);
   if (c->disconnected) {
     /* Don't try to connect if we're already disconnected */
-    return;
+    goto done;
   }
   if (c->connecting) {
     /* Already connecting: don't restart */
-    return;
+    goto done;
   }
   if (c->connected_subchannel != nullptr) {
     /* Already connected: don't restart */
-    return;
+    goto done;
   }
   c->connecting = true;
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
@@ -491,6 +492,8 @@ void grpc_subchannel_maybe_start_connecting_locked(grpc_subchannel* c) {
     grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
                                 GRPC_ERROR_NONE, "backoff");
   }
+done:
+  gpr_mu_unlock(&c->mu);
 }
 
 void grpc_subchannel_notify_on_state_change(
