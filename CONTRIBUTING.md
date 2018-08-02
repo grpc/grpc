@@ -1,4 +1,4 @@
-# How to contribute
+# Interested in contributing?
 
 We definitely welcome your patches and contributions to gRPC!
 
@@ -10,10 +10,11 @@ howto](https://help.github.com/articles/about-pull-requests/)
 In order to protect both you and ourselves, you will need to sign the
 [Contributor License
 Agreement](https://identity.linuxfoundation.org/projects/cncf).
+We strongly recommend you to sign BEFORE you make a pull request.
 
 ## Cloning the repository
 
-Before starting any development work you will need a local copy of the gRPC repository.
+Before starting any development work, you will need a local copy of the gRPC repository.
 Please follow the instructions in [Building gRPC C++: Clone the repository](BUILDING.md#clone-the-repository-including-submodules).
 
 ## Building & Running tests
