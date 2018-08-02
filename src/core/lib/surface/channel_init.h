@@ -45,7 +45,8 @@ enum {
   // For filters that need to be close to top or bottom, such as protocol-level
   // filters (client_authority, http-client, http-server).
   GRPC_CHANNEL_INIT_PRIORITY_HIGH = 20000,
-  // For filters that need to be very close to the wire or surface.
+  // For filters that need to be very close to the wire or surface, such as
+  // stats filters (census).
   GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH = 30000,
   // For things that have to happen last, such as connected channel filter or
   // surface server filter. Consider as reserved for gRPC internals.
