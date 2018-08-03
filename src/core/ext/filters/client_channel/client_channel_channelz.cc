@@ -98,45 +98,6 @@ void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
   }
 }
 
-grpc_json* ClientChannelNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "channelId", uuid());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  PopulateConnectivityState(json);
-  // populate the target.
-  GPR_ASSERT(target_view() != nullptr);
-  grpc_json_create_child(nullptr, json, "target", target_view(),
-                         GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace()->RenderJson();
-  if (trace_json != nullptr) {
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
-  }
-  // ask CallCountingHelper to populate trace and call count data.
-  call_counter()->PopulateCallCounts(json);
-  // reset to the top level
-  json = top_level_json;
-  PopulateChildRefs(json);
-  return top_level_json;
-}
-
 grpc_arg ClientChannelNode::CreateChannelArg() {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC),

@@ -50,7 +50,10 @@ class ClientChannelNode : public ChannelNode {
                     bool is_top_level_channel);
   virtual ~ClientChannelNode() {}
 
-  grpc_json* RenderJson() override;
+  // Overriding template methods from ChannelNode to render information that
+  // only ClientChannelNode knows about.
+  void PopulateConnectivityState(grpc_json* json) override;
+  void PopulateChildRefs(grpc_json* json) override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
@@ -58,10 +61,6 @@ class ClientChannelNode : public ChannelNode {
 
  private:
   grpc_channel_element* client_channel_;
-
-  // helpers
-  void PopulateConnectivityState(grpc_json* json);
-  void PopulateChildRefs(grpc_json* json);
 };
 
 // Handles channelz bookkeeping for sockets

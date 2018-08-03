@@ -124,6 +124,18 @@ class ChannelNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
+  // template methods. RenderJSON uses these methods to render its JSON
+  // representation. These are virtual so that children classes may provide
+  // their specific mechanism for populating these parts of the channelz
+  // object.
+  //
+  // ChannelNode does not have a notion of connectivity state or child refs,
+  // so it leaves these implementations blank.
+  //
+  // This is utilizing the template method design pattern.
+  virtual void PopulateConnectivityState(grpc_json* json) {}
+  virtual void PopulateChildRefs(grpc_json* json) {}
+
   void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
     channel_ = nullptr;
@@ -143,14 +155,6 @@ class ChannelNode : public BaseNode {
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
-
- protected:
-  // provides view of target for child.
-  char* target_view() { return target_.get(); }
-  // provides access to call_counter_ for child.
-  CallCountingHelper* call_counter() { return &call_counter_; }
-  // provides access to channel trace for child.
-  ChannelTrace* trace() { return &trace_; }
 
  private:
   // to allow the channel trace test to access trace();

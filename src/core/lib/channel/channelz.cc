@@ -117,6 +117,9 @@ grpc_json* ChannelNode::RenderJson() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
+  // template method. Child classes may override this to add their specific
+  // functionality.
+  PopulateConnectivityState(json);
   // populate the target.
   GPR_ASSERT(target_.get() != nullptr);
   grpc_json_create_child(nullptr, json, "target", target_.get(),
@@ -129,6 +132,10 @@ grpc_json* ChannelNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  // template method. Child classes may override this to add their specific
+  // functionality.
+  PopulateChildRefs(json);
   return top_level_json;
 }
 
