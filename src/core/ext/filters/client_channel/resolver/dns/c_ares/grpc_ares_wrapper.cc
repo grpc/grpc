@@ -22,7 +22,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -63,7 +62,7 @@ struct grpc_ares_request {
   /** the evernt driver used by this request */
   grpc_ares_ev_driver* ev_driver;
   /** number of ongoing queries */
-  gpr_refcount pending_queries;
+  size_t pending_queries;
 
   /** is there at least one successful query, set in on_done_cb */
   bool success;
@@ -145,21 +144,25 @@ void grpc_cares_wrapper_test_only_address_sorting_sort(
 }
 
 static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
-  gpr_ref(&r->pending_queries);
+  r->pending_queries++;
 }
 
 static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
-  /* If there are no pending queries, invoke on_done callback and destroy the
-     request */
-  if (gpr_unref(&r->pending_queries)) {
-    grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
-    if (lb_addrs != nullptr) {
-      grpc_cares_wrapper_address_sorting_sort(lb_addrs);
-    }
-    GRPC_CLOSURE_SCHED(r->on_done, r->error);
-    grpc_ares_ev_driver_destroy_locked(r->ev_driver);
-    gpr_free(r);
+  r->pending_queries--;
+  if (r->pending_queries == 0u) {
+    grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
   }
+}
+
+void grpc_ares_complete_request_locked(grpc_ares_request* r) {
+  /* Invoke on_done callback and destroy the
+     request */
+  grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
+  if (lb_addrs != nullptr) {
+    grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  }
+  GRPC_CLOSURE_SCHED(r->on_done, r->error);
+  gpr_free(r);
 }
 
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
@@ -211,7 +214,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin6_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin6_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -232,7 +235,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in_addr));
-          addr.sin_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -277,7 +280,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
           grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
-        if (grpc_ipv6_loopback_available()) {
+        if (grpc_ares_query_ipv6()) {
           grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
               r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
           ares_gethostbyname(*channel, hr->host, AF_INET6,
@@ -399,20 +402,18 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
     port = gpr_strdup(default_port);
   }
-  grpc_ares_ev_driver* ev_driver;
-  error = grpc_ares_ev_driver_create_locked(&ev_driver, interested_parties,
-                                            combiner);
-  if (error != GRPC_ERROR_NONE) goto error_cleanup;
-
   r = static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
-  r->ev_driver = ev_driver;
+  r->ev_driver = nullptr;
   r->on_done = on_done;
   r->lb_addrs_out = addrs;
   r->service_config_json_out = service_config_json;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
+  r->pending_queries = 0;
+  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
+                                            combiner, r);
+  if (error != GRPC_ERROR_NONE) goto error_cleanup;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
-
   // If dns_server is specified, use it.
   if (dns_server != nullptr) {
     gpr_log(GPR_INFO, "Using DNS server %s", dns_server);
@@ -437,7 +438,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-      gpr_free(r);
       goto error_cleanup;
     }
     int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
@@ -447,12 +447,11 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                    ares_strerror(status));
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
       gpr_free(error_msg);
-      gpr_free(r);
       goto error_cleanup;
     }
   }
-  gpr_ref_init(&r->pending_queries, 1);
-  if (grpc_ipv6_loopback_available()) {
+  r->pending_queries = 1;
+  if (grpc_ares_query_ipv6()) {
     hr = create_hostbyname_request_locked(r, host, strhtons(port),
                                           false /* is_balancer */);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
@@ -487,6 +486,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
 
 error_cleanup:
   GRPC_CLOSURE_SCHED(on_done, error);
+  gpr_free(r);
   gpr_free(host);
   gpr_free(port);
   return nullptr;

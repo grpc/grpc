@@ -60,6 +60,8 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
 /** Initialize the grpc library.
 
+    After it's called, a matching invocation to grpc_shutdown() is expected.
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -67,6 +69,9 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 GRPCAPI void grpc_init(void);
 
 /** Shut down the grpc library.
+
+    Before it's called, there should haven been a matching invocation to
+    grpc_init().
 
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
@@ -286,14 +291,6 @@ GRPCAPI grpc_channel* grpc_lame_client_channel_create(
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
 
-/** Returns the JSON formatted channel trace for this channel. The caller
-    owns the returned string and is responsible for freeing it. */
-GRPCAPI char* grpc_channel_get_trace(grpc_channel* channel);
-
-/** Returns the channel uuid, which can be used to look up its trace at a
-    later time. */
-GRPCAPI intptr_t grpc_channel_get_uuid(grpc_channel* channel);
-
 /** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.
@@ -461,6 +458,29 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
+
+/************* CHANNELZ API *************/
+/** Channelz is under active development. The following APIs will see some
+    churn as the feature is implemented. This comment will be removed once
+    channelz is officially supported, and these APIs become stable. For now
+    you may track the progress by following this github issue:
+    https://github.com/grpc/grpc/issues/15340
+
+    the following APIs return allocated JSON strings that match the response
+    objects from the channelz proto, found here:
+    https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto.
+
+    For easy conversion to protobuf, The JSON is formatted according to:
+    https://developers.google.com/protocol-buffers/docs/proto3#json. */
+
+/* Gets all root channels (i.e. channels the application has directly
+   created). This does not include subchannels nor non-top level channels.
+   The returned string is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_top_channels(intptr_t start_channel_id);
+
+/* Returns a single Channel, or else a NOT_FOUND code. The returned string
+   is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_channel(intptr_t channel_id);
 
 #ifdef __cplusplus
 }

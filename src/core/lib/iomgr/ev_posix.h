@@ -51,8 +51,10 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_error)(grpc_fd* fd, grpc_closure* closure);
+  void (*fd_set_readable)(grpc_fd* fd);
+  void (*fd_set_writable)(grpc_fd* fd);
+  void (*fd_set_error)(grpc_fd* fd);
   bool (*fd_is_shutdown)(grpc_fd* fd);
-  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
@@ -142,8 +144,20 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure);
  * needs to have been set on grpc_fd_create */
 void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure);
 
-/* Return the read notifier pollset from the fd */
-grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);
+/* Forcibly set the fd to be readable, resulting in the closure registered with
+ * grpc_fd_notify_on_read being invoked.
+ */
+void grpc_fd_set_readable(grpc_fd* fd);
+
+/* Forcibly set the fd to be writable, resulting in the closure registered with
+ * grpc_fd_notify_on_write being invoked.
+ */
+void grpc_fd_set_writable(grpc_fd* fd);
+
+/* Forcibly set the fd to have errored, resulting in the closure registered with
+ * grpc_fd_notify_on_error being invoked.
+ */
+void grpc_fd_set_error(grpc_fd* fd);
 
 /* pollset_posix functions */
 

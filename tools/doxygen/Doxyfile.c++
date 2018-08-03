@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.14.0-dev
+PROJECT_NUMBER         = 1.15.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -784,6 +784,7 @@ doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
+doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/server-reflection.md \
@@ -891,6 +892,7 @@ include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
@@ -936,6 +938,7 @@ include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
+include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \

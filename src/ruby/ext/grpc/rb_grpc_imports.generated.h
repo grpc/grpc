@@ -30,11 +30,11 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -179,12 +179,6 @@ extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_impo
 typedef void(*grpc_channel_destroy_type)(grpc_channel* channel);
 extern grpc_channel_destroy_type grpc_channel_destroy_import;
 #define grpc_channel_destroy grpc_channel_destroy_import
-typedef char*(*grpc_channel_get_trace_type)(grpc_channel* channel);
-extern grpc_channel_get_trace_type grpc_channel_get_trace_import;
-#define grpc_channel_get_trace grpc_channel_get_trace_import
-typedef intptr_t(*grpc_channel_get_uuid_type)(grpc_channel* channel);
-extern grpc_channel_get_uuid_type grpc_channel_get_uuid_import;
-#define grpc_channel_get_uuid grpc_channel_get_uuid_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import
@@ -257,6 +251,12 @@ extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 typedef const grpc_arg_pointer_vtable*(*grpc_resource_quota_arg_vtable_type)(void);
 extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 #define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import
+typedef char*(*grpc_channelz_get_top_channels_type)(intptr_t start_channel_id);
+extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
+#define grpc_channelz_get_top_channels grpc_channelz_get_top_channels_import
+typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
+extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
+#define grpc_channelz_get_channel grpc_channelz_get_channel_import
 typedef grpc_channel*(*grpc_insecure_channel_create_from_fd_type)(const char* target, int fd, const grpc_channel_args* args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
@@ -407,6 +407,12 @@ extern grpc_alts_credentials_create_type grpc_alts_credentials_create_import;
 typedef grpc_server_credentials*(*grpc_alts_server_credentials_create_type)(const grpc_alts_credentials_options* options);
 extern grpc_alts_server_credentials_create_type grpc_alts_server_credentials_create_import;
 #define grpc_alts_server_credentials_create grpc_alts_server_credentials_create_import
+typedef grpc_channel_credentials*(*grpc_local_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_credentials_create_type grpc_local_credentials_create_import;
+#define grpc_local_credentials_create grpc_local_credentials_create_import
+typedef grpc_server_credentials*(*grpc_local_server_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_server_credentials_create_type grpc_local_server_credentials_create_import;
+#define grpc_local_server_credentials_create grpc_local_server_credentials_create_import
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 #define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
@@ -437,6 +443,27 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -611,27 +638,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

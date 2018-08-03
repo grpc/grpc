@@ -38,6 +38,11 @@ struct grpc_channel_credentials;
 @property(nonatomic) int keepaliveInterval;
 @property(nonatomic) int keepaliveTimeout;
 @property(nonatomic) id logContext;
+@property(nonatomic) BOOL retryEnabled;
+
+@property(nonatomic) unsigned int minConnectTimeout;
+@property(nonatomic) unsigned int initialConnectBackoff;
+@property(nonatomic) unsigned int maxConnectBackoff;
 
 /** The following properties should only be modified for testing: */
 

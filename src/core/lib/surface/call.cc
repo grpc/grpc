@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -271,16 +272,12 @@ struct grpc_call {
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
-/* Given a size, round up to the next multiple of sizeof(void*) */
-#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
-
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -353,7 +350,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
   call = static_cast<grpc_call*>(
-      gpr_arena_alloc(arena, ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
@@ -489,6 +486,12 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(call->channel);
+  if (channelz_channel != nullptr) {
+    channelz_channel->RecordCallStarted();
+  }
+
   grpc_slice_unref_internal(path);
 
   return error;
@@ -526,12 +529,12 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
 static void release_call(void* call, grpc_error* error) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
+  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
   grpc_call_combiner_destroy(&c->call_combiner);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
-static void set_status_value_directly(grpc_status_code status, void* dest);
 static void destroy_call(void* call, grpc_error* error) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   size_t i;
@@ -559,7 +562,7 @@ static void destroy_call(void* call, grpc_error* error) {
   }
 
   get_final_status(c, set_status_value_directly, &c->final_info.final_status,
-                   nullptr, c->final_info.error_string);
+                   nullptr, &(c->final_info.error_string));
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -1087,13 +1090,12 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   if (b->idx.named.grpc_status != nullptr) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
-    grpc_error* error =
-        status_code == GRPC_STATUS_OK
-            ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 static_cast<intptr_t>(status_code));
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (status_code != GRPC_STATUS_OK) {
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error received from peer"),
+          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+    }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -1108,6 +1110,8 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   }
   publish_app_metadata(call, b, true);
 }
+
+gpr_arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
   return CALL_STACK_FROM_CALL(call);
@@ -1259,6 +1263,15 @@ static void post_batch_completion(batch_control* bctl) {
     } else {
       get_final_status(call, set_cancelled_value,
                        call->final_op.server.cancelled, nullptr, nullptr);
+    }
+    grpc_core::channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
+    if (channelz_channel != nullptr) {
+      if (*call->final_op.client.status != GRPC_STATUS_OK) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
     }
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;

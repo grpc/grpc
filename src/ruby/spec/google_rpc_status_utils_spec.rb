@@ -114,17 +114,6 @@ describe 'conversion from a status struct to a google protobuf status' do
   end
 end
 
-# Test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
-end
-
 # A test service that fills in the "reserved" grpc-status-details-bin trailer,
 # for client-side testing of GoogleRpcStatus protobuf extraction from trailers.
 class GoogleRpcStatusTestService

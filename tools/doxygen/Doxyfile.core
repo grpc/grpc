@@ -786,6 +786,7 @@ doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
+doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/server-reflection.md \
@@ -825,6 +826,8 @@ include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/log.h \
+include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \

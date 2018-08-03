@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -133,6 +134,9 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+      channelz_subchannel;
 };
 
 struct grpc_subchannel_call {
@@ -140,9 +144,13 @@ struct grpc_subchannel_call {
   grpc_closure* schedule_closure_after_destroy;
 };
 
-#define SUBCHANNEL_CALL_TO_CALL_STACK(call) ((grpc_call_stack*)((call) + 1))
-#define CALLSTACK_TO_SUBCHANNEL_CALL(callstack) \
-  (((grpc_subchannel_call*)(callstack)) - 1)
+#define SUBCHANNEL_CALL_TO_CALL_STACK(call)                          \
+  (grpc_call_stack*)((char*)(call) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
+                                         sizeof(grpc_subchannel_call)))
+#define CALLSTACK_TO_SUBCHANNEL_CALL(callstack)           \
+  (grpc_subchannel_call*)(((char*)(call_stack)) -         \
+                          GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
+                              sizeof(grpc_subchannel_call)))
 
 static void on_subchannel_connected(void* subchannel, grpc_error* error);
 
@@ -173,6 +181,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
+  c->channelz_subchannel.reset();
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -369,7 +378,20 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
 
+  const grpc_arg* arg =
+      grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
+  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  if (channelz_enabled) {
+    c->channelz_subchannel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>();
+  }
+
   return grpc_subchannel_index_register(key, c);
+}
+
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel) {
+  return subchannel->channelz_subchannel.get();
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
@@ -380,8 +402,6 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
-  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "state_change");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -437,27 +457,24 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     /* Don't try to connect if we're already disconnected */
     return;
   }
-
   if (c->connecting) {
     /* Already connecting: don't restart */
     return;
   }
-
   if (c->connected_subchannel != nullptr) {
     /* Already connected: don't restart */
     return;
   }
-
   if (!grpc_connectivity_state_has_watchers(&c->state_tracker)) {
     /* Nobody is interested in connecting: so don't just yet */
     return;
   }
-
   c->connecting = true;
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
-
   if (!c->backoff_begun) {
     c->backoff_begun = true;
+    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                                GRPC_ERROR_NONE, "connecting");
     continue_connect_locked(c);
   } else {
     GPR_ASSERT(!c->have_alarm);
@@ -472,6 +489,11 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&c->alarm, c->next_attempt_deadline, &c->on_alarm);
+    // During backoff, we prefer the connectivity state of CONNECTING instead of
+    // TRANSIENT_FAILURE in order to prevent triggering re-resolution
+    // continuously in pick_first.
+    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                                GRPC_ERROR_NONE, "backoff");
   }
 }
 
@@ -783,9 +805,17 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 
 grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
-  *call = static_cast<grpc_subchannel_call*>(gpr_arena_alloc(
-      args.arena, sizeof(grpc_subchannel_call) +
-                      channel_stack_->call_stack_size + args.parent_data_size));
+  size_t allocation_size =
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_subchannel_call));
+  if (args.parent_data_size > 0) {
+    allocation_size +=
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(channel_stack_->call_stack_size) +
+        args.parent_data_size;
+  } else {
+    allocation_size += channel_stack_->call_stack_size;
+  }
+  *call = static_cast<grpc_subchannel_call*>(
+      gpr_arena_alloc(args.arena, allocation_size));
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");

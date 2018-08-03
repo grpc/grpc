@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -42,12 +43,12 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
    created successfully. */
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
-                                              grpc_combiner* combiner);
+                                              grpc_combiner* combiner,
+                                              grpc_ares_request* request);
 
-/* Destroys \a ev_driver asynchronously. Pending lookups made on \a ev_driver
-   will be cancelled and their on_done callbacks will be invoked with a status
-   of ARES_ECANCELLED. */
-void grpc_ares_ev_driver_destroy_locked(grpc_ares_ev_driver* ev_driver);
+/* Called back when all DNS lookups have completed. */
+void grpc_ares_ev_driver_on_queries_complete_locked(
+    grpc_ares_ev_driver* ev_driver);
 
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);

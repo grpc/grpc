@@ -196,8 +196,8 @@ typedef struct {
     data frame, Int valued, milliseconds. */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
-/** Minimum allowed time between receiving successive ping frames without
-    sending any data frame. Int valued, milliseconds */
+/** Minimum allowed time between a server receiving successive ping frames
+   without sending any data frame. Int valued, milliseconds */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
@@ -289,6 +289,10 @@ typedef struct {
  * subchannel. The default is 10. If set to 0, channel tracing is disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE \
   "grpc.max_channel_trace_events_per_node"
+/** If non-zero, gRPC library will track stats and information at at per channel
+ * level. Disabling channelz naturally disables channel tracing. The default
+ * is for channelz to be disabled. */
+#define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \

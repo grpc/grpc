@@ -23,6 +23,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
@@ -233,6 +234,10 @@ struct AltsCredentialsOptions {
 /// Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options);
+
+/// Builds Local Credentials.
+std::shared_ptr<ChannelCredentials> LocalCredentials(
+    grpc_local_connect_type type);
 
 }  // namespace experimental
 }  // namespace grpc
