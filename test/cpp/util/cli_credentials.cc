@@ -25,6 +25,10 @@ DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
 DEFINE_string(
     access_token, "",
     "The access token that will be sent to the server to authenticate RPCs.");
+DEFINE_string(
+    ssl_target, "",
+    "If not empty, treat the server host name as this for ssl/tls certificate "
+    "validation.");
 
 namespace grpc {
 namespace testing {
@@ -58,7 +62,15 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          "    --use_auth               ; Set whether to create default google"
          " credentials\n"
          "    --access_token           ; Set the access token in metadata,"
-         " overrides --use_auth\n";
+         " overrides --use_auth\n"
+         "    --ssl_target             ; Set server host for tls validation\n";
 }
+
+const grpc::string CliCredentials::GetSslTargetNameOverride() const {
+  bool use_tls =
+      FLAGS_enable_ssl || (FLAGS_access_token.empty() && FLAGS_use_auth);
+  return use_tls ? FLAGS_ssl_target : "";
+}
+
 }  // namespace testing
 }  // namespace grpc

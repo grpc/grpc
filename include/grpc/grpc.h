@@ -60,6 +60,8 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
 /** Initialize the grpc library.
 
+    After it's called, a matching invocation to grpc_shutdown() is expected.
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -67,6 +69,9 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 GRPCAPI void grpc_init(void);
 
 /** Shut down the grpc library.
+
+    Before it's called, there should haven been a matching invocation to
+    grpc_init().
 
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.

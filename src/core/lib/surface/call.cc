@@ -529,6 +529,7 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
 static void release_call(void* call, grpc_error* error) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
+  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
   grpc_call_combiner_destroy(&c->call_combiner);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
@@ -573,7 +574,6 @@ static void destroy_call(void* call, grpc_error* error) {
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c), &c->final_info,
                           GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
-  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
 }
 
 void grpc_call_ref(grpc_call* c) { gpr_ref(&c->ext_ref); }

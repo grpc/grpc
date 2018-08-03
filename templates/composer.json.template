@@ -11,7 +11,7 @@
       "php": ">=5.5.0"
     },
     "require-dev": {
-      "google/auth": "v0.9"
+      "google/auth": "^v1.3.0"
     },
     "suggest": {
       "ext-protobuf": "For better performance, install the protobuf C extension.",
