@@ -69,13 +69,12 @@ grpc_slice GetSystemRootCerts() {
 
 void GetAbsoluteFilePath(const char* path_buffer, const char* valid_file_dir,
                          const char* file_entry_name) {
-  if (valid_file_dir == nullptr || file_entry_name == nullptr) {
-    path_buffer = nullptr;
-  }
-  int path_len = snprintf((char*)path_buffer, MAXPATHLEN, "%s/%s",
-                          valid_file_dir, file_entry_name);
-  if (path_len == 0) {
-    path_buffer = nullptr;
+  if (valid_file_dir != nullptr && file_entry_name != nullptr) {
+    int path_len = snprintf((char*)path_buffer, MAXPATHLEN, "%s/%s",
+                            valid_file_dir, file_entry_name);
+    if (path_len == 0) {
+      gpr_log(GPR_ERROR, "failed to get certificate absolute path");
+    }
   }
 }
 
@@ -110,17 +109,14 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   closedir(ca_directory);
 
   bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
-  const char* file_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
   size_t bytes_read = 0;
   for (size_t i = 0; i < roots_filenames.size(); i++) {
     struct stat dir_entry_stat;
-    file_path = roots_filenames[i];
-    int stat_return = stat(file_path, &dir_entry_stat);
+    int stat_return = stat(roots_filenames[i], &dir_entry_stat);
     if (stat_return == -1) {
-      gpr_free((char*)file_path);
       continue;
     }
-    int file_descriptor = open(file_path, O_RDONLY);
+    int file_descriptor = open(roots_filenames[i], O_RDONLY);
     if (file_descriptor != -1) {
       // Read file into bundle.
       size_t cert_file_size = dir_entry_stat.st_size;
@@ -132,9 +128,9 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
         gpr_log(GPR_ERROR, "failed to read a file");
       }
     }
-    gpr_free((char*)file_path);
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
+  roots_filenames.clear();
   return bundle_slice;
 }
 
