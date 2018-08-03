@@ -150,6 +150,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "macos_system_roots_test",
+    srcs = ["macos_system_roots_test.cc"],
+    language = "C++",
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ssl_credentials_test",
     srcs = ["ssl_credentials_test.cc"],
     language = "C++",

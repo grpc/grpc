@@ -22,9 +22,8 @@
 
 #ifdef GPR_APPLE
 
-#include <CoreFoundation/CoreFoundation.h>
-#include <Security/Security.h>
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/load_system_roots_macos.h"
 
 namespace grpc_core {
 
@@ -243,11 +242,17 @@ int FetchPEMRoots(CFDataRef* pemRoots, CFDataRef* untrustedPemRoots) {
   return 0;
 }
 
-int GetMacOSRootCerts(grpc_slice* roots) {
+int GetMacOSRootCerts(grpc_slice* roots,
+                      grpc_macos_system_roots_getter get_roots) {
   CFDataRef data = 0;
   CFDataRef untrusted_data = 0;
-  int err = FetchPEMRoots(&data, &untrusted_data);
-  if (err == -1) { return -1; }
+  if (!get_roots) {
+    get_roots = FetchPEMRoots;
+  }
+  int err = get_roots(&data, &untrusted_data);
+  if (err == -1) {
+    return -1;
+  }
   char* buf = nullptr;
   buf = (char*)(CFDataGetBytePtr(data));
   *roots = grpc_slice_from_copied_buffer(buf, CFDataGetLength(data));
@@ -257,8 +262,8 @@ int GetMacOSRootCerts(grpc_slice* roots) {
 
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  GetMacOSRootCerts(&roots);
-  return roots;
+  GetMacOSRootCerts(&result, nullptr);
+  return result;
 }
 
 }  // namespace grpc_core

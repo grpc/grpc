@@ -791,6 +791,7 @@ filegroups:
   - src/core/lib/security/security_connector/alts_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
+  - src/core/lib/security/security_connector/load_system_roots_macos.h
   - src/core/lib/security/security_connector/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
@@ -820,6 +821,7 @@ filegroups:
   - src/core/lib/security/security_connector/alts_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
+  - src/core/lib/security/security_connector/load_system_roots_macos.cc
   - src/core/lib/security/security_connector/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
@@ -4691,6 +4693,28 @@ targets:
   language: c++
   src:
   - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_linux_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: grpc_macos_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/macos_system_roots_test.cc
   deps:
   - grpc_test_util
   - grpc
