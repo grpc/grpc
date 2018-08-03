@@ -93,6 +93,15 @@ class ChannelzServerTest : public ::testing::Test {
     proxy_server_ = proxy_builder.BuildAndStart();
   }
 
+  void TearDown() override {
+    proxy_server_->Shutdown();
+    grpc_recycle_unused_port(proxy_port_);
+    for (size_t i = 0; i < backends_.size(); ++i) {
+      backends_[i].server->Shutdown();
+      grpc_recycle_unused_port(backends_[i].port);
+    }
+  }
+
   // Sets the proxy up to have an arbitrary number of backends.
   void ConfigureProxy(size_t num_backends) {
     backends_.resize(num_backends);
