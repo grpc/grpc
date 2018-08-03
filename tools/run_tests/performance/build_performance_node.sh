@@ -17,12 +17,14 @@ set +ex
 
 . "$HOME/.nvm/nvm.sh"
 
-nvm install 9
+nvm install 10
 
 set -ex
 
 cd "$(dirname "$0")/../../../../grpc-node"
 
 npm install
+
+./node_modules/.bin/gulp clean.all
 
 ./node_modules/.bin/gulp setup

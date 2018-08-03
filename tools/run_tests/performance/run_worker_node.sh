@@ -15,7 +15,7 @@
 
 . "$HOME/.nvm/nvm.sh"
 
-nvm use 9
+nvm use 10
 
 set -ex
 
