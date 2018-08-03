@@ -49,6 +49,8 @@ static grpc_subchannel_key* create_key(
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   grpc_subchannel_key* k =
       static_cast<grpc_subchannel_key*>(gpr_malloc(sizeof(*k)));
+  // Currently, args->filter_count is always 0, which means we only use the
+  // channel args to create the subchannel key.
   k->args.filter_count = args->filter_count;
   if (k->args.filter_count > 0) {
     k->args.filters = static_cast<const grpc_channel_filter**>(
