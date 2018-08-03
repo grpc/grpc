@@ -83,7 +83,8 @@ class SubchannelNode : public BaseNode {
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   grpc_slice data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data, referenced_channel);
+    trace_.AddTraceEventWithReference(severity, data,
+                                      std::move(referenced_channel));
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }

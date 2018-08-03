@@ -925,7 +925,6 @@ typedef struct client_channel_call_data {
 
   grpc_closure recv_trailing_metadata_ready_channelz;
   grpc_closure* original_recv_trailing_metadata;
-  // metadata_batch recv_trailing_metadata_channelz;
 
   grpc_polling_entity* pollent;
   bool pollent_added_to_interested_parties;
@@ -1305,6 +1304,9 @@ static void recv_trailing_metadata_ready_channelz(void* arg,
   GRPC_CLOSURE_SCHED(calld->original_recv_trailing_metadata, error);
 }
 
+// If channelz is enabled, intercept recv_trailing so that we may check the
+// status and associate it to a subchannel.
+// Returns true if callback was intercepted, false otherwise.
 static bool maybe_intercept_recv_trailing_for_channelz(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -1355,6 +1357,7 @@ static void pending_batches_resume(grpc_call_element* elem) {
                         grpc_schedule_on_exec_ctx);
       closures.Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
                    "pending_batches_resume");
+      // Only clear if we haven't intercepted anything.
       if (!intercepted) {
         pending_batch_clear(calld, pending);
       }
@@ -1836,7 +1839,8 @@ static void recv_message_ready(void* arg, grpc_error* error) {
 // recv_trailing_metadata handling
 //
 
-// Sets *status and *server_pushback_md based on batch_data and error.
+// Sets *status and *server_pushback_md based on md_batch and error.
+// Only sets *server_pushback_md if server_pushback_md != nullptr.
 static void get_call_status(grpc_call_element* elem,
                             grpc_metadata_batch* md_batch, grpc_error* error,
                             grpc_status_code* status,

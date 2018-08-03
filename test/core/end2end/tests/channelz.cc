@@ -241,13 +241,6 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
   gpr_free(json);
 
-  json = grpc_channelz_get_subchannel(2);
-  gpr_log(GPR_INFO, "%s", json);
-  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
-  gpr_free(json);
-
   end_test(&f);
   config.tear_down_data(&f);
 }
