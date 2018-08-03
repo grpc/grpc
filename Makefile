@@ -12434,7 +12434,7 @@ endif
 
 
 GRPC_LINUX_SYSTEM_ROOTS_TEST_SRC = \
-    test/core/security/system_roots_test_linux.cc \
+    test/core/security/linux_system_roots_test.cc \
 
 GRPC_LINUX_SYSTEM_ROOTS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_LINUX_SYSTEM_ROOTS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12454,7 +12454,7 @@ $(BINDIR)/$(CONFIG)/grpc_linux_system_roots_test: $(GRPC_LINUX_SYSTEM_ROOTS_TEST
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/system_roots_test_linux.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/linux_system_roots_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_grpc_linux_system_roots_test: $(GRPC_LINUX_SYSTEM_ROOTS_TEST_OBJS:.o=.dep)
 

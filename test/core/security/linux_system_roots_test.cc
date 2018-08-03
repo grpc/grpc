@@ -17,12 +17,15 @@
  */
 
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
 
 #ifdef GPR_LINUX
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <sys/param.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -30,7 +33,6 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
-#include <sys/param.h>
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -46,8 +48,7 @@ static void test_absolute_cert_path() {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
   const char* result_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
-  grpc_core::GetAbsoluteFilePath(
-      result_path, directory, filename);
+  grpc_core::GetAbsoluteFilePath(result_path, directory, filename);
   GPR_ASSERT(
       strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
   gpr_free((char*)result_path);
@@ -63,8 +64,7 @@ static void test_cert_bundle_creation() {
                                   &roots_bundle));
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle(
-          "test/core/security/etc/roots");
+      grpc_core::CreateRootCertsBundle("test/core/security/etc/roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   GPR_ASSERT(strcmp(result_str, bundle_str) == 0);
@@ -89,4 +89,9 @@ int main() {
   test_cert_bundle_creation();
   return 0;
 }
-#endif // GPR_LINUX
+#else
+int main() {
+  printf("*** WARNING: this test is only supported on Linux systems ***\n");
+  return 0;
+}
+#endif  // GPR_LINUX

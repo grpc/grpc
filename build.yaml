@@ -2762,7 +2762,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/security/system_roots_test_linux.cc
+  - test/core/security/linux_system_roots_test.cc
   deps:
   - grpc_test_util
   - grpc

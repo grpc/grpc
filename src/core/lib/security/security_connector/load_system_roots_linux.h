@@ -25,19 +25,18 @@
 
 namespace grpc_core {
 
-  // Creates a bundle slice containing the contents of all certificate files in
-  // a directory.
-  // Returns such slice.
-  // Protected for testing.
-  grpc_slice CreateRootCertsBundle(const char* certs_directory);
+// Creates a bundle slice containing the contents of all certificate files in
+// a directory.
+// Returns such slice.
+// Protected for testing.
+grpc_slice CreateRootCertsBundle(const char* certs_directory);
 
-  // Gets the absolute file path needed to load a certificate file.
-  // This function is not thread-safe.
-  // Returns such path.
-  // Protected for testing.
-  void GetAbsoluteFilePath(const char* path_buffer,
-                                  const char* valid_file_dir,
-                                  const char* file_entry_name);
+// Gets the absolute file path needed to load a certificate file.
+// This function is not thread-safe.
+// Returns such path.
+// Protected for testing.
+void GetAbsoluteFilePath(const char* path_buffer, const char* valid_file_dir,
+                         const char* file_entry_name);
 
 }  // namespace grpc_core
 

@@ -7391,7 +7391,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_linux_system_roots_test
-  test/core/security/system_roots_test_linux.cc
+  test/core/security/linux_system_roots_test.cc
 )
 
 
