@@ -220,6 +220,7 @@
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
+  LDFLAGS += -framework CoreFoundation -framework Security
   endif
   % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'COREFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
