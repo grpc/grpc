@@ -45,7 +45,7 @@ namespace testing {
 class ChannelNodePeer {
  public:
   ChannelNodePeer(ChannelNode* node) : node_(node) {}
-  ChannelTrace* trace() { return node_->trace_.get(); }
+  ChannelTrace* trace() { return &node_->trace_; }
 
  private:
   ChannelNode* node_;
