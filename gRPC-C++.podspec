@@ -280,6 +280,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/alts_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
                       'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                      'src/core/lib/security/security_connector/load_system_roots_macos.h',
                       'src/core/lib/security/security_connector/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',

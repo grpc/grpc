@@ -229,6 +229,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_macos.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
@@ -651,6 +652,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_macos.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />

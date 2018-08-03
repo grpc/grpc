@@ -256,6 +256,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/security_connector/alts_security_connector.cc',
     'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
     'src/core/lib/security/security_connector/load_system_roots_linux.cc',
+    'src/core/lib/security/security_connector/load_system_roots_macos.cc',
     'src/core/lib/security/security_connector/local_security_connector.cc',
     'src/core/lib/security/security_connector/security_connector.cc',
     'src/core/lib/security/transport/client_auth_filter.cc',
