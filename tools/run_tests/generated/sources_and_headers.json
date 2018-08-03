@@ -1095,7 +1095,7 @@
     "language": "c", 
     "name": "grpc_linux_system_roots_test", 
     "src": [
-      "test/core/security/system_roots_test_linux.cc"
+      "test/core/security/linux_system_roots_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
