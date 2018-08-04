@@ -520,12 +520,13 @@ struct grpc_chttp2_stream {
   bool write_closed;
   /** Is this stream reading half-closed. */
   bool read_closed;
+  /** Has this stream been cancelled */
+  bool cancelled;
   /** Are all published incoming byte streams closed. */
   bool all_incoming_byte_streams_finished;
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
-  bool cancelled;
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering;
