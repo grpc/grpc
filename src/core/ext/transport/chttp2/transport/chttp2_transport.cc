@@ -1208,7 +1208,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
-    if (s->seen_error || (t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
+    if ((s->cancelled) ||
+        (t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       GRPC_CLOSURE_RUN(closure, closure->error_data.error);
     } else {
@@ -2017,6 +2018,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error* due_to_error) {
   GRPC_CLOSURE_LIST_SCHED(&s->run_after_write);
+  s->cancelled = true;
   if (grpc_chttp2_list_remove_waiting_for_write_stream(t, s)) {
     GRPC_CHTTP2_STREAM_UNREF(s, "chttp2:pending_write_closure");
   }

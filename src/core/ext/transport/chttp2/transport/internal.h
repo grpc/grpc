@@ -525,6 +525,7 @@ struct grpc_chttp2_stream {
   /** Has this stream seen an error.
       If true, then pending incoming frames can be thrown away. */
   bool seen_error;
+  bool cancelled;
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering;
