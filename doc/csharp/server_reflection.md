@@ -30,7 +30,8 @@ server.Start();
 ```
 
 After starting the server, you can verify that the server reflection
-is working properly by using the `grpc_cli` command line tool:
+is working properly by using the [`grpc_cli` command line
+tool](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md):
 
  ```sh
   $ grpc_cli ls localhost:50051
