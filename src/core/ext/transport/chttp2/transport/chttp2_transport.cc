@@ -3125,3 +3125,5 @@ void grpc_chttp2_transport_start_reading(
   t->notify_on_receive_settings = notify_on_receive_settings;
   GRPC_CLOSURE_SCHED(&t->read_action_locked, GRPC_ERROR_NONE);
 }
+
+size_t grpc_chttp2_get_stream_size() { return sizeof(grpc_chttp2_stream); }

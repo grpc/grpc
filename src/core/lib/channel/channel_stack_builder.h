@@ -27,47 +27,48 @@
 #include "src/core/lib/channel/channel_stack.h"
 
 /// grpc_channel_stack_builder offers a programmatic interface to selected
-/// and order channel filters
+/// and order channel filters.
 typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
 typedef struct grpc_channel_stack_builder_iterator
     grpc_channel_stack_builder_iterator;
 
-/// Create a new channel stack builder
+/// Creates a new channel stack builder.
 grpc_channel_stack_builder* grpc_channel_stack_builder_create(void);
 
-/// Assign a name to the channel stack: \a name must be statically allocated
+/// Assigns a name to the channel stack: \a name must be statically allocated.
 void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
                                          const char* name);
 
-/// Set the target uri
+/// Sets the target uri.
 void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
                                            const char* target);
 
 const char* grpc_channel_stack_builder_get_target(
     grpc_channel_stack_builder* b);
 
-/// Attach \a transport to the builder (does not take ownership)
+/// Attaches \a transport to the builder (does not take ownership).
 void grpc_channel_stack_builder_set_transport(
     grpc_channel_stack_builder* builder, grpc_transport* transport);
 
-/// Fetch attached transport
+/// Fetches attached transport.
 grpc_transport* grpc_channel_stack_builder_get_transport(
     grpc_channel_stack_builder* builder);
 
-/// Set channel arguments: copies args
+/// Sets channel arguments: copies args.
 void grpc_channel_stack_builder_set_channel_arguments(
     grpc_channel_stack_builder* builder, const grpc_channel_args* args);
 
-/// Return a borrowed pointer to the channel arguments
+/// Returns a borrowed pointer to the channel arguments.
 const grpc_channel_args* grpc_channel_stack_builder_get_channel_arguments(
     grpc_channel_stack_builder* builder);
 
-/// Begin iterating over already defined filters in the builder at the beginning
+/// Begins iterating over already defined filters in the builder at the
+/// beginning.
 grpc_channel_stack_builder_iterator*
 grpc_channel_stack_builder_create_iterator_at_first(
     grpc_channel_stack_builder* builder);
 
-/// Begin iterating over already defined filters in the builder at the end
+/// Begins iterating over already defined filters in the builder at the end.
 grpc_channel_stack_builder_iterator*
 grpc_channel_stack_builder_create_iterator_at_last(
     grpc_channel_stack_builder* builder);
@@ -84,15 +85,15 @@ bool grpc_channel_stack_builder_iterator_is_end(
 const char* grpc_channel_stack_builder_iterator_filter_name(
     grpc_channel_stack_builder_iterator* iterator);
 
-/// Move an iterator to the next item
+/// Moves an iterator to the next item.
 bool grpc_channel_stack_builder_move_next(
     grpc_channel_stack_builder_iterator* iterator);
 
-/// Move an iterator to the previous item
+/// Moves an iterator to the previous item.
 bool grpc_channel_stack_builder_move_prev(
     grpc_channel_stack_builder_iterator* iterator);
 
-/// Return an iterator at \a filter_name, or at the end of the list if not
+/// Returns an iterator at \a filter_name, or at the end of the list if not
 /// found.
 grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_iterator_find(
     grpc_channel_stack_builder* builder, const char* filter_name);
@@ -100,8 +101,8 @@ grpc_channel_stack_builder_iterator* grpc_channel_stack_builder_iterator_find(
 typedef void (*grpc_post_filter_create_init_func)(
     grpc_channel_stack* channel_stack, grpc_channel_element* elem, void* arg);
 
-/// Add \a filter to the stack, after \a iterator.
-/// Call \a post_init_func(..., \a user_data) once the channel stack is
+/// Adds \a filter to the stack, after \a iterator.
+/// Calls \a post_init_func(..., \a user_data) once the channel stack is
 /// created.
 bool grpc_channel_stack_builder_add_filter_after(
     grpc_channel_stack_builder_iterator* iterator,
@@ -109,7 +110,7 @@ bool grpc_channel_stack_builder_add_filter_after(
     grpc_post_filter_create_init_func post_init_func,
     void* user_data) GRPC_MUST_USE_RESULT;
 
-/// Add \a filter to the stack, before \a iterator.
+/// Adds \a filter to the stack, before \a iterator.
 /// Call \a post_init_func(..., \a user_data) once the channel stack is
 /// created.
 bool grpc_channel_stack_builder_add_filter_before(
@@ -118,41 +119,44 @@ bool grpc_channel_stack_builder_add_filter_before(
     grpc_post_filter_create_init_func post_init_func,
     void* user_data) GRPC_MUST_USE_RESULT;
 
-/// Add \a filter to the beginning of the filter list.
-/// Call \a post_init_func(..., \a user_data) once the channel stack is
+/// Adds \a filter to the beginning of the filter list.
+/// Calls \a post_init_func(..., \a user_data) once the channel stack is
 /// created.
 bool grpc_channel_stack_builder_prepend_filter(
     grpc_channel_stack_builder* builder, const grpc_channel_filter* filter,
     grpc_post_filter_create_init_func post_init_func,
     void* user_data) GRPC_MUST_USE_RESULT;
 
-/// Add \a filter to the end of the filter list.
-/// Call \a post_init_func(..., \a user_data) once the channel stack is
+/// Adds \a filter to the end of the filter list.
+/// Calls \a post_init_func(..., \a user_data) once the channel stack is
 /// created.
 bool grpc_channel_stack_builder_append_filter(
     grpc_channel_stack_builder* builder, const grpc_channel_filter* filter,
     grpc_post_filter_create_init_func post_init_func,
     void* user_data) GRPC_MUST_USE_RESULT;
 
-/// Remove any filter whose name is \a filter_name from \a builder. Returns true
-/// if \a filter_name was not found.
+/// Removes any filter whose name is \a filter_name from \a builder. Returns
+/// true if \a filter_name was not found.
 bool grpc_channel_stack_builder_remove_filter(
     grpc_channel_stack_builder* builder, const char* filter_name);
 
-/// Terminate iteration and destroy \a iterator
+/// Terminates iteration and destroy \a iterator.
 void grpc_channel_stack_builder_iterator_destroy(
     grpc_channel_stack_builder_iterator* iterator);
 
-/// Destroy the builder, return the freshly minted channel stack in \a result.
-/// Allocates \a prefix_bytes bytes before the channel stack
-/// Returns the base pointer of the allocated block
-/// \a initial_refs, \a destroy, \a destroy_arg are as per
-/// grpc_channel_stack_init
+/// Destroies the builder, returns the freshly minted channel stack in \a
+/// result. Allocates \a prefix_bytes bytes before the channel stack. Returns
+/// the base pointer of the allocated block. \a initial_refs, \a destroy, \a
+/// destroy_arg are as per grpc_channel_stack_init.
 grpc_error* grpc_channel_stack_builder_finish(
     grpc_channel_stack_builder* builder, size_t prefix_bytes, int initial_refs,
     grpc_iomgr_cb_func destroy, void* destroy_arg, void** result);
 
-/// Destroy the builder without creating a channel stack
+/// Destroies the builder without creating a channel stack.
 void grpc_channel_stack_builder_destroy(grpc_channel_stack_builder* builder);
+
+/// Gets the estimated call stack size of a subchannel.
+size_t grpc_channel_stack_builder_get_subchannel_call_size(
+    grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H */

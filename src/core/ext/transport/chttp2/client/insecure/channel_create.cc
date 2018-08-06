@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/authority.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -73,8 +74,8 @@ static grpc_channel* client_channel_factory_create_channel(
 }
 
 static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
-    {client_channel_factory_ref, client_channel_factory_unref,
-     client_channel_factory_create_subchannel,
+    {grpc_chttp2_get_stream_size(), client_channel_factory_ref,
+     client_channel_factory_unref, client_channel_factory_create_subchannel,
      client_channel_factory_create_channel};
 
 static grpc_client_channel_factory client_channel_factory = {

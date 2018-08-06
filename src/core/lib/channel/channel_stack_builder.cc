@@ -25,6 +25,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport_impl.h"
+
 typedef struct filter_node {
   struct filter_node* next;
   struct filter_node* prev;
@@ -308,4 +313,29 @@ grpc_error* grpc_channel_stack_builder_finish(
   gpr_free(const_cast<grpc_channel_filter**>(filters));
 
   return error;
+}
+
+size_t grpc_channel_stack_builder_get_subchannel_call_size(
+    grpc_channel_args* args) {
+  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  grpc_transport_vtable transport_vtable;
+  // Set the transport vtable name to http to enable http-client filters.
+  transport_vtable.name = "http";
+  grpc_transport transport = {&transport_vtable};
+  grpc_channel_stack_builder_set_transport(builder, &transport);
+  // Create a subchannel stack to see what filters are enabled.
+  grpc_channel_init_create_stack(builder, GRPC_CLIENT_SUBCHANNEL);
+  size_t subchannel_size = 0;
+  gpr_log(GPR_DEBUG, "Calculating call stack size of a subchannel.");
+  for (const filter_node* p = builder->begin.next; p != &builder->end;
+       p = p->next) {
+    const size_t s =
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(p->filter->sizeof_call_data);
+    subchannel_size += s;
+    gpr_log(GPR_DEBUG, "The call data size of %s filter is %lu B.",
+            p->filter->name, s);
+  }
+  grpc_channel_stack_builder_destroy(builder);
+  return subchannel_size;
 }
