@@ -383,7 +383,7 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-    grpc_resource_quota* server_rq = nullptr)
+    grpc_resource_quota* server_rq)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
