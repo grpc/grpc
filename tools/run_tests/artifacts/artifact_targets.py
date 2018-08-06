@@ -392,6 +392,7 @@ def targets():
         PythonArtifact('windows', 'x86', 'Python34_32bits'),
         PythonArtifact('windows', 'x86', 'Python35_32bits'),
         PythonArtifact('windows', 'x86', 'Python36_32bits'),
+        PythonArtifact('windows', 'x86', 'Python37_32bits'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python34'),
         PythonArtifact('windows', 'x64', 'Python35'),
