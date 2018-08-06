@@ -342,10 +342,12 @@ get_lb_policy_name_from_resolver_result_locked(channel_data* chand) {
     if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
       if (lb_policy_name != nullptr &&
           gpr_stricmp(lb_policy_name, "grpclb") != 0) {
-        gpr_log(GPR_INFO,
-                "resolver requested LB policy %s but provided at least one "
-                "balancer address -- forcing use of grpclb LB policy",
-                lb_policy_name);
+        if (grpc_client_channel_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "resolver requested LB policy %s but provided at least one "
+                  "balancer address -- forcing use of grpclb LB policy",
+                  lb_policy_name);
+        }
       }
       lb_policy_name = "grpclb";
     }
