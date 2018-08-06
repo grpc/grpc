@@ -342,10 +342,12 @@ get_lb_policy_name_from_resolver_result_locked(channel_data* chand) {
     if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
       if (lb_policy_name != nullptr &&
           gpr_stricmp(lb_policy_name, "grpclb") != 0) {
-        gpr_log(GPR_INFO,
-                "resolver requested LB policy %s but provided at least one "
-                "balancer address -- forcing use of grpclb LB policy",
-                lb_policy_name);
+        if (grpc_client_channel_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "resolver requested LB policy %s but provided at least one "
+                  "balancer address -- forcing use of grpclb LB policy",
+                  lb_policy_name);
+        }
       }
       lb_policy_name = "grpclb";
     }
@@ -482,10 +484,12 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
             ? ""
             : (error == GRPC_ERROR_NONE ? " (transient error)"
                                         : " (resolver shutdown)");
-    gpr_log(GPR_INFO,
-            "chand=%p: got resolver result: resolver_result=%p error=%s%s",
-            chand, chand->resolver_result, grpc_error_string(error),
-            disposition);
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "chand=%p: got resolver result: resolver_result=%p error=%s%s",
+              chand, chand->resolver_result, grpc_error_string(error),
+              disposition);
+    }
   }
   // Handle shutdown.
   if (error != GRPC_ERROR_NONE || chand->resolver == nullptr) {
@@ -1221,9 +1225,11 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       if (calld->pending_batches[i].batch != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            elem->channel_data, calld, num_batches, grpc_error_string(error));
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
+              elem->channel_data, calld, num_batches, grpc_error_string(error));
+    }
   }
   grpc_core::CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
@@ -1272,10 +1278,12 @@ static void pending_batches_resume(grpc_call_element* elem) {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
       if (calld->pending_batches[i].batch != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: starting %" PRIuPTR
-            " pending batches on subchannel_call=%p",
-            chand, calld, num_batches, calld->subchannel_call);
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: starting %" PRIuPTR
+              " pending batches on subchannel_call=%p",
+              chand, calld, num_batches, calld->subchannel_call);
+    }
   }
   grpc_core::CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
