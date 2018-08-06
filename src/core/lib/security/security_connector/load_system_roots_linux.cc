@@ -45,21 +45,22 @@
 #include "src/core/lib/iomgr/load_file.h"
 
 namespace grpc_core {
+namespace {
 
-const char* linux_cert_files_[] = {
+const char* kLinuxCertFiles[] = {
     "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
     "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
-const char* linux_cert_directories_[] = {
+const char* kLinuxCertDirectories[] = {
     "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
     "/etc/pki/tls/certs", "/etc/openssl/certs"};
 
 grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
-  size_t num_cert_files_ = GPR_ARRAY_SIZE(linux_cert_files_);
+  size_t num_cert_files_ = GPR_ARRAY_SIZE(kLinuxCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
     grpc_error* error =
-        grpc_load_file(linux_cert_files_[i], 1, &valid_bundle_slice);
+        grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
     if (error == GRPC_ERROR_NONE) {
       return valid_bundle_slice;
     }
@@ -67,8 +68,10 @@ grpc_slice GetSystemRootCerts() {
   return grpc_empty_slice();
 }
 
-void GetAbsoluteFilePath(const char* path_buffer, const char* valid_file_dir,
-                         const char* file_entry_name) {
+}  // namespace
+
+void GetAbsoluteFilePath(const char* valid_file_dir,
+                         const char* file_entry_name, const char* path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
     int path_len = snprintf((char*)path_buffer, MAXPATHLEN, "%s/%s",
                             valid_file_dir, file_entry_name);
@@ -83,24 +86,26 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   if (certs_directory == nullptr) {
     return bundle_slice;
   }
-  struct dirent* directory_entry;
-  char* bundle_string = nullptr;
-  InlinedVector<const char*, 1> roots_filenames;
+  // 512 is an estimate based on the number of roots observed on development
+  // machines.
+  InlinedVector<const char*, 512> roots_filenames;
   size_t total_bundle_size = 0;
   DIR* ca_directory = opendir(certs_directory);
   if (ca_directory == nullptr) {
     return bundle_slice;
   }
+  struct dirent* directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
     const char* file_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
-    GetAbsoluteFilePath(file_path, certs_directory, file_entry_name);
+    GetAbsoluteFilePath(certs_directory, file_entry_name, file_path);
     int stat_return = stat(file_path, &dir_entry_stat);
     if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
       // no subdirectories.
+      gpr_free(const_cast<char*>(file_path));
       continue;
     }
     roots_filenames.push_back(file_path);
@@ -108,7 +113,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   }
   closedir(ca_directory);
 
-  bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
+  char* bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
   size_t bytes_read = 0;
   for (size_t i = 0; i < roots_filenames.size(); i++) {
     struct stat dir_entry_stat;
@@ -130,17 +135,19 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     }
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
-  roots_filenames.clear();
+  for (size_t i = 0; i < roots_filenames.size(); i++) {
+    gpr_free(const_cast<char*>(roots_filenames[i]));
+  }
   return bundle_slice;
 }
 
 grpc_slice LoadSystemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // Prioritize user-specified custom directory if flag is set.
-  const char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+  char* custom_dir = gpr_getenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
   if (custom_dir != nullptr) {
     result = CreateRootCertsBundle(custom_dir);
-    gpr_free((char*)custom_dir);
+    gpr_free(custom_dir);
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.
@@ -148,8 +155,8 @@ grpc_slice LoadSystemRootCerts() {
     result = GetSystemRootCerts();
   }
   if (GRPC_SLICE_IS_EMPTY(result)) {
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(linux_cert_directories_); i++) {
-      result = CreateRootCertsBundle(linux_cert_directories_[i]);
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(kLinuxCertDirectories); i++) {
+      result = CreateRootCertsBundle(kLinuxCertDirectories[i]);
       if (!GRPC_SLICE_IS_EMPTY(result)) {
         break;
       }

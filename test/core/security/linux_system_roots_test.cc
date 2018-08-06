@@ -24,10 +24,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 #include <sys/param.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -48,7 +48,7 @@ static void test_absolute_cert_path() {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
   const char* result_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
-  grpc_core::GetAbsoluteFilePath(result_path, directory, filename);
+  grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
   GPR_ASSERT(
       strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
   gpr_free((char*)result_path);
@@ -77,7 +77,6 @@ static void test_cert_bundle_creation() {
 
   /* Cleanup. */
   unsetenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
-  unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
   gpr_free(result_str);
   gpr_free(bundle_str);
   grpc_slice_unref(roots_bundle);

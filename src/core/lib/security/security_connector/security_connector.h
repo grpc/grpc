@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdbool.h>
-#include <string.h>
 
 #include <grpc/grpc_security.h>
 
