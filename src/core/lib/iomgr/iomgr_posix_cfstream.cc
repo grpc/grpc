@@ -22,7 +22,6 @@
 
 #ifdef GRPC_CFSTREAM_IOMGR
 
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -33,7 +32,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 
-static const char *grpc_cfstream_env_var = "grpc_cfstream";
+static const char* grpc_cfstream_env_var = "grpc_cfstream";
 
 extern grpc_tcp_server_vtable grpc_posix_tcp_server_vtable;
 extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;
@@ -59,8 +58,8 @@ static grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
 
 void grpc_set_default_iomgr_platform() {
-  char *enable_cfstream = getenv(grpc_cfstream_env_var);
-  grpc_tcp_client_vtable *client_vtable = &grpc_posix_tcp_client_vtable;
+  char* enable_cfstream = getenv(grpc_cfstream_env_var);
+  grpc_tcp_client_vtable* client_vtable = &grpc_posix_tcp_client_vtable;
   if (enable_cfstream != nullptr && enable_cfstream[0] == '1') {
     client_vtable = &grpc_cfstream_client_vtable;
   }
