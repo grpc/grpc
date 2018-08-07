@@ -2758,16 +2758,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: grpc_linux_system_roots_test
-  build: test
-  language: c
-  src:
-  - test/core/security/linux_system_roots_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: grpc_print_google_default_creds_token
   build: tool
   language: c
@@ -4695,6 +4685,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_linux_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_node_plugin
   build: protoc
   language: c++
