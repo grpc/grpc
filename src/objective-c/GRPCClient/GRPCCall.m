@@ -230,7 +230,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
                                errorWithDomain:kGRPCErrorDomain
                                           code:GRPCErrorCodeCancelled
                                       userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
-
 }
 
 - (void)maybeFinishWithError:(NSError *)errorOrNil {
@@ -534,11 +533,12 @@ static NSString *const kBearerPrefix = @"Bearer ";
   __strong GRPCCall *strongSelf = self;
   if (strongSelf) {
     [self cancelCall];
-    [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                   code:GRPCErrorCodeUnavailable
-                                               userInfo:@{
-                                                 NSLocalizedDescriptionKey : @"Connectivity lost."
-                                               }]];
+    [self
+        maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                 code:GRPCErrorCodeUnavailable
+                                             userInfo:@{
+                                               NSLocalizedDescriptionKey : @"Connectivity lost."
+                                             }]];
   }
 }
 
