@@ -16,14 +16,14 @@ If you use gRPC following the instructions in
 - Replace the
 dependency on `gRPC-ProtoRPC` with `gRPC-ProtoRPC/CFStream`.
 - Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
-  console or by your code with `setenv()`.
+  console or by your code with `setenv()` before gRPC is initialized.
 
 If your project directly depends on podspecs other than `gRPC-ProtoRPC` (e.g. `gRPC` or
 `gRPC-Core`):
 
 - Make your projects depend on subspecs corresponding to CFStream in each gRPC podspec.
 - Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
-  console or by your code with `setenv()`.
+  console or by your code with `setenv()` before gRPC is initialized.
 
 ## Notes
 
