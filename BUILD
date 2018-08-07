@@ -68,7 +68,7 @@ g_stands_for = "gladiolus"
 
 core_version = "6.0.0"
 
-version = "1.14.0"
+version = "1.14.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
