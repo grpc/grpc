@@ -39,22 +39,25 @@
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
+#include "gtest/gtest.h"
+
 #ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
 #define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
 #endif
 
-// Test GetAbsoluteFilePath.
-static void test_absolute_cert_path() {
+namespace grpc {
+namespace {
+
+TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
   const char* result_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
   grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
-  GPR_ASSERT(
-      strcmp(result_path, "nonexistent/test/directory/doesnotexist.txt") == 0);
+  EXPECT_STREQ(result_path, "nonexistent/test/directory/doesnotexist.txt");
   gpr_free((char*)result_path);
 }
 
-static void test_cert_bundle_creation() {
+TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "true");
 
   /* Test that CreateRootCertsBundle returns a correct slice. */
@@ -67,7 +70,7 @@ static void test_cert_bundle_creation() {
       grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
-  GPR_ASSERT(strcmp(result_str, bundle_str) == 0);
+  EXPECT_STREQ(result_str, bundle_str);
   /* TODO: add tests for branches in CreateRootCertsBundle that return empty
    * slices. */
 
@@ -79,10 +82,15 @@ static void test_cert_bundle_creation() {
   grpc_slice_unref(result_slice);
 }
 
-int main() {
-  test_absolute_cert_path();
-  test_cert_bundle_creation();
-  return 0;
+} // namespace
+} // namespace grpc
+
+int main(int argc, char** argv) {
+  // test_absolute_cert_path();
+  // test_cert_bundle_creation();
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 #else
 int main() {
