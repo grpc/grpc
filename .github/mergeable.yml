@@ -1,6 +1,14 @@
 mergeable:
   pull_requests:
     label:
-      must_include:
-        regex: "release notes: yes|release notes: no"
-        message: "Add release notes yes/no label. For yes, add lang label"
+      or:
+        - and:
+          - must_include:
+              regex: 'release notes: yes'
+              message: 'Please include release note: yes'
+          - must_include:
+              regex: '^lang\/'
+              message: 'Please include a language label'
+        - must_include:
+            regex: 'release notes: no'
+            message: 'Please include release note: no'
