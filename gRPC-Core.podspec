@@ -1112,6 +1112,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
                       'src/core/lib/iomgr/endpoint_cfstream.cc',
                       'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
                       'src/core/lib/iomgr/tcp_client_cfstream.cc',
                       'src/core/lib/iomgr/cfstream_handle.h',
                       'src/core/lib/iomgr/endpoint_cfstream.h',

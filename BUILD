@@ -1010,6 +1010,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/cfstream_handle.cc",
         "src/core/lib/iomgr/endpoint_cfstream.cc",
         "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
     ],
     hdrs = [

@@ -45,6 +45,8 @@ static NSMutableDictionary *callFlags;
 static NSString *const kAuthorizationHeader = @"authorization";
 static NSString *const kBearerPrefix = @"Bearer ";
 
+const char *kCFStreamVarName = "grpc_cfstream";
+
 @interface GRPCCall ()<GRXWriteable>
 // Make them read-write.
 @property(atomic, strong) NSDictionary *responseHeaders;
@@ -206,9 +208,12 @@ static NSString *const kBearerPrefix = @"Bearer ";
   } else {
     [_responseWriteable enqueueSuccessfulCompletion];
   }
-#ifndef GRPC_CFSTREAM
-  [GRPCConnectivityMonitor unregisterObserver:self];
-#endif
+
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor unregisterObserver:self];
+  }
 
   // If the call isn't retained anywhere else, it can be deallocated now.
   _retainSelf = nil;
@@ -463,9 +468,11 @@ static NSString *const kBearerPrefix = @"Bearer ";
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
 
-#ifndef GRPC_CFSTREAM
-  [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-#endif
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+  }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
