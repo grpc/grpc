@@ -205,6 +205,12 @@ class SubchannelList
   // Returns true if the subchannel list is shutting down.
   bool shutting_down() const { return shutting_down_; }
 
+  // Starts watching all the subchannels in the list. Should only be invoked on
+  // either the current or latest pending subchannel list because
+  // ProcessConnectivityChangeLocked() should only be invoked on subchannels in
+  // such subchannel lists.
+  void StartWatchingLocked();
+
   // Populates refs_list with the uuids of this SubchannelLists's subchannels.
   void PopulateChildRefsList(ChildRefsList* refs_list) {
     for (size_t i = 0; i < subchannels_.size(); ++i) {
@@ -299,8 +305,6 @@ SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
       (&SubchannelData<SubchannelListType,
                        SubchannelDataType>::OnConnectivityChangedLocked),
       this, grpc_combiner_scheduler(combiner));
-  // Any subchannel in use is watched for connectivity change.
-  StartConnectivityWatchLocked(true /* from_ctor */);
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -586,6 +590,16 @@ void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   for (size_t i = 0; i < subchannels_.size(); i++) {
     SubchannelDataType* sd = &subchannels_[i];
     sd->ShutdownLocked();
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelList<SubchannelListType,
+                    SubchannelDataType>::StartWatchingLocked() {
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    if (subchannel(i)->subchannel() != nullptr) {
+      subchannel(i)->StartConnectivityWatchLocked();
+    }
   }
 }
 

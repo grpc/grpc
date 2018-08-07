@@ -691,6 +691,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
       this, &grpc_lb_round_robin_trace, addresses, combiner(),
       client_channel_factory(), args);
+  latest_pending_subchannel_list_->StartWatchingLocked();
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // Immediately promote the new list if it's empty.
     subchannel_list_ = std::move(latest_pending_subchannel_list_);

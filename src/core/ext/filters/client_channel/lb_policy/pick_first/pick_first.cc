@@ -177,8 +177,12 @@ void PickFirst::PickFirstSubchannelList::
         sd->initial_connectivity_state(),
         GRPC_ERROR_REF(sd->initial_connectivity_error()), true);
     // We are done if any subchannel is born READY.
-    if (sd->initial_connectivity_state() == GRPC_CHANNEL_READY) return;
+    if (sd->initial_connectivity_state() == GRPC_CHANNEL_READY) {
+      sd->StartConnectivityWatchLocked();
+      return;
+    }
   }
+  StartWatchingLocked();
   if (p->started_picking_) {
     trying_index_ = 0;
     subchannel(trying_index_)->ConnectLocked();
@@ -462,6 +466,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
           selected_ = sd;
           subchannel_list_ = std::move(subchannel_list);
           ShutdownUnselectedSubchannelsLocked();
+          subchannel_list_->StartWatchingLocked();
           // If there was a previously pending update (which may or may
           // not have contained the currently selected subchannel), drop
           // it, so that it doesn't override what we've done here.
