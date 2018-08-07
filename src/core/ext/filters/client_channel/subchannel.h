@@ -145,6 +145,13 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
 const grpc_subchannel_key* grpc_subchannel_get_key(
     const grpc_subchannel* subchannel);
 
+// Resets the connection backoff of the subchannel.
+// TODO(roth): Move connection backoff out of subchannels and up into LB
+// policy code (probably by adding a SubchannelGroup between
+// SubchannelList and SubchannelData), at which point this method can
+// go away.
+void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel);
+
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call* subchannel_call,
                                      grpc_transport_stream_op_batch* op);

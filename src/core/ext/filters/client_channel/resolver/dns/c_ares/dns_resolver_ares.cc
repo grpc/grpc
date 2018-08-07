@@ -66,6 +66,8 @@ class AresDnsResolver : public Resolver {
 
   void RequestReresolutionLocked() override;
 
+  void ResetBackoffLocked() override;
+
   void ShutdownLocked() override;
 
  private:
@@ -185,6 +187,13 @@ void AresDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
     MaybeStartResolvingLocked();
   }
+}
+
+void AresDnsResolver::ResetBackoffLocked() {
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  backoff_.Reset();
 }
 
 void AresDnsResolver::ShutdownLocked() {

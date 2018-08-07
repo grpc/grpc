@@ -57,6 +57,7 @@ class PickFirst : public LoadBalancingPolicy {
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                 ChildRefsList* ignored) override;
 
@@ -256,6 +257,13 @@ void PickFirst::StartPickingLocked() {
 void PickFirst::ExitIdleLocked() {
   if (!started_picking_) {
     StartPickingLocked();
+  }
+}
+
+void PickFirst::ResetBackoffLocked() {
+  subchannel_list_->ResetBackoffLocked();
+  if (latest_pending_subchannel_list_ != nullptr) {
+    latest_pending_subchannel_list_->ResetBackoffLocked();
   }
 }
 
