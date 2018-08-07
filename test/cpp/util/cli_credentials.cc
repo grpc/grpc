@@ -25,7 +25,7 @@ DEFINE_bool(
     "Whether to use ssl/tls. Deprecated. Use --channel_creds_type=ssl.");
 DEFINE_bool(use_auth, false,
             "Whether to create default google credentials. Deprecated. Use "
-            "--channel_creds_type=google_default_credentials.");
+            "--channel_creds_type=gdc.");
 DEFINE_string(
     access_token, "",
     "The access token that will be sent to the server to authenticate RPCs.");
@@ -35,8 +35,8 @@ DEFINE_string(
     "validation.");
 DEFINE_string(
     channel_creds_type, "",
-    "The channel creds type: insecure, ssl, google_default_credentials or "
-    "alts.");
+    "The channel creds type: insecure, ssl, gdc (Google Default Credentials) "
+    "or alts.");
 
 namespace grpc {
 namespace testing {
@@ -53,8 +53,8 @@ grpc::string CliCredentials::GetDefaultChannelCredsType() const {
   if (FLAGS_access_token.empty() && FLAGS_use_auth) {
     fprintf(stderr,
             "warning: --use_auth is deprecated. Use "
-            "--channel_creds_type=google_default_credentials.\n");
-    return "google_default_credentials";
+            "--channel_creds_type=gdc.\n");
+    return "gdc";
   }
   return "insecure";
 }
@@ -65,16 +65,15 @@ CliCredentials::GetChannelCredentials() const {
     return grpc::InsecureChannelCredentials();
   } else if (FLAGS_channel_creds_type.compare("ssl") == 0) {
     return grpc::SslCredentials(grpc::SslCredentialsOptions());
-  } else if (FLAGS_channel_creds_type.compare("google_default_credentials") ==
-             0) {
+  } else if (FLAGS_channel_creds_type.compare("gdc") == 0) {
     return grpc::GoogleDefaultCredentials();
   } else if (FLAGS_channel_creds_type.compare("alts") == 0) {
     return grpc::experimental::AltsCredentials(
         grpc::experimental::AltsCredentialsOptions());
   }
   fprintf(stderr,
-          "--channel_creds_type=%s invalid; must be insecure, ssl, "
-          "google_default_credentials or alts.\n",
+          "--channel_creds_type=%s invalid; must be insecure, ssl, gdc or "
+          "alts.\n",
           FLAGS_channel_creds_type.c_str());
   return std::shared_ptr<grpc::ChannelCredentials>();
 }
@@ -100,8 +99,7 @@ std::shared_ptr<grpc::ChannelCredentials> CliCredentials::GetCredentials()
             "warning: ignoring --enable_ssl because "
             "--channel_creds_type already set to %s.\n",
             FLAGS_channel_creds_type.c_str());
-  } else if (FLAGS_use_auth && FLAGS_channel_creds_type.compare(
-                                   "google_default_credentials") != 0) {
+  } else if (FLAGS_use_auth && FLAGS_channel_creds_type.compare("gdc") != 0) {
     fprintf(stderr,
             "warning: ignoring --use_auth because "
             "--channel_creds_type already set to %s.\n",
@@ -131,14 +129,12 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          "    --access_token           ; Set the access token in metadata,"
          " overrides --use_auth\n"
          "    --ssl_target             ; Set server host for ssl validation\n"
-         "    --channel_creds_type     ; Set to insecure, ssl, alts or\n"
-         "                             ; google_default_credentials\n";
+         "    --channel_creds_type     ; Set to insecure, ssl, gdc, or alts\n";
 }
 
 const grpc::string CliCredentials::GetSslTargetNameOverride() const {
-  bool use_ssl =
-      FLAGS_channel_creds_type.compare("ssl") == 0 ||
-      FLAGS_channel_creds_type.compare("google_default_credentials") == 0;
+  bool use_ssl = FLAGS_channel_creds_type.compare("ssl") == 0 ||
+                 FLAGS_channel_creds_type.compare("gdc") == 0;
   return use_ssl ? FLAGS_ssl_target : "";
 }
 
