@@ -82,8 +82,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   grpc_slice_unref(result_slice);
 }
 
-} // namespace
-} // namespace grpc
+}  // namespace
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   // test_absolute_cert_path();
