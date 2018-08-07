@@ -70,11 +70,6 @@ static void do_basic_init(void) {
   g_initializations = 0;
 }
 
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
-}
-
 static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
@@ -82,19 +77,20 @@ static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
 
 static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
+                                   grpc_append_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
+                                   grpc_append_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
+                                   grpc_append_connected_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   append_filter, (void*)&grpc_lame_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-                                   (void*)&grpc_server_top_filter);
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
+                                   prepend_filter, (void*)&grpc_lame_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_MAX, prepend_filter,
+      (void*)&grpc_server_top_filter);
 }
 
 typedef struct grpc_plugin {
