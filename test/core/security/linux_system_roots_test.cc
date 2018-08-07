@@ -86,8 +86,6 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // test_absolute_cert_path();
-  // test_cert_bundle_creation();
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
