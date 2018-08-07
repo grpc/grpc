@@ -13,17 +13,17 @@ interface that gRPC uses when it is ready for production.
 ## Usage
 If you use gRPC following the instructions in
 [README.md](https://github.com/grpc/grpc/blob/master/src/objective-c/README.md):
-- Simply replace the
-dependency on `gRPC-ProtoRPC` with `gRPC-ProtoRPC/CFStream`. The build system will take care of
-everything else and switch networking to CFStream.
+- Replace the
+dependency on `gRPC-ProtoRPC` with `gRPC-ProtoRPC/CFStream`.
+- Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
+  console or by your code with `setenv()`.
 
 If your project directly depends on podspecs other than `gRPC-ProtoRPC` (e.g. `gRPC` or
 `gRPC-Core`):
 
-- Make your projects depend on subspecs corresponding to CFStream in each gRPC podspec. For
-  `gRPC-Core`, you will need to make sure that the completion queue you create is of type
-  `GRPC_CQ_NON_POLLING`. This is expected to be fixed soon so that you do not have to modify the
-  completion queue type.
+- Make your projects depend on subspecs corresponding to CFStream in each gRPC podspec.
+- Enable CFStream with environment variable `grpc_cfstream=1`. This can be done either in Xcode
+  console or by your code with `setenv()`.
 
 ## Notes
 
