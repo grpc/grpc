@@ -129,6 +129,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "linux_system_roots_test",
+    srcs = ["linux_system_roots_test.cc"],
+    data = [
+        "//test/core/security/etc:bundle.pem",
+        "//test/core/security/etc:test_roots/cert1.pem",
+        "//test/core/security/etc:test_roots/cert2.pem",
+        "//test/core/security/etc:test_roots/cert3.pem",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ssl_credentials_test",
     srcs = ["ssl_credentials_test.cc"],
     language = "C++",
