@@ -76,7 +76,8 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
     int path_len = snprintf((char*)path_buffer, MAXPATHLEN, "%s/%s",
                             valid_file_dir, file_entry_name);
     if (path_len == 0) {
-      gpr_log(GPR_ERROR, "failed to get certificate absolute path");
+      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
+              file_entry_name);
     }
   }
 }
@@ -86,9 +87,11 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   if (certs_directory == nullptr) {
     return bundle_slice;
   }
-  // 512 is an estimate based on the number of roots observed on development
-  // machines.
-  InlinedVector<const char*, 512> roots_filenames;
+  struct FileData {
+    char path[MAXPATHLEN];
+    off_t size;
+  };
+  InlinedVector<FileData, 2> roots_filenames;
   size_t total_bundle_size = 0;
   DIR* ca_directory = opendir(certs_directory);
   if (ca_directory == nullptr) {
@@ -98,46 +101,41 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
     struct stat dir_entry_stat;
     const char* file_entry_name = directory_entry->d_name;
-    const char* file_path = static_cast<char*>(gpr_malloc(MAXPATHLEN));
-    GetAbsoluteFilePath(certs_directory, file_entry_name, file_path);
-    int stat_return = stat(file_path, &dir_entry_stat);
+    FileData file_data;
+    GetAbsoluteFilePath(certs_directory, file_entry_name, file_data.path);
+    int stat_return = stat(file_data.path, &dir_entry_stat);
     if (stat_return == -1 || S_ISDIR(dir_entry_stat.st_mode) ||
         strcmp(directory_entry->d_name, ".") == 0 ||
         strcmp(directory_entry->d_name, "..") == 0) {
       // no subdirectories.
-      gpr_free(const_cast<char*>(file_path));
+      if (stat_return == -1) {
+        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+      }
       continue;
     }
-    roots_filenames.push_back(file_path);
-    total_bundle_size += dir_entry_stat.st_size;
+    file_data.size = dir_entry_stat.st_size;
+    total_bundle_size += file_data.size;
+    roots_filenames.push_back(file_data);
   }
   closedir(ca_directory);
 
   char* bundle_string = static_cast<char*>(gpr_zalloc(total_bundle_size + 1));
   size_t bytes_read = 0;
   for (size_t i = 0; i < roots_filenames.size(); i++) {
-    struct stat dir_entry_stat;
-    int stat_return = stat(roots_filenames[i], &dir_entry_stat);
-    if (stat_return == -1) {
-      continue;
-    }
-    int file_descriptor = open(roots_filenames[i], O_RDONLY);
+    int file_descriptor = open(roots_filenames[i].path, O_RDONLY);
     if (file_descriptor != -1) {
       // Read file into bundle.
-      size_t cert_file_size = dir_entry_stat.st_size;
+      size_t cert_file_size = roots_filenames[i].size;
       int read_ret =
           read(file_descriptor, bundle_string + bytes_read, cert_file_size);
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        gpr_log(GPR_ERROR, "failed to read a file");
+        gpr_log(GPR_ERROR, "failed to read file: %s", roots_filenames[i].path);
       }
     }
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
-  for (size_t i = 0; i < roots_filenames.size(); i++) {
-    gpr_free(const_cast<char*>(roots_filenames[i]));
-  }
   return bundle_slice;
 }
 
