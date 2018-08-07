@@ -33,6 +33,8 @@ class ThreadState;
 
 class Fork {
  public:
+  typedef void (*child_postfork_func)(void);
+
   static void GlobalInit();
   static void GlobalShutdown();
 
@@ -45,6 +47,19 @@ class Fork {
 
   // Decrement the count of active ExecCtxs
   static void DecExecCtxCount();
+
+  static void IncrementForkEpoch();
+  static int GetForkEpoch();
+  // Provide a function that will be invoked in the child's postfork handler to
+  // shutdown inherited connections.
+  static void SetShutdownChildConnectionsFunc(
+      child_postfork_func shutdown_child_connections);
+  static child_postfork_func GetShutdownChildConnectionsFunc();
+  // Provide a function that will be invoked in the child's postfork handler to
+  // reset the polling engine's internal state.
+  static void SetResetChildPollingEngineFunc(
+      child_postfork_func reset_child_polling_engine);
+  static child_postfork_func GetResetChildPollingEngineFunc();
 
   // Check if there is a single active ExecCtx
   // (the one used to invoke this function).  If there are more,
@@ -68,10 +83,13 @@ class Fork {
   static void Enable(bool enable);
 
  private:
-  static internal::ExecCtxState* execCtxState_;
-  static internal::ThreadState* threadState_;
-  static bool supportEnabled_;
-  static bool overrideEnabled_;
+  static internal::ExecCtxState* exec_ctx_state_;
+  static internal::ThreadState* thread_state_;
+  static bool support_enabled_;
+  static bool override_enabled_;
+  static int fork_epoch_;
+  static child_postfork_func shutdown_child_connections_;
+  static child_postfork_func reset_child_polling_engine_;
 };
 
 }  // namespace grpc_core

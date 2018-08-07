@@ -29,6 +29,7 @@
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/fork.h"
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them
@@ -120,10 +121,32 @@ static const grpc_avl_vtable subchannel_avl_vtable = {
     scv_avl_copy      // copy_value
 };
 
+static void disconnect_on_fork_helper(grpc_avl_node* node) {
+  if (node == nullptr) {
+    return;
+  }
+  grpc_subchannel* c = static_cast<grpc_subchannel*>(node->value);
+  if (c != nullptr) {
+    grpc_subchannel_disconnect_due_to_fork(c);
+  }
+  disconnect_on_fork_helper(node->left);
+  disconnect_on_fork_helper(node->right);
+}
+
+/* Disconnects all subchannels found in the index. This must *only* be used in
+ * the post-fork handler in the child process after a fork has occurred, as it
+ * has no guarantees of thread-safety and assumes that no locks are held. */
+static void disconnect_on_fork(void) {
+  disconnect_on_fork_helper(g_subchannel_index.root);
+}
+
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
   gpr_ref_init(&g_refcount, 1);
+  if (grpc_core::Fork::Enabled()) {
+    grpc_core::Fork::SetShutdownChildConnectionsFunc(disconnect_on_fork);
+  }
 }
 
 void grpc_subchannel_index_shutdown(void) {
@@ -137,6 +160,9 @@ void grpc_subchannel_index_unref(void) {
   if (gpr_unref(&g_refcount)) {
     gpr_mu_destroy(&g_mu);
     grpc_avl_unref(g_subchannel_index, grpc_core::ExecCtx::Get());
+    if (grpc_core::Fork::Enabled()) {
+      grpc_core::Fork::SetShutdownChildConnectionsFunc(nullptr);
+    }
   }
 }
 

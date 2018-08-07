@@ -82,8 +82,19 @@ void grpc_postfork_parent() {
 
 void grpc_postfork_child() {
   if (!skipped_handler) {
+    grpc_core::Fork::IncrementForkEpoch();
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::Fork::child_postfork_func shutdown_connections =
+        grpc_core::Fork::GetShutdownChildConnectionsFunc();
+    if (shutdown_connections != nullptr) {
+      shutdown_connections();
+    }
+    grpc_core::Fork::child_postfork_func reset_polling_engine =
+        grpc_core::Fork::GetResetChildPollingEngineFunc();
+    if (reset_polling_engine != nullptr) {
+      reset_polling_engine();
+    }
     grpc_timer_manager_set_threading(true);
     grpc_executor_set_threading(true);
   }

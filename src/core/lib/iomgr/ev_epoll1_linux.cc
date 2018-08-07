@@ -141,6 +141,7 @@ struct grpc_fd {
   struct grpc_fd* freelist_next;
 
   grpc_iomgr_object iomgr_object;
+  int fork_epoch;
 };
 
 static void fd_global_init(void);
@@ -286,6 +287,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
     new_fd->error_closure.Init();
   }
   new_fd->fd = fd;
+  new_fd->fork_epoch = grpc_core::Fork::GetForkEpoch();
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();
@@ -327,7 +329,12 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
                                  bool releasing_fd) {
   if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
     if (!releasing_fd) {
-      shutdown(fd->fd, SHUT_RDWR);
+      if (grpc_core::Fork::Enabled() &&
+          fd->fork_epoch < grpc_core::Fork::GetForkEpoch()) {
+        close(fd->fd);
+      } else {
+        shutdown(fd->fd, SHUT_RDWR);
+      }
     }
     fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));
     fd->error_closure->SetShutdown(GRPC_ERROR_REF(why));
@@ -1190,6 +1197,9 @@ static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
   epoll_set_shutdown();
+  if (grpc_core::Fork::Enabled()) {
+    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+  }
 }
 
 static const grpc_event_engine_vtable vtable = {
@@ -1227,6 +1237,11 @@ static const grpc_event_engine_vtable vtable = {
     shutdown_engine,
 };
 
+static void reset_event_manager_on_fork() {
+  shutdown_engine();
+  grpc_init_epoll1_linux(true);
+}
+
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
@@ -1248,6 +1263,10 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
     return nullptr;
   }
 
+  if (grpc_core::Fork::Enabled()) {
+    grpc_core::Fork::SetResetChildPollingEngineFunc(
+        reset_event_manager_on_fork);
+  }
   return &vtable;
 }
 
