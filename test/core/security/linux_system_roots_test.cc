@@ -60,18 +60,14 @@ static void test_cert_bundle_creation() {
   /* Test that CreateRootCertsBundle returns a correct slice. */
   grpc_slice roots_bundle = grpc_empty_slice();
   GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file("test/core/security/etc/bundle/bundle.pem", 1,
-                                  &roots_bundle));
+      "load_file",
+      grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
   /* result_slice should have the same content as roots_bundle. */
   grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/roots");
+      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   GPR_ASSERT(strcmp(result_str, bundle_str) == 0);
-  // TODO: fix bazel builds by introducing working absolute path
-  if (GRPC_SLICE_IS_EMPTY(result_slice)) {
-    printf("Your build is unsupported by 'test_cert_bundle_creation'\n");
-  }
   /* TODO: add tests for branches in CreateRootCertsBundle that return empty
    * slices. */
 

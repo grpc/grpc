@@ -138,9 +138,6 @@ grpc_cc_test(
         "//test/core/security/etc:test_roots/cert3.pem",
     ],
     language = "C++",
-    external_deps = [
-        "gtest",
-    ],
     deps = [
         "//:gpr",
         "//:grpc",
