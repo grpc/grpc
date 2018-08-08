@@ -257,6 +257,7 @@ int GetMacOSRootCerts(grpc_slice* roots,
   buf = (char*)(CFDataGetBytePtr(data));
   *roots = grpc_slice_from_copied_buffer(buf, CFDataGetLength(data));
   // TODO: handle removal of untrusted roots from data.
+  // gRPC issue #16286.
   return 0;
 }
 
