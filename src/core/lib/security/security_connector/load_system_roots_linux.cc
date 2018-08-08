@@ -73,8 +73,8 @@ grpc_slice GetSystemRootCerts() {
 void GetAbsoluteFilePath(const char* valid_file_dir,
                          const char* file_entry_name, char* path_buffer) {
   if (valid_file_dir != nullptr && file_entry_name != nullptr) {
-    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s",
-                            valid_file_dir, file_entry_name);
+    int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
+                            file_entry_name);
     if (path_len == 0) {
       gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
               file_entry_name);
