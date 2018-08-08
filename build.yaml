@@ -4000,6 +4000,28 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_channel_secure
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_channel_secure.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  - grpc
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_chttp2_hpack
   build: test
   language: c++
