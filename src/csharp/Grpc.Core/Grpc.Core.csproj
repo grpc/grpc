@@ -70,12 +70,12 @@
       <PackagePath>build/net45/</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\MonoAndroid\Grpc.Core.targets">
-      <PackagePath>build/MonoAndroid/</PackagePath>
+    <Content Include="build\MonoAndroid10\Grpc.Core.targets">
+      <PackagePath>build/MonoAndroid10/</PackagePath>
       <Pack>true</Pack>
     </Content>
-    <Content Include="build\Xamarin.iOS\Grpc.Core.targets">
-      <PackagePath>build/Xamarin.iOS/</PackagePath>
+    <Content Include="build\Xamarin.iOS10\Grpc.Core.targets">
+      <PackagePath>build/Xamarin.iOS10/</PackagePath>
       <Pack>true</Pack>
     </Content>
   </ItemGroup>
