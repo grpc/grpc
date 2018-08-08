@@ -114,6 +114,10 @@ message Load {
   // num_calls_in_progress is the only valid entry. If in_progress_report is not
   // set, num_calls_in_progress will be ignored. If in_progress_report is set,
   // fields other than num_calls_in_progress and orphaned_load will be ignored.
+  // TODO(juanlishen): A Load is either an in_progress_report or not. We should
+  // make this explicit in hierarchy. From the log, I see in_progress_report_
+  // has a random num_calls_in_progress_ when not set, which might lead to bug
+  // when the balancer process the load report.
   oneof in_progress_report {
     // The number of calls in progress (instantaneously) per load balancer id.
     int64 num_calls_in_progress = 5;

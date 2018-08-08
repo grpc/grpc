@@ -83,10 +83,11 @@ class BaseStub
     }
 
     private static function updateOpts($opts) {
-        $package_config = json_decode(
-            file_get_contents(dirname(__FILE__).'/../../composer.json'),
-            true
-        );
+        if (!file_exists($composerFile = __DIR__.'/../../composer.json')) {
+            // for grpc/grpc-php subpackage
+            $composerFile = __DIR__.'/../composer.json';
+        }
+        $package_config = json_decode(file_get_contents($composerFile), true);
         if (!empty($opts['grpc.primary_user_agent'])) {
             $opts['grpc.primary_user_agent'] .= ' ';
         } else {

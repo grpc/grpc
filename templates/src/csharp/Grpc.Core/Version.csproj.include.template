@@ -4,6 +4,6 @@
   <Project>
     <PropertyGroup>
       <GrpcCsharpVersion>${settings.csharp_version}</GrpcCsharpVersion>
-      <GoogleProtobufVersion>3.5.1</GoogleProtobufVersion>
+      <GoogleProtobufVersion>3.6.0</GoogleProtobufVersion>
     </PropertyGroup>
   </Project>

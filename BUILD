@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gladiolus"
+g_stands_for = "glider"
 
 core_version = "6.0.0-dev"
 
-version = "1.14.0-dev"
+version = "1.15.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -98,10 +98,10 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security_constants.h",
-    "include/grpc/load_reporting.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
+    "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
 ]
 
@@ -1201,9 +1201,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1211,9 +1211,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1234,9 +1234,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1244,9 +1244,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1334,6 +1334,51 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_server_load_reporting_service_server_builder_plugin",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "lb_load_reporter_service",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_server_load_reporting",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
+        "src/cpp/server/load_reporter/util.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/server_load_reporting.h",
+    ],
+    deps = [
+        "lb_server_load_reporting_filter",
+        "lb_server_load_reporting_service_server_builder_plugin",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "lb_load_reporter_service",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_reporter_async_service_impl.h",
+    ],
+    language = "c++",
+    deps = [
+        "lb_load_reporter",
+    ],
+)
+
+grpc_cc_library(
     name = "lb_get_cpu_stats",
     srcs = [
         "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
@@ -1388,7 +1433,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
     ],
     hdrs = [
@@ -2004,6 +2052,26 @@ grpc_cc_library(
     deps = [
         ":grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_channelz",
+    srcs = [
+        "src/cpp/server/channelz/channelz_service.cc",
+        "src/cpp/server/channelz/channelz_service_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/channelz/channelz_service.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/channelz_service_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     alwayslink = 1,
 )

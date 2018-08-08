@@ -462,6 +462,14 @@ void alts_tsi_handshaker_handle_response(alts_tsi_handshaker* handshaker,
     set_unused_bytes(result, &handshaker->recv_bytes, resp->bytes_consumed);
   }
   grpc_status_code code = static_cast<grpc_status_code>(resp->status.code);
+  if (code != GRPC_STATUS_OK) {
+    grpc_slice* details = static_cast<grpc_slice*>(resp->status.details.arg);
+    if (details != nullptr) {
+      char* error_details = grpc_slice_to_c_string(*details);
+      gpr_log(GPR_ERROR, "Error from handshaker service:%s", error_details);
+      gpr_free(error_details);
+    }
+  }
   grpc_gcp_handshaker_resp_destroy(resp);
   cb(alts_tsi_utils_convert_to_tsi_result(code), user_data, bytes_to_send,
      bytes_to_send_size, result);

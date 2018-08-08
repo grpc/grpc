@@ -196,8 +196,8 @@ typedef struct {
     data frame, Int valued, milliseconds. */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
-/** Minimum allowed time between receiving successive ping frames without
-    sending any data frame. Int valued, milliseconds */
+/** Minimum allowed time between a server receiving successive ping frames
+   without sending any data frame. Int valued, milliseconds */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */

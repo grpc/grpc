@@ -94,6 +94,14 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   /// throw away unselected subchannels.
   virtual void RequestReresolutionLocked() GRPC_ABSTRACT;
 
+  /// Resets the re-resolution backoff, if any.
+  /// This needs to be implemented only by pull-based implementations;
+  /// for push-based implementations, it will be a no-op.
+  /// TODO(roth): Pull the backoff code out of resolver and into
+  /// client_channel, so that it can be shared across resolver
+  /// implementations.  At that point, this method can go away.
+  virtual void ResetBackoffLocked() {}
+
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
     GRPC_CLOSURE_SCHED(

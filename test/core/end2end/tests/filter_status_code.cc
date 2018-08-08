@@ -333,7 +333,6 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
     // So we add it right before the last one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
     const bool retval = grpc_channel_stack_builder_add_filter_before(
         it, filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
@@ -350,15 +349,15 @@ static void init_plugin(void) {
   g_client_code_recv = false;
   g_server_code_recv = false;
 
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_client_filter);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
-                                   maybe_add_filter,
-                                   (void*)&test_server_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_MAX, maybe_add_filter,
+      (void*)&test_client_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_MAX,
+      maybe_add_filter, (void*)&test_client_filter);
+  grpc_channel_init_register_stage(
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_MAX, maybe_add_filter,
+      (void*)&test_server_filter);
 }
 
 static void destroy_plugin(void) {

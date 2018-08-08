@@ -132,8 +132,13 @@ struct grpc_subchannel {
   bool have_alarm;
   /** have we started the backoff loop */
   bool backoff_begun;
+  // reset_backoff() was called while alarm was pending
+  bool deferred_reset_backoff;
   /** our alarm */
   grpc_timer alarm;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+      channelz_subchannel;
 };
 
 struct grpc_subchannel_call {
@@ -178,6 +183,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
+  c->channelz_subchannel.reset();
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -374,7 +380,20 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
 
+  const grpc_arg* arg =
+      grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
+  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  if (channelz_enabled) {
+    c->channelz_subchannel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>();
+  }
+
   return grpc_subchannel_index_register(key, c);
+}
+
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel) {
+  return subchannel->channelz_subchannel.get();
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
@@ -385,8 +404,6 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
-  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "state_change");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -423,6 +440,9 @@ static void on_alarm(void* arg, grpc_error* error) {
   if (c->disconnected) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
                                                              &error, 1);
+  } else if (c->deferred_reset_backoff) {
+    c->deferred_reset_backoff = false;
+    error = GRPC_ERROR_NONE;
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -442,27 +462,24 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     /* Don't try to connect if we're already disconnected */
     return;
   }
-
   if (c->connecting) {
     /* Already connecting: don't restart */
     return;
   }
-
   if (c->connected_subchannel != nullptr) {
     /* Already connected: don't restart */
     return;
   }
-
   if (!grpc_connectivity_state_has_watchers(&c->state_tracker)) {
     /* Nobody is interested in connecting: so don't just yet */
     return;
   }
-
   c->connecting = true;
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
-
   if (!c->backoff_begun) {
     c->backoff_begun = true;
+    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                                GRPC_ERROR_NONE, "connecting");
     continue_connect_locked(c);
   } else {
     GPR_ASSERT(!c->have_alarm);
@@ -477,6 +494,11 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&c->alarm, c->next_attempt_deadline, &c->on_alarm);
+    // During backoff, we prefer the connectivity state of CONNECTING instead of
+    // TRANSIENT_FAILURE in order to prevent triggering re-resolution
+    // continuously in pick_first.
+    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                                GRPC_ERROR_NONE, "backoff");
   }
 }
 
@@ -656,6 +678,19 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
   gpr_mu_unlock(&c->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(c, "connected");
   grpc_channel_args_destroy(delete_channel_args);
+}
+
+void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel) {
+  gpr_mu_lock(&subchannel->mu);
+  if (subchannel->have_alarm) {
+    subchannel->deferred_reset_backoff = true;
+    grpc_timer_cancel(&subchannel->alarm);
+  } else {
+    subchannel->backoff_begun = false;
+    subchannel->backoff->Reset();
+    maybe_start_connecting_locked(subchannel);
+  }
+  gpr_mu_unlock(&subchannel->mu);
 }
 
 /*
