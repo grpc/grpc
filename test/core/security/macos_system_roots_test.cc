@@ -36,11 +36,16 @@
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
+#include "gtest/gtest.h"
+
 #include "src/core/lib/security/security_connector/load_system_roots_macos.h"
 
 #ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
 #define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
 #endif  // GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+
+namespace grpc {
+namespace {
 
 int grpc_macos_system_roots_fail(CFDataRef* data, CFDataRef* untrusted) {
   return -1;
@@ -55,29 +60,37 @@ int grpc_macos_system_roots_dummy(CFDataRef* data, CFDataRef* untrusted) {
   return 0;
 }
 
-static void test_macos_system_roots() {
+TEST(MacOSRootsTest, FailsCorrectly) {
   // Set roots getter to fail to test that GetMacOSRootCerts returns -1 when it
   // should.
   grpc_slice result = grpc_empty_slice();
   int err = grpc_core::GetMacOSRootCerts(&result, grpc_macos_system_roots_fail);
-  GPR_ASSERT(err == -1);
+  EXPECT_EQ(err, -1);
   grpc_slice_unref(result);
+}
 
+TEST(MacOSRootsTest, ConvertsCorrectly) {
   // Test that GetMacOSRootCerts properly converts from CFDataRef to grpc_slice.
-  err = grpc_core::GetMacOSRootCerts(&result, grpc_macos_system_roots_dummy);
+  grpc_slice result = grpc_empty_slice();
+  int err = grpc_core::GetMacOSRootCerts(&result, grpc_macos_system_roots_dummy);
   char* test_slice_str = grpc_slice_to_c_string(result);
-  GPR_ASSERT(err == 0);
-  GPR_ASSERT(strcmp(test_slice_str, "DUMMY DATA") == 0);
+  EXPECT_EQ(err, 0);
+  EXPECT_STREQ(test_slice_str, "DUMMY DATA");
   grpc_slice_unref(result);
   gpr_free(test_slice_str);
 }
 
-int main() { test_macos_system_roots(); }
+}  // namespace
+}  // namespace grpc
 
+int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
 #else
-
 int main() {
   printf("*** WARNING: this test is only supported on MacOS systems ***\n");
+  return 0;
 }
-
 #endif  // GPR_APPLE
