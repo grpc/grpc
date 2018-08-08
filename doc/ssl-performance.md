@@ -23,7 +23,6 @@ Node.JS | n/a | Linux | :heavy_check_mark:
 Node.JS | n/a | MacOS | :heavy_check_mark:
 Node.JS | n/a | Windows | :x:
 Electron | n/a | all | :heavy_check_mark:
-Ruby | Yes | all | Same as the `Makefile` case from above
 Ruby | No | all | :x:
 PHP | Yes | all | Same as the `Makefile` case from above
 PHP | No | all | :x:
