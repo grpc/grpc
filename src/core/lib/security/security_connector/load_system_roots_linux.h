@@ -35,7 +35,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory);
 // Populates path_buffer, which must be of size MAXPATHLEN.
 // Exposed for testing purposes only.
 void GetAbsoluteFilePath(const char* valid_file_dir,
-                         const char* file_entry_name, const char* path_buffer);
+                         const char* file_entry_name, char* path_buffer);
 
 }  // namespace grpc_core
 
