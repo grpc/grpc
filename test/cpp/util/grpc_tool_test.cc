@@ -81,7 +81,7 @@ using grpc::testing::EchoResponse;
   "  peer: \"peer\"\n"        \
   "}\n\n"
 
-DECLARE_bool(enable_ssl);
+DECLARE_string(channel_creds_type);
 DECLARE_string(ssl_target);
 
 namespace grpc {
@@ -102,7 +102,8 @@ const int kServerDefaultResponseStreamsToSend = 3;
 class TestCliCredentials final : public grpc::testing::CliCredentials {
  public:
   TestCliCredentials(bool secure = false) : secure_(secure) {}
-  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const override {
+  std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials()
+      const override {
     if (!secure_) {
       return InsecureChannelCredentials();
     }
@@ -769,12 +770,12 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
   const grpc::string server_address = SetUpServer(true);
 
-  // Test input "grpc_cli ls localhost:<port> --enable_ssl
+  // Test input "grpc_cli ls localhost:<port> --channel_creds_type=ssl
   // --ssl_target=z.test.google.fr"
   std::stringstream output_stream;
   const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
   FLAGS_l = false;
-  FLAGS_enable_ssl = true;
+  FLAGS_channel_creds_type = "ssl";
   FLAGS_ssl_target = "z.test.google.fr";
   EXPECT_TRUE(
       0 == GrpcToolMainLib(
@@ -784,7 +785,7 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
                           "grpc.testing.EchoTestService\n"
                           "grpc.reflection.v1alpha.ServerReflection\n"));
 
-  FLAGS_enable_ssl = false;
+  FLAGS_channel_creds_type = "";
   FLAGS_ssl_target = "";
   ShutdownServer();
 }
