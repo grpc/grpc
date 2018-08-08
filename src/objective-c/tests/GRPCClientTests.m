@@ -606,20 +606,20 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   call.oauth2AccessToken = @"bogusToken";
 
   id<GRXWriteable> responsesWriteable =
-  [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    XCTFail(@"Received unexpected response: %@", value);
-  }
-                           completionHandler:^(NSError *errorOrNil) {
-                             XCTAssertNotNil(errorOrNil, @"Finished without error!");
-                             NSDictionary *userInfo = errorOrNil.userInfo;
-                             NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
-                             XCTAssertNotNil(debugInformation);
-                             XCTAssertNotEqual([debugInformation length], 0);
-                             NSString *challengeHeader = call.oauth2ChallengeHeader;
-                             XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
-                                                  call.responseHeaders);
-                             [expectation fulfill];
-                           }];
+      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+        XCTFail(@"Received unexpected response: %@", value);
+      }
+          completionHandler:^(NSError *errorOrNil) {
+            XCTAssertNotNil(errorOrNil, @"Finished without error!");
+            NSDictionary *userInfo = errorOrNil.userInfo;
+            NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
+            XCTAssertNotNil(debugInformation);
+            XCTAssertNotEqual([debugInformation length], 0);
+            NSString *challengeHeader = call.oauth2ChallengeHeader;
+            XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
+                                 call.responseHeaders);
+            [expectation fulfill];
+          }];
 
   [call startWithWriteable:responsesWriteable];
 
