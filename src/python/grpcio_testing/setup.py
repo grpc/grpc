@@ -29,7 +29,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.5.2.post1',
+    'protobuf>=3.6.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 

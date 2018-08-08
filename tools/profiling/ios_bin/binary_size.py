@@ -75,6 +75,7 @@ def get_size(where, frameworks):
 
 
 def build(where, frameworks):
+    subprocess.check_call(['make', 'clean'])
     shutil.rmtree(
         'src/objective-c/examples/Sample/Build/Build-%s' % where,
         ignore_errors=True)
