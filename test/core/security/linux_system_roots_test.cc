@@ -51,7 +51,7 @@ namespace {
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
-  char result_path[MAXPATHLEN];;
+  char result_path[MAXPATHLEN];
   grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
   EXPECT_STREQ(result_path, "nonexistent/test/directory/doesnotexist.txt");
 }
