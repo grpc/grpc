@@ -149,6 +149,8 @@
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
     # needed to compile protobuf
     add_definitions(/wd4065 /wd4506)
+    # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
+    add_definitions(/wd4200 /wd4291 /wd4244)
     # TODO(jtattermusch): revisit C4267 occurrences throughout the code
     add_definitions(/wd4267)
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later

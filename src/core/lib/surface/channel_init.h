@@ -21,11 +21,37 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
-#define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
+// Priority for channel registration functions to be used in
+// grpc_channel_init_register_stage().  The priority dictates the
+// order in which the registration functions run.
+//
+// When used to register a filter, the filter can either be appended or
+// prepended, thus dictating whether the filter goes at the top or bottom of
+// the stack. Higher priority functions can get closer to the top or bottom
+// of the stack than lower priority functions.
+enum {
+  // Default level. Most of filters should use this level if their location in
+  // the stack does not matter.
+  GRPC_CHANNEL_INIT_PRIORITY_LOW = 0,
+  // For filters that should be added after the group of filters with default
+  // priority, such as auth filters.
+  GRPC_CHANNEL_INIT_PRIORITY_MED = 10000,
+  // For filters that need to be close to top or bottom, such as protocol-level
+  // filters (client_authority, http-client, http-server).
+  GRPC_CHANNEL_INIT_PRIORITY_HIGH = 20000,
+  // For filters that need to be very close to the wire or surface, such as
+  // stats filters (census).
+  GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH = 30000,
+  // For things that have to happen last, such as connected channel filter or
+  // surface server filter. Consider as reserved for gRPC internals.
+  GRPC_CHANNEL_INIT_PRIORITY_MAX = INT_MAX
+};
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.

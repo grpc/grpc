@@ -32,10 +32,12 @@ namespace grpc {
 
 void RegisterOpenCensusPlugin() {
   RegisterChannelFilter<CensusChannelData, CensusClientCallData>(
-      "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
+      "opencensus_client", GRPC_CLIENT_CHANNEL,
+      GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH, true /* prepend */,
       nullptr /* condition function */);
   RegisterChannelFilter<CensusChannelData, CensusServerCallData>(
-      "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
+      "opencensus_server", GRPC_SERVER_CHANNEL,
+      GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH, true /* prepend */,
       nullptr /* condition function */);
 
   // Access measures to ensure they are initialized. Otherwise, creating a view

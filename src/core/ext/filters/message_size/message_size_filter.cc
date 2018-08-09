@@ -311,13 +311,13 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
 
 void grpc_message_size_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_message_size_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_message_size_filter, nullptr);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_message_size_filter, nullptr);
 }
 

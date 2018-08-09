@@ -144,7 +144,10 @@ class LoadBalancingPolicy
   /// consider whether this method is still needed.
   virtual void ExitIdleLocked() GRPC_ABSTRACT;
 
-  /// populates child_subchannels and child_channels with the uuids of this
+  /// Resets connection backoff.
+  virtual void ResetBackoffLocked() GRPC_ABSTRACT;
+
+  /// Populates child_subchannels and child_channels with the uuids of this
   /// LB policy's referenced children. This is not invoked from the
   /// client_channel's combiner. The implementation is responsible for
   /// providing its own synchronization.

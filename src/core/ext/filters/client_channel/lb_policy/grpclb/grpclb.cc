@@ -134,6 +134,7 @@ class GrpcLb : public LoadBalancingPolicy {
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                 ChildRefsList* child_channels) override;
 
@@ -1214,6 +1215,15 @@ void GrpcLb::ExitIdleLocked() {
   }
 }
 
+void GrpcLb::ResetBackoffLocked() {
+  if (lb_channel_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_channel_);
+  }
+  if (rr_policy_ != nullptr) {
+    rr_policy_->ResetBackoffLocked();
+  }
+}
+
 bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
   PendingPick* pp = PendingPickCreate(pick);
   bool pick_done = false;
@@ -1880,7 +1890,7 @@ void grpc_lb_policy_grpclb_init() {
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::GrpcLbFactory>()));
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_client_load_reporting_filter,
                                    (void*)&grpc_client_load_reporting_filter);
 }
