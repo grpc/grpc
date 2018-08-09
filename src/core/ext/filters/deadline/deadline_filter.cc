@@ -379,10 +379,10 @@ static bool maybe_add_deadline_filter(grpc_channel_stack_builder* builder,
 
 void grpc_deadline_filter_init(void) {
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH,
       maybe_add_deadline_filter, (void*)&grpc_client_deadline_filter);
   grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_VERY_HIGH,
       maybe_add_deadline_filter, (void*)&grpc_server_deadline_filter);
 }
 

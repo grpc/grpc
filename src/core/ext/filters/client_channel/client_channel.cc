@@ -578,7 +578,12 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     } else {
       grpc_error* error = GRPC_ERROR_NONE;
       grpc_core::LoadBalancingPolicy::PickState pick_state;
-      memset(&pick_state, 0, sizeof(pick_state));
+      pick_state.initial_metadata = nullptr;
+      pick_state.initial_metadata_flags = 0;
+      pick_state.on_complete = nullptr;
+      memset(&pick_state.subchannel_call_context, 0,
+             sizeof(pick_state.subchannel_call_context));
+      pick_state.user_data = nullptr;
       // Pick must return synchronously, because pick_state.on_complete is null.
       GPR_ASSERT(chand->lb_policy->PickLocked(&pick_state, &error));
       if (pick_state.connected_subchannel != nullptr) {
@@ -617,6 +622,17 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     }
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
+
+  if (op->reset_connect_backoff) {
+    if (chand->resolver != nullptr) {
+      chand->resolver->ResetBackoffLocked();
+      chand->resolver->RequestReresolutionLocked();
+    }
+    if (chand->lb_policy != nullptr) {
+      chand->lb_policy->ResetBackoffLocked();
+    }
+  }
+
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "start_transport_op");
 
   GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);

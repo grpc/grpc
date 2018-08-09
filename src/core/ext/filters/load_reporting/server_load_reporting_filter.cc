@@ -345,7 +345,8 @@ struct ServerLoadReportingFilterStaticRegistrar {
     if (registered) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
-        "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
+        "server_load_reporting", GRPC_SERVER_CHANNEL,
+        GRPC_CHANNEL_INIT_PRIORITY_LOW, true,
         MaybeAddServerLoadReportingFilter);
     // Access measures to ensure they are initialized. Otherwise, we can't
     // create any valid view before the first RPC.

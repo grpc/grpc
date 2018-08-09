@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_census_call_get_context);
   printf("%lx", (unsigned long) grpc_channel_get_target);
   printf("%lx", (unsigned long) grpc_channel_get_info);
+  printf("%lx", (unsigned long) grpc_channel_reset_connect_backoff);
   printf("%lx", (unsigned long) grpc_insecure_channel_create);
   printf("%lx", (unsigned long) grpc_lame_client_channel_create);
   printf("%lx", (unsigned long) grpc_channel_destroy);
