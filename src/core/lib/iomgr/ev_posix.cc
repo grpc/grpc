@@ -101,10 +101,15 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 }
 }  // namespace
 
-static const event_engine_factory g_factories[] = {
+#define ENGINE_HEAD_CUSTOM "head_custom"
+#define ENGINE_TAIL_CUSTOM "tail_custom"
+
+static event_engine_factory g_factories[] = {
+    {ENGINE_HEAD_CUSTOM, nullptr},          {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
     {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},   {"none", init_non_polling},
+    {ENGINE_TAIL_CUSTOM, nullptr},          {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -138,7 +143,7 @@ static bool is(const char* want, const char* have) {
 
 static void try_engine(const char* engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
-    if (is(engine, g_factories[i].name)) {
+    if (g_factories[i].factory != nullptr && is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory(
                0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
@@ -149,14 +154,32 @@ static void try_engine(const char* engine) {
   }
 }
 
-/* This should be used for testing purposes ONLY */
-void grpc_set_event_engine_test_only(
-    const grpc_event_engine_vtable* ev_engine) {
-  g_event_engine = ev_engine;
-}
+/* Call this before calling grpc_event_engine_init() */
+void grpc_register_event_engine_factory(const char* name,
+                                        event_engine_factory_fn factory,
+                                        bool add_at_head) {
+  const char* custom_match =
+      add_at_head ? ENGINE_HEAD_CUSTOM : ENGINE_TAIL_CUSTOM;
 
-const grpc_event_engine_vtable* grpc_get_event_engine_test_only() {
-  return g_event_engine;
+  // Overwrite an existing registration if already registered
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
+    if (0 == strcmp(name, g_factories[i].name)) {
+      g_factories[i].factory = factory;
+      return;
+    }
+  }
+
+  // Otherwise fill in an available custom slot
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
+    if (0 == strcmp(g_factories[i].name, custom_match)) {
+      g_factories[i].name = name;
+      g_factories[i].factory = factory;
+      return;
+    }
+  }
+
+  // Otherwise fail
+  GPR_ASSERT(false);
 }
 
 /* Call this only after calling grpc_event_engine_init() */

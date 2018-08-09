@@ -37,12 +37,9 @@ struct grpc_pollset {
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 static void* g_tag = (void*)static_cast<intptr_t>(10);  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
-static const grpc_event_engine_vtable* g_old_vtable;
 
 static void pollset_shutdown(grpc_pollset* ps, grpc_closure* closure) {
   GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
@@ -83,7 +80,7 @@ static grpc_error* pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker,
   return GRPC_ERROR_NONE;
 }
 
-static void init_engine_vtable() {
+static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   memset(&g_vtable, 0, sizeof(g_vtable));
 
   g_vtable.pollset_size = sizeof(grpc_pollset);
@@ -92,17 +89,23 @@ static void init_engine_vtable() {
   g_vtable.pollset_destroy = pollset_destroy;
   g_vtable.pollset_work = pollset_work;
   g_vtable.pollset_kick = pollset_kick;
+  g_vtable.shutdown_engine = [] {};
+
+  return &g_vtable;
 }
 
 static void setup() {
-  grpc_init();
+  // This test should only ever be run with a non or any polling engine
+  // Override the polling engine for the non-polling engine
+  // and add a custom polling engine
+  grpc_register_event_engine_factory("none", init_engine_vtable, false);
+  grpc_register_event_engine_factory("bm_cq_multiple_threads",
+                                     init_engine_vtable, true);
 
-  /* Override the event engine with our test event engine (g_vtable); but before
-   * that, save the current event engine in g_old_vtable. We will have to set
-   * g_old_vtable back before calling grpc_shutdown() */
-  init_engine_vtable();
-  g_old_vtable = grpc_get_event_engine_test_only();
-  grpc_set_event_engine_test_only(&g_vtable);
+  grpc_init();
+  GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
+             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
+                 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
@@ -118,9 +121,6 @@ static void teardown() {
   }
 
   grpc_completion_queue_destroy(g_cq);
-
-  /* Restore the old event engine before calling grpc_shutdown */
-  grpc_set_event_engine_test_only(g_old_vtable);
   grpc_shutdown();
 }
 
