@@ -43,6 +43,7 @@ grpc_g_stands_for_type grpc_g_stands_for_import;
 grpc_completion_queue_factory_lookup_type grpc_completion_queue_factory_lookup_import;
 grpc_completion_queue_create_for_next_type grpc_completion_queue_create_for_next_import;
 grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
+grpc_completion_queue_create_for_callback_type grpc_completion_queue_create_for_callback_import;
 grpc_completion_queue_create_type grpc_completion_queue_create_import;
 grpc_completion_queue_next_type grpc_completion_queue_next_import;
 grpc_completion_queue_pluck_type grpc_completion_queue_pluck_import;
@@ -294,6 +295,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_completion_queue_factory_lookup_import = (grpc_completion_queue_factory_lookup_type) GetProcAddress(library, "grpc_completion_queue_factory_lookup");
   grpc_completion_queue_create_for_next_import = (grpc_completion_queue_create_for_next_type) GetProcAddress(library, "grpc_completion_queue_create_for_next");
   grpc_completion_queue_create_for_pluck_import = (grpc_completion_queue_create_for_pluck_type) GetProcAddress(library, "grpc_completion_queue_create_for_pluck");
+  grpc_completion_queue_create_for_callback_import = (grpc_completion_queue_create_for_callback_type) GetProcAddress(library, "grpc_completion_queue_create_for_callback");
   grpc_completion_queue_create_import = (grpc_completion_queue_create_type) GetProcAddress(library, "grpc_completion_queue_create");
   grpc_completion_queue_next_import = (grpc_completion_queue_next_type) GetProcAddress(library, "grpc_completion_queue_next");
   grpc_completion_queue_pluck_import = (grpc_completion_queue_pluck_type) GetProcAddress(library, "grpc_completion_queue_pluck");

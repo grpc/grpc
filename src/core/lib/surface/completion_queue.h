@@ -47,6 +47,16 @@ typedef struct grpc_cq_completion {
   uintptr_t next;
 } grpc_cq_completion;
 
+/// For callback CQs, the following is what is actually intended by
+/// the tag.
+namespace grpc_core {
+class CQCallbackInterface {
+ public:
+  virtual ~CQCallbackInterface() {}
+  virtual void Run(bool) = 0;
+};
+}  // namespace grpc_core
+
 #ifndef NDEBUG
 void grpc_cq_internal_ref(grpc_completion_queue* cc, const char* reason,
                           const char* file, int line);
@@ -87,6 +97,7 @@ grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue* cc);
 int grpc_get_cq_poll_num(grpc_completion_queue* cc);
 
 grpc_completion_queue* grpc_completion_queue_create_internal(
-    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type);
+    grpc_cq_completion_type completion_type, grpc_cq_polling_type polling_type,
+    grpc_core::CQCallbackInterface* shutdown_callback);
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_H */
