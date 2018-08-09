@@ -19,6 +19,11 @@
 #include "test/cpp/util/cli_credentials.h"
 
 #include <gflags/gflags.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/slice.h>
+
+#include "src/core/lib/iomgr/load_file.h"
 
 DEFINE_bool(
     enable_ssl, false,
@@ -33,6 +38,14 @@ DEFINE_string(
     ssl_target, "",
     "If not empty, treat the server host name as this for ssl/tls certificate "
     "validation.");
+DEFINE_string(
+    ssl_client_cert, "",
+    "If not empty, load this PEM formated client certificate file. Requires "
+    "use of --ssl_client_key.");
+DEFINE_string(
+    ssl_client_key, "",
+    "If not empty, load this PEM formated private key. Requires use of "
+    "--ssl_client_cert");
 DEFINE_string(
     channel_creds_type, "",
     "The channel creds type: insecure, ssl, gdc (Google Default Credentials) "
@@ -64,7 +77,27 @@ CliCredentials::GetChannelCredentials() const {
   if (FLAGS_channel_creds_type.compare("insecure") == 0) {
     return grpc::InsecureChannelCredentials();
   } else if (FLAGS_channel_creds_type.compare("ssl") == 0) {
-    return grpc::SslCredentials(grpc::SslCredentialsOptions());
+    grpc::SslCredentialsOptions ssl_creds_options;
+    // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
+    if (!FLAGS_ssl_client_cert.empty()) {
+      grpc_slice cert_slice = grpc_empty_slice();
+      GRPC_LOG_IF_ERROR(
+          "load_file",
+          grpc_load_file(FLAGS_ssl_client_cert.c_str(), 1, &cert_slice));
+      ssl_creds_options.pem_cert_chain =
+          grpc::StringFromCopiedSlice(cert_slice);
+      grpc_slice_unref(cert_slice);
+    }
+    if (!FLAGS_ssl_client_key.empty()) {
+      grpc_slice key_slice = grpc_empty_slice();
+      GRPC_LOG_IF_ERROR(
+          "load_file",
+          grpc_load_file(FLAGS_ssl_client_key.c_str(), 1, &key_slice));
+      ssl_creds_options.pem_private_key =
+          grpc::StringFromCopiedSlice(key_slice);
+      grpc_slice_unref(key_slice);
+    }
+    return grpc::SslCredentials(ssl_creds_options);
   } else if (FLAGS_channel_creds_type.compare("gdc") == 0) {
     return grpc::GoogleDefaultCredentials();
   } else if (FLAGS_channel_creds_type.compare("alts") == 0) {
@@ -129,6 +162,8 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
          "    --access_token           ; Set the access token in metadata,"
          " overrides --use_auth\n"
          "    --ssl_target             ; Set server host for ssl validation\n"
+         "    --ssl_client_cert        ; Client cert for ssl\n"
+         "    --ssl_client_key         ; Client private key for ssl\n"
          "    --channel_creds_type     ; Set to insecure, ssl, gdc, or alts\n";
 }
 
