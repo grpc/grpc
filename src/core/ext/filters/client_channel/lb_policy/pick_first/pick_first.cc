@@ -78,9 +78,10 @@ class PickFirst : public LoadBalancingPolicy {
         : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
                          combiner) {}
 
-    void ProcessConnectivityChangeLocked(
-        grpc_connectivity_state connectivity_state, grpc_error* error,
-        bool sync) override;
+    void ProcessConnectivityChangeLocked() override;
+
+    // Processes the connectivity change to READY for an unselected subchannel.
+    void ProcessUnselectedReadyLocked();
   };
 
   class PickFirstSubchannelList
@@ -105,24 +106,19 @@ class PickFirst : public LoadBalancingPolicy {
       p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
-    // Processes the initial connectivity states of the subchannels in a new
-    // list. Only invoke this method on either the current or latest pending
-    // subchannel list.
-    void ProcessInitialConnectivityStatesLocked();
-
     // Tries to connect to the next subchannel after the input index (which
     // should be at least -1). Returns whether we've wrapped around to the
     // beginning of the list.
     bool MaybeTryNextLocked(int idx);
 
     // Accessor.
-    size_t trying_index() const { return trying_index_; }
+    size_t current_index() const { return current_index_; }
 
    private:
-    // The index of the subchannel that we are trying to connect. It's -1 if we
-    // are not trying any subchannel. It's only meaningful when we are still
-    // trying to select a subchannel from this list.
-    int trying_index_ = -1;
+    // The index of the subchannel that we are currently interested in. Only the
+    // connectivity change of this subchannel will be processed. Note that we
+    // are not necessarily attempting to connect to this subchannel though.
+    size_t current_index_ = 0;
   };
 
   // Helper class to ensure that any function that modifies the child refs
@@ -165,32 +161,58 @@ class PickFirst : public LoadBalancingPolicy {
   ChildRefsList child_channels_;
 };
 
-void PickFirst::PickFirstSubchannelList::
-    ProcessInitialConnectivityStatesLocked() {
-  PickFirst* p = static_cast<PickFirst*>(policy());
-  GPR_ASSERT(this == p->subchannel_list_.get() ||
-             this == p->latest_pending_subchannel_list_.get());
-  for (size_t i = 0; i < num_subchannels(); ++i) {
-    PickFirstSubchannelData* sd = subchannel(i);
-    if (sd->initial_connectivity_state() == GRPC_CHANNEL_IDLE) continue;
-    sd->ProcessConnectivityChangeLocked(
-        sd->initial_connectivity_state(),
-        GRPC_ERROR_REF(sd->initial_connectivity_error()), true);
-    // We are done if any subchannel is born READY.
-    if (sd->initial_connectivity_state() == GRPC_CHANNEL_READY) {
-      sd->StartConnectivityWatchLocked();
-      return;
+void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
+  GPR_ASSERT(latest_connectivity_state() == GRPC_CHANNEL_READY);
+  PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  // If we get here, there are two possible cases:
+  // 1. We do not currently have a selected subchannel, and the update is
+  //    for a subchannel in p->subchannel_list_ that we're trying to
+  //    connect to.  The goal here is to find a subchannel that we can
+  //    select.
+  // 2. We do currently have a selected subchannel, and the update is
+  //    for a subchannel in p->latest_pending_subchannel_list_.  The
+  //    goal here is to find a subchannel from the update that we can
+  //    select in place of the current one.
+  GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
+             subchannel_list() == p->latest_pending_subchannel_list_.get());
+  // Case 2.  Promote p->latest_pending_subchannel_list_ to
+  // p->subchannel_list_.
+  if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
+    if (grpc_lb_pick_first_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "Pick First %p promoting pending subchannel list %p to "
+              "replace %p",
+              p, p->latest_pending_subchannel_list_.get(),
+              p->subchannel_list_.get());
     }
+    p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
-  StartWatchingLocked();
-  if (p->started_picking_) {
-    trying_index_ = 0;
-    subchannel(trying_index_)->ConnectLocked();
+  // Cases 1 and 2.
+  grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_READY,
+                              GRPC_ERROR_NONE, "connecting_ready");
+  p->selected_ = this;
+  if (grpc_lb_pick_first_trace.enabled()) {
+    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
+  }
+  // Drop all other subchannels, since we are now connected.
+  p->ShutdownUnselectedSubchannelsLocked();
+  // Update any calls that were waiting for a pick.
+  PickState* pick;
+  while ((pick = p->pending_picks_)) {
+    p->pending_picks_ = pick->next;
+    pick->connected_subchannel = p->selected_->connected_subchannel()->Ref();
+    if (grpc_lb_pick_first_trace.enabled()) {
+      gpr_log(GPR_INFO, "Servicing pending pick with selected subchannel %p",
+              p->selected_->subchannel());
+    }
+    GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
   }
 }
 
 bool PickFirst::PickFirstSubchannelList::MaybeTryNextLocked(int idx) {
   PickFirst* p = static_cast<PickFirst*>(policy());
+  GPR_ASSERT(this == p->subchannel_list_.get() ||
+             this == p->latest_pending_subchannel_list_.get());
   GPR_ASSERT(idx >= -1);
   bool wrapped_around = false;
   do {
@@ -198,11 +220,12 @@ bool PickFirst::PickFirstSubchannelList::MaybeTryNextLocked(int idx) {
     if (static_cast<size_t>(idx) == num_subchannels()) wrapped_around = true;
     idx %= num_subchannels();
   } while (subchannel(idx)->subchannel() == nullptr);
-  if (p->started_picking_) {
-    trying_index_ = idx;
-    subchannel(trying_index_)->ConnectLocked();
-  } else {
-    trying_index_ = -1;
+  current_index_ = idx;
+  PickFirstSubchannelData* sd = subchannel(current_index_);
+  if (sd->latest_connectivity_state() == GRPC_CHANNEL_READY) {
+    sd->ProcessUnselectedReadyLocked();
+  } else if (p->started_picking_) {
+    subchannel(current_index_)->ConnectLocked();
   }
   return wrapped_around;
 }
@@ -442,7 +465,8 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     // We don't yet have a selected subchannel, so replace the current
     // subchannel list immediately.
     subchannel_list_ = std::move(subchannel_list);
-    subchannel_list_->ProcessInitialConnectivityStatesLocked();
+    subchannel_list_->StartWatchingLocked();
+    subchannel_list_->MaybeTryNextLocked(-1);
   } else {
     // We do have a selected subchannel.
     // Check if it's present in the new list.  If so, we're done.
@@ -462,7 +486,8 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
         // informing us otherwise is pending.
         // Note that CheckConnectivityStateLocked() also takes a ref to
         // the connected subchannel.
-        if (sd->initial_connectivity_state() == GRPC_CHANNEL_READY) {
+        if (sd->latest_connectivity_state() == GRPC_CHANNEL_READY) {
+          // TODO(juanlishen): Maybe use ProcessUnselectedReadyLocked() instead.
           selected_ = sd;
           subchannel_list_ = std::move(subchannel_list);
           ShutdownUnselectedSubchannelsLocked();
@@ -489,31 +514,28 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
       }
     }
     latest_pending_subchannel_list_ = std::move(subchannel_list);
-    latest_pending_subchannel_list_->ProcessInitialConnectivityStatesLocked();
+    latest_pending_subchannel_list_->StartWatchingLocked();
+    latest_pending_subchannel_list_->MaybeTryNextLocked(-1);
   }
 }
 
-void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
-    grpc_connectivity_state connectivity_state, grpc_error* error, bool sync) {
+void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked() {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
   AutoChildRefsUpdater guard(p);
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
              subchannel_list() == p->latest_pending_subchannel_list_.get());
-  GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
+  GPR_ASSERT(latest_connectivity_state() != GRPC_CHANNEL_SHUTDOWN);
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
-    // We will only be in sync mode if we are processing subchannels in a newly
-    // created list, which doesn't contain the selected subchannel yet.
-    GPR_ASSERT(!sync);
     if (grpc_lb_pick_first_trace.enabled()) {
       gpr_log(GPR_INFO,
               "Pick First %p connectivity changed for selected subchannel", p);
     }
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.
-    if (connectivity_state != GRPC_CHANNEL_READY &&
+    if (latest_connectivity_state() != GRPC_CHANNEL_READY &&
         p->latest_pending_subchannel_list_ != nullptr) {
       if (grpc_lb_pick_first_trace.enabled()) {
         gpr_log(GPR_INFO,
@@ -522,19 +544,19 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 p, p->latest_pending_subchannel_list_.get(),
                 p->subchannel_list_.get());
       }
-      p->selected_ = nullptr;
-      StopConnectivityWatchLocked();
-      p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       grpc_connectivity_state_set(
           &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          error != GRPC_ERROR_NONE
-              ? GRPC_ERROR_REF(error)
+          latest_connectivity_error() != GRPC_ERROR_NONE
+              ? GRPC_ERROR_REF(latest_connectivity_error())
               : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "selected subchannel not ready; switching to pending "
                     "update"),
           "selected_not_ready+switch_to_update");
+      p->selected_ = nullptr;
+      StopConnectivityWatchLocked();
+      p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
     } else {
-      if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (latest_connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // If the selected subchannel goes bad, request a re-resolution. We also
         // set the channel state to IDLE and reset started_picking_. The reason
         // is that if the new state is TRANSIENT_FAILURE due to a GOAWAY
@@ -550,13 +572,13 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         StopConnectivityWatchLocked();
         UnrefSubchannelLocked("pf_selected_shutdown");
       } else {
-        grpc_connectivity_state_set(&p->state_tracker_, connectivity_state,
-                                    GRPC_ERROR_REF(error), "selected_changed");
+        grpc_connectivity_state_set(
+            &p->state_tracker_, latest_connectivity_state(),
+            GRPC_ERROR_REF(latest_connectivity_error()), "selected_changed");
         // Renew notification.
         RenewConnectivityWatchLocked();
       }
     }
-    GRPC_ERROR_UNREF(error);
     return;
   }
   // If we get here, there are two possible cases:
@@ -568,79 +590,47 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    for a subchannel in p->latest_pending_subchannel_list_.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
-  // If it's in sync mode, we don't need to handle connectivity watch.
-  if (!sync) RenewConnectivityWatchLocked();
-  switch (connectivity_state) {
-    case GRPC_CHANNEL_READY: {
-      // Case 2.  Promote p->latest_pending_subchannel_list_ to
-      // p->subchannel_list_.
-      if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
-        if (grpc_lb_pick_first_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "Pick First %p promoting pending subchannel list %p to "
-                  "replace %p",
-                  p, p->latest_pending_subchannel_list_.get(),
-                  p->subchannel_list_.get());
+  RenewConnectivityWatchLocked();
+  // If this subchannel is not the one that we are interested in, don't process
+  // its connectivity change prematurely.
+  if (subchannel_list()->current_index() == index()) {
+    switch (latest_connectivity_state()) {
+      case GRPC_CHANNEL_READY: {
+        ProcessUnselectedReadyLocked();
+        break;
+      }
+      case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+        bool wrapped_around = subchannel_list()->MaybeTryNextLocked(index());
+        // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
+        // all subchannels.
+        // TODO (juanlishen): Now that we are watching all the subchannels in
+        // parallel, we may need to improve the way to aggregate the
+        // TRANSIENT_FAILURE states of the subchannels to that of the LB
+        // policy's.
+        if (wrapped_around && subchannel_list() == p->subchannel_list_.get()) {
+          p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+          grpc_connectivity_state_set(
+              &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+              GRPC_ERROR_REF(latest_connectivity_error()),
+              "exhausted_subchannels");
         }
-        p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
+        break;
       }
-      // Cases 1 and 2.
-      grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_READY,
-                                  GRPC_ERROR_NONE, "connecting_ready");
-      p->selected_ = this;
-      if (grpc_lb_pick_first_trace.enabled()) {
-        gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p,
-                subchannel());
-      }
-      // Drop all other subchannels, since we are now connected.
-      p->ShutdownUnselectedSubchannelsLocked();
-      // Update any calls that were waiting for a pick.
-      PickState* pick;
-      while ((pick = p->pending_picks_)) {
-        p->pending_picks_ = pick->next;
-        pick->connected_subchannel =
-            p->selected_->connected_subchannel()->Ref();
-        if (grpc_lb_pick_first_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "Servicing pending pick with selected subchannel %p",
-                  p->selected_->subchannel());
+      case GRPC_CHANNEL_CONNECTING:
+      case GRPC_CHANNEL_IDLE: {
+        // Only update connectivity state in case 1.
+        if (subchannel_list() == p->subchannel_list_.get()) {
+          grpc_connectivity_state_set(
+              &p->state_tracker_, GRPC_CHANNEL_CONNECTING,
+              GRPC_ERROR_REF(latest_connectivity_error()),
+              "connecting_changed");
         }
-        GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
+        break;
       }
-      break;
+      case GRPC_CHANNEL_SHUTDOWN:
+        GPR_UNREACHABLE_CODE(break);
     }
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // If we are not trying to connect to this subchannel, we don't care about
-      // its failure.
-      if (subchannel_list()->trying_index() != index()) break;
-      bool wrapped_around = subchannel_list()->MaybeTryNextLocked(index());
-      // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
-      // all subchannels.
-      // TODO (juanlishen): Now that we are watching all the subchannels in
-      // parallel, we may need to improve the way to aggregate the
-      // TRANSIENT_FAILURE states of the subchannels to that of the LB policy's.
-      if (wrapped_around && subchannel_list() == p->subchannel_list_.get()) {
-        p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
-        grpc_connectivity_state_set(
-            &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-            GRPC_ERROR_REF(error), "exhausted_subchannels");
-      }
-      break;
-    }
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_IDLE: {
-      // Only update connectivity state in case 1.
-      if (subchannel_list() == p->subchannel_list_.get()) {
-        grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_CONNECTING,
-                                    GRPC_ERROR_REF(error),
-                                    "connecting_changed");
-      }
-      break;
-    }
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_UNREACHABLE_CODE(break);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 //
