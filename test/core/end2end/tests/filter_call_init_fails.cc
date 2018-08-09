@@ -438,7 +438,6 @@ static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
     // must be the last one.  So we add it right before the last one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
     const bool retval = grpc_channel_stack_builder_add_filter_before(
         it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
@@ -457,7 +456,6 @@ static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
     // must be the last one.  So we add it right before the last one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
     const bool retval = grpc_channel_stack_builder_add_filter_before(
         it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
@@ -476,7 +474,6 @@ static bool maybe_add_client_subchannel_filter(
     // must be the last one.  So we add it right before the last one.
     grpc_channel_stack_builder_iterator* it =
         grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
     const bool retval = grpc_channel_stack_builder_add_filter_before(
         it, &test_filter, nullptr, nullptr);
     grpc_channel_stack_builder_iterator_destroy(it);
@@ -487,13 +484,17 @@ static bool maybe_add_client_subchannel_filter(
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
                                    maybe_add_server_channel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
                                    maybe_add_client_channel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
                                    maybe_add_client_subchannel_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MAX,
                                    maybe_add_client_channel_filter, nullptr);
 }
 

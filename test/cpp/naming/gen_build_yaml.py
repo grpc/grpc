@@ -68,7 +68,7 @@ def main():
               'gtest': False,
               'run': False,
               'src': ['test/cpp/naming/resolver_component_test.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
+              'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,
@@ -129,7 +129,7 @@ def main():
           'gtest': True,
           'run': True,
           'src': ['test/cpp/naming/cancel_ares_query_test.cc'],
-          'platforms': ['linux', 'posix', 'mac'],
+          'platforms': ['linux', 'posix', 'mac', 'windows'],
           'deps': [
               'grpc++_test_util',
               'grpc_test_util',

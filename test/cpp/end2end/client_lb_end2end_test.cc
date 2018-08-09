@@ -408,6 +408,36 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   gpr_atm_rel_store(&g_connection_delay_ms, 0);
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
+  ChannelArguments args;
+  constexpr int kInitialBackOffMs = 1000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  auto channel = BuildChannel("pick_first", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  // The channel won't become connected (there's no server).
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Bring up a server on the chosen port.
+  StartServers(1, ports);
+  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  // Wait for connect, but not long enough.  This proves that we're
+  // being throttled by initial backoff.
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Reset connection backoff.
+  experimental::ChannelResetConnectionBackoff(channel.get());
+  // Wait for connect.  Should happen ~immediately.
+  EXPECT_TRUE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
+  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
+  // We should have waited less than kInitialBackOffMs.
+  EXPECT_LT(waited_ms, kInitialBackOffMs);
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;

@@ -536,7 +536,7 @@ static bool maybe_add_max_age_filter(grpc_channel_stack_builder* builder,
 
 void grpc_max_age_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
                                    maybe_add_max_age_filter, nullptr);
 }
 

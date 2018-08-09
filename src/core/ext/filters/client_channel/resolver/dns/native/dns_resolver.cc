@@ -58,6 +58,8 @@ class NativeDnsResolver : public Resolver {
 
   void RequestReresolutionLocked() override;
 
+  void ResetBackoffLocked() override;
+
   void ShutdownLocked() override;
 
  private:
@@ -156,6 +158,13 @@ void NativeDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
     MaybeStartResolvingLocked();
   }
+}
+
+void NativeDnsResolver::ResetBackoffLocked() {
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  backoff_.Reset();
 }
 
 void NativeDnsResolver::ShutdownLocked() {
