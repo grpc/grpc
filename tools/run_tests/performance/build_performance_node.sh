@@ -25,6 +25,4 @@ cd "$(dirname "$0")/../../../../grpc-node"
 
 npm install
 
-./node_modules/.bin/gulp clean.all
-
 ./node_modules/.bin/gulp setup
