@@ -1,6 +1,14 @@
 resolver_tests_common_zone_name: resolver-tests-version-4.grpctestingexp.
 resolver_component_tests:
 - expected_addrs:
+  - {address: '5.5.5.5:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: no-srv-ipv4-single-target
+  records:
+    no-srv-ipv4-single-target:
+    - {TTL: '2100', data: 5.5.5.5, type: A}
+- expected_addrs:
   - {address: '1.2.3.4:1234', is_balancer: true}
   expected_chosen_service_config: null
   expected_lb_policy: null
