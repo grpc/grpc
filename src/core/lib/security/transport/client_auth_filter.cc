@@ -167,7 +167,6 @@ static void cancel_get_request_metadata(void* arg, grpc_error* error) {
     grpc_call_credentials_cancel_get_request_metadata(
         calld->creds, &calld->md_array, GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
 }
 
 static void send_security_metadata(grpc_call_element* elem,
@@ -222,7 +221,6 @@ static void send_security_metadata(grpc_call_element* elem,
     GRPC_ERROR_UNREF(error);
   } else {
     // Async return; register cancellation closure with call combiner.
-    GRPC_CALL_STACK_REF(calld->owning_call, "cancel_get_request_metadata");
     grpc_call_combiner_set_notify_on_cancel(
         calld->call_combiner,
         GRPC_CLOSURE_INIT(&calld->get_request_metadata_cancel_closure,
@@ -265,7 +263,6 @@ static void cancel_check_call_host(void* arg, grpc_error* error) {
         chand->security_connector, &calld->async_result_closure,
         GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_check_call_host");
 }
 
 static void auth_start_transport_stream_op_batch(
@@ -318,7 +315,6 @@ static void auth_start_transport_stream_op_batch(
         GRPC_ERROR_UNREF(error);
       } else {
         // Async return; register cancellation closure with call combiner.
-        GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
         grpc_call_combiner_set_notify_on_cancel(
             calld->call_combiner,
             GRPC_CLOSURE_INIT(&calld->check_call_host_cancel_closure,
