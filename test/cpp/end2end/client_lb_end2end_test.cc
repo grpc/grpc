@@ -291,6 +291,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ResetCounters();
   }
 
+  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+    const gpr_timespec deadline =
+        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    grpc_connectivity_state state;
+    while ((state = channel->GetState(false /* try_to_connect */)) ==
+           GRPC_CHANNEL_READY) {
+      if (!channel->WaitForStateChange(state, deadline)) return false;
+    }
+    return true;
+  }
+
   bool SeenAllServers() {
     for (const auto& server : servers_) {
       if (server->service_.request_count() == 0) return false;
@@ -590,18 +601,22 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
   auto channel_2 = BuildChannel("pick_first");
   auto stub_2 = BuildStub(channel_2);
+  // TODO(juanlishen): This resolution result will only be visible to channel 2
+  // since the response generator is only associated with channel 2 now. We
+  // should change the response generator to be able to deliver updates to
+  // multiple channels at once.
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
   WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
   gpr_log(GPR_INFO, "****** CHANNEL 2 CONNECTED *******");
   servers_[0]->Shutdown();
+  // Wait until the disconnection has triggered the connectivity notification.
+  // Otherwise, the subchannel may be picked for next call but will fail soon.
+  EXPECT_TRUE(WaitForChannelNotReady(channel_2.get()));
   // Channel 2 will also receive a re-resolution containing the same server.
   // Both channels will ref the same subchannel that failed.
   servers_.clear();
   StartServers(1, ports);
-  // Wait for a while so that the disconnection has triggered the connectivity
-  // notification. Otherwise, the subchannel may be picked but will fail soon.
-  sleep(1);
   gpr_log(GPR_INFO, "****** SERVER RESTARTED AGAIN *******");
   gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING A CALL *******");
   // The first call after the server restart will succeed.
