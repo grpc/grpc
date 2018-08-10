@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Class: ServerReadableStream</title>
+	<title>Documentation Class: Channel</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -100,15 +100,15 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Class: ServerReadableStream</h1>
+	<h1 class="page-title">Class: Channel</h1>
 <section>
 
 <header>
     
         <h2>
-            <span class="ancestors"><a href="grpc.html">grpc</a>~</span>
+            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>
         
-        ServerReadableStream
+        Channel
         </h2>
         
     
@@ -121,7 +121,7 @@
         
 <hr>
 <dt>
-    <h4 class="name" id="ServerReadableStream"><span class="type-signature"></span>new ServerReadableStream(call, metadata, deserialize)</h4>
+    <h4 class="name" id="Channel"><span class="type-signature"></span>new Channel(target, credentials, options)</h4>
     
     
 </dt>
@@ -129,8 +129,9 @@
 
     
     <div class="description">
-        <p>A stream that the server can read from. Used for calls that are streaming
-from the client side.</p>
+        <p>This constructor API is almost identical to the Client constructor,
+except that some of the options for the Client constructor are not valid
+here.</p>
     </div>
     
 
@@ -165,13 +166,13 @@ from the client side.</p>
 
         <tr>
             
-                <td class="name"><code>call</code></td>
+                <td class="name"><code>target</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">grpc.internal~Call</span>
+<span class="param-type">string</span>
 
 
 
@@ -182,20 +183,20 @@ from the client side.</p>
 
             
 
-            <td class="description last"><p>The call object to read data with</p></td>
+            <td class="description last"><p>The address of the server to connect to</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>metadata</code></td>
+                <td class="name"><code>credentials</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+<span class="param-type">grpc.ChannelCredentials</span>
 
 
 
@@ -206,20 +207,20 @@ from the client side.</p>
 
             
 
-            <td class="description last"><p>The request metadata from the client</p></td>
+            <td class="description last"><p>Channel credentials to use when connecting</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>deserialize</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+<span class="param-type"><a href="grpc.html#~ChannelOptions">grpc~ChannelOptions</a></span>
 
 
 
@@ -230,7 +231,7 @@ from the client side.</p>
 
             
 
-            <td class="description last"><p>Deserialization function for reads</p></td>
+            <td class="description last"><p>A map of channel options that will be passed to the core</p></td>
         </tr>
 
     
@@ -298,15 +299,6 @@ from the client side.</p>
     </div>
 
     
-        <h3 class="subsection-title">Extends</h3>
-
-        
-
-
-    <ul>
-        <li><a href="external-Readable.html">external:Readable</a></li>
-    </ul>
-
 
     
 
@@ -316,296 +308,6 @@ from the client side.</p>
 
     
 
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        <dl>
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        </dl>
     
 
     
@@ -615,7 +317,7 @@ from the client side.</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="getPeer"><span class="type-signature"></span>getPeer()</h4>
+    <h4 class="name" id="close"><span class="type-signature"></span>close()</h4>
     
     
 </dt>
@@ -623,7 +325,499 @@ from the client side.</p>
 
     
     <div class="description">
-        <p>Get the endpoint this call/stream is connected to.</p>
+        <p>Close the channel. This has the same functionality as the existing grpc.Client#close</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="createCall"><span class="type-signature"></span>createCall(method, deadline, host, parentCall, propagateFlags)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Create a call object. Call is an opaque type used by the <a href="grpc.Client.html">grpc.Client</a>
+and <a href="grpc.Server.html">grpc.Server</a> classes. This function is called by the gRPC library
+when starting a request. Implementers should return an instance of Call that
+is returned from calling createCall on an instance of the provided Channel
+class.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>method</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The full method string to request</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deadline</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The call deadline</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>host</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A host string override for making the request</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>parentCall</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc-Call.html">grpc~Call</a></span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A server call to propagate some
+    information from</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>propagateFlags</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A bitwise combination of elements of
+    <a href="grpc.html#.propagate">grpc.propagate</a> that indicates what information to propagate
+    from parentCall</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="grpc-Call.html">grpc~Call</a></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="getConnectivityState"><span class="type-signature"></span>getConnectivityState(tryToConnect)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Get the channel's current connectivity state.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>tryToConnect</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>If true, the channel will start connecting if it is
+    idle. Otherwise, idle channels will only start connecting when a
+    call starts.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>The current connectivity state</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="grpc.html#.connectivityState">grpc.connectivityState</a></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="getTarget"><span class="type-signature"></span>getTarget()</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Return the target that this channel connects to</p>
     </div>
     
 
@@ -689,7 +883,7 @@ from the client side.</p>
     
             
 <div class="param-desc">
-    <p>The URI of the endpoint</p>
+    <p>The target</p>
 </div>
 
 
@@ -717,7 +911,7 @@ from the client side.</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="sendMetadata"><span class="type-signature"></span>sendMetadata(responseMetadata)</h4>
+    <h4 class="name" id="watchConnectivityState"><span class="type-signature"></span>watchConnectivityState(currentState, deadline, callback)</h4>
     
     
 </dt>
@@ -725,7 +919,7 @@ from the client side.</p>
 
     
     <div class="description">
-        <p>Send the initial metadata for a writable stream.</p>
+        <p>Watch for connectivity state changes.</p>
     </div>
     
 
@@ -760,13 +954,13 @@ from the client side.</p>
 
         <tr>
             
-                <td class="name"><code>responseMetadata</code></td>
+                <td class="name"><code>currentState</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+<span class="param-type">grpc.ConnectivityState</span>
 
 
 
@@ -777,7 +971,59 @@ from the client side.</p>
 
             
 
-            <td class="description last"><p>Metadata to send</p></td>
+            <td class="description last"><p>The state to watch for
+    transitions from. This should always be populated by calling
+    getConnectivityState immediately before.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deadline</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~Deadline">grpc~Deadline</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A deadline for waiting for a state change</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Channel.html#~watchConnectivityStateCallback">grpc.Channel~watchConnectivityStateCallback</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Called with no
+    error when the state changes, or with an error if the deadline passes
+    without a state change</p></td>
         </tr>
 
     
@@ -845,32 +1091,87 @@ from the client side.</p>
     
 
     
-
-    
-        <h3 class="subsection-title">Events</h3>
+        <h3 class="subsection-title">Type Definitions</h3>
 
         <dl>
-            
+                
 <hr>
 <dt>
-    <h4 class="name" id="~event:cancelled">cancelled</h4>
+    <h4 class="name" id="~watchConnectivityStateCallback"><span class="type-signature"></span>watchConnectivityStateCallback(error)</h4>
     
     
 </dt>
 <dd>
 
     
-    <div class="description">
-        <p>Emitted when the call has been cancelled. After this has been emitted, the
-call's <code>cancelled</code> property will be set to <code>true</code>.</p>
-    </div>
-    
 
     
 
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>error</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Error</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -928,7 +1229,9 @@ call's <code>cancelled</code> property will be set to <code>true</code>.</p>
     
 </dd>
 
-        </dl>
+            </dl>
+    
+
     
 </article>
 
