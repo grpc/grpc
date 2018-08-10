@@ -19,6 +19,10 @@
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
 
+#ifndef GRPC_BAZEL_BUILD
+#error OpenCensus for gRPC is only supported when building with bazel.
+#endif
+
 #include "opencensus/trace/span.h"
 
 namespace grpc {
