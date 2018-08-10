@@ -813,11 +813,11 @@ static void set_write_state(grpc_chttp2_transport* t,
                                  write_state_name(st), reason));
   t->write_state = st;
   /* If the state is being reset back to idle, it means a write was just
-     finished. Make sure all the run_after_write closures are scheduled.
-
-     This is also our chance to close the transport if the transport was marked
-     to be closed after all writes finish (for example, if we received a go-away
-     from peer while we had some pending writes) */
+   * finished. Make sure all the run_after_write closures are scheduled.
+   *
+   * This is also our chance to close the transport if the transport was marked
+   * to be closed after all writes finish (for example, if we received a go-away
+   * from peer while we had some pending writes) */
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
     grpc_chttp2_stream* s;
     while (grpc_chttp2_list_pop_waiting_for_write_stream(t, &s)) {
