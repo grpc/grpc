@@ -52,7 +52,7 @@ class GenericServerContext final : public ServerContext {
 //   ServerBuilder builder;
 //   auto cq = builder.AddCompletionQueue();
 //   AsyncGenericService generic_service;
-//   builder.RegisterAsyncGeneicService(&generic_service);
+//   builder.RegisterAsyncGenericService(&generic_service);
 //   auto server = builder.BuildAndStart();
 //
 //   // request a new call
