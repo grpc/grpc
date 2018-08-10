@@ -50,6 +50,7 @@ namespace Grpc.Core
         static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
+        volatile static bool alreadyInvokedNativeInit;
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
@@ -360,12 +361,26 @@ namespace Grpc.Core
 
         internal static void GrpcNativeInit()
         {
+            if (!IsNativeShutdownAllowed && alreadyInvokedNativeInit)
+            {
+                // Normally grpc_init and grpc_shutdown calls should come in pairs (C core does reference counting),
+                // but in case we avoid grpc_shutdown calls altogether, calling grpc_init has no effect
+                // besides incrementing an internal C core counter that could theoretically overflow.
+                // NOTE: synchronization not necessary here as we are only trying to avoid calling grpc_init
+                // so many times that it would causes an overflow, and thus "alreadyInvokedNativeInit"
+                // being eventually consistent is good enough.
+                return;
+            }
             NativeMethods.Get().grpcsharp_init();
+            alreadyInvokedNativeInit = true;
         }
 
         internal static void GrpcNativeShutdown()
         {
-            NativeMethods.Get().grpcsharp_shutdown();
+            if (IsNativeShutdownAllowed)
+            {
+                NativeMethods.Get().grpcsharp_shutdown();
+            }
         }
 
         /// <summary>
@@ -410,6 +425,14 @@ namespace Grpc.Core
             // by default, create a completion queue for each thread
             return GetThreadPoolSizeOrDefault();
         }
+
+        // On some platforms (specifically iOS), thread local variables in native code
+        // require initialization/destruction. By skipping the grpc_shutdown() call,
+        // we avoid a potential crash where grpc_shutdown() has already destroyed
+        // the thread local variables, but some C core's *_destroy() methods still
+        // need to run (e.g. they may be run by finalizer thread which is out of our control)
+        // For more context, see https://github.com/grpc/grpc/issues/16294
+        private static bool IsNativeShutdownAllowed => !PlatformApis.IsXamarinIOS && !PlatformApis.IsUnityIOS;
 
         private static class ShutdownHooks
         {
