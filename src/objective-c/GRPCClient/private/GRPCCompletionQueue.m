@@ -22,10 +22,10 @@
 
 #ifdef GRPC_CFSTREAM
 const grpc_completion_queue_attributes kCompletionQueueAttr = {
-    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING, nullptr};
+    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING, NULL};
 #else
 const grpc_completion_queue_attributes kCompletionQueueAttr = {
-    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, nullptr};
+    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL};
 #endif
 
 @implementation GRPCCompletionQueue
