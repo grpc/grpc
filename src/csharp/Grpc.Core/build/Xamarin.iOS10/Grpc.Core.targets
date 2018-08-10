@@ -2,11 +2,11 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <ItemGroup>
-    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\runtimes\ios\native\libgrpc_csharp_ext.a">
+    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc_csharp_ext.a">
       <Kind>Static</Kind>
       <ForceLoad>True</ForceLoad>
     </NativeReference>
-    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\runtimes\ios\native\libgrpc.a">
+    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc.a">
       <Kind>Static</Kind>
       <ForceLoad>True</ForceLoad>
     </NativeReference>
