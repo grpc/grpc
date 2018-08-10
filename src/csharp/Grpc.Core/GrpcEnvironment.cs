@@ -50,7 +50,7 @@ namespace Grpc.Core
         static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
-        volatile static bool alreadyInvokedNativeInit;
+        static readonly AtomicCounter nativeInitCounter = new AtomicCounter();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
@@ -361,18 +361,17 @@ namespace Grpc.Core
 
         internal static void GrpcNativeInit()
         {
-            if (!IsNativeShutdownAllowed && alreadyInvokedNativeInit)
+            if (!IsNativeShutdownAllowed && nativeInitCounter.Count > 0)
             {
                 // Normally grpc_init and grpc_shutdown calls should come in pairs (C core does reference counting),
                 // but in case we avoid grpc_shutdown calls altogether, calling grpc_init has no effect
                 // besides incrementing an internal C core counter that could theoretically overflow.
-                // NOTE: synchronization not necessary here as we are only trying to avoid calling grpc_init
-                // so many times that it would causes an overflow, and thus "alreadyInvokedNativeInit"
-                // being eventually consistent is good enough.
+                // To avoid this theoretical possibility we guard repeated calls to grpc_init()
+                // with a 64-bit atomic counter (that can't realistically overflow).
                 return;
             }
             NativeMethods.Get().grpcsharp_init();
-            alreadyInvokedNativeInit = true;
+            nativeInitCounter.Increment();
         }
 
         internal static void GrpcNativeShutdown()
