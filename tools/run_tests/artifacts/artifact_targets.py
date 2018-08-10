@@ -295,10 +295,6 @@ class PHPArtifact:
                 self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
                     self.arch),
                 'tools/run_tests/artifacts/build_artifact_php.sh')
-        else:
-            return create_jobspec(
-                self.name, ['tools/run_tests/artifacts/build_artifact_php.sh'],
-                use_workspace=True)
 
 
 class ProtocArtifact:
@@ -400,6 +396,5 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python37'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
-        PHPArtifact('linux', 'x64'),
-        PHPArtifact('macos', 'x64')
+        PHPArtifact('linux', 'x64')
     ])
