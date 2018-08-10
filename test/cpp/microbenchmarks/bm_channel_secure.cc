@@ -60,13 +60,11 @@ class SecureChannelFixture : public ChannelDestroyerFixture {
  public:
   SecureChannelFixture() {}
   void Init() override {
-    grpc_channel_credentials* channel_creds = grpc_ssl_credentials_create(
-        /*pem root certs*/ nullptr,
-        /*pem key cert pair*/ nullptr,
-        /*verify peer options*/ nullptr,
-        /*reserved*/ nullptr);
-
-    channel_ = grpc_secure_channel_create(channel_creds, "localhost:1234",
+    // TODO: possibly create grpc_channel_creds by loading roots.pem or through
+    // ComputePemRootCerts (need to convert slice to c string).
+    // Related function: grpc_ssl_credentials_create()
+    channel_ = grpc_secure_channel_create(/*grpc_channel_creds*/ nullptr,
+                                          "localhost:1234",
                                           /*grpc channel args*/ nullptr,
                                           /*reserved*/ nullptr);
   }
@@ -112,7 +110,8 @@ int main(int argc, char** argv) {
     unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
   }
   for (int i = 0; i < kTotalIterations; i++) {
-    result_slice = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+    result_slice =
+        grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
     grpc_slice_unref(result_slice);
   }
   auto finish = std::chrono::high_resolution_clock::now();
@@ -120,12 +119,12 @@ int main(int argc, char** argv) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(finish - start)
           .count();
 
-  // System roots feature using roots.pem.
+  // System feature enabled.
   start = std::chrono::high_resolution_clock::now();
   gpr_setenv("GRPC_USE_SYSTEM_SSL_ROOTS", "1");
-  gpr_setenv("GRPC_SYSTEM_SSL_ROOTS_DIR", "./etc");
   for (int i = 0; i < kTotalIterations; i++) {
-    result_slice = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+    result_slice =
+        grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
     grpc_slice_unref(result_slice);
   }
   finish = std::chrono::high_resolution_clock::now();
@@ -133,11 +132,12 @@ int main(int argc, char** argv) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(finish - start)
           .count();
 
-  // System feature enabled.
+  // System roots feature using roots.pem (creates a bundle from /etc).
   start = std::chrono::high_resolution_clock::now();
-  unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+  gpr_setenv("GRPC_SYSTEM_SSL_ROOTS_DIR", "./etc");
   for (int i = 0; i < kTotalIterations; i++) {
-    result_slice = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+    result_slice =
+        grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
     grpc_slice_unref(result_slice);
   }
   finish = std::chrono::high_resolution_clock::now();
@@ -145,21 +145,26 @@ int main(int argc, char** argv) {
       std::chrono::duration_cast<std::chrono::nanoseconds>(finish - start)
           .count();
 
+  // Clean up.
+  unsetenv("GRPC_USE_SYSTEM_SSL_ROOTS");
+  unsetenv("GRPC_SYSTEM_SSL_ROOTS_DIR");
+
   benchmark::RunTheBenchmarksNamespaced();
 
-  std::cout << "\nRoot certs computation took: "
-            << time_elapsed0 / kTotalIterations
-            << " nanoseconds, with the feature disabled"
-            << "\n";
+  printf(
+      "SYSTEM ROOTS FEATURE DISABLED:\nRoot certs computation took: %ld "
+      "nanoseconds\n",
+      time_elapsed0 / kTotalIterations);
 
-  std::cout << "Root certs computation took: "
-            << time_elapsed1 / kTotalIterations
-            << " nanoseconds, with the feature using roots.pem"
-            << "\n";
+  printf(
+      "SYSTEM ROOTS FEATURE ENABLED:\nRoot certs computation took: %ld "
+      "nanoseconds\n",
+      time_elapsed1 / kTotalIterations);
 
-  std::cout << "Root certs computation took: "
-            << time_elapsed2 / kTotalIterations
-            << " nanoseconds, with the feature enabled (uses system roots)"
-            << "\n\n";
+  printf(
+      "SYSTEM ROOTS FEATURE ENABLED (CREATES BUNDLE FROM /etc):\nRoot certs "
+      "computation took: %ld nanoseconds\n\n",
+      time_elapsed2 / kTotalIterations);
+
   return 0;
 }
