@@ -292,8 +292,7 @@ class PHPArtifact:
     def build_jobspec(self):
         return create_docker_jobspec(
             self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
-                self.arch),
-            'tools/run_tests/artifacts/build_artifact_php.sh')
+                self.arch), 'tools/run_tests/artifacts/build_artifact_php.sh')
 
 
 class ProtocArtifact:
