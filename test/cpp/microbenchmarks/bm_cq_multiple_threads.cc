@@ -141,8 +141,9 @@ static void teardown() {
 static void BM_Cq_Throughput(benchmark::State& state) {
   TrackCounters track_counters;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  auto thd_idx = state.thread_index;
 
-  if (state.thread_index == 0) {
+  if (thd_idx == 0) {
     setup();
   }
 
@@ -152,12 +153,11 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
 
   state.SetItemsProcessed(state.iterations());
+  track_counters.Finish(state);
 
-  if (state.thread_index == 0) {
+  if (thd_idx == 0) {
     teardown();
   }
-
-  track_counters.Finish(state);
 }
 
 BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
