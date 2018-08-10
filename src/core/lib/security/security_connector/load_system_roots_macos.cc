@@ -20,7 +20,10 @@
 
 #include <grpc/slice_buffer.h>
 
-#ifdef GPR_APPLE
+#if defined GPR_APPLE && !defined GPR_CPU_IPHONE
+// iOS Security library is different than the MacOS library, so avoid building
+// on iOS until the difference is taken care of.
+// TODO: accomodate for iOS Security library differences.
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_macos.h"

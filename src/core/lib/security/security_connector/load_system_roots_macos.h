@@ -21,7 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GPR_APPLE
+#if defined GPR_APPLE && !defined GPR_CPU_IPHONE
+// TODO: see
+// src/core/lib/security/security_connector/load_system_roots_macos.cc.
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 #include <errno.h>

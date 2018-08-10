@@ -19,7 +19,9 @@
 #include <grpc/support/port_platform.h>
 #include <stdio.h>
 
-#ifdef GPR_APPLE
+#if defined GPR_APPLE && !defined GPR_CPU_IPHONE
+// TODO: see
+// src/core/lib/security/security_connector/load_system_roots_macos.cc.
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -72,7 +74,8 @@ TEST(MacOSRootsTest, FailsCorrectly) {
 TEST(MacOSRootsTest, ConvertsCorrectly) {
   // Test that GetMacOSRootCerts properly converts from CFDataRef to grpc_slice.
   grpc_slice result = grpc_empty_slice();
-  int err = grpc_core::GetMacOSRootCerts(&result, grpc_macos_system_roots_dummy);
+  int err =
+      grpc_core::GetMacOSRootCerts(&result, grpc_macos_system_roots_dummy);
   char* test_slice_str = grpc_slice_to_c_string(result);
   EXPECT_EQ(err, 0);
   EXPECT_STREQ(test_slice_str, "DUMMY DATA");
