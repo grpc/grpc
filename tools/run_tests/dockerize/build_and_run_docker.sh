@@ -73,6 +73,10 @@ docker run \
 # Copy output artifacts
 if [ "$OUTPUT_DIR" != "" ]
 then
+  # Create the artifact directory in advance to avoid a race in "docker cp" if tasks
+  # that were running in parallel finish at the same time.
+  # see https://github.com/grpc/grpc/issues/16155
+  mkdir -p "$git_root/$OUTPUT_DIR"
   docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
 fi
 
