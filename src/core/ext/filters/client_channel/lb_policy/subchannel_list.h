@@ -115,7 +115,7 @@ class SubchannelData {
   // Starts watching the connectivity state of the subchannel.
   // ProcessConnectivityChangeLocked() will be called when the
   // connectivity state changes.
-  void StartConnectivityWatchLocked();
+  virtual void StartConnectivityWatchLocked();
 
   // Renews watching the connectivity state of the subchannel.
   void RenewConnectivityWatchLocked();
@@ -153,6 +153,10 @@ class SubchannelData {
   virtual void ProcessConnectivityChangeLocked(
       grpc_connectivity_state connectivity_state,
       grpc_error* error) GRPC_ABSTRACT;
+
+  // Returns the connectivity state. Must be called only while there is no
+  // connectivity notification pending.
+  grpc_connectivity_state connectivity_state() const;
 
  private:
   // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
@@ -317,6 +321,13 @@ void SubchannelData<SubchannelListType,
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
+grpc_connectivity_state SubchannelData<
+    SubchannelListType, SubchannelDataType>::connectivity_state() const {
+  GPR_ASSERT(!connectivity_notification_pending_);
+  return pending_connectivity_state_unsafe_;
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StartConnectivityWatchLocked() {
   if (subchannel_list_->tracer()->enabled()) {
@@ -350,7 +361,8 @@ void SubchannelData<SubchannelListType,
             subchannel_,
             grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
   }
-  GPR_ASSERT(connectivity_notification_pending_);
+  GPR_ASSERT(!connectivity_notification_pending_);
+  connectivity_notification_pending_ = true;
   grpc_subchannel_notify_on_state_change(
       subchannel_, subchannel_list_->policy()->interested_parties(),
       &pending_connectivity_state_unsafe_, &connectivity_changed_closure_);
@@ -367,8 +379,7 @@ void SubchannelData<SubchannelListType,
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
             subchannel_);
   }
-  GPR_ASSERT(connectivity_notification_pending_);
-  connectivity_notification_pending_ = false;
+  GPR_ASSERT(!connectivity_notification_pending_);
   subchannel_list()->Unref(DEBUG_LOCATION, "connectivity_watch");
 }
 
@@ -442,6 +453,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
         grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe_),
         grpc_error_string(error), sd->subchannel_list_->shutting_down());
   }
+  sd->connectivity_notification_pending_ = false;
   // If shutting down, unref subchannel and stop watching.
   if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     sd->UnrefSubchannelLocked("connectivity_shutdown");
