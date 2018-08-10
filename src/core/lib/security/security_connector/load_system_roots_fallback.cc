@@ -21,7 +21,7 @@
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 
-#if !defined GPR_LINUX && !defined GPR_APPLE
+#if (!defined GPR_LINUX && !defined GPR_APPLE) || defined GPR_CPU_IPHONE
 
 namespace grpc_core {
 
