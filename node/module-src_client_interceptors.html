@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Class: ServerReadableStream</title>
+	<title>Documentation Module: src/client_interceptors</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -100,17 +100,10 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Class: ServerReadableStream</h1>
+	<h1 class="page-title">Module: src/client_interceptors</h1>
 <section>
 
 <header>
-    
-        <h2>
-            <span class="ancestors"><a href="grpc.html">grpc</a>~</span>
-        
-        ServerReadableStream
-        </h2>
-        
     
 </header>
 
@@ -119,9 +112,202 @@
     <div class="container-overview">
     
         
+            <div class="description"><p>Client Interceptors</p>
+<p>This module describes the interceptor framework for clients.
+An interceptor is a function which takes an options object and a nextCall
+function and returns an InterceptingCall:</p>
+<pre class="prettyprint source"><code>var interceptor = function(options, nextCall) {
+  return new InterceptingCall(nextCall(options));
+}</code></pre><p>The interceptor function must return an InterceptingCall object. Returning
+<code>new InterceptingCall(nextCall(options))</code> will satisfy the contract (but
+provide no interceptor functionality). <code>nextCall</code> is a function which will
+generate the next interceptor in the chain.</p>
+<p>To implement interceptor functionality, create a requester and pass it to
+the InterceptingCall constructor:</p>
+<p><code>return new InterceptingCall(nextCall(options), requester);</code></p>
+<p>A requester is a POJO with zero or more of the following methods:</p>
+<p><code>start(metadata, listener, next)</code></p>
+<ul>
+<li>To continue, call next(metadata, listener). Listeners are described</li>
+<li>below.</li>
+</ul>
+<p><code>sendMessage(message, next)</code></p>
+<ul>
+<li>To continue, call next(message).</li>
+</ul>
+<p><code>halfClose(next)</code></p>
+<ul>
+<li>To continue, call next().</li>
+</ul>
+<p><code>cancel(message, next)</code></p>
+<ul>
+<li>To continue, call next().</li>
+</ul>
+<p>A listener is a POJO with one or more of the following methods:</p>
+<p><code>onReceiveMetadata(metadata, next)</code></p>
+<ul>
+<li>To continue, call next(metadata)</li>
+</ul>
+<p><code>onReceiveMessage(message, next)</code></p>
+<ul>
+<li>To continue, call next(message)</li>
+</ul>
+<p><code>onReceiveStatus(status, next)</code></p>
+<ul>
+<li>To continue, call next(status)</li>
+</ul>
+<p>A listener is provided by the requester's <code>start</code> method. The provided
+listener implements all the inbound interceptor methods, which can be called
+to short-circuit the gRPC call.</p>
+<p>Three usage patterns are supported for listeners:
+1) Pass the listener along without modification: <code>next(metadata, listener)</code>.
+  In this case the interceptor declines to intercept any inbound operations.
+2) Create a new listener with one or more inbound interceptor methods and
+  pass it to <code>next</code>. In this case the interceptor will fire on the inbound
+  operations implemented in the new listener.
+3) Make direct inbound calls to the provided listener's methods. This
+  short-circuits the interceptor stack.</p>
+<p>Do not modify the listener passed in. Either pass it along unmodified,
+ignore it, or call methods on it to short-circuit the call.</p>
+<p>To intercept errors, implement the <code>onReceiveStatus</code> method and test for
+<code>status.code !== grpc.status.OK</code>.</p>
+<p>To intercept trailers, examine <code>status.metadata</code> in the <code>onReceiveStatus</code>
+method.</p>
+<p>This is a trivial implementation of all interceptor methods:
+var interceptor = function(options, nextCall) {
+  return new InterceptingCall(nextCall(options), {
+    start: function(metadata, listener, next) {
+      next(metadata, {
+        onReceiveMetadata: function (metadata, next) {
+          next(metadata);
+        },
+        onReceiveMessage: function (message, next) {
+          next(message);
+        },
+        onReceiveStatus: function (status, next) {
+          next(status);
+        },
+      });
+    },
+    sendMessage: function(message, next) {
+      next(message);
+    },
+    halfClose: function(next) {
+      next();
+    },
+    cancel: function(message, next) {
+      next();
+    }
+  });
+};</p>
+<p>This is an interceptor with a single method:
+var interceptor = function(options, nextCall) {
+  return new InterceptingCall(nextCall(options), {
+    sendMessage: function(message, next) {
+      next(message);
+    }
+  });
+};</p>
+<p>Builders are provided for convenience: StatusBuilder, ListenerBuilder,
+and RequesterBuilder</p>
+<p>gRPC client operations use this mapping to interceptor methods:</p>
+<p>grpc.opType.SEND_INITIAL_METADATA -&gt; start
+grpc.opType.SEND_MESSAGE -&gt; sendMessage
+grpc.opType.SEND_CLOSE_FROM_CLIENT -&gt; halfClose
+grpc.opType.RECV_INITIAL_METADATA -&gt; onReceiveMetadata
+grpc.opType.RECV_MESSAGE -&gt; onReceiveMessage
+grpc.opType.RECV_STATUS_ON_CLIENT -&gt; onReceiveStatus</p></div>
+        
+
+        
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-src_client_interceptors-EndListener.html">EndListener</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-InterceptingCall.html">InterceptingCall</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-InterceptingListener.html">InterceptingListener</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-InterceptorConfigurationError.html">InterceptorConfigurationError</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-ListenerBuilder.html">ListenerBuilder</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-RequesterBuilder.html">RequesterBuilder</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-src_client_interceptors-StatusBuilder.html">StatusBuilder</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        <dl>
+            
 <hr>
 <dt>
-    <h4 class="name" id="ServerReadableStream"><span class="type-signature"></span>new ServerReadableStream(call, metadata, deserialize)</h4>
+    <h4 class="name" id="~getCall"><span class="type-signature">&lt;inner> </span>getCall(channel, path [, options])</h4>
     
     
 </dt>
@@ -129,8 +315,7 @@
 
     
     <div class="description">
-        <p>A stream that the server can read from. Used for calls that are streaming
-from the client side.</p>
+        <p>Get a call object built with the provided options.</p>
     </div>
     
 
@@ -153,6 +338,8 @@ from the client side.</p>
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
         
 
@@ -165,13 +352,13 @@ from the client side.</p>
 
         <tr>
             
-                <td class="name"><code>call</code></td>
+                <td class="name"><code>channel</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">grpc.internal~Call</span>
+<span class="param-type"><a href="grpc.Channel.html">grpc.Channel</a></span>
 
 
 
@@ -179,23 +366,31 @@ from the client side.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>The call object to read data with</p></td>
+            <td class="description last"></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>metadata</code></td>
+                <td class="name"><code>path</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+<span class="param-type">string</span>
 
 
 
@@ -203,23 +398,31 @@ from the client side.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>The request metadata from the client</p></td>
+            <td class="description last"></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>deserialize</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
+<span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
 
 
 
@@ -227,10 +430,20 @@ from the client side.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>Deserialization function for reads</p></td>
+            <td class="description last"><p>Options object.</p></td>
         </tr>
 
     
@@ -294,328 +507,234 @@ from the client side.</p>
     
 </dd>
 
-    
-    </div>
-
-    
-        <h3 class="subsection-title">Extends</h3>
-
         
-
-
-    <ul>
-        <li><a href="external-Readable.html">external:Readable</a></li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        <dl>
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        </dl>
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        <dl>
             
 <hr>
 <dt>
-    <h4 class="name" id="getPeer"><span class="type-signature"></span>getPeer()</h4>
+    <h4 class="name" id="~getInterceptingCall"><span class="type-signature">&lt;inner> </span>getInterceptingCall(method_definition, options, interceptors, channel, responder)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>method_definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>interceptors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;<a href="global.html#Interceptor">Interceptor</a>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channel</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Channel.html">grpc.Channel</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>responder</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+|
+
+<span class="param-type">EventEmitter</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~getLastListener"><span class="type-signature">&lt;inner> </span>getLastListener(method_definition, emitter [, callback])</h4>
     
     
 </dt>
@@ -623,7 +742,7 @@ from the client side.</p>
 
     
     <div class="description">
-        <p>Get the endpoint this call/stream is connected to.</p>
+        <p>Creates the last listener in an interceptor stack.</p>
     </div>
     
 
@@ -632,6 +751,132 @@ from the client side.</p>
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>method_definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>emitter</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">EventEmitter</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -688,10 +933,6 @@ from the client side.</p>
     <h5>Returns:</h5>
     
             
-<div class="param-desc">
-    <p>The URI of the endpoint</p>
-</div>
-
 
 
 <dl>
@@ -700,7 +941,7 @@ from the client side.</p>
     </dt>
     <dd>
         
-<span class="param-type">string</span>
+<span class="param-type"><a href="grpc.html#~Listener">grpc~Listener</a></span>
 
 
 
@@ -717,7 +958,7 @@ from the client side.</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="sendMetadata"><span class="type-signature"></span>sendMetadata(responseMetadata)</h4>
+    <h4 class="name" id="~resolveInterceptorProviders"><span class="type-signature">&lt;inner> </span>resolveInterceptorProviders(providers, method_definition)</h4>
     
     
 </dt>
@@ -725,7 +966,7 @@ from the client side.</p>
 
     
     <div class="description">
-        <p>Send the initial metadata for a writable stream.</p>
+        <p>Transforms a list of interceptor providers into interceptors.</p>
     </div>
     
 
@@ -760,13 +1001,13 @@ from the client side.</p>
 
         <tr>
             
-                <td class="name"><code>responseMetadata</code></td>
+                <td class="name"><code>providers</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+<span class="param-type">Array.&lt;<a href="global.html#InterceptorProvider">InterceptorProvider</a>></span>
 
 
 
@@ -777,7 +1018,31 @@ from the client side.</p>
 
             
 
-            <td class="description last"><p>Metadata to send</p></td>
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>method_definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
         </tr>
 
     
@@ -837,98 +1102,38 @@ from the client side.</p>
     
 
     
-
+    <h5>Returns:</h5>
     
-</dd>
-
-        </dl>
-    
-
-    
-
-    
-        <h3 class="subsection-title">Events</h3>
-
-        <dl>
             
-<hr>
-<dt>
-    <h4 class="name" id="~event:cancelled">cancelled</h4>
-    
-    
-</dt>
-<dd>
 
-    
-    <div class="description">
-        <p>Emitted when the call has been cancelled. After this has been emitted, the
-call's <code>cancelled</code> property will be set to <code>true</code>.</p>
-    </div>
-    
 
-    
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">null</span>
+|
 
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
+<span class="param-type">Array.&lt;<a href="global.html#Interceptor">Interceptor</a>></span>
 
 
 
-	
-
-	
-
-	
-
-	
+    </dd>
 </dl>
 
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
+        
 
     
 </dd>
 
         </dl>
+    
+
+    
+
     
 </article>
 

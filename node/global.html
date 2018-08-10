@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Class: Server</title>
+	<title>Documentation Global</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -100,15 +100,13 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Class: Server</h1>
+	<h1 class="page-title">Global</h1>
 <section>
 
 <header>
     
         <h2>
-            <span class="ancestors"><a href="grpc.html">grpc</a>.</span>
         
-        Server
         </h2>
         
     
@@ -119,92 +117,8 @@
     <div class="container-overview">
     
         
-<hr>
-<dt>
-    <h4 class="name" id="Server"><span class="type-signature"></span>new Server( [options])</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>Constructs a server object that stores request handlers and delegates
-incoming requests to those handlers</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
 
         
-        <th>Argument</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Options that should be passed to the internal server
-    implementation</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
 <dl class="details">
     
 
@@ -244,30 +158,7 @@ incoming requests to those handlers</p>
 </dl>
 
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h5>Example</h5>
         
-    <pre class="sunlight-highlight-javascript">var server = new grpc.Server();
-server.addProtoService(protobuf_service_descriptor, service_implementation);
-server.bind(&#x27;address:port&#x27;, server_credential);
-server.start();</pre>
-
-
-    
-</dd>
-
     
     </div>
 
@@ -281,79 +172,6 @@ server.start();</pre>
 
     
 
-    
-        <h3 class="subsection-title">Members</h3>
-
-        <dl>
-            
-<hr>
-<dt class="name" id="addProtoService">
-    <h4 id="addProtoService"><span class="type-signature"></span>addProtoService<span class="type-signature"></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Add a proto service to the server, with a corresponding implementation</p>
-    </div>
-    
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-	<dt class="important tag-deprecated method-doc-label method-doc-details-label">Deprecated:</dt>
-	
-    <dd>
-        <ul class="dummy">
-            <li>Use <a href="grpc.Server.html#addService">grpc.Server#addService</a> instead</li>
-        </ul>
-    </dd>
-    
-    
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        </dl>
     
 
     
@@ -363,16 +181,12 @@ server.start();</pre>
             
 <hr>
 <dt>
-    <h4 class="name" id="addService"><span class="type-signature"></span>addService(service, implementation)</h4>
+    <h4 class="name" id="CancelRequester"><span class="type-signature"></span>CancelRequester(next)</h4>
     
     
 </dt>
 <dd>
 
-    
-    <div class="description">
-        <p>Add a service to the server, with a corresponding implementation.</p>
-    </div>
     
 
     
@@ -406,13 +220,13 @@ server.start();</pre>
 
         <tr>
             
-                <td class="name"><code>service</code></td>
+                <td class="name"><code>next</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.html#~ServiceDefinition">grpc~ServiceDefinition</a></span>
+<span class="param-type">function</span>
 
 
 
@@ -423,32 +237,7 @@ server.start();</pre>
 
             
 
-            <td class="description last"><p>The service descriptor</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>implementation</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object.&lt;String, <a href="grpc.Server.html#~handleCall">grpc.Server~handleCall</a>></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Map of method
-    names to method implementation for the provided service.</p></td>
+            <td class="description last"><p>Calls the next interceptor.</p></td>
         </tr>
 
     
@@ -516,17 +305,12 @@ server.start();</pre>
             
 <hr>
 <dt>
-    <h4 class="name" id="bind"><span class="type-signature"></span>bind(port, creds)</h4>
+    <h4 class="name" id="CloseRequester"><span class="type-signature"></span>CloseRequester(next)</h4>
     
     
 </dt>
 <dd>
 
-    
-    <div class="description">
-        <p>Binds the server to the given port, with SSL disabled if creds is an
-insecure credentials object</p>
-    </div>
     
 
     
@@ -560,13 +344,13 @@ insecure credentials object</p>
 
         <tr>
             
-                <td class="name"><code>port</code></td>
+                <td class="name"><code>next</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">function</span>
 
 
 
@@ -577,33 +361,7 @@ insecure credentials object</p>
 
             
 
-            <td class="description last"><p>The port that the server should bind on, in the format
-    &quot;address:port&quot;</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>creds</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.ServerCredentials.html">grpc.ServerCredentials</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Server credential object to be used for
-    SSL. Pass an insecure credentials object for an insecure port.</p></td>
+            <td class="description last"><p>Calls the next interceptor.</p></td>
         </tr>
 
     
@@ -671,7 +429,7 @@ insecure credentials object</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="forceShutdown"><span class="type-signature"></span>forceShutdown()</h4>
+    <h4 class="name" id="createStatusError"><span class="type-signature"></span>createStatusError(status)</h4>
     
     
 </dt>
@@ -679,89 +437,7 @@ insecure credentials object</p>
 
     
     <div class="description">
-        <p>Forcibly shuts down the server. The server will stop receiving new calls
-and cancel all pending calls. When it returns, the server has shut down.
-This method is idempotent with itself and tryShutdown, and it will trigger
-any outstanding tryShutdown callbacks.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt>
-    <h4 class="name" id="register"><span class="type-signature"></span>register(name, handler, serialize, deserialize, type)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>Registers a handler to handle the named method. Fails if there already is
-a handler for the given method. Returns true on success</p>
+        <p>Create an Error object from a status object</p>
     </div>
     
 
@@ -796,13 +472,13 @@ a handler for the given method. Returns true on success</p>
 
         <tr>
             
-                <td class="name"><code>name</code></td>
+                <td class="name"><code>status</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type"><a href="grpc.html#~StatusObject">grpc~StatusObject</a></span>
 
 
 
@@ -813,105 +489,7 @@ a handler for the given method. Returns true on success</p>
 
             
 
-            <td class="description last"><p>The name of the method that the provided function should
-    handle/respond to.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>handler</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.Server.html#~handleCall">grpc.Server~handleCall</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Function that takes a stream of
-    request values and returns a stream of response values</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>serialize</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.html#~serialize">grpc~serialize</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Serialization function for responses</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>deserialize</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Deserialization function for requests</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The streaming type of method that this handles</p></td>
+            <td class="description last"><p>The status object</p></td>
         </tr>
 
     
@@ -975,8 +553,7 @@ a handler for the given method. Returns true on success</p>
     
             
 <div class="param-desc">
-    <p>True if the handler was set. False if a handler was already
-    set for that name.</p>
+    <p>The resulting Error</p>
 </div>
 
 
@@ -987,7 +564,7 @@ a handler for the given method. Returns true on success</p>
     </dt>
     <dd>
         
-<span class="param-type">boolean</span>
+<span class="param-type">Error</span>
 
 
 
@@ -1004,7 +581,7 @@ a handler for the given method. Returns true on success</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="start"><span class="type-signature"></span>start()</h4>
+    <h4 class="name" id="getClientInterceptors"><span class="type-signature"></span>getClientInterceptors(client)</h4>
     
     
 </dt>
@@ -1012,7 +589,7 @@ a handler for the given method. Returns true on success</p>
 
     
     <div class="description">
-        <p>Start the server and begin handling requests</p>
+        <p>Gets a map of client method names to interceptor stacks.</p>
     </div>
     
 
@@ -1021,6 +598,991 @@ a handler for the given method. Returns true on success</p>
     
 
     
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html">grpc.Client</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object.&lt;string, Array.&lt;<a href="global.html#Interceptor">Interceptor</a>>></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="getMethodType"><span class="type-signature"></span>getMethodType(method_definition)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Get a method's type from its definition</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>method_definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="GetPeerRequester"><span class="type-signature"></span>GetPeerRequester(next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Calls the next interceptor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="Interceptor"><span class="type-signature"></span>Interceptor(options, nextCall)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A function which can modify call options and produce methods to intercept
+RPC operations.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The grpc call options</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>nextCall</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#NextCall">NextCall</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">InterceptingCall</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="InterceptorProvider"><span class="type-signature"></span>InterceptorProvider(method_definition)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A function for dynamically assigning an interceptor to a call.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>method_definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The method to provide
+    an interceptor for.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>The interceptor to provide or nothing</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="global.html#Interceptor">Interceptor</a></span>
+|
+
+<span class="param-type">null</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="loadPackageDefinition"><span class="type-signature"></span>loadPackageDefinition(packageDef)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Load a gRPC package definition as a gRPC object hierarchy</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>packageDef</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>grpc~PackageDefinition The package definition object</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>The resulting gRPC object</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="MessageListener"><span class="type-signature"></span>MessageListener(message, next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">jspb.Message</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The response message.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Passes a message to the next interceptor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
     
 
     
@@ -1082,7 +1644,477 @@ a handler for the given method. Returns true on success</p>
             
 <hr>
 <dt>
-    <h4 class="name" id="tryShutdown"><span class="type-signature"></span>tryShutdown(callback)</h4>
+    <h4 class="name" id="MessageRequester"><span class="type-signature"></span>MessageRequester(message, next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>message</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">jspb.Message</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The request message.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Passes a message to the next interceptor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="MetadataListener"><span class="type-signature"></span>MetadataListener(metadata, next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>metadata</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The response metadata.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Passes metadata to the next interceptor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="MetadataRequester"><span class="type-signature"></span>MetadataRequester(metadata, listener, next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>metadata</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The request metadata.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>listener</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~Listener">grpc~Listener</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A listener wired to the previous layers
+    in the interceptor stack.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Passes metadata and a listener to the next
+     interceptor.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="NextCall"><span class="type-signature"></span>NextCall(options)</h4>
     
     
 </dt>
@@ -1090,10 +2122,7 @@ a handler for the given method. Returns true on success</p>
 
     
     <div class="description">
-        <p>Gracefully shuts down the server. The server will stop receiving new calls,
-and any pending calls will complete. The callback will be called when all
-pending calls have completed and the server is fully shut down. This method
-is idempotent with itself and forceShutdown.</p>
+        <p>A function which produces the next InterceptingCall.</p>
     </div>
     
 
@@ -1128,7 +2157,178 @@ is idempotent with itself and forceShutdown.</p>
 
         <tr>
             
-                <td class="name"><code>callback</code></td>
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The grpc call options</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">InterceptingCall</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="StatusListener"><span class="type-signature"></span>StatusListener(status, next)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>status</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~StatusObject">grpc~StatusObject</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The response status.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>next</code></td>
             
 
             <td class="type">
@@ -1145,7 +2345,7 @@ is idempotent with itself and forceShutdown.</p>
 
             
 
-            <td class="description last"><p>The shutdown complete callback</p></td>
+            <td class="description last"><p>Passes a status to the next interceptor.</p></td>
         </tr>
 
     
@@ -1212,892 +2412,6 @@ is idempotent with itself and forceShutdown.</p>
         </dl>
     
 
-    
-        <h3 class="subsection-title">Type Definitions</h3>
-
-        <dl>
-                
-<hr>
-<dt>
-    <h4 class="name" id="~handleBidiStreamingCall"><span class="type-signature"></span>handleBidiStreamingCall(call)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>User provided method to handle bidirectional streaming calls on the server.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>call</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc-ServerDuplexStream.html">grpc~ServerDuplexStream</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The call object</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-            
-                
-<hr>
-<dt class="name" id="~handleCall">
-    <h4 id="~handleCall">handleCall</h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Unified type for application handlers for all types of calls</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Server.html#~handleUnaryCall">grpc.Server~handleUnaryCall</a></span>
-|
-
-<span class="param-type"><a href="grpc.Server.html#~handleClientStreamingCall">grpc.Server~handleClientStreamingCall</a></span>
-|
-
-<span class="param-type"><a href="grpc.Server.html#~handleServerStreamingCall">grpc.Server~handleServerStreamingCall</a></span>
-|
-
-<span class="param-type"><a href="grpc.Server.html#~handleBidiStreamingCall">grpc.Server~handleBidiStreamingCall</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-            
-                
-<hr>
-<dt>
-    <h4 class="name" id="~handleClientStreamingCall"><span class="type-signature"></span>handleClientStreamingCall(call, callback)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>User provided method to handle client streaming methods on the server.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>call</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc-ServerReadableStream.html">grpc~ServerReadableStream</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The call object</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.Server.html#~sendUnaryData">grpc.Server~sendUnaryData</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The callback to call to respond
-    to the request</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-            
-                
-<hr>
-<dt>
-    <h4 class="name" id="~handleServerStreamingCall"><span class="type-signature"></span>handleServerStreamingCall(call)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>User provided method to handle server streaming methods on the server.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>call</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc-ServerWritableStream.html">grpc~ServerWritableStream</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The call object</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-            
-                
-<hr>
-<dt>
-    <h4 class="name" id="~handleUnaryCall"><span class="type-signature"></span>handleUnaryCall(call, callback)</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>User-provided method to handle unary requests on a server</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>call</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc-ServerUnaryCall.html">grpc~ServerUnaryCall</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The call object</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>callback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.Server.html#~sendUnaryData">grpc.Server~sendUnaryData</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The callback to call to respond
-    to the request</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-            
-                
-<hr>
-<dt>
-    <h4 class="name" id="~sendUnaryData"><span class="type-signature"></span>sendUnaryData(error, value [, trailer] [, flags])</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>Callback function passed to server handlers that handle methods with unary
-responses.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Argument</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>error</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.html#~ServiceError">grpc~ServiceError</a></span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>An error, if the call failed</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>value</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">*</span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The response value. Must be a valid argument to the
-    <code>responseSerialize</code> method of the method that is being handled</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>trailer</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Trailing metadata to send, if applicable</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>flags</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.html#.writeFlags">grpc.writeFlags</a></span>
-
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Flags to modify writing the response</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-            </dl>
     
 
     

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width">
-	<title>Documentation Class: ServerReadableStream</title>
+	<title>Documentation Class: InterceptorConfigurationError</title>
 
 	<!--[if lt IE 9]>
 	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -100,15 +100,15 @@
 		<div id="main">
 			
 
-	<h1 class="page-title">Class: ServerReadableStream</h1>
+	<h1 class="page-title">Class: InterceptorConfigurationError</h1>
 <section>
 
 <header>
     
         <h2>
-            <span class="ancestors"><a href="grpc.html">grpc</a>~</span>
+            <span class="ancestors"><a href="module-src_client_interceptors.html">src/client_interceptors</a>~</span>
         
-        ServerReadableStream
+        InterceptorConfigurationError
         </h2>
         
     
@@ -121,7 +121,7 @@
         
 <hr>
 <dt>
-    <h4 class="name" id="ServerReadableStream"><span class="type-signature"></span>new ServerReadableStream(call, metadata, deserialize)</h4>
+    <h4 class="name" id="InterceptorConfigurationError"><span class="type-signature"></span>new InterceptorConfigurationError(message [, extra])</h4>
     
     
 </dt>
@@ -129,8 +129,7 @@
 
     
     <div class="description">
-        <p>A stream that the server can read from. Used for calls that are streaming
-from the client side.</p>
+        <p>A custom error thrown when interceptor configuration fails.</p>
     </div>
     
 
@@ -153,6 +152,8 @@ from the client side.</p>
         <th>Type</th>
 
         
+        <th>Argument</th>
+        
 
         
 
@@ -165,608 +166,45 @@ from the client side.</p>
 
         <tr>
             
-                <td class="name"><code>call</code></td>
+                <td class="name"><code>message</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">grpc.internal~Call</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The call object to read data with</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>metadata</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The request metadata from the client</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>deserialize</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="grpc.html#~deserialize">grpc~deserialize</a></span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Deserialization function for reads</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-    
-    </div>
-
-    
-        <h3 class="subsection-title">Extends</h3>
-
-        
-
-
-    <ul>
-        <li><a href="external-Readable.html">external:Readable</a></li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        <dl>
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="cancelled">
-    <h4 id="cancelled"><span class="type-signature"></span>cancelled<span class="type-signature"> :boolean</span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>Indicates if the call has been cancelled</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type">boolean</span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        
-            
-<hr>
-<dt class="name" id="metadata">
-    <h4 id="metadata"><span class="type-signature"></span>metadata<span class="type-signature"> :<a href="grpc.Metadata.html">grpc.Metadata</a></span></h4>
-
-    
-</dt>
-<dd>
-    
-    <div class="description">
-        <p>The request metadata from the client</p>
-    </div>
-    
-
-    
-        <h5>Type:</h5>
-        <ul>
-            <li>
-                
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
-
-
-
-            </li>
-        </ul>
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-</dd>
-
-        </dl>
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        <dl>
-            
-<hr>
-<dt>
-    <h4 class="name" id="getPeer"><span class="type-signature"></span>getPeer()</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>Get the endpoint this call/stream is connected to.</p>
-    </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <h5>Returns:</h5>
-    
-            
-<div class="param-desc">
-    <p>The URI of the endpoint</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
 <span class="param-type">string</span>
 
 
 
-    </dd>
-</dl>
-
-
-        
-
-    
-</dd>
-
-        
             
-<hr>
-<dt>
-    <h4 class="name" id="sendMetadata"><span class="type-signature"></span>sendMetadata(responseMetadata)</h4>
-    
-    
-</dt>
-<dd>
+            </td>
 
-    
-    <div class="description">
-        <p>Send the initial metadata for a writable stream.</p>
-    </div>
-    
+            
+                <td class="attributes">
+                
 
-    
+                
 
-    
+                
+                </td>
+            
 
-    
-    
-        <h5>Parameters:</h5>
-        
+            
 
-<table class="params table table-striped">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
+            <td class="description last"><p>The error message</p></td>
+        </tr>
 
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
     
 
         <tr>
             
-                <td class="name"><code>responseMetadata</code></td>
+                <td class="name"><code>extra</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+<span class="param-type">object</span>
 
 
 
@@ -774,10 +212,20 @@ from the client side.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>Metadata to send</p></td>
+            <td class="description last"></td>
         </tr>
 
     
@@ -841,77 +289,8 @@ from the client side.</p>
     
 </dd>
 
-        </dl>
     
-
-    
-
-    
-        <h3 class="subsection-title">Events</h3>
-
-        <dl>
-            
-<hr>
-<dt>
-    <h4 class="name" id="~event:cancelled">cancelled</h4>
-    
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        <p>Emitted when the call has been cancelled. After this has been emitted, the
-call's <code>cancelled</code> property will be set to <code>true</code>.</p>
     </div>
-    
-
-    
-
-    
-
-    
-    
-
-    
-<dl class="details">
-    
-
-	
-
-	
-
-	
-
-    
-
-    
-
-    
-
-    
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
-</dl>
-
 
     
 
@@ -926,9 +305,9 @@ call's <code>cancelled</code> property will be set to <code>true</code>.</p>
     
 
     
-</dd>
 
-        </dl>
+    
+
     
 </article>
 
