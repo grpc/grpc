@@ -57,7 +57,7 @@ class GenericServerContext final : public ServerContext {
 //
 //   // request a new call
 //   GenericServerContext context;
-//   GenericAsyncReaderWriter stream;
+//   GenericServerAsyncReaderWriter stream;
 //   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(), tag);
 //
 // When tag is retrieved from cq->Next(), context.method() can be used to look
