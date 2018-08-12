@@ -779,6 +779,15 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+- name: grpc_resolver_plugin
+  headers:
+  - src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.h
+  src:
+  - src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc
+  plugin: grpc_resolver_plugin
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -1468,6 +1477,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
+  - grpc_resolver_plugin
   - grpc_secure
   - census
   - grpc_max_age_filter
@@ -3333,6 +3343,16 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: plugin_resolver_test
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/resolvers/plugin_resolver_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: pollset_set_test
   build: test
   language: c

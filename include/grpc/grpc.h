@@ -201,6 +201,31 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
 /** Check whether a grpc channel supports connectivity watcher */
 GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
 
+/**
+ * Create and register a new resolver \a factory with \a scheme.
+ * \a scheme must be unique.
+ * Thread Safety: All factories have to be registered via plugin initialization.
+ */
+GRPCAPI void grpc_resolver_factory_register(const char* scheme,
+                                            grpc_resolver_factory* factory);
+
+/** Add a reference to \a observer.
+    THREAD SAFETY: grpc_resolver_observer_ref is thread-compatible. */
+GRPCAPI void grpc_resolver_observer_ref(grpc_resolver_observer* observer);
+
+/** Drop a reference to \a observer.
+    THREAD SAFETY: grpc_resolver_observer_unref is thread-compatible. */
+GRPCAPI void grpc_resolver_observer_unref(grpc_resolver_observer* observer);
+
+/**
+ * Set new list of \a addresses to \a observer.
+ */
+GRPCAPI void grpc_resolver_observer_set_result(
+    grpc_resolver_observer* observer, const grpc_resolver_result* result);
+
+GRPCAPI void grpc_resolver_observer_set_error(grpc_resolver_observer* observer,
+                                              const char* error_details);
+
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.

@@ -142,6 +142,7 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
       g_state->FindResolverFactory(target, &uri, &canonical_target);
   ResolverArgs resolver_args;
   resolver_args.uri = uri;
+  resolver_args.target = canonical_target;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;

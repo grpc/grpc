@@ -55,6 +55,22 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "plugin_resolver_test",
+    srcs = ["plugin_resolver_test.cc"],
+    language = "C++",
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_resolver_plugin",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
     language = "C++",
