@@ -26,6 +26,7 @@ WAIT_TIME = 1000
 REQUEST = b'request'
 
 UNSTARTED_SERVER = 'unstarted_server'
+BOUND_SERVER = 'bound_server'
 RUNNING_SERVER = 'running_server'
 POLL_CONNECTIVITY_NO_SERVER = 'poll_connectivity_no_server'
 POLL_CONNECTIVITY = 'poll_connectivity'
@@ -169,6 +170,11 @@ if __name__ == '__main__':
 
     if args.scenario == UNSTARTED_SERVER:
         server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
+        if args.wait_for_interrupt:
+            time.sleep(WAIT_TIME)
+    if args.scenario == BOUND_SERVER:
+        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
+        port = server.add_insecure_port('[::]:0')
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == RUNNING_SERVER:

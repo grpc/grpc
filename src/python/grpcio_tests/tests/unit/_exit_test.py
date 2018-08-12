@@ -86,6 +86,19 @@ class ExitTest(unittest.TestCase):
             stdout=sys.stdout)
         interrupt_and_wait(process)
 
+    def test_bound_server(self):
+        process = subprocess.Popen(
+            BASE_COMMAND + [_exit_scenarios.BOUND_SERVER],
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+        wait(process)
+
+    def test_bound_server_terminate(self):
+        process = subprocess.Popen(
+            BASE_SIGTERM_COMMAND + [_exit_scenarios.BOUND_SERVER],
+            stdout=sys.stdout)
+        interrupt_and_wait(process)
+
     def test_running_server(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_exit_scenarios.RUNNING_SERVER],
