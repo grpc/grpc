@@ -68,7 +68,7 @@ popd
 
 # this should be the same version as the submodule we compile against
 # ideally we'd update this as a template to ensure that
-pip install protobuf==3.5.2
+pip install protobuf==3.6.0
 
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 

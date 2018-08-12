@@ -187,6 +187,7 @@
   grpc_slice _details;
   size_t _detailsCapacity;
   grpc_metadata_array _trailers;
+  const char *_errorString;
 }
 
 - (instancetype)init {
@@ -200,6 +201,7 @@
     _op.data.recv_status_on_client.status_details = &_details;
     grpc_metadata_array_init(&_trailers);
     _op.data.recv_status_on_client.trailing_metadata = &_trailers;
+    _op.data.recv_status_on_client.error_string = &_errorString;
     if (handler) {
       // Prevent reference cycle with _handler
       __weak typeof(self) weakSelf = self;
@@ -207,8 +209,9 @@
         __strong typeof(self) strongSelf = weakSelf;
         if (strongSelf) {
           char *details = grpc_slice_to_c_string(strongSelf->_details);
-          NSError *error =
-              [NSError grpc_errorFromStatusCode:strongSelf->_statusCode details:details];
+          NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
+                                                     details:details
+                                                 errorString:strongSelf->_errorString];
           NSDictionary *trailers =
               [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
           handler(error, trailers);
@@ -223,6 +226,7 @@
 - (void)dealloc {
   grpc_metadata_array_destroy(&_trailers);
   grpc_slice_unref(_details);
+  gpr_free((void *)_errorString);
 }
 
 @end

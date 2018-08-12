@@ -70,7 +70,9 @@
   copy /Y Grpc.HealthCheck\bin\Release\net45\Google.Protobuf.dll unitypackage\unitypackage_skeleton\Plugins\Google.Protobuf\lib\net45\Google.Protobuf.dll || goto :error
   
   @rem create a zipfile that will act as a Unity package
-  powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [System.IO.Compression.ZipFile]::CreateFromDirectory('unitypackage\unitypackage_skeleton', 'grpc_unity_package.zip');"
+  cd unitypackage\unitypackage_skeleton
+  zip -r ..\..\grpc_unity_package.zip Plugins
+  cd ..\..
   copy /Y grpc_unity_package.zip ..\..\artifacts\grpc_unity_package.%VERSION%.zip || goto :error
   
   goto :EOF

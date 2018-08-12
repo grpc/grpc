@@ -68,6 +68,7 @@ class RoundRobin : public LoadBalancingPolicy {
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                 ChildRefsList* ignored) override;
 
@@ -330,6 +331,13 @@ void RoundRobin::StartPickingLocked() {
 void RoundRobin::ExitIdleLocked() {
   if (!started_picking_) {
     StartPickingLocked();
+  }
+}
+
+void RoundRobin::ResetBackoffLocked() {
+  subchannel_list_->ResetBackoffLocked();
+  if (latest_pending_subchannel_list_ != nullptr) {
+    latest_pending_subchannel_list_->ResetBackoffLocked();
   }
 }
 

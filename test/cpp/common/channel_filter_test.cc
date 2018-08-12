@@ -50,7 +50,8 @@ class MyCallData : public CallData {
 // C-core, we don't accidentally break the C++ filter API.
 TEST(ChannelFilterTest, RegisterChannelFilter) {
   grpc::RegisterChannelFilter<MyChannelData, MyCallData>(
-      "myfilter", GRPC_CLIENT_CHANNEL, INT_MAX, nullptr);
+      "myfilter", GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_LOW, true,
+      nullptr);
 }
 
 // TODO(roth): When we have time, add tests for all methods of the

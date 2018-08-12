@@ -61,8 +61,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --runs_per_test_detects_flakes \
-  --runs_per_test=2 \
+  --cache_test_results=no \
   -- //test/... || FAILED="true"
 
 # Sleep to let ResultStore finish writing results before querying

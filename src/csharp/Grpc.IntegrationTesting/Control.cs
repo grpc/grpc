@@ -1039,14 +1039,14 @@ namespace Grpc.Testing {
     public ClientConfig(ClientConfig other) : this() {
       serverTargets_ = other.serverTargets_.Clone();
       clientType_ = other.clientType_;
-      SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
+      securityParams_ = other.securityParams_ != null ? other.securityParams_.Clone() : null;
       outstandingRpcsPerChannel_ = other.outstandingRpcsPerChannel_;
       clientChannels_ = other.clientChannels_;
       asyncClientThreads_ = other.asyncClientThreads_;
       rpcType_ = other.rpcType_;
-      LoadParams = other.loadParams_ != null ? other.LoadParams.Clone() : null;
-      PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
-      HistogramParams = other.histogramParams_ != null ? other.HistogramParams.Clone() : null;
+      loadParams_ = other.loadParams_ != null ? other.loadParams_.Clone() : null;
+      payloadConfig_ = other.payloadConfig_ != null ? other.payloadConfig_.Clone() : null;
+      histogramParams_ = other.histogramParams_ != null ? other.histogramParams_.Clone() : null;
       coreList_ = other.coreList_.Clone();
       coreLimit_ = other.coreLimit_;
       otherClientApi_ = other.otherClientApi_;
@@ -1647,7 +1647,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStatus(ClientStatus other) : this() {
-      Stats = other.stats_ != null ? other.Stats.Clone() : null;
+      stats_ = other.stats_ != null ? other.stats_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -2122,11 +2122,11 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerConfig(ServerConfig other) : this() {
       serverType_ = other.serverType_;
-      SecurityParams = other.securityParams_ != null ? other.SecurityParams.Clone() : null;
+      securityParams_ = other.securityParams_ != null ? other.securityParams_.Clone() : null;
       port_ = other.port_;
       asyncServerThreads_ = other.asyncServerThreads_;
       coreLimit_ = other.coreLimit_;
-      PayloadConfig = other.payloadConfig_ != null ? other.PayloadConfig.Clone() : null;
+      payloadConfig_ = other.payloadConfig_ != null ? other.payloadConfig_.Clone() : null;
       coreList_ = other.coreList_.Clone();
       otherServerApi_ = other.otherServerApi_;
       threadsPerCq_ = other.threadsPerCq_;
@@ -2758,7 +2758,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerStatus(ServerStatus other) : this() {
-      Stats = other.stats_ != null ? other.Stats.Clone() : null;
+      stats_ = other.stats_ != null ? other.stats_.Clone() : null;
       port_ = other.port_;
       cores_ = other.cores_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -3293,9 +3293,9 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public Scenario(Scenario other) : this() {
       name_ = other.name_;
-      ClientConfig = other.clientConfig_ != null ? other.ClientConfig.Clone() : null;
+      clientConfig_ = other.clientConfig_ != null ? other.clientConfig_.Clone() : null;
       numClients_ = other.numClients_;
-      ServerConfig = other.serverConfig_ != null ? other.ServerConfig.Clone() : null;
+      serverConfig_ = other.serverConfig_ != null ? other.serverConfig_.Clone() : null;
       numServers_ = other.numServers_;
       warmupSeconds_ = other.warmupSeconds_;
       benchmarkSeconds_ = other.benchmarkSeconds_;
@@ -4422,12 +4422,12 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ScenarioResult(ScenarioResult other) : this() {
-      Scenario = other.scenario_ != null ? other.Scenario.Clone() : null;
-      Latencies = other.latencies_ != null ? other.Latencies.Clone() : null;
+      scenario_ = other.scenario_ != null ? other.scenario_.Clone() : null;
+      latencies_ = other.latencies_ != null ? other.latencies_.Clone() : null;
       clientStats_ = other.clientStats_.Clone();
       serverStats_ = other.serverStats_.Clone();
       serverCores_ = other.serverCores_.Clone();
-      Summary = other.summary_ != null ? other.Summary.Clone() : null;
+      summary_ = other.summary_ != null ? other.summary_.Clone() : null;
       clientSuccess_ = other.clientSuccess_.Clone();
       serverSuccess_ = other.serverSuccess_.Clone();
       requestResults_ = other.requestResults_.Clone();

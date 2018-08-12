@@ -17,6 +17,19 @@ Xamarin.iOS
 - supported architectures: arm64 (iPhone 6+) and x86_64 (iPhone simulator)
 
 # Unity
-gRPC C# currently doesn't support Unity, but some proof-of-concept
-work has been done. There is in-progress effort to provide users
-with a pre-built gRPC package that can be used in their projects.
+
+gRPC C# now has experimental support for Unity. Please try using gRPC with
+Unity and provide feedback!
+
+How to test gRPC in a Unity project
+1. Create a Unity project that targets .NET 4.x (Edit -> Project Settings -> Editor -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
+2. Download the latest development build of `grpc_unity_package.VERSION.zip` from
+   [daily builds](https://packages.grpc.io/)
+3. Extract the `.zip` file in the `Assets` directory in your Unity project
+4. Unity IDE will pick up all the bundled files and add them to project automatically.
+   You should be able to use gRPC and Protobuf in your scripts from now on.
+
+What's currently bundled in the `grpc_unity_package`
+-  Grpc.Core and its dependencies
+-  Google.Protobuf
+-  Precompiled native libraries for Linux, MacOS, Windows, Android and iOS.
