@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -312,3 +313,28 @@ void grpc_uri_destroy(grpc_uri* uri) {
   gpr_free(uri->fragment);
   gpr_free(uri);
 }
+
+const char* grpc_uri_get_scheme(const grpc_uri* uri) { return uri->scheme; }
+
+const char* grpc_uri_get_authority(const grpc_uri* uri) {
+  return uri->authority;
+}
+
+const char* grpc_uri_get_path(const grpc_uri* uri) { return uri->path; }
+
+grpc_uri_query_iterator grpc_uri_get_query_iterator(const grpc_uri* uri) {
+  return grpc_uri_query_iterator{uri, 0, nullptr, nullptr};
+}
+
+grpc_uri_query_iterator* grpc_uri_query_iterator_next(
+    grpc_uri_query_iterator* iterator) {
+  if (iterator->index >= iterator->uri->num_query_parts) {
+    return nullptr;
+  }
+  iterator->key = iterator->uri->query_parts[iterator->index];
+  iterator->value = iterator->uri->query_parts_values[iterator->index];
+  iterator->index++;
+  return iterator;
+}
+
+const char* grpc_uri_get_fragment(const grpc_uri* uri) { return uri->fragment; }

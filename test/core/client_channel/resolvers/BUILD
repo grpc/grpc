@@ -19,6 +19,22 @@ grpc_package(name = "test/core/client_channel_resolvers")
 licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
+    name = "custom_resolver_test",
+    srcs = ["custom_resolver_test.cc"],
+    language = "C++",
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_resolver_custom",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "dns_resolver_connectivity_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
     language = "C++",

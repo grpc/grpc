@@ -23,7 +23,7 @@
 
 #include <stddef.h>
 
-typedef struct {
+struct grpc_uri {
   char* scheme;
   char* authority;
   char* path;
@@ -35,16 +35,17 @@ typedef struct {
   /** Split each query part by '='. NULL if not present. */
   char** query_parts_values;
   char* fragment;
-} grpc_uri;
+};
 
 /** parse a uri, return NULL on failure */
 grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors);
 
 /** return the part of a query string after the '=' in "?key=xxx&...", or NULL
  * if key is not present */
-const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key);
+extern "C" const char* grpc_uri_get_query_arg(const grpc_uri* uri,
+                                              const char* key);
 
 /** destroy a uri */
-void grpc_uri_destroy(grpc_uri* uri);
+extern "C" void grpc_uri_destroy(grpc_uri* uri);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H */
