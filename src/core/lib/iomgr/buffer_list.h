@@ -31,6 +31,8 @@
 
 namespace grpc_core {
 struct Timestamps {
+  /* TODO(yashykt): This would also need to store OPTSTAT once support is added
+   */
   gpr_timespec sendmsg_time;
   gpr_timespec scheduled_time;
   gpr_timespec sent_time;

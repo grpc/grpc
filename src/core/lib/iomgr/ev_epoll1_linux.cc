@@ -386,27 +386,15 @@ static bool fd_is_shutdown(grpc_fd* fd) {
 }
 
 static void fd_notify_on_read(grpc_fd* fd, grpc_closure* closure) {
-  if (closure != nullptr) {
-    fd->read_closure->NotifyOn(closure);
-  } else {
-    fd->read_closure->SetReady();
-  }
+  fd->read_closure->NotifyOn(closure);
 }
 
 static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
-  if (closure != nullptr) {
-    fd->write_closure->NotifyOn(closure);
-  } else {
-    fd->write_closure->SetReady();
-  }
+  fd->write_closure->NotifyOn(closure);
 }
 
 static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
-  if (closure != nullptr) {
-    fd->error_closure->NotifyOn(closure);
-  } else {
-    fd->error_closure->SetReady();
-  }
+  fd->error_closure->NotifyOn(closure);
 }
 
 static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {

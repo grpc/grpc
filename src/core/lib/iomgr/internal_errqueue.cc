@@ -30,7 +30,7 @@
 
 bool kernel_supports_errqueue() {
 #ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
   return true;
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(4, 0, 0) */
 #endif /* LINUX_VERSION_CODE */
