@@ -41,36 +41,6 @@
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-/* Redefining scm_timestamping in the same way that <linux/errqueue.h> defines
- * it, so that code compiles on systems that don't have it. */
-struct scm_timestamping {
-  struct timespec ts[3];
-};
-
-/* Also redefine timestamp types */
-/* The timestamp type for when the driver passed skb to NIC, or HW. */
-constexpr int SCM_TSTAMP_SND = 0;
-/* The timestamp type for when data entered the packet scheduler. */
-constexpr int SCM_TSTAMP_SCHED = 1;
-/* The timestamp type for when data acknowledged by peer. */
-constexpr int SCM_TSTAMP_ACK = 2;
-
-/* Redefine required constants from <linux/net_tstamp.h> */
-constexpr uint32_t SOF_TIMESTAMPING_TX_SOFTWARE = 1u << 1;
-constexpr uint32_t SOF_TIMESTAMPING_SOFTWARE = 1u << 4;
-constexpr uint32_t SOF_TIMESTAMPING_OPT_ID = 1u << 7;
-constexpr uint32_t SOF_TIMESTAMPING_TX_SCHED = 1u << 8;
-constexpr uint32_t SOF_TIMESTAMPING_TX_ACK = 1u << 9;
-constexpr uint32_t SOF_TIMESTAMPING_OPT_TSONLY = 1u << 11;
-
-constexpr uint32_t kTimestampingSocketOptions = SOF_TIMESTAMPING_SOFTWARE |
-                                                SOF_TIMESTAMPING_OPT_ID |
-                                                SOF_TIMESTAMPING_OPT_TSONLY;
-
-constexpr uint32_t kTimestampingRecordingOptions =
-    SOF_TIMESTAMPING_TX_SCHED | SOF_TIMESTAMPING_TX_SOFTWARE |
-    SOF_TIMESTAMPING_TX_ACK;
-
 /* Returns true if kernel is capable of supporting errqueue and timestamping.
  * Currently allowing only linux kernels above 4.0.0
  */
