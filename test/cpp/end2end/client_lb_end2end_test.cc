@@ -584,6 +584,23 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
+  std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  StartServers(1, ports);
+  auto channel = BuildChannel("pick_first");
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
+  servers_.clear();
+  StartServers(1, ports);
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
