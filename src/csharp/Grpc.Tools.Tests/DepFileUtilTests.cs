@@ -23,7 +23,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using NUnit.Framework;
 
-namespace Grps.Tools.Tests {
+namespace Grpc.Tools.Tests {
   public class DepFileUtilTests {
 
     [Test]
