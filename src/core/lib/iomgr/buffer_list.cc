@@ -69,9 +69,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   TracedBuffer* next = nullptr;
   while (elem != nullptr) {
     /* The byte number refers to the sequence number of the last byte which this
-     * timestamp relates to. For scheduled and send, we are interested in the
-     * timestamp for the first byte, whereas for ack, we are interested in the
-     * last */
+     * timestamp relates to. */
     if (serr->ee_data >= elem->seq_no_) {
       switch (serr->ee_info) {
         case SCM_TSTAMP_SCHED:
@@ -83,19 +81,17 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
-          if (serr->ee_data >= elem->seq_no_) {
-            fill_gpr_from_timestamp(&(elem->ts_.acked_time), &(tss->ts[0]));
-            /* Got all timestamps. Do the callback and free this TracedBuffer.
-             * The thing below can be passed by value if we don't want the
-             * restriction on the lifetime. */
-            timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
-            next = elem->next_;
-            Delete<TracedBuffer>(elem);
-            *head = elem = next;
-            break;
-            default:
-              abort();
-          }
+          fill_gpr_from_timestamp(&(elem->ts_.acked_time), &(tss->ts[0]));
+          /* Got all timestamps. Do the callback and free this TracedBuffer.
+           * The thing below can be passed by value if we don't want the
+           * restriction on the lifetime. */
+          timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
+          next = elem->next_;
+          Delete<TracedBuffer>(elem);
+          *head = elem = next;
+          break;
+        default:
+          abort();
       }
     } else {
       break;

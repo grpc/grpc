@@ -107,11 +107,22 @@ struct grpc_tcp {
   grpc_resource_user* resource_user;
   grpc_resource_user_slice_allocator slice_allocator;
 
-  grpc_core::TracedBuffer* head; /* List of traced buffers */
-  gpr_mu traced_buffer_lock;     /* Lock for access to list of traced buffers */
-  void* outgoing_buffer_arg; /* buffer arg provided on grpc_endpoint_write */
-  int bytes_counter;         /* Current TCP relative sequence number. Used for
-                                timestamping traced buffers. */
+  grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
+  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+
+  /* grpc_endpoint_write takes an argument which if non-null means that the
+   * transport layer wants the TCP layer to collect timestamps for this write.
+   * This arg is forwarded to the timestamps callback function when the ACK
+   * timestamp is received from the kernel. This arg is a (void *) which allows
+   * users of this API to pass in a pointer to any kind of structure. This
+   * structure could actually be a tag or any book-keeping object that the user
+   * can use to distinguish between different traced writes. The only
+   * requirement from the TCP endpoint layer is that this arg should be non-null
+   * if the user wants timestamps for the write. */
+  void* outgoing_buffer_arg;
+  /* Current TCP relative sequence number as defined in RFC 793. Used for
+   * timestamping traced buffers. */
+  int bytes_counter;
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
                            */
   gpr_atm
@@ -318,7 +329,7 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->peer_string);
-  gpr_mu_destroy(&tcp->traced_buffer_lock);
+  gpr_mu_destroy(&tcp->tb_mu);
   gpr_free(tcp);
 }
 
@@ -586,11 +597,11 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
-    gpr_mu_lock(&tcp->traced_buffer_lock);
+    gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::AddNewEntry(
-        &tcp->head, static_cast<int>(tcp->bytes_counter + length),
+        &tcp->tb_head, static_cast<int>(tcp->bytes_counter + length),
         tcp->outgoing_buffer_arg);
-    gpr_mu_unlock(&tcp->traced_buffer_lock);
+    gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -633,17 +644,16 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   /* The error handling can potentially be done on another thread so we need
    * to protect the traced buffer list. A lock free list might be better. Using
    * a simple mutex for now. */
-  gpr_mu_lock(&tcp->traced_buffer_lock);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->head, serr, tss);
-  gpr_mu_unlock(&tcp->traced_buffer_lock);
+  gpr_mu_lock(&tcp->tb_mu);
+  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, tss);
+  gpr_mu_unlock(&tcp->tb_mu);
   return next_cmsg;
 }
 
 /** For linux platforms, reads the socket's error queue and processes error
  * messages from the queue. Returns true if all the errors processed were
  * timestamps. Returns false if any of the errors were not timestamps. For
- * non-linux platforms, error processing is not enabled currently, and hence
- * crashes out.
+ * non-linux platforms, error processing is not used/enabled currently.
  */
 static bool process_errors(grpc_tcp* tcp) {
   while (true) {
@@ -686,16 +696,18 @@ static bool process_errors(grpc_tcp* tcp) {
     }
 
     if (msg.msg_controllen == 0) {
-      /* There was no control message read. Return now */
+      /* There was no control message found. It was probably spurious. */
       return true;
     }
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg && cmsg->cmsg_len;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level != SOL_SOCKET ||
           cmsg->cmsg_type != SCM_TIMESTAMPING) {
-        /* Got a weird control message, not a timestamp */
+        /* Got a control message that is not a timestamp. Don't know how to
+         * handle this. */
         if (grpc_tcp_trace.enabled()) {
-          gpr_log(GPR_INFO, "weird control message cmsg_level:%d cmsg_type:%d",
+          gpr_log(GPR_INFO,
+                  "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
         }
         return false;
@@ -715,20 +727,23 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
-    grpc_core::TracedBuffer::Shutdown(&tcp->head, GRPC_ERROR_REF(error));
-    TCP_UNREF(tcp, "error");
-  } else {
-    if (!process_errors(tcp)) {
-      /* This was not a timestamps error. This was an actual error. Set the
-       * read and write closures to be ready.
-       */
-      grpc_fd_set_readable(tcp->em_fd);
-      grpc_fd_set_writable(tcp->em_fd);
-    }
-    GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
-                      grpc_schedule_on_exec_ctx);
-    grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
+    grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, GRPC_ERROR_REF(error));
+    TCP_UNREF(tcp, "error-tracking");
+    return;
   }
+
+  /* We are still interested in collecting timestamps, so let's try reading
+   * them. */
+  if (!process_errors(tcp)) {
+    /* This was not a timestamps error. This was an actual error. Set the
+     * read and write closures to be ready.
+     */
+    grpc_fd_set_readable(tcp->em_fd);
+    grpc_fd_set_writable(tcp->em_fd);
+  }
+  GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
+                    grpc_schedule_on_exec_ctx);
+  grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
 }
 
 #else  /* GRPC_LINUX_ERRQUEUE */
@@ -915,7 +930,9 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   tcp->outgoing_buffer = buf;
   tcp->outgoing_byte_idx = 0;
   tcp->outgoing_buffer_arg = arg;
-  if (arg) GPR_ASSERT(grpc_event_engine_can_track_errors());
+  if (arg) {
+    GPR_ASSERT(grpc_event_engine_can_track_errors());
+  }
 
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
@@ -932,8 +949,6 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     GRPC_CLOSURE_SCHED(cb, error);
   }
 }
-
-namespace {} /* namespace */
 
 static void tcp_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
@@ -1048,11 +1063,14 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   /* Tell network status tracker about new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
   grpc_resource_quota_unref_internal(resource_quota);
-  gpr_mu_init(&tcp->traced_buffer_lock);
-  tcp->head = nullptr;
+  gpr_mu_init(&tcp->tb_mu);
+  tcp->tb_head = nullptr;
   /* Start being notified on errors if event engine can track errors. */
   if (grpc_event_engine_can_track_errors()) {
-    TCP_REF(tcp, "error");
+    /* Grab a ref to tcp so that we can safely access the tcp struct when
+     * processing errors. We unref when we no longer want to track errors
+     * separately. */
+    TCP_REF(tcp, "error-tracking");
     gpr_atm_rel_store(&tcp->stop_error_notification, 0);
     GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
                       grpc_schedule_on_exec_ctx);
