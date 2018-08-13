@@ -41,6 +41,16 @@
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
+
+#ifdef GRPC_LINUX_ERRQUEUE
+constexpr uint32_t kTimestampingSocketOptions = SOF_TIMESTAMPING_SOFTWARE |
+                                                SOF_TIMESTAMPING_OPT_ID |
+                                                SOF_TIMESTAMPING_OPT_TSONLY;
+constexpr uint32_t kTimestampingRecordingOptions =
+    SOF_TIMESTAMPING_TX_SCHED | SOF_TIMESTAMPING_TX_SOFTWARE |
+    SOF_TIMESTAMPING_TX_ACK;
+#endif /* GRPC_LINUX_ERRQUEUE */
+
 /* Returns true if kernel is capable of supporting errqueue and timestamping.
  * Currently allowing only linux kernels above 4.0.0
  */
