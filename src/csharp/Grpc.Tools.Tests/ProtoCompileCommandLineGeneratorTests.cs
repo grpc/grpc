@@ -22,52 +22,6 @@ using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  public class ProtoCompileBasicTests {
-    // Mock task class that stops right before invoking protoc.
-    public class ProtoCompileTestable : ProtoCompile {
-      public string LastPathToTool { get; private set; }
-      public string[] LastResponseFile { get; private set; }
-
-      protected override int ExecuteTool(string pathToTool,
-                                         string response,
-                                         string commandLine) {
-        // We should never be using command line commands.
-        Assert.That(commandLine, Is.Null | Is.Empty);
-
-        // Must receive a path to tool
-        Assert.That(pathToTool, Is.Not.Null & Is.Not.Empty);
-        Assert.That(response, Is.Not.Null & Does.EndWith("\n"));
-
-        LastPathToTool = pathToTool;
-        LastResponseFile = response.Remove(response.Length - 1).Split('\n');
-
-        // Do not run the tool, but pretend it ran successfully.
-        return 0;
-      }
-    };
-
-    protected Mock<IBuildEngine> _mockEngine;
-    protected ProtoCompileTestable _task;
-
-    [SetUp]
-    public void SetUp() {
-      _mockEngine = new Mock<IBuildEngine>();
-      _task = new ProtoCompileTestable {
-        BuildEngine = _mockEngine.Object
-      };
-    }
-
-    [TestCase("ProtoBuf")]
-    [TestCase("Generator")]
-    [TestCase("OutputDir")]
-    [Description("We trust MSBuild to initialize these properties.")]
-    public void RequiredAttributePresentOnProperty(string prop) {
-      var pinfo = _task.GetType()?.GetProperty(prop);
-      Assert.NotNull(pinfo);
-      Assert.That(pinfo, Has.Attribute<RequiredAttribute>());
-    }
-  };
-
   internal class ProtoCompileCommandLineGeneratorTests : ProtoCompileBasicTests {
     [SetUp]
     public new void SetUp() {
@@ -204,29 +158,5 @@ namespace Grpc.Tools.Tests {
       Assert.That(_task.LastResponseFile,
                   Does.Contain("--csharp_out=" + expect));
     }
-  };
-
-  internal class ProtoCompileCommandLinePrinterTests : ProtoCompileBasicTests {
-    [SetUp]
-    public new void SetUp() {
-      _task.Generator = "csharp";
-      _task.OutputDir = "outdir";
-      _task.ProtoBuf = Utils.MakeSimpleItems("a.proto");
-
-      _mockEngine
-        .Setup(me => me.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()))
-        .Callback((BuildMessageEventArgs e) =>
-            Assert.Fail($"Error logged by build engine:\n{e.Message}"))
-        .Verifiable("Command line was not output by the task.");
-    }
-
-    void ExecuteExpectSuccess() {
-      _mockEngine
-        .Setup(me => me.LogErrorEvent(It.IsAny<BuildErrorEventArgs>()))
-        .Callback((BuildErrorEventArgs e) =>
-            Assert.Fail($"Error logged by build engine:\n{e.Message}"));
-      bool result = _task.Execute();
-      Assert.IsTrue(result);
-    }
-  };
+  }
 }
