@@ -107,6 +107,13 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   return WrapChannelCredentials(c_creds);
 }
 
+// Builds Local Credentials
+std::shared_ptr<ChannelCredentials> LocalCredentials(
+    grpc_local_connect_type type) {
+  GrpcLibraryCodegen init;  // To call grpc_init().
+  return WrapChannelCredentials(grpc_local_credentials_create(type));
+}
+
 }  // namespace experimental
 
 // Builds credentials for use when running in GCE

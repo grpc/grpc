@@ -67,14 +67,17 @@ static bool maybe_prepend_server_auth_filter(
 }
 
 void grpc_register_security_filters(void) {
-  // Register the auth client with a priority < INT_MAX to allow the authority
+  // Register the auth client with a medium priority to allow the authority
   // filter -on which the auth filter depends- to be higher on the channel
   // stack.
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MED,
                                    maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX - 1,
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MED,
                                    maybe_prepend_client_auth_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX,
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_MED,
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 

@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gladiolus
-  version: 1.14.0-dev
+  g_stands_for: glider
+  version: 1.15.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -552,6 +552,7 @@ filegroups:
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   uses:
   - grpc_base_headers
@@ -744,8 +745,11 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
@@ -793,6 +797,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/load_system_roots.h
+  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
@@ -820,6 +826,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
@@ -1115,10 +1123,6 @@ filegroups:
   secure: true
   uses:
   - grpc_trace
-- name: grpc++_channelz_proto
-  language: c++
-  src:
-  - src/proto/grpc/channelz/channelz.proto
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -1363,6 +1367,10 @@ filegroups:
   deps:
   - grpc++
   - grpc
+- name: grpcpp_channelz_proto
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
 libs:
 - name: address_sorting
   build: all
@@ -1855,6 +1863,21 @@ libs:
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
   - protoc
+- name: grpcpp_channelz
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/channelz_service_plugin.h
+  headers:
+  - src/cpp/server/channelz/channelz_service.h
+  src:
+  - src/cpp/server/channelz/channelz_service.cc
+  - src/cpp/server/channelz/channelz_service_plugin.cc
+  deps:
+  - grpc++
+  - grpc
+  filegroups:
+  - grpcpp_channelz_proto
 - name: http2_client_main
   build: private
   language: c++
@@ -1952,6 +1975,7 @@ libs:
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
   - test/cpp/qps/parse_json.h
+  - test/cpp/qps/qps_server_builder.h
   - test/cpp/qps/qps_worker.h
   - test/cpp/qps/report.h
   - test/cpp/qps/server.h
@@ -1970,6 +1994,7 @@ libs:
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/parse_json.cc
+  - test/cpp/qps/qps_server_builder.cc
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
   - test/cpp/qps/server_async.cc
@@ -2731,6 +2756,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_ipv6_loopback_available_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_json_token_test
   build: test
   language: c
@@ -4313,7 +4350,7 @@ targets:
   - gpr_test_util
   - gpr
   filegroups:
-  - grpc++_channelz_proto
+  - grpcpp_channelz_proto
   uses:
   - grpc++_test
 - name: channelz_registry_test
@@ -4332,6 +4369,22 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_service_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/channelz_service_test.cc
+  deps:
+  - grpcpp_channelz
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpcpp_channelz_proto
 - name: channelz_test
   gtest: true
   build: test
@@ -4346,7 +4399,7 @@ targets:
   - gpr_test_util
   - gpr
   filegroups:
-  - grpc++_channelz_proto
+  - grpcpp_channelz_proto
   uses:
   - grpc++_test
 - name: check_gcp_environment_linux_test
@@ -4668,6 +4721,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_linux_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_node_plugin
   build: protoc
   language: c++

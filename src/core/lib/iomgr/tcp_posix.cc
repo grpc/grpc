@@ -26,6 +26,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -365,7 +366,7 @@ static void tcp_destroy(grpc_endpoint* ep) {
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
-    grpc_fd_notify_on_error(tcp->em_fd, nullptr);
+    grpc_fd_set_error(tcp->em_fd);
   }
   TCP_UNREF(tcp, "destroy");
 }
@@ -721,8 +722,8 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
       /* This was not a timestamps error. This was an actual error. Set the
        * read and write closures to be ready.
        */
-      grpc_fd_notify_on_read(tcp->em_fd, nullptr);
-      grpc_fd_notify_on_write(tcp->em_fd, nullptr);
+      grpc_fd_set_readable(tcp->em_fd);
+      grpc_fd_set_writable(tcp->em_fd);
     }
     GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
                       grpc_schedule_on_exec_ctx);
@@ -747,7 +748,11 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 /* returns true if done, false if pending; if returning true, *error is set */
+#if defined(IOV_MAX) && IOV_MAX < 1000
+#define MAX_WRITE_IOVEC IOV_MAX
+#else
 #define MAX_WRITE_IOVEC 1000
+#endif
 static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
@@ -1074,7 +1079,7 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   if (grpc_event_engine_can_track_errors()) {
     /* Stop errors notification. */
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
-    grpc_fd_notify_on_error(tcp->em_fd, nullptr);
+    grpc_fd_set_error(tcp->em_fd);
   }
   TCP_UNREF(tcp, "destroy");
 }

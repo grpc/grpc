@@ -637,13 +637,13 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
     'java', 'go', 'python', 'c++'
 ]
 
-#TODO: Add c++ when c++ ALTS interop client is ready.
 _LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
 
-#TODO: Add c++ when c++ ALTS interop server is ready.
 _SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
 
-_TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
+_TRANSPORT_SECURITY_OPTIONS = [
+    'tls', 'alts', 'google_default_credentials', 'insecure'
+]
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
@@ -724,6 +724,9 @@ def auth_options(language, test_case, service_account_key_file=None):
     key_file_arg = '--service_account_key_file=%s' % service_account_key_file
     default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
+    # TODO: When using google_default_credentials outside of cloud-to-prod, the environment variable
+    # 'GOOGLE_APPLICATION_CREDENTIALS' needs to be set for the test case
+    # 'jwt_token_creds' to work.
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
                 'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
@@ -763,15 +766,25 @@ def cloud_to_prod_jobspec(language,
                           docker_image=None,
                           auth=False,
                           manual_cmd_log=None,
-                          service_account_key_file=None):
+                          service_account_key_file=None,
+                          transport_security='tls'):
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
         '--server_host=%s' % server_host,
         '--server_host_override=%s' % server_host, '--server_port=443',
-        '--use_tls=true',
         '--test_case=%s' % test_case
     ]
+    if transport_security == 'tls':
+        transport_security_options += ['--use_tls=true']
+    elif transport_security == 'google_default_credentials' and language == 'c++':
+        transport_security_options += [
+            '--custom_credentials_type=google_default_credentials'
+        ]
+    else:
+        print('Invalid transport security option.')
+        sys.exit(1)
+    cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
         auth_cmdargs, auth_env = auth_options(language, test_case,
@@ -1285,14 +1298,16 @@ try:
 
     jobs = []
     if args.cloud_to_prod:
-        if args.transport_security != 'tls':
-            print('TLS is always enabled for cloud_to_prod scenarios.')
+        if args.transport_security not in ['tls', 'google_default_credentials']:
+            print(
+                'TLS or google default credential is always enabled for cloud_to_prod scenarios.'
+            )
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
                         if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
-                            test_job = cloud_to_prod_jobspec(
+                            tls_test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
                                 server_host_nickname,
@@ -1300,8 +1315,23 @@ try:
                                 docker_image=docker_images.get(str(language)),
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
-                                service_account_key_file)
-                            jobs.append(test_job)
+                                service_account_key_file,
+                                transport_security='tls')
+                            jobs.append(tls_test_job)
+                            if language == 'c++':
+                                google_default_creds_test_job = cloud_to_prod_jobspec(
+                                    language,
+                                    test_case,
+                                    server_host_nickname,
+                                    prod_servers[server_host_nickname],
+                                    docker_image=docker_images.get(
+                                        str(language)),
+                                    manual_cmd_log=client_manual_cmd_log,
+                                    service_account_key_file=args.
+                                    service_account_key_file,
+                                    transport_security=
+                                    'google_default_credentials')
+                                jobs.append(google_default_creds_test_job)
 
             if args.http2_interop:
                 for test_case in _HTTP2_TEST_CASES:
@@ -1312,12 +1342,15 @@ try:
                         prod_servers[server_host_nickname],
                         docker_image=docker_images.get(str(http2Interop)),
                         manual_cmd_log=client_manual_cmd_log,
-                        service_account_key_file=args.service_account_key_file)
+                        service_account_key_file=args.service_account_key_file,
+                        transport_security=args.transport_security)
                     jobs.append(test_job)
 
     if args.cloud_to_prod_auth:
-        if args.transport_security != 'tls':
-            print('TLS is always enabled for cloud_to_prod scenarios.')
+        if args.transport_security not in ['tls', 'google_default_credentials']:
+            print(
+                'TLS or google default credential is always enabled for cloud_to_prod scenarios.'
+            )
         for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _AUTH_TEST_CASES:
@@ -1325,7 +1358,7 @@ try:
                             not compute_engine_creds_required(
                                 language, test_case)):
                         if not test_case in language.unimplemented_test_cases():
-                            test_job = cloud_to_prod_jobspec(
+                            tls_test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
                                 server_host_nickname,
@@ -1334,8 +1367,23 @@ try:
                                 auth=True,
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
-                                service_account_key_file)
-                            jobs.append(test_job)
+                                service_account_key_file,
+                                transport_security='tls')
+                            jobs.append(tls_test_job)
+                            if language == 'c++':
+                                google_default_creds_test_job = cloud_to_prod_jobspec(
+                                    language,
+                                    test_case,
+                                    server_host_nickname,
+                                    prod_servers[server_host_nickname],
+                                    docker_image=docker_images.get(
+                                        str(language)),
+                                    manual_cmd_log=client_manual_cmd_log,
+                                    service_account_key_file=args.
+                                    service_account_key_file,
+                                    transport_security=
+                                    'google_default_credentials')
+                                jobs.append(google_default_creds_test_job)
 
     for server in args.override_server:
         server_name = server[0]

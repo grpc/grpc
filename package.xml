@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.14.0dev</release>
-  <api>1.14.0dev</api>
+  <release>1.15.0dev</release>
+  <api>1.15.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -227,6 +227,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
@@ -651,6 +653,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_fallback.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
@@ -751,8 +755,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/cpp/ext/filters/census/grpc_context.cc" role="src" />

@@ -35,6 +35,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
@@ -80,6 +81,9 @@ using grpc::testing::EchoResponse;
   "  peer: \"peer\"\n"        \
   "}\n\n"
 
+DECLARE_string(channel_creds_type);
+DECLARE_string(ssl_target);
+
 namespace grpc {
 namespace testing {
 
@@ -97,10 +101,19 @@ const int kServerDefaultResponseStreamsToSend = 3;
 
 class TestCliCredentials final : public grpc::testing::CliCredentials {
  public:
-  std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const override {
-    return InsecureChannelCredentials();
+  TestCliCredentials(bool secure = false) : secure_(secure) {}
+  std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials()
+      const override {
+    if (!secure_) {
+      return InsecureChannelCredentials();
+    }
+    SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+    return SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
+
+ private:
+  const bool secure_;
 };
 
 bool PrintStream(std::stringstream* ss, const grpc::string& output) {
@@ -206,13 +219,24 @@ class GrpcToolTest : public ::testing::Test {
   // SetUpServer cannot be used with EXPECT_EXIT. grpc_pick_unused_port_or_die()
   // uses atexit() to free chosen ports, and it will spawn a new thread in
   // resolve_address_posix.c:192 at exit time.
-  const grpc::string SetUpServer() {
+  const grpc::string SetUpServer(bool secure = false) {
     std::ostringstream server_address;
     int port = grpc_pick_unused_port_or_die();
     server_address << "localhost:" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address.str(), InsecureServerCredentials());
+    std::shared_ptr<grpc::ServerCredentials> creds;
+    if (secure) {
+      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                          test_server1_cert};
+      SslServerCredentialsOptions ssl_opts;
+      ssl_opts.pem_root_certs = "";
+      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      creds = SslServerCredentials(ssl_opts);
+    } else {
+      creds = InsecureServerCredentials();
+    }
+    builder.AddListeningPort(server_address.str(), creds);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     return server_address.str();
@@ -741,6 +765,29 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   FLAGS_protofiles = "";
 
   gpr_free(test_srcdir);
+}
+
+TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
+  const grpc::string server_address = SetUpServer(true);
+
+  // Test input "grpc_cli ls localhost:<port> --channel_creds_type=ssl
+  // --ssl_target=z.test.google.fr"
+  std::stringstream output_stream;
+  const char* argv[] = {"grpc_cli", "ls", server_address.c_str()};
+  FLAGS_l = false;
+  FLAGS_channel_creds_type = "ssl";
+  FLAGS_ssl_target = "z.test.google.fr";
+  EXPECT_TRUE(
+      0 == GrpcToolMainLib(
+               ArraySize(argv), argv, TestCliCredentials(true),
+               std::bind(PrintStream, &output_stream, std::placeholders::_1)));
+  EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
+                          "grpc.testing.EchoTestService\n"
+                          "grpc.reflection.v1alpha.ServerReflection\n"));
+
+  FLAGS_channel_creds_type = "";
+  FLAGS_ssl_target = "";
+  ShutdownServer();
 }
 
 }  // namespace testing

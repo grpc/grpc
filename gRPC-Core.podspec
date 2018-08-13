@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.14.0-dev'
+  version = '1.15.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -289,6 +289,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/security_connector/alts_security_connector.h',
+                      'src/core/lib/security/security_connector/load_system_roots.h',
+                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
                       'src/core/lib/security/security_connector/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
@@ -709,6 +711,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.cc',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
                       'src/core/lib/security/security_connector/alts_security_connector.cc',
+                      'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
+                      'src/core/lib/security/security_connector/load_system_roots_linux.cc',
                       'src/core/lib/security/security_connector/local_security_connector.cc',
                       'src/core/lib/security/security_connector/security_connector.cc',
                       'src/core/lib/security/transport/client_auth_filter.cc',
@@ -806,8 +810,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/cpp/ext/filters/census/grpc_context.cc',
@@ -883,6 +890,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                               'src/core/lib/security/security_connector/alts_security_connector.h',
+                              'src/core/lib/security/security_connector/load_system_roots.h',
+                              'src/core/lib/security/security_connector/load_system_roots_linux.h',
                               'src/core/lib/security/security_connector/local_security_connector.h',
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/transport/auth_filters.h',
@@ -1115,6 +1124,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
                       'src/core/lib/iomgr/endpoint_cfstream.cc',
                       'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
                       'src/core/lib/iomgr/tcp_client_cfstream.cc',
                       'src/core/lib/iomgr/cfstream_handle.h',
                       'src/core/lib/iomgr/endpoint_cfstream.h',
