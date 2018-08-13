@@ -27,7 +27,8 @@
 
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.8.3" />
-    <PackageReference Include="NUnit; NUnitLite" Version="3.10.1" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnitLite" Version="3.10.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
