@@ -156,7 +156,6 @@ static void cancel_call(void* arg, grpc_error* error) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
@@ -168,7 +167,6 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
-      GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,

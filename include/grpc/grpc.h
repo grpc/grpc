@@ -460,6 +460,10 @@ GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota* resource_quota);
 GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                         size_t new_size);
 
+/** Update the size of the maximum number of threads allowed */
+GRPCAPI void grpc_resource_quota_set_max_threads(
+    grpc_resource_quota* resource_quota, int new_max_threads);
+
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
