@@ -194,7 +194,12 @@ void grpc_event_engine_shutdown(void) {
 }
 
 bool grpc_event_engine_can_track_errors(void) {
+/* Only track errors if platform supports errqueue. */
+#ifdef GRPC_LINUX_ERRQUEUE
   return g_event_engine->can_track_err;
+#else
+  return false;
+#endif /* GRPC_LINUX_ERRQUEUE */
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
