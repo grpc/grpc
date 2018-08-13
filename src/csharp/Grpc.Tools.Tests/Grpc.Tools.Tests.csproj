@@ -9,6 +9,18 @@
 
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
+  <!-- This is copied verbatim from Grpc.Core/Common.csproj.include. Other settings
+       in that file conflict with the intent of this build, as it cannot be signed,
+       and may not compile Grpc.Core/Version.cs, as that file references constants
+       in Grpc.Core.dll.
+       TODO(kkm): Refactor imports. -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <!-- Workaround for https://github.com/dotnet/sdk/issues/335 -->
+    <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Grpc.Tools\Grpc.Tools.csproj" />
   </ItemGroup>
