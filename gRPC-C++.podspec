@@ -278,6 +278,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/security_connector/alts_security_connector.h',
+                      'src/core/lib/security/security_connector/load_system_roots.h',
+                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
                       'src/core/lib/security/security_connector/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
