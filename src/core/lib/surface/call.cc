@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -271,16 +272,12 @@ struct grpc_call {
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
-/* Given a size, round up to the next multiple of sizeof(void*) */
-#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
-
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -353,7 +350,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
   call = static_cast<grpc_call*>(
-      gpr_arena_alloc(arena, ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
@@ -532,6 +529,7 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
 static void release_call(void* call, grpc_error* error) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
+  gpr_free(static_cast<void*>(const_cast<char*>(c->final_info.error_string)));
   grpc_call_combiner_destroy(&c->call_combiner);
   grpc_channel_update_call_size_estimate(channel, gpr_arena_destroy(c->arena));
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
@@ -564,7 +562,7 @@ static void destroy_call(void* call, grpc_error* error) {
   }
 
   get_final_status(c, set_status_value_directly, &c->final_info.final_status,
-                   nullptr, c->final_info.error_string);
+                   nullptr, &(c->final_info.error_string));
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -615,8 +613,11 @@ void grpc_call_unref(grpc_call* c) {
     // Unset the call combiner cancellation closure.  This has the
     // effect of scheduling the previously set cancellation closure, if
     // any, so that it can release any internal references it may be
-    // holding to the call stack.
+    // holding to the call stack. Also flush the closures on exec_ctx so that
+    // filters that schedule cancel notification closures on exec_ctx do not
+    // need to take a ref of the call stack to guarantee closure liveness.
     grpc_call_combiner_set_notify_on_cancel(&c->call_combiner, nullptr);
+    grpc_core::ExecCtx::Get()->Flush();
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
 }
@@ -1112,6 +1113,8 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   }
   publish_app_metadata(call, b, true);
 }
+
+gpr_arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
   return CALL_STACK_FROM_CALL(call);

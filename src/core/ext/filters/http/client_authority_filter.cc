@@ -146,12 +146,12 @@ static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
 }
 
 void grpc_client_authority_filter_init(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   add_client_authority_filter,
-                                   (void*)&grpc_client_authority_filter);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   add_client_authority_filter,
-                                   (void*)&grpc_client_authority_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+      add_client_authority_filter, (void*)&grpc_client_authority_filter);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+      add_client_authority_filter, (void*)&grpc_client_authority_filter);
 }
 
 void grpc_client_authority_filter_shutdown(void) {}

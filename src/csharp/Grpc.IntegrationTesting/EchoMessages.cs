@@ -28,7 +28,7 @@ namespace Grpc.Testing {
             "DGdycGMudGVzdGluZyIyCglEZWJ1Z0luZm8SFQoNc3RhY2tfZW50cmllcxgB",
             "IAMoCRIOCgZkZXRhaWwYAiABKAkiUAoLRXJyb3JTdGF0dXMSDAoEY29kZRgB",
             "IAEoBRIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhwKFGJpbmFyeV9lcnJvcl9k",
-            "ZXRhaWxzGAMgASgJIuIDCg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
+            "ZXRhaWxzGAMgASgJIv8DCg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
             "bmUYASABKAgSHgoWY2xpZW50X2NhbmNlbF9hZnRlcl91cxgCIAEoBRIeChZz",
             "ZXJ2ZXJfY2FuY2VsX2FmdGVyX3VzGAMgASgFEhUKDWVjaG9fbWV0YWRhdGEY",
             "BCABKAgSGgoSY2hlY2tfYXV0aF9jb250ZXh0GAUgASgIEh8KF3Jlc3BvbnNl",
@@ -39,18 +39,18 @@ namespace Grpc.Testing {
             "Zy5EZWJ1Z0luZm8SEgoKc2VydmVyX2RpZRgMIAEoCBIcChRiaW5hcnlfZXJy",
             "b3JfZGV0YWlscxgNIAEoCRIxCg5leHBlY3RlZF9lcnJvchgOIAEoCzIZLmdy",
             "cGMudGVzdGluZy5FcnJvclN0YXR1cxIXCg9zZXJ2ZXJfc2xlZXBfdXMYDyAB",
-            "KAUiSgoLRWNob1JlcXVlc3QSDwoHbWVzc2FnZRgBIAEoCRIqCgVwYXJhbRgC",
-            "IAEoCzIbLmdycGMudGVzdGluZy5SZXF1ZXN0UGFyYW1zIkYKDlJlc3BvbnNl",
-            "UGFyYW1zEhgKEHJlcXVlc3RfZGVhZGxpbmUYASABKAMSDAoEaG9zdBgCIAEo",
-            "CRIMCgRwZWVyGAMgASgJIkwKDEVjaG9SZXNwb25zZRIPCgdtZXNzYWdlGAEg",
-            "ASgJEisKBXBhcmFtGAIgASgLMhwuZ3JwYy50ZXN0aW5nLlJlc3BvbnNlUGFy",
-            "YW1zYgZwcm90bzM="));
+            "KAUSGwoTYmFja2VuZF9jaGFubmVsX2lkeBgQIAEoBSJKCgtFY2hvUmVxdWVz",
+            "dBIPCgdtZXNzYWdlGAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0",
+            "aW5nLlJlcXVlc3RQYXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVz",
+            "dF9kZWFkbGluZRgBIAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAki",
+            "TAoMRWNob1Jlc3BvbnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiAB",
+            "KAsyHC5ncnBjLnRlc3RpbmcuUmVzcG9uc2VQYXJhbXNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
@@ -435,11 +435,12 @@ namespace Grpc.Testing {
       expectedClientIdentity_ = other.expectedClientIdentity_;
       skipCancelledCheck_ = other.skipCancelledCheck_;
       expectedTransportSecurityType_ = other.expectedTransportSecurityType_;
-      DebugInfo = other.debugInfo_ != null ? other.DebugInfo.Clone() : null;
+      debugInfo_ = other.debugInfo_ != null ? other.debugInfo_.Clone() : null;
       serverDie_ = other.serverDie_;
       binaryErrorDetails_ = other.binaryErrorDetails_;
-      ExpectedError = other.expectedError_ != null ? other.ExpectedError.Clone() : null;
+      expectedError_ = other.expectedError_ != null ? other.expectedError_.Clone() : null;
       serverSleepUs_ = other.serverSleepUs_;
+      backendChannelIdx_ = other.backendChannelIdx_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -622,6 +623,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "backend_channel_idx" field.</summary>
+    public const int BackendChannelIdxFieldNumber = 16;
+    private int backendChannelIdx_;
+    /// <summary>
+    /// which backend to send request to
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int BackendChannelIdx {
+      get { return backendChannelIdx_; }
+      set {
+        backendChannelIdx_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RequestParams);
@@ -650,6 +665,7 @@ namespace Grpc.Testing {
       if (BinaryErrorDetails != other.BinaryErrorDetails) return false;
       if (!object.Equals(ExpectedError, other.ExpectedError)) return false;
       if (ServerSleepUs != other.ServerSleepUs) return false;
+      if (BackendChannelIdx != other.BackendChannelIdx) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -671,6 +687,7 @@ namespace Grpc.Testing {
       if (BinaryErrorDetails.Length != 0) hash ^= BinaryErrorDetails.GetHashCode();
       if (expectedError_ != null) hash ^= ExpectedError.GetHashCode();
       if (ServerSleepUs != 0) hash ^= ServerSleepUs.GetHashCode();
+      if (BackendChannelIdx != 0) hash ^= BackendChannelIdx.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -744,6 +761,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(120);
         output.WriteInt32(ServerSleepUs);
       }
+      if (BackendChannelIdx != 0) {
+        output.WriteRawTag(128, 1);
+        output.WriteInt32(BackendChannelIdx);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -796,6 +817,9 @@ namespace Grpc.Testing {
       }
       if (ServerSleepUs != 0) {
         size += 1 + pb::CodedOutputStream.ComputeInt32Size(ServerSleepUs);
+      }
+      if (BackendChannelIdx != 0) {
+        size += 2 + pb::CodedOutputStream.ComputeInt32Size(BackendChannelIdx);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -858,6 +882,9 @@ namespace Grpc.Testing {
       }
       if (other.ServerSleepUs != 0) {
         ServerSleepUs = other.ServerSleepUs;
+      }
+      if (other.BackendChannelIdx != 0) {
+        BackendChannelIdx = other.BackendChannelIdx;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -936,6 +963,10 @@ namespace Grpc.Testing {
             ServerSleepUs = input.ReadInt32();
             break;
           }
+          case 128: {
+            BackendChannelIdx = input.ReadInt32();
+            break;
+          }
         }
       }
     }
@@ -968,7 +999,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoRequest(EchoRequest other) : this() {
       message_ = other.message_;
-      Param = other.param_ != null ? other.Param.Clone() : null;
+      param_ = other.param_ != null ? other.param_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1316,7 +1347,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoResponse(EchoResponse other) : this() {
       message_ = other.message_;
-      Param = other.param_ != null ? other.Param.Clone() : null;
+      param_ = other.param_ != null ? other.param_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 

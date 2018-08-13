@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -42,12 +43,12 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
    created successfully. */
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
-                                              grpc_combiner* combiner);
+                                              grpc_combiner* combiner,
+                                              grpc_ares_request* request);
 
-/* Destroys \a ev_driver asynchronously. Pending lookups made on \a ev_driver
-   will be cancelled and their on_done callbacks will be invoked with a status
-   of ARES_ECANCELLED. */
-void grpc_ares_ev_driver_destroy_locked(grpc_ares_ev_driver* ev_driver);
+/* Called back when all DNS lookups have completed. */
+void grpc_ares_ev_driver_on_queries_complete_locked(
+    grpc_ares_ev_driver* ev_driver);
 
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
@@ -80,10 +81,24 @@ class GrpcPolledFd {
   GRPC_ABSTRACT_BASE_CLASS
 };
 
-/* Creates a new wrapped fd for the current platform */
-GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
-                                    grpc_pollset_set* driver_pollset_set);
-void ConfigureAresChannelLocked(ares_channel* channel);
+/* A GrpcPolledFdFactory is 1-to-1 with and owned by the
+ * ares event driver. It knows how to create GrpcPolledFd's
+ * for the current platform, and the ares driver uses it for all of
+ * its fd's. */
+class GrpcPolledFdFactory {
+ public:
+  virtual ~GrpcPolledFdFactory() {}
+  /* Creates a new wrapped fd for the current platform */
+  virtual GrpcPolledFd* NewGrpcPolledFdLocked(
+      ares_socket_t as, grpc_pollset_set* driver_pollset_set,
+      grpc_combiner* combiner) GRPC_ABSTRACT;
+  /* Optionally configures the ares channel after creation */
+  virtual void ConfigureAresChannelLocked(ares_channel channel) GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
+};
+
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner);
 
 }  // namespace grpc_core
 

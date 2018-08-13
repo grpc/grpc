@@ -300,7 +300,7 @@ cdef class SegregatedCall:
   def next_event(self):
     def on_success(tag):
       _process_segregated_call_tag(
-          self._channel_state, self._call_state, self._c_completion_queue, tag)
+        self._channel_state, self._call_state, self._c_completion_queue, tag)
     return _next_call_event(
         self._channel_state, self._c_completion_queue, on_success)
 
@@ -309,12 +309,17 @@ cdef SegregatedCall _segregated_call(
     _ChannelState state, int flags, method, host, object deadline,
     object metadata, CallCredentials credentials, operationses_and_user_tags):
   cdef _CallState call_state = _CallState()
-  cdef grpc_completion_queue *c_completion_queue = (
-      grpc_completion_queue_create_for_next(NULL))
   cdef SegregatedCall segregated_call
+  cdef grpc_completion_queue *c_completion_queue
 
   def on_success(started_tags):
     state.segregated_call_states.add(call_state)
+
+  with state.condition:
+    if state.open:
+      c_completion_queue = (grpc_completion_queue_create_for_next(NULL))
+    else:
+      raise ValueError('Cannot invoke RPC on closed channel!')
 
   try:
     _call(
@@ -443,8 +448,11 @@ cdef class Channel:
 
   def check_connectivity_state(self, bint try_to_connect):
     with self._state.condition:
-      return grpc_channel_check_connectivity_state(
-          self._state.c_channel, try_to_connect)
+      if self._state.open:
+        return grpc_channel_check_connectivity_state(
+            self._state.c_channel, try_to_connect)
+      else:
+        raise ValueError('Cannot invoke RPC on closed channel!')
 
   def watch_connectivity_state(
       self, grpc_connectivity_state last_observed_state, object deadline):

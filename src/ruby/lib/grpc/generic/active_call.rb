@@ -322,18 +322,22 @@ module GRPC
     # @return [Enumerator] if no block was given
     def each_remote_read_then_finish
       return enum_for(:each_remote_read_then_finish) unless block_given?
-      begin
-        loop do
-          resp = remote_read
-          if resp.nil?  # the last response was received
-            receive_and_check_status
-            break
+      loop do
+        resp =
+          begin
+            remote_read
+          rescue GRPC::Core::CallError => e
+            GRPC.logger.warn("In each_remote_read_then_finish: #{e}")
+            nil
           end
-          yield resp
-        end
-      ensure
-        set_input_stream_done
+
+        break if resp.nil?  # the last response was received
+        yield resp
       end
+
+      receive_and_check_status
+    ensure
+      set_input_stream_done
     end
 
     # request_response sends a request to a GRPC server, and returns the

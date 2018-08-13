@@ -220,17 +220,16 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)cancel {
-  [self
-      maybeFinishWithError:[NSError
-                               errorWithDomain:kGRPCErrorDomain
-                                          code:GRPCErrorCodeCancelled
-                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
-
   if (!self.isWaitingForToken) {
     [self cancelCall];
   } else {
     self.isWaitingForToken = NO;
   }
+  [self
+      maybeFinishWithError:[NSError
+                               errorWithDomain:kGRPCErrorDomain
+                                          code:GRPCErrorCodeCancelled
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
 }
 
 - (void)maybeFinishWithError:(NSError *)errorOrNil {
@@ -292,6 +291,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
+        [strongSelf cancelCall];
         [strongSelf
             maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                      code:GRPCErrorCodeResourceExhausted
@@ -300,7 +300,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
                                                        @"Client does not have enough memory to "
                                                        @"hold the server response."
                                                  }]];
-        [strongSelf cancelCall];
         return;
       }
       [strongWriteable enqueueValue:data
@@ -530,13 +529,17 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)connectivityChanged:(NSNotification *)note {
-  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+  // Cancel underlying call upon this notification
+  __strong GRPCCall *strongSelf = self;
+  if (strongSelf) {
+    [self cancelCall];
+    [self
+        maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                  code:GRPCErrorCodeUnavailable
                                              userInfo:@{
                                                NSLocalizedDescriptionKey : @"Connectivity lost."
                                              }]];
-  // Cancel underlying call upon this notification
-  [self cancelCall];
+  }
 }
 
 @end

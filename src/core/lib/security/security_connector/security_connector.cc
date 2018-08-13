@@ -21,7 +21,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include <stdbool.h>
-#include <string.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -39,6 +38,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/security/transport/target_authority_table.h"
@@ -55,6 +55,16 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #else
 static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
+#endif
+
+/** Environment variable used as a flag to enable/disable loading system root
+    certificates from the OS trust store. */
+#ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
+#endif
+
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
 #endif
 
 /* -- Overridden default roots. -- */
@@ -850,7 +860,8 @@ grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer) {
 static grpc_error* ssl_check_peer(grpc_security_connector* sc,
                                   const char* peer_name, const tsi_peer* peer,
                                   grpc_auth_context** auth_context) {
-  /* Check the ALPN. */
+#if TSI_OPENSSL_ALPN_SUPPORT
+  /* Check the ALPN if ALPN is supported. */
   const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
@@ -861,7 +872,7 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: invalid ALPN value.");
   }
-
+#endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
@@ -1181,6 +1192,10 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
+  char* use_system_roots_env_value =
+      gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
+  const bool use_system_roots = gpr_is_true(use_system_roots_env_value);
+  gpr_free(use_system_roots_env_value);
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
@@ -1202,7 +1217,11 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     }
     gpr_free(pem_root_certs);
   }
-  // Fall back to installed certs if needed.
+  // Try loading roots from OS trust store if flag is enabled.
+  if (GRPC_SLICE_IS_EMPTY(result) && use_system_roots) {
+    result = LoadSystemRootCerts();
+  }
+  // Fallback to roots manually shipped with gRPC.
   if (GRPC_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     GRPC_LOG_IF_ERROR("load_file",

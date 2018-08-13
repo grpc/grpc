@@ -42,6 +42,7 @@ EXPORTS
     grpc_census_call_get_context
     grpc_channel_get_target
     grpc_channel_get_info
+    grpc_channel_reset_connect_backoff
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
@@ -69,6 +70,8 @@ EXPORTS
     grpc_resource_quota_unref
     grpc_resource_quota_resize
     grpc_resource_quota_arg_vtable
+    grpc_channelz_get_top_channels
+    grpc_channelz_get_channel
     grpc_insecure_channel_create_from_fd
     grpc_server_add_insecure_channel_from_fd
     grpc_use_signal
@@ -119,6 +122,8 @@ EXPORTS
     grpc_alts_credentials_options_destroy
     grpc_alts_credentials_create
     grpc_alts_server_credentials_create
+    grpc_local_credentials_create
+    grpc_local_server_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
@@ -129,6 +134,13 @@ EXPORTS
     grpc_byte_buffer_reader_next
     grpc_byte_buffer_reader_readall
     grpc_raw_byte_buffer_from_reader
+    gpr_log_severity_string
+    gpr_log
+    gpr_should_log
+    gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
+    gpr_set_log_function
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -187,13 +199,6 @@ EXPORTS
     gpr_get_allocation_functions
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_log_severity_string
-    gpr_log
-    gpr_should_log
-    gpr_log_message
-    gpr_set_log_verbosity
-    gpr_log_verbosity_init
-    gpr_set_log_function
     gpr_format_message
     gpr_strdup
     gpr_asprintf

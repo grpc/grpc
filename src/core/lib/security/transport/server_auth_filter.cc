@@ -44,7 +44,6 @@ struct call_data {
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
-  grpc_auth_context* auth_context;
   grpc_closure cancel_closure;
   gpr_atm state;  // async_state
 };
@@ -157,7 +156,6 @@ static void cancel_call(void* arg, grpc_error* error) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
@@ -169,7 +167,6 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
-      GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
@@ -178,7 +175,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
       chand->creds->processor.process(
-          chand->creds->processor.state, calld->auth_context,
+          chand->creds->processor.state, chand->auth_context,
           calld->md.metadata, calld->md.count, on_md_processing_done, elem);
       return;
     }
@@ -214,9 +211,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context* server_ctx =
-      grpc_server_security_context_create();
-  server_ctx->auth_context = grpc_auth_context_create(chand->auth_context);
-  calld->auth_context = server_ctx->auth_context;
+      grpc_server_security_context_create(args->arena);
+  server_ctx->auth_context =
+      GRPC_AUTH_CONTEXT_REF(chand->auth_context, "server_auth_filter");
   if (args->context[GRPC_CONTEXT_SECURITY].value != nullptr) {
     args->context[GRPC_CONTEXT_SECURITY].destroy(
         args->context[GRPC_CONTEXT_SECURITY].value);

@@ -77,6 +77,10 @@ _EXEMPT = frozenset((
     'examples/python/route_guide/route_guide_pb2_grpc.py',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
+    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c',
     'src/core/tsi/alts/handshaker/altscontext.pb.h',
     'src/core/tsi/alts/handshaker/altscontext.pb.c',
     'src/core/tsi/alts/handshaker/handshaker.pb.h',
@@ -96,6 +100,10 @@ _EXEMPT = frozenset((
     # Gradle wrappers used to build for Android
     'examples/android/helloworld/gradlew.bat',
     'src/android/test/interop/gradlew.bat',
+
+    # Designer-generated source
+    'examples/csharp/HelloworldXamarin/Droid/Resources/Resource.designer.cs',
+    'examples/csharp/HelloworldXamarin/iOS/ViewController.designer.cs',
 ))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'

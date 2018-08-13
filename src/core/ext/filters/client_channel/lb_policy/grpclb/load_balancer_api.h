@@ -33,7 +33,9 @@ typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;
-typedef grpc_lb_v1_Duration grpc_grpclb_duration;
+typedef google_protobuf_Duration grpc_grpclb_duration;
+typedef google_protobuf_Timestamp grpc_grpclb_timestamp;
+
 typedef struct {
   grpc_grpclb_server** servers;
   size_t num_servers;

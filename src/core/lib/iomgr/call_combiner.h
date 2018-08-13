@@ -102,7 +102,10 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner,
 /// If \a closure is NULL, then no closure will be invoked on
 /// cancellation; this effectively unregisters the previously set closure.
 /// However, most filters will not need to explicitly unregister their
-/// callbacks, as this is done automatically when the call is destroyed.
+/// callbacks, as this is done automatically when the call is destroyed. Filters
+/// that schedule the cancellation closure on ExecCtx do not need to take a ref
+/// on the call stack to guarantee closure liveness. This is done by explicitly
+/// flushing ExecCtx after the unregistration during call destruction.
 void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
                                              grpc_closure* closure);
 

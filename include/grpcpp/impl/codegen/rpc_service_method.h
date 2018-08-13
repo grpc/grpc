@@ -25,6 +25,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
@@ -58,18 +59,57 @@ class RpcServiceMethod : public RpcMethod {
   /// Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler)
-      : RpcMethod(name, type), server_tag_(nullptr), handler_(handler) {}
+      : RpcMethod(name, type),
+        server_tag_(nullptr),
+        async_type_(AsyncType::UNSET),
+        handler_(handler) {}
+
+  enum class AsyncType {
+    UNSET,
+    ASYNC,
+    RAW,
+  };
 
   void set_server_tag(void* tag) { server_tag_ = tag; }
   void* server_tag() const { return server_tag_; }
   /// if MethodHandler is nullptr, then this is an async method
   MethodHandler* handler() const { return handler_.get(); }
-  void ResetHandler() { handler_.reset(); }
   void SetHandler(MethodHandler* handler) { handler_.reset(handler); }
+  void SetServerAsyncType(RpcServiceMethod::AsyncType type) {
+    if (async_type_ == AsyncType::UNSET) {
+      // this marks this method as async
+      handler_.reset();
+    } else {
+      // this is not an error condition, as it allows users to declare a server
+      // like WithRawMethod_foo<AsyncService>. However since it
+      // overwrites behavior, it should be logged.
+      gpr_log(
+          GPR_INFO,
+          "You are marking method %s as '%s', even though it was "
+          "previously marked '%s'. This behavior will overwrite the original "
+          "behavior. If you expected this then ignore this message.",
+          name(), TypeToString(async_type_), TypeToString(type));
+    }
+    async_type_ = type;
+  }
 
  private:
   void* server_tag_;
+  AsyncType async_type_;
   std::unique_ptr<MethodHandler> handler_;
+
+  const char* TypeToString(RpcServiceMethod::AsyncType type) {
+    switch (type) {
+      case AsyncType::UNSET:
+        return "unset";
+      case AsyncType::ASYNC:
+        return "async";
+      case AsyncType::RAW:
+        return "raw";
+      default:
+        GPR_UNREACHABLE_CODE(return "unknown");
+    }
+  }
 };
 }  // namespace internal
 

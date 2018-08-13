@@ -23,15 +23,15 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.14.0-dev'
-  version = '0.0.2'
+  # version = '1.15.0-dev'
+  version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.14.0-dev'
+  grpc_version = '1.15.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
+                      'include/grpcpp/impl/codegen/async_generic_service.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
                       'include/grpcpp/impl/codegen/byte_buffer.h',
@@ -212,6 +213,7 @@ Pod::Spec.new do |s|
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
                       'src/cpp/codegen/codegen_init.cc',
+                      'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/host_port.h',
@@ -271,10 +273,14 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/jwt/json_token.h',
                       'src/core/lib/security/credentials/jwt/jwt_credentials.h',
                       'src/core/lib/security/credentials/jwt/jwt_verifier.h',
+                      'src/core/lib/security/credentials/local/local_credentials.h',
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/security_connector/alts_security_connector.h',
+                      'src/core/lib/security/security_connector/load_system_roots.h',
+                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                      'src/core/lib/security/security_connector/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
@@ -313,6 +319,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
+                      'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
@@ -334,6 +341,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
+                      'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                       'src/core/tsi/ssl_transport_security.h',
@@ -479,13 +487,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                      'src/core/ext/filters/load_reporting/server_load_reporting_filter.h',
-                      'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -503,6 +511,7 @@ Pod::Spec.new do |s|
                               'src/cpp/server/health/health.pb.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
+                              'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/host_port.h',
@@ -662,6 +671,17 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h'
+  end
+
+  s.subspec 'Protobuf' do |ss|
+    ss.header_mappings_dir = 'include/grpcpp'
+    ss.dependency "#{s.name}/Interface", version
+
+    ss.source_files = 'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+                      'include/grpcpp/impl/codegen/proto_buffer_writer.h',
+                      'include/grpcpp/impl/codegen/proto_utils.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h'
   end
 
   s.prepare_command = <<-END_OF_COMMAND

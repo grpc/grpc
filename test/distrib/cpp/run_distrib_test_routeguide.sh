@@ -19,7 +19,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 cd third_party/protobuf && ./autogen.sh && \
-./configure && make -j4 && make check && make install && ldconfig
+./configure && make -j4 && make install && ldconfig
 
 cd ../.. && make -j4 && make install
 

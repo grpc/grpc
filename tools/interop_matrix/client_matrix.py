@@ -93,6 +93,12 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.12.0': None
         },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
     ],
     'go': [
         {
@@ -175,6 +181,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.13.1': None
         },
+        {
+            'v1.14.0': None
+        },
     ],
     'python': [
         {
@@ -213,6 +222,12 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.12.0': None
         },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
     ],
     'node': [
         {
@@ -245,6 +260,12 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.10.0': None
+        },
+        {
+            'v1.11.3': None
+        },
+        {
+            'v1.12.4': None
         },
     ],
     'ruby': [
@@ -289,6 +310,12 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.12.0': None
         },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
     ],
     'php': [
         {
@@ -326,6 +353,12 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
         },
     ],
     'csharp': [
@@ -369,6 +402,12 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
         },
     ],
 }

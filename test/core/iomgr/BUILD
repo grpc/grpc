@@ -18,7 +18,10 @@ licenses(["notice"])  # Apache v2
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-grpc_package(name = "test/core/iomgr", visibility = "public") # Useful for third party devs to test their io manager implementation.
+grpc_package(
+    name = "test/core/iomgr",
+    visibility = "public",
+)  # Useful for third party devs to test their io manager implementation.
 
 grpc_cc_library(
     name = "endpoint_tests",
@@ -44,6 +47,7 @@ grpc_cc_test(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
 )
 
 grpc_cc_test(
@@ -73,15 +77,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "ev_epollsig_linux_test",
-    srcs = ["ev_epollsig_linux_test.cc"],
+    name = "ev_epollex_linux_test",
+    srcs = ["ev_epollex_linux_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_test(
+    name = "ev_epollsig_linux_test",
+    srcs = ["ev_epollsig_linux_test.cc"],
     language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(
@@ -107,6 +123,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "grpc_ipv6_loopback_available_test",
+    srcs = ["grpc_ipv6_loopback_available_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 
 grpc_cc_test(
     name = "load_file_test",
@@ -221,13 +250,13 @@ grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     language = "C++",
+    tags = ["manual"],  # TODO(adelez): Remove once this works on Foundry.
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["manual"],    # TODO(adelez): Remove once this works on Foundry.
 )
 
 grpc_cc_test(

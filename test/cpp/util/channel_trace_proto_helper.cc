@@ -64,13 +64,22 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
 
 }  // namespace
 
-void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(
-      tracer_json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_c_str);
 }
 
-void ValidateChannelProtoJsonTranslation(char* channel_json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(channel_json_c_str);
+void ValidateChannelProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_c_str);
+}
+
+void ValidateGetTopChannelsResponseProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
+      json_c_str);
+}
+
+void ValidateGetChannelResponseProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
+      json_c_str);
 }
 
 }  // namespace testing

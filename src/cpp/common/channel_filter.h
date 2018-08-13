@@ -36,7 +36,8 @@
 /// \c ChannelData. Then register the filter using something like this:
 /// \code{.cpp}
 ///   RegisterChannelFilter<MyChannelDataSubclass, MyCallDataSubclass>(
-///       "name-of-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+///       "name-of-filter", GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_LOW,
+///       true, nullptr);
 /// \endcode
 
 namespace grpc {
@@ -207,6 +208,18 @@ class TransportStreamOpBatch {
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
   }
 
+  const gpr_atm* get_peer_string() const {
+    if (op_->send_initial_metadata &&
+        op_->payload->send_initial_metadata.peer_string != nullptr) {
+      return op_->payload->send_initial_metadata.peer_string;
+    } else if (op_->recv_initial_metadata &&
+               op_->payload->recv_initial_metadata.peer_string != nullptr) {
+      return op_->payload->recv_initial_metadata.peer_string;
+    } else {
+      return nullptr;
+    }
+  }
+
  private:
   grpc_transport_stream_op_batch* op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
@@ -339,6 +352,7 @@ class ChannelFilter final {
 struct FilterRecord {
   grpc_channel_stack_type stack_type;
   int priority;
+  bool prepend;
   std::function<bool(const grpc_channel_args&)> include_filter;
   grpc_channel_filter filter;
 };
@@ -351,12 +365,14 @@ void ChannelFilterPluginShutdown();
 
 /// Registers a new filter.
 /// Must be called by only one thread at a time.
+/// The \a prepend argument decides whether to prepend or append the filter.
 /// The \a include_filter argument specifies a function that will be called
 /// to determine at run-time whether or not to add the filter. If the
 /// value is nullptr, the filter will be added unconditionally.
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,
+    bool prepend,
     std::function<bool(const grpc_channel_args&)> include_filter) {
   // If we haven't been called before, initialize channel_filters and
   // call grpc_register_plugin().
@@ -371,6 +387,7 @@ void RegisterChannelFilter(
   internal::FilterRecord filter_record = {
       stack_type,
       priority,
+      prepend,
       include_filter,
       {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,

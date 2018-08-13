@@ -27,6 +27,7 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
 
@@ -154,23 +155,23 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 class SynchronousServer final : public grpc::testing::Server {
  public:
   explicit SynchronousServer(const ServerConfig& config) : Server(config) {
-    ServerBuilder builder;
+    std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
 
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
       char* server_address = nullptr;
       gpr_join_host_port(&server_address, "::", port_num);
-      builder.AddListeningPort(server_address,
-                               Server::CreateServerCredentials(config));
+      builder->AddListeningPort(server_address,
+                                Server::CreateServerCredentials(config));
       gpr_free(server_address);
     }
 
-    ApplyConfigToBuilder(config, &builder);
+    ApplyConfigToBuilder(config, builder.get());
 
-    builder.RegisterService(&service_);
+    builder->RegisterService(&service_);
 
-    impl_ = builder.BuildAndStart();
+    impl_ = builder->BuildAndStart();
   }
 
   std::shared_ptr<Channel> InProcessChannel(

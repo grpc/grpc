@@ -261,8 +261,9 @@ static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   nullptr);
+  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
+                                   GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+                                   maybe_add_filter, nullptr);
 }
 
 static void destroy_plugin(void) {}

@@ -153,3 +153,11 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     return nullptr;
   return static_cast<grpc_lb_addresses*>(lb_addresses_arg->value.pointer.p);
 }
+
+bool grpc_lb_addresses_contains_balancer_address(
+    const grpc_lb_addresses& addresses) {
+  for (size_t i = 0; i < addresses.num_addresses; ++i) {
+    if (addresses.addresses[i].is_balancer) return true;
+  }
+  return false;
+}
