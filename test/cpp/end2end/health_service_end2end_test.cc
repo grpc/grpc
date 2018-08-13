@@ -64,6 +64,28 @@ class HealthCheckServiceImpl : public ::grpc::health::v1::Health::Service {
     return Status::OK;
   }
 
+  Status Watch(ServerContext* context, const HealthCheckRequest* request,
+               ::grpc::ServerWriter<HealthCheckResponse>* writer) override {
+    auto last_state = HealthCheckResponse::UNKNOWN;
+    while (!context->IsCancelled()) {
+      {
+        std::lock_guard<std::mutex> lock(mu_);
+        HealthCheckResponse response;
+        auto iter = status_map_.find(request->service());
+        if (iter == status_map_.end()) {
+          response.set_status(response.SERVICE_UNKNOWN);
+        } else {
+          response.set_status(iter->second);
+        }
+        if (response.status() != last_state) {
+          writer->Write(response, ::grpc::WriteOptions());
+        }
+      }
+      sleep(1);
+    }
+    return Status::OK;
+  }
+
   void SetStatus(const grpc::string& service_name,
                  HealthCheckResponse::ServingStatus status) {
     std::lock_guard<std::mutex> lock(mu_);
@@ -105,14 +127,6 @@ class CustomHealthCheckService : public HealthCheckServiceInterface {
  private:
   HealthCheckServiceImpl* impl_;  // not owned
 };
-
-void LoopCompletionQueue(ServerCompletionQueue* cq) {
-  void* tag;
-  bool ok;
-  while (cq->Next(&tag, &ok)) {
-    abort();  // Nothing should come out of the cq.
-  }
-}
 
 class HealthServiceEnd2endTest : public ::testing::Test {
  protected:
@@ -218,6 +232,33 @@ class HealthServiceEnd2endTest : public ::testing::Test {
                        Status(StatusCode::NOT_FOUND, ""));
   }
 
+  void VerifyHealthCheckServiceStreaming() {
+    const grpc::string kServiceName("service_name");
+    HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+    // Start Watch for service.
+    ClientContext context;
+    HealthCheckRequest request;
+    request.set_service(kServiceName);
+    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
+        hc_stub_->Watch(&context, request);
+    // Initial response will be SERVICE_UNKNOWN.
+    HealthCheckResponse response;
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.SERVICE_UNKNOWN, response.status());
+    response.Clear();
+    // Now set service to NOT_SERVING and make sure we get an update.
+    service->SetServingStatus(kServiceName, false);
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.NOT_SERVING, response.status());
+    response.Clear();
+    // Now set service to SERVING and make sure we get another update.
+    service->SetServingStatus(kServiceName, true);
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.SERVING, response.status());
+    // Finish call.
+    context.TryCancel();
+  }
+
   TestServiceImpl echo_test_service_;
   HealthCheckServiceImpl health_check_service_impl_;
   std::unique_ptr<Health::Stub> hc_stub_;
@@ -245,27 +286,12 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
   EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
   SetUpServer(true, false, false, nullptr);
   VerifyHealthCheckService();
+  VerifyHealthCheckServiceStreaming();
 
   // The default service has a size limit of the service name.
   const grpc::string kTooLongServiceName(201, 'x');
   SendHealthCheckRpc(kTooLongServiceName,
                      Status(StatusCode::INVALID_ARGUMENT, ""));
-}
-
-// The server has no sync service.
-TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceAsyncOnly) {
-  EnableDefaultHealthCheckService(true);
-  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
-  SetUpServer(false, true, false, nullptr);
-  cq_thread_ = std::thread(LoopCompletionQueue, cq_.get());
-
-  HealthCheckServiceInterface* default_service =
-      server_->GetHealthCheckService();
-  EXPECT_TRUE(default_service == nullptr);
-
-  ResetStubs();
-
-  SendHealthCheckRpc("", Status(StatusCode::UNIMPLEMENTED, ""));
 }
 
 // Provide an empty service to disable the default service.
@@ -296,6 +322,7 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
   ResetStubs();
 
   VerifyHealthCheckService();
+  VerifyHealthCheckServiceStreaming();
 }
 
 }  // namespace
