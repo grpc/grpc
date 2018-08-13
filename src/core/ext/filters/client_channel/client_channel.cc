@@ -1312,7 +1312,7 @@ static void recv_trailing_metadata_ready_channelz(void* arg,
     channelz_subchannel->RecordCallFailed();
   }
   pending->batch = nullptr;
-  GRPC_CLOSURE_SCHED(calld->original_recv_trailing_metadata, error);
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata, error);
 }
 
 // If channelz is enabled, intercept recv_trailing so that we may check the
