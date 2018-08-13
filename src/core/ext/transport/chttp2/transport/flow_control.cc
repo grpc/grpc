@@ -55,7 +55,7 @@ static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
 
 static char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
   char* str;
-  if (new_val > 0 && old_val != new_val) {
+  if (old_val != new_val) {
     gpr_asprintf(&str, "%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
   } else {
     gpr_asprintf(&str, "%" PRIu32 "", old_val);
@@ -98,10 +98,12 @@ void FlowControlTrace::Finish() {
   if (sfc_ != nullptr) {
     srw_str = fmt_int64_diff_str(remote_window_delta_ + remote_window,
                                  sfc_->remote_window_delta() + remote_window);
-    slw_str = fmt_int64_diff_str(local_window_delta_ + acked_local_window,
-                                 local_window_delta_ + acked_local_window);
-    saw_str = fmt_int64_diff_str(announced_window_delta_ + acked_local_window,
-                                 announced_window_delta_ + acked_local_window);
+    slw_str =
+        fmt_int64_diff_str(local_window_delta_ + acked_local_window,
+                           sfc_->local_window_delta() + acked_local_window);
+    saw_str =
+        fmt_int64_diff_str(announced_window_delta_ + acked_local_window,
+                           sfc_->announced_window_delta() + acked_local_window);
   } else {
     srw_str = gpr_leftpad("", ' ', kTracePadding);
     slw_str = gpr_leftpad("", ' ', kTracePadding);
