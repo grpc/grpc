@@ -120,10 +120,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   int AddListeningPort(const grpc::string& addr,
                        ServerCredentials* creds) override;
 
-  /// NOTE: This is *NOT* a public API. The server constructors are supposed to
-  /// be used by \a ServerBuilder class only. The constructor will be made
-  /// 'private' very soon.
-  ///
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
   /// \param max_message_size Maximum message length that the channel can
@@ -148,8 +144,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
-         int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-         grpc_resource_quota* server_rq = nullptr);
+         int min_pollers, int max_pollers, int sync_cq_timeout_msec);
 
   /// Start the server.
   ///
