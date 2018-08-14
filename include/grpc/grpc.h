@@ -101,6 +101,12 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_next(
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     void* reserved);
 
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
+    This function is experimental. */
+GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
+    void* shutdown_callback, void* reserved);
+
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
     const grpc_completion_queue_factory* factory,

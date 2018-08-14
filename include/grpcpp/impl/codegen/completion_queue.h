@@ -97,7 +97,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// instance.
   CompletionQueue()
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -376,7 +377,7 @@ class ServerCompletionQueue : public CompletionQueue {
   /// frequently polled.
   ServerCompletionQueue(grpc_cq_polling_type polling_type)
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type, nullptr}),
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;

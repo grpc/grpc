@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_completion_queue_factory_lookup);
   printf("%lx", (unsigned long) grpc_completion_queue_create_for_next);
   printf("%lx", (unsigned long) grpc_completion_queue_create_for_pluck);
+  printf("%lx", (unsigned long) grpc_completion_queue_create_for_callback);
   printf("%lx", (unsigned long) grpc_completion_queue_create);
   printf("%lx", (unsigned long) grpc_completion_queue_next);
   printf("%lx", (unsigned long) grpc_completion_queue_pluck);
