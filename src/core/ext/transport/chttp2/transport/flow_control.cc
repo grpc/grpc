@@ -40,6 +40,7 @@ namespace chttp2 {
 namespace {
 
 static constexpr const int kTracePadding = 30;
+static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
 static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
   char* str;
@@ -193,7 +194,7 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
     const uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
-        target_announced_window - announced_window_, 0, UINT32_MAX);
+        target_announced_window - announced_window_, 0, kMaxWindowUpdateSize);
     announced_window_ += announce;
     return announce;
   }
@@ -267,7 +268,7 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
   if (local_window_delta_ > announced_window_delta_) {
     uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
-        local_window_delta_ - announced_window_delta_, 0, UINT32_MAX);
+        local_window_delta_ - announced_window_delta_, 0, kMaxWindowUpdateSize);
     UpdateAnnouncedWindowDelta(tfc_, announce);
     return announce;
   }
