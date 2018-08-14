@@ -4111,6 +4111,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_error
   build: test
   language: c++
