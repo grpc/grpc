@@ -104,11 +104,24 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 #define ENGINE_HEAD_CUSTOM "head_custom"
 #define ENGINE_TAIL_CUSTOM "tail_custom"
 
+// The global array of event-engine factories. Each entry is a pair with a name
+// and an event-engine generator function (nullptr if there is no generator
+// registered for this name). The middle entries are the engines predefined by
+// open-source gRPC. The head entries represent an opportunity for specific
+// high-priority custom pollers to be added by the initializer plugins of
+// custom-built gRPC libraries. The tail entries represent the same, but for
+// low-priority custom pollers. The actual poller selected is either the first
+// available one in the list if no specific poller is requested, or the first
+// specific poller that is requested by name in the GRPC_POLL_STRATEGY
+// environment variable if that variable is set (which should be a
+// comma-separated list of one or more event engine names)
 static event_engine_factory g_factories[] = {
+    {ENGINE_HEAD_CUSTOM, nullptr},          {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},          {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
     {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
     {"poll-cv", grpc_init_poll_cv_posix},   {"none", init_non_polling},
+    {ENGINE_TAIL_CUSTOM, nullptr},          {ENGINE_TAIL_CUSTOM, nullptr},
     {ENGINE_TAIL_CUSTOM, nullptr},          {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
