@@ -86,5 +86,14 @@ void ValidateSubchannelProtoJsonTranslation(char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_c_str);
 }
 
+void ValidateServerProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_c_str);
+}
+
+void ValidateGetServersResponseProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
+      json_c_str);
+}
+
 }  // namespace testing
 }  // namespace grpc

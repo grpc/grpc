@@ -52,6 +52,12 @@ class ChannelzRegistry {
     return Default()->InternalGetTopChannels(start_channel_id);
   }
 
+  // Returns the allocated JSON string that represents the proto
+  // GetServersResponse as per channelz.proto.
+  static char* GetServers(intptr_t start_server_id) {
+    return Default()->InternalGetServers(start_server_id);
+  }
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
@@ -74,6 +80,7 @@ class ChannelzRegistry {
   BaseNode* InternalGet(intptr_t uuid);
 
   char* InternalGetTopChannels(intptr_t start_channel_id);
+  char* InternalGetServers(intptr_t start_server_id);
 
   // protects entities_ and uuid_
   gpr_mu mu_;
