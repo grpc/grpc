@@ -68,15 +68,13 @@ _INTEROP_RESULTS_SCHEMA = [
 
 
 def _get_build_metadata(test_results):
-    """Add Jenkins/Kokoro build metadata to test_results based on environment
-  variables set by Jenkins/Kokoro.
+    """Add Kokoro build metadata to test_results based on environment
+  variables set by Kokoro.
   """
-    build_id = os.getenv('BUILD_ID') or os.getenv('KOKORO_BUILD_NUMBER')
-    build_url = os.getenv('BUILD_URL')
-    if os.getenv('KOKORO_BUILD_ID'):
-        build_url = 'https://source.cloud.google.com/results/invocations/%s' % os.getenv(
-            'KOKORO_BUILD_ID')
-    job_name = os.getenv('JOB_BASE_NAME') or os.getenv('KOKORO_JOB_NAME')
+    build_id = os.getenv('KOKORO_BUILD_NUMBER')
+    build_url = 'https://source.cloud.google.com/results/invocations/%s' % os.getenv(
+        'KOKORO_BUILD_ID')
+    job_name = os.getenv('KOKORO_JOB_NAME')
 
     if build_id:
         test_results['build_id'] = build_id
