@@ -166,22 +166,37 @@ void ThreadManager::MainWorkLoop() {
       case WORK_FOUND:
         // If we got work and there are now insufficient pollers and there is
         // quota available to create a new thread, start a new poller thread
-        if (!shutdown_ && num_pollers_ < min_pollers_ &&
-            grpc_resource_user_allocate_threads(resource_user_, 1)) {
-          num_pollers_++;
-          num_threads_++;
-          if (num_threads_ > max_active_threads_sofar_) {
-            max_active_threads_sofar_ = num_threads_;
+        bool got_thread;
+        if (!shutdown_ && num_pollers_ < min_pollers_) {
+          if (grpc_resource_user_allocate_threads(resource_user_, 1)) {
+            num_pollers_++;
+            num_threads_++;
+            if (num_threads_ > max_active_threads_sofar_) {
+              max_active_threads_sofar_ = num_threads_;
+            }
+            // Drop lock before spawning thread to avoid contention
+            lock.unlock();
+            new WorkerThread(this);
+            got_thread = true;
+          } else if (num_pollers_ > 0) {
+            // There is still at least some thread polling, so we can go on
+            // even though we couldn't allocate a new thread
+            lock.unlock();
+            got_thread = true;
+          } else {
+            // There are no pollers to spare and we couldn't allocate
+            // a new thread, so resources are exhausted!
+            lock.unlock();
+            got_thread = false;
           }
-          // Drop lock before spawning thread to avoid contention
-          lock.unlock();
-          new WorkerThread(this);
         } else {
           // Drop lock for consistency with above branch
           lock.unlock();
+          got_thread = true;
         }
         // Lock is always released at this point - do the application work
-        DoWork(tag, ok);
+        // or return resource exhausted
+        DoWork(tag, ok, got_thread);
         // Take the lock again to check post conditions
         lock.lock();
         // If we're shutdown, we should finish at this point.

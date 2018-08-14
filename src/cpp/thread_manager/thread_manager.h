@@ -72,7 +72,7 @@ class ThreadManager {
   // The implementation of DoWork() should also do any setup needed to ensure
   // that the next call to PollForWork() (not necessarily by the current thread)
   // actually finds some work
-  virtual void DoWork(void* tag, bool ok) = 0;
+  virtual void DoWork(void* tag, bool ok, bool resources) = 0;
 
   // Mark the ThreadManager as shutdown and begin draining the work. This is a
   // non-blocking call and the caller should call Wait(), a blocking call which
