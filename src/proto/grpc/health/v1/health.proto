@@ -54,5 +54,10 @@ service Health {
   // SERVICE_UNKNOWN but will *not* terminate the call.  If at some
   // future point, the serving status of the service becomes known, the
   // server will send a new message with the service's serving status.
+  //
+  // If the call terminates with status UNIMPLEMENTED, then clients
+  // should assume this method is not supported and should not retry the
+  // call.  If the call terminates with any other status (including OK),
+  // clients should retry the call with appropriate exponential backoff.
   rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
 }
