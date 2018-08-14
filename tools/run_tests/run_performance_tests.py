@@ -189,7 +189,13 @@ def create_netperf_jobspec(server_host='localhost',
 
 def archive_repo(languages):
     """Archives local version of repo including submodules."""
-    cmdline = ['tar', '-cf', '../grpc.tar', '../grpc/']
+    # Directory contains symlinks that can't be correctly untarred on Windows
+    # so we just skip them as a workaround.
+    # See https://github.com/grpc/grpc/issues/16334
+    bad_symlinks_dir = '../grpc/third_party/libcxx/test/std/experimental/filesystem/Inputs/static_test_env'
+    cmdline = [
+        'tar', '--exclude', bad_symlinks_dir, '-cf', '../grpc.tar', '../grpc/'
+    ]
     if 'java' in languages:
         cmdline.append('../grpc-java')
     if 'go' in languages:
