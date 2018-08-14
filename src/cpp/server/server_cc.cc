@@ -48,7 +48,7 @@ namespace grpc {
 namespace {
 
 // The default value for maximum number of threads that can be created in the
-// sync server. This value of INT_MAX is chose to match the default behavior if
+// sync server. This value of INT_MAX is chosen to match the default behavior if
 // no ResourceQuota is set. To modify the max number of threads in a sync
 // server, pass a custom ResourceQuota object  (with the desired number of
 // max-threads set) to the server builder.
