@@ -499,9 +499,6 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
 static void cq_init_next(void* ptr,
                          grpc_core::CQCallbackInterface* shutdown_callback) {
-  // shutdown_callback should not be provided to this CQ variant
-  GPR_ASSERT(shutdown_callback == nullptr);
-
   cq_next_data* cqd = static_cast<cq_next_data*>(ptr);
   /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
@@ -518,9 +515,6 @@ static void cq_destroy_next(void* ptr) {
 
 static void cq_init_pluck(void* ptr,
                           grpc_core::CQCallbackInterface* shutdown_callback) {
-  // shutdown_callback should not be provided to this CQ variant
-  GPR_ASSERT(shutdown_callback == nullptr);
-
   cq_pluck_data* cqd = static_cast<cq_pluck_data*>(ptr);
   /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
