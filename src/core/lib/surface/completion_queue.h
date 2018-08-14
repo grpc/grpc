@@ -47,8 +47,13 @@ typedef struct grpc_cq_completion {
   uintptr_t next;
 } grpc_cq_completion;
 
-/// For callback CQs, the following is what is actually intended by
-/// the tag.
+/// For callback CQs, the tag that is passed in for an operation must
+/// actually be a pointer to an implementation of the following class.
+/// When the operation completes, the tag will be typecasted from void*
+/// to grpc_core::CQCallbackInterface* and then the Run method will be
+/// invoked on it. In practice, the language binding (e.g., C++ API
+/// implementation) is responsible for providing and using an implementation
+/// of this abstract base class.
 namespace grpc_core {
 class CQCallbackInterface {
  public:
