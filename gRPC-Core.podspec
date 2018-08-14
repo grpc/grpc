@@ -181,8 +181,9 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 10.0'
+    ss.dependency 'BoringSSL-GRPC', '0.0.1'
     ss.dependency 'nanopb', '~> 0.3'
+    ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
@@ -356,6 +357,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
+                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/lib/avl/avl.h',
@@ -949,6 +951,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security_grpc.h',
+                              'src/core/tsi/grpc_shadow_boringssl.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/lib/avl/avl.h',

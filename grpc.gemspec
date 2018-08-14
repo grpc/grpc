@@ -293,6 +293,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/ssl_transport_security.h )
   s.files += %w( src/core/tsi/ssl_types.h )
   s.files += %w( src/core/tsi/transport_security_grpc.h )
+  s.files += %w( src/core/tsi/grpc_shadow_boringssl.h )
   s.files += %w( src/core/ext/transport/chttp2/server/chttp2_server.h )
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.h )
   s.files += %w( src/core/lib/avl/avl.h )
