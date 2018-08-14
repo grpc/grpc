@@ -193,7 +193,9 @@ def archive_repo(languages):
     # so we just skip them as a workaround.
     # See https://github.com/grpc/grpc/issues/16334
     bad_symlinks_dir = '../grpc/third_party/libcxx/test/std/experimental/filesystem/Inputs/static_test_env'
-    cmdline = ['tar', '--exclude', bad_symlinks_dir, '-cf','../grpc.tar', '../grpc/']
+    cmdline = [
+        'tar', '--exclude', bad_symlinks_dir, '-cf', '../grpc.tar', '../grpc/'
+    ]
     if 'java' in languages:
         cmdline.append('../grpc-java')
     if 'go' in languages:
