@@ -25,6 +25,7 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/pollset.h"
 
 /* These trace flags default to 1. The corresponding lines are only traced
@@ -58,7 +59,9 @@ namespace grpc_core {
 class CQCallbackInterface {
  public:
   virtual ~CQCallbackInterface() {}
-  virtual void Run(bool) = 0;
+  virtual void Run(bool) GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
 };
 }  // namespace grpc_core
 
