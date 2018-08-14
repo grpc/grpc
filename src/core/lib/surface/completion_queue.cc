@@ -497,9 +497,9 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   return cq;
 }
 
-static void cq_init_next(void* ptr,
+static void cq_init_next(void* data,
                          grpc_core::CQCallbackInterface* shutdown_callback) {
-  cq_next_data* cqd = static_cast<cq_next_data*>(ptr);
+  cq_next_data* cqd = static_cast<cq_next_data*>(data);
   /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
   cqd->shutdown_called = false;
@@ -507,15 +507,15 @@ static void cq_init_next(void* ptr,
   cq_event_queue_init(&cqd->queue);
 }
 
-static void cq_destroy_next(void* ptr) {
-  cq_next_data* cqd = static_cast<cq_next_data*>(ptr);
+static void cq_destroy_next(void* data) {
+  cq_next_data* cqd = static_cast<cq_next_data*>(data);
   GPR_ASSERT(cq_event_queue_num_items(&cqd->queue) == 0);
   cq_event_queue_destroy(&cqd->queue);
 }
 
-static void cq_init_pluck(void* ptr,
+static void cq_init_pluck(void* data,
                           grpc_core::CQCallbackInterface* shutdown_callback) {
-  cq_pluck_data* cqd = static_cast<cq_pluck_data*>(ptr);
+  cq_pluck_data* cqd = static_cast<cq_pluck_data*>(data);
   /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
   cqd->completed_tail = &cqd->completed_head;
@@ -526,14 +526,14 @@ static void cq_init_pluck(void* ptr,
   gpr_atm_no_barrier_store(&cqd->things_queued_ever, 0);
 }
 
-static void cq_destroy_pluck(void* ptr) {
-  cq_pluck_data* cqd = static_cast<cq_pluck_data*>(ptr);
+static void cq_destroy_pluck(void* data) {
+  cq_pluck_data* cqd = static_cast<cq_pluck_data*>(data);
   GPR_ASSERT(cqd->completed_head.next == (uintptr_t)&cqd->completed_head);
 }
 
 static void cq_init_callback(
-    void* ptr, grpc_core::CQCallbackInterface* shutdown_callback) {
-  cq_callback_data* cqd = static_cast<cq_callback_data*>(ptr);
+    void* data, grpc_core::CQCallbackInterface* shutdown_callback) {
+  cq_callback_data* cqd = static_cast<cq_callback_data*>(data);
   /* Initial count is dropped by grpc_completion_queue_shutdown */
   gpr_atm_no_barrier_store(&cqd->pending_events, 1);
   cqd->shutdown_called = false;
@@ -541,7 +541,7 @@ static void cq_init_callback(
   cqd->shutdown_callback = shutdown_callback;
 }
 
-static void cq_destroy_callback(void* ptr) {}
+static void cq_destroy_callback(void* data) {}
 
 grpc_cq_completion_type grpc_get_cq_completion_type(grpc_completion_queue* cq) {
   return cq->vtable->cq_completion_type;
