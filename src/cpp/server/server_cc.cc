@@ -584,6 +584,9 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     }
   }
 
+  // If this server has any support for synchronous methods (has any sync
+  // server CQs), make sure that we have a ResourceExhausted handler
+  // to deal with the case of thread exhaustion
   if (!sync_server_cqs_->empty()) {
     resource_exhausted_handler_.reset(new internal::ResourceExhaustedHandler);
   }
