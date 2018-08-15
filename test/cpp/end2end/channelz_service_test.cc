@@ -41,6 +41,8 @@
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
+using grpc::channelz::v1::GetServersRequest;
+using grpc::channelz::v1::GetServersResponse;
 using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
@@ -413,6 +415,45 @@ TEST_F(ChannelzServerTest, ManySubchannels) {
     EXPECT_EQ(gtc_response.channel(i).data().calls_failed(),
               gsc_response.subchannel().data().calls_failed());
   }
+}
+
+TEST_F(ChannelzServerTest, BasicServerTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest request;
+  GetServersResponse response;
+  request.set_start_server_id(0);
+  ClientContext context;
+  Status s = channelz_stub_->GetServers(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(response.server_size(), 1);
+}
+
+TEST_F(ChannelzServerTest, ServerCallTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  const int kNumSuccess = 10;
+  const int kNumFailed = 11;
+  for (int i = 0; i < kNumSuccess; ++i) {
+    SendSuccessfulEcho(0);
+  }
+  for (int i = 0; i < kNumFailed; ++i) {
+    SendFailedEcho(0);
+  }
+  GetServersRequest request;
+  GetServersResponse response;
+  request.set_start_server_id(0);
+  ClientContext context;
+  Status s = channelz_stub_->GetServers(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(response.server_size(), 1);
+  EXPECT_EQ(response.server(0).data().calls_succeeded(), kNumSuccess);
+  EXPECT_EQ(response.server(0).data().calls_failed(), kNumFailed);
+  // This is success+failure+1 because the call that retrieved this information
+  // will be counted as started. It will not track success/failure until after
+  // it has returned, so that is not included in the response.
+  EXPECT_EQ(response.server(0).data().calls_started(),
+            kNumSuccess + kNumFailed + 1);
 }
 
 }  // namespace testing
