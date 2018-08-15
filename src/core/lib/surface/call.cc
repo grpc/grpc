@@ -48,6 +48,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
@@ -166,6 +167,8 @@ struct grpc_call {
   grpc_completion_queue* cq;
   grpc_polling_entity pollent;
   grpc_channel* channel;
+  // backpointer to owning server if this is a server side call.
+  grpc_server* server;
   gpr_timespec start_time;
   /* parent_call* */ gpr_atm parent_call_atm;
   child_call* child;
@@ -362,14 +365,11 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_MESSAGE_COMPRESS_NONE);
   call->is_client = args->server_transport_data == nullptr;
-  if (call->is_client) {
-    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-  } else {
-    GRPC_STATS_INC_SERVER_CALLS_CREATED();
-  }
   call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
+    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
+    call->server = nullptr;
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
@@ -383,6 +383,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     call->send_extra_metadata_count =
         static_cast<int>(args->add_initial_metadata_count);
   } else {
+    GRPC_STATS_INC_SERVER_CALLS_CREATED();
+    call->server = args->server;
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
@@ -486,10 +488,18 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(call->channel);
-  if (channelz_channel != nullptr) {
-    channelz_channel->RecordCallStarted();
+  if (call->is_client) {
+    grpc_core::channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
+    if (channelz_channel != nullptr) {
+      channelz_channel->RecordCallStarted();
+    }
+  } else {
+    grpc_core::channelz::ServerNode* channelz_server =
+        grpc_server_get_channelz_node(call->server);
+    if (channelz_server != nullptr) {
+      channelz_server->RecordCallStarted();
+    }
   }
 
   grpc_slice_unref_internal(path);
@@ -1263,18 +1273,26 @@ static void post_batch_completion(batch_control* bctl) {
                        call->final_op.client.status,
                        call->final_op.client.status_details,
                        call->final_op.client.error_string);
+      grpc_core::channelz::ChannelNode* channelz_channel =
+          grpc_channel_get_channelz_node(call->channel);
+      if (channelz_channel != nullptr) {
+        if (*call->final_op.client.status != GRPC_STATUS_OK) {
+          channelz_channel->RecordCallFailed();
+        } else {
+          channelz_channel->RecordCallSucceeded();
+        }
+      }
     } else {
       get_final_status(call, set_cancelled_value,
                        call->final_op.server.cancelled, nullptr, nullptr);
-    }
-    // Record channelz data for the channel.
-    grpc_core::channelz::ChannelNode* channelz_channel =
-        grpc_channel_get_channelz_node(call->channel);
-    if (channelz_channel != nullptr) {
-      if (*call->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
+      grpc_core::channelz::ServerNode* channelz_server =
+          grpc_server_get_channelz_node(call->server);
+      if (channelz_server != nullptr) {
+        if (*call->final_op.server.cancelled) {
+          channelz_server->RecordCallFailed();
+        } else {
+          channelz_server->RecordCallSucceeded();
+        }
       }
     }
     GRPC_ERROR_UNREF(error);
