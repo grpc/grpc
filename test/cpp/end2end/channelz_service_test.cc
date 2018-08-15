@@ -140,7 +140,7 @@ class ChannelzServerTest : public ::testing::Test {
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   }
 
   void SendFailedEcho(int channel_idx) {
@@ -154,6 +154,19 @@ class ChannelzServerTest : public ::testing::Test {
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
     EXPECT_FALSE(s.ok());
+  }
+
+  // Uses GetTopChannels to return the channel_id of a particular channel,
+  // so that the unit tests may test GetChannel call.
+  intptr_t GetChannelId(int channel_idx) {
+    GetTopChannelsRequest request;
+    GetTopChannelsResponse response;
+    request.set_start_channel_id(0);
+    ClientContext context;
+    Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+    EXPECT_GT(response.channel_size(), channel_idx);
+    return response.channel(channel_idx).ref().channel_id();
   }
 
   static string to_string(const int number) {
@@ -190,7 +203,7 @@ TEST_F(ChannelzServerTest, BasicTest) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
 }
 
@@ -202,7 +215,7 @@ TEST_F(ChannelzServerTest, HighStartId) {
   request.set_start_channel_id(10000);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 0);
 }
 
@@ -212,10 +225,10 @@ TEST_F(ChannelzServerTest, SuccessfulRequestTest) {
   SendSuccessfulEcho(0);
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 1);
   EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -227,10 +240,10 @@ TEST_F(ChannelzServerTest, FailedRequestTest) {
   SendFailedEcho(0);
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
   EXPECT_EQ(response.channel().data().calls_failed(), 1);
@@ -250,10 +263,10 @@ TEST_F(ChannelzServerTest, ManyRequestsTest) {
   }
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(),
             kNumSuccess + kNumFailed);
   EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -269,7 +282,7 @@ TEST_F(ChannelzServerTest, ManyChannels) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), kNumChannels);
 }
 
@@ -292,10 +305,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(1);
+    request.set_channel_id(GetChannelId(0));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -305,10 +318,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(2);
+    request.set_channel_id(GetChannelId(1));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
@@ -318,10 +331,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(3);
+    request.set_channel_id(GetChannelId(2));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(),
               kNumSuccess + kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -332,10 +345,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(4);
+    request.set_channel_id(GetChannelId(3));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), 0);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
