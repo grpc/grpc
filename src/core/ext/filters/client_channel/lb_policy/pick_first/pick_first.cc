@@ -284,11 +284,11 @@ bool PickFirst::PickLocked(PickState* pick, grpc_error** error) {
         "No pick result available but synchronous result required.");
     return true;
   }
+  pick->next = pending_picks_;
+  pending_picks_ = pick;
   if (!started_picking_) {
     StartPickingLocked();
   }
-  pick->next = pending_picks_;
-  pending_picks_ = pick;
   return false;
 }
 
@@ -556,15 +556,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
 
 void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
-  if (p->selected_ == this) {
-    if (grpc_lb_pick_first_trace.enabled()) {
-      gpr_log(GPR_ERROR,
-              "Pick First %p calling ProcessUnselectedReadyLocked() on "
-              "selected subchannel %p",
-              p, subchannel());
-    }
-    return;
-  }
   // If we get here, there are two possible cases:
   // 1. We do not currently have a selected subchannel, and the update is
   //    for a subchannel in p->subchannel_list_ that we're trying to
