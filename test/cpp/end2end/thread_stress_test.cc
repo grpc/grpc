@@ -320,6 +320,10 @@ TYPED_TEST(End2endTest, ThreadStress) {
   if (error_cnt != 0) {
     gpr_log(GPR_INFO, "RPC error count: %" PRIu64, error_cnt);
   }
+  // If this test allows resource exhaustion, expect that it actually sees some
+  if (this->common_.AllowExhaustion()) {
+    EXPECT_GT(error_cnt, static_cast<uint64_t>(0));
+  }
 }
 
 template <class Common>
