@@ -67,7 +67,9 @@ class ThreadManager {
 
   // The implementation of DoWork() is supposed to perform the work found by
   // PollForWork(). The tag and ok parameters are the same as returned by
-  // PollForWork()
+  // PollForWork(). The resources parameter indicates that the call actually
+  // has the resources available for performing the RPC's work. If it doesn't,
+  // the implementation should fail it appropriately.
   //
   // The implementation of DoWork() should also do any setup needed to ensure
   // that the next call to PollForWork() (not necessarily by the current thread)
