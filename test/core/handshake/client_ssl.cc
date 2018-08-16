@@ -140,9 +140,10 @@ static void server_thread(void* arg) {
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
 
-  const SSL_METHOD* method = TLSv1_2_server_method();
+  const SSL_METHOD* method = TLS_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
-  if (!ctx) {
+  if (!ctx || !SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION) ||
+      !SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION)) {
     perror("Unable to create SSL context");
     ERR_print_errors_fp(stderr);
     abort();
