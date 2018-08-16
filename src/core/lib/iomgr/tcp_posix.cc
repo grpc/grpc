@@ -120,7 +120,7 @@ struct grpc_tcp {
    * requirement from the TCP endpoint layer is that this arg should be non-null
    * if the user wants timestamps for the write. */
   void* outgoing_buffer_arg;
-  /* Current TCP relative sequence number as defined in RFC 793. Used for
+  /* Current TCP (relative) sequence number which starts out at zero. Used for
    * timestamping traced buffers. */
   int bytes_counter;
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
@@ -576,6 +576,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     }
     tcp->socket_ts_enabled = true;
   }
+  /* Set control message to indicate that you want timestamps. */
   union {
     char cmsg_buf[CMSG_SPACE(sizeof(uint32_t))];
     struct cmsghdr align;
@@ -594,6 +595,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     GRPC_STATS_INC_SYSCALL_WRITE();
     length = sendmsg(tcp->fd, msg, SENDMSG_FLAGS);
   } while (length < 0 && errno == EINTR);
+  /* If there was an error on sendmsg the logic in tcp_flush will handle it. */
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
