@@ -279,11 +279,11 @@ bool PickFirst::PickLocked(PickState* pick, grpc_error** error) {
         "No pick result available but synchronous result required.");
     return true;
   }
+  pick->next = pending_picks_;
+  pending_picks_ = pick;
   if (!started_picking_) {
     StartPickingLocked();
   }
-  pick->next = pending_picks_;
-  pending_picks_ = pick;
   return false;
 }
 
