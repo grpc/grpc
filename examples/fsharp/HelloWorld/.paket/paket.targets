@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <PropertyGroup>
+    <!-- Enable the restore command to run before builds -->
+    <RestorePackages Condition=" '$(RestorePackages)' == '' ">true</RestorePackages>
+    <PaketToolsPath>$(MSBuildThisFileDirectory)</PaketToolsPath>
+    <PaketRootPath>$(MSBuildThisFileDirectory)..\</PaketRootPath>
+    <PaketLockFilePath>$(PaketRootPath)paket.lock</PaketLockFilePath>
+    <PaketRestoreCacheFile>$(PaketRootPath)paket-files\paket.restore.cached</PaketRestoreCacheFile>
+    <MonoPath Condition="'$(MonoPath)' == '' And Exists('/Library/Frameworks/Mono.framework/Commands/mono')">/Library/Frameworks/Mono.framework/Commands/mono</MonoPath>
+    <MonoPath Condition="'$(MonoPath)' == ''">mono</MonoPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Paket command -->
+    <PaketExePath Condition=" '$(PaketExePath)' == '' AND Exists('$(PaketRootPath)paket.exe')">$(PaketRootPath)paket.exe</PaketExePath>
+    <PaketExePath Condition=" '$(PaketExePath)' == '' ">$(PaketToolsPath)paket.exe</PaketExePath>
+    <PaketCommand Condition=" '$(OS)' == 'Windows_NT'">"$(PaketExePath)"</PaketCommand>
+    <PaketCommand Condition=" '$(OS)' != 'Windows_NT' ">$(MonoPath) --runtime=v4.0.30319 "$(PaketExePath)"</PaketCommand>
+  </PropertyGroup>
+
+  <Choose> <!-- MyProject.fsproj.paket.references has the highest precedence -->
+    <When Condition="Exists('$(MSBuildProjectFullPath).paket.references')">
+      <PropertyGroup>
+        <PaketReferences>$(MSBuildProjectFullPath).paket.references</PaketReferences>
+      </PropertyGroup>
+    </When> <!-- MyProject.paket.references -->
+    <When Condition="Exists('$(MSBuildProjectDirectory)\$(MSBuildProjectName).paket.references')">
+      <PropertyGroup>
+        <PaketReferences>$(MSBuildProjectDirectory)\$(MSBuildProjectName).paket.references</PaketReferences>
+      </PropertyGroup>
+    </When> <!-- paket.references -->
+    <When Condition="Exists('$(MSBuildProjectDirectory)\paket.references')">
+      <PropertyGroup>
+        <PaketReferences>$(MSBuildProjectDirectory)\paket.references</PaketReferences>
+      </PropertyGroup>
+    </When> <!-- Set to empty if a reference file isn't found matching one of the 3 format options -->
+    <Otherwise>
+      <PropertyGroup>
+        <PaketReferences></PaketReferences>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+
+  <PropertyGroup>
+  <!-- Commands -->
+    <RestoreCommand>$(PaketCommand) restore --references-files "$(PaketReferences)"</RestoreCommand>
+    <!-- We need to ensure packages are restored prior to assembly resolve -->
+    <BuildDependsOn Condition="$(RestorePackages) == 'true'">RestorePackages; $(BuildDependsOn);</BuildDependsOn>
+  </PropertyGroup>
+  <Target Name="RestorePackages">
+    <PropertyGroup>
+      <PaketRestoreRequired>true</PaketRestoreRequired>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="Exists('$(PaketRestoreCacheFile)') ">
+      <PaketRestoreCachedHash>$([System.IO.File]::ReadAllText('$(PaketRestoreCacheFile)'))</PaketRestoreCachedHash>
+      <PaketRestoreLockFileHash>$([System.IO.File]::ReadAllText('$(PaketLockFilePath)'))</PaketRestoreLockFileHash>
+      <PaketRestoreRequired>true</PaketRestoreRequired>
+      <PaketRestoreRequired Condition=" '$(PaketRestoreLockFileHash)' == '$(PaketRestoreCachedHash)' ">false</PaketRestoreRequired>
+      <PaketRestoreRequired Condition=" '$(PaketRestoreLockFileHash)' == '' ">true</PaketRestoreRequired>
+    </PropertyGroup>
+
+    <Exec Command="$(RestoreCommand)" 
+          IgnoreStandardErrorWarningFormat="true" 
+          WorkingDirectory="$(PaketRootPath)" 
+          ContinueOnError="false" 
+          Condition=" '$(PaketRestoreRequired)' == 'true' AND Exists('$(PaketReferences)') AND '$(PaketReferences)' != '' " 
+    />
+  </Target>
+</Project>

@@ -1,0 +1,24 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "Client", "Client\Client.fsproj", "{895AA64E-8DFD-4376-99F5-5DC35A6C8AAC}"
+EndProject
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "Server", "Server\Server.fsproj", "{32D03D00-80D3-439A-96F6-A54BB6C853B1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{32D03D00-80D3-439A-96F6-A54BB6C853B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32D03D00-80D3-439A-96F6-A54BB6C853B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32D03D00-80D3-439A-96F6-A54BB6C853B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32D03D00-80D3-439A-96F6-A54BB6C853B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{895AA64E-8DFD-4376-99F5-5DC35A6C8AAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{895AA64E-8DFD-4376-99F5-5DC35A6C8AAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{895AA64E-8DFD-4376-99F5-5DC35A6C8AAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{895AA64E-8DFD-4376-99F5-5DC35A6C8AAC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+	EndGlobalSection
+EndGlobal
