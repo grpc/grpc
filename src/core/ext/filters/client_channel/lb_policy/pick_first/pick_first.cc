@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -308,7 +309,7 @@ void PickFirst::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 
 void PickFirst::FillChildRefsForChannelz(
     ChildRefsList* child_subchannels_to_fill, ChildRefsList* ignored) {
-  mu_guard guard(&child_refs_mu_);
+  MutexLock lock(&child_refs_mu_);
   for (size_t i = 0; i < child_subchannels_.size(); ++i) {
     // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
     // have to implement lightweight set. For now, we don't care about
@@ -335,7 +336,7 @@ void PickFirst::UpdateChildRefsLocked() {
     latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
   }
   // atomically update the data that channelz will actually be looking at.
-  mu_guard guard(&child_refs_mu_);
+  MutexLock lock(&child_refs_mu_);
   child_subchannels_ = std::move(cs);
 }
 

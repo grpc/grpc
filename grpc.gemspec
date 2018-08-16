@@ -105,6 +105,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/fork.h )
   s.files += %w( src/core/lib/gprpp/manual_constructor.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
+  s.files += %w( src/core/lib/gprpp/mutex_lock.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/profiling/timers.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
