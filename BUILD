@@ -2129,7 +2129,7 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
