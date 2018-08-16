@@ -48,7 +48,7 @@ cdef int _get_metadata(
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
-    if status is StatusCode.ok:
+    if status == StatusCode.ok:
       _store_c_metadata(metadata, &c_metadata, &metadata_count)
       cb(user_data, c_metadata, metadata_count, status, NULL)
       _release_c_metadata(c_metadata, metadata_count)
