@@ -19,6 +19,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
@@ -97,6 +101,7 @@
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="System.Runtime" />
+    <Reference Include="System.Runtime.InteropServices" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
