@@ -9187,7 +9187,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/cpp/ext/filters/census/grpc_context.cc"
+      "src/core/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
