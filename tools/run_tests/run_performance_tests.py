@@ -200,6 +200,8 @@ def archive_repo(languages):
         cmdline.append('../grpc-java')
     if 'go' in languages:
         cmdline.append('../grpc-go')
+    if 'node' in languages or 'node_purejs' in languages:
+        cmdline.append('../grpc-node')
 
     archive_job = jobset.JobSpec(
         cmdline=cmdline, shortname='archive_repo', timeout_seconds=3 * 60)
@@ -253,9 +255,9 @@ def build_on_remote_hosts(hosts,
                           languages=scenario_config.LANGUAGES.keys(),
                           build_local=False):
     """Builds performance worker on remote hosts (and maybe also locally)."""
-    build_timeout = 15 * 60
+    build_timeout = 45 * 60
     # Kokoro VMs (which are local only) do not have caching, so they need more time to build
-    local_build_timeout = 30 * 60
+    local_build_timeout = 60 * 60
     build_jobs = []
     for host in hosts:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)
