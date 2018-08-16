@@ -166,22 +166,38 @@ void ThreadManager::MainWorkLoop() {
       case WORK_FOUND:
         // If we got work and there are now insufficient pollers and there is
         // quota available to create a new thread, start a new poller thread
-        if (!shutdown_ && num_pollers_ < min_pollers_ &&
-            grpc_resource_user_allocate_threads(resource_user_, 1)) {
-          num_pollers_++;
-          num_threads_++;
-          if (num_threads_ > max_active_threads_sofar_) {
-            max_active_threads_sofar_ = num_threads_;
+        bool resource_exhausted = false;
+        if (!shutdown_ && num_pollers_ < min_pollers_) {
+          if (grpc_resource_user_allocate_threads(resource_user_, 1)) {
+            // We can allocate a new poller thread
+            num_pollers_++;
+            num_threads_++;
+            if (num_threads_ > max_active_threads_sofar_) {
+              max_active_threads_sofar_ = num_threads_;
+            }
+            // Drop lock before spawning thread to avoid contention
+            lock.unlock();
+            new WorkerThread(this);
+          } else if (num_pollers_ > 0) {
+            // There is still at least some thread polling, so we can go on
+            // even though we are below the number of pollers that we would
+            // like to have (min_pollers_)
+            lock.unlock();
+          } else {
+            // There are no pollers to spare and we couldn't allocate
+            // a new thread, so resources are exhausted!
+            lock.unlock();
+            resource_exhausted = true;
           }
-          // Drop lock before spawning thread to avoid contention
-          lock.unlock();
-          new WorkerThread(this);
         } else {
-          // Drop lock for consistency with above branch
+          // There are a sufficient number of pollers available so we can do
+          // the work and continue polling with our existing poller threads
           lock.unlock();
         }
         // Lock is always released at this point - do the application work
-        DoWork(tag, ok);
+        // or return resource exhausted if there is new work but we couldn't
+        // get a thread in which to do it.
+        DoWork(tag, ok, !resource_exhausted);
         // Take the lock again to check post conditions
         lock.lock();
         // If we're shutdown, we should finish at this point.
