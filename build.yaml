@@ -196,6 +196,7 @@ filegroups:
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mutex_lock.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
