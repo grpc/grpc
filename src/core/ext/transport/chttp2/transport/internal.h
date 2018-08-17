@@ -451,8 +451,6 @@ struct grpc_chttp2_transport {
   /* keep-alive ping support */
   /** Closure to initialize a keepalive ping */
   grpc_closure init_keepalive_ping_locked;
-  /** Closure to run when the keepalive ping is sent */
-  grpc_closure start_keepalive_ping_locked;
   /** Cousure to run when the keepalive ping ack is received */
   grpc_closure finish_keepalive_ping_locked;
   /** Closrue to run when the keepalive ping timeouts */

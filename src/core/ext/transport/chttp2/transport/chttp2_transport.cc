@@ -140,7 +140,6 @@ static void retry_initiate_ping_locked(void* tp, grpc_error* error);
 
 /** keepalive-relevant functions */
 static void init_keepalive_ping_locked(void* arg, grpc_error* error);
-static void start_keepalive_ping_locked(void* arg, grpc_error* error);
 static void finish_keepalive_ping_locked(void* arg, grpc_error* error);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error);
 
@@ -277,9 +276,6 @@ static void init_transport(grpc_chttp2_transport* t,
                     grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping_locked,
                     t, grpc_combiner_scheduler(t->combiner));
-  GRPC_CLOSURE_INIT(&t->start_keepalive_ping_locked,
-                    start_keepalive_ping_locked, t,
-                    grpc_combiner_scheduler(t->combiner));
   GRPC_CLOSURE_INIT(&t->finish_keepalive_ping_locked,
                     finish_keepalive_ping_locked, t,
                     grpc_combiner_scheduler(t->combiner));
@@ -1676,22 +1672,24 @@ static void send_ping_locked(grpc_chttp2_transport* t,
  */
 static void send_keepalive_ping_locked(grpc_chttp2_transport* t) {
   if (t->closed_with_error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_RUN(&t->start_keepalive_ping_locked,
-                     GRPC_ERROR_REF(t->closed_with_error));
     GRPC_CLOSURE_RUN(&t->finish_keepalive_ping_locked,
                      GRPC_ERROR_REF(t->closed_with_error));
     return;
   }
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
+
+  /* Start the watchdog timer. */
+  GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
+  grpc_timer_init(&t->keepalive_watchdog_timer,
+                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
+                  &t->keepalive_watchdog_fired_locked);
+
   if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
     /* There is a ping in flight. Add yourself to the inflight closure list. */
-    GRPC_CLOSURE_RUN(&t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
     grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INFLIGHT],
                              &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
     return;
   }
-  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE],
-                           &t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
                            &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
 }
@@ -2659,17 +2657,6 @@ static void init_keepalive_ping_locked(void* arg, grpc_error* error) {
                     &t->init_keepalive_ping_locked);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "init keepalive ping");
-}
-
-static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
-  grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    return;
-  }
-  GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
-  grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
-                  &t->keepalive_watchdog_fired_locked);
 }
 
 static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
