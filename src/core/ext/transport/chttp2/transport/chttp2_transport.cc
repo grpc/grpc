@@ -578,6 +578,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
   end_all_the_calls(t, GRPC_ERROR_REF(error));
   cancel_pings(t, GRPC_ERROR_REF(error));
   if (t->closed_with_error == GRPC_ERROR_NONE) {
+    grpc_endpoint_shutdown(t->ep, GRPC_ERROR_REF(error));
     if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
@@ -622,7 +623,6 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:close");
     }
     GPR_ASSERT(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
-    grpc_endpoint_shutdown(t->ep, GRPC_ERROR_REF(error));
   }
   if (t->notify_on_receive_settings != nullptr) {
     GRPC_CLOSURE_SCHED(t->notify_on_receive_settings, GRPC_ERROR_CANCELLED);
