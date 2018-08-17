@@ -180,7 +180,7 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
     grpc_error* last_transient_failure_error_ = GRPC_ERROR_NONE;
-    size_t last_ready_index_ = -1;  // Index into list of last pick.
+    size_t last_ready_index_ = 0;  // Index into list of last pick.
   };
 
   // Helper class to ensure that any function that modifies the child refs
