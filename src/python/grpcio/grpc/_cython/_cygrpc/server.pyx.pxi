@@ -18,6 +18,7 @@ import logging
 import time
 import grpc
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
