@@ -918,7 +918,8 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
   // Use a simple heuristic to determine how many fd events to process
   // per loop iteration.  (events/workers)
   int handle_count = 1;
-  int worker_count = gpr_atm_no_barrier_load(&pollset->worker_count);
+  int worker_count =
+      static_cast<int>(gpr_atm_no_barrier_load(&pollset->worker_count));
   GPR_ASSERT(worker_count > 0);
   handle_count =
       (pollable_obj->event_count - pollable_obj->event_cursor) / worker_count;

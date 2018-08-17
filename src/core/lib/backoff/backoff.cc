@@ -58,13 +58,13 @@ grpc_millis BackOff::NextAttemptTime() {
     return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
   }
   current_backoff_ = static_cast<grpc_millis>(
-      std::min(current_backoff_ * options_.multiplier(),
+      std::min(static_cast<double>(current_backoff_) * options_.multiplier(),
                static_cast<double>(options_.max_backoff())));
   const double jitter = generate_uniform_random_number_between(
-      &rng_state_, -options_.jitter() * current_backoff_,
-      options_.jitter() * current_backoff_);
+      &rng_state_, -options_.jitter() * static_cast<double>(current_backoff_),
+      options_.jitter() * static_cast<double>(current_backoff_));
   const grpc_millis next_timeout =
-      static_cast<grpc_millis>(current_backoff_ + jitter);
+      static_cast<grpc_millis>(static_cast<double>(current_backoff_) + jitter);
   return next_timeout + grpc_core::ExecCtx::Get()->Now();
 }
 

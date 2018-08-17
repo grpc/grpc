@@ -52,7 +52,8 @@ class OpenSslCachedSession : public SslCachedSession {
   SslSessionPtr CopySession() const override {
     const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
     size_t length = GRPC_SLICE_LENGTH(serialized_session_);
-    SSL_SESSION* session = d2i_SSL_SESSION(nullptr, &data, length);
+    SSL_SESSION* session =
+        d2i_SSL_SESSION(nullptr, &data, static_cast<long>(length));
     if (session == nullptr) {
       return SslSessionPtr();
     }

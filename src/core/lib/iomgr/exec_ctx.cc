@@ -58,7 +58,8 @@ static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
-  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE))
+    return GRPC_MILLIS_INF_FUTURE;
   return static_cast<grpc_millis>(x);
 }
 
@@ -69,7 +70,8 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
              static_cast<double>(GPR_NS_PER_SEC - 1) /
                  static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
-  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE))
+    return GRPC_MILLIS_INF_FUTURE;
   return static_cast<grpc_millis>(x);
 }
 

@@ -34,7 +34,7 @@
 /* ------------------------------------------------- */
 /* Tests for gpr_spinlock. */
 struct test {
-  int thread_count; /* number of threads */
+  size_t thread_count; /* number of threads */
   grpc_core::Thread* threads;
 
   int64_t iterations; /* number of iterations per thread */
@@ -45,11 +45,12 @@ struct test {
 };
 
 /* Return pointer to a new struct test. */
-static struct test* test_new(int threads, int64_t iterations, int incr_step) {
+static struct test* test_new(size_t threads, int64_t iterations,
+                             int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->thread_count = threads;
   m->threads = static_cast<grpc_core::Thread*>(
-      gpr_malloc(sizeof(*m->threads) * static_cast<size_t>(threads)));
+      gpr_malloc(sizeof(*m->threads) * threads));
   m->iterations = iterations;
   m->counter = 0;
   m->thread_count = 0;
@@ -66,8 +67,7 @@ static void test_destroy(struct test* m) {
 
 /* Create m->threads threads, each running (*body)(m) */
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
-  int i;
-  for (i = 0; i != m->thread_count; i++) {
+  for (size_t i = 0; i != m->thread_count; i++) {
     m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
     m->threads[i].Start();
   }
@@ -75,8 +75,7 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
 
 /* Wait until all threads report done. */
 static void test_wait(struct test* m) {
-  int i;
-  for (i = 0; i != m->thread_count; i++) {
+  for (size_t i = 0; i != m->thread_count; i++) {
     m->threads[i].Join();
   }
 }
@@ -105,9 +104,11 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
     m = test_new(10, iterations, incr_step);
     test_create_threads(m, body);
     test_wait(m);
-    if (m->counter != m->thread_count * m->iterations * m->incr_step) {
-      fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
-              static_cast<long>(m->counter), m->thread_count,
+    if (m->counter !=
+        static_cast<int64_t>(m->thread_count) * m->iterations * m->incr_step) {
+      fprintf(stderr, "counter %ld  threads %lu  iterations %ld\n",
+              static_cast<long>(m->counter),
+              static_cast<unsigned long>(m->thread_count),
               static_cast<long>(m->iterations));
       fflush(stderr);
       GPR_ASSERT(0);

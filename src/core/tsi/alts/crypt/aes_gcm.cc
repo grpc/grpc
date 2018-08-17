@@ -349,7 +349,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
       return GRPC_STATUS_INTERNAL;
     }
     ciphertext += bytes_written;
-    ciphertext_length -= bytes_written;
+    ciphertext_length -= static_cast<size_t>(bytes_written);
   }
   int bytes_written_temp = 0;
   if (!EVP_EncryptFinal_ex(aes_gcm_crypter->ctx, nullptr,

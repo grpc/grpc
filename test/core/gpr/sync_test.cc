@@ -135,14 +135,14 @@ int queue_remove(queue* q, int* head, gpr_timespec abs_deadline) {
 /* ------------------------------------------------- */
 /* Tests for gpr_mu and gpr_cv, and the queue example. */
 struct test {
-  int nthreads; /* number of threads */
+  size_t nthreads; /* number of threads */
   grpc_core::Thread* threads;
 
   int64_t iterations; /* number of iterations per thread */
   int64_t counter;
-  int thread_count; /* used to allocate thread ids */
-  int done;         /* threads not yet completed */
-  int incr_step;    /* how much to increment/decrement refcount each time */
+  size_t thread_count; /* used to allocate thread ids */
+  size_t done;         /* threads not yet completed */
+  int incr_step;       /* how much to increment/decrement refcount each time */
 
   gpr_mu mu; /* protects iterations, counter, thread_count, done */
 
@@ -160,7 +160,8 @@ struct test {
 };
 
 /* Return pointer to a new struct test. */
-static struct test* test_new(int nthreads, int64_t iterations, int incr_step) {
+static struct test* test_new(size_t nthreads, int64_t iterations,
+                             int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->nthreads = nthreads;
   m->threads = static_cast<grpc_core::Thread*>(
@@ -176,7 +177,7 @@ static struct test* test_new(int nthreads, int64_t iterations, int incr_step) {
   queue_init(&m->q);
   gpr_stats_init(&m->stats_counter, 0);
   gpr_ref_init(&m->refcount, 0);
-  gpr_ref_init(&m->thread_refcount, nthreads);
+  gpr_ref_init(&m->thread_refcount, static_cast<int>(nthreads));
   gpr_event_init(&m->event);
   return m;
 }
@@ -193,8 +194,7 @@ static void test_destroy(struct test* m) {
 
 /* Create m->nthreads threads, each running (*body)(m) */
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
-  int i;
-  for (i = 0; i != m->nthreads; i++) {
+  for (size_t i = 0; i != m->nthreads; i++) {
     m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
     m->threads[i].Start();
   }
@@ -207,14 +207,14 @@ static void test_wait(struct test* m) {
     gpr_cv_wait(&m->done_cv, &m->mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&m->mu);
-  for (int i = 0; i != m->nthreads; i++) {
+  for (size_t i = 0; i != m->nthreads; i++) {
     m->threads[i].Join();
   }
 }
 
 /* Get an integer thread id in the raneg 0..nthreads-1 */
-static int thread_id(struct test* m) {
-  int id;
+static size_t thread_id(struct test* m) {
+  size_t id;
   gpr_mu_lock(&m->mu);
   id = m->thread_count++;
   gpr_mu_unlock(&m->mu);
@@ -265,9 +265,11 @@ static void test(const char* name, void (*body)(void* m),
     if (extra != nullptr) {
       extra_thd.Join();
     }
-    if (m->counter != m->nthreads * m->iterations * m->incr_step) {
-      fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
-              static_cast<long>(m->counter), m->nthreads,
+    if (m->counter !=
+        static_cast<int64_t>(m->nthreads) * m->iterations * m->incr_step) {
+      fprintf(stderr, "counter %ld  threads %lu  iterations %ld\n",
+              static_cast<long>(m->counter),
+              static_cast<unsigned long>(m->nthreads),
               static_cast<long>(m->iterations));
       fflush(stderr);
       GPR_ASSERT(0);
@@ -314,10 +316,10 @@ static void inctry(void* v /*=m*/) {
 static void inc_by_turns(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
   int64_t i;
-  int id = thread_id(m);
+  int64_t id = static_cast<int64_t>(thread_id(m));
   for (i = 0; i != m->iterations; i++) {
     gpr_mu_lock(&m->mu);
-    while ((m->counter % m->nthreads) != id) {
+    while ((m->counter % static_cast<int64_t>(m->nthreads)) != id) {
       gpr_cv_wait(&m->cv, &m->mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     }
     m->counter++;
@@ -368,7 +370,7 @@ static void inc_with_1ms_delay_event(void* v /*=m*/) {
 static void many_producers(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
   int64_t i;
-  int x = thread_id(m);
+  size_t x = thread_id(m);
   if ((x & 1) == 0) {
     for (i = 0; i != m->iterations; i++) {
       queue_append(&m->q, 1);
@@ -387,7 +389,7 @@ static void many_producers(void* v /*=m*/) {
    then mark thread as done. */
 static void consumer(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
-  int64_t n = m->iterations * m->nthreads;
+  int64_t n = m->iterations * static_cast<int64_t>(m->nthreads);
   int64_t i;
   int value;
   for (i = 0; i != n; i++) {
@@ -441,7 +443,7 @@ static void refinc(void* v /*=m*/) {
    decrement caused the counter to reach zero, then mark thread as done.  */
 static void refcheck(void* v /*=m*/) {
   struct test* m = static_cast<struct test*>(v);
-  int64_t n = m->iterations * m->nthreads * m->incr_step;
+  int64_t n = m->iterations * static_cast<int64_t>(m->nthreads) * m->incr_step;
   int64_t i;
   GPR_ASSERT(gpr_event_wait(&m->event, gpr_inf_future(GPR_CLOCK_REALTIME)) ==
              (void*)1);

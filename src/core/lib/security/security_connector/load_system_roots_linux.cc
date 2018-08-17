@@ -112,7 +112,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       continue;
     }
     file_data.size = dir_entry_stat.st_size;
-    total_bundle_size += file_data.size;
+    total_bundle_size += static_cast<size_t>(file_data.size);
     roots_filenames.push_back(file_data);
   }
   closedir(ca_directory);
@@ -122,11 +122,11 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     int file_descriptor = open(roots_filenames[i].path, O_RDONLY);
     if (file_descriptor != -1) {
       // Read file into bundle.
-      size_t cert_file_size = roots_filenames[i].size;
-      int read_ret =
+      size_t cert_file_size = static_cast<size_t>(roots_filenames[i].size);
+      ssize_t read_ret =
           read(file_descriptor, bundle_string + bytes_read, cert_file_size);
       if (read_ret != -1) {
-        bytes_read += read_ret;
+        bytes_read += static_cast<size_t>(read_ret);
       } else {
         gpr_log(GPR_ERROR, "failed to read file: %s", roots_filenames[i].path);
       }

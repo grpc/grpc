@@ -228,7 +228,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
           grpc_base64_decode_with_len(
               reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
               GRPC_SLICE_LENGTH(query_slice), k_url_safe));
-      calld->read_stream.Init(&read_slice_buffer, 0);
+      calld->read_stream.Init(&read_slice_buffer, 0u);
       grpc_slice_buffer_destroy_internal(&read_slice_buffer);
       calld->have_read_stream = true;
       grpc_slice_unref_internal(query_slice);

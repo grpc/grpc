@@ -1214,7 +1214,7 @@ static grpc_error* parse_string_prefix(grpc_chttp2_hpack_parser* p,
   }
 
   p->strlen = (*cur) & 0x7f;
-  p->huff = (*cur) >> 7;
+  p->huff = static_cast<uint8_t>((*cur) >> 7);
   if (p->strlen == 0x7f) {
     p->parsing.value = &p->strlen;
     return parse_value0(p, cur + 1, end);
@@ -1406,7 +1406,7 @@ static grpc_error* huff_nibble(grpc_chttp2_hpack_parser* p, uint8_t nibble) {
 static grpc_error* add_huff_bytes(grpc_chttp2_hpack_parser* p,
                                   const uint8_t* cur, const uint8_t* end) {
   for (; cur != end; ++cur) {
-    grpc_error* err = huff_nibble(p, *cur >> 4);
+    grpc_error* err = huff_nibble(p, static_cast<uint8_t>(*cur >> 4));
     if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
     err = huff_nibble(p, *cur & 0xf);
     if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);

@@ -43,16 +43,17 @@ void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error) {
 
 static void timer_init(grpc_timer* timer, grpc_millis deadline,
                        grpc_closure* closure) {
-  uint64_t timeout;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= grpc_core::ExecCtx::Get()->Now()) {
     GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
     timer->pending = false;
     return;
-  } else {
-    timeout = deadline - now;
   }
+
+  // deadline is > now, so the result of the following subtraction is positive
+  uint64_t timeout = static_cast<uint64_t>(deadline - now);
+
   timer->pending = true;
   timer->closure = closure;
   grpc_custom_timer* timer_wrapper =

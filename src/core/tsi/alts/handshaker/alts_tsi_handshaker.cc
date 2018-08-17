@@ -109,7 +109,8 @@ static tsi_result handshaker_result_extract_peer(
     tsi_peer_destruct(peer);
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
   }
-  GPR_ASSERT(++index == kTsiAltsNumOfPeerProperties);
+  index++;
+  GPR_ASSERT(static_cast<size_t>(index) == kTsiAltsNumOfPeerProperties);
   return ok;
 }
 

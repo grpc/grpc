@@ -178,8 +178,8 @@ static void test_overflow(void) {
 }
 
 static void test_sticky_infinities(void) {
-  int i;
-  int j;
+  size_t i;
+  size_t j;
   int k;
   gpr_timespec infinity[2];
   gpr_timespec addend[3];

@@ -23,7 +23,7 @@
 #include <grpc/support/alloc.h>
 
 void gsec_test_random_bytes(uint8_t* bytes, size_t length) {
-  srand(time(nullptr));
+  srand(static_cast<unsigned int>(time(nullptr)));
   size_t ind;
   for (ind = 0; ind < length; ind++) {
     bytes[ind] = static_cast<uint8_t>(rand() % 255 + 1);

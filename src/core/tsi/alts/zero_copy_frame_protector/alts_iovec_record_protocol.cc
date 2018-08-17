@@ -47,7 +47,7 @@ static void maybe_copy_error_msg(const char* src, char** dst) {
 /* Appends error message to destination.  */
 static void maybe_append_error_msg(const char* appendix, char** dst) {
   if (dst != nullptr && appendix != nullptr) {
-    int dst_len = static_cast<int>(strlen(*dst));
+    size_t dst_len = strlen(*dst);
     *dst = static_cast<char*>(realloc(*dst, dst_len + strlen(appendix) + 1));
     assert(*dst != nullptr);
     memcpy(*dst + dst_len, appendix, strlen(appendix) + 1);

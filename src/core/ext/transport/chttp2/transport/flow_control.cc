@@ -374,7 +374,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = static_cast<int32_t> GPR_CLAMP(
+    uint32_t frame_size = static_cast<uint32_t> GPR_CLAMP(
         GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
                 target_initial_window_size_),
         16384, 16777215);

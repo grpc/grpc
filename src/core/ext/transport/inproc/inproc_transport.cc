@@ -553,7 +553,7 @@ static void message_transfer_locked(inproc_stream* sender,
   } while (remaining > 0);
   sender->send_message_op->payload->send_message.send_message.reset();
 
-  receiver->recv_stream.Init(&receiver->recv_message, 0);
+  receiver->recv_stream.Init(&receiver->recv_message, 0u);
   receiver->recv_message_op->payload->recv_message.recv_message->reset(
       receiver->recv_stream.get());
   INPROC_LOG(GPR_INFO, "message_transfer_locked %p scheduling message-ready",

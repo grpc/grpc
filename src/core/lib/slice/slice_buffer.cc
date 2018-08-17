@@ -128,7 +128,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
     grpc_slice* back = &sb->slices[n - 1];
     if (!back->refcount &&
         back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
-      if (s.data.inlined.length + back->data.inlined.length <=
+      if (static_cast<size_t>(s.data.inlined.length +
+                              back->data.inlined.length) <=
           GRPC_SLICE_INLINED_SIZE) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, s.data.inlined.length);

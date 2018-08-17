@@ -247,7 +247,7 @@ bool grpc_gcp_handshaker_resp_set_bytes_consumed(grpc_gcp_handshaker_resp* resp,
     return false;
   }
   resp->has_bytes_consumed = true;
-  resp->bytes_consumed = bytes_consumed;
+  resp->bytes_consumed = static_cast<uint32_t>(bytes_consumed);
   return true;
 }
 

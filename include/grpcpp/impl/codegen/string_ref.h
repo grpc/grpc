@@ -110,12 +110,14 @@ class string_ref {
 
   size_t find(string_ref s) const {
     auto it = std::search(cbegin(), cend(), s.cbegin(), s.cend());
-    return it == cend() ? npos : std::distance(cbegin(), it);
+    return it == cend() ? npos
+                        : static_cast<size_t>(std::distance(cbegin(), it));
   }
 
   size_t find(char c) const {
     auto it = std::find(cbegin(), cend(), c);
-    return it == cend() ? npos : std::distance(cbegin(), it);
+    return it == cend() ? npos
+                        : static_cast<size_t>(std::distance(cbegin(), it));
   }
 
   string_ref substr(size_t pos, size_t n = npos) const {

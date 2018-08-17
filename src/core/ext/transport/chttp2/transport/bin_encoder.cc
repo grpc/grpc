@@ -186,11 +186,11 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
     const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
-    const uint8_t high_to_low = in[1] >> 4;
-    enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
+    const uint8_t high_to_low = static_cast<uint8_t>(in[1] >> 4);
+    enc_add2(&out, static_cast<uint8_t>(in[0] >> 2), low_to_high | high_to_low);
 
     const uint8_t a = static_cast<uint8_t>((in[1] & 0xf) << 2);
-    const uint8_t b = (in[2] >> 6);
+    const uint8_t b = static_cast<uint8_t>(in[2] >> 6);
     enc_add2(&out, a | b, in[2] & 0x3f);
     in += 3;
   }
@@ -200,13 +200,15 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
     case 0:
       break;
     case 1:
-      enc_add2(&out, in[0] >> 2, static_cast<uint8_t>((in[0] & 0x3) << 4));
+      enc_add2(&out, static_cast<uint8_t>(in[0] >> 2),
+               static_cast<uint8_t>((in[0] & 0x3) << 4));
       in += 1;
       break;
     case 2: {
       const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
-      const uint8_t high_to_low = in[1] >> 4;
-      enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
+      const uint8_t high_to_low = static_cast<uint8_t>(in[1] >> 4);
+      enc_add2(&out, static_cast<uint8_t>(in[0] >> 2),
+               low_to_high | high_to_low);
       enc_add1(&out, static_cast<uint8_t>((in[1] & 0xf) << 2));
       in += 2;
       break;

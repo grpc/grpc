@@ -49,11 +49,11 @@ ServerRetryThrottleData::ServerRetryThrottleData(
   // we will start out doing the same thing on the new one.
   if (old_throttle_data != nullptr) {
     double token_fraction =
-        static_cast<intptr_t>(
+        static_cast<double>(
             gpr_atm_acq_load(&old_throttle_data->milli_tokens_)) /
         static_cast<double>(old_throttle_data->max_milli_tokens_);
-    initial_milli_tokens =
-        static_cast<intptr_t>(token_fraction * max_milli_tokens);
+    initial_milli_tokens = static_cast<intptr_t>(
+        token_fraction * static_cast<double>(max_milli_tokens));
   }
   gpr_atm_rel_store(&milli_tokens_, static_cast<gpr_atm>(initial_milli_tokens));
   // If there was a pre-existing entry, mark it as stale and give it a

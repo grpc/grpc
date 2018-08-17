@@ -56,26 +56,28 @@ ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 intptr_t ChannelzRegistry::InternalRegisterEntry(const RegistryEntry& entry) {
   MutexLock lock(&mu_);
   entities_.push_back(entry);
-  intptr_t uuid = entities_.size();
+  intptr_t uuid = static_cast<intptr_t>(entities_.size());
   return uuid;
 }
 
 void ChannelzRegistry::InternalUnregisterEntry(intptr_t uuid, EntityType type) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
-  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  GPR_ASSERT(entities_[uuid - 1].type == type);
-  entities_[uuid - 1].object = nullptr;
-  entities_[uuid - 1].type = EntityType::kUnset;
+  size_t uuindex = static_cast<size_t>(uuid);
+  GPR_ASSERT(uuindex <= entities_.size());
+  GPR_ASSERT(entities_[uuindex - 1].type == type);
+  entities_[uuindex - 1].object = nullptr;
+  entities_[uuindex - 1].type = EntityType::kUnset;
 }
 
 void* ChannelzRegistry::InternalGetEntry(intptr_t uuid, EntityType type) {
+  size_t uuindex = static_cast<size_t>(uuid);
   MutexLock lock(&mu_);
-  if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+  if (uuid < 1 || uuindex > entities_.size()) {
     return nullptr;
   }
-  if (entities_[uuid - 1].type == type) {
-    return entities_[uuid - 1].object;
+  if (entities_[uuindex - 1].type == type) {
+    return entities_[uuindex - 1].object;
   } else {
     return nullptr;
   }
@@ -90,7 +92,8 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   // reserved). However, we want to support requests coming in with
   // start_channel_id=0, which signifies "give me everything." Hence this
   // funky looking line below.
-  size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
+  size_t start_idx =
+      start_channel_id == 0 ? 0 : static_cast<size_t>(start_channel_id - 1);
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i].type == EntityType::kChannelNode) {
       ChannelNode* channel_node =
