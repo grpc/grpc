@@ -629,7 +629,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
   servers_[0]->Shutdown();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
-  servers_.clear();
   StartServers(1, ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
@@ -649,7 +648,6 @@ TEST_F(ClientLbEnd2endTest,
   servers_[1]->Shutdown();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   gpr_log(GPR_INFO, "****** STARTING BOTH SERVERS ******");
-  servers_.clear();
   StartServers(2, ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
@@ -666,7 +664,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   servers_[0]->Shutdown();
   // Channel 1 will receive a re-resolution containing the same server. It will
   // create a new subchannel and hold a ref to it.
-  servers_.clear();
   StartServers(1, ports);
   gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
   auto channel_2 = BuildChannel("pick_first");
@@ -685,7 +682,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   EXPECT_TRUE(WaitForChannelNotReady(channel_2.get()));
   // Channel 2 will also receive a re-resolution containing the same server.
   // Both channels will ref the same subchannel that failed.
-  servers_.clear();
   StartServers(1, ports);
   gpr_log(GPR_INFO, "****** SERVER RESTARTED AGAIN *******");
   gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING A CALL *******");
