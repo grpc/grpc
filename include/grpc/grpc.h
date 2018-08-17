@@ -101,6 +101,12 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_next(
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     void* reserved);
 
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
+    This function is experimental. */
+GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
+    void* shutdown_callback, void* reserved);
+
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
     const grpc_completion_queue_factory* factory,
@@ -459,6 +465,10 @@ GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota* resource_quota);
 /** Update the size of a buffer pool */
 GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                         size_t new_size);
+
+/** Update the size of the maximum number of threads allowed */
+GRPCAPI void grpc_resource_quota_set_max_threads(
+    grpc_resource_quota* resource_quota, int new_max_threads);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */

@@ -20,6 +20,7 @@ EXPORTS
     grpc_completion_queue_factory_lookup
     grpc_completion_queue_create_for_next
     grpc_completion_queue_create_for_pluck
+    grpc_completion_queue_create_for_callback
     grpc_completion_queue_create
     grpc_completion_queue_next
     grpc_completion_queue_pluck
@@ -69,6 +70,7 @@ EXPORTS
     grpc_resource_quota_ref
     grpc_resource_quota_unref
     grpc_resource_quota_resize
+    grpc_resource_quota_set_max_threads
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels
     grpc_channelz_get_channel
