@@ -291,6 +291,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ResetCounters();
   }
 
+  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+    const gpr_timespec deadline =
+        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    grpc_connectivity_state state;
+    while ((state = channel->GetState(false /* try_to_connect */)) ==
+           GRPC_CHANNEL_READY) {
+      if (!channel->WaitForStateChange(state, deadline)) return false;
+    }
+    return true;
+  }
+
   bool SeenAllServers() {
     for (const auto& server : servers_) {
       if (server->service_.request_count() == 0) return false;
@@ -588,6 +599,50 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
+  std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  StartServers(1, ports);
+  auto channel_1 = BuildChannel("pick_first");
+  auto stub_1 = BuildStub(channel_1);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 1 *******");
+  WaitForServer(stub_1, 0, DEBUG_LOCATION);
+  gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
+  servers_[0]->Shutdown();
+  // Channel 1 will receive a re-resolution containing the same server. It will
+  // create a new subchannel and hold a ref to it.
+  servers_.clear();
+  StartServers(1, ports);
+  gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
+  auto channel_2 = BuildChannel("pick_first");
+  auto stub_2 = BuildStub(channel_2);
+  // TODO(juanlishen): This resolution result will only be visible to channel 2
+  // since the response generator is only associated with channel 2 now. We
+  // should change the response generator to be able to deliver updates to
+  // multiple channels at once.
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
+  WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
+  gpr_log(GPR_INFO, "****** CHANNEL 2 CONNECTED *******");
+  servers_[0]->Shutdown();
+  // Wait until the disconnection has triggered the connectivity notification.
+  // Otherwise, the subchannel may be picked for next call but will fail soon.
+  EXPECT_TRUE(WaitForChannelNotReady(channel_2.get()));
+  // Channel 2 will also receive a re-resolution containing the same server.
+  // Both channels will ref the same subchannel that failed.
+  servers_.clear();
+  StartServers(1, ports);
+  gpr_log(GPR_INFO, "****** SERVER RESTARTED AGAIN *******");
+  gpr_log(GPR_INFO, "****** CHANNEL 2 STARTING A CALL *******");
+  // The first call after the server restart will succeed.
+  CheckRpcSendOk(stub_2, DEBUG_LOCATION);
+  gpr_log(GPR_INFO, "****** CHANNEL 2 FINISHED A CALL *******");
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_1->GetLoadBalancingPolicyName());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("pick_first", channel_2->GetLoadBalancingPolicyName());
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
