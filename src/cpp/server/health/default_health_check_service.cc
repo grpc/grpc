@@ -263,7 +263,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
                               std::placeholders::_1, std::placeholders::_2),
                     std::move(self));
     service->RequestAsyncUnary(0, &handler->ctx_, &handler->request_,
-                               &handler->stream_, cq, cq, &handler->next_);
+                               &handler->writer_, cq, cq, &handler->next_);
   }
 }
 
@@ -271,7 +271,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
     CheckCallHandler(ServerCompletionQueue* cq,
                      DefaultHealthCheckService* database,
                      HealthCheckServiceImpl* service)
-    : cq_(cq), database_(database), service_(service), stream_(&ctx_) {}
+    : cq_(cq), database_(database), service_(service), writer_(&ctx_) {}
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
     OnCallReceived(std::shared_ptr<CallHandler> self, bool ok) {
@@ -303,9 +303,9 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
                                 std::placeholders::_1, std::placeholders::_2),
                       std::move(self));
   if (status.ok()) {
-    stream_.Finish(response, status, &next_);
+    writer_.Finish(response, status, &next_);
   } else {
-    stream_.FinishWithError(status, &next_);
+    writer_.FinishWithError(status, &next_);
   }
 }
 
@@ -416,7 +416,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
   std::unique_lock<std::mutex> cq_lock(service_->cq_shutdown_mu_);
   if (service_->shutdown_) {
     cq_lock.release()->unlock();
-    Shutdown(std::move(self), "OnCallReceived");
+    Shutdown(std::move(self), "SendHealthLocked");
     return;
   }
   send_in_flight_ = true;
@@ -440,7 +440,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok) {
   if (!ok || shutdown_) {
-    Shutdown(std::move(self), "OnReadDone");
+    Shutdown(std::move(self), "OnSendHealthDone");
     return;
   }
   call_state_ = CALL_RECEIVED;

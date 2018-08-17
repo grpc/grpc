@@ -131,7 +131,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       HealthCheckServiceImpl* service_;
 
       ByteBuffer request_;
-      GenericServerAsyncResponseWriter stream_;
+      GenericServerAsyncResponseWriter writer_;
       ServerContext ctx_;
 
       CallableTag next_;
