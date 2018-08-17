@@ -112,9 +112,10 @@ class AsyncWriterInterface {
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
+  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
+  ///
   /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
-  /// This is thread-safe with respect to \a AsyncReaderInterface::Read
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] tag The tag identifying the operation.
@@ -126,10 +127,11 @@ class AsyncWriterInterface {
   /// Only one write may be outstanding at any given time. This means that
   /// after calling Write, one must wait to receive \a tag from the completion
   /// queue BEFORE calling Write again.
-  /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
-  /// to deallocate once Write returns.
   /// WriteOptions \a options is used to set the write options of this message.
   /// This is thread-safe with respect to \a AsyncReaderInterface::Read
+  ///
+  /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
+  /// to deallocate once Write returns.
   ///
   /// \param[in] msg The message to be written.
   /// \param[in] options The WriteOptions to be used to write this message.
@@ -147,6 +149,7 @@ class AsyncWriterInterface {
   /// and write is initiated. Note that WriteLast can only buffer \a msg up to
   /// the flow control window size. If \a msg size is larger than the window
   /// size, it will be sent on wire without buffering.
+  ///
   /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
   ///
@@ -635,6 +638,7 @@ class ServerAsyncReaderInterface
   /// This operation will end when the server has finished sending out initial
   /// metadata (if not sent already), response message, and status, or if
   /// some failure occurred when trying to do so.
+  ///
   /// GRPC doesn't take ownership or a reference to \a msg or \a status, so it
   /// is safe to to deallocate once Finish returns.
   ///
