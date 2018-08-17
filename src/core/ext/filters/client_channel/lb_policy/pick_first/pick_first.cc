@@ -248,14 +248,9 @@ void PickFirst::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
 
 void PickFirst::StartPickingLocked() {
   started_picking_ = true;
-  if (subchannel_list_ != nullptr) {
-    for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
-      if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        subchannel_list_->subchannel(i)
-            ->CheckConnectivityStateAndStartWatchingLocked();
-        break;
-      }
-    }
+  if (subchannel_list_ != nullptr && subchannel_list_->num_subchannels() > 0) {
+    subchannel_list_->subchannel(0)
+        ->CheckConnectivityStateAndStartWatchingLocked();
   }
 }
 

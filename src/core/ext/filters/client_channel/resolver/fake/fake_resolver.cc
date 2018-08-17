@@ -103,8 +103,8 @@ void FakeResolver::NextLocked(grpc_channel_args** target_result,
 }
 
 void FakeResolver::RequestReresolutionLocked() {
-  grpc_channel_args_destroy(next_results_);
   if (reresolution_results_ != nullptr) {
+    grpc_channel_args_destroy(next_results_);
     next_results_ = grpc_channel_args_copy(reresolution_results_);
     MaybeFinishNextLocked();
   }

@@ -131,6 +131,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void CreateServers(size_t num_servers,
                      std::vector<int> ports = std::vector<int>()) {
+    servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
       if (ports.size() == num_servers) port = ports[i];
@@ -144,7 +145,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void StartServers(size_t num_servers,
                     std::vector<int> ports = std::vector<int>()) {
-    if (servers_.empty()) CreateServers(num_servers, ports);
+    CreateServers(num_servers, ports);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -630,7 +631,7 @@ TEST_F(ClientLbEnd2endTest,
   gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
   servers_[1]->Shutdown();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
-  gpr_log(GPR_INFO, "****** STARTING SERVER 0 ******");
+  gpr_log(GPR_INFO, "****** STARTING BOTH SERVERS ******");
   servers_.clear();
   StartServers(2, ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -895,7 +896,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Kill all servers
   gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
   for (size_t i = 0; i < servers_.size(); ++i) {
-    servers_[i]->Shutdown(false);
+    servers_[i]->Shutdown(true);
   }
   gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
   gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
