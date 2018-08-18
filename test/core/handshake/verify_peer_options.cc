@@ -36,6 +36,8 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -202,33 +204,112 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   return success;
 }
 
-static int callback_return_value = 0;
+static grpc_status_code callback_return_value = GRPC_STATUS_OK;
 static char callback_target_host[4096];
 static char callback_target_pem[4096];
 static void* callback_userdata = nullptr;
 static void* destruct_userdata = nullptr;
 
-static int verify_callback(const char* target_host, const char* target_pem,
-                           void* userdata) {
-  if (target_host != nullptr) {
+static int verify_callback_synchronous(const char* target_name,
+                                       const char* peer_pem, void* userdata,
+                                       grpc_status_code* status,
+                                       const char** error_details,
+                                       verify_peer_callback_complete_cb cb,
+                                       void* callback_data) {
+  if (target_name != nullptr) {
     snprintf(callback_target_host, sizeof(callback_target_host), "%s",
-             target_host);
+             target_name);
   } else {
     callback_target_host[0] = '\0';
   }
-  if (target_pem != nullptr) {
-    snprintf(callback_target_pem, sizeof(callback_target_pem), "%s",
-             target_pem);
+  if (peer_pem != nullptr) {
+    snprintf(callback_target_pem, sizeof(callback_target_pem), "%s", peer_pem);
   } else {
     callback_target_pem[0] = '\0';
   }
   callback_userdata = userdata;
-  return callback_return_value;
+
+  // Synchronous response
+  *status = callback_return_value;
+  *error_details = nullptr;
+  return 1;
+}
+
+// Arguments for TLS server thread.
+typedef struct {
+  char* target_name;
+  char* peer_pem;
+  void* userdata;
+  verify_peer_callback_complete_cb cb;
+  void* callback_data;
+} async_callback_args;
+
+static void async_callback_start(void* arg, grpc_error* error) {
+  // Sleep 10 milliseconds before running just to simulate
+  // asynchronous behavior better
+  usleep(10000);
+
+  async_callback_args* args = static_cast<async_callback_args*>(arg);
+
+  if (args->target_name != nullptr) {
+    snprintf(callback_target_host, sizeof(callback_target_host), "%s",
+             args->target_name);
+    gpr_free(args->target_name);
+  } else {
+    callback_target_host[0] = '\0';
+  }
+  if (args->peer_pem != nullptr) {
+    snprintf(callback_target_pem, sizeof(callback_target_pem), "%s",
+             args->peer_pem);
+    gpr_free(args->peer_pem);
+  } else {
+    callback_target_pem[0] = '\0';
+  }
+  callback_userdata = args->userdata;
+
+  args->cb(args->callback_data, callback_return_value, nullptr);
+  gpr_free(args);
+}
+
+static int verify_callback_asynchronous(const char* target_name,
+                                        const char* peer_pem, void* userdata,
+                                        grpc_status_code* status,
+                                        const char** error_details,
+                                        verify_peer_callback_complete_cb cb,
+                                        void* callback_data) {
+  async_callback_args* args = static_cast<async_callback_args*>(
+      gpr_malloc(sizeof(async_callback_args)));
+  if (target_name == nullptr) {
+    args->target_name = nullptr;
+  } else {
+    args->target_name = static_cast<char*>(gpr_malloc(strlen(target_name) + 1));
+    memcpy(args->target_name, target_name, strlen(target_name) + 1);
+  }
+  if (peer_pem == nullptr) {
+    args->peer_pem = nullptr;
+  } else {
+    args->peer_pem = static_cast<char*>(gpr_malloc(strlen(peer_pem) + 1));
+    memcpy(args->peer_pem, peer_pem, strlen(peer_pem) + 1);
+  }
+
+  args->userdata = userdata;
+  args->cb = cb;
+  args->callback_data = callback_data;
+
+  grpc_closure* verify_closure = GRPC_CLOSURE_CREATE(async_callback_start, args,
+                                                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(verify_closure, nullptr);
+
+  // Asynchronous response
+  return 0;
 }
 
 static void verify_destruct(void* userdata) { destruct_userdata = userdata; }
 
-int main(int argc, char* argv[]) {
+static void run_test_with_callback(
+    int (*cb)(const char* target_name, const char* peer_pem, void* userdata,
+              grpc_status_code* status, const char** error_details,
+              verify_peer_callback_complete_cb cb, void* callback_data)) {
   int userdata = 42;
   verify_peer_options verify_options;
 
@@ -238,6 +319,13 @@ int main(int argc, char* argv[]) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   const char* server_cert =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+
+  // Init callback data
+  callback_return_value = GRPC_STATUS_OK;
+  callback_target_host[0] = '\0';
+  callback_target_pem[0] = '\0';
+  callback_userdata = nullptr;
+  destruct_userdata = nullptr;
 
   // Running with all-null values should have no effect
   verify_options.verify_peer_callback = nullptr;
@@ -250,7 +338,7 @@ int main(int argc, char* argv[]) {
   GPR_ASSERT(destruct_userdata == nullptr);
 
   // Running with the callbacks and verify we get the expected values
-  verify_options.verify_peer_callback = verify_callback;
+  verify_options.verify_peer_callback = cb;
   verify_options.verify_peer_callback_userdata = static_cast<void*>(&userdata);
   verify_options.verify_peer_destruct = verify_destruct;
   GPR_ASSERT(verify_peer_options_test(&verify_options));
@@ -260,10 +348,15 @@ int main(int argc, char* argv[]) {
   GPR_ASSERT(destruct_userdata == static_cast<void*>(&userdata));
 
   // If the callback returns non-zero, initializing the channel should fail.
-  callback_return_value = 1;
+  callback_return_value = GRPC_STATUS_UNAVAILABLE;
   GPR_ASSERT(!verify_peer_options_test(&verify_options));
 
   grpc_slice_unref(cert_slice);
+}
+
+int main(int argc, char* argv[]) {
+  run_test_with_callback(verify_callback_synchronous);
+  run_test_with_callback(verify_callback_asynchronous);
 
   return 0;
 }

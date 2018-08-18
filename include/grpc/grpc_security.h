@@ -163,18 +163,45 @@ typedef struct {
   const char* cert_chain;
 } grpc_ssl_pem_key_cert_pair;
 
+/** Callback function to be called by the verify_peer_callback option of
+   the verify_peer_options struct when a peer verification decision has been
+   completed.
+   - callback_data is the opaque pointer that was passed in to
+     verify_peer_callback.
+   - status must be GRPC_STATUS_OK in case of success or another specific error
+     code otherwise.
+   - error_details contains details about the error if any. In case of success
+     it should be NULL and will be otherwise ignored. */
+typedef void (*verify_peer_callback_complete_cb)(void* callback_data,
+                                                 grpc_status_code status,
+                                                 const char* error_details);
+
 /** Object that holds additional peer-verification options on a secure
    channel. */
 typedef struct {
   /** If non-NULL this callback will be invoked with the expected
-     target_name, the peer's certificate (in PEM format), and whatever
-     userdata pointer is set below. If a non-zero value is returned by this
-     callback then it is treated as a verification failure. Invocation of
-     the callback is blocking, so any implementation should be light-weight.
-     */
+     target_name, the peer's certificate (in PEM format), whatever
+     userdata pointer is set below, a callback (cb), and an opaque pointer
+     callback_data to be passed to cb if using an asynchronous implementation.
+
+     The implementation of this method has to be non-blocking, but can
+     be performed synchronously or asynchronously.
+
+     If processing occurs synchronously, returns non-zero and populates
+     status, and error_details. In this case, the caller takes ownership of
+     error_details.
+
+     If processing occurs asynchronously, returns zero and invokes \a cb
+     when processing is completed.  \a callback_data must be passed as the
+     first parameter of the callback. Note that the memory under target_pem and
+     peer_pem pointers may be released after the return from this method, so
+     they should be copied if processing asynchronously and they areneeded. */
   int (*verify_peer_callback)(const char* target_name, const char* peer_pem,
-                              void* userdata);
-  /** Arbitrary userdata that will be passed as the last argument to
+                              void* userdata, grpc_status_code* status,
+                              const char** error_details,
+                              verify_peer_callback_complete_cb cb,
+                              void* callback_data);
+  /** Arbitrary userdata that will be passed as the userdata argument to
      verify_peer_callback. */
   void* verify_peer_callback_userdata;
   /** A destruct callback that will be invoked when the channel is being
