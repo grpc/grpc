@@ -138,7 +138,8 @@ class RoundRobin : public LoadBalancingPolicy {
         grpc_client_channel_factory* client_channel_factory,
         const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         client_channel_factory, args) {
+                         client_channel_factory, args),
+          last_ready_index_(num_subchannels() - 1) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -179,7 +180,7 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
     grpc_error* last_transient_failure_error_ = GRPC_ERROR_NONE;
-    size_t last_ready_index_ = -1;  // Index into list of last pick.
+    size_t last_ready_index_;  // Index into list of last pick.
   };
 
   // Helper class to ensure that any function that modifies the child refs
