@@ -29,6 +29,8 @@
 #include "test/core/util/test_config.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
+// Provide some slack when checking intervals, to allow for test timing issues.
+constexpr int kMinResolutionPeriodForCheckMs = 900;
 
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolve_address;
@@ -70,7 +72,7 @@ static void test_resolve_address_impl(const char* name,
   } else {
     grpc_millis now =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
+    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodForCheckMs);
     last_resolution_time = now;
   }
 }
@@ -96,11 +98,12 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   if (last_resolution_time == 0) {
+    last_resolution_time =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
     grpc_millis now =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
+    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodForCheckMs);
     last_resolution_time = now;
   }
   return result;
