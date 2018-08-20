@@ -35,7 +35,7 @@ namespace grpc {
 class ThreadManager {
  public:
   explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota,
-                         int min_pollers, int max_pollers);
+                         int min_pollers, int max_pollers, int worker_stack_size);
   virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads
@@ -160,6 +160,7 @@ class ThreadManager {
   // The minimum and maximum number of threads that should be doing polling
   int min_pollers_;
   int max_pollers_;
+  int worker_stack_size_;
 
   // The total number of threads currently active (includes threads includes the
   // threads that are currently polling i.e num_pollers_)

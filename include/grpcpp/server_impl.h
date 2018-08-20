@@ -182,10 +182,13 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   ///
   /// \param sync_cq_timeout_msec The timeout to use when calling AsyncNext() on
   /// server completion queues passed via sync_server_cqs param.
+  ///
+  /// \param worker_stack_size The default stack size for worker threads.
   Server(int max_message_size, ChannelArguments* args,
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+         int worker_stack_size,
          std::vector<
              std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
              acceptors,

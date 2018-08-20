@@ -818,8 +818,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   SyncRequestThreadManager(Server* server, grpc::CompletionQueue* server_cq,
                            std::shared_ptr<GlobalCallbacks> global_callbacks,
                            grpc_resource_quota* rq, int min_pollers,
-                           int max_pollers, int cq_timeout_msec)
-      : ThreadManager("SyncServer", rq, min_pollers, max_pollers),
+                           int max_pollers, int cq_timeout_msec,
+                           int worker_stack_size)
+      : ThreadManager("SyncServer", rq, min_pollers, max_pollers, worker_stack_size),
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
@@ -938,6 +939,7 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
+    int worker_stack_size,
     std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
         acceptors,
     grpc_resource_quota* server_rq,
@@ -971,7 +973,7 @@ Server::Server(
     for (const auto& it : *sync_server_cqs_) {
       sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
           this, it.get(), global_callbacks_, server_rq, min_pollers,
-          max_pollers, sync_cq_timeout_msec));
+          max_pollers, sync_cq_timeout_msec, worker_stack_size));
     }
 
     if (default_rq_created) {

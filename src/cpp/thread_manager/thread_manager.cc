@@ -31,10 +31,14 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
     : thd_mgr_(thd_mgr) {
   // Make thread creation exclusive with respect to its join happening in
   // ~WorkerThread().
+  grpc_core::Thread::Options options;
+  if (thd_mgr->worker_stack_size_ != 0) {
+    options.set_stack_size(thd_mgr->worker_stack_size_);
+  }
   thd_ = grpc_core::Thread(
       "grpcpp_sync_server",
       [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
-      this);
+      this, nullptr, options);
   thd_.Start();
 }
 
@@ -50,11 +54,13 @@ ThreadManager::WorkerThread::~WorkerThread() {
 
 ThreadManager::ThreadManager(const char* name,
                              grpc_resource_quota* resource_quota,
-                             int min_pollers, int max_pollers)
+                             int min_pollers, int max_pollers,
+                             int worker_stack_size)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
+      worker_stack_size_(worker_stack_size),
       num_threads_(0),
       max_active_threads_sofar_(0) {
   resource_user_ = grpc_resource_user_create(resource_quota, name);
