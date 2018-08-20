@@ -485,7 +485,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "census",
     srcs = [
-        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
     ],
     language = "c++",
     public_hdrs = [
@@ -560,6 +560,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
+        "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
@@ -1436,9 +1437,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
@@ -1885,8 +1886,8 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
         "src/core/tsi/alts_transport_security.h",
-        "src/core/tsi/local_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
+        "src/core/tsi/local_transport_security.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
@@ -2129,7 +2130,7 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
