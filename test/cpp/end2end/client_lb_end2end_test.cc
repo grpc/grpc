@@ -139,9 +139,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void StartServer(size_t index) {
-    servers_[index]->Start(server_host_);
-  }
+  void StartServer(size_t index) { servers_[index]->Start(server_host_); }
 
   void StartServers(size_t num_servers,
                     std::vector<int> ports = std::vector<int>()) {
