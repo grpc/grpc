@@ -686,7 +686,6 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
-  gpr_log(GPR_INFO, "set final status");
   if (grpc_call_error_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
@@ -1645,13 +1644,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             call->channel, op->data.send_status_from_server.status);
-        if (op->data.send_status_from_server.status_details != nullptr) {
-          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
-              GRPC_MDSTR_GRPC_MESSAGE,
-              grpc_slice_ref_internal(
-                  *op->data.send_status_from_server.status_details));
-          call->send_extra_metadata_count++;
-        }
         grpc_error* status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? GRPC_ERROR_NONE
@@ -1661,6 +1653,22 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       GRPC_ERROR_INT_GRPC_STATUS,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
+        if (op->data.send_status_from_server.status_details != nullptr) {
+          call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
+              GRPC_MDSTR_GRPC_MESSAGE,
+              grpc_slice_ref_internal(
+                  *op->data.send_status_from_server.status_details));
+          call->send_extra_metadata_count++;
+          if (status_error != GRPC_ERROR_NONE) {
+            char* msg = grpc_slice_to_c_string(
+                GRPC_MDVALUE(call->send_extra_metadata[1].md));
+            status_error =
+                grpc_error_set_str(status_error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                   grpc_slice_from_copied_string(msg));
+            gpr_free(msg);
+          }
+        }
+
         call->status_error = status_error;
         if (!prepare_application_metadata(
                 call,
