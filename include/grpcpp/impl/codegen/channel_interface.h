@@ -41,6 +41,8 @@ class CallOpSetInterface;
 class RpcMethod;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+template <class InputMessage, class OutputMessage>
+class CallbackUnaryCallImpl;
 template <class R>
 class ClientAsyncReaderFactory;
 template <class W>
@@ -103,6 +105,8 @@ class ChannelInterface {
   friend class ::grpc::internal::ClientAsyncResponseReaderFactory;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+  template <class InputMessage, class OutputMessage>
+  friend class ::grpc::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
@@ -115,6 +119,16 @@ class ChannelInterface {
                                        CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
+
+  // EXPERIMENTAL
+  // A method to get the callbackable completion queue associated with this
+  // channel. If the return value is nullptr, this channel doesn't support
+  // callback operations.
+  // TODO(vjpai): Consider a better default like using a global CQ
+  // Returns nullptr (rather than being pure) since this is a new method
+  // and adding a new pure method to an interface would be a breaking change
+  // (even though this is private and non-API)
+  virtual CompletionQueue* CallbackCQ() { return nullptr; }
 };
 }  // namespace grpc
 

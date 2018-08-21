@@ -274,6 +274,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
 
+  // Friends that need access to constructor for callback CQ
+  friend class ::grpc::Channel;
+
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
   /// On this completion queue queued from this thread.  Once
