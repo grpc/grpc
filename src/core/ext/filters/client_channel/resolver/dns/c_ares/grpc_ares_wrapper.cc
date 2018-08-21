@@ -87,7 +87,7 @@ typedef struct grpc_ares_hostbyname_request {
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
-static uint16_t strhtons(const char* port) {
+uint16_t strhtons(const char* port) {
   if (strcmp(port, "http") == 0) {
     return htons(80);
   } else if (strcmp(port, "https") == 0) {
@@ -137,12 +137,6 @@ void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
   if (grpc_trace_cares_address_sorting.enabled()) {
     log_address_sorting_list(lb_addrs, "output");
   }
-}
-
-/* Allow tests to access grpc_ares_wrapper_address_sorting_sort */
-void grpc_cares_wrapper_test_only_address_sorting_sort(
-    grpc_lb_addresses* lb_addrs) {
-  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
 }
 
 static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
@@ -371,7 +365,8 @@ done:
   grpc_ares_request_unref_locked(r);
 }
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+static grpc_ares_request*
+grpc_dns_lookup_continue_after_check_localhost_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
@@ -494,6 +489,20 @@ error_cleanup:
   return nullptr;
 }
 
+static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
+  if (maybe_resolve_localhost_manually_locked(name, default_port, addrs)) {
+    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    return nullptr;
+  }
+  return grpc_dns_lookup_continue_after_check_localhost_ares_locked(
+      dns_server, name, default_port, interested_parties, on_done, addrs,
+      check_grpclb, service_config_json, combiner);
+}
+
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -502,7 +511,9 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
 
 void grpc_cancel_ares_request(grpc_ares_request* r) {
   if (grpc_dns_lookup_ares_locked == grpc_dns_lookup_ares_locked_impl) {
-    grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
+    if (r != nullptr) {
+      grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
+    }
   }
 }
 
