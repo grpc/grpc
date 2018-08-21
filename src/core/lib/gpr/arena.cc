@@ -81,8 +81,9 @@ typedef struct zone {
 } zone;
 
 struct gpr_arena {
+  // Keep track of the total used size. We use this in our call sizing
+  // historesis.
   gpr_atm total_used;
-  gpr_atm initial_zone_used;
   size_t initial_zone_size;
   zone initial_zone;
   zone* last_zone;
@@ -120,16 +121,10 @@ size_t gpr_arena_destroy(gpr_arena* arena) {
 
 void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
-  // Update the total used size to estimate next call's size.
-  gpr_atm_no_barrier_fetch_add(&arena->total_used, size);
-  // Try to allocate in the initial zone.
-  size_t initial_zone_alloc_begin = static_cast<size_t>(
-      gpr_atm_no_barrier_fetch_add(&arena->initial_zone_used, size));
-  size_t initial_zone_alloc_end = initial_zone_alloc_begin + size;
-  if (initial_zone_alloc_end <= arena->initial_zone_size) {
+  size_t begin = gpr_atm_no_barrier_fetch_add(&arena->total_used, size);
+  if (begin + size <= arena->initial_zone_size) {
     return reinterpret_cast<char*>(arena) +
-           GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) +
-           initial_zone_alloc_begin;
+           GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + begin;
   } else {
     // If the allocation isn't able to end in the initial zone, create a new
     // zone for this allocation, and any unused space in the initial zone is
