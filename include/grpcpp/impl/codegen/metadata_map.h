@@ -19,11 +19,15 @@
 #ifndef GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 #define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 
+#include <grpc/slice.h>
 #include <grpcpp/impl/codegen/slice.h>
 
 namespace grpc {
 
 namespace internal {
+
+const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
+
 class MetadataMap {
  public:
   MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
@@ -32,7 +36,31 @@ class MetadataMap {
     g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
   }
 
+  grpc::string GetBinaryErrorDetails() {
+    // if filled, extract from the multimap for O(log(n))
+    if (filled) {
+      auto iter = map_.find(kBinaryErrorDetailsKey);
+      if (iter != map_.end()) {
+        return grpc::string(iter->second.begin(), iter->second.length());
+      }
+    }
+    // if not yet filled, take the O(n) lookup to avoid allocating the
+    // multimap until it is requested.
+    else {
+      for (size_t i = 0; i < arr_.count; i++) {
+        if (grpc_slice_str_cmp(arr_.metadata[i].key, kBinaryErrorDetailsKey)) {
+          return grpc::string(reinterpret_cast<const char*>(
+                                  GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
+                              GRPC_SLICE_LENGTH(arr_.metadata[i].value));
+        }
+      }
+    }
+    return grpc::string();
+  }
+
   void FillMap() {
+    if (filled) return;
+    filled = true;
     for (size_t i = 0; i < arr_.count; i++) {
       // TODO(yangg) handle duplicates?
       map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
@@ -48,6 +76,7 @@ class MetadataMap {
   grpc_metadata_array* arr() { return &arr_; }
 
  private:
+  bool filled = false;
   grpc_metadata_array arr_;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
 };

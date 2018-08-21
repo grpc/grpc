@@ -202,6 +202,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
+    recv_initial_metadata_.FillMap();
     return *recv_initial_metadata_.map();
   }
 
@@ -214,6 +215,7 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
+    trailing_metadata_.FillMap();
     return *trailing_metadata_.map();
   }
 
@@ -425,8 +427,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  internal::MetadataMap recv_initial_metadata_;
-  internal::MetadataMap trailing_metadata_;
+  mutable internal::MetadataMap recv_initial_metadata_;
+  mutable internal::MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

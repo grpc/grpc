@@ -169,6 +169,7 @@ class ServerContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
       const {
+    client_metadata_.FillMap();
     return *client_metadata_.map();
   }
 
@@ -294,7 +295,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  internal::MetadataMap client_metadata_;
+  mutable internal::MetadataMap client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
