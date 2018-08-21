@@ -22,8 +22,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
+#include <string.h>
+
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
@@ -240,6 +246,28 @@ static void test_unparseable_hostports(void) {
 }
 
 int main(int argc, char** argv) {
+  // First set the resolver type based off of --resolver
+  const char* resolver_type = nullptr;
+  gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
+                         &resolver_type);
+  gpr_cmdline_parse(cl, argc, argv);
+  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
+            cur_resolver);
+  }
+  if (gpr_stricmp(resolver_type, "native") == 0) {
+    gpr_setenv("GRPC_DNS_RESOLVER", "native");
+  } else if (gpr_stricmp(resolver_type, "ares") == 0) {
+#ifndef GRPC_UV
+    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+#endif
+  } else {
+    gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
+    abort();
+  }
+  // Run the test.
   grpc_test_init(argc, argv);
   grpc_init();
   {
@@ -250,10 +278,18 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    test_invalid_ip_addresses();
-    test_unparseable_hostports();
+    if (gpr_stricmp(resolver_type, "ares") != 0) {
+      // These tests can trigger DNS queries to the nearby nameserver
+      // that need to come back in order for the test to succeed.
+      // c-ares is prone to not using the local system caches that the
+      // native getaddrinfo implementations take advantage of, so running
+      // these unit tests under c-ares risks flakiness.
+      test_invalid_ip_addresses();
+      test_unparseable_hostports();
+    }
     grpc_executor_shutdown();
   }
+  gpr_cmdline_destroy(cl);
 
   grpc_shutdown();
   return 0;

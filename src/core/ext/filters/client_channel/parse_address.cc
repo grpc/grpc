@@ -197,3 +197,12 @@ bool grpc_parse_uri(const grpc_uri* uri, grpc_resolved_address* resolved_addr) {
   gpr_log(GPR_ERROR, "Can't parse scheme '%s'", uri->scheme);
   return false;
 }
+
+uint16_t grpc_strhtons(const char* port) {
+  if (strcmp(port, "http") == 0) {
+    return htons(80);
+  } else if (strcmp(port, "https") == 0) {
+    return htons(443);
+  }
+  return htons(static_cast<unsigned short>(atoi(port)));
+}
