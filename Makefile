@@ -2942,8 +2942,14 @@ install-headers_c:
 
 install-headers_cxx:
 	$(E) "[INSTALL] Installing public C++ headers"
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX1), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX1), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX2), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX2), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX3), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX3), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX4), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX4), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
 
 install-static: install-static_c install-static_cxx
 
@@ -5274,6 +5280,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+
+PUBLIC_HEADERS_CXX1 += \
     include/grpcpp/alarm.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
@@ -5321,6 +5329,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
     include/grpcpp/support/time.h \
+
+PUBLIC_HEADERS_CXX2 += \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
@@ -5372,6 +5382,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
+
+PUBLIC_HEADERS_CXX3 += \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
     include/grpc++/impl/codegen/byte_buffer.h \
@@ -5402,6 +5414,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+
+PUBLIC_HEADERS_CXX4 += \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
