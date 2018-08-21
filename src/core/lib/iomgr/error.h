@@ -187,12 +187,6 @@ bool grpc_error_get_str(grpc_error* error, grpc_error_strs which,
 /// child error.
 grpc_error* grpc_error_add_child(grpc_error* src,
                                  grpc_error* child) GRPC_MUST_USE_RESULT;
-/// Produce an error that is a combination of both src and child.
-//  If src or child, is GRPC_ERROR_NONE, a new reference to the other error is
-//  returned. Otherwise, a new error with src as the parent and child as the
-//  child is returned.
-grpc_error* grpc_error_maybe_add_child(grpc_error* src,
-                                       grpc_error* child) GRPC_MUST_USE_RESULT;
 
 grpc_error* grpc_os_error(const char* file, int line, int err,
                           const char* call_name) GRPC_MUST_USE_RESULT;

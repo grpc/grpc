@@ -513,22 +513,18 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
 
 grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
   GPR_TIMER_SCOPE("grpc_error_add_child", 0);
-  grpc_error* new_err = copy_error_and_unref(src);
-  internal_add_error(&new_err, child);
-  return new_err;
-}
-
-grpc_error* grpc_error_maybe_add_child(grpc_error* src, grpc_error* child) {
   if (src != GRPC_ERROR_NONE) {
     if (child == GRPC_ERROR_NONE) {
-      return GRPC_ERROR_REF(src);
+      return src;
     } else if (child != src) {
-      return grpc_error_add_child(src, GRPC_ERROR_REF(child));
+      grpc_error* new_err = copy_error_and_unref(src);
+      internal_add_error(&new_err, child);
+      return new_err;
     } else {
-      return GRPC_ERROR_REF(src);
+      return src;
     }
   } else {
-    return GRPC_ERROR_REF(child);
+    return child;
   }
 }
 

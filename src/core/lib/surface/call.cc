@@ -686,6 +686,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
+  gpr_log(GPR_INFO, "set final status");
   if (grpc_call_error_trace.enabled()) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
@@ -1650,9 +1651,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
               grpc_slice_ref_internal(
                   *op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
-          char* msg = grpc_slice_to_c_string(
-              GRPC_MDVALUE(call->send_extra_metadata[1].md));
-          gpr_free(msg);
         }
         grpc_error* status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK

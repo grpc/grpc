@@ -737,7 +737,7 @@ static void server_recv_trailing_metadata_ready(void* user_data,
                                                 grpc_error* err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  err = grpc_error_maybe_add_child(err, calld->error);
+  err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
 }
 
