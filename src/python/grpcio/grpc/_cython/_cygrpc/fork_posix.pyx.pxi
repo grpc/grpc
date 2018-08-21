@@ -23,6 +23,8 @@ _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
 _TRUE_VALUES = ['yes',  'Yes',  'YES', 'true', 'True', 'TRUE', '1']
 
+_SUPPORTED_POLL_STRATEGIES = ['epoll1', 'poll']
+
 # This flag enables experimental support within gRPC Python for applications
 # that will fork() without exec(). When enabled, gRPC Python will attempt to
 # pause all of its internally created threads before the fork syscall proceeds.
@@ -82,12 +84,14 @@ cdef void __postfork_child() nogil:
 def fork_handlers_and_grpc_init():
     grpc_init()
     if _GRPC_ENABLE_FORK_SUPPORT:
-        # TODO(ericgribkoff) epoll1 is default for grpcio distribution. Decide whether to expose
-        # grpc_get_poll_strategy_name() from ev_posix.cc to get actual polling choice.
-        if _GRPC_POLL_STRATEGY is not None and _GRPC_POLL_STRATEGY != "epoll1":
+        # TODO(ericgribkoff) epoll1 is default for grpcio distribution (poll is
+        # default on mac). Decide whether to expose grpc_get_poll_strategy_name()
+        # from ev_posix.cc to get actual poller.
+        if (_GRPC_POLL_STRATEGY is not None and
+                _GRPC_POLL_STRATEGY not in _SUPPORTED_POLL_STRATEGIES):
             _LOGGER.error(
                 'gRPC Python fork support is only compatible with the epoll1 '
-                'polling engine')
+                'and poll polling strategies')
             return
         with _fork_state.fork_handler_registered_lock:
             if not _fork_state.fork_handler_registered:
