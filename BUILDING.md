@@ -107,7 +107,8 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 
 From the grpc repository root
 ```sh
- $ make
+ $ make 
+ $ make install
 ```
 
 ## bazel
