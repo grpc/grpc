@@ -17,7 +17,6 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
   endif()
   if(EXISTS "${BORINGSSL_ROOT_DIR}/CMakeLists.txt")
-    set(OPENSSL_NO_ASM ON)  # make boringssl buildable with Visual Studio
     add_subdirectory(${BORINGSSL_ROOT_DIR} third_party/boringssl)
     if(TARGET ssl)
       set(_gRPC_SSL_LIBRARIES ssl)
