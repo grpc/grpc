@@ -24,6 +24,7 @@
 #include <grpcpp/impl/codegen/slice.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 DEFINE_bool(
     enable_ssl, false,
