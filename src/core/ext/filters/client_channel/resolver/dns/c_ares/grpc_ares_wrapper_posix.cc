@@ -26,4 +26,9 @@
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port, grpc_lb_addresses** addrs) {
+  return false;
+}
+
 #endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) */
