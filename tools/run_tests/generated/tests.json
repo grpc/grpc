@@ -6754,6 +6754,32 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
+    "name": "boringssl_pem_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
     "name": "boringssl_pkcs7_test", 
     "platforms": [
       "linux", 
@@ -7041,6 +7067,32 @@
     "gtest": true, 
     "language": "c++", 
     "name": "boringssl_x509_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "args": [], 
+    "boringssl": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "defaults": "boringssl", 
+    "exclude_configs": [
+      "asan", 
+      "ubsan"
+    ], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "boringssl_x509_time_test", 
     "platforms": [
       "linux", 
       "mac", 

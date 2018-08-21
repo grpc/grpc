@@ -1279,6 +1279,7 @@ boringssl_hkdf_test: $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
 boringssl_hmac_test: $(BINDIR)/$(CONFIG)/boringssl_hmac_test
 boringssl_lhash_test: $(BINDIR)/$(CONFIG)/boringssl_lhash_test
 boringssl_obj_test: $(BINDIR)/$(CONFIG)/boringssl_obj_test
+boringssl_pem_test: $(BINDIR)/$(CONFIG)/boringssl_pem_test
 boringssl_pkcs7_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
 boringssl_pkcs12_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
 boringssl_pkcs8_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
@@ -1291,6 +1292,7 @@ boringssl_file_test_gtest: $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest
 boringssl_gtest_main: $(BINDIR)/$(CONFIG)/boringssl_gtest_main
 boringssl_thread_test: $(BINDIR)/$(CONFIG)/boringssl_thread_test
 boringssl_x509_test: $(BINDIR)/$(CONFIG)/boringssl_x509_test
+boringssl_x509_time_test: $(BINDIR)/$(CONFIG)/boringssl_x509_time_test
 boringssl_tab_test: $(BINDIR)/$(CONFIG)/boringssl_tab_test
 boringssl_v3name_test: $(BINDIR)/$(CONFIG)/boringssl_v3name_test
 boringssl_span_test: $(BINDIR)/$(CONFIG)/boringssl_span_test
@@ -1416,7 +1418,7 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_self_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_self_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 else
 privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
@@ -1771,6 +1773,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/boringssl_hmac_test \
   $(BINDIR)/$(CONFIG)/boringssl_lhash_test \
   $(BINDIR)/$(CONFIG)/boringssl_obj_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pem_test \
   $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test \
   $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test \
   $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test \
@@ -1783,6 +1786,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/boringssl_gtest_main \
   $(BINDIR)/$(CONFIG)/boringssl_thread_test \
   $(BINDIR)/$(CONFIG)/boringssl_x509_test \
+  $(BINDIR)/$(CONFIG)/boringssl_x509_time_test \
   $(BINDIR)/$(CONFIG)/boringssl_tab_test \
   $(BINDIR)/$(CONFIG)/boringssl_v3name_test \
   $(BINDIR)/$(CONFIG)/boringssl_span_test \
@@ -7645,6 +7649,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/bytestring/ber.c \
     third_party/boringssl/crypto/bytestring/cbb.c \
     third_party/boringssl/crypto/bytestring/cbs.c \
+    third_party/boringssl/crypto/bytestring/unicode.c \
     third_party/boringssl/crypto/chacha/chacha.c \
     third_party/boringssl/crypto/cipher_extra/cipher_extra.c \
     third_party/boringssl/crypto/cipher_extra/derive_key.c \
@@ -7655,7 +7660,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/cipher_extra/e_null.c \
     third_party/boringssl/crypto/cipher_extra/e_rc2.c \
     third_party/boringssl/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl/crypto/cipher_extra/e_ssl3.c \
     third_party/boringssl/crypto/cipher_extra/e_tls.c \
     third_party/boringssl/crypto/cipher_extra/tls_cbc.c \
     third_party/boringssl/crypto/cmac/cmac.c \
@@ -7676,7 +7680,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/dsa/dsa.c \
     third_party/boringssl/crypto/dsa/dsa_asn1.c \
     third_party/boringssl/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl/crypto/ecdh/ecdh.c \
+    third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c \
     third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl/crypto/engine/engine.c \
     third_party/boringssl/crypto/err/err.c \
@@ -7729,6 +7733,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/refcount_c11.c \
     third_party/boringssl/crypto/refcount_lock.c \
     third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl/crypto/stack/stack.c \
     third_party/boringssl/crypto/thread.c \
     third_party/boringssl/crypto/thread_none.c \
@@ -7805,6 +7810,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/x509v3/v3_int.c \
     third_party/boringssl/crypto/x509v3/v3_lib.c \
     third_party/boringssl/crypto/x509v3/v3_ncons.c \
+    third_party/boringssl/crypto/x509v3/v3_ocsp.c \
     third_party/boringssl/crypto/x509v3/v3_pci.c \
     third_party/boringssl/crypto/x509v3/v3_pcia.c \
     third_party/boringssl/crypto/x509v3/v3_pcons.c \
@@ -7816,7 +7822,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/x509v3/v3_sxnet.c \
     third_party/boringssl/crypto/x509v3/v3_utl.c \
     third_party/boringssl/ssl/bio_ssl.cc \
-    third_party/boringssl/ssl/custom_extensions.cc \
     third_party/boringssl/ssl/d1_both.cc \
     third_party/boringssl/ssl/d1_lib.cc \
     third_party/boringssl/ssl/d1_pkt.cc \
@@ -7883,6 +7888,7 @@ LIBBORINGSSL_TEST_UTIL_SRC = \
     third_party/boringssl/crypto/test/file_test.cc \
     third_party/boringssl/crypto/test/malloc.cc \
     third_party/boringssl/crypto/test/test_util.cc \
+    third_party/boringssl/crypto/test/wycheproof_util.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -8623,7 +8629,7 @@ endif
 
 
 LIBBORINGSSL_ECDH_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/ecdh/ecdh_test.cc \
+    third_party/boringssl/crypto/ecdh_extra/ecdh_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
@@ -9285,6 +9291,45 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_PEM_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/pem/pem_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_PEM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PEM_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PEM_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PEM_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_PEM_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PEM_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a $(LIBBORINGSSL_PEM_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PEM_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
     third_party/boringssl/crypto/pkcs7/pkcs7_test.cc \
 
@@ -9750,6 +9795,45 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBBORINGSSL_X509_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_X509_TIME_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/x509/x509_time_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X509_TIME_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a $(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_X509_TIME_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -22076,6 +22160,46 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+BORINGSSL_PEM_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PEM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PEM_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PEM_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PEM_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PEM_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pem_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pem_test: $(PROTOBUF_DEP) $(BORINGSSL_PEM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PEM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pem_test
+
+endif
+
+$(BORINGSSL_PEM_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PEM_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PEM_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pem_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pem_test: $(BORINGSSL_PEM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PEM_TEST_OBJS:.o=.dep)
+endif
+
+
 BORINGSSL_PKCS7_TEST_SRC = \
     third_party/boringssl/crypto/test/gtest_main.cc \
 
@@ -22553,6 +22677,46 @@ deps_boringssl_x509_test: $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_X509_TIME_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_X509_TIME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_X509_TIME_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_X509_TIME_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X509_TIME_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_X509_TIME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_time_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_x509_time_test: $(PROTOBUF_DEP) $(BORINGSSL_X509_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_X509_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x509_time_test
+
+endif
+
+$(BORINGSSL_X509_TIME_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_X509_TIME_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_X509_TIME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_x509_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_x509_time_test: $(BORINGSSL_X509_TIME_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_X509_TIME_TEST_OBJS:.o=.dep)
 endif
 
 

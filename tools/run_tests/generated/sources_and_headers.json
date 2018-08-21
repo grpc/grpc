@@ -5486,6 +5486,20 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_pem_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_pem_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_pkcs7_test_lib", 
       "boringssl_test_util"
     ], 
@@ -5647,6 +5661,20 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_x509_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util", 
+      "boringssl_x509_time_test_lib"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_x509_time_test", 
     "src": [], 
     "third_party": true, 
     "type": "target"
@@ -7854,6 +7882,7 @@
       "third_party/boringssl/crypto/asn1/asn1_locl.h", 
       "third_party/boringssl/crypto/bio/internal.h", 
       "third_party/boringssl/crypto/bytestring/internal.h", 
+      "third_party/boringssl/crypto/chacha/internal.h", 
       "third_party/boringssl/crypto/cipher_extra/internal.h", 
       "third_party/boringssl/crypto/conf/conf_def.h", 
       "third_party/boringssl/crypto/conf/internal.h", 
@@ -7870,8 +7899,10 @@
       "third_party/boringssl/crypto/fipsmodule/bn/cmp.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/ctx.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/div.c", 
+      "third_party/boringssl/crypto/fipsmodule/bn/div_extra.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/exponentiation.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/gcd.c", 
+      "third_party/boringssl/crypto/fipsmodule/bn/gcd_extra.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/generic.c", 
       "third_party/boringssl/crypto/fipsmodule/bn/internal.h", 
       "third_party/boringssl/crypto/fipsmodule/bn/jacobi.c", 
@@ -7899,15 +7930,19 @@
       "third_party/boringssl/crypto/fipsmodule/ec/ec.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/ec_key.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/ec_montgomery.c", 
+      "third_party/boringssl/crypto/fipsmodule/ec/felem.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/internal.h", 
       "third_party/boringssl/crypto/fipsmodule/ec/oct.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p224-64.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64.h", 
+      "third_party/boringssl/crypto/fipsmodule/ec/scalar.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/simple.c", 
+      "third_party/boringssl/crypto/fipsmodule/ec/simple_mul.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/util.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/wnaf.c", 
+      "third_party/boringssl/crypto/fipsmodule/ecdh/ecdh.c", 
       "third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa.c", 
       "third_party/boringssl/crypto/fipsmodule/hmac/hmac.c", 
       "third_party/boringssl/crypto/fipsmodule/md4/md4.c", 
@@ -7974,6 +8009,7 @@
       "third_party/boringssl/include/openssl/digest.h", 
       "third_party/boringssl/include/openssl/dsa.h", 
       "third_party/boringssl/include/openssl/dtls1.h", 
+      "third_party/boringssl/include/openssl/e_os2.h", 
       "third_party/boringssl/include/openssl/ec.h", 
       "third_party/boringssl/include/openssl/ec_key.h", 
       "third_party/boringssl/include/openssl/ecdh.h", 
@@ -8509,6 +8545,19 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "boringssl_pem_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "boringssl_pkcs7_test_lib", 
     "src": [], 
     "third_party": true, 
@@ -8653,6 +8702,19 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_x509_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_x509_time_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
