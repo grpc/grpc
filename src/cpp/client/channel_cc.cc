@@ -42,8 +42,10 @@
 #include <grpcpp/support/time.h>
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
 
@@ -53,7 +55,12 @@ Channel::Channel(const grpc::string& host, grpc_channel* channel)
   g_gli_initializer.summon();
 }
 
-Channel::~Channel() { grpc_channel_destroy(c_channel_); }
+Channel::~Channel() {
+  grpc_channel_destroy(c_channel_);
+  if (callback_cq_ != nullptr) {
+    callback_cq_->Shutdown();
+  }
+}
 
 namespace {
 
@@ -135,8 +142,8 @@ void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), cops, nops, ops, nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), cops, nops,
+                                                   ops->cq_tag(), nullptr));
 }
 
 void* Channel::RegisterMethod(const char* method) {
@@ -183,6 +190,34 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   cq.Next(&tag, &ok);
   GPR_ASSERT(tag == nullptr);
   return ok;
+}
+
+namespace {
+class ShutdownCallback : public grpc_core::CQCallbackInterface {
+ public:
+  void TakeCQ(CompletionQueue* cq) { cq_ = cq; }
+  void Run(bool) override {
+    delete cq_;
+    grpc_core::Delete(this);
+  }
+
+ private:
+  CompletionQueue* cq_ = nullptr;
+};
+}  // namespace
+
+CompletionQueue* Channel::CallbackCQ() {
+  // TODO(vjpai): Consider using a single global CQ for the default CQ
+  // if there is no explicit per-channel CQ registered
+  std::lock_guard<std::mutex> l(mu_);
+  if (callback_cq_ == nullptr) {
+    auto* shutdown_callback = grpc_core::New<ShutdownCallback>();
+    callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{
+        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+        shutdown_callback});
+    shutdown_callback->TakeCQ(callback_cq_);
+  }
+  return callback_cq_;
 }
 
 }  // namespace grpc
