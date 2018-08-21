@@ -668,11 +668,20 @@
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
   endif
 
+  # gpr .pc file
+  PC_NAME = gpr
+  PC_DESCRIPTION = gRPC platform support library
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
+  PC_LIB = -lgpr
+  GPR_PC_FILE := $(CORE_PC_TEMPLATE)
+
   # grpc .pc file
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -681,7 +690,7 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -921,6 +930,16 @@
   % endfor
 
 
+  static_csharp: static_c \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'csharp':
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+
+
   shared: shared_c shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
@@ -966,9 +985,9 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -1189,6 +1208,11 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
+  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
+
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1387,6 +1411,7 @@
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 

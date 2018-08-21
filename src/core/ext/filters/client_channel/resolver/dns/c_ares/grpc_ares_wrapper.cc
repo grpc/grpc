@@ -22,7 +22,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -49,6 +48,8 @@ static gpr_mu g_init_mu;
 
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
+
+grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
@@ -215,7 +216,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin6_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin6_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -236,7 +237,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in_addr));
-          addr.sin_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -281,7 +282,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
           grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
-        if (grpc_ipv6_loopback_available()) {
+        if (grpc_ares_query_ipv6()) {
           grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
               r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
           ares_gethostbyname(*channel, hr->host, AF_INET6,
@@ -452,7 +453,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
   }
   r->pending_queries = 1;
-  if (grpc_ipv6_loopback_available()) {
+  if (grpc_ares_query_ipv6()) {
     hr = create_hostbyname_request_locked(r, host, strhtons(port),
                                           false /* is_balancer */);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,

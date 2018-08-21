@@ -8,7 +8,7 @@
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "v0.9"
+    "google/auth": "^v1.3.0"
   },
   "autoload": {
     "psr-4": {

@@ -1,4 +1,5 @@
 # a set of tests that are run in parallel for sanity tests
+- script: tools/run_tests/sanity/check_bad_dependencies.sh
 - script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_owners.sh
@@ -6,7 +7,6 @@
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
 - script: tools/run_tests/sanity/check_tracer_sanity.py
-- script: tools/run_tests/sanity/check_unsecure.sh
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py

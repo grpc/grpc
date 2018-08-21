@@ -234,6 +234,11 @@ class CSharpExtArtifact:
                 environ={
                     'ANDROID_ABI': self.arch_abi
                 })
+        elif self.arch == 'ios':
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
+                use_workspace=True)
         elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
@@ -285,15 +290,9 @@ class PHPArtifact:
         return []
 
     def build_jobspec(self):
-        if self.platform == 'linux':
-            return create_docker_jobspec(
-                self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
-                    self.arch),
-                'tools/run_tests/artifacts/build_artifact_php.sh')
-        else:
-            return create_jobspec(
-                self.name, ['tools/run_tests/artifacts/build_artifact_php.sh'],
-                use_workspace=True)
+        return create_docker_jobspec(
+            self.name, 'tools/dockerfile/grpc_artifact_linux_{}'.format(
+                self.arch), 'tools/run_tests/artifacts/build_artifact_php.sh')
 
 
 class ProtocArtifact:
@@ -356,6 +355,8 @@ def targets():
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),
         CSharpExtArtifact('linux', 'android', arch_abi='armeabi-v7a'),
+        CSharpExtArtifact('linux', 'android', arch_abi='x86'),
+        CSharpExtArtifact('macos', 'ios'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
         PythonArtifact('linux', 'x86', 'cp34-cp34m'),
@@ -385,6 +386,7 @@ def targets():
         PythonArtifact('windows', 'x86', 'Python34_32bits'),
         PythonArtifact('windows', 'x86', 'Python35_32bits'),
         PythonArtifact('windows', 'x86', 'Python36_32bits'),
+        PythonArtifact('windows', 'x86', 'Python37_32bits'),
         PythonArtifact('windows', 'x64', 'Python27'),
         PythonArtifact('windows', 'x64', 'Python34'),
         PythonArtifact('windows', 'x64', 'Python35'),
@@ -392,6 +394,5 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python37'),
         RubyArtifact('linux', 'x64'),
         RubyArtifact('macos', 'x64'),
-        PHPArtifact('linux', 'x64'),
-        PHPArtifact('macos', 'x64')
+        PHPArtifact('linux', 'x64')
     ])

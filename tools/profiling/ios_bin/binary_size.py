@@ -55,7 +55,7 @@ def dir_size(dir):
 
 
 def get_size(where, frameworks):
-    build_dir = 'src/objective-c/examples/Sample/Build-%s/' % where
+    build_dir = 'src/objective-c/examples/Sample/Build/Build-%s/' % where
     if not frameworks:
         link_map_filename = 'Build/Intermediates.noindex/Sample.build/Release-iphoneos/Sample.build/Sample-LinkMap-normal-arm64.txt'
         return parse_link_map(build_dir + link_map_filename)
@@ -75,15 +75,17 @@ def get_size(where, frameworks):
 
 
 def build(where, frameworks):
+    subprocess.check_call(['make', 'clean'])
     shutil.rmtree(
-        'src/objective-c/examples/Sample/Build-%s' % where, ignore_errors=True)
+        'src/objective-c/examples/Sample/Build/Build-%s' % where,
+        ignore_errors=True)
     subprocess.check_call(
         'CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample FRAMEWORKS=%s ./build_one_example.sh'
         % ('YES' if frameworks else 'NO'),
         shell=True,
         cwd='src/objective-c/tests')
-    os.rename('src/objective-c/examples/Sample/Build',
-              'src/objective-c/examples/Sample/Build-%s' % where)
+    os.rename('src/objective-c/examples/Sample/Build/Build',
+              'src/objective-c/examples/Sample/Build/Build-%s' % where)
 
 
 text = 'Objective-C binary sizes\n'

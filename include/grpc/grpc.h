@@ -60,6 +60,8 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
 /** Initialize the grpc library.
 
+    After it's called, a matching invocation to grpc_shutdown() is expected.
+
     It is not safe to call any other grpc functions before calling this.
     (To avoid overhead, little checking is done, and some things may work. We
     do not warrant that they will continue to do so in future revisions of this
@@ -67,6 +69,9 @@ GRPCAPI void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 GRPCAPI void grpc_init(void);
 
 /** Shut down the grpc library.
+
+    Before it's called, there should haven been a matching invocation to
+    grpc_init().
 
     No memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
@@ -95,6 +100,12 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_next(
     of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     void* reserved);
+
+/** Helper function to create a completion queue with grpc_cq_completion_type
+    of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
+    This function is experimental. */
+GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
+    void* shutdown_callback, void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -268,6 +279,11 @@ GRPCAPI char* grpc_channel_get_target(grpc_channel* channel);
     \a channel_info is owned by the caller. */
 GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
                                    const grpc_channel_info* channel_info);
+
+/** EXPERIMENTAL.  Resets the channel's connect backoff.
+    TODO(roth): When we see whether this proves useful, either promote
+    to non-experimental or remove it. */
+GRPCAPI void grpc_channel_reset_connect_backoff(grpc_channel* channel);
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
@@ -449,6 +465,10 @@ GRPCAPI void grpc_resource_quota_unref(grpc_resource_quota* resource_quota);
 /** Update the size of a buffer pool */
 GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
                                         size_t new_size);
+
+/** Update the size of the maximum number of threads allowed */
+GRPCAPI void grpc_resource_quota_set_max_threads(
+    grpc_resource_quota* resource_quota, int new_max_threads);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */

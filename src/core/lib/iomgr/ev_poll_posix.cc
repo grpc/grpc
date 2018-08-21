@@ -108,9 +108,6 @@ struct grpc_fd {
   grpc_closure* on_done_closure;
 
   grpc_iomgr_object iomgr_object;
-
-  /* The pollset that last noticed and notified that the fd is readable */
-  grpc_pollset* read_notifier_pollset;
 };
 
 /* Begin polling on an fd.
@@ -131,8 +128,7 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
    MUST NOT be called with a pollset lock taken
    if got_read or got_write are 1, also does the become_{readable,writable} as
    appropriate. */
-static void fd_end_poll(grpc_fd_watcher* rec, int got_read, int got_write,
-                        grpc_pollset* read_notifier_pollset);
+static void fd_end_poll(grpc_fd_watcher* rec, int got_read, int got_write);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 static bool fd_is_orphaned(grpc_fd* fd);
@@ -346,7 +342,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   r->closed = 0;
   r->released = 0;
   gpr_atm_no_barrier_store(&r->pollhup, 0);
-  r->read_notifier_pollset = nullptr;
 
   char* name2;
   gpr_asprintf(&name2, "%s fd=%d", name, fd);
@@ -357,17 +352,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
 
 static bool fd_is_orphaned(grpc_fd* fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) == 0;
-}
-
-/* Return the read-notifier pollset */
-static grpc_pollset* fd_get_read_notifier_pollset(grpc_fd* fd) {
-  grpc_pollset* notifier = nullptr;
-
-  gpr_mu_lock(&fd->mu);
-  notifier = fd->read_notifier_pollset;
-  gpr_mu_unlock(&fd->mu);
-
-  return notifier;
 }
 
 static grpc_error* pollset_kick_locked(grpc_fd_watcher* watcher) {
@@ -512,11 +496,6 @@ static int set_ready_locked(grpc_fd* fd, grpc_closure** st) {
   }
 }
 
-static void set_read_notifier_pollset_locked(
-    grpc_fd* fd, grpc_pollset* read_notifier_pollset) {
-  fd->read_notifier_pollset = read_notifier_pollset;
-}
-
 static void fd_shutdown(grpc_fd* fd, grpc_error* why) {
   gpr_mu_lock(&fd->mu);
   /* only shutdown once */
@@ -553,8 +532,28 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 }
 
 static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
-  gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
-  abort();
+  if (grpc_polling_trace.enabled()) {
+    gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
+  }
+  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CANCELLED);
+}
+
+static void fd_set_readable(grpc_fd* fd) {
+  gpr_mu_lock(&fd->mu);
+  set_ready_locked(fd, &fd->read_closure);
+  gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_set_writable(grpc_fd* fd) {
+  gpr_mu_lock(&fd->mu);
+  set_ready_locked(fd, &fd->write_closure);
+  gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_set_error(grpc_fd* fd) {
+  if (grpc_polling_trace.enabled()) {
+    gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
+  }
 }
 
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
@@ -608,8 +607,7 @@ static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
   return mask;
 }
 
-static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write,
-                        grpc_pollset* read_notifier_pollset) {
+static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write) {
   int was_polling = 0;
   int kick = 0;
   grpc_fd* fd = watcher->fd;
@@ -644,9 +642,6 @@ static void fd_end_poll(grpc_fd_watcher* watcher, int got_read, int got_write,
   if (got_read) {
     if (set_ready_locked(fd, &fd->read_closure)) {
       kick = 1;
-    }
-    if (read_notifier_pollset != nullptr) {
-      set_read_notifier_pollset_locked(fd, read_notifier_pollset);
     }
   }
   if (got_write) {
@@ -997,16 +992,16 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].fd == nullptr) {
-            fd_end_poll(&watchers[i], 0, 0, nullptr);
+            fd_end_poll(&watchers[i], 0, 0);
           } else {
             // Wake up all the file descriptors, if we have an invalid one
             // we can identify it on the next pollset_work()
-            fd_end_poll(&watchers[i], 1, 1, pollset);
+            fd_end_poll(&watchers[i], 1, 1);
           }
         }
       } else if (r == 0) {
         for (i = 1; i < pfd_count; i++) {
-          fd_end_poll(&watchers[i], 0, 0, nullptr);
+          fd_end_poll(&watchers[i], 0, 0);
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
@@ -1018,7 +1013,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         }
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].fd == nullptr) {
-            fd_end_poll(&watchers[i], 0, 0, nullptr);
+            fd_end_poll(&watchers[i], 0, 0);
           } else {
             if (grpc_polling_trace.enabled()) {
               gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
@@ -1032,7 +1027,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
               gpr_atm_no_barrier_store(&watchers[i].fd->pollhup, 1);
             }
             fd_end_poll(&watchers[i], pfds[i].revents & POLLIN_CHECK,
-                        pfds[i].revents & POLLOUT_CHECK, pollset);
+                        pfds[i].revents & POLLOUT_CHECK);
           }
         }
       }
@@ -1723,8 +1718,10 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_set_readable,
+    fd_set_writable,
+    fd_set_error,
     fd_is_shutdown,
-    fd_get_read_notifier_pollset,
 
     pollset_init,
     pollset_shutdown,

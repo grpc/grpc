@@ -100,7 +100,7 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   src:
-  - src/cpp/ext/filters/census/grpc_context.cc
+  - src/core/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
 - name: cmdline
@@ -196,6 +196,7 @@ filegroups:
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mutex_lock.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
@@ -548,6 +549,7 @@ filegroups:
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   uses:
   - grpc_base_headers
@@ -740,8 +742,11 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   plugin: grpc_resolver_dns_ares
   uses:
   - grpc_base
@@ -789,6 +794,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/load_system_roots.h
+  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
@@ -816,6 +823,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
@@ -2730,6 +2739,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: grpc_ipv6_loopback_available_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
 - name: grpc_json_token_test
   build: test
   language: c
@@ -4091,6 +4112,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_error
   build: test
   language: c++
@@ -4683,6 +4705,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_linux_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_node_plugin
   build: protoc
   language: c++

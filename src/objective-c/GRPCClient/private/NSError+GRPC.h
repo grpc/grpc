@@ -24,5 +24,7 @@
  * Returns nil if the status code is OK. Otherwise, a NSError whose code is one of |GRPCErrorCode|
  * and whose domain is |kGRPCErrorDomain|.
  */
-+ (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode details:(char *)details;
++ (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode
+                                 details:(char *)details
+                             errorString:(const char *)errorString;
 @end

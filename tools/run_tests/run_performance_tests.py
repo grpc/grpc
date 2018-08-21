@@ -189,11 +189,19 @@ def create_netperf_jobspec(server_host='localhost',
 
 def archive_repo(languages):
     """Archives local version of repo including submodules."""
-    cmdline = ['tar', '-cf', '../grpc.tar', '../grpc/']
+    # Directory contains symlinks that can't be correctly untarred on Windows
+    # so we just skip them as a workaround.
+    # See https://github.com/grpc/grpc/issues/16334
+    bad_symlinks_dir = '../grpc/third_party/libcxx/test/std/experimental/filesystem/Inputs/static_test_env'
+    cmdline = [
+        'tar', '--exclude', bad_symlinks_dir, '-cf', '../grpc.tar', '../grpc/'
+    ]
     if 'java' in languages:
         cmdline.append('../grpc-java')
     if 'go' in languages:
         cmdline.append('../grpc-go')
+    if 'node' in languages or 'node_purejs' in languages:
+        cmdline.append('../grpc-node')
 
     archive_job = jobset.JobSpec(
         cmdline=cmdline, shortname='archive_repo', timeout_seconds=3 * 60)
@@ -247,9 +255,9 @@ def build_on_remote_hosts(hosts,
                           languages=scenario_config.LANGUAGES.keys(),
                           build_local=False):
     """Builds performance worker on remote hosts (and maybe also locally)."""
-    build_timeout = 15 * 60
+    build_timeout = 45 * 60
     # Kokoro VMs (which are local only) do not have caching, so they need more time to build
-    local_build_timeout = 30 * 60
+    local_build_timeout = 60 * 60
     build_jobs = []
     for host in hosts:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, host)

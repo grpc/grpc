@@ -100,6 +100,12 @@ typedef enum {
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
 
+/**
+ * Type of local connection for which local channel/server credentials will be
+ * applied. It only supports UDS for now.
+ */
+typedef enum { UDS = 0 } grpc_local_connect_type;
+
 #ifdef __cplusplus
 }
 #endif

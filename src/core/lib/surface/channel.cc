@@ -281,6 +281,17 @@ void grpc_channel_get_info(grpc_channel* channel,
   elem->filter->get_channel_info(elem, channel_info);
 }
 
+void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_channel_reset_connect_backoff(channel=%p)", 1,
+                 (channel));
+  grpc_transport_op* op = grpc_make_transport_op(nullptr);
+  op->reset_connect_backoff = true;
+  grpc_channel_element* elem =
+      grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
+  elem->filter->start_transport_op(elem, op);
+}
+
 static grpc_call* grpc_channel_create_call_internal(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
