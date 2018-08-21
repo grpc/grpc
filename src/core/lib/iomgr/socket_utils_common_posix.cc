@@ -222,6 +222,30 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
   return GRPC_ERROR_NONE;
 }
 
+#define DEFAULT_TCP_USER_TIMEOUT 20000 /* 20 seconds */
+
+/* Set TCP_USER_TIMEOUT */
+grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val) {
+#ifdef GPR_LINUX
+  int newval;
+  socklen_t len;
+  if (val == 0) {
+    val = DEFAULT_TCP_USER_TIMEOUT;
+  }
+  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &val, sizeof(val))) {
+    return GRPC_OS_ERROR(errno, "setsockopt(TCP_USER_TIMEOUT)");
+  }
+  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+    return GRPC_OS_ERROR(errno, "getsockopt(TCP_USER_TIMEOUT)");
+  }
+  if (newval != val) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Failed to set TCP_USER_TIMEOUT");
+  }
+#endif /* GPR_LINUX */
+  return GRPC_ERROR_NONE;
+}
+
 /* set a socket using a grpc_socket_mutator */
 grpc_error* grpc_set_socket_with_mutator(int fd, grpc_socket_mutator* mutator) {
   GPR_ASSERT(mutator);

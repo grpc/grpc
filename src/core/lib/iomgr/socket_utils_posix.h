@@ -53,6 +53,9 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency);
 /* set SO_REUSEPORT */
 grpc_error* grpc_set_socket_reuse_port(int fd, int reuse);
 
+/* Set TCP_USER_TIMEOUT to val, or the default value if val is 0. */
+grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val);
+
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
 

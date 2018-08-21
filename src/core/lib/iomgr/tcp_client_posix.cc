@@ -76,8 +76,11 @@ static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
   if (!grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
+    err = grpc_set_socket_tcp_user_timeout(fd, 0 /* set to gRPC default */);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
+
   if (err != GRPC_ERROR_NONE) goto error;
   if (channel_args) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
