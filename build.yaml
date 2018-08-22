@@ -3419,7 +3419,7 @@ targets:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
-- name: server_using_ares_resolver_test
+- name: server_test
   build: test
   language: c
   src:
@@ -3429,20 +3429,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  args:
-  - --resolver=ares
-- name: server_using_native_resolver_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/server_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  args:
-  - --resolver=native
 - name: slice_buffer_test
   build: test
   language: c

@@ -364,8 +364,7 @@ add_dependencies(buildtests_c secure_channel_create_test)
 add_dependencies(buildtests_c secure_endpoint_test)
 add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
-add_dependencies(buildtests_c server_using_ares_resolver_test)
-add_dependencies(buildtests_c server_using_native_resolver_test)
+add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
@@ -8682,12 +8681,12 @@ target_link_libraries(server_chttp2_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(server_using_ares_resolver_test
+add_executable(server_test
   test/core/surface/server_test.cc
 )
 
 
-target_include_directories(server_using_ares_resolver_test
+target_include_directories(server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8700,36 +8699,7 @@ target_include_directories(server_using_ares_resolver_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(server_using_ares_resolver_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(server_using_native_resolver_test
-  test/core/surface/server_test.cc
-)
-
-
-target_include_directories(server_using_native_resolver_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(server_using_native_resolver_test
+target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
