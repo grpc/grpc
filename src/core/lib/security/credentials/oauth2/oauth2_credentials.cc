@@ -235,7 +235,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
                                         access_token_md);
     } else {
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Error occured when fetching oauth2 token.", &error, 1);
+          "Error occurred when fetching oauth2 token.", &error, 1);
     }
     GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, error);
     grpc_polling_entity_del_from_pollset_set(
