@@ -22,9 +22,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <string.h>
+
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -148,6 +153,29 @@ static void test_bind_server_to_addrs(const char** addrs, size_t n) {
 }
 
 int main(int argc, char** argv) {
+  // First set the resolver type based off of --resolver
+  const char* resolver_type = nullptr;
+  gpr_cmdline* cl = gpr_cmdline_create("Server test");
+  gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
+                         &resolver_type);
+  gpr_cmdline_parse(cl, argc, argv);
+  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
+            cur_resolver);
+  }
+  if (gpr_stricmp(resolver_type, "native") == 0) {
+    gpr_setenv("GRPC_DNS_RESOLVER", "native");
+  } else if (gpr_stricmp(resolver_type, "ares") == 0) {
+#ifndef GRPC_UV
+    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+#endif
+  } else {
+    gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
+    abort();
+  }
+  gpr_cmdline_destroy(cl);
+  // Run the test
   grpc_test_init(argc, argv);
   grpc_init();
   test_register_method_fail();

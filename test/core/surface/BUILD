@@ -166,9 +166,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "server_test",
+    name = "server_using_native_resolver_test",
     srcs = ["server_test.cc"],
     language = "C++",
+    args = [
+        "--resolver=native",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "server_using_ares_resolver_test",
+    srcs = ["server_test.cc"],
+    language = "C++",
+    args = [
+        "--resolver=ares",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
