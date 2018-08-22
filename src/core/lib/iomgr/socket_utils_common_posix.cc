@@ -242,6 +242,8 @@ grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to set TCP_USER_TIMEOUT");
   }
+#else
+  gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
 #endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }
