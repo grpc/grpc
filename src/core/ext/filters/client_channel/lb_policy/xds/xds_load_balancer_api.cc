@@ -68,7 +68,7 @@ xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name) {
   req->has_initial_request = true;
   req->initial_request.has_name = true;
   strncpy(req->initial_request.name, lb_service_name,
-          XDS_SERVICE_NAME_MAX_LENGTH);
+          XDS_SERVICE_NAME_MAX_LENGTH-1);
   return req;
 }
 
