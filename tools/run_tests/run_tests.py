@@ -1028,7 +1028,8 @@ class CSharpLanguage(object):
         if self.platform == 'windows':
             return 'cmake/build/%s/Makefile' % self._cmake_arch_option
         else:
-            return 'Makefile'
+            # TODO(jtattermusch): arch option needed?
+            return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (

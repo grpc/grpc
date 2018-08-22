@@ -16,6 +16,14 @@
 set -ex
 
 # cd to gRPC csharp directory
-cd "$(dirname "$0")/../../../src/csharp"
+cd "$(dirname "$0")/../../.."
+
+mkdir -p cmake/build
+cd cmake/build
+
+# TODO(jtattermusch): use RelWithDebInfo for release?
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" ../..
+
+cd ../../src/csharp
 
 dotnet restore Grpc.sln
