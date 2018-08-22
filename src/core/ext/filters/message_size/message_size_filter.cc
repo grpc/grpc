@@ -107,7 +107,7 @@ struct call_data {
   // Original recv_message_ready callback, invoked after our own.
   grpc_closure* next_recv_message_ready;
   // Original recv_trailing_metadata callback, invoked after our own.
-  grpc_closure* next_recv_trailing_metadata_ready;
+  grpc_closure* original_recv_trailing_metadata_ready;
 };
 
 struct channel_data {
@@ -158,7 +158,7 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   error =
       grpc_error_add_child(GRPC_ERROR_REF(error), GRPC_ERROR_REF(calld->error));
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_trailing_metadata_ready, error);
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
 }
 
 // Start transport stream op.
@@ -191,7 +191,7 @@ static void start_transport_stream_op_batch(
   }
   // Inject callback for receiving trailing metadata.
   if (op->recv_trailing_metadata) {
-    calld->next_recv_trailing_metadata_ready =
+    calld->original_recv_trailing_metadata_ready =
         op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &calld->recv_trailing_metadata_ready;
@@ -207,7 +207,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   calld->next_recv_message_ready = nullptr;
-  calld->next_recv_trailing_metadata_ready = nullptr;
+  calld->original_recv_trailing_metadata_ready = nullptr;
   calld->error = GRPC_ERROR_NONE;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
