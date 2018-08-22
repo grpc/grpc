@@ -228,7 +228,7 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
 grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val) {
 #ifdef GRPC_HAVE_TCP_USER_TIMEOUT
   int newval;
-  socklen_t len;
+  socklen_t len = sizeof(newval);
   if (val == 0) {
     val = DEFAULT_TCP_USER_TIMEOUT;
   }
