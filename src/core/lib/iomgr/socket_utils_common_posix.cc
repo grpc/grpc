@@ -226,7 +226,7 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val) {
-#ifdef GPR_LINUX
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
   int newval;
   socklen_t len;
   if (val == 0) {
@@ -242,7 +242,7 @@ grpc_error* grpc_set_socket_tcp_user_timeout(int fd, int val) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to set TCP_USER_TIMEOUT");
   }
-#endif /* GPR_LINUX */
+#endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }
 
