@@ -693,12 +693,10 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(call->channel);
   if (call->is_client) {
-    const char** error_string = call->final_op.client.error_string;
-    grpc_status_code code;
     grpc_slice slice = grpc_empty_slice();
-    grpc_error_get_status(error, call->send_deadline, &code, &slice, nullptr,
-                          error_string);
-    *call->final_op.client.status = code;
+    grpc_error_get_status(error, call->send_deadline,
+                          call->final_op.client.status, &slice, nullptr,
+                          call->final_op.client.error_string);
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
     call->status_error = error;
     if (channelz_channel != nullptr) {
