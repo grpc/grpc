@@ -73,6 +73,10 @@ cdef void __postfork_child() nogil:
         # TODO(ericgribkoff) Check and abort if core is not shutdown
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = False
+    if grpc_is_initialized() > 0:
+        with gil:
+            _LOGGER.error('Failed to shutdown gRPC Core after fork()')
+            os._exit(os.EX_USAGE)
 
 
 def fork_handlers_and_grpc_init():
