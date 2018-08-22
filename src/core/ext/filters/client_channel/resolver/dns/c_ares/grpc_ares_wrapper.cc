@@ -366,7 +366,7 @@ done:
 }
 
 static grpc_ares_request*
-grpc_dns_lookup_continue_after_check_localhost_ares_locked(
+grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
@@ -489,16 +489,72 @@ error_cleanup:
   return nullptr;
 }
 
+static bool inner_resolve_as_ip_literal(const char* name,
+                                        const char* default_port,
+                                        grpc_lb_addresses** addrs, char** host,
+                                        char** port, char** hostport) {
+  gpr_split_host_port(name, host, port);
+  if (*host == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Failed to parse %s to host:port while attempting to resolve as ip "
+            "literal.",
+            name);
+    return false;
+  }
+  if (*port == nullptr) {
+    if (default_port == nullptr) {
+      gpr_log(GPR_ERROR,
+              "No port or default port for %s while attempting to resolve as "
+              "ip literal.",
+              name);
+      return false;
+    }
+    *port = gpr_strdup(default_port);
+  }
+  grpc_resolved_address addr;
+  GPR_ASSERT(gpr_join_host_port(hostport, *host, atoi(*port)));
+  if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
+    GPR_ASSERT(*addrs == nullptr);
+    *addrs = grpc_lb_addresses_create(1, nullptr);
+    grpc_lb_addresses_set_address(
+        *addrs, 0, addr.addr, addr.len, false /* is_balancer */,
+        nullptr /* balancer_name */, nullptr /* user_data */);
+    return true;
+  }
+  return false;
+}
+
+static bool resolve_as_ip_literal(const char* name, const char* default_port,
+                                  grpc_lb_addresses** addrs) {
+  char* host = nullptr;
+  char* port = nullptr;
+  char* hostport = nullptr;
+  bool out = inner_resolve_as_ip_literal(name, default_port, addrs, &host,
+                                         &port, &hostport);
+  gpr_free(host);
+  gpr_free(port);
+  gpr_free(hostport);
+  return out;
+}
+
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
     grpc_combiner* combiner) {
+  // Early out if the target is an ipv4 or ipv6 literal.
+  if (resolve_as_ip_literal(name, default_port, addrs)) {
+    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    return nullptr;
+  }
+  // Early out if the target is localhost and we're on Windows.
   if (maybe_resolve_localhost_manually_locked(name, default_port, addrs)) {
     GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
     return nullptr;
   }
-  return grpc_dns_lookup_continue_after_check_localhost_ares_locked(
+  // Look up name using c-ares lib.
+  return grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       dns_server, name, default_port, interested_parties, on_done, addrs,
       check_grpclb, service_config_json, combiner);
 }
