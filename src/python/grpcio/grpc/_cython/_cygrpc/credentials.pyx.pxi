@@ -21,7 +21,7 @@ from libc.stdint cimport uintptr_t
 
 
 def _spawn_callback_in_thread(cb_func, args):
-  threading.Thread(target=cb_func, args=args).start()
+  ForkManagedThread(target=cb_func, args=args).start()
 
 async_callback_func = _spawn_callback_in_thread
 
@@ -114,7 +114,7 @@ cdef class ChannelCredentials:
 cdef class SSLSessionCacheLRU:
 
   def __cinit__(self, capacity):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self._cache = grpc_ssl_session_cache_create_lru(capacity)
 
   def __int__(self):
@@ -172,7 +172,7 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
 cdef class ServerCertificateConfig:
 
   def __cinit__(self):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self.c_cert_config = NULL
     self.c_pem_root_certs = NULL
     self.c_ssl_pem_key_cert_pairs = NULL
@@ -187,7 +187,7 @@ cdef class ServerCertificateConfig:
 cdef class ServerCredentials:
 
   def __cinit__(self):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self.c_credentials = NULL
     self.references = []
     self.initial_cert_config = None

@@ -19,7 +19,7 @@ cdef class Call:
 
   def __cinit__(self):
     # Create an *empty* call
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self.c_call = NULL
     self.references = []
 

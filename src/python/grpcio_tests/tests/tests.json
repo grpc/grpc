@@ -32,6 +32,8 @@
   "unit._credentials_test.CredentialsTest",
   "unit._cython._cancel_many_calls_test.CancelManyCallsTest",
   "unit._cython._channel_test.ChannelTest",
+  "unit._cython._fork_test.ForkPosixTester",
+  "unit._cython._fork_test.ForkWindowsTester",
   "unit._cython._no_messages_server_completion_queue_per_call_test.Test",
   "unit._cython._no_messages_single_server_completion_queue_test.Test",
   "unit._cython._read_some_but_not_all_responses_test.ReadSomeButNotAllResponsesTest",
