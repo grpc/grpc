@@ -216,7 +216,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 /* Used for debugging. TODO(jboeuf): Remove when code is mature enough. */
 static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    gpr_log(GPR_ERROR, "ssl_info_callback: error occured.\n");
+    gpr_log(GPR_ERROR, "ssl_info_callback: error occurred.\n");
     return;
   }
 

@@ -610,7 +610,7 @@ static void test_compute_engine_creds_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   request_metadata_state* state = make_request_metadata_state(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occured when fetching oauth2 token."),
+          "Error occurred when fetching oauth2 token."),
       nullptr, 0);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -699,7 +699,7 @@ static void test_refresh_token_creds_failure(void) {
   grpc_core::ExecCtx exec_ctx;
   request_metadata_state* state = make_request_metadata_state(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Error occured when fetching oauth2 token."),
+          "Error occurred when fetching oauth2 token."),
       nullptr, 0);
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
