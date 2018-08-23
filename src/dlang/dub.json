@@ -1,0 +1,38 @@
+{
+    "name": "grpc",
+    "license": "Apache-2.0",
+    "copyright": "Copyright (C) 2015-2017 Shanghai Putao Technology Co., Ltd",
+    "description": "A high performance full-stack Web framework.",
+    "libs": [],
+    "dependencies": {
+        "protobuf": {"path":"../protobuf-d"},
+		"hunt-http":{"path":"../hunt-http"}
+    },
+    "configurations":[
+        {
+            "name" : "grpc",
+            "targetType": "library"
+    
+        },
+        {
+            "targetName": "example",
+            "name": "example",
+            "targetType": "executable",
+            "sourceFiles": [
+                "helloworld/example.d",
+                "helloworld/helloworld.d",
+                "helloworld/helloworldrpc.d"
+            ]
+        },
+        {
+            "targetName": "raw_example",
+            "name":"raw_example",
+            "targetType": "executable",
+            "sourceFiles": [
+                "helloworld/helloworld.d",
+                "helloworld/raw_example.d"
+            ]
+        }
+
+    ]
+}
