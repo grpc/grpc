@@ -162,9 +162,10 @@ void ServerLoadReportingCallData::GetCensusSafeClientIpString(
   } else if (addr->sa_family == GRPC_AF_INET6) {
     grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
     *client_ip_string = static_cast<char*>(gpr_malloc(32 + 1));
-    for (size_t i = 0; i < 16; ++i) {
-      snprintf(*client_ip_string + i * 2, 2 + 1, "%02x",
-               addr6->sin6_addr.__in6_u.__u6_addr8[i]);
+    uint32_t* addr6_next_long = reinterpret_cast<uint32_t*>(&addr6->sin6_addr);
+    for (size_t i = 0; i < 4; ++i) {
+      snprintf(*client_ip_string + 8 * i, 8 + 1, "%08x",
+               grpc_ntohl(*addr6_next_long++));
     }
     *size = 32;
   } else {
