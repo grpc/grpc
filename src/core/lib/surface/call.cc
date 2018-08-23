@@ -510,9 +510,8 @@ static void destroy_call(void* call, grpc_error* error) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
 
-  grpc_slice slice = grpc_empty_slice();
   grpc_error_get_status(c->status_error, c->send_deadline,
-                        &c->final_info.final_status, &slice, nullptr,
+                        &c->final_info.final_status, nullptr, nullptr,
                         &(c->final_info.error_string));
   GRPC_ERROR_UNREF(c->status_error);
   c->final_info.stats.latency =
@@ -690,8 +689,6 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
-  grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(call->channel);
   if (call->is_client) {
     grpc_slice slice = grpc_empty_slice();
     grpc_error_get_status(error, call->send_deadline,
@@ -699,6 +696,8 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
                           call->final_op.client.error_string);
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
     call->status_error = error;
+    grpc_core::channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
     if (channelz_channel != nullptr) {
       if (*call->final_op.client.status != GRPC_STATUS_OK) {
         channelz_channel->RecordCallFailed();
@@ -709,13 +708,14 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
-    if (channelz_channel != nullptr) {
+    /* TODO(ncteisen) : Update channelz handling for server
+      if (channelz_channel != nullptr) {
       if (*call->final_op.server.cancelled) {
         channelz_channel->RecordCallFailed();
       } else {
         channelz_channel->RecordCallSucceeded();
       }
-    }
+    } */
     GRPC_ERROR_UNREF(error);
   }
 }
@@ -992,7 +992,7 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
                                  grpc_error* batch_error) {
   grpc_call* call = static_cast<grpc_call*>(args);
   if (batch_error != GRPC_ERROR_NONE) {
-    set_final_status(call, GRPC_ERROR_REF(batch_error));
+    set_final_status(call, batch_error);
   } else if (b->idx.named.grpc_status != nullptr) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
@@ -1025,7 +1025,6 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
                   GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNKNOWN));
   }
   publish_app_metadata(call, b, true);
-  GRPC_ERROR_UNREF(batch_error);
 }
 
 gpr_arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
