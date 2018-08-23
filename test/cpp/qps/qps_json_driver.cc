@@ -66,6 +66,11 @@ DEFINE_string(json_file_out, "", "File to write the JSON output to.");
 DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
               "Credential type for communication with workers");
 DEFINE_bool(run_inproc, false, "Perform an in-process transport test");
+DEFINE_int32(
+    median_latency_collection_interval_millis, 0,
+    "Specifies the period between gathering latency medians in "
+    "milliseconds. The medians will be logged out on the client at the "
+    "end of the benchmark run. If 0, this periodic collection is disabled.");
 
 namespace grpc {
 namespace testing {
@@ -73,13 +78,13 @@ namespace testing {
 static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                                                     bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
-  auto result =
-      RunScenario(scenario.client_config(), scenario.num_clients(),
-                  scenario.server_config(), scenario.num_servers(),
-                  scenario.warmup_seconds(), scenario.benchmark_seconds(),
-                  !FLAGS_run_inproc ? scenario.spawn_local_worker_count() : -2,
-                  FLAGS_qps_server_target_override, FLAGS_credential_type,
-                  FLAGS_run_inproc);
+  auto result = RunScenario(
+    scenario.client_config(), scenario.num_clients(),
+    scenario.server_config(), scenario.num_servers(),
+    scenario.warmup_seconds(), scenario.benchmark_seconds(),
+    !FLAGS_run_inproc ? scenario.spawn_local_worker_count() : -2,
+    FLAGS_qps_server_target_override, FLAGS_credential_type, FLAGS_run_inproc,
+    FLAGS_median_latency_collection_interval_millis);
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
@@ -145,7 +150,8 @@ static double SearchOfferedLoad(double initial_offered_load,
                                 bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario->name() << "\n";
   double current_offered_load = initial_offered_load;
-  double current_cpu_load = GetCpuLoad(scenario, current_offered_load, success);
+  double current_cpu_load =
+      GetCpuLoad(scenario, current_offered_load, success);
   if (current_cpu_load > targeted_cpu_load) {
     gpr_log(GPR_ERROR, "Initial offered load too high");
     return -1;
