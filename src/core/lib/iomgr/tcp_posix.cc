@@ -120,8 +120,9 @@ struct grpc_tcp {
    * requirement from the TCP endpoint layer is that this arg should be non-null
    * if the user wants timestamps for the write. */
   void* outgoing_buffer_arg;
-  /* Current TCP (relative) sequence number which starts out at zero. Used for
-   * timestamping traced buffers. */
+  /* A counter which starts at 0. It is initialized the first time the socket
+   * options for collecting timestamps are set, and is incremented with each
+   * byte sent. */
   int bytes_counter;
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
                            */
@@ -574,6 +575,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
       }
       return false;
     }
+    tcp->bytes_counter = 0;
     tcp->socket_ts_enabled = true;
   }
   /* Set control message to indicate that you want timestamps. */
@@ -590,12 +592,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   msg->msg_control = u.cmsg_buf;
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
 
-  ssize_t length;
-  do {
-    GRPC_STATS_INC_SYSCALL_WRITE();
-    length = sendmsg(tcp->fd, msg, SENDMSG_FLAGS);
-  } while (length < 0 && errno == EINTR);
   /* If there was an error on sendmsg the logic in tcp_flush will handle it. */
+  ssize_t length = sendmsg_wrapper(tcp->fd, msg);
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
@@ -763,6 +761,19 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
 
+/* A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
+ * of bytes sent. */
+ssize_t sendmsg_wrapper(int fd, const struct msghdr* msg) {
+  GPR_TIMER_SCOPE("sendmsg", 1);
+  ssize_t sent_length;
+  do {
+    /* TODO(klempner): Cork if this is a partial write */
+    GRPC_STATS_INC_SYSCALL_WRITE();
+    sent_length = sendmsg(fd, msg, SENDMSG_FLAGS);
+  } while (sent_length < 0 && errno == EINTR);
+  return sent_length;
+}
+
 /* returns true if done, false if pending; if returning true, *error is set */
 #if defined(IOV_MAX) && IOV_MAX < 1000
 #define MAX_WRITE_IOVEC IOV_MAX
@@ -819,12 +830,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
       GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
 
-      GPR_TIMER_SCOPE("sendmsg", 1);
-      do {
-        /* TODO(klempner): Cork if this is a partial write */
-        GRPC_STATS_INC_SYSCALL_WRITE();
-        sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
-      } while (sent_length < 0 && errno == EINTR);
+      sent_length = sendmsg_wrapper(tcp->fd, &msg);
     }
 
     if (sent_length < 0) {
