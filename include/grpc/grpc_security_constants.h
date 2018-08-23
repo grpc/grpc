@@ -57,15 +57,16 @@ typedef enum {
 } grpc_ssl_certificate_config_reload_status;
 
 typedef enum {
-  /** Server does not request client certificate. A client can present a self
-     signed or signed certificates if it wishes to do so and they would be
-     accepted. */
+  /** Server does not request client certificate. A client may present a self
+     signed or signed certificates if it wishes to do so and either option would
+     be accepted. */
   GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
      If the client presents a certificate, the client authentication is left to
-     the application based on the metadata like certificate etc.
+     the application (the necessary metadata will be available to the
+     application via authentication context properties, see grpc_auth_context).
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
@@ -74,26 +75,27 @@ typedef enum {
      presents a certificate.
 
      If the client presents a certificate, the client authentication is done by
-     grpc framework (The client needs to either present a signed cert or skip no
-     certificate for a successful connection).
+     the gRPC framework (the client needs to either present a signed cert or not
+     present a certificate at all for a successful connection).
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
   GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-  /** Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate and enforces that the client presents a
      certificate.
 
      If the client presents a certificate, the client authentication is left to
-     the application based on the metadata like certificate etc.
+     the application (the necessary metadata will be available to the
+     application via authentication context properties, see grpc_auth_context).
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-  /** Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate and enforces that the client presents a
      certificate.
 
-     The cerificate presented by the client is verified by grpc framework (The
-     client needs to present signed certs for a successful connection).
+     The cerificate presented by the client is verified by the gRPC framework
+     (the client needs to present signed certs for a successful connection).
 
      The key cert pair should still be valid for the SSL connection to be
      established. */
