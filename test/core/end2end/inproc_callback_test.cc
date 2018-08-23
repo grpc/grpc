@@ -91,10 +91,10 @@ ShutdownCallback* g_shutdown_callback;
 }  // namespace
 
 // The following global structure is the tag collection. It holds
-// all information related to tags expected and tags received 
+// all information related to tags expected and tags received
 // during the execution, with each callback setting a tag.
 // The tag sets are implemented and checked using arrays and
-// linear lookups (rather than maps) so that this test doesn't 
+// linear lookups (rather than maps) so that this test doesn't
 // need the C++ standard library.
 static gpr_mu tags_mu;
 static gpr_cv tags_cv;
