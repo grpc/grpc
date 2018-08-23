@@ -62,7 +62,7 @@ typedef struct grpc_fd_watcher {
 
 typedef struct grpc_cached_wakeup_fd grpc_cached_wakeup_fd;
 
-/* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
+/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
 struct grpc_fork_fd_list {
   /* Only one of fd or cached_wakeup_fd will be set. The unused field will be
   set to nullptr. */
@@ -122,15 +122,14 @@ struct grpc_fd {
 
   grpc_iomgr_object iomgr_object;
 
-  /* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
+  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 };
 
-/* True when GRPC_ENABLE_FORK_SUPPORT=1 and polling strategy is poll. We do not
- * support fork with poll-cv */
+/* True when GRPC_ENABLE_FORK_SUPPORT=1. We do not support fork with poll-cv */
 static bool track_fds_for_fork = false;
 
-/* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
+/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
 static grpc_fork_fd_list* fork_fd_list_head = nullptr;
 static gpr_mu fork_fd_list_mu;
 
@@ -181,7 +180,7 @@ typedef struct grpc_cached_wakeup_fd {
   grpc_wakeup_fd fd;
   struct grpc_cached_wakeup_fd* next;
 
-  /* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
+  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 } grpc_cached_wakeup_fd;
 
