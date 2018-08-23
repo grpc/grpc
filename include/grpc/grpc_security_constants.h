@@ -58,8 +58,8 @@ typedef enum {
 
 typedef enum {
   /** Server does not request client certificate. A client may present a self
-     signed or signed certificates if it wishes to do so and either option would
-     be accepted. */
+     signed or signed certificate or not present a certificate at all and any of
+     those option would be accepted. */
   GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
