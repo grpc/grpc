@@ -608,6 +608,11 @@ GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
  */
 GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type type);
+    
+    /**
+     * certificate is or not valide host name
+     */
+    GRPCAPI void grpc_set_auth_host_name(bool auth);
 
 #ifdef __cplusplus
 }

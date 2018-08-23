@@ -17,7 +17,7 @@
  */
 
 #import "GRPCCall+Tests.h"
-
+#include <grpc/grpc_security.h>
 #import "private/GRPCHost.h"
 
 @implementation GRPCCall (Tests)
@@ -38,6 +38,7 @@
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   [hostConfig setTLSPEMRootCerts:certs withPrivateKey:nil withCertChain:nil error:nil];
   hostConfig.hostNameOverride = testName;
+  grpc_set_auth_host_name(false);
 }
 
 + (void)useInsecureConnectionsForHost:(NSString *)host {
