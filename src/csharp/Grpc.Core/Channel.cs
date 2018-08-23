@@ -72,9 +72,9 @@ namespace Grpc.Core
             this.environment = GrpcEnvironment.AddRef();
 
             this.completionQueue = this.environment.PickCompletionQueue();
-            using (var nativeCredentials = credentials.ToNativeCredentials())
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
+                var nativeCredentials = credentials.GetNativeCredentials();
                 if (nativeCredentials != null)
                 {
                     this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
