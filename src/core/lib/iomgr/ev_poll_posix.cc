@@ -62,7 +62,7 @@ typedef struct grpc_fd_watcher {
 
 typedef struct grpc_cached_wakeup_fd grpc_cached_wakeup_fd;
 
-/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+/* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
 struct grpc_fork_fd_list {
   /* Only one of fd or cached_wakeup_fd will be set. The unused field will be
   set to nullptr. */
@@ -122,11 +122,15 @@ struct grpc_fd {
 
   grpc_iomgr_object iomgr_object;
 
-  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+  /* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 };
 
-/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+/* True when GRPC_ENABLE_FORK_SUPPORT=1 and polling strategy is poll. We do not
+ * support fork with poll-cv */
+static bool track_fds_for_fork = false;
+
+/* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
 static grpc_fork_fd_list* fork_fd_list_head = nullptr;
 static gpr_mu fork_fd_list_mu;
 
@@ -177,7 +181,7 @@ typedef struct grpc_cached_wakeup_fd {
   grpc_wakeup_fd fd;
   struct grpc_cached_wakeup_fd* next;
 
-  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+  /* Only used by poll when GRPC_ENABLE_FORK_SUPPORT=1 */
   grpc_fork_fd_list* fork_fd_list;
 } grpc_cached_wakeup_fd;
 
@@ -304,11 +308,11 @@ poll_hash_table poll_cache;
 grpc_cv_fd_table g_cvfds;
 
 /*******************************************************************************
- * functions to track opened fds. No-ops unless GRPC_ENABLE_FORK_SUPPORT=1.
+ * functions to track opened fds. No-ops unless track_fds_for_fork is true.
  */
 
 static void fork_fd_list_remove_node(grpc_fork_fd_list* node) {
-  if (grpc_core::Fork::Enabled()) {
+  if (track_fds_for_fork) {
     gpr_mu_lock(&fork_fd_list_mu);
     if (fork_fd_list_head == node) {
       fork_fd_list_head = node->next;
@@ -336,7 +340,7 @@ static void fork_fd_list_add_node(grpc_fork_fd_list* node) {
 }
 
 static void fork_fd_list_add_grpc_fd(grpc_fd* fd) {
-  if (grpc_core::Fork::Enabled()) {
+  if (track_fds_for_fork) {
     fd->fork_fd_list =
         static_cast<grpc_fork_fd_list*>(gpr_malloc(sizeof(grpc_fork_fd_list)));
     fd->fork_fd_list->fd = fd;
@@ -346,7 +350,7 @@ static void fork_fd_list_add_grpc_fd(grpc_fd* fd) {
 }
 
 static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
-  if (grpc_core::Fork::Enabled()) {
+  if (track_fds_for_fork) {
     fd->fork_fd_list =
         static_cast<grpc_fork_fd_list*>(gpr_malloc(sizeof(grpc_fork_fd_list)));
     fd->fork_fd_list->cached_wakeup_fd = fd;
@@ -1784,7 +1788,7 @@ static void shutdown_engine(void) {
   if (grpc_cv_wakeup_fds_enabled()) {
     global_cv_fd_table_shutdown();
   }
-  if (grpc_core::Fork::Enabled()) {
+  if (track_fds_for_fork) {
     gpr_mu_destroy(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
   }
@@ -1854,6 +1858,7 @@ const grpc_event_engine_vtable* grpc_init_poll_posix(bool explicit_request) {
     return nullptr;
   }
   if (grpc_core::Fork::Enabled()) {
+    track_fds_for_fork = true;
     gpr_mu_init(&fork_fd_list_mu);
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);
