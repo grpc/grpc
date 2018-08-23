@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
+#include <grpc/grpc_security.h>
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -64,7 +64,7 @@ static grpc_ssl_roots_override_callback ssl_roots_override_cb = nullptr;
 void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
   ssl_roots_override_cb = cb;
 }
-
+static bool grpc_auth_peer_name = true;
 /* -- Cipher suites. -- */
 
 /* Defines the cipher suites that we accept by default. All these cipher suites
@@ -786,8 +786,15 @@ static void ssl_server_add_handshakers(grpc_server_security_connector* sc,
   grpc_handshake_manager_add(
       handshake_mgr, grpc_security_handshaker_create(tsi_hs, &sc->base));
 }
+    
+    void grpc_set_auth_host_name(bool auth){
+        grpc_auth_peer_name = auth;
+    }
 
 int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
+    if (!grpc_auth_peer_name){
+        return 1;
+    }
   char* allocated_name = nullptr;
   int r;
 
