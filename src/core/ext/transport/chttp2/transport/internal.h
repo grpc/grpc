@@ -469,6 +469,7 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+  ContextList *cl;
 };
 
 typedef enum {
@@ -479,6 +480,7 @@ typedef enum {
 } grpc_published_metadata_method;
 
 struct grpc_chttp2_stream {
+  void *context;
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
 

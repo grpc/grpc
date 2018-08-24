@@ -22,26 +22,26 @@
 #include <grpc/support/port_platform.h>
 
 /** A list of RPC Contexts */
-class ContextList {
-  struct ContextListElement {
-    void *context;
-    ContextListElement *next;
-  };
-
+class ContextList {\
  public:
-  ContextList() : head_(nullptr);
-
-  /* Creates a new element with \a context as the value and appends it to the 
+  /* Creates a new element with \a context as the value and appends it to the
    * list. */
-  void Append(void *context) {
-    ContextListElement *elem = static_cast<ContextListElement *>(gpr_malloc(sizeof(ContextlistELement)));
+  void Append(ContextList **head, void *context) {
+    /* Make sure context is not already present */
+    ContextList *ptr = *head;
+    while(ptr != nullptr) {
+      if(ptr->context == context) {
+        GPR_ASSERT(false);
+      }
+    }
+    ContextList *elem = static_cast<ContextListElement *>(gpr_malloc(sizeof(ContextList)));
     elem->context = context;
     elem->next = nullptr;
-    if(head_ == nullptr) {
-      head = elem;
+    if(*head_ == nullptr) {
+      *head = elem;
       return;
     }
-    ContextListElement *ptr = head_;
+    ptr = *head;
     while(ptr->next != nullptr) {
       ptr = ptr->next;
     }
@@ -50,17 +50,13 @@ class ContextList {
 
   /* Executes a function \a fn with each context in the list and \a arg. It also
    * frees up the entire list after this operation. */
-  void Execute(void (*fn)(void *context, void *arg)) {
-    ContextListElement *ptr;
-    while(head_ != nullptr){
-      fn(head->context, arg);
-      ptr = head_;
-      head_ = head_->next;
-      gpr_free(ptr);
-    }
-  }
+  void Execute(ContextList *head, grpc_core::Timestamps *ts, grpc_error* error);
+
  private:
-  ContextListElement *head_;
+    void *context;
+    ContextListElement *next;
 };
+
+grpc_http2_set_write_timestamps_callback(void (*fn)(void *, grpc_core::Timestamps*));
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */

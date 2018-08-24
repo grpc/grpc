@@ -487,6 +487,7 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
+    ContextList::Append(&t_->cl, s_->context);
     while ((s_->flow_controlled_buffer.length > 0 ||
             s_->compressed_data_buffer.length > 0) &&
            data_send_context.max_outgoing() > 0) {
