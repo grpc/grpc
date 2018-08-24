@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -236,6 +236,7 @@ static void init_transport(grpc_chttp2_transport* t,
   size_t i;
   int j;
 
+  grpc_tcp_set_write_timestamps_callback(ContextList::Execute);
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -1026,11 +1027,13 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
 static void write_action(void* gt, grpc_error* error) {
   GPR_TIMER_SCOPE("write_action", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
+  void *cl = t->cl;
+  t->cl = nullptr;
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
-                        grpc_combiner_scheduler(t->combiner)),
-      nullptr);
+                        grpc_combiner_scheduler(t->combiner)), cl
+      );
 }
 
 /* Callback from the grpc_endpoint after bytes have been written by calling
@@ -1354,6 +1357,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   GRPC_STATS_INC_HTTP2_OP_BATCHES();
 
+  s->context = op->context;
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
