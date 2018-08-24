@@ -58,6 +58,12 @@ void grpc_prefork() {
             "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
     return;
   }
+  if (strcmp(grpc_get_poll_strategy_name(), "epoll1") != 0 &&
+      strcmp(grpc_get_poll_strategy_name(), "poll") != 0) {
+    gpr_log(GPR_ERROR,
+            "Fork support is only compatible with the epoll1 and poll polling "
+            "strategies");
+  }
   if (!grpc_core::Fork::BlockExecCtx()) {
     gpr_log(GPR_INFO,
             "Other threads are currently calling into gRPC, skipping fork() "

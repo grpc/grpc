@@ -37,8 +37,6 @@ _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
-_GRPC_POLL_STRATEGY = os.environ.get('GRPC_POLL_STRATEGY')
-
 cdef void __prefork() nogil:
     with gil:
         with _fork_state.fork_in_progress_condition:
@@ -82,13 +80,6 @@ cdef void __postfork_child() nogil:
 def fork_handlers_and_grpc_init():
     grpc_init()
     if _GRPC_ENABLE_FORK_SUPPORT:
-        # TODO(ericgribkoff) epoll1 is default for grpcio distribution. Decide whether to expose
-        # grpc_get_poll_strategy_name() from ev_posix.cc to get actual polling choice.
-        if _GRPC_POLL_STRATEGY is not None and _GRPC_POLL_STRATEGY != "epoll1":
-            _LOGGER.error(
-                'gRPC Python fork support is only compatible with the epoll1 '
-                'polling engine')
-            return
         with _fork_state.fork_handler_registered_lock:
             if not _fork_state.fork_handler_registered:
                 pthread_atfork(&__prefork, &__postfork_parent, &__postfork_child)
