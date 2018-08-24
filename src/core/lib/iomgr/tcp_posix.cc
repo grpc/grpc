@@ -646,7 +646,8 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     return cmsg;
   }
 
-  auto tss = reinterpret_cast<struct scm_timestamping*>(CMSG_DATA(cmsg));
+  auto tss =
+      reinterpret_cast<struct grpc_core::scm_timestamping*>(CMSG_DATA(cmsg));
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
