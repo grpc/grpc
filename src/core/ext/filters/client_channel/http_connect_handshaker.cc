@@ -320,7 +320,7 @@ static void http_connect_handshaker_do_handshake(
   // Take a new ref to be held by the write callback.
   gpr_ref(&handshaker->refcount);
   grpc_endpoint_write(args->endpoint, &handshaker->write_buffer,
-                      &handshaker->request_done_closure);
+                      &handshaker->request_done_closure, nullptr);
   gpr_mu_unlock(&handshaker->mu);
 }
 
