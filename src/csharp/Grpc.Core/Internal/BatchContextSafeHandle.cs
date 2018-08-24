@@ -144,7 +144,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Exception occured while invoking batch completion delegate.");
+                Logger.Error(e, "Exception occurred while invoking batch completion delegate.");
             }
             finally
             {
