@@ -42,4 +42,6 @@ void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
     grpc_closure* notify_on_receive_settings);
 
+size_t grpc_chttp2_get_stream_size();
+
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

@@ -338,7 +338,7 @@ class FakeClientChannelFactory : public grpc_client_channel_factory {
 };
 
 const grpc_client_channel_factory_vtable FakeClientChannelFactory::vtable_ = {
-    NoRef, NoUnref, CreateSubchannel, CreateClientChannel};
+    0, NoRef, NoUnref, CreateSubchannel, CreateClientChannel};
 
 static grpc_arg StringArg(const char* key, const char* value) {
   grpc_arg a;

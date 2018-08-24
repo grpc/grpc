@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
@@ -99,7 +100,6 @@ grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_args_destroy(args);
     return channel;
   }
-
   memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
@@ -112,12 +112,23 @@ grpc_channel* grpc_channel_create_with_builder(
       grpc_core::channelz::ChannelNode::MakeChannelNode;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
-
-  gpr_atm_no_barrier_store(
-      &channel->call_size_estimate,
-      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size +
-          grpc_call_get_initial_size_estimate());
-
+  size_t initial_call_size_estimate =
+      CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size +
+      grpc_call_get_initial_size_estimate();
+  if (channel_stack_type == GRPC_CLIENT_CHANNEL) {
+    initial_call_size_estimate +=
+        grpc_channel_stack_builder_get_subchannel_call_size(args);
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_CLIENT_CHANNEL_FACTORY);
+    if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
+      auto client_channel_factory =
+          static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
+      initial_call_size_estimate +=
+          grpc_client_channel_factory_get_stream_size(client_channel_factory);
+    }
+  }
+  gpr_atm_no_barrier_store(&channel->call_size_estimate,
+                           initial_call_size_estimate);
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
     if (0 ==

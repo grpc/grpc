@@ -21,6 +21,11 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/lib/channel/channel_args.h"
 
+size_t grpc_client_channel_factory_get_stream_size(
+    grpc_client_channel_factory* factory) {
+  return factory->vtable->sizeof_stream;
+}
+
 void grpc_client_channel_factory_ref(grpc_client_channel_factory* factory) {
   factory->vtable->ref(factory);
 }
