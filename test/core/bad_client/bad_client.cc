@@ -115,7 +115,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure);
+  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Await completion, unless the request is large and write may not finish
