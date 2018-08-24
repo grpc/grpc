@@ -104,10 +104,9 @@ bool tags_valid[kAvailableTags];
 bool tags_expected[kAvailableTags];
 bool tags_needed[kAvailableTags];
 
-// Mark that a tag is expected; this function must be
-// executed in the main thread only while there are no
-// other threads altering the expectation set (e.g.,
-// running callbacks).
+// Mark that a tag is expected; this function must be executed in the
+// main thread only while there are no other threads altering the
+// expectation set (e.g., running callbacks).
 static void expect_tag(intptr_t tag, bool ok) {
   size_t idx = static_cast<size_t>(tag);
   GPR_ASSERT(idx < kAvailableTags);
@@ -340,13 +339,14 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Register a call at the server-side to match the incoming client call
+  // First mark that we are expecting its tag to complete in this round
+  expect_tag(2, true);
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq, tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // We expect that the server call creation callback (and no others) will
   // execute now since no other batch should be complete.
-  expect_tag(2, true);
   verify_tags(deadline);
 
   peer = grpc_call_get_peer(s);
@@ -357,6 +357,11 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(peer != nullptr);
   gpr_log(GPR_DEBUG, "client_peer=%s", peer);
   gpr_free(peer);
+
+  // Both the client request and server response batches should get complete
+  // in this round and we should see that their callbacks get executed
+  expect_tag(3, true);
+  expect_tag(1, true);
 
   // Create the server response batch (no payload)
   memset(ops, 0, sizeof(ops));
@@ -383,10 +388,7 @@ static void simple_request_body(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  // Both the client request and server response batches should get complete
-  // now and we should see that their callbacks have been executed
-  expect_tag(3, true);
-  expect_tag(1, true);
+  // Make sure that the tags get executed by the deadline
   verify_tags(deadline);
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
