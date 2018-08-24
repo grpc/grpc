@@ -690,11 +690,12 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
   if (call->is_client) {
-    grpc_slice slice = grpc_empty_slice();
     grpc_error_get_status(error, call->send_deadline,
-                          call->final_op.client.status, &slice, nullptr,
+                          call->final_op.client.status,
+                          call->final_op.client.status_details, nullptr,
                           call->final_op.client.error_string);
-    *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
+    // explicitly take a ref
+    grpc_slice_ref_internal(*call->final_op.client.status_details);
     call->status_error = error;
     grpc_core::channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel);
