@@ -22,6 +22,9 @@
 #include <grpc/impl/codegen/byte_buffer.h>
 
 #include <grpcpp/impl/codegen/config.h>
+// Question for reviewers, does this bring in dependency on proto? or is this
+// safe?
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
@@ -153,6 +156,9 @@ class ByteBuffer final {
   friend class ProtoBufferReader;
   friend class ProtoBufferWriter;
   friend class internal::GrpcByteBufferPeer;
+  template <class ProtoBufferReader, class T>
+  friend Status GenericDeserialize(ByteBuffer* buffer,
+                                   grpc::protobuf::Message* msg);
 
   grpc_byte_buffer* buffer_;
 
