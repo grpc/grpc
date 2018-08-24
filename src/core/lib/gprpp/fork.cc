@@ -222,8 +222,9 @@ void Fork::DecExecCtxCount() {
   }
 }
 
-void Fork::SetResetChildPollingEngineFunc(Fork::child_postfork_func func) {
-  reset_child_polling_engine_ = func;
+void Fork::SetResetChildPollingEngineFunc(
+    Fork::child_postfork_func reset_child_polling_engine) {
+  reset_child_polling_engine_ = reset_child_polling_engine;
 }
 Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {
   return reset_child_polling_engine_;
