@@ -131,11 +131,13 @@ static void verify_tags(gpr_timespec deadline) {
           if (tags[i] != tags_expected[i]) {
             gpr_log(GPR_ERROR, "Got wrong result (%d instead of %d) for tag %d",
                     tags[i], tags_expected[i], static_cast<int>(i));
+            GPR_ASSERT(false);
           }
           tags_valid[i] = false;
           tags_needed[i] = false;
         } else if (done) {
           gpr_log(GPR_ERROR, "Didn't get tag %d", static_cast<int>(i));
+          GPR_ASSERT(false);
         }
       }
     }
@@ -151,6 +153,7 @@ static void verify_tags(gpr_timespec deadline) {
         if (tags_valid[i]) {
           gpr_log(GPR_ERROR, "Got unexpected tag %d and result %d",
                   static_cast<int>(i), tags[i]);
+          GPR_ASSERT(false);
         }
         tags_valid[i] = false;
       }
