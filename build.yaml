@@ -3022,6 +3022,19 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: inproc_callback_test
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/inproc_callback_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: invalid_call_argument_test
   cpu_cost: 0.1
   build: test

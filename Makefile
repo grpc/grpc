@@ -1053,6 +1053,7 @@ httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
 httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
 init_test: $(BINDIR)/$(CONFIG)/init_test
+inproc_callback_test: $(BINDIR)/$(CONFIG)/inproc_callback_test
 invalid_call_argument_test: $(BINDIR)/$(CONFIG)/invalid_call_argument_test
 json_fuzzer_test: $(BINDIR)/$(CONFIG)/json_fuzzer_test
 json_rewrite: $(BINDIR)/$(CONFIG)/json_rewrite
@@ -1500,6 +1501,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/httpcli_test \
   $(BINDIR)/$(CONFIG)/httpscli_test \
   $(BINDIR)/$(CONFIG)/init_test \
+  $(BINDIR)/$(CONFIG)/inproc_callback_test \
   $(BINDIR)/$(CONFIG)/invalid_call_argument_test \
   $(BINDIR)/$(CONFIG)/json_rewrite \
   $(BINDIR)/$(CONFIG)/json_rewrite_test \
@@ -2076,6 +2078,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpscli_test || ( echo test httpscli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing init_test"
 	$(Q) $(BINDIR)/$(CONFIG)/init_test || ( echo test init_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inproc_callback_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inproc_callback_test || ( echo test inproc_callback_test failed ; exit 1 )
 	$(E) "[RUN]     Testing invalid_call_argument_test"
 	$(Q) $(BINDIR)/$(CONFIG)/invalid_call_argument_test || ( echo test invalid_call_argument_test failed ; exit 1 )
 	$(E) "[RUN]     Testing json_rewrite_test"
@@ -13111,6 +13115,38 @@ deps_init_test: $(INIT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(INIT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INPROC_CALLBACK_TEST_SRC = \
+    test/core/end2end/inproc_callback_test.cc \
+
+INPROC_CALLBACK_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_CALLBACK_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inproc_callback_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/inproc_callback_test: $(INPROC_CALLBACK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(INPROC_CALLBACK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/inproc_callback_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/inproc_callback_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_inproc_callback_test: $(INPROC_CALLBACK_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INPROC_CALLBACK_TEST_OBJS:.o=.dep)
 endif
 endif
 
