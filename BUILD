@@ -1549,6 +1549,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1809,6 +1810,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "tsi_interface",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1905,6 +1907,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -2157,6 +2160,13 @@ grpc_cc_library(
     deps = [
         ":census",
         ":grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_shadow_boringssl",
+    hdrs = [
+        "src/core/tsi/grpc_shadow_boringssl.h",
     ],
 )
 

@@ -69,6 +69,7 @@ filegroups:
   - grpc_transport_chttp2_client_insecure
   - tsi_interface
   - tsi
+  - grpc_shadow_boringssl
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
@@ -841,6 +842,7 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - tsi
+  - grpc_shadow_boringssl
 - name: grpc_server_backward_compatibility
   headers:
   - src/core/ext/filters/workarounds/workaround_utils.h
@@ -848,6 +850,9 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.cc
   uses:
   - grpc_base
+- name: grpc_shadow_boringssl
+  headers:
+  - src/core/tsi/grpc_shadow_boringssl.h
 - name: grpc_test_util_base
   build: test
   headers:
@@ -1109,6 +1114,7 @@ filegroups:
   - tsi_interface
   - grpc_base
   - grpc_trace
+  - grpc_shadow_boringssl
 - name: tsi_interface
   headers:
   - src/core/tsi/transport_security.h

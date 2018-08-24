@@ -9068,6 +9068,7 @@
       "alts_util", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_client_insecure", 
       "tsi", 
       "tsi_interface"
@@ -10357,6 +10358,7 @@
       "alts_tsi", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_alpn", 
       "tsi"
     ], 
@@ -10468,6 +10470,20 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.cc", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/tsi/grpc_shadow_boringssl.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_shadow_boringssl", 
+    "src": [
+      "src/core/tsi/grpc_shadow_boringssl.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10923,6 +10939,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_trace", 
       "tsi_interface"
     ], 

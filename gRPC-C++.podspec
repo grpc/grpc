@@ -348,6 +348,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
+                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/lib/avl/avl.h',
