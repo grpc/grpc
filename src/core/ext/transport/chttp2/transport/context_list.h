@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+namespace grpc_core {
 /** A list of RPC Contexts */
 class ContextList {\
  public:
@@ -58,5 +59,6 @@ class ContextList {\
 };
 
 grpc_http2_set_write_timestamps_callback(void (*fn)(void *, grpc_core::Timestamps*));
+} /* namespace grpc_core */
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */
