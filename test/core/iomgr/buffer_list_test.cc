@@ -75,7 +75,7 @@ static void TestVerifierCalledOnAckVerifier(void* arg,
 static void TestVerifierCalledOnAck() {
   struct sock_extended_err serr;
   serr.ee_data = 213;
-  serr.ee_info = SCM_TSTAMP_ACK;
+  serr.ee_info = grpc_core::SCM_TSTAMP_ACK;
   struct grpc_core::scm_timestamping tss;
   tss.ts[0].tv_sec = 123;
   tss.ts[0].tv_nsec = 456;
