@@ -193,6 +193,7 @@ setuptools.setup(
     url='https://grpc.io',
     license='Apache License 2.0',
     classifiers=CLASSIFIERS,
+    long_description=open('README.rst').read(),
     ext_modules=extension_modules(),
     packages=setuptools.find_packages('.'),
     install_requires=[
