@@ -79,12 +79,12 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
                                                     bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
   auto result = RunScenario(
-    scenario.client_config(), scenario.num_clients(),
-    scenario.server_config(), scenario.num_servers(),
-    scenario.warmup_seconds(), scenario.benchmark_seconds(),
-    !FLAGS_run_inproc ? scenario.spawn_local_worker_count() : -2,
-    FLAGS_qps_server_target_override, FLAGS_credential_type, FLAGS_run_inproc,
-    FLAGS_median_latency_collection_interval_millis);
+      scenario.client_config(), scenario.num_clients(),
+      scenario.server_config(), scenario.num_servers(),
+      scenario.warmup_seconds(), scenario.benchmark_seconds(),
+      !FLAGS_run_inproc ? scenario.spawn_local_worker_count() : -2,
+      FLAGS_qps_server_target_override, FLAGS_credential_type, FLAGS_run_inproc,
+      FLAGS_median_latency_collection_interval_millis);
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.
@@ -150,8 +150,7 @@ static double SearchOfferedLoad(double initial_offered_load,
                                 bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario->name() << "\n";
   double current_offered_load = initial_offered_load;
-  double current_cpu_load =
-      GetCpuLoad(scenario, current_offered_load, success);
+  double current_cpu_load = GetCpuLoad(scenario, current_offered_load, success);
   if (current_cpu_load > targeted_cpu_load) {
     gpr_log(GPR_ERROR, "Initial offered load too high");
     return -1;

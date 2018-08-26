@@ -323,7 +323,6 @@ class Client {
       return medians_each_interval_list_;
     }
 
-
     void UpdateHistogram(HistogramEntry* entry) {
       std::lock_guard<std::mutex> g(mu_);
       if (entry->value_used()) {
