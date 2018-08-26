@@ -114,6 +114,7 @@ static const grpc_endpoint_vtable vtable = {
     me_get_resource_user,
     me_get_peer,
     me_get_fd,
+    nullptr,
 };
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),

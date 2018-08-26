@@ -148,7 +148,8 @@ static const grpc_endpoint_vtable vtable = {te_read,
                                             te_destroy,
                                             te_get_resource_user,
                                             te_get_peer,
-                                            te_get_fd};
+                                            te_get_fd,
+                                            nullptr};
 
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second) {

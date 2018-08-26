@@ -242,6 +242,7 @@ add_dependencies(buildtests_c combiner_test)
 add_dependencies(buildtests_c compression_test)
 add_dependencies(buildtests_c concurrent_connectivity_test)
 add_dependencies(buildtests_c connection_refused_test)
+add_dependencies(buildtests_c context_list_test)
 add_dependencies(buildtests_c dns_resolver_connectivity_test)
 add_dependencies(buildtests_c dns_resolver_cooldown_test)
 add_dependencies(buildtests_c dns_resolver_test)
@@ -6170,6 +6171,33 @@ target_link_libraries(connection_refused_test
   grpc
   gpr_test_util
   gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(context_list_test
+  test/core/transport/chttp2/context_list_test.cc
+)
+
+
+target_include_directories(context_list_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(context_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
 )
 
 endif (gRPC_BUILD_TESTS)

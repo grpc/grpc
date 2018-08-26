@@ -21,44 +21,55 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/buffer_list.h"
+
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+
 namespace grpc_core {
 /** A list of RPC Contexts */
-class ContextList {\
+class ContextList {
  public:
   /* Creates a new element with \a context as the value and appends it to the
    * list. */
-  void Append(ContextList **head, void *context) {
+  static void Append(ContextList** head, grpc_chttp2_stream* s) {
     /* Make sure context is not already present */
-    ContextList *ptr = *head;
-    while(ptr != nullptr) {
-      if(ptr->context == context) {
+    ContextList* ptr = *head;
+    // GRPC_CHTTP2_STREAM_REF(s, "timestamp");
+    while (ptr != nullptr) {
+      if (ptr->s == s) {
         GPR_ASSERT(false);
       }
+      ptr = ptr->next;
     }
-    ContextList *elem = static_cast<ContextListElement *>(gpr_malloc(sizeof(ContextList)));
-    elem->context = context;
+    ContextList* elem =
+        static_cast<ContextList*>(gpr_malloc(sizeof(ContextList)));
+    elem->s = s;
     elem->next = nullptr;
-    if(*head_ == nullptr) {
+    if (*head == nullptr) {
       *head = elem;
+      gpr_log(GPR_INFO, "new head");
+      gpr_log(GPR_INFO, "append %p %p", elem, *head);
       return;
     }
+    gpr_log(GPR_INFO, "append %p %p", elem, *head);
     ptr = *head;
-    while(ptr->next != nullptr) {
+    while (ptr->next != nullptr) {
       ptr = ptr->next;
     }
     ptr->next = elem;
   }
 
-  /* Executes a function \a fn with each context in the list and \a arg. It also
+  /* Executes a function \a fn with each context in the list and \a ts. It also
    * frees up the entire list after this operation. */
-  void Execute(ContextList *head, grpc_core::Timestamps *ts, grpc_error* error);
+  static void Execute(void* arg, grpc_core::Timestamps* ts, grpc_error* error);
 
  private:
-    void *context;
-    ContextListElement *next;
+  grpc_chttp2_stream* s;
+  ContextList* next;
 };
 
-grpc_http2_set_write_timestamps_callback(void (*fn)(void *, grpc_core::Timestamps*));
+void grpc_http2_set_write_timestamps_callback(
+    void (*fn)(void*, grpc_core::Timestamps*));
 } /* namespace grpc_core */
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */

@@ -171,6 +171,7 @@ static const grpc_endpoint_vtable vtable = {
     me_get_resource_user,
     me_get_peer,
     me_get_fd,
+    nullptr,
 };
 
 static void half_init(half* m, passthru_endpoint* parent,

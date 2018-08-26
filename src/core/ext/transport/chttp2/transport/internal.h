@@ -44,6 +44,10 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
+namespace grpc_core {
+class ContextList;
+}
+
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
@@ -469,7 +473,7 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
-  ContextList *cl;
+  grpc_core::ContextList* cl;
 };
 
 typedef enum {
@@ -480,7 +484,7 @@ typedef enum {
 } grpc_published_metadata_method;
 
 struct grpc_chttp2_stream {
-  void *context;
+  void* context;
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
 

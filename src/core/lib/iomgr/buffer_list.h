@@ -67,7 +67,7 @@ class TracedBuffer {
 
   /** Cleans the list by calling the callback for each traced buffer in the list
    * with timestamps that it has. */
-  static void Shutdown(grpc_core::TracedBuffer** head,
+  static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
                        grpc_error* shutdown_err);
 
  private:

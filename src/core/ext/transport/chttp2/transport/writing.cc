@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <limits.h>
@@ -487,7 +488,10 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    ContextList::Append(&t_->cl, s_->context);
+    if (/* traced && */ grpc_endpoint_can_track_err(t_->ep)) {
+      gpr_log(GPR_INFO, "for transport %p", t_);
+      grpc_core::ContextList::Append(&t_->cl, s_);
+    }
     while ((s_->flow_controlled_buffer.length > 0 ||
             s_->compressed_data_buffer.length > 0) &&
            data_send_context.max_outgoing() > 0) {

@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
@@ -155,6 +156,7 @@ bool g_flow_control_enabled = true;
  */
 
 static void destruct_transport(grpc_chttp2_transport* t) {
+  gpr_log(GPR_INFO, "destruct transport %p", t);
   size_t i;
 
   grpc_endpoint_destroy(t->ep);
@@ -163,6 +165,8 @@ static void destruct_transport(grpc_chttp2_transport* t) {
 
   grpc_slice_buffer_destroy_internal(&t->outbuf);
   grpc_chttp2_hpack_compressor_destroy(&t->hpack_compressor);
+
+  grpc_core::ContextList::Execute(t->cl, nullptr, GRPC_ERROR_NONE);
 
   grpc_slice_buffer_destroy_internal(&t->read_buffer);
   grpc_chttp2_hpack_parser_destroy(&t->hpack_parser);
@@ -236,7 +240,7 @@ static void init_transport(grpc_chttp2_transport* t,
   size_t i;
   int j;
 
-  grpc_tcp_set_write_timestamps_callback(ContextList::Execute);
+  grpc_tcp_set_write_timestamps_callback(grpc_core::ContextList::Execute);
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -1027,13 +1031,16 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
 static void write_action(void* gt, grpc_error* error) {
   GPR_TIMER_SCOPE("write_action", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
-  void *cl = t->cl;
+  void* cl = t->cl;
   t->cl = nullptr;
+  if (cl) {
+    gpr_log(GPR_INFO, "cleared for write");
+  }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
-                        grpc_combiner_scheduler(t->combiner)), cl
-      );
+                        grpc_combiner_scheduler(t->combiner)),
+      cl);
 }
 
 /* Callback from the grpc_endpoint after bytes have been written by calling
@@ -1357,7 +1364,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   GRPC_STATS_INC_HTTP2_OP_BATCHES();
 
-  s->context = op->context;
+  s->context = op->payload->context;
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,

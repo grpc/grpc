@@ -31,6 +31,7 @@
 namespace grpc_core {
 void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
                                void* arg) {
+  gpr_log(GPR_INFO, "new entry %u", seq_no);
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
   /* Store the current time as the sendmsg time. */
@@ -64,6 +65,7 @@ void (*timestamps_callback)(void*, grpc_core::Timestamps*,
 void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
                                     struct sock_extended_err* serr,
                                     struct scm_timestamping* tss) {
+  gpr_log(GPR_INFO, "process timestamp %u", serr->ee_data);
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* elem = *head;
   TracedBuffer* next = nullptr;
@@ -85,6 +87,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           /* Got all timestamps. Do the callback and free this TracedBuffer.
            * The thing below can be passed by value if we don't want the
            * restriction on the lifetime. */
+          gpr_log(GPR_INFO, "calling");
           timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
           next = elem->next_;
           Delete<TracedBuffer>(elem);
@@ -99,18 +102,22 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   }
 }
 
-void TracedBuffer::Shutdown(TracedBuffer** head, grpc_error* shutdown_err) {
+void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
+                            grpc_error* shutdown_err) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* elem = *head;
+  gpr_log(GPR_INFO, "shutdown");
   while (elem != nullptr) {
-    if (timestamps_callback) {
-      timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    }
+    timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
+    gpr_log(GPR_INFO, "iter");
     auto* next = elem->next_;
     Delete<TracedBuffer>(elem);
     elem = next;
   }
   *head = nullptr;
+  if (remaining != nullptr) {
+    timestamps_callback(remaining, nullptr, shutdown_err);
+  }
   GRPC_ERROR_UNREF(shutdown_err);
 }
 
