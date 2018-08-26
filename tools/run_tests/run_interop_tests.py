@@ -1494,7 +1494,7 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run)
     if args.bq_result_table and resultset:
-        upload_interop_results_to_bq(resultset, args.bq_result_table, args)
+        upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
         jobset.message('FAILED', 'Some tests failed', do_newline=True)
     else:
