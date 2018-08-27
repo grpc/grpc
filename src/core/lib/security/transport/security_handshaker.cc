@@ -259,7 +259,7 @@ static grpc_error* on_handshake_next_done_locked(
     grpc_slice_buffer_reset_and_unref_internal(&h->outgoing);
     grpc_slice_buffer_add(&h->outgoing, to_send);
     grpc_endpoint_write(h->args->endpoint, &h->outgoing,
-                        &h->on_handshake_data_sent_to_peer);
+                        &h->on_handshake_data_sent_to_peer, nullptr);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(h->args->endpoint, h->args->read_buffer,
