@@ -1,0 +1,76 @@
+# Copyright 2018 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# This is for the gRPC build system. This isn't intended to be used outsite of
+# the BUILD file for gRPC. It contains the mapping for the template system we
+# use to generate other platform's build system files.
+#
+# Please consider that there should be a high bar for additions and changes to
+# this file.
+# Each rule listed must be re-written for Google's internal build system, and
+# each change must be ported from one to the other.
+#
+
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test")
+load("//test/cpp/qps:qps_json_driver_scenarios.bzl", "QPS_JSON_DRIVER_SCENARIOS")
+load("//test/cpp/qps:json_run_localhost_scenarios.bzl", "JSON_RUN_LOCALHOST_SCENARIOS")
+
+def qps_json_driver_batch():
+    idx = 0  # number for differentiating names
+    for scenario in QPS_JSON_DRIVER_SCENARIOS:
+        grpc_cc_test(
+            name = "qps_json_driver_test_%s" % str(idx),
+            srcs = ["qps_json_driver.cc"],
+            args = [
+                "--run_inproc",
+                "--scenarios_json",
+                scenario,
+            ],
+            external_deps = [
+                "gflags",
+            ],
+            deps = [
+                ":benchmark_config",
+                ":driver_impl",
+                "//:grpc++",
+                "//test/cpp/util:test_config",
+                "//test/cpp/util:test_util",
+            ],
+        )
+        idx += 1
+
+def json_run_localhost_batch():
+    idx = 0  # number for differentiating names
+    for scenario in JSON_RUN_LOCALHOST_SCENARIOS:
+        grpc_cc_test(
+            name = "json_run_localhost_%s" % str(idx),
+            srcs = ["json_run_localhost.cc"],
+            args = [
+                "--scenarios_json",
+                scenario,
+            ],
+            data = [
+                "//test/cpp/qps:qps_json_driver",
+                "//test/cpp/qps:qps_worker",
+            ],
+            deps = [
+                "//:gpr",
+                "//test/core/util:gpr_test_util",
+                "//test/core/util:grpc_test_util",
+                "//test/cpp/util:test_config",
+                "//test/cpp/util:test_util",
+            ],
+        )
+        idx += 1

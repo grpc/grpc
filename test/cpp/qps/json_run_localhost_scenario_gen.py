@@ -20,15 +20,19 @@ import json
 def generate_args():
   all_scenario_set = gen.generate_yaml()
   all_scenario_set = all_scenario_set['tests']
-  qps_json_driver_scenario_set = \
-    [item for item in all_scenario_set if item['name'] == 'json_run_localhost']
-  qps_json_driver_arg_set = \
-    [item['args'][1] for item in qps_json_driver_scenario_set \
-     if 'args' in item and len(item['args']) > 1]
+  json_run_localhost_scenarios = \
+    [item for item in all_scenario_set if item['name'] == 'qps_json_driver']
+  json_run_localhost_arg_set = \
+    [item['args'][2] for item in json_run_localhost_scenarios \
+     if 'args' in item and len(item['args']) > 2]
   deserialized_scenarios = [json.loads(item)['scenarios'][0] \
-                            for item in qps_json_driver_arg_set]
-  all_scenarios = {'scenarios': deserialized_scenarios}
-  print('\'' + json.dumps(all_scenarios) + '\'')
+                            for item in json_run_localhost_arg_set]
+  all_scenarios = [{'scenarios' : [scenario]} \
+                   for scenario in deserialized_scenarios]
 
+  serialized_scenarios_str = str(['\'' + json.dumps(scenario) + '\'' \
+                                  for scenario in all_scenarios])
+  with open('json_run_localhost_scenarios.bzl', 'wb') as f:
+    f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str + '\n')
 
 generate_args()

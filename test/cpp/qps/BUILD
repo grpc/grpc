@@ -15,6 +15,7 @@
 licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+load("//test/cpp/qps:qps_benchmark_script.bzl", "qps_json_driver_batch", "json_run_localhost_batch")
 
 grpc_package(name = "test/cpp/qps")
 
@@ -117,6 +118,21 @@ grpc_cc_library(
     deps = ["//test/core/util:grpc_test_util"],
 )
 
+grpc_cc_binary(
+    name = "qps_json_driver",
+    srcs = ["qps_json_driver.cc"],
+    external_deps = [
+        "gflags",
+    ],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "inproc_sync_unary_ping_pong_test",
     srcs = ["inproc_sync_unary_ping_pong_test.cc"],
@@ -135,34 +151,9 @@ grpc_cc_library(
     deps = ["//:grpc++"],
 )
 
-filegroup(
-    name = "json_run_localhost_scenarios",
-    srcs = [
-        ":json_run_localhost_scenarios.json",
-    ],
-)
+qps_json_driver_batch()
 
-grpc_cc_test(
-    name = "json_run_localhost",
-    timeout = "eternal",
-    srcs = ["json_run_localhost.cc"],
-    args = [
-        "--scenarios_file",
-        "$(location //test/cpp/qps:json_run_localhost_scenarios)",
-    ],
-    data = [
-        "//test/cpp/qps:json_run_localhost_scenarios",
-        "//test/cpp/qps:qps_json_driver",
-        "//test/cpp/qps:qps_worker",
-    ],
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
-    ],
-)
+json_run_localhost_batch()
 
 grpc_cc_test(
     name = "qps_interarrival_test",
@@ -171,36 +162,6 @@ grpc_cc_test(
         ":histogram",
         ":interarrival",
         "//test/cpp/util:test_config",
-    ],
-)
-
-filegroup(
-    name = "qps_json_driver_scenarios",
-    srcs = [
-        ":qps_json_driver_scenarios.json",
-    ],
-)
-
-grpc_cc_test(
-    name = "qps_json_driver",
-    srcs = ["qps_json_driver.cc"],
-    args = [
-        "--run_inproc",
-        "--scenarios_file",
-        "$(location //test/cpp/qps:qps_json_driver_scenarios)",
-    ],
-    data = [
-        "//test/cpp/qps:qps_json_driver_scenarios",
-    ],
-    external_deps = [
-        "gflags",
-    ],
-    deps = [
-        ":benchmark_config",
-        ":driver_impl",
-        "//:grpc++",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
     ],
 )
 
