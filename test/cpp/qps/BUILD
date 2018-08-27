@@ -144,6 +144,7 @@ filegroup(
 
 grpc_cc_test(
     name = "json_run_localhost",
+    timeout = "eternal",
     srcs = ["json_run_localhost.cc"],
     args = [
         "--scenarios_file",
