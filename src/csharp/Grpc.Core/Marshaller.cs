@@ -163,6 +163,15 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Creates a marshaller from specified contextual serializer and deserializer.
+        /// Note: This method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static Marshaller<T> Create<T>(Action<T, SerializationContext> serializer, Func<DeserializationContext, T> deserializer)
+        {
+            return new Marshaller<T>(serializer, deserializer);
+        }
+
+        /// <summary>
         /// Returns a marshaller for <c>string</c> type. This is useful for testing.
         /// </summary>
         public static Marshaller<string> StringMarshaller
