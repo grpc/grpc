@@ -28,15 +28,14 @@ load("//test/cpp/qps:qps_json_driver_scenarios.bzl", "QPS_JSON_DRIVER_SCENARIOS"
 load("//test/cpp/qps:json_run_localhost_scenarios.bzl", "JSON_RUN_LOCALHOST_SCENARIOS")
 
 def qps_json_driver_batch():
-    idx = 0  # number for differentiating names
     for scenario in QPS_JSON_DRIVER_SCENARIOS:
         grpc_cc_test(
-            name = "qps_json_driver_test_%s" % str(idx),
+            name = "qps_json_driver_test_%s" % scenario,
             srcs = ["qps_json_driver.cc"],
             args = [
                 "--run_inproc",
                 "--scenarios_json",
-                scenario,
+                QPS_JSON_DRIVER_SCENARIOS[scenario],
             ],
             external_deps = [
                 "gflags",
@@ -49,17 +48,15 @@ def qps_json_driver_batch():
                 "//test/cpp/util:test_util",
             ],
         )
-        idx += 1
 
 def json_run_localhost_batch():
-    idx = 0  # number for differentiating names
     for scenario in JSON_RUN_LOCALHOST_SCENARIOS:
         grpc_cc_test(
-            name = "json_run_localhost_%s" % str(idx),
+            name = "json_run_localhost_%s" % scenario,
             srcs = ["json_run_localhost.cc"],
             args = [
                 "--scenarios_json",
-                scenario,
+                JSON_RUN_LOCALHOST_SCENARIOS[scenario],
             ],
             data = [
                 "//test/cpp/qps:qps_json_driver",
@@ -73,4 +70,3 @@ def json_run_localhost_batch():
                 "//test/cpp/util:test_util",
             ],
         )
-        idx += 1

@@ -27,12 +27,12 @@ def generate_args():
      if 'args' in item and len(item['args']) > 2]
   deserialized_scenarios = [json.loads(item)['scenarios'][0] \
                             for item in qps_json_driver_arg_set]
-  all_scenarios = [{'scenarios' : [scenario]} \
-                   for scenario in deserialized_scenarios]
+  all_scenarios = {scenario['name'].encode('ascii', 'ignore'): \
+                   '\'{\'scenarios\' : [' + json.dumps(scenario) + ']}\'' \
+                   for scenario in deserialized_scenarios}
 
-  serialized_scenarios_str = str(['\'' + json.dumps(scenario) + '\'' \
-                          for scenario in all_scenarios])
-  with open('qps_json_driver_scenarios.bzl', 'wb') as f:
+  serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
+  with open('qps_json_driver_scenarios.bzl', 'w') as f:
     f.write('QPS_JSON_DRIVER_SCENARIOS = ' + serialized_scenarios_str + '\n')
 
 generate_args()
