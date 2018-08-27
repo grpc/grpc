@@ -55,7 +55,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg) {
+                     grpc_closure* cb) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);

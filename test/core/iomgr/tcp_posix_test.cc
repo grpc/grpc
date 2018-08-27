@@ -36,9 +36,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/buffer_list.h"
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
@@ -66,43 +63,6 @@ static void create_sockets(int sv[2]) {
   int flags;
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
   flags = fcntl(sv[0], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
-  flags = fcntl(sv[1], F_GETFL, 0);
-  GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-}
-
-static void create_inet_sockets(int sv[2]) {
-  /* Prepare listening socket */
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(struct sockaddr_in));
-  addr.sin_family = AF_INET;
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(sock);
-  GPR_ASSERT(bind(sock, (sockaddr*)&addr, sizeof(sockaddr_in)) == 0);
-  listen(sock, 1);
-
-  /* Prepare client socket and connect to server */
-  socklen_t len = sizeof(sockaddr_in);
-  GPR_ASSERT(getsockname(sock, (sockaddr*)&addr, &len) == 0);
-
-  int client = socket(AF_INET, SOCK_STREAM, 0);
-  GPR_ASSERT(client);
-  int ret;
-  do {
-    ret = connect(client, (sockaddr*)&addr, sizeof(sockaddr_in));
-  } while (ret == -1 && errno == EINTR);
-
-  /* Accept client connection */
-  len = sizeof(socklen_t);
-  int server;
-  do {
-    server = accept(sock, (sockaddr*)&addr, (socklen_t*)&len);
-  } while (server == -1 && errno == EINTR);
-  GPR_ASSERT(server != -1);
-
-  sv[0] = server;
-  sv[1] = client;
-  int flags = fcntl(sv[0], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
@@ -329,10 +289,11 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error* error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
+  gpr_log(GPR_INFO, "Write done callback called");
   gpr_mu_lock(g_mu);
+  gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
@@ -379,24 +340,10 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   gpr_free(buf);
 }
 
-/* Verifier for timestamps callback for write_test */
-void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
-                         grpc_error* error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(ts->sendmsg_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->scheduled_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->acked_time.clock_type == GPR_CLOCK_REALTIME);
-  gpr_atm* done_timestamps = (gpr_atm*)arg;
-  gpr_atm_rel_store(done_timestamps, static_cast<gpr_atm>(1));
-}
-
 /* Write to a socket using the grpc_tcp API, then drain it directly.
    Note that if the write does not complete immediately we need to drain the
-   socket in parallel with the read. If collect_timestamps is true, it will
-   try to get timestamps for the write. */
-static void write_test(size_t num_bytes, size_t slice_size,
-                       bool collect_timestamps) {
+   socket in parallel with the read. */
+static void write_test(size_t num_bytes, size_t slice_size) {
   int sv[2];
   grpc_endpoint* ep;
   struct write_socket_state state;
@@ -409,27 +356,19 @@ static void write_test(size_t num_bytes, size_t slice_size,
       grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
   grpc_core::ExecCtx exec_ctx;
 
-  if (collect_timestamps && !grpc_event_engine_can_track_errors()) {
-    return;
-  }
-
   gpr_log(GPR_INFO,
           "Start write test with %" PRIuPTR " bytes, slice size %" PRIuPTR,
           num_bytes, slice_size);
 
-  if (collect_timestamps) {
-    create_inet_sockets(sv);
-  } else {
-    create_sockets(sv);
-  }
+  create_sockets(sv);
 
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER,
   a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test", collect_timestamps),
-                       &args, "test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test", false), &args,
+                       "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
   state.ep = ep;
@@ -442,26 +381,18 @@ static void write_test(size_t num_bytes, size_t slice_size,
   GRPC_CLOSURE_INIT(&write_done_closure, write_done, &state,
                     grpc_schedule_on_exec_ctx);
 
-  gpr_atm done_timestamps;
-  gpr_atm_rel_store(&done_timestamps, static_cast<gpr_atm>(0));
-  grpc_endpoint_write(ep, &outgoing, &write_done_closure,
-                      grpc_event_engine_can_track_errors() && collect_timestamps
-                          ? (void*)&done_timestamps
-                          : nullptr);
+  grpc_endpoint_write(ep, &outgoing, &write_done_closure);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
-  exec_ctx.Flush();
   gpr_mu_lock(g_mu);
   for (;;) {
     grpc_pollset_worker* worker = nullptr;
-    if (state.write_done &&
-        (!(grpc_event_engine_can_track_errors() && collect_timestamps) ||
-         gpr_atm_acq_load(&done_timestamps) == static_cast<gpr_atm>(1))) {
+    if (state.write_done) {
       break;
     }
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
-    exec_ctx.Flush();
+
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -566,21 +497,14 @@ void run_tests(void) {
   large_read_test(8192);
   large_read_test(1);
 
-  write_test(100, 8192, false);
-  write_test(100, 1, false);
-  write_test(100000, 8192, false);
-  write_test(100000, 1, false);
-  write_test(100000, 137, false);
-
-  write_test(100, 8192, true);
-  write_test(100, 1, true);
-  write_test(100000, 8192, true);
-  write_test(100000, 1, true);
-  write_test(100, 137, true);
+  write_test(100, 8192);
+  write_test(100, 1);
+  write_test(100000, 8192);
+  write_test(100000, 1);
+  write_test(100000, 137);
 
   for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
-    write_test(40320, i, false);
-    write_test(40320, i, true);
+    write_test(40320, i);
   }
 
   release_fd_test(100, 8192);
@@ -625,7 +549,6 @@ int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
