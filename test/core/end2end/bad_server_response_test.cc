@@ -104,7 +104,7 @@ static void handle_write() {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
+  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write);
 }
 
 static void handle_read(void* arg, grpc_error* error) {

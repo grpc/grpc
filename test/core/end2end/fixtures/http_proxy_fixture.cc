@@ -201,7 +201,7 @@ static void on_client_write_done(void* arg, grpc_error* error) {
                                 &conn->client_write_buffer);
     conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr);
+                        &conn->on_client_write_done);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "write_done");
@@ -226,7 +226,7 @@ static void on_server_write_done(void* arg, grpc_error* error) {
                                 &conn->server_write_buffer);
     conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr);
+                        &conn->on_server_write_done);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "server_write");
@@ -257,7 +257,7 @@ static void on_client_read_done(void* arg, grpc_error* error) {
     proxy_connection_ref(conn, "client_read");
     conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr);
+                        &conn->on_server_write_done);
   }
   // Read more data.
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
@@ -288,7 +288,7 @@ static void on_server_read_done(void* arg, grpc_error* error) {
     proxy_connection_ref(conn, "server_read");
     conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr);
+                        &conn->on_client_write_done);
   }
   // Read more data.
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
@@ -340,7 +340,7 @@ static void on_server_connect_done(void* arg, grpc_error* error) {
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   conn->client_is_writing = true;
   grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                      &conn->on_write_response_done, nullptr);
+                      &conn->on_write_response_done);
 }
 
 /**

@@ -96,7 +96,7 @@ class DummyEndpoint : public grpc_endpoint {
   }
 
   static void write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, void* arg) {
+                    grpc_closure* cb) {
     GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
   }
 
