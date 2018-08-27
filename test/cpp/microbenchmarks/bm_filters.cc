@@ -51,23 +51,23 @@ template <class FilterBM>
 static void BM_CallStackInit(benchmark::State& state) {
   // Setup for benchmark
   FilterBM bm_setup;
-  struct DataForFilterBM data;
-  bm_setup.Setup(&data);
-
+  std::ostringstream label;
+  TrackCounters track_counters;
+  
   // Run the benchmark
   grpc_call_final_info final_info;
   while (state.KeepRunning()) {
-    GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
-                                          nullptr, &data.call_args));
-    grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
+    GRPC_ERROR_UNREF(grpc_call_stack_init(bm_setup.GetChannelStack(), 1, DoNothing,
+                                          nullptr, bm_setup.GetCallArgs()));
+    grpc_call_stack_destroy(bm_setup.GetCallStack(), &final_info, nullptr);
     // Recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
-      gpr_arena_destroy(data.call_args.arena);
-      data.call_args.arena = gpr_arena_create(bm_setup.kArenaSize);
+      gpr_arena_destroy(bm_setup.GetCallArgs()->arena);
+      bm_setup.GetCallArgs()->arena = gpr_arena_create(bm_setup.kArenaSize);
     }
   }
-
-  bm_setup.Destroy(&data, state);
+  state.SetLabel(label.str());
+  track_counters.Finish(state);
 }
 
 typedef FilterFixture<nullptr, 0> NoFilter;
@@ -129,8 +129,8 @@ template <class FilterBM>
 static void BM_FullFilterFunctionality(benchmark::State& state) {
   // Setup for benchmark
   FilterBM bm_setup;
-  struct DataForFilterBM data;
-  bm_setup.Setup(&data);
+  std::ostringstream label;
+  TrackCounters track_counters;
 
   // Run the benchmark
   while (state.KeepRunning()) {
@@ -139,9 +139,9 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
     // a new call stack each time through the loop. It's also not valid to have
     // more than one of send_message or recv_message in flight on a single call
     // at the same time.
-    memset(data.call_stack, 0, data.channel_stack->call_stack_size);
-    GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
-                                          nullptr, &data.call_args));
+    memset(bm_setup.GetCallStack(), 0, bm_setup.GetChannelStack()->call_stack_size);
+    GRPC_ERROR_UNREF(grpc_call_stack_init(bm_setup.GetChannelStack(), 1, DoNothing,
+                                          nullptr, bm_setup.GetCallArgs()));
 
     struct PayloadData payload;
     CreatePayloadForAllOps(&payload);
@@ -150,8 +150,8 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
     CreateBatchWithAllOps(&batch, &payload.payload);
 
     grpc_call_element* call_elem =
-        CALL_ELEMS_FROM_STACK(data.call_args.call_stack);
-    if (!data.filters.empty()) {
+        CALL_ELEMS_FROM_STACK(bm_setup.GetCallArgs()->call_stack);
+    if (!bm_setup.GetFilters().empty()) {
       bm_setup.fixture.filter->start_transport_stream_op_batch(call_elem,
                                                                &batch);
     }
@@ -169,24 +169,24 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
   }
 
   grpc_call_final_info final_info;
-  grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
-
-  bm_setup.Destroy(&data, state);
+  grpc_call_stack_destroy(bm_setup.GetCallStack(), &final_info, nullptr);
+  state.SetLabel(label.str());
+  track_counters.Finish(state);
 }
 
 // We skip Client_Channel for this benchmark because it requires a lot more work
 // than what has been done in order to microbenchmark it. Moreover, it may be
 // the case that once we do this work, we may be measuring much more than just
 // client_channel filter overhead.
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpClientFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpServerFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, MessageSizeFilterBM);
-// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerLoadReportingFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpServerFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, MessageSizeFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerLoadReportingFilterBM);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.

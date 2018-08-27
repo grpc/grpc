@@ -42,16 +42,16 @@ class FakeClientChannelFactory : public grpc_client_channel_factory {
   FakeClientChannelFactory() { vtable = &vtable_; }
 
  private:
-  static void NoRef(grpc_client_channel_factory* factory) {}
-  static void NoUnref(grpc_client_channel_factory* factory) {}
-  static grpc_subchannel* CreateSubchannel(grpc_client_channel_factory* factory,
-                                           const grpc_subchannel_args* args) {
+  static void NoRef(grpc_client_channel_factory* factory_) {}
+  static void NoUnref(grpc_client_channel_factory* factory_) {}
+  static grpc_subchannel* CreateSubchannel(grpc_client_channel_factory* factory_,
+                                           const grpc_subchannel_args* args_) {
     return nullptr;
   }
-  static grpc_channel* CreateClientChannel(grpc_client_channel_factory* factory,
+  static grpc_channel* CreateClientChannel(grpc_client_channel_factory* factory_,
                                            const char* target,
                                            grpc_client_channel_type type,
-                                           const grpc_channel_args* args) {
+                                           const grpc_channel_args* args_) {
     return nullptr;
   }
 
@@ -78,7 +78,7 @@ static void StartTransportOp(grpc_channel_element* elem,
                              grpc_transport_op* op) {}
 
 static grpc_error* InitCallElem(grpc_call_element* elem,
-                                const grpc_call_element_args* args) {
+                                const grpc_call_element_args* args_) {
   return GRPC_ERROR_NONE;
 }
 
@@ -90,7 +90,7 @@ static void DestroyCallElem(grpc_call_element* elem,
                             grpc_closure* then_sched_closure) {}
 
 grpc_error* InitChannelElem(grpc_channel_element* elem,
-                            grpc_channel_element_args* args) {
+                            grpc_channel_element_args* args_) {
   return GRPC_ERROR_NONE;
 }
 
@@ -166,11 +166,11 @@ static grpc_transport dummy_transport = {&dummy_transport_vtable};
 
 }  // namespace dummy_transport
 
-grpc_channel_args CreateFakeChannelArgs(std::vector<grpc_arg>* args,
-                                        FakeClientChannelFactory* factory) {
-  args->push_back(grpc_client_channel_factory_create_channel_arg(factory));
-  args->push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
-  return {args->size(), args->data()};
+grpc_channel_args CreateFakeChannelArgs(std::vector<grpc_arg>* args_,
+                                        FakeClientChannelFactory* factory_) {
+  args_->push_back(grpc_client_channel_factory_create_channel_arg(factory_));
+  args_->push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+  return {args_->size(), args_->data()};
 }
 
 enum FilterFixtureFlags : uint32_t {
@@ -184,113 +184,114 @@ struct FilterFixture {
   const uint32_t flags = kFlags;
 };
 
-// Generic data needed for each filter microbenchmark
-struct DataForFilterBM {
-  std::vector<const grpc_channel_filter*> filters;
-  grpc_channel_args channel_args;
-  grpc_channel_stack* channel_stack;
-  grpc_call_stack* call_stack;
-  grpc_call_element_args call_args;
-};
-
 template <class FilterFixture>
 class FilterBM {
  public:
+  // Creates necessary data and structures for the filter microbenchmark
   FilterBM()
-      : fixture(), track_counters(), label(), args(), exec_ctx(), factory() {}
+      : fixture(), args_(), exec_ctx_(), factory_(), channel_args_(), call_args_() {
+        channel_args_ = CreateFakeChannelArgs();
+        MaybeAddFilterToStack();
+        channel_stack_ =
+            ConstructChannelStack();
+        call_stack_ = static_cast<grpc_call_stack*>(
+            gpr_zalloc(channel_stack_->call_stack_size));
+        SetCallArgs(&call_args_, call_stack_);
+      }
 
-  // Creates all necessary data and structures for the filter microbenchmark
-  void Setup(struct DataForFilterBM* data) {
-    data->channel_args = CreateFakeChannelArgs();
-    MaybeAddFilterToStack(&data->filters);
-    data->channel_stack =
-        ConstructChannelStack(&data->filters, &data->channel_args);
-    data->call_stack = static_cast<grpc_call_stack*>(
-        gpr_zalloc(data->channel_stack->call_stack_size));
-    SetCallArgs(&data->call_args, data->call_stack);
+  ~FilterBM() {
+    gpr_arena_destroy(call_args_.arena);
+    grpc_channel_stack_destroy(channel_stack_);
+
+    gpr_free(channel_stack_);
+    gpr_free(call_stack_);
   }
 
-  // Call this at the end of the benchmark for cleanup
-  void Destroy(struct DataForFilterBM* data, benchmark::State& state) {
-    gpr_arena_destroy(data->call_args.arena);
-    grpc_channel_stack_destroy(data->channel_stack);
+  grpc_channel_stack* GetChannelStack() {
+    return channel_stack_;
+  }
 
-    gpr_free(data->channel_stack);
-    gpr_free(data->call_stack);
+  grpc_call_element_args* GetCallArgs() {
+    return &call_args_;
+  }
 
-    state.SetLabel(label.str());
-    track_counters.Finish(state);
+  grpc_call_stack* GetCallStack() {
+    return call_stack_;
+  }
+
+  const std::vector<const grpc_channel_filter*> GetFilters() {
+    return filters_;
   }
 
   FilterFixture fixture;
   const int kArenaSize = 4096;
-  TrackCounters track_counters;
-  std::ostringstream label;
 
  private:
   // Caller is responsible for freeing the returned grpc_channel_stack*
-  grpc_channel_stack* ConstructChannelStack(
-      std::vector<const grpc_channel_filter*>* filters,
-      grpc_channel_args* channel_args) {
+  grpc_channel_stack* ConstructChannelStack() {
     size_t channel_size =
-        grpc_channel_stack_size(filters->data(), filters->size());
-    grpc_channel_stack* channel_stack =
+        grpc_channel_stack_size(filters_.data(), filters_.size());
+    grpc_channel_stack* channel_stack_ =
         static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "channel_stack_init",
-        grpc_channel_stack_init(1, FilterDestroy, channel_stack,
-                                filters->data(), filters->size(), channel_args,
+        grpc_channel_stack_init(1, FilterDestroy, channel_stack_,
+                                filters_.data(), filters_.size(), &channel_args_,
                                 fixture.flags & REQUIRES_TRANSPORT
                                     ? &dummy_transport::dummy_transport
                                     : nullptr,
-                                "CHANNEL", channel_stack)));
+                                "CHANNEL", channel_stack_)));
     grpc_core::ExecCtx::Get()->Flush();
-    return channel_stack;
+    return channel_stack_;
   }
 
   grpc_channel_args CreateFakeChannelArgs() {
-    args.push_back(grpc_client_channel_factory_create_channel_arg(&factory));
-    args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
-    return {args.size(), args.data()};
+    args_.push_back(grpc_client_channel_factory_create_channel_arg(&factory_));
+    args_.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+    return {args_.size(), args_.data()};
   }
 
   // If the filter in FilterFixture is not null, then add it to the filter stack
   // and add a dummy filter to the appropriate place in the stack.
-  void MaybeAddFilterToStack(
-      std::vector<const grpc_channel_filter*>* filter_stack) {
+  void MaybeAddFilterToStack() {
     if (fixture.filter == nullptr) {
       return;
     }
-    filter_stack->push_back(fixture.filter);
+    filters_.push_back(fixture.filter);
     if (fixture.flags & CHECKS_NOT_LAST) {
       // This filter cannot be last in the stack, so we must append a dummy
       // filter after it to appease it.
-      filter_stack->push_back(&dummy_filter::dummy_filter);
+      filters_.push_back(&dummy_filter::dummy_filter);
     } else {
       // This filter must be last on the stack. In order to be consistent with
-      // the other benchmarked filters, we add a dummy filter onto the stack.
-      filter_stack->insert(filter_stack->begin(), &dummy_filter::dummy_filter);
+      // the other benchmarked filters_, we add a dummy filter onto the stack.
+      filters_.insert(filters_.begin(), &dummy_filter::dummy_filter);
     }
   }
 
-  void SetCallArgs(grpc_call_element_args* call_args,
-                   grpc_call_stack* call_stack) {
+  void SetCallArgs(grpc_call_element_args* call_args_,
+                   grpc_call_stack* call_stack_) {
     grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
     gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
     grpc_slice method = grpc_slice_from_static_string("/foo/bar");
 
-    call_args->call_stack = call_stack;
-    call_args->server_transport_data = nullptr;
-    call_args->context = nullptr;
-    call_args->path = method;
-    call_args->start_time = start_time;
-    call_args->deadline = deadline;
-    call_args->arena = gpr_arena_create(kArenaSize);
+    call_args_->call_stack = call_stack_;
+    call_args_->server_transport_data = nullptr;
+    call_args_->context = nullptr;
+    call_args_->path = method;
+    call_args_->start_time = start_time;
+    call_args_->deadline = deadline;
+    call_args_->arena = gpr_arena_create(kArenaSize);
   }
 
-  std::vector<grpc_arg> args;
-  grpc_core::ExecCtx exec_ctx;
-  FakeClientChannelFactory factory;
+  std::vector<grpc_arg> args_;
+  grpc_core::ExecCtx exec_ctx_;
+  FakeClientChannelFactory factory_;
+  std::vector<const grpc_channel_filter*> filters_;
+  grpc_channel_args channel_args_;
+  grpc_channel_stack* channel_stack_;
+  grpc_call_stack* call_stack_;
+  grpc_call_element_args call_args_;
 };
 
 // Generic data needed for batch payloads in these microbenchmarks
@@ -316,7 +317,7 @@ struct PayloadData {
   grpc_transport_stream_op_batch_payload payload;
 };
 
-// Initializes the payload such that filters won't complain when we send
+// Initializes the payload such that filters_ won't complain when we send
 // all 6 ops down the filter stack
 void CreatePayloadForAllOps(struct PayloadData* data) {
   grpc_transport_stream_op_batch_payload* payload = &data->payload;
