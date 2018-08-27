@@ -137,10 +137,10 @@ namespace Grpc.Core
 
             public EmulatedDeserializationContext(byte[] payload)
             {
-                this.payload = payload;
+                this.payload = GrpcPreconditions.CheckNotNull(payload);
             }
 
-            public override int? PayloadLength => payload?.Length;
+            public override int PayloadLength => payload.Length;
 
             public override byte[] PayloadAsNewBuffer()
             {

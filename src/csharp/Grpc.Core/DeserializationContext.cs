@@ -24,14 +24,9 @@ namespace Grpc.Core
     public abstract class DeserializationContext
     {
         /// <summary>
-        /// Returns <c>true</c> if there is a payload to deserialize (= payload is not null), <c>false</c> otherwise.
+        /// Get the total length of the payload in bytes.
         /// </summary>
-        public virtual bool HasPayload => PayloadLength.HasValue;
-
-        /// <summary>
-        /// Get the total length of the payload in bytes or <c>null</c> if the payload is null.
-        /// </summary>
-        public abstract int? PayloadLength { get; }
+        public abstract int PayloadLength { get; }
 
         /// <summary>
         /// Gets the entire payload as a newly allocated byte array.
@@ -43,7 +38,7 @@ namespace Grpc.Core
         /// the payload is more than 86700 bytes large (which means the newly allocated buffer will be placed in LOH,
         /// and LOH object can only be garbage collected via a full ("stop the world") GC run).
         /// </summary>
-        /// <returns>byte array containing the entire payload or null if there is no payload.</returns>
+        /// <returns>byte array containing the entire payload.</returns>
         public abstract byte[] PayloadAsNewBuffer();
     }
 }
