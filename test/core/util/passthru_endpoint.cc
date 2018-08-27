@@ -76,7 +76,7 @@ static half* other_half(half* h) {
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg) {
+                     grpc_closure* cb) {
   half* m = other_half(reinterpret_cast<half*>(ep));
   gpr_mu_lock(&m->parent->mu);
   grpc_error* error = GRPC_ERROR_NONE;

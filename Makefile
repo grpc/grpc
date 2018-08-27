@@ -978,7 +978,6 @@ avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
-buffer_list_test: $(BINDIR)/$(CONFIG)/buffer_list_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 check_epollexclusive: $(BINDIR)/$(CONFIG)/check_epollexclusive
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
@@ -1435,7 +1434,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
-  $(BINDIR)/$(CONFIG)/buffer_list_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
   $(BINDIR)/$(CONFIG)/chttp2_stream_map_test \
@@ -1952,8 +1950,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
-	$(E) "[RUN]     Testing buffer_list_test"
-	$(Q) $(BINDIR)/$(CONFIG)/buffer_list_test || ( echo test buffer_list_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_create_test || ( echo test channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_hpack_encoder_test"
@@ -3464,7 +3460,6 @@ LIBGRPC_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -3485,7 +3480,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -3871,7 +3865,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -3892,7 +3885,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -4263,7 +4255,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -4284,7 +4275,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -4564,7 +4554,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -4585,7 +4574,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -4831,7 +4819,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -4852,7 +4839,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -5661,7 +5647,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
-    src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/combiner.cc \
     src/core/lib/iomgr/endpoint.cc \
@@ -5682,7 +5667,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_fallback.cc \
     src/core/lib/iomgr/gethostname_host_name_max.cc \
     src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
@@ -10713,38 +10697,6 @@ deps_bin_encoder_test: $(BIN_ENCODER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BIN_ENCODER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-BUFFER_LIST_TEST_SRC = \
-    test/core/iomgr/buffer_list_test.cc \
-
-BUFFER_LIST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BUFFER_LIST_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/buffer_list_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/buffer_list_test: $(BUFFER_LIST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BUFFER_LIST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/buffer_list_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/iomgr/buffer_list_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_buffer_list_test: $(BUFFER_LIST_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BUFFER_LIST_TEST_OBJS:.o=.dep)
 endif
 endif
 
