@@ -21,7 +21,7 @@
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 
 namespace {
-void (*cb)(void*, grpc_core::Timestamps*) = nullptr;
+void (*cb)(void*, const char*) = nullptr;
 }
 
 namespace grpc_core {
@@ -47,7 +47,7 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
 }
 
 void grpc_http2_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*)) {
+    void (*fn)(void*, const char*)) {
   cb = fn;
 }
 } /* namespace grpc_core */

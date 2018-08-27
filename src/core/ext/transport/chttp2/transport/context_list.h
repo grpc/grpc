@@ -70,7 +70,7 @@ class ContextList {
 };
 
 void grpc_http2_set_write_timestamps_callback(
-    void (*fn)(void*, grpc_core::Timestamps*));
+    void (*fn)(void*, const char*));
 } /* namespace grpc_core */
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */
