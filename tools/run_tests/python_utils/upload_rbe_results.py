@@ -125,7 +125,7 @@ def _get_resultstore_data(api_key, invocation_id):
 
 
 if __name__ == "__main__":
-    # Arguments are necessary if running in a non-Kokoro envrionment.
+    # Arguments are necessary if running in a non-Kokoro environment.
     argp = argparse.ArgumentParser(description='Upload RBE results.')
     argp.add_argument('--api_key', default='', type=str)
     argp.add_argument('--invocation_id', default='', type=str)
@@ -175,8 +175,8 @@ if __name__ == "__main__":
                     'build_id':
                     os.getenv('KOKORO_BUILD_NUMBER'),
                     'build_url':
-                    'https://sponge.corp.google.com/invocation?id=%s' %
-                    os.getenv('KOKORO_BUILD_ID'),
+                    'https://source.cloud.google.com/results/invocations/%s' %
+                    invocation_id,
                     'test_target':
                     action['id']['targetId'],
                     'test_case':

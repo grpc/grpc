@@ -18,7 +18,6 @@
 
 #import "GRPCHost.h"
 
-#import <GRPCClient/GRPCCall+MobileLog.h>
 #import <GRPCClient/GRPCCall.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -50,7 +49,9 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
+#ifndef GRPC_CFSTREAM
   [GRPCConnectivityMonitor unregisterObserver:self];
+#endif
 }
 
 // Default initializer.
@@ -85,7 +86,9 @@ static NSMutableDictionary *kHostCache;
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
     }
+#ifndef GRPC_CFSTREAM
     [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
+#endif
   }
   return self;
 }
@@ -126,6 +129,14 @@ static NSMutableDictionary *kHostCache;
                         completionQueue:queue];
 }
 
+- (NSData *)nullTerminatedDataWithString:(NSString *)string {
+  // dataUsingEncoding: does not return a null-terminated string.
+  NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+  NSMutableData *nullTerminated = [NSMutableData dataWithData:data];
+  [nullTerminated appendBytes:"\0" length:1];
+  return nullTerminated;
+}
+
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
@@ -147,13 +158,12 @@ static NSMutableDictionary *kHostCache;
       kDefaultRootsError = error;
       return;
     }
-    kDefaultRootsASCII =
-        [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    kDefaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
   });
 
   NSData *rootsASCII;
   if (pemRootCerts != nil) {
-    rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    rootsASCII = [self nullTerminatedDataWithString:pemRootCerts];
   } else {
     if (kDefaultRootsASCII == nil) {
       if (errorPtr) {
@@ -176,10 +186,8 @@ static NSMutableDictionary *kHostCache;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
-    NSData *privateKeyASCII =
-        [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
-    NSData *certChainASCII =
-        [pemCertChain dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    NSData *privateKeyASCII = [self nullTerminatedDataWithString:pemPrivateKey];
+    NSData *certChainASCII = [self nullTerminatedDataWithString:pemCertChain];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL);
@@ -223,9 +231,9 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] = [NSNumber numberWithInt:_keepaliveTimeout];
   }
 
-  id logConfig = [GRPCCall logConfig];
-  if (logConfig != nil) {
-    args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
+  id logContext = self.logContext;
+  if (logContext != nil) {
+    args[@GRPC_ARG_MOBILE_LOG_CONTEXT] = logContext;
   }
 
   if (useCronet) {

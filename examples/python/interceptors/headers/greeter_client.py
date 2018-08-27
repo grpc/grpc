@@ -25,10 +25,14 @@ import header_manipulator_client_interceptor
 def run():
     header_adder_interceptor = header_manipulator_client_interceptor.header_adder_interceptor(
         'one-time-password', '42')
-    channel = grpc.insecure_channel('localhost:50051')
-    channel = grpc.intercept_channel(channel, header_adder_interceptor)
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
-    response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    with grpc.insecure_channel('localhost:50051') as channel:
+        intercept_channel = grpc.intercept_channel(channel,
+                                                   header_adder_interceptor)
+        stub = helloworld_pb2_grpc.GreeterStub(intercept_channel)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     print("Greeter client received: " + response.message)
 
 

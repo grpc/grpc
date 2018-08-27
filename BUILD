@@ -1004,6 +1004,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_cfstream",
+    srcs = [
+        "src/core/lib/iomgr/cfstream_handle.cc",
+        "src/core/lib/iomgr/endpoint_cfstream.cc",
+        "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/tcp_client_cfstream.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/cfstream_handle.h",
+        "src/core/lib/iomgr/endpoint_cfstream.h",
+        "src/core/lib/iomgr/error_cfstream.h",
+    ],
+    deps = [
+        ":gpr_base",
+        ":grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backup_poller.cc",

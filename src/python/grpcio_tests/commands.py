@@ -119,6 +119,8 @@ class TestGevent(setuptools.Command):
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
         # using the c-core
         'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
+        # TODO(https://github.com/grpc/grpc/issues/15743) enable this test
+        'unit._session_cache_test.SSLSessionCacheTest.testSSLSessionCacheLRU',
         # TODO(https://github.com/grpc/grpc/issues/14789) enable this test
         'unit._server_ssl_cert_config_test',
         # TODO(https://github.com/grpc/grpc/issues/14901) enable this test

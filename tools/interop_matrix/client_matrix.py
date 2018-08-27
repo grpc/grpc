@@ -326,7 +326,14 @@ LANG_RELEASE_MATRIX = {
         },
     ],
     'csharp': [
-        #{'v1.0.1': None},
+        {
+            'v1.0.1': {
+                'patch': [
+                    'tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile',
+                    'tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile',
+                ]
+            }
+        },
         {
             'v1.1.4': None
         },
@@ -377,6 +384,7 @@ TESTCASES_VERSION_MATRIX = {
     'node_v1.4.2': 'node__v1.1.4',
     'node_v1.6.6': 'node__v1.1.4',
     'ruby_v1.0.1': 'ruby__v1.0.1',
+    'csharp_v1.0.1': 'csharp__v1.1.4',
     'csharp_v1.1.4': 'csharp__v1.1.4',
     'csharp_v1.2.5': 'csharp__v1.1.4',
     'python_v1.0.x': 'python__v1.0.x',

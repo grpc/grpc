@@ -15,10 +15,12 @@
 cimport cpython
 
 
+# TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
 cdef void* _copy_pointer(void* pointer):
   return pointer
 
 
+# TODO(https://github.com/grpc/grpc/issues/15662): Reform this.
 cdef void _destroy_pointer(void* pointer):
   pass
 

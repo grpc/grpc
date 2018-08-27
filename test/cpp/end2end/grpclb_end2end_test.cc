@@ -1380,7 +1380,7 @@ TEST_F(SingleBalancerTest, DropAll) {
 
 class SingleBalancerWithClientLoadReportingTest : public GrpclbEnd2endTest {
  public:
-  SingleBalancerWithClientLoadReportingTest() : GrpclbEnd2endTest(4, 1, 2) {}
+  SingleBalancerWithClientLoadReportingTest() : GrpclbEnd2endTest(4, 1, 3) {}
 };
 
 TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {

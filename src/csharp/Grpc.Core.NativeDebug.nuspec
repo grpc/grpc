@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Grpc.Core.NativeDebug</id>
+    <title>Grpc.Core: Native Debug Symbols</title>
+    <summary>Debug symbols for the native library contained in Grpc.Core</summary>
+    <description>Currently contains grpc_csharp_ext.pdb</description>
+    <version>$version$</version>
+    <authors>Google Inc.</authors>
+    <owners>grpc-packages</owners>
+    <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/grpc/grpc</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>Release $version$</releaseNotes>
+    <copyright>Copyright 2015, Google Inc.</copyright>
+    <tags>gRPC RPC Protocol HTTP/2</tags>
+  </metadata>
+  <files>
+    <!-- forward slashes in src path enable building on Linux -->
+    <file src="nativelibs/csharp_ext_windows_x86/grpc_csharp_ext.dll" target="runtimes/win/native/grpc_csharp_ext.x86.dll" />
+    <file src="nativelibs/csharp_ext_windows_x86/grpc_csharp_ext.pdb" target="runtimes/win/native/grpc_csharp_ext.x86.pdb" />
+    <file src="nativelibs/csharp_ext_windows_x64/grpc_csharp_ext.dll" target="runtimes/win/native/grpc_csharp_ext.x64.dll" />
+    <file src="nativelibs/csharp_ext_windows_x64/grpc_csharp_ext.pdb" target="runtimes/win/native/grpc_csharp_ext.x64.pdb" />
+  </files>
+</package>

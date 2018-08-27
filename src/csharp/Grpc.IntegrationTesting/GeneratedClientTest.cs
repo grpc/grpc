@@ -34,29 +34,6 @@ namespace Grpc.IntegrationTesting
         TestService.TestServiceClient unimplementedClient = new UnimplementedTestServiceClient();
 
         [Test]
-        public void ExpandedParamOverloadCanBeMocked()
-        {
-            var expected = new SimpleResponse();
-
-            var mockClient = new Moq.Mock<TestService.TestServiceClient>();
-            // mocking is relatively clumsy because one needs to specify value for all the optional params.
-            mockClient.Setup(m => m.UnaryCall(Moq.It.IsAny<SimpleRequest>(), null, null, CancellationToken.None)).Returns(expected);
-
-            Assert.AreSame(expected, mockClient.Object.UnaryCall(new SimpleRequest()));
-        }
-
-        [Test]
-        public void CallOptionsOverloadCanBeMocked()
-        {
-            var expected = new SimpleResponse();
-
-            var mockClient = new Moq.Mock<TestService.TestServiceClient>();
-            mockClient.Setup(m => m.UnaryCall(Moq.It.IsAny<SimpleRequest>(), Moq.It.IsAny<CallOptions>())).Returns(expected);
-
-            Assert.AreSame(expected, mockClient.Object.UnaryCall(new SimpleRequest(), new CallOptions()));
-        }
-
-        [Test]
         public void DefaultMethodStubThrows_UnaryCall()
         {
             Assert.Throws(typeof(NotImplementedException), () => unimplementedClient.UnaryCall(new SimpleRequest()));

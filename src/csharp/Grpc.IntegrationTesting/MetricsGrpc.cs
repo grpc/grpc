@@ -23,7 +23,7 @@
 // Currently, 'Gauge' (i.e a metric that represents the measured value of
 // something at an instant of time) is the only metric type supported by the
 // service.
-#pragma warning disable 1591
+#pragma warning disable 0414, 1591
 #region Designer generated code
 
 using grpc = global::Grpc.Core;
@@ -33,23 +33,23 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.MetricsService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.EmptyMessage> __Marshaller_EmptyMessage = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.EmptyMessage.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_GaugeResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeResponse.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeRequest> __Marshaller_GaugeRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.EmptyMessage> __Marshaller_grpc_testing_EmptyMessage = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.EmptyMessage.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeResponse> __Marshaller_grpc_testing_GaugeResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.GaugeRequest> __Marshaller_grpc_testing_GaugeRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.GaugeRequest.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Grpc.Testing.EmptyMessage, global::Grpc.Testing.GaugeResponse> __Method_GetAllGauges = new grpc::Method<global::Grpc.Testing.EmptyMessage, global::Grpc.Testing.GaugeResponse>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "GetAllGauges",
-        __Marshaller_EmptyMessage,
-        __Marshaller_GaugeResponse);
+        __Marshaller_grpc_testing_EmptyMessage,
+        __Marshaller_grpc_testing_GaugeResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.GaugeRequest, global::Grpc.Testing.GaugeResponse> __Method_GetGauge = new grpc::Method<global::Grpc.Testing.GaugeRequest, global::Grpc.Testing.GaugeResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
         "GetGauge",
-        __Marshaller_GaugeRequest,
-        __Marshaller_GaugeResponse);
+        __Marshaller_grpc_testing_GaugeRequest,
+        __Marshaller_grpc_testing_GaugeResponse);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor

@@ -17,6 +17,21 @@ cimport cpython
 import grpc
 import threading
 
+from libc.stdint cimport uintptr_t
+
+
+def _spawn_callback_in_thread(cb_func, args):
+  threading.Thread(target=cb_func, args=args).start()
+
+async_callback_func = _spawn_callback_in_thread
+
+def set_async_callback_func(callback_func):
+  global async_callback_func
+  async_callback_func = callback_func
+
+def _spawn_callback_async(callback, args):
+  async_callback_func(callback, args)
+
 
 cdef class CallCredentials:
 
@@ -40,7 +55,7 @@ cdef int _get_metadata(
     else:
       cb(user_data, NULL, 0, status, error_details)
   args = context.service_url, context.method_name, callback,
-  threading.Thread(target=<object>state, args=args).start()
+  _spawn_callback_async(<object>state, args)
   return 0  # Asynchronous return
 
 
@@ -94,6 +109,21 @@ cdef class ChannelCredentials:
 
   cdef grpc_channel_credentials *c(self):
     raise NotImplementedError()
+
+
+cdef class SSLSessionCacheLRU:
+
+  def __cinit__(self, capacity):
+    grpc_init()
+    self._cache = grpc_ssl_session_cache_create_lru(capacity)
+
+  def __int__(self):
+    return <uintptr_t>self._cache
+
+  def __dealloc__(self):
+    if self._cache != NULL:
+        grpc_ssl_session_cache_destroy(self._cache)
+    grpc_shutdown()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):

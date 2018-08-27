@@ -333,14 +333,26 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
     if (slice_len > n) {
       sb->slices[idx] = grpc_slice_split_head(&slice, slice_len - n);
-      grpc_slice_buffer_add_indexed(garbage, slice);
+      if (garbage) {
+        grpc_slice_buffer_add_indexed(garbage, slice);
+      } else {
+        grpc_slice_unref_internal(slice);
+      }
       return;
     } else if (slice_len == n) {
-      grpc_slice_buffer_add_indexed(garbage, slice);
+      if (garbage) {
+        grpc_slice_buffer_add_indexed(garbage, slice);
+      } else {
+        grpc_slice_unref_internal(slice);
+      }
       sb->count = idx;
       return;
     } else {
-      grpc_slice_buffer_add_indexed(garbage, slice);
+      if (garbage) {
+        grpc_slice_buffer_add_indexed(garbage, slice);
+      } else {
+        grpc_slice_unref_internal(slice);
+      }
       n -= slice_len;
       sb->count = idx;
     }
