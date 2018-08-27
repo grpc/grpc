@@ -240,7 +240,6 @@ static void init_transport(grpc_chttp2_transport* t,
   size_t i;
   int j;
 
-  grpc_tcp_set_write_timestamps_callback(grpc_core::ContextList::Execute);
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 

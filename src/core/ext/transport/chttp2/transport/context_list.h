@@ -34,7 +34,8 @@ class ContextList {
   static void Append(ContextList** head, grpc_chttp2_stream* s) {
     /* Make sure context is not already present */
     ContextList* ptr = *head;
-    // GRPC_CHTTP2_STREAM_REF(s, "timestamp");
+    GRPC_CHTTP2_STREAM_REF(s, "timestamp");
+    //grpc_stream_ref(s->refcount);
     while (ptr != nullptr) {
       if (ptr->s == s) {
         GPR_ASSERT(false);

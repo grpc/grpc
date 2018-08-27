@@ -37,8 +37,9 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
       }
     }
     gpr_log(GPR_INFO, "one iteration %p %p", head, arg);
-    // GRPC_CHTTP2_STREAM_UNREF(static_cast<grpc_chttp2_stream *>(head->s),
-    // "timestamp exec");
+    GRPC_CHTTP2_STREAM_UNREF(static_cast<grpc_chttp2_stream *>(head->s),
+     "timestamp exec");
+    //grpc_stream_unref(head->s->refcount);
     ptr = head;
     head = head->next;
     gpr_free(ptr);

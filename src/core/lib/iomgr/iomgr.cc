@@ -33,6 +33,8 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -57,6 +59,7 @@ void grpc_iomgr_init() {
   g_root_object.name = (char*)"root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
+  grpc_tcp_set_write_timestamps_callback(grpc_core::ContextList::Execute);
 }
 
 void grpc_iomgr_start() { grpc_timer_manager_init(); }
