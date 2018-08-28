@@ -174,8 +174,9 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL', '~> 10.0'
+      ss.dependency 'BoringSSL-GRPC', '0.0.1'
       ss.dependency 'nanopb', '~> 0.3'
+      ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
       # To save you from scrolling, this is the last part of the podspec.
       ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}

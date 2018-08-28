@@ -53,5 +53,5 @@ class TestRunner(threading.Thread):
             except Exception as e:  # pylint: disable=broad-except
                 traceback.print_exc()
                 self._exception_queue.put(
-                    Exception("An exception occured during test {}"
+                    Exception("An exception occurred during test {}"
                               .format(test_case), e))

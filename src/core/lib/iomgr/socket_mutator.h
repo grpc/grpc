@@ -33,7 +33,7 @@ typedef struct {
   /** Compare socket mutator \a a and \a b */
   int (*compare)(grpc_socket_mutator* a, grpc_socket_mutator* b);
   /** Destroys the socket mutator instance */
-  void (*destory)(grpc_socket_mutator* mutator);
+  void (*destroy)(grpc_socket_mutator* mutator);
 } grpc_socket_mutator_vtable;
 
 /** The Socket Mutator interface allows changes on socket options */

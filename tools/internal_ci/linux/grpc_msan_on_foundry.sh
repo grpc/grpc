@@ -23,8 +23,8 @@ mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
 temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5"
+ln -f "${KOKORO_GFILE_DIR}/bazel-latest-release" ${temp_dir}/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-latest-release"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
@@ -58,13 +58,15 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --linkopt=-fsanitize=memory \
   --copt=-fsanitize-memory-track-origins \
   --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/default:toolchain \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/msan:toolchain \
+  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/msan:toolchain \
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
-  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
+  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default \
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --remote_instance_name=grpc-testing/instances/default_instance \
+  --test_env=GRPC_VERBOSITY=debug \
   -- //test/... || FAILED="true"
 
 # Sleep to let ResultStore finish writing results before querying
