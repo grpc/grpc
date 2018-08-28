@@ -41,7 +41,7 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 
 
 	/// client's methods
-	for (size_t i = 0; i < service->method_count(); i++)
+	for (int i = 0; i < service->method_count(); i++)
 	{
 		auto m = service->method(i);
 		auto res = m->output_type()->name();
@@ -83,7 +83,7 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 	cos.WriteString("\n");
 
 	/// service's methods
-	for(size_t i = 0 ; i < service->method_count() ; i++)
+	for(int i = 0 ; i < service->method_count() ; i++)
 	{
 		auto m = service->method(i);
 		auto res = m->output_type()->name();
@@ -99,7 +99,7 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 	cos.WriteString("\t{\n");
 	cos.WriteString("\t\tswitch(method)\n");
 	cos.WriteString("\t\t{\n");
-	for (size_t i = 0; i < service->method_count(); i++)
+	for (int i = 0; i < service->method_count(); i++)
 	{
 		auto m = service->method(i);
 		auto res = m->output_type()->name();
@@ -113,7 +113,7 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 	cos.WriteString("\t\t\tlogWarning(\"none method \", method);\n");
 	cos.WriteString("\t\t\t\treturn null;\n");
 	cos.WriteString("\t\t}\n");
-	cos.WriteString("\t\}\n");
+	cos.WriteString("\t}\n");
 	
 	cos.WriteString("}\n");
 }
@@ -167,7 +167,7 @@ public:
 		cos.WriteString("\n\n");
 
 		/// import dep next
-		for(size_t i = 0 ; i < file->dependency_count() ; i++ )
+		for(int i = 0 ; i < file->dependency_count() ; i++ )
 		{
 			auto dep = file->dependency(i);
 			cos.WriteString("import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
@@ -177,7 +177,7 @@ public:
 
 		/// import public dep next
 		{
-			for (size_t i = 0; i < file->public_dependency_count(); i++)
+			for (int i = 0; i < file->public_dependency_count(); i++)
 			{
 				auto dep = file->public_dependency(i);
 				cos.WriteString("public import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
@@ -185,7 +185,7 @@ public:
 		}
 
 		/// service
-		for(size_t i = 0 ; i < file->service_count() ; i++)
+		for(int i = 0 ; i < file->service_count() ; i++)
 		{
 			GenerateService(file->package() , cos , file->service(i));
 			cos.WriteString("\n\n");
