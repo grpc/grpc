@@ -325,9 +325,18 @@ namespace Grpc.Core.Internal
             }
         }
 
-        protected override void OnAfterReleaseResources()
+        protected override void OnAfterReleaseResourcesLocked()
         {
             details.Channel.RemoveCallReference(this);
+        }
+
+        protected override void OnAfterReleaseResourcesUnlocked()
+        {
+            // If cancellation callback is in progress, this can block
+            // so we need to do this outside of call's lock to prevent
+            // deadlock.
+            // See https://github.com/grpc/grpc/issues/14777
+            // See https://github.com/dotnet/corefx/issues/14903
             cancellationTokenRegistration?.Dispose();
         }
 
@@ -448,6 +457,7 @@ namespace Grpc.Core.Internal
             TResponse msg = default(TResponse);
             var deserializeException = TryDeserialize(receivedMessage, out msg);
 
+            bool releasedResources;
             lock (myLock)
             {
                 finished = true;
@@ -464,7 +474,12 @@ namespace Grpc.Core.Internal
                     streamingWriteTcs = null;
                 }
 
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             responseHeadersTcs.SetResult(responseHeaders);
@@ -494,6 +509,7 @@ namespace Grpc.Core.Internal
 
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
 
+            bool releasedResources;
             lock (myLock)
             {
                 finished = true;
@@ -504,7 +520,12 @@ namespace Grpc.Core.Internal
                     streamingWriteTcs = null;
                 }
 
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (delayedStreamingWriteTcs != null)

@@ -102,11 +102,6 @@ class SubchannelData {
     return pending_connectivity_state_unsafe_;
   }
 
-  // Unrefs the subchannel.  May be used if an individual subchannel is
-  // no longer needed even though the subchannel list as a whole is not
-  // being unreffed.
-  virtual void UnrefSubchannelLocked(const char* reason);
-
   // Resets the connection backoff.
   // TODO(roth): This method should go away when we move the backoff
   // code out of the subchannel and into the LB policies.
@@ -153,6 +148,10 @@ class SubchannelData {
   virtual void ProcessConnectivityChangeLocked(
       grpc_connectivity_state connectivity_state,
       grpc_error* error) GRPC_ABSTRACT;
+
+  // Unrefs the subchannel.  May be overridden by subclasses that need
+  // to perform extra cleanup when unreffing the subchannel.
+  virtual void UnrefSubchannelLocked(const char* reason);
 
  private:
   // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
