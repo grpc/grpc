@@ -46,6 +46,7 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -735,7 +736,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("kick_one_worker", 0);
   pollable* p = specific_worker->pollable_obj;
-  grpc_core::mu_guard lock(&p->mu);
+  grpc_core::MutexLock lock(&p->mu);
   GPR_ASSERT(specific_worker != nullptr);
   if (specific_worker->kicked) {
     if (grpc_polling_trace.enabled()) {

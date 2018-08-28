@@ -3190,7 +3190,7 @@ static void cc_start_transport_stream_op_batch(
     // For all other batches, release the call combiner.
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: saved batch, yeilding call combiner", chand,
+              "chand=%p calld=%p: saved batch, yielding call combiner", chand,
               calld);
     }
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,

@@ -23,6 +23,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -53,7 +54,7 @@ ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
 intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
-  mu_guard guard(&mu_);
+  MutexLock lock(&mu_);
   entities_.push_back(node);
   intptr_t uuid = entities_.size();
   return uuid;
@@ -61,13 +62,13 @@ intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
-  mu_guard guard(&mu_);
+  MutexLock lock(&mu_);
   GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
   entities_[uuid - 1] = nullptr;
 }
 
 BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
-  mu_guard guard(&mu_);
+  MutexLock lock(&mu_);
   if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
     return nullptr;
   }

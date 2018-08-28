@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "glider"
+g_stands_for = "gao"
 
 core_version = "6.0.0-dev"
 
-version = "1.15.0-dev"
+version = "1.16.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -485,7 +485,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "census",
     srcs = [
-        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
     ],
     language = "c++",
     public_hdrs = [
@@ -560,6 +560,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
+        "src/core/lib/gprpp/mutex_lock.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
@@ -695,6 +696,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
+        "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/endpoint.cc",
@@ -715,6 +717,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/gethostname_fallback.cc",
         "src/core/lib/iomgr/gethostname_host_name_max.cc",
         "src/core/lib/iomgr/gethostname_sysconf.cc",
+        "src/core/lib/iomgr/internal_errqueue.cc",
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
         "src/core/lib/iomgr/iomgr_custom.cc",
@@ -844,6 +847,7 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
@@ -861,6 +865,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
@@ -1436,9 +1441,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
-        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
@@ -1548,6 +1553,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_alpn",
         "tsi",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1808,6 +1814,7 @@ grpc_cc_library(
         "gpr",
         "grpc_base",
         "tsi_interface",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1885,8 +1892,8 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
         "src/core/tsi/alts_transport_security.h",
-        "src/core/tsi/local_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
+        "src/core/tsi/local_transport_security.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
@@ -1904,6 +1911,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
+        "grpc_shadow_boringssl",
     ],
 )
 
@@ -2129,7 +2137,7 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
@@ -2156,6 +2164,13 @@ grpc_cc_library(
     deps = [
         ":census",
         ":grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_shadow_boringssl",
+    hdrs = [
+        "src/core/tsi/grpc_shadow_boringssl.h",
     ],
 )
 
