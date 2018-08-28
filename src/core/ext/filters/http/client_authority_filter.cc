@@ -94,7 +94,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   if (default_authority_arg == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-        "channels must explicity specify a value for this argument.");
+        "channels must explicitly specify a value for this argument.");
   }
   const char* default_authority_str =
       grpc_channel_arg_get_string(default_authority_arg);
@@ -146,12 +146,12 @@ static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
 }
 
 void grpc_client_authority_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
-      add_client_authority_filter, (void*)&grpc_client_authority_filter);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
-      add_client_authority_filter, (void*)&grpc_client_authority_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   add_client_authority_filter,
+                                   (void*)&grpc_client_authority_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   add_client_authority_filter,
+                                   (void*)&grpc_client_authority_filter);
 }
 
 void grpc_client_authority_filter_shutdown(void) {}

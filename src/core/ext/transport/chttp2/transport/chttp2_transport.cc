@@ -1029,7 +1029,8 @@ static void write_action(void* gt, grpc_error* error) {
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
-                        grpc_combiner_scheduler(t->combiner)));
+                        grpc_combiner_scheduler(t->combiner)),
+      nullptr);
 }
 
 /* Callback from the grpc_endpoint after bytes have been written by calling

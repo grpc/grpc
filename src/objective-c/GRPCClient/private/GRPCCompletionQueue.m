@@ -21,7 +21,7 @@
 #import <grpc/grpc.h>
 
 const grpc_completion_queue_attributes kCompletionQueueAttr = {
-    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING};
+    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL};
 
 @implementation GRPCCompletionQueue
 

@@ -48,10 +48,11 @@ namespace grpc {
 namespace {
 
 // The default value for maximum number of threads that can be created in the
-// sync server. This value of 500 is empirically chosen. To increase the max
-// number of threads in a sync server, pass a custom ResourceQuota object (with
-// the desired number of max-threads set) to the server builder
-#define DEFAULT_MAX_SYNC_SERVER_THREADS 500
+// sync server. This value of INT_MAX is chosen to match the default behavior if
+// no ResourceQuota is set. To modify the max number of threads in a sync
+// server, pass a custom ResourceQuota object  (with the desired number of
+// max-threads set) to the server builder.
+#define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -210,8 +211,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
           call_(mrd->call_, server, &cq_, server->max_receive_message_size()),
           ctx_(mrd->deadline_, &mrd->request_metadata_),
           has_request_payload_(mrd->has_request_payload_),
-          request_payload_(mrd->request_payload_),
-          method_(mrd->method_) {
+          request_payload_(has_request_payload_ ? mrd->request_payload_
+                                                : nullptr),
+          method_(mrd->method_),
+          server_(server) {
       ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
@@ -225,10 +228,13 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
       }
     }
 
-    void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks) {
+    void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks,
+             bool resources) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
+      auto* handler = resources ? method_->handler()
+                                : server_->resource_exhausted_handler_.get();
+      handler->RunHandler(internal::MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
@@ -250,6 +256,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     const bool has_request_payload_;
     grpc_byte_buffer* request_payload_;
     internal::RpcServiceMethod* const method_;
+    Server* server_;
   };
 
  private:
@@ -300,7 +307,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     GPR_UNREACHABLE_CODE(return TIMEOUT);
   }
 
-  void DoWork(void* tag, bool ok) override {
+  void DoWork(void* tag, bool ok, bool resources) override {
     SyncRequest* sync_req = static_cast<SyncRequest*>(tag);
 
     if (!sync_req) {
@@ -320,7 +327,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run(global_callbacks_);
+      cd.Run(global_callbacks_, resources);
     }
     // TODO (sreek) If ok is false here (which it isn't in case of
     // grpc_request_registered_call), we should still re-queue the request
@@ -552,16 +559,20 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
+  ServerCompletionQueue* health_check_cq = nullptr;
+  DefaultHealthCheckService::HealthCheckServiceImpl*
+      default_health_check_service_impl = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    if (sync_server_cqs_ == nullptr || sync_server_cqs_->empty()) {
-      gpr_log(GPR_INFO,
-              "Default health check service disabled at async-only server.");
-    } else {
-      auto* default_hc_service = new DefaultHealthCheckService;
-      health_check_service_.reset(default_hc_service);
-      RegisterService(nullptr, default_hc_service->GetHealthCheckService());
-    }
+    auto* default_hc_service = new DefaultHealthCheckService;
+    health_check_service_.reset(default_hc_service);
+    health_check_cq = new ServerCompletionQueue(GRPC_CQ_DEFAULT_POLLING);
+    grpc_server_register_completion_queue(server_, health_check_cq->cq(),
+                                          nullptr);
+    default_health_check_service_impl =
+        default_hc_service->GetHealthCheckService(
+            std::unique_ptr<ServerCompletionQueue>(health_check_cq));
+    RegisterService(nullptr, default_health_check_service_impl);
   }
 
   grpc_server_start(server_);
@@ -576,10 +587,24 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
     }
+    if (health_check_cq != nullptr) {
+      new UnimplementedAsyncRequest(this, health_check_cq);
+    }
+  }
+
+  // If this server has any support for synchronous methods (has any sync
+  // server CQs), make sure that we have a ResourceExhausted handler
+  // to deal with the case of thread exhaustion
+  if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
+    resource_exhausted_handler_.reset(new internal::ResourceExhaustedHandler);
   }
 
   for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
     (*it)->Start();
+  }
+
+  if (default_health_check_service_impl != nullptr) {
+    default_health_check_service_impl->StartServingThread();
   }
 }
 
