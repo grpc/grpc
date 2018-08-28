@@ -651,10 +651,16 @@ typedef enum {
   GRPC_CQ_NEXT,
 
   /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
-  GRPC_CQ_PLUCK
+  GRPC_CQ_PLUCK,
+
+  /** EXPERIMENTAL: Events trigger a callback specified as the tag */
+  GRPC_CQ_CALLBACK
 } grpc_cq_completion_type;
 
-#define GRPC_CQ_CURRENT_VERSION 1
+/* The upgrade to version 2 is currently experimental. */
+
+#define GRPC_CQ_CURRENT_VERSION 2
+#define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2
 typedef struct grpc_completion_queue_attributes {
   /** The version number of this structure. More fields might be added to this
      structure in future. */
@@ -663,6 +669,15 @@ typedef struct grpc_completion_queue_attributes {
   grpc_cq_completion_type cq_completion_type;
 
   grpc_cq_polling_type cq_polling_type;
+
+  /* END OF VERSION 1 CQ ATTRIBUTES */
+
+  /* EXPERIMENTAL: START OF VERSION 2 CQ ATTRIBUTES */
+  /** When creating a callbackable CQ, pass in a functor to get invoked when
+   * shutdown is complete */
+  void* cq_shutdown_cb;
+
+  /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;
 
 /** The completion queue factory structure is opaque to the callers of grpc */

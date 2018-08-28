@@ -82,6 +82,11 @@ typedef struct grpc_event_engine_vtable {
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
 
+/* register a new event engine factory */
+void grpc_register_event_engine_factory(
+    const char* name, const grpc_event_engine_vtable* (*factory)(bool),
+    bool add_at_head);
+
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
 
@@ -172,10 +177,5 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-
-/* WARNING: The following two functions should be used for testing purposes
- * ONLY */
-void grpc_set_event_engine_test_only(const grpc_event_engine_vtable*);
-const grpc_event_engine_vtable* grpc_get_event_engine_test_only();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

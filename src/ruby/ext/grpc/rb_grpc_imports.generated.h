@@ -89,6 +89,9 @@ extern grpc_init_type grpc_init_import;
 typedef void(*grpc_shutdown_type)(void);
 extern grpc_shutdown_type grpc_shutdown_import;
 #define grpc_shutdown grpc_shutdown_import
+typedef int(*grpc_is_initialized_type)(void);
+extern grpc_is_initialized_type grpc_is_initialized_import;
+#define grpc_is_initialized grpc_is_initialized_import
 typedef const char*(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
@@ -104,6 +107,9 @@ extern grpc_completion_queue_create_for_next_type grpc_completion_queue_create_f
 typedef grpc_completion_queue*(*grpc_completion_queue_create_for_pluck_type)(void* reserved);
 extern grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
 #define grpc_completion_queue_create_for_pluck grpc_completion_queue_create_for_pluck_import
+typedef grpc_completion_queue*(*grpc_completion_queue_create_for_callback_type)(void* shutdown_callback, void* reserved);
+extern grpc_completion_queue_create_for_callback_type grpc_completion_queue_create_for_callback_import;
+#define grpc_completion_queue_create_for_callback grpc_completion_queue_create_for_callback_import
 typedef grpc_completion_queue*(*grpc_completion_queue_create_type)(const grpc_completion_queue_factory* factory, const grpc_completion_queue_attributes* attributes, void* reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
@@ -251,6 +257,9 @@ extern grpc_resource_quota_unref_type grpc_resource_quota_unref_import;
 typedef void(*grpc_resource_quota_resize_type)(grpc_resource_quota* resource_quota, size_t new_size);
 extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 #define grpc_resource_quota_resize grpc_resource_quota_resize_import
+typedef void(*grpc_resource_quota_set_max_threads_type)(grpc_resource_quota* resource_quota, int new_max_threads);
+extern grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
+#define grpc_resource_quota_set_max_threads grpc_resource_quota_set_max_threads_import
 typedef const grpc_arg_pointer_vtable*(*grpc_resource_quota_arg_vtable_type)(void);
 extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 #define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import

@@ -109,6 +109,12 @@ grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
 namespace grpc_core {
 GPR_TLS_CLASS_DEF(ExecCtx::exec_ctx_);
 
+// WARNING: for testing purposes only!
+void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
+  g_start_time = new_val;
+  gpr_tls_init(&exec_ctx_);
+}
+
 void ExecCtx::GlobalInit(void) {
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_tls_init(&exec_ctx_);

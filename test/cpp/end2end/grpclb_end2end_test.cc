@@ -734,6 +734,25 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   EXPECT_EQ(2U, balancer_servers_[0].service_->response_count());
 }
 
+TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
+  SetNextResolutionAllBalancers();
+  const size_t kNumUnreachableServers = 5;
+  std::vector<int> ports;
+  for (size_t i = 0; i < kNumUnreachableServers; ++i) {
+    ports.push_back(grpc_pick_unused_port_or_die());
+  }
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(ports, {}), 0);
+  const Status status = SendRpc();
+  // The error shouldn't be DEADLINE_EXCEEDED.
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
+
 TEST_F(SingleBalancerTest, Fallback) {
   SetNextResolutionAllBalancers();
   const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
