@@ -27,7 +27,7 @@ qps_json_driver_bzl = 'test/cpp/qps/qps_json_driver_scenarios.bzl'
 json_run_localhost_bzl = 'test/cpp/qps/json_run_localhost_scenarios.bzl'
 
 if qps_json_driver_bzl in output or json_run_localhost_bzl in output:
-  print('qps benchmark scenarios have been updated, please commit '
+    print('qps benchmark scenarios have been updated, please commit '
         'test/cpp/qps/qps_json_driver_scenarios.bzl and/or '
         'test/cpp/qps/json_run_localhost_scenarios.bzl')
-  sys.exit(1)
+    sys.exit(1)

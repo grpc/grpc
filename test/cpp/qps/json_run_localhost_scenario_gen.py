@@ -18,21 +18,21 @@ import gen_build_yaml as gen
 import json
 
 def generate_args():
-  all_scenario_set = gen.generate_yaml()
-  all_scenario_set = all_scenario_set['tests']
-  json_run_localhost_scenarios = \
-    [item for item in all_scenario_set if item['name'] == 'qps_json_driver']
-  json_run_localhost_arg_set = \
-    [item['args'][2] for item in json_run_localhost_scenarios \
-     if 'args' in item and len(item['args']) > 2]
-  deserialized_scenarios = [json.loads(item)['scenarios'][0] \
-                            for item in json_run_localhost_arg_set]
-  all_scenarios = {scenario['name'].encode('ascii', 'ignore'): \
-                  '\'{\'scenarios\' : [' + json.dumps(scenario) + ']}\'' \
-                  for scenario in deserialized_scenarios}
+    all_scenario_set = gen.generate_yaml()
+    all_scenario_set = all_scenario_set['tests']
+    json_run_localhost_scenarios = \
+        [item for item in all_scenario_set if item['name'] == 'qps_json_driver']
+    json_run_localhost_arg_set = \
+        [item['args'][2] for item in json_run_localhost_scenarios \
+        if 'args' in item and len(item['args']) > 2]
+    deserialized_scenarios = [json.loads(item)['scenarios'][0] \
+                              for item in json_run_localhost_arg_set]
+    all_scenarios = {scenario['name'].encode('ascii', 'ignore'): \
+                    '\'{\'scenarios\' : [' + json.dumps(scenario) + ']}\'' \
+                    for scenario in deserialized_scenarios}
 
-  serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
-  with open('json_run_localhost_scenarios.bzl', 'wb') as f:
-    f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str + '\n')
+    serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
+    with open('json_run_localhost_scenarios.bzl', 'wb') as f:
+        f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str + '\n')
 
 generate_args()
