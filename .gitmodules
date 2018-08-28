@@ -42,3 +42,6 @@
 	path = third_party/libcxx
 	url = https://github.com/llvm-mirror/libcxx.git
 	branch = release_60
+[submodule "src/dlang"]
+	path = src/dlang
+	url = https://github.com/huntlabs/grpc.git
