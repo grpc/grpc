@@ -265,14 +265,14 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         end
         creds = GRPC::Core::CallCredentials.new(failing_auth)
 
-        unavailable_error_occured = false
+        unavailable_error_occurred = false
         begin
           get_response(stub, credentials: creds)
         rescue GRPC::Unavailable => e
-          unavailable_error_occured = true
+          unavailable_error_occurred = true
           expect(e.details.include?(error_message)).to be true
         end
-        expect(unavailable_error_occured).to eq(true)
+        expect(unavailable_error_occurred).to eq(true)
 
         @server.shutdown_and_notify(Time.now + 3)
         th.join

@@ -220,3 +220,25 @@ Objective-C Protobuf runtime library.
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [example Podfile]:https://github.com/grpc/grpc/blob/master/examples/objective-c/helloworld/Podfile
 [example apps]: https://github.com/grpc/grpc/tree/master/examples/objective-c
+
+## Use gRPC with OpenSSL
+gRPC uses BoringSSL as its dependency, which is a fork of OpenSSL and export a number of symbols
+that are the same as OpenSSL. gRPC avoids conflicts of these symbols by renaming BoringSSL symbols.
+
+If you need gRPC to use OpenSSL instead of BoringSSL (e.g. for the benefit of reducing the binary
+size of your product), you need to make a local `gRPC-Core` podspec and tweak it accordingly:
+- Copy the version of `/gRPC-Core.podspec` you wish to use from Github into the repository of your
+  app;
+- In your `Podfile`, add the following line:
+```
+pod `gRPC-Core`, :podspec => "." # assuming gRPC-Core.podspec is in the same directory as your Podfile
+```
+- Remove [the
+  macro](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L186)
+  `GRPC_SHADOW_BORINGSSL_SYMBOLS` to disable symbol renaming;
+- Substitude the `BoringSSL-GRPC`
+  [dependency](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L184)
+  to whatever pod of OpenSSL your other libraries use.
+
+These steps should allow gRPC to use OpenSSL and drop BoringSSL dependency. If you see any issue,
+file an issue to us.

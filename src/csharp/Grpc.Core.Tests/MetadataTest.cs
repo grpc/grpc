@@ -66,6 +66,8 @@ namespace Grpc.Core.Tests
             new Metadata.Entry("0123456789abc", "XYZ");
             new Metadata.Entry("-abc", "XYZ");
             new Metadata.Entry("a_bc_", "XYZ");
+            new Metadata.Entry("abc.xyz", "XYZ");
+            new Metadata.Entry("abc.xyz-bin", new byte[] {1, 2, 3});
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc[", "xyz"));
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc/", "xyz"));
         }

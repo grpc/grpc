@@ -124,6 +124,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "inproc_callback_test",
+    srcs = ["inproc_callback_test.cc"],
+    language = "C++",
+    deps = [
+        ':end2end_tests',
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
     language = "C++",
