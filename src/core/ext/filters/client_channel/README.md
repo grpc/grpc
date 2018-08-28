@@ -46,20 +46,4 @@ construction arguments for concrete grpc_subchannel instances.
 Naming for GRPC
 ===============
 
-Names in GRPC are represented by a URI (as defined in
-[RFC 3986](https://tools.ietf.org/html/rfc3986)).
-
-The following schemes are currently supported:
-
-dns:///host:port - dns schemes are currently supported so long as authority is
-                   empty (authority based dns resolution is expected in a future
-                   release)
-
-unix:path        - the unix scheme is used to create and connect to unix domain
-                   sockets - the authority must be empty, and the path
-                   represents the absolute or relative path to the desired
-                   socket
-
-ipv4:host:port   - a pre-resolved ipv4 dotted decimal address/port combination
-
-ipv6:[host]:port - a pre-resolved ipv6 address/port combination
+See [/doc/naming.md](gRPC name resolution).
