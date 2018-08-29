@@ -33,6 +33,7 @@ def generate_args():
 
     serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
     with open('json_run_localhost_scenarios.bzl', 'wb') as f:
+        f.write('"""Scenarios run on localhost."""\n\n')
         f.write('JSON_RUN_LOCALHOST_SCENARIOS = ' + serialized_scenarios_str + '\n')
 
 generate_args()
