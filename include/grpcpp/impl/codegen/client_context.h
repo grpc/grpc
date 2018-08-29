@@ -202,7 +202,6 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
     GPR_CODEGEN_ASSERT(initial_metadata_received_);
-    recv_initial_metadata_.FillMap();
     return *recv_initial_metadata_.map();
   }
 
@@ -215,7 +214,6 @@ class ClientContext {
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
-    trailing_metadata_.FillMap();
     return *trailing_metadata_.map();
   }
 

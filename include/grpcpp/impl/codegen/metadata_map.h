@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 #define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/slice.h>
 
@@ -37,8 +38,8 @@ class MetadataMap {
   }
 
   grpc::string GetBinaryErrorDetails() {
-    // if filled, extract from the multimap for O(log(n))
-    if (filled) {
+    // if filled_, extract from the multimap for O(log(n))
+    if (filled_) {
       auto iter = map_.find(kBinaryErrorDetailsKey);
       if (iter != map_.end()) {
         return grpc::string(iter->second.begin(), iter->second.length());
@@ -46,9 +47,12 @@ class MetadataMap {
     }
     // if not yet filled, take the O(n) lookup to avoid allocating the
     // multimap until it is requested.
+    // TODO(ncteisen): plumb this through core as a first class object, just
+    // like code and message.
     else {
       for (size_t i = 0; i < arr_.count; i++) {
-        if (grpc_slice_str_cmp(arr_.metadata[i].key, kBinaryErrorDetailsKey)) {
+        if (grpc_slice_str_cmp(arr_.metadata[i].key, kBinaryErrorDetailsKey) ==
+            0) {
           return grpc::string(reinterpret_cast<const char*>(
                                   GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
                               GRPC_SLICE_LENGTH(arr_.metadata[i].value));
@@ -58,9 +62,20 @@ class MetadataMap {
     return grpc::string();
   }
 
+  std::multimap<grpc::string_ref, grpc::string_ref>* map() {
+    FillMap();
+    return &map_;
+  }
+  grpc_metadata_array* arr() { return &arr_; }
+
+ private:
+  bool filled_ = false;
+  grpc_metadata_array arr_;
+  std::multimap<grpc::string_ref, grpc::string_ref> map_;
+
   void FillMap() {
-    if (filled) return;
-    filled = true;
+    if (filled_) return;
+    filled_ = true;
     for (size_t i = 0; i < arr_.count; i++) {
       // TODO(yangg) handle duplicates?
       map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
@@ -68,17 +83,6 @@ class MetadataMap {
           StringRefFromSlice(&arr_.metadata[i].value)));
     }
   }
-
-  std::multimap<grpc::string_ref, grpc::string_ref>* map() { return &map_; }
-  const std::multimap<grpc::string_ref, grpc::string_ref>* map() const {
-    return &map_;
-  }
-  grpc_metadata_array* arr() { return &arr_; }
-
- private:
-  bool filled = false;
-  grpc_metadata_array arr_;
-  std::multimap<grpc::string_ref, grpc::string_ref> map_;
 };
 }  // namespace internal
 

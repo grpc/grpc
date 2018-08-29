@@ -169,7 +169,6 @@ class ServerContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata()
       const {
-    client_metadata_.FillMap();
     return *client_metadata_.map();
   }
 
