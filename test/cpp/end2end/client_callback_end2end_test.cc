@@ -79,7 +79,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
 
       std::mutex mu;
       std::condition_variable cv;
-      bool done;
+      bool done = false;
       stub_->experimental().UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv](Status s) {
