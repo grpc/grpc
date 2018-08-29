@@ -195,7 +195,12 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
 namespace {
 class ShutdownCallback : public grpc_core::CQCallbackInterface {
  public:
+  // TakeCQ takes ownership of the cq into the shutdown callback
+  // so that the shutdown callback will be responsible for destroying it
   void TakeCQ(CompletionQueue* cq) { cq_ = cq; }
+
+  // The Run function will get invoked by the completion queue library
+  // when the shutdown is actually complete
   void Run(bool) override {
     delete cq_;
     grpc_core::Delete(this);
@@ -215,6 +220,8 @@ CompletionQueue* Channel::CallbackCQ() {
     callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});
+
+    // Transfer ownership of the new cq to its own shutdown callback
     shutdown_callback->TakeCQ(callback_cq_);
   }
   return callback_cq_;

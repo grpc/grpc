@@ -69,7 +69,7 @@ void GenericStub::experimental_type::UnaryCall(
   internal::CallbackUnaryCall(
       stub_->channel_.get(),
       internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
-      context, request, response, on_completion);
+      context, request, response, std::move(on_completion));
 }
 
 }  // namespace grpc
