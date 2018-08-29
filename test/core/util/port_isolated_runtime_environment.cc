@@ -16,8 +16,9 @@
  *
  */
 
-/* When running tests on remote machines, the framework takes a round-robin pick
- * of a port within certain range. There is no need to recycle ports.
+/* When individual tests run in an isolated runtime environment (e.g. each test
+ * runs in a separate container) the framework takes a round-robin pick of a
+ * port within certain range. There is no need to recycle ports.
  */
 #include <grpc/support/time.h>
 #include <stdlib.h>
@@ -28,18 +29,21 @@
 #include "test/core/util/port.h"
 
 #define MIN_PORT 49152
-#define MAX_PORT 65536
+#define MAX_PORT 65535
 
 int get_random_starting_port() {
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  return rand() % (MAX_PORT - MIN_PORT + 1) + MIN_PORT;
+  double rnd = static_cast<double>(rand()) /
+               (static_cast<double>(RAND_MAX) + 1.0);  // values from [0,1)
+  return static_cast<int>(rnd * (MAX_PORT - MIN_PORT + 1)) + MIN_PORT;
 }
 
 static int s_allocated_port = get_random_starting_port();
 
 int grpc_pick_unused_port_or_die(void) {
+  // TODO(jtattermusch): protect by mutex
   int allocated_port = s_allocated_port++;
-  if (s_allocated_port == MAX_PORT) {
+  if (s_allocated_port == MAX_PORT + 1) {
     s_allocated_port = MIN_PORT;
   }
 
