@@ -126,6 +126,11 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
   batch->idx.array[idx] = nullptr;
 }
 
+bool is_valid_mdelem_index(int64_t index) {
+  return index >= MIN_STATIC_HPACK_TABLE_IDX &&
+         index <= MAX_STATIC_HPACK_TABLE_IDX;
+}
+
 grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
                                          grpc_linked_mdelem* storage,
                                          grpc_mdelem elem_to_add) {
@@ -134,9 +139,18 @@ grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
   return grpc_metadata_batch_link_head(batch, storage);
 }
 
+grpc_error* grpc_metadata_batch_add_head_index(grpc_metadata_batch* batch,
+                                               grpc_linked_mdelem* storage,
+                                               int64_t index_to_add) {
+  GPR_ASSERT(is_valid_mdelem_index(index_to_add));
+  storage->md_index = index_to_add;
+  return grpc_metadata_batch_link_head(batch, storage);
+}
+
 static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(!GRPC_MDISNULL(storage->md));
+  GPR_ASSERT(is_valid_mdelem_index(storage->md_index) ||
+             !GRPC_MDISNULL(storage->md));
   storage->prev = nullptr;
   storage->next = list->head;
   if (list->head != nullptr) {
@@ -170,9 +184,18 @@ grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
+grpc_error* grpc_metadata_batch_add_tail_index(grpc_metadata_batch* batch,
+                                               grpc_linked_mdelem* storage,
+                                               int64_t index_to_add) {
+  GPR_ASSERT(is_valid_mdelem_index(index_to_add));
+  storage->md_index = index_to_add;
+  return grpc_metadata_batch_link_tail(batch, storage);
+}
+
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(!GRPC_MDISNULL(storage->md));
+  GPR_ASSERT(is_valid_mdelem_index(storage->md_index) ||
+             !GRPC_MDISNULL(storage->md));
   storage->prev = list->tail;
   storage->next = nullptr;
   storage->reserved = nullptr;
