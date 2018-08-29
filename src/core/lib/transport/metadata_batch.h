@@ -30,8 +30,16 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+/** Each grpc_linked_mdelem refers to a particular metadata element by either:
+    1) grpc_mdelem md
+    2) int64_t md_index
+    md_index is an optional optimization. It can only be used for metadata in
+    the hpack static table and is equivalent to the metadata's index in the
+    table. If a metadata elem is not contained in the hpack static table, then
+    md must be used instead. */
 typedef struct grpc_linked_mdelem {
-  grpc_mdelem md;
+  int64_t md_index;  // If -1, not used. Else, use this field instead of md.
+  grpc_mdelem md;    // If md_index is 0, use this field instead of md_index.
   struct grpc_linked_mdelem* next;
   struct grpc_linked_mdelem* prev;
   void* reserved;
@@ -50,7 +58,7 @@ typedef struct grpc_metadata_batch {
   grpc_metadata_batch_callouts idx;
   /** Used to calculate grpc-timeout at the point of sending,
       or GRPC_MILLIS_INF_FUTURE if this batch does not need to send a
-      grpc-timeout */
+      grpc-timeout. */
   grpc_millis deadline;
 } grpc_metadata_batch;
 
@@ -82,6 +90,7 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
 grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
                                           grpc_linked_mdelem* storage)
     GRPC_MUST_USE_RESULT;
+
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
@@ -100,6 +109,14 @@ grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
 grpc_error* grpc_metadata_batch_add_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+
+/** Identical to grpc_metadata_batch_add_head, except takes the index of the
+    metadata element to add instead of a grpc_mdelem object. The index must
+    be a valid static hpack table index */
+grpc_error* grpc_metadata_batch_add_head_index(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    int64_t index_to_add) GRPC_MUST_USE_RESULT;
+
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -110,7 +127,16 @@ grpc_error* grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
+/** Identical to grpc_metadata_batch_add_tail, except takes the index of the
+    metadata element to add instead of a grpc_mdelem object. The index must
+    be a valid static hpack table index */
+grpc_error* grpc_metadata_batch_add_head_index(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    int64_t index_to_add) GRPC_MUST_USE_RESULT;
+
 grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
+
+bool is_valid_mdelem_index(int64_t index);
 
 typedef struct {
   grpc_error* error;

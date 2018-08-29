@@ -692,7 +692,11 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    hpack_enc(c, l->md, &st);
+    if (is_valid_mdelem_index(l->md_index)) {
+      emit_indexed(c, l->md_index, &st);
+    } else {
+      hpack_enc(c, l->md, &st);
+    }
   }
   grpc_millis deadline = metadata->deadline;
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
