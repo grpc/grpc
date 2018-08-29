@@ -399,7 +399,6 @@ TEST_F(ChannelzServerTest, ManySubchannels) {
     // Since this is pick first, we know that there was only one subchannel
     // used. We request it here.
     ASSERT_GT(gtc_response.channel(i).subchannel_ref_size(), 0);
-    EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 1);
     GetSubchannelRequest gsc_request;
     GetSubchannelResponse gsc_response;
     gsc_request.set_subchannel_id(
