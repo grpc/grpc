@@ -76,4 +76,4 @@ class CallbackWithSuccessTag {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPCPP_IMPL_CODEGEN_CLIENT_CALLBACK_H
+#endif  // GRPCPP_IMPL_CODEGEN_CALLBACK_COMMON_H

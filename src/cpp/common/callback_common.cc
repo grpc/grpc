@@ -32,7 +32,7 @@ class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
  public:
   CallbackWithSuccessImpl(CallbackWithSuccessTag* parent,
                           std::function<void(bool)> f, bool self_delete)
-      : parent_(parent), func_(f), self_delete_(self_delete) {}
+      : parent_(parent), func_(std::move(f)), self_delete_(self_delete) {}
 
   void Run(bool ok) override {
     void* ignored = parent_->ops();
@@ -57,7 +57,10 @@ class CallbackWithStatusImpl : public grpc_core::CQCallbackInterface {
  public:
   CallbackWithStatusImpl(CallbackWithStatusTag* parent,
                          std::function<void(Status)> f, bool self_delete)
-      : parent_(parent), func_(f), status_(), self_delete_(self_delete) {}
+      : parent_(parent),
+        func_(std::move(f)),
+        status_(),
+        self_delete_(self_delete) {}
 
   void Run(bool ok) override {
     void* ignored = parent_->ops();
@@ -101,7 +104,7 @@ CallbackWithStatusTag::CallbackWithStatusTag(std::function<void(Status)> f,
 }
 
 void CallbackWithStatusTag::force_run(Status s) {
-  *status_ = s;
+  *status_ = std::move(s);
   impl_->Run(true);
 }
 
