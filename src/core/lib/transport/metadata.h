@@ -350,6 +350,11 @@ void grpc_mdctx_global_shutdown();
 /* {"www-authenticate", ""} */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY_INDEX 61
 
+/* End of static hpack table indices */
+
+#define GRPC_IS_DEFAULT_HEADER_INDEX(idx) idx >= GRPC_MDELEM_AUTHORITY_EMPTY_INDEX 
+  && idx <= GRPC_MDELEM_STATUS_500_INDEX
+
 /* Forward declarations */
 typedef struct grpc_mdelem grpc_mdelem;
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

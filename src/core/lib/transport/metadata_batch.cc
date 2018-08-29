@@ -99,6 +99,15 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
 
 static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
                                       grpc_linked_mdelem* storage) {
+  if (is_valid_mdelem_index(storage->md_index)) {
+    if (GRPC_IS_DEFAULT_HEADER_INDEX(storage->md_index)) {
+      // Lookup elem in static hpack table. If it is already in a batch callout,
+      // error. Else, increment the default count and return.
+      ++batch->list.default_count;
+    }
+    return GRPC_ERROR_NONE;
+  }
+
   grpc_metadata_batch_callouts_index idx =
       GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md));
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {

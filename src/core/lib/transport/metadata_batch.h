@@ -38,7 +38,7 @@
     table. If a metadata elem is not contained in the hpack static table, then
     md must be used instead. */
 typedef struct grpc_linked_mdelem {
-  int64_t md_index;  // If -1, not used. Else, use this field instead of md.
+  int64_t md_index;  // If 0, not used. Else, use this field instead of md.
   grpc_mdelem md;    // If md_index is 0, use this field instead of md_index.
   struct grpc_linked_mdelem* next;
   struct grpc_linked_mdelem* prev;
