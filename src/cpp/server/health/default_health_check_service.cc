@@ -289,13 +289,13 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
   grpc::Status status = Status::OK;
   ByteBuffer response;
   if (!service_->DecodeRequest(request_, &service_name)) {
-    status = Status(INVALID_ARGUMENT, "");
+    status = Status(StatusCode::INVALID_ARGUMENT, "");
   } else {
     ServingStatus serving_status = database_->GetServingStatus(service_name);
     if (serving_status == NOT_FOUND) {
       status = Status(StatusCode::NOT_FOUND, "service name unknown");
     } else if (!service_->EncodeResponse(serving_status, &response)) {
-      status = Status(INTERNAL, "");
+      status = Status(StatusCode::INTERNAL, "");
     }
   }
   // Send response.
@@ -389,7 +389,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
         CallableTag(std::bind(&WatchCallHandler::OnFinishDone, this,
                               std::placeholders::_1, std::placeholders::_2),
                     std::move(self));
-    stream_.Finish(Status(INVALID_ARGUMENT, ""), &on_finish_done_);
+    stream_.Finish(Status(StatusCode::INVALID_ARGUMENT, ""), &on_finish_done_);
     call_state_ = FINISH_CALLED;
     return;
   }
@@ -431,7 +431,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
         CallableTag(std::bind(&WatchCallHandler::OnFinishDone, this,
                               std::placeholders::_1, std::placeholders::_2),
                     std::move(self));
-    stream_.Finish(Status(INTERNAL, ""), &on_finish_done_);
+    stream_.Finish(Status(StatusCode::INTERNAL, ""), &on_finish_done_);
     return;
   }
   next_ = CallableTag(std::bind(&WatchCallHandler::OnSendHealthDone, this,
