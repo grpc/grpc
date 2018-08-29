@@ -84,6 +84,14 @@ grpc::string Channel::GetServiceConfigJSON() const {
                              &channel_info.service_config_json);
 }
 
+namespace experimental {
+
+void ChannelResetConnectionBackoff(Channel* channel) {
+  grpc_channel_reset_connect_backoff(channel->c_channel_);
+}
+
+}  // namespace experimental
+
 internal::Call Channel::CreateCall(const internal::RpcMethod& method,
                                    ClientContext* context,
                                    CompletionQueue* cq) {

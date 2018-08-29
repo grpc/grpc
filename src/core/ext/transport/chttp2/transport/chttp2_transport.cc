@@ -812,12 +812,14 @@ static void set_write_state(grpc_chttp2_transport* t,
                                  write_state_name(t->write_state),
                                  write_state_name(st), reason));
   t->write_state = st;
+  /* If the state is being reset back to idle, it means a write was just
+   * finished. Make sure all the run_after_write closures are scheduled.
+   *
+   * This is also our chance to close the transport if the transport was marked
+   * to be closed after all writes finish (for example, if we received a go-away
+   * from peer while we had some pending writes) */
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
-    grpc_chttp2_stream* s;
-    while (grpc_chttp2_list_pop_waiting_for_write_stream(t, &s)) {
-      GRPC_CLOSURE_LIST_SCHED(&s->run_after_write);
-      GRPC_CHTTP2_STREAM_UNREF(s, "chttp2:write_closure_sched");
-    }
+    GRPC_CLOSURE_LIST_SCHED(&t->run_after_write);
     if (t->close_transport_on_writes_finished != nullptr) {
       grpc_error* err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = nullptr;
@@ -903,6 +905,22 @@ void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                       grpc_chttp2_initiate_write_reason_string(reason));
       t->is_first_write_in_batch = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
+      /* Note that the 'write_action_begin_locked' closure is being scheduled
+       * on the 'finally_scheduler' of t->combiner. This means that
+       * 'write_action_begin_locked' is called only *after* all the other
+       * closures (some of which are potentially initiating more writes on the
+       * transport) are executed on the t->combiner.
+       *
+       * The reason for scheduling on finally_scheduler is to make sure we batch
+       * as many writes as possible. 'write_action_begin_locked' is the function
+       * that gathers all the relevant bytes (which are at various places in the
+       * grpc_chttp2_transport structure) and append them to 'outbuf' field in
+       * grpc_chttp2_transport thereby batching what would have been potentially
+       * multiple write operations.
+       *
+       * Also, 'write_action_begin_locked' only gathers the bytes into outbuf.
+       * It does not call the endpoint to write the bytes. That is done by the
+       * 'write_action' (which is scheduled by 'write_action_begin_locked') */
       GRPC_CLOSURE_SCHED(
           GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t,
@@ -1011,9 +1029,12 @@ static void write_action(void* gt, grpc_error* error) {
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
-                        grpc_combiner_scheduler(t->combiner)));
+                        grpc_combiner_scheduler(t->combiner)),
+      nullptr);
 }
 
+/* Callback from the grpc_endpoint after bytes have been written by calling
+ * sendmsg */
 static void write_action_end_locked(void* tp, grpc_error* error) {
   GPR_TIMER_SCOPE("terminate_writing_with_lock", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -1208,14 +1229,11 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
-    if (s->seen_error || (t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
+    if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       GRPC_CLOSURE_RUN(closure, closure->error_data.error);
     } else {
-      if (grpc_chttp2_list_add_waiting_for_write_stream(t, s)) {
-        GRPC_CHTTP2_STREAM_REF(s, "chttp2:pending_write_closure");
-      }
-      grpc_closure_list_append(&s->run_after_write, closure,
+      grpc_closure_list_append(&t->run_after_write, closure,
                                closure->error_data.error);
     }
   }
@@ -2016,10 +2034,6 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
 
 void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_error* due_to_error) {
-  GRPC_CLOSURE_LIST_SCHED(&s->run_after_write);
-  if (grpc_chttp2_list_remove_waiting_for_write_stream(t, s)) {
-    GRPC_CHTTP2_STREAM_UNREF(s, "chttp2:pending_write_closure");
-  }
   if (!t->is_client && !s->sent_trailing_metadata &&
       grpc_error_has_clear_grpc_status(due_to_error)) {
     close_from_api(t, s, due_to_error);

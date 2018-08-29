@@ -265,8 +265,17 @@ class BuildExt(build_ext.build_ext):
                 os.path.join(target_path, 'libgpr.a'),
                 os.path.join(target_path, 'libgrpc.a')
             ]
+            # Running make separately for Mac means we lose all
+            # Extension.define_macros configured in setup.py. Re-add the macro
+            # for gRPC Core's fork handlers.
+            # TODO(ericgribkoff) Decide what to do about the other missing core
+            #   macros, including GRPC_ENABLE_FORK_SUPPORT, which defaults to 1
+            #   on Linux but remains unset on Mac.
+            extra_defines = [
+                'EXTRA_DEFINES="GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1"'
+            ]
             make_process = subprocess.Popen(
-                ['make'] + targets,
+                ['make'] + extra_defines + targets,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             make_out, make_err = make_process.communicate()

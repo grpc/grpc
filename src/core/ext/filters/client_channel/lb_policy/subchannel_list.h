@@ -102,10 +102,10 @@ class SubchannelData {
     return pending_connectivity_state_unsafe_;
   }
 
-  // Unrefs the subchannel.  May be used if an individual subchannel is
-  // no longer needed even though the subchannel list as a whole is not
-  // being unreffed.
-  virtual void UnrefSubchannelLocked(const char* reason);
+  // Resets the connection backoff.
+  // TODO(roth): This method should go away when we move the backoff
+  // code out of the subchannel and into the LB policies.
+  void ResetBackoffLocked();
 
   // Starts watching the connectivity state of the subchannel.
   // ProcessConnectivityChangeLocked() will be called when the
@@ -148,6 +148,10 @@ class SubchannelData {
   virtual void ProcessConnectivityChangeLocked(
       grpc_connectivity_state connectivity_state,
       grpc_error* error) GRPC_ABSTRACT;
+
+  // Unrefs the subchannel.  May be overridden by subclasses that need
+  // to perform extra cleanup when unreffing the subchannel.
+  virtual void UnrefSubchannelLocked(const char* reason);
 
  private:
   // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
@@ -205,6 +209,11 @@ class SubchannelList
   // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
   TraceFlag* tracer() const { return tracer_; }
+
+  // Resets connection backoff of all subchannels.
+  // TODO(roth): We will probably need to rethink this as part of moving
+  // the backoff code out of subchannels and into LB policies.
+  void ResetBackoffLocked();
 
   // Note: Caller must ensure that this is invoked inside of the combiner.
   void Orphan() override {
@@ -295,6 +304,14 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     GRPC_SUBCHANNEL_UNREF(subchannel_, reason);
     subchannel_ = nullptr;
     connected_subchannel_.reset();
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelData<SubchannelListType,
+                    SubchannelDataType>::ResetBackoffLocked() {
+  if (subchannel_ != nullptr) {
+    grpc_subchannel_reset_backoff(subchannel_);
   }
 }
 
@@ -541,6 +558,15 @@ void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   for (size_t i = 0; i < subchannels_.size(); i++) {
     SubchannelDataType* sd = &subchannels_[i];
     sd->ShutdownLocked();
+  }
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
+void SubchannelList<SubchannelListType,
+                    SubchannelDataType>::ResetBackoffLocked() {
+  for (size_t i = 0; i < subchannels_.size(); i++) {
+    SubchannelDataType* sd = &subchannels_[i];
+    sd->ResetBackoffLocked();
   }
 }
 

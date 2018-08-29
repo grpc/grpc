@@ -1709,7 +1709,7 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_secure,
-                                              int test_big_limit) {
+                                              bool test_message_size_limit) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
@@ -1731,13 +1731,18 @@ std::vector<TestScenario> CreateTestScenarios(bool test_secure,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  for (int sz = 1; sz <= test_big_limit; sz *= 32) {
-    grpc::string big_msg;
-    for (int i = 0; i < sz * 1024; i++) {
-      char c = 'a' + (i % 26);
-      big_msg += c;
+  if (test_message_size_limit) {
+    for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
+         k *= 32) {
+      grpc::string big_msg;
+      for (size_t i = 0; i < k * 1024; ++i) {
+        char c = 'a' + (i % 26);
+        big_msg += c;
+      }
+      messages.push_back(big_msg);
     }
-    messages.push_back(big_msg);
+    messages.push_back(
+        grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 10, 'a'));
   }
 
   // TODO (sreek) Renable tests with health check service after the issue
@@ -1758,10 +1763,10 @@ std::vector<TestScenario> CreateTestScenarios(bool test_secure,
 }
 
 INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true, 1024)));
+                        ::testing::ValuesIn(CreateTestScenarios(true, true)));
 INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
                         AsyncEnd2endServerTryCancelTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, 0)));
+                        ::testing::ValuesIn(CreateTestScenarios(false, false)));
 
 }  // namespace
 }  // namespace testing

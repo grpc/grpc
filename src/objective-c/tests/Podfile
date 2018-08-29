@@ -21,7 +21,7 @@ GRPC_LOCAL_SRC = '../../..'
     pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
     pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
-    pod 'BoringSSL',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+    pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 
     pod 'gRPC',           :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
@@ -47,7 +47,7 @@ end
     pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
     pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
-    pod 'BoringSSL',                 :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+    pod 'BoringSSL-GRPC',                 :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 
     pod 'gRPC/CFStream',             :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core/CFStream-Implementation',       :path => GRPC_LOCAL_SRC
@@ -62,7 +62,7 @@ end
   CronetUnitTests
 ).each do |target_name|
   target target_name do
-    pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+    pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
     pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core/Cronet-Interface', :path => GRPC_LOCAL_SRC

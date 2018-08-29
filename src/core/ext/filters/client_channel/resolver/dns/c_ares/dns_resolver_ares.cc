@@ -66,6 +66,8 @@ class AresDnsResolver : public Resolver {
 
   void RequestReresolutionLocked() override;
 
+  void ResetBackoffLocked() override;
+
   void ShutdownLocked() override;
 
  private:
@@ -185,6 +187,13 @@ void AresDnsResolver::RequestReresolutionLocked() {
   if (!resolving_) {
     MaybeStartResolvingLocked();
   }
+}
+
+void AresDnsResolver::ResetBackoffLocked() {
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  backoff_.Reset();
 }
 
 void AresDnsResolver::ShutdownLocked() {
@@ -364,13 +373,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
 void AresDnsResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
-  if (have_next_resolution_timer_) {
-    // TODO(dgq): remove the following two lines once Pick First stops
-    // discarding subchannels after selecting.
-    ++resolved_version_;
-    MaybeFinishNextLocked();
-    return;
-  }
+  if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
@@ -392,10 +395,6 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       self.release();
       grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
                       &on_next_resolution_);
-      // TODO(dgq): remove the following two lines once Pick First stops
-      // discarding subchannels after selecting.
-      ++resolved_version_;
-      MaybeFinishNextLocked();
       return;
     }
   }

@@ -92,6 +92,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -134,6 +135,7 @@ class GrpcLb : public LoadBalancingPolicy {
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                 ChildRefsList* child_channels) override;
 
@@ -1214,6 +1216,15 @@ void GrpcLb::ExitIdleLocked() {
   }
 }
 
+void GrpcLb::ResetBackoffLocked() {
+  if (lb_channel_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_channel_);
+  }
+  if (rr_policy_ != nullptr) {
+    rr_policy_->ResetBackoffLocked();
+  }
+}
+
 bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
   PendingPick* pp = PendingPickCreate(pick);
   bool pick_done = false;
@@ -1249,7 +1260,7 @@ void GrpcLb::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                       ChildRefsList* child_channels) {
   // delegate to the RoundRobin to fill the children subchannels.
   rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  mu_guard guard(&lb_channel_mu_);
+  MutexLock lock(&lb_channel_mu_);
   if (lb_channel_ != nullptr) {
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);

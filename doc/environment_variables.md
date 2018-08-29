@@ -135,3 +135,7 @@ some configuration as environment variables that can be set.
   if set, flow control will be effectively disabled. Max out all values and
   assume the remote peer does the same. Thus we can ignore any flow control
   bookkeeping, error checking, and decision making
+
+* grpc_cfstream
+  set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP
+  connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.

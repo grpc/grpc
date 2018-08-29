@@ -77,16 +77,16 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
 // would allow us to use the alignment actually needed by the caller.
 
 typedef struct zone {
-  size_t size_begin;  // All the space we have set aside for allocations up
-                      // until this zone.
-  size_t size_end;  // size_end = size_begin plus all the space we set aside for
-                    // allocations in zone z itself.
   zone* next;
 } zone;
 
 struct gpr_arena {
-  gpr_atm size_so_far;
+  // Keep track of the total used size. We use this in our call sizing
+  // historesis.
+  gpr_atm total_used;
+  size_t initial_zone_size;
   zone initial_zone;
+  zone* last_zone;
   gpr_mu arena_growth_mutex;
 };
 
@@ -100,14 +100,15 @@ gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
   gpr_arena* a = static_cast<gpr_arena*>(zalloc_aligned(
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + initial_size));
-  a->initial_zone.size_end = initial_size;
+  a->initial_zone_size = initial_size;
+  a->last_zone = &a->initial_zone;
   gpr_mu_init(&a->arena_growth_mutex);
   return a;
 }
 
 size_t gpr_arena_destroy(gpr_arena* arena) {
   gpr_mu_destroy(&arena->arena_growth_mutex);
-  gpr_atm size = gpr_atm_no_barrier_load(&arena->size_so_far);
+  gpr_atm size = gpr_atm_no_barrier_load(&arena->total_used);
   zone* z = arena->initial_zone.next;
   gpr_free_aligned(arena);
   while (z) {
@@ -120,55 +121,25 @@ size_t gpr_arena_destroy(gpr_arena* arena) {
 
 void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
-  size_t previous_size_of_arena_allocations = static_cast<size_t>(
-      gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size));
-  size_t updated_size_of_arena_allocations =
-      previous_size_of_arena_allocations + size;
-  zone* z = &arena->initial_zone;
-  // Check to see if the allocation isn't able to end in the initial zone.
-  // This statement is true only in the uncommon case because of our arena
-  // sizing historesis (that is, most calls should have a large enough initial
-  // zone and will not need to grow the arena).
-  if (updated_size_of_arena_allocations > z->size_end) {
-    // Find a zone to fit this allocation
+  size_t begin = gpr_atm_no_barrier_fetch_add(&arena->total_used, size);
+  if (begin + size <= arena->initial_zone_size) {
+    return reinterpret_cast<char*>(arena) +
+           GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + begin;
+  } else {
+    // If the allocation isn't able to end in the initial zone, create a new
+    // zone for this allocation, and any unused space in the initial zone is
+    // wasted. This overflowing and wasting is uncommon because of our arena
+    // sizing historesis (that is, most calls should have a large enough initial
+    // zone and will not need to grow the arena).
     gpr_mu_lock(&arena->arena_growth_mutex);
-    while (updated_size_of_arena_allocations > z->size_end) {
-      if (z->next == nullptr) {
-        // Note that we do an extra increment of size_so_far to prevent multiple
-        // simultaneous callers from stepping on each other. However, this extra
-        // increment means some space in the arena is wasted.
-        // So whenever we need to allocate x bytes and there are x - n (where
-        // n > 0) remaining in the current zone, we will waste x bytes (x - n
-        // in the current zone and n in the new zone).
-        previous_size_of_arena_allocations = static_cast<size_t>(
-            gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size));
-        updated_size_of_arena_allocations =
-            previous_size_of_arena_allocations + size;
-        size_t next_z_size = updated_size_of_arena_allocations;
-        z->next = static_cast<zone*>(zalloc_aligned(
-            GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + next_z_size));
-        z->next->size_begin = z->size_end;
-        z->next->size_end = z->size_end + next_z_size;
-      }
-      z = z->next;
-    }
+    zone* z = static_cast<zone*>(
+        zalloc_aligned(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + size));
+    arena->last_zone->next = z;
+    arena->last_zone = z;
     gpr_mu_unlock(&arena->arena_growth_mutex);
+    return reinterpret_cast<char*>(z) +
+           GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
   }
-  GPR_ASSERT(previous_size_of_arena_allocations >= z->size_begin);
-  GPR_ASSERT(updated_size_of_arena_allocations <= z->size_end);
-  // Skip the first part of the zone, which just contains tracking information.
-  // For the initial zone, this is the gpr_arena struct and for any other zone,
-  // it's the zone struct.
-  char* start_of_allocation_space =
-      (z == &arena->initial_zone)
-          ? reinterpret_cast<char*>(arena) +
-                GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena))
-          : reinterpret_cast<char*>(z) +
-                GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
-  // previous_size_of_arena_allocations - size_begin is how many bytes have been
-  // allocated into the current zone
-  return start_of_allocation_space + previous_size_of_arena_allocations -
-         z->size_begin;
 }
 
 #endif  // SIMPLE_ARENA_FOR_DEBUGGING

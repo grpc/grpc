@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests of Channel Args on client/server side."""
 
+from concurrent import futures
 import unittest
 
 import grpc
@@ -39,7 +40,9 @@ class ChannelArgsTest(unittest.TestCase):
         grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
 
     def test_server(self):
-        grpc.server(None, options=TEST_CHANNEL_ARGS)
+        grpc.server(
+            futures.ThreadPoolExecutor(max_workers=1),
+            options=TEST_CHANNEL_ARGS)
 
 
 if __name__ == '__main__':

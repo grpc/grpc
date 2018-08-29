@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glider
-  version: 1.15.0-dev
+  g_stands_for: gao
+  version: 1.16.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -69,6 +69,7 @@ filegroups:
   - grpc_transport_chttp2_client_insecure
   - tsi_interface
   - tsi
+  - grpc_shadow_boringssl
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
@@ -100,7 +101,7 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   src:
-  - src/cpp/ext/filters/census/grpc_context.cc
+  - src/core/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
 - name: cmdline
@@ -196,6 +197,7 @@ filegroups:
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mutex_lock.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
@@ -254,6 +256,7 @@ filegroups:
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
+  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/endpoint.cc
@@ -274,6 +277,7 @@ filegroups:
   - src/core/lib/iomgr/gethostname_fallback.cc
   - src/core/lib/iomgr/gethostname_host_name_max.cc
   - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/lib/iomgr/internal_errqueue.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
   - src/core/lib/iomgr/iomgr_custom.cc
@@ -432,6 +436,7 @@ filegroups:
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
+  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
@@ -447,6 +452,7 @@ filegroups:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
+  - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
@@ -548,6 +554,7 @@ filegroups:
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   uses:
   - grpc_base_headers
@@ -792,6 +799,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/load_system_roots.h
+  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
@@ -819,6 +828,8 @@ filegroups:
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
@@ -835,6 +846,7 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - tsi
+  - grpc_shadow_boringssl
 - name: grpc_server_backward_compatibility
   headers:
   - src/core/ext/filters/workarounds/workaround_utils.h
@@ -842,6 +854,9 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.cc
   uses:
   - grpc_base
+- name: grpc_shadow_boringssl
+  headers:
+  - src/core/tsi/grpc_shadow_boringssl.h
 - name: grpc_test_util_base
   build: test
   headers:
@@ -1103,6 +1118,7 @@ filegroups:
   - tsi_interface
   - grpc_base
   - grpc_trace
+  - grpc_shadow_boringssl
 - name: tsi_interface
   headers:
   - src/core/tsi/transport_security.h
@@ -2127,6 +2143,20 @@ targets:
   - grpc_test_util
   - grpc
   uses_polling: false
+- name: buffer_list_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/buffer_list_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
 - name: channel_create_test
   build: test
   language: c
@@ -3004,6 +3034,19 @@ targets:
   language: c
   src:
   - test/core/surface/init_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
+- name: inproc_callback_test
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/inproc_callback_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4106,6 +4149,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_error
   build: test
   language: c++
@@ -4698,6 +4742,17 @@ targets:
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
+- name: grpc_linux_system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/linux_system_roots_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_node_plugin
   build: protoc
   language: c++

@@ -52,6 +52,10 @@ grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   return r;
 }
 
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) {
+  return socket->socket;
+}
+
 /* Schedule a shutdown of the socket operations. Will call the pending
    operations to abort them. We need to do that this way because of the
    various callsites of that function, which happens to be in various

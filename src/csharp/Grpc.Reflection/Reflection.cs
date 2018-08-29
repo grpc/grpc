@@ -610,7 +610,7 @@ namespace Grpc.Reflection.V1Alpha {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ServerReflectionResponse(ServerReflectionResponse other) : this() {
       validHost_ = other.validHost_;
-      OriginalRequest = other.originalRequest_ != null ? other.OriginalRequest.Clone() : null;
+      originalRequest_ = other.originalRequest_ != null ? other.originalRequest_.Clone() : null;
       switch (other.MessageResponseCase) {
         case MessageResponseOneofCase.FileDescriptorResponse:
           FileDescriptorResponse = other.FileDescriptorResponse.Clone();

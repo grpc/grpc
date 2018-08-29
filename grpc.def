@@ -15,11 +15,13 @@ EXPORTS
     grpc_register_plugin
     grpc_init
     grpc_shutdown
+    grpc_is_initialized
     grpc_version_string
     grpc_g_stands_for
     grpc_completion_queue_factory_lookup
     grpc_completion_queue_create_for_next
     grpc_completion_queue_create_for_pluck
+    grpc_completion_queue_create_for_callback
     grpc_completion_queue_create
     grpc_completion_queue_next
     grpc_completion_queue_pluck
@@ -42,6 +44,7 @@ EXPORTS
     grpc_census_call_get_context
     grpc_channel_get_target
     grpc_channel_get_info
+    grpc_channel_reset_connect_backoff
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
@@ -68,6 +71,7 @@ EXPORTS
     grpc_resource_quota_ref
     grpc_resource_quota_unref
     grpc_resource_quota_resize
+    grpc_resource_quota_set_max_threads
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels
     grpc_channelz_get_channel

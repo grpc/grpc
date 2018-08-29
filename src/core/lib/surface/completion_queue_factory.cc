@@ -30,8 +30,9 @@
 static grpc_completion_queue* default_create(
     const grpc_completion_queue_factory* factory,
     const grpc_completion_queue_attributes* attr) {
-  return grpc_completion_queue_create_internal(attr->cq_completion_type,
-                                               attr->cq_polling_type);
+  return grpc_completion_queue_create_internal(
+      attr->cq_completion_type, attr->cq_polling_type,
+      static_cast<grpc_core::CQCallbackInterface*>(attr->cq_shutdown_cb));
 }
 
 static grpc_completion_queue_factory_vtable default_vtable = {default_create};
@@ -60,14 +61,22 @@ const grpc_completion_queue_factory* grpc_completion_queue_factory_lookup(
 grpc_completion_queue* grpc_completion_queue_create_for_next(void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_NEXT,
-                                           GRPC_CQ_DEFAULT_POLLING};
+                                           GRPC_CQ_DEFAULT_POLLING, nullptr};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }
 
 grpc_completion_queue* grpc_completion_queue_create_for_pluck(void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_completion_queue_attributes attr = {1, GRPC_CQ_PLUCK,
-                                           GRPC_CQ_DEFAULT_POLLING};
+                                           GRPC_CQ_DEFAULT_POLLING, nullptr};
+  return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
+}
+
+grpc_completion_queue* grpc_completion_queue_create_for_callback(
+    void* shutdown_callback, void* reserved) {
+  GPR_ASSERT(!reserved);
+  grpc_completion_queue_attributes attr = {
+      2, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING, shutdown_callback};
   return g_default_cq_factory.vtable->create(&g_default_cq_factory, &attr);
 }
 

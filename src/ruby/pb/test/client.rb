@@ -681,13 +681,13 @@ class NamedTests
   # Send probing message for compressed request on the server, to see
   # if it's implemented.
   def send_probe_for_compressed_request_support(&send_probe)
-    bad_status_occured = false
+    bad_status_occurred = false
 
     begin
       send_probe.call
     rescue GRPC::BadStatus => e
       if e.code == GRPC::Core::StatusCodes::INVALID_ARGUMENT
-        bad_status_occured = true
+        bad_status_occurred = true
       else
         fail AssertionError, "Bad status received but code is #{e.code}"
       end
@@ -696,7 +696,7 @@ class NamedTests
     end
 
     assert('CompressedRequest probe failed') do
-      bad_status_occured
+      bad_status_occurred
     end
   end
 

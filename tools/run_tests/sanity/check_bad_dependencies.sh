@@ -23,5 +23,9 @@ test "$(bazel query 'somepath("//:grpc++_unsecure", "//external:libssl")' 2>/dev
 test "$(bazel query 'somepath("//:grpc++_codegen_proto", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 test "$(bazel query 'somepath("//test/cpp/microbenchmarks:helpers", "//external:libssl")' 2>/dev/null | wc -l)" -eq 0 || exit 1
 
+# Make sure that core doesn't depend on anything in C++ library
+
+test "$(bazel query 'deps("//:grpc")' 2>/dev/null | egrep 'src/cpp|include/grpcpp' | wc -l)" -eq 0 || exit 1 
+
 exit 0
 

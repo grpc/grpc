@@ -622,6 +622,17 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     }
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
+
+  if (op->reset_connect_backoff) {
+    if (chand->resolver != nullptr) {
+      chand->resolver->ResetBackoffLocked();
+      chand->resolver->RequestReresolutionLocked();
+    }
+    if (chand->lb_policy != nullptr) {
+      chand->lb_policy->ResetBackoffLocked();
+    }
+  }
+
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "start_transport_op");
 
   GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
@@ -3090,7 +3101,7 @@ static void cc_start_transport_stream_op_batch(
     // For all other batches, release the call combiner.
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: saved batch, yeilding call combiner", chand,
+              "chand=%p calld=%p: saved batch, yielding call combiner", chand,
               calld);
     }
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,

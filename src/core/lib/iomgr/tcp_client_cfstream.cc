@@ -211,6 +211,6 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   gpr_mu_unlock(&connect->mu);
 }
 
-grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {CFStreamClientConnect};
+grpc_tcp_client_vtable grpc_cfstream_client_vtable = {CFStreamClientConnect};
 
 #endif /* GRPC_CFSTREAM_CLIENT */
