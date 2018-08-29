@@ -342,6 +342,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** If set, inhibits health checking (which may be enabled via the
+ *  service config.) */
+#define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

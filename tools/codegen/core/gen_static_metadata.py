@@ -59,6 +59,7 @@ CONFIG = [
     'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
+    '/grpc.health.v1.Health/Watch',
     # compression algorithm names
     'deflate',
     'gzip',

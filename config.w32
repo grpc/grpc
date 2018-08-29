@@ -315,6 +315,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\client_channel_factory.cc " +
     "src\\core\\ext\\filters\\client_channel\\client_channel_plugin.cc " +
     "src\\core\\ext\\filters\\client_channel\\connector.cc " +
+    "src\\core\\ext\\filters\\client_channel\\health\\health_check_client.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
@@ -331,6 +332,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\subchannel_index.cc " +
     "src\\core\\ext\\filters\\client_channel\\uri_parser.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
+    "src\\core\\ext\\filters\\client_channel\\health\\health.pb.c " +
     "src\\core\\tsi\\alts_transport_security.cc " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
@@ -669,6 +671,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\census");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\health");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto");

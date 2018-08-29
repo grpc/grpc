@@ -131,7 +131,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/create_default_thread_pool.cc",
     "src/cpp/server/dynamic_thread_pool.cc",
     "src/cpp/server/health/default_health_check_service.cc",
-    "src/cpp/server/health/health.pb.c",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
     "src/cpp/server/server_builder.cc",
@@ -151,7 +150,6 @@ GRPCXX_HDRS = [
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/health/default_health_check_service.h",
-    "src/cpp/server/health/health.pb.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
 ]
@@ -1039,6 +1037,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/connector.cc",
+        "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
@@ -1061,6 +1060,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
+        "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
@@ -1088,6 +1088,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "health_proto",
     ],
 )
 
@@ -1196,6 +1197,19 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "health_proto",
+    srcs = [
+        "src/core/ext/filters/client_channel/health/health.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/health/health.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
     ],
 )
 
@@ -1924,6 +1938,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
+        "health_proto",
     ],
 )
 
@@ -1936,6 +1951,7 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
+        "health_proto",
     ],
 )
 

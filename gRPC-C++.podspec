@@ -168,7 +168,6 @@ Pod::Spec.new do |s|
                       'src/cpp/common/channel_filter.h',
                       'src/cpp/server/dynamic_thread_pool.h',
                       'src/cpp/server/health/default_health_check_service.h',
-                      'src/cpp/server/health/health.pb.h',
                       'src/cpp/server/thread_pool_interface.h',
                       'src/cpp/thread_manager/thread_manager.h',
                       'src/cpp/client/insecure_credentials.cc',
@@ -199,7 +198,6 @@ Pod::Spec.new do |s|
                       'src/cpp/server/create_default_thread_pool.cc',
                       'src/cpp/server/dynamic_thread_pool.cc',
                       'src/cpp/server/health/default_health_check_service.cc',
-                      'src/cpp/server/health/health.pb.c',
                       'src/cpp/server/health/health_check_service.cc',
                       'src/cpp/server/health/health_check_service_server_builder_option.cc',
                       'src/cpp/server/server_builder.cc',
@@ -323,6 +321,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
+                      'src/core/ext/filters/client_channel/health/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',
@@ -340,6 +339,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/client_channel/uri_parser.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
+                      'src/core/ext/filters/client_channel/health/health.pb.h',
                       'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
@@ -512,7 +512,6 @@ Pod::Spec.new do |s|
                               'src/cpp/common/channel_filter.h',
                               'src/cpp/server/dynamic_thread_pool.h',
                               'src/cpp/server/health/default_health_check_service.h',
-                              'src/cpp/server/health/health.pb.h',
                               'src/cpp/server/thread_pool_interface.h',
                               'src/cpp/thread_manager/thread_manager.h',
                               'src/core/lib/gpr/alloc.h',
@@ -677,7 +676,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
-                              'src/core/ext/transport/inproc/inproc_transport.h'
+                              'src/core/ext/transport/inproc/inproc_transport.h',
+                              'src/core/ext/filters/client_channel/health/health.pb.h'
   end
 
   s.subspec 'Protobuf' do |ss|

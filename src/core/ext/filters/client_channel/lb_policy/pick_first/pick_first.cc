@@ -357,9 +357,14 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
             "Pick First %p received update with %" PRIuPTR " addresses", this,
             addresses->num_addresses);
   }
+  grpc_arg new_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(&args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
       this, &grpc_lb_pick_first_trace, addresses, combiner(),
-      client_channel_factory(), args);
+      client_channel_factory(), *new_args);
+  grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {
     // Empty update or no valid subchannels. Unsubscribe from all current
     // subchannels and put the channel in TRANSIENT_FAILURE.

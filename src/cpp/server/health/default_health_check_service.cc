@@ -26,8 +26,8 @@
 
 #include "pb_decode.h"
 #include "pb_encode.h"
+#include "src/core/ext/filters/client_channel/health/health.pb.h"
 #include "src/cpp/server/health/default_health_check_service.h"
-#include "src/cpp/server/health/health.pb.h"
 
 namespace grpc {
 

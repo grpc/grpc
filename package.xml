@@ -276,6 +276,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.h" role="src" />
@@ -293,6 +294,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
@@ -713,6 +715,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.cc" role="src" />
@@ -729,6 +732,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
