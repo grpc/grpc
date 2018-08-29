@@ -419,6 +419,8 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
+  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                              GRPC_ERROR_NONE, "connecting");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -493,8 +495,6 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                                GRPC_ERROR_NONE, "connecting");
     continue_connect_locked(c);
   } else {
     GPR_ASSERT(!c->have_alarm);
@@ -509,11 +509,6 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&c->alarm, c->next_attempt_deadline, &c->on_alarm);
-    // During backoff, we prefer the connectivity state of CONNECTING instead of
-    // TRANSIENT_FAILURE in order to prevent triggering re-resolution
-    // continuously in pick_first.
-    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                                GRPC_ERROR_NONE, "backoff");
   }
 }
 

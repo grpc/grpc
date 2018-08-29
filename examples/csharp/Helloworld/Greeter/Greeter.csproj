@@ -9,10 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.5.0" />
-    <PackageReference Include="Google.Protobuf.Tools" Version="3.5.0" />
-    <PackageReference Include="Grpc" Version="1.13.1" />
-    <PackageReference Include="Grpc.Tools" Version="1.13.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.6.1" />
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.6.1" />
+    <PackageReference Include="Grpc" Version="1.14.1" />
+    <PackageReference Include="Grpc.Tools" Version="1.14.1" />
   </ItemGroup>
 
 </Project>

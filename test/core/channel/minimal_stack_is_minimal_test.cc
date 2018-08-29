@@ -85,21 +85,21 @@ int main(int argc, char** argv) {
 
   // tests with a default stack
   errors +=
-      CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "deadline",
-                  "authority", "message_size", "connected", NULL);
+      CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
+                  "message_size", "deadline", "connected", NULL);
   errors += CHECK_STACK("unknown", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
                         "message_size", "connected", NULL);
   errors += CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server",
-                        "deadline", "message_size", "connected", NULL);
+                        "message_size", "deadline", "connected", NULL);
   errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL,
-                        "deadline", "authority", "message_size",
-                        "message_compress", "http-client", "connected", NULL);
+                        "authority", "message_size", "deadline", "http-client",
+                        "message_compress", "connected", NULL);
   errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
-                        "message_size", "message_compress", "http-client",
+                        "message_size", "http-client", "message_compress",
                         "connected", NULL);
   errors += CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
-                        "deadline", "message_size", "message_compress",
-                        "http-server", "connected", NULL);
+                        "message_size", "deadline", "http-server",
+                        "message_compress", "connected", NULL);
   errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
                         NULL);
 

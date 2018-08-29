@@ -53,7 +53,8 @@ class FakeResolverResponseGenerator
   // The new re-resolution response replaces any previous re-resolution
   // response that may have been set by a previous call.
   // If the re-resolution response is set to NULL, then the fake
-  // resolver will return the last value set via \a SetResponse().
+  // resolver will not return anything when \a RequestReresolutionLocked()
+  // is called.
   void SetReresolutionResponse(grpc_channel_args* response);
 
   // Tells the resolver to return a transient failure (signalled by

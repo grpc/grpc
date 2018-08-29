@@ -1972,7 +1972,7 @@ done:
   return error;
 
 done_with_error:
-  /* reverse any mutations that occured */
+  /* reverse any mutations that occurred */
   if (stream_op->send_initial_metadata) {
     call->sent_initial_metadata = false;
     grpc_metadata_batch_clear(&call->metadata_batch[0][0]);
