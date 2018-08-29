@@ -20,7 +20,6 @@
 #define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 
 #include <grpc/impl/codegen/log.h>
-#include <grpc/slice.h>
 #include <grpcpp/impl/codegen/slice.h>
 
 namespace grpc {
@@ -51,8 +50,10 @@ class MetadataMap {
     // like code and message.
     else {
       for (size_t i = 0; i < arr_.count; i++) {
-        if (grpc_slice_str_cmp(arr_.metadata[i].key, kBinaryErrorDetailsKey) ==
-            0) {
+        if (strncmp(reinterpret_cast<const char*>(
+                        GRPC_SLICE_START_PTR(arr_.metadata[i].key)),
+                    kBinaryErrorDetailsKey,
+                    GRPC_SLICE_LENGTH(arr_.metadata[i].key)) == 0) {
           return grpc::string(reinterpret_cast<const char*>(
                                   GRPC_SLICE_START_PTR(arr_.metadata[i].value)),
                               GRPC_SLICE_LENGTH(arr_.metadata[i].value));
