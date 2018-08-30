@@ -3309,14 +3309,15 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_cli_libs", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "client_callback_end2end_test", 
+    "name": "cli_call_test", 
     "src": [
-      "test/cpp/end2end/client_callback_end2end_test.cc"
+      "test/cpp/util/cli_call_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3328,15 +3329,14 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
-      "grpc_cli_libs", 
       "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "cli_call_test", 
+    "name": "client_callback_end2end_test", 
     "src": [
-      "test/cpp/util/cli_call_test.cc"
+      "test/cpp/end2end/client_callback_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
