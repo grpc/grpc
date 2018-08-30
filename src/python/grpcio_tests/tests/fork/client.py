@@ -63,12 +63,12 @@ def _test_case_from_arg(test_case_arg):
 
 def test_fork():
     logging.basicConfig(level=logging.INFO)
-    args = _args()
-    if args.test_case == "all":
+    args = vars(_args())
+    if args['test_case'] == "all":
         for test_case in methods.TestCase:
             test_case.run_test(args)
     else:
-        test_case = _test_case_from_arg(args.test_case)
+        test_case = _test_case_from_arg(args['test_case'])
         test_case.run_test(args)
 
 
