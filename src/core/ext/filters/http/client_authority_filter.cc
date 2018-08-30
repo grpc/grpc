@@ -49,25 +49,25 @@ struct channel_data {
 
 void authority_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Handle send_initial_metadata.
-  auto* initial_metadata =
-      batch->payload->send_initial_metadata.send_initial_metadata;
-  // If the initial metadata doesn't already contain :authority, add it.
-  if (batch->send_initial_metadata &&
-      initial_metadata->idx.named.authority == nullptr) {
-    grpc_error* error = grpc_metadata_batch_add_head(
-        initial_metadata, &calld->authority_storage,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_AUTHORITY,
-            grpc_slice_ref_internal(chand->default_authority)));
-    if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                         calld->call_combiner);
-      return;
-    }
-  }
+  // channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  // call_data* calld = static_cast<call_data*>(elem->call_data);
+  // // Handle send_initial_metadata.
+  // auto* initial_metadata =
+  //     batch->payload->send_initial_metadata.send_initial_metadata;
+  // // If the initial metadata doesn't already contain :authority, add it.
+  // if (batch->send_initial_metadata &&
+  //     initial_metadata->idx.named.authority == nullptr) {
+  //   grpc_error* error = grpc_metadata_batch_add_head(
+  //       initial_metadata, &calld->authority_storage,
+  //       grpc_mdelem_from_slices(
+  //           GRPC_MDSTR_AUTHORITY,
+  //           grpc_slice_ref_internal(chand->default_authority)));
+  //   if (error != GRPC_ERROR_NONE) {
+  //     grpc_transport_stream_op_batch_finish_with_failure(batch, error,
+  //                                                        calld->call_combiner);
+  //     return;
+  //   }
+  // }
   // Pass control down the stack.
   grpc_call_next_op(elem, batch);
 }

@@ -107,6 +107,7 @@ static grpc_error* process_send_initial_metadata(
 static grpc_error* process_send_initial_metadata(
     grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
     bool* has_compression_algorithm) {
+  return GRPC_ERROR_NONE;
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   *has_compression_algorithm = false;

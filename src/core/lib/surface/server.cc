@@ -699,18 +699,19 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
 
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(calld->recv_initial_metadata->idx.named.path != nullptr);
-    GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != nullptr);
+    // GPR_ASSERT(calld->recv_initial_metadata->idx.named.authority != nullptr);
     calld->path = grpc_slice_ref_internal(
         GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.path->md));
-    calld->host = grpc_slice_ref_internal(
-        GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
+    // calld->host = grpc_slice_ref_internal(
+    //     GRPC_MDVALUE(calld->recv_initial_metadata->idx.named.authority->md));
+    calld->host = grpc_slice_from_static_string("fake host");
     calld->path_set = true;
     calld->host_set = true;
     grpc_metadata_batch_remove(calld->recv_initial_metadata,
                                calld->recv_initial_metadata->idx.named.path);
-    grpc_metadata_batch_remove(
-        calld->recv_initial_metadata,
-        calld->recv_initial_metadata->idx.named.authority);
+    // grpc_metadata_batch_remove(
+    //     calld->recv_initial_metadata,
+    //     calld->recv_initial_metadata->idx.named.authority);
   } else {
     GRPC_ERROR_REF(error);
   }

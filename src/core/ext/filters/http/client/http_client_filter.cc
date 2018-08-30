@@ -77,67 +77,76 @@ struct channel_data {
 
 static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
-  if (b->idx.named.status != nullptr) {
-    if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
-      grpc_metadata_batch_remove(b, b->idx.named.status);
-    } else {
-      char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
-                                  GPR_DUMP_ASCII);
-      char* msg;
-      gpr_asprintf(&msg, "Received http2 header with status: %s", val);
-      grpc_error* e = grpc_error_set_str(
-          grpc_error_set_int(
-              grpc_error_set_str(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
-          GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
-      gpr_free(val);
-      gpr_free(msg);
-      return e;
-    }
-  }
+  // if (b->idx.named.status != nullptr) {
+  //   if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
+  //     grpc_metadata_batch_remove(b, b->idx.named.status);
+  //   } else {
+  //     char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
+  //                                 GPR_DUMP_ASCII);
+  //     char* msg;
+  //     gpr_asprintf(&msg, "Received http2 header with status: %s", val);
+  //     grpc_error* e = grpc_error_set_str(
+  //         grpc_error_set_int(
+  //             grpc_error_set_str(
+  //                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  //                     "Received http2 :status header with non-200 OK
+  //                     status"),
+  //                 GRPC_ERROR_STR_VALUE, grpc_slice_from_copied_string(val)),
+  //             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED),
+  //         GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_copied_string(msg));
+  //     gpr_free(val);
+  //     gpr_free(msg);
+  //     return e;
+  //   }
+  // }
 
-  if (b->idx.named.grpc_message != nullptr) {
-    grpc_slice pct_decoded_msg = grpc_permissive_percent_decode_slice(
-        GRPC_MDVALUE(b->idx.named.grpc_message->md));
-    if (grpc_slice_is_equivalent(pct_decoded_msg,
-                                 GRPC_MDVALUE(b->idx.named.grpc_message->md))) {
-      grpc_slice_unref_internal(pct_decoded_msg);
-    } else {
-      grpc_metadata_batch_set_value(b->idx.named.grpc_message, pct_decoded_msg);
-    }
-  }
+  // if (b->idx.named.grpc_message != nullptr) {
+  //   grpc_slice pct_decoded_msg = grpc_permissive_percent_decode_slice(
+  //       GRPC_MDVALUE(b->idx.named.grpc_message->md));
+  //   if (grpc_slice_is_equivalent(pct_decoded_msg,
+  //                                GRPC_MDVALUE(b->idx.named.grpc_message->md)))
+  //                                {
+  //     grpc_slice_unref_internal(pct_decoded_msg);
+  //   } else {
+  //     grpc_metadata_batch_set_value(b->idx.named.grpc_message,
+  //     pct_decoded_msg);
+  //   }
+  // }
 
-  if (b->idx.named.content_type != nullptr) {
-    if (!grpc_mdelem_eq(b->idx.named.content_type->md,
-                        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                  EXPECTED_CONTENT_TYPE,
-                                  EXPECTED_CONTENT_TYPE_LENGTH) &&
-          (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               '+' ||
-           GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               ';')) {
-        /* Although the C implementation doesn't (currently) generate them,
-           any custom +-suffix is explicitly valid. */
-        /* TODO(klempner): We should consider preallocating common values such
-           as +proto or +json, or at least stashing them if we see them. */
-        /* TODO(klempner): Should we be surfacing this to application code? */
-      } else {
-        /* TODO(klempner): We're currently allowing this, but we shouldn't
-           see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
-                                    GPR_DUMP_ASCII);
-        gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
-        gpr_free(val);
-      }
-    }
-    grpc_metadata_batch_remove(b, b->idx.named.content_type);
-  }
+  // if (b->idx.named.content_type != nullptr) {
+  //   if (!grpc_mdelem_eq(b->idx.named.content_type->md,
+  //                       GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
+  //     if
+  //     (grpc_slice_buf_start_eq(GRPC_MDVALUE(b->idx.named.content_type->md),
+  //                                 EXPECTED_CONTENT_TYPE,
+  //                                 EXPECTED_CONTENT_TYPE_LENGTH) &&
+  //         (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
+  //              b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH]
+  //              ==
+  //              '+' ||
+  //          GRPC_SLICE_START_PTR(GRPC_MDVALUE(
+  //              b->idx.named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH]
+  //              ==
+  //              ';')) {
+  //       /* Although the C implementation doesn't (currently) generate them,
+  //          any custom +-suffix is explicitly valid. */
+  //       /* TODO(klempner): We should consider preallocating common values
+  //       such
+  //          as +proto or +json, or at least stashing them if we see them. */
+  //       /* TODO(klempner): Should we be surfacing this to application code?
+  //       */
+  //     } else {
+  //       /* TODO(klempner): We're currently allowing this, but we shouldn't
+  //          see it without a proxy so log for now. */
+  //       char* val =
+  //       grpc_dump_slice(GRPC_MDVALUE(b->idx.named.content_type->md),
+  //                                   GPR_DUMP_ASCII);
+  //       gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
+  //       gpr_free(val);
+  //     }
+  //   }
+  //   grpc_metadata_batch_remove(b, b->idx.named.content_type);
+  // }
 
   return GRPC_ERROR_NONE;
 }
@@ -284,12 +293,12 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
                                         mdelem_path_and_query);
 }
 
-static void remove_if_present(grpc_metadata_batch* batch,
-                              grpc_metadata_batch_callouts_index idx) {
-  if (batch->idx.array[idx] != nullptr) {
-    grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
-  }
-}
+// static void remove_if_present(grpc_metadata_batch* batch,
+//                               grpc_metadata_batch_callouts_index idx) {
+//   if (batch->idx.array[idx] != nullptr) {
+//     grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
+//   }
+// }
 
 static void hc_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
@@ -364,44 +373,45 @@ static void hc_start_transport_stream_op_batch(
       method = GRPC_MDELEM_METHOD_PUT;
     }
 
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_METHOD);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_SCHEME);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_TE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_CONTENT_TYPE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_USER_AGENT);
+    // remove_if_present(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     GRPC_BATCH_METHOD);
+    // remove_if_present(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     GRPC_BATCH_SCHEME);
+    // remove_if_present(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     GRPC_BATCH_TE);
+    // remove_if_present(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     GRPC_BATCH_CONTENT_TYPE);
+    // remove_if_present(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     GRPC_BATCH_USER_AGENT);
 
-    /* Send : prefixed headers, which have to be before any application
-       layer headers. */
-    error = grpc_metadata_batch_add_head(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->method, method);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_head(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->scheme, channeld->static_scheme);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
-    if (error != GRPC_ERROR_NONE) goto done;
+    // /* Send : prefixed headers, which have to be before any application
+    //    layer headers. */
+    // error = grpc_metadata_batch_add_head(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     &calld->method, method);
+    // if (error != GRPC_ERROR_NONE) goto done;
+    // error = grpc_metadata_batch_add_head(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     &calld->scheme, channeld->static_scheme);
+    // if (error != GRPC_ERROR_NONE) goto done;
+    // error = grpc_metadata_batch_add_tail(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
+    // if (error != GRPC_ERROR_NONE) goto done;
+    // error = grpc_metadata_batch_add_tail(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     &calld->content_type,
+    //     GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+    // if (error != GRPC_ERROR_NONE) goto done;
+    // error = grpc_metadata_batch_add_tail(
+    //     batch->payload->send_initial_metadata.send_initial_metadata,
+    //     &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
+    // if (error != GRPC_ERROR_NONE) goto done;
   }
 
 done:
