@@ -42,13 +42,8 @@ static const size_t kMaxPayloadSizeForGet = 2048;
 namespace {
 struct call_data {
   grpc_call_combiner* call_combiner;
-  // State for handling send_initial_metadata ops.
-  grpc_linked_mdelem method;
-  grpc_linked_mdelem scheme;
-  grpc_linked_mdelem authority;
-  grpc_linked_mdelem te_trailers;
-  grpc_linked_mdelem content_type;
-  grpc_linked_mdelem user_agent;
+  // this can change per call, so the storage is per call.
+  grpc_linked_mdelem method_storage;
   // State for handling recv_initial_metadata ops.
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* original_recv_initial_metadata_ready;
@@ -71,6 +66,10 @@ struct call_data {
 struct channel_data {
   grpc_mdelem static_scheme;
   grpc_mdelem user_agent;
+  grpc_linked_mdelem scheme_storage;
+  grpc_linked_mdelem te_trailers_storage;
+  grpc_linked_mdelem content_type_storage;
+  grpc_linked_mdelem user_agent_storage;
   size_t max_payload_size_for_get;
 };
 }  // namespace
@@ -284,13 +283,6 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
                                         mdelem_path_and_query);
 }
 
-static void remove_if_present(grpc_metadata_batch* batch,
-                              grpc_metadata_batch_callouts_index idx) {
-  if (batch->idx.array[idx] != nullptr) {
-    grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
-  }
-}
-
 static void hc_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -364,43 +356,28 @@ static void hc_start_transport_stream_op_batch(
       method = GRPC_MDELEM_METHOD_PUT;
     }
 
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_METHOD);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_SCHEME);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_TE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_CONTENT_TYPE);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_USER_AGENT);
-
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
     error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->method, method);
+        &calld->method_storage, method);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->scheme, channeld->static_scheme);
+        &channeld->scheme_storage, channeld->static_scheme);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
+        &channeld->te_trailers_storage, GRPC_MDELEM_TE_TRAILERS);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+        &channeld->content_type_storage,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
+        &channeld->user_agent_storage, GRPC_MDELEM_REF(channeld->user_agent));
     if (error != GRPC_ERROR_NONE) goto done;
   }
 
