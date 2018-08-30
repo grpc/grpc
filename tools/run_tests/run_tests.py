@@ -1824,10 +1824,10 @@ def _build_and_run(check_cancelled,
             upload_extra_fields = {
                 'compiler': args.compiler,
                 'config': args.config,
-                'iomgr_plaform': args.iomgr_platform,
+                'iomgr_platform': args.iomgr_platform,
                 'language': args.language[
                     0],  # args.language is a list but will always have one element when uploading to BQ is enabled.
-                'plaform': platform_string()
+                'platform': platform_string()
             }
             upload_results_to_bq(resultset, args.bq_result_table,
                                  upload_extra_fields)
