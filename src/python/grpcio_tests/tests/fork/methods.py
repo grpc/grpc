@@ -33,8 +33,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _channel(args):
-    target = '{}:{}'.format(args.server_host, args.server_port)
-    if args.use_tls:
+    target = '{}:{}'.format(args['server_host'], args['server_port'])
+    if args['use_tls']:
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(target, channel_credentials)
     else:
@@ -121,6 +121,8 @@ class _ChildProcess(object):
         def record_exceptions():
             try:
                 task(*args)
+            except grpc.RpcError as rpc_error:
+                self._exceptions.put('RpcError: %s' % rpc_error)
             except Exception as e:  # pylint: disable=broad-except
                 self._exceptions.put(e)
 
@@ -242,10 +244,9 @@ def _connectivity_watch(channel, args):
         child_stub = test_pb2_grpc.TestServiceStub(child_channel)
         child_channel.subscribe(child_connectivity_callback)
         _async_unary(child_stub)
-        if len(child_states
-              ) < 2 or child_states[-1] != grpc.ChannelConnectivity.READY:
+        if not child_states or child_states[-1] != grpc.ChannelConnectivity.READY:
             raise ValueError('Channel did not move to READY')
-        if len(parent_states) > 1:
+        if parent_states:
             raise ValueError('Received connectivity updates on parent callback')
         child_channel.unsubscribe(child_connectivity_callback)
         child_channel.close()
