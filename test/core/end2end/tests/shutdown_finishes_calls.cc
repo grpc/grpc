@@ -166,6 +166,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 
   grpc_server_destroy(f.server);
 
+  gpr_log(GPR_INFO, "status %d", status);
   // new code should give INTERNAL, some older code will give UNAVAILABLE
   GPR_ASSERT(status == GRPC_STATUS_INTERNAL ||
              status == GRPC_STATUS_UNAVAILABLE);
