@@ -776,9 +776,9 @@ def cloud_to_prod_jobspec(language,
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
-        transport_security_options += ['--use_tls=true']
+        transport_security_options = ['--use_tls=true']
     elif transport_security == 'google_default_credentials' and language == 'c++':
-        transport_security_options += [
+        transport_security_options = [
             '--custom_credentials_type=google_default_credentials'
         ]
     else:
