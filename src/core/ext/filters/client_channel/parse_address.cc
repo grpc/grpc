@@ -125,7 +125,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   char* host_end = static_cast<char*>(gpr_memrchr(host, '%', strlen(host)));
   if (host_end != nullptr) {
     GPR_ASSERT(host_end >= host);
-    char host_without_scope[GRPC_INET6_ADDRSTRLEN];
+    char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
     size_t host_without_scope_len = static_cast<size_t>(host_end - host);
     uint32_t sin6_scope_id = 0;
     if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
