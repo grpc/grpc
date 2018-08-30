@@ -128,6 +128,13 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
     char host_without_scope[GRPC_INET6_ADDRSTRLEN];
     size_t host_without_scope_len = static_cast<size_t>(host_end - host);
     uint32_t sin6_scope_id = 0;
+    if (host_without_scope_len > GRPC_INET6_ADDRSTRLEN) {
+      gpr_log(GPR_ERROR,
+              "invalid ipv6 address length %d. Length cannot be greater than "
+              "GRPC_INET6_ADDRSTRLEN i.e %d)",
+              host_without_scope_len, GRPC_INET6_ADDRSTRLEN);
+      goto done;
+    }
     strncpy(host_without_scope, host, host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
     if (grpc_inet_pton(GRPC_AF_INET6, host_without_scope, &in6->sin6_addr) ==
