@@ -1519,9 +1519,6 @@ try:
         sys.exit(1)
     else:
         sys.exit(0)
-except Exception as e:
-    print('exception occurred:')
-    traceback.print_exc(file=sys.stdout)
 finally:
     # Check if servers are still running.
     for server, job in server_jobs.items():
