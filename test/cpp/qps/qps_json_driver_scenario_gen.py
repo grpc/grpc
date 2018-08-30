@@ -33,6 +33,7 @@ def generate_args():
 
     serialized_scenarios_str = str(all_scenarios).encode('ascii', 'ignore')
     with open('qps_json_driver_scenarios.bzl', 'w') as f:
+        f.write('"""Scenarios of qps driver."""\n\n')
         f.write('QPS_JSON_DRIVER_SCENARIOS = ' + serialized_scenarios_str + '\n')
 
 generate_args()
