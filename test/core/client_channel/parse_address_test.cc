@@ -113,5 +113,5 @@ int main(int argc, char** argv) {
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
       "v6:45%x$1*");
 
-  test_grpc_parse grpc_shutdown();
+  grpc_shutdown();
 }
