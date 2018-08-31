@@ -37,11 +37,14 @@ namespace internal {
 
 class CallbackWithStatusTag {
  public:
-  // TODO(vjpai): make impl and ops part of this structure to avoid allocation,
-  // ownership transfer, and delete
-  CallbackWithStatusTag(std::function<void(Status)> f, bool self_delete,
+  // always allocated against a call arena, no memory free required
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CallbackWithStatusTag));
+  }
+
+  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops);
-  ~CallbackWithStatusTag() { delete ops_; }
+  ~CallbackWithStatusTag() {}
   void* tag() { return static_cast<void*>(impl_); }
   Status* status_ptr() { return status_; }
   CompletionQueueTag* ops() { return ops_; }
@@ -57,11 +60,14 @@ class CallbackWithStatusTag {
 
 class CallbackWithSuccessTag {
  public:
-  // TODO(vjpai): make impl and ops part of this structure to avoid allocation,
-  // ownership transfer, and delete
-  CallbackWithSuccessTag(std::function<void(bool)> f, bool self_delete,
+  // always allocated against a call arena, no memory free required
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CallbackWithSuccessTag));
+  }
+
+  CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
                          CompletionQueueTag* ops);
-  ~CallbackWithSuccessTag() { delete ops_; }
+
   void* tag() { return static_cast<void*>(impl_); }
   CompletionQueueTag* ops() { return ops_; }
 
