@@ -187,6 +187,7 @@ struct grpc_call {
   gpr_atm received_final_op_atm;
 
   batch_control* active_batches[MAX_CONCURRENT_BATCHES];
+  gpr_refcount num_active_batches;
   grpc_transport_stream_op_batch_payload stream_op_payload;
 
   /* first idx: is_receiving, second idx: is_trailing */
@@ -235,6 +236,8 @@ struct grpc_call {
   grpc_closure receiving_stream_ready;
   grpc_closure receiving_initial_metadata_ready;
   grpc_closure receiving_trailing_metadata_ready;
+  grpc_closure delay_recv_trailing_finish;
+  gpr_atm recv_trailing_finish_delayed;
   uint32_t test_only_last_message_flags;
 
   grpc_closure release_call;
@@ -353,6 +356,9 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
       gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
+  gpr_ref_init(&call->num_active_batches, 0);
+  gpr_atm_rel_store(&call->recv_trailing_finish_delayed,
+                    static_cast<gpr_atm>(0));
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
   *out_call = call;
@@ -1285,6 +1291,15 @@ static void post_batch_completion(batch_control* bctl) {
     *call->receiving_buffer = nullptr;
   }
 
+  if (call->is_client) {
+    gpr_unref(&call->num_active_batches);
+    if (gpr_ref_is_unique(&call->num_active_batches) &&
+        gpr_atm_full_cas(&call->recv_trailing_finish_delayed,
+                         static_cast<gpr_atm>(1), static_cast<gpr_atm>(0))) {
+      GRPC_CLOSURE_SCHED(&call->delay_recv_trailing_finish, GRPC_ERROR_NONE);
+    }
+  }
+
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs bctl->error */
     bctl->call = nullptr;
@@ -1557,6 +1572,11 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
   finish_batch_step(bctl);
 }
 
+static void delay_recv_trailing_finish(void* arg, grpc_error* error) {
+  batch_control* bctl = static_cast<batch_control*>(arg);
+  finish_batch_step(bctl);
+}
+
 static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
@@ -1565,7 +1585,22 @@ static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
   grpc_metadata_batch* md =
       &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
   recv_trailing_filter(call, md);
-  finish_batch_step(bctl);
+  if (!call->is_client || gpr_ref_is_unique(&call->num_active_batches)) {
+    finish_batch_step(bctl);
+  } else {
+    GRPC_CLOSURE_INIT(&call->delay_recv_trailing_finish,
+                      delay_recv_trailing_finish, bctl,
+                      grpc_schedule_on_exec_ctx);
+    gpr_atm_no_barrier_store(&call->recv_trailing_finish_delayed,
+                             static_cast<gpr_atm>(1));
+
+    if (gpr_ref_is_unique(&call->num_active_batches) &&
+        gpr_atm_no_barrier_cas(&call->recv_trailing_finish_delayed,
+                               static_cast<gpr_atm>(1),
+                               static_cast<gpr_atm>(0))) {
+      finish_batch_step(bctl);
+    }
+  }
 }
 
 static void finish_batch(void* bctlp, grpc_error* error) {
@@ -1937,6 +1972,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
     GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
   gpr_ref_init(&bctl->steps_to_complete, (has_send_ops ? 1 : 0) + num_recv_ops);
+  if (call->is_client) {
+    gpr_ref(&call->num_active_batches);
+  }
 
   if (has_send_ops) {
     GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,
