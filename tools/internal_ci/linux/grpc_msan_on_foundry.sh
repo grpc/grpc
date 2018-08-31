@@ -65,8 +65,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --remote_instance_name=grpc-testing/instances/default_instance \
   --test_env=GRPC_VERBOSITY=debug \
+  --remote_instance_name=projects/grpc-testing/instances/default_instance \
   -- //test/... || FAILED="true"
 
 # Sleep to let ResultStore finish writing results before querying
