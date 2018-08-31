@@ -270,7 +270,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
 
   public function testPersistentChannelDefaultOutBound1()
   {
-      $this->channel1 = new Grpc\Channel('localhost:10011', []);
+      $this->channel1 = new Grpc\Channel('localhost:10004', []);
       // Make channel1 not IDLE.
       $this->channel1->getConnectivityState(true);
       $this->waitUntilNotIdle($this->channel1);
@@ -280,7 +280,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       // Since channel1 is CONNECTING, channel 2 will not be persisted
       $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
         null);
-      $this->channel2 = new Grpc\Channel('localhost:10011',
+      $this->channel2 = new Grpc\Channel('localhost:10004',
           ['credentials' => $channel_credentials]);
       $channel2_info = $this->channel2->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel2_info['connectivity_status']);
@@ -295,7 +295,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
 
   public function testPersistentChannelDefaultOutBound2()
   {
-      $this->channel1 = new Grpc\Channel('localhost:10011', []);
+      $this->channel1 = new Grpc\Channel('localhost:10005', []);
       $channel1_info = $this->channel1->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel1_info['connectivity_status']);
 
@@ -303,7 +303,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       // gRPC channel. channel2 will not be persisted
       $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
         null);
-      $this->channel2 = new Grpc\Channel('localhost:10011',
+      $this->channel2 = new Grpc\Channel('localhost:10005',
           ['credentials' => $channel_credentials]);
       $channel2_info = $this->channel2->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel2_info['connectivity_status']);
@@ -318,7 +318,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
 
   public function testPersistentChannelDefaultOutBound3()
   {
-      $this->channel1 = new Grpc\Channel('localhost:10011', []);
+      $this->channel1 = new Grpc\Channel('localhost:10006', []);
       $channel1_info = $this->channel1->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel1_info['connectivity_status']);
 
@@ -327,7 +327,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       // channel2 can be persisted.
       $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
         null);
-      $this->channel2 = new Grpc\Channel('localhost:10011',
+      $this->channel2 = new Grpc\Channel('localhost:10006',
         ['credentials' => $channel_credentials]);
       $channel2_info = $this->channel2->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel2_info['connectivity_status']);
@@ -342,7 +342,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
 
   public function testPersistentChannelTwoUpperBound()
   {
-      $this->channel1 = new Grpc\Channel('localhost:10011', [
+      $this->channel1 = new Grpc\Channel('localhost:10007', [
           "grpc_target_persist_bound" => 2,
       ]);
       $channel1_info = $this->channel1->getChannelInfo();
@@ -351,7 +351,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       // Since channel1 is IDLE, channel 1 will be deleted
       $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
           null);
-      $this->channel2 = new Grpc\Channel('localhost:10011',
+      $this->channel2 = new Grpc\Channel('localhost:10007',
           ['credentials' => $channel_credentials]);
       $channel2_info = $this->channel2->getChannelInfo();
       $this->assertEquals(GRPC\CHANNEL_IDLE, $channel2_info['connectivity_status']);

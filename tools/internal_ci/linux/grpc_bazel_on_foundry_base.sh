@@ -22,8 +22,8 @@ mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
 temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5"
+ln -f "${KOKORO_GFILE_DIR}/bazel-latest-release" ${temp_dir}/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-latest-release"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
@@ -33,6 +33,8 @@ chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instance"
 
 # TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
@@ -49,13 +51,15 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/default:toolchain \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
-  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
+  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default \
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --test_env=GRPC_VERBOSITY=debug \
+  --remote_instance_name=projects/grpc-testing/instances/default_instance \
   $1 \
   -- //test/... || FAILED="true"
 

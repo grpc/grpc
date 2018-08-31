@@ -39,6 +39,11 @@ include "_cygrpc/_hooks.pyx.pxi"
 
 include "_cygrpc/grpc_gevent.pyx.pxi"
 
+IF UNAME_SYSNAME == "Windows":
+    include "_cygrpc/fork_windows.pyx.pxi"
+ELSE:
+    include "_cygrpc/fork_posix.pyx.pxi"
+
 #
 # initialize gRPC
 #

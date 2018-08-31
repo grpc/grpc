@@ -457,7 +457,6 @@ get_service_config_from_resolver_result_locked(channel_data* chand) {
         grpc_uri* uri = grpc_uri_parse(server_uri, true);
         GPR_ASSERT(uri->path[0] != '\0');
         service_config_parsing_state parsing_state;
-        memset(&parsing_state, 0, sizeof(parsing_state));
         parsing_state.server_name =
             uri->path[0] == '/' ? uri->path + 1 : uri->path;
         service_config->ParseGlobalParams(parse_retry_throttle_params,
@@ -3101,7 +3100,7 @@ static void cc_start_transport_stream_op_batch(
     // For all other batches, release the call combiner.
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "chand=%p calld=%p: saved batch, yeilding call combiner", chand,
+              "chand=%p calld=%p: saved batch, yielding call combiner", chand,
               calld);
     }
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
