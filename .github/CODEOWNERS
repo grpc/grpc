@@ -4,6 +4,5 @@
 /**/OWNERS @markdroth @nicolasnoble @a11r
 /bazel/** @nicolasnoble @dgquintas @a11r @vjpai
 /cmake/** @jtattermusch @nicolasnoble @mehrdada
-/src/core/ext/filters/client_channel/** @markdroth @dgquintas @AspirinSJL
 /tools/dockerfile/** @jtattermusch @mehrdada @nicolasnoble
 /tools/run_tests/performance/** @ncteisen @apolcyn @jtattermusch
