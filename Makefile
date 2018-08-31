@@ -455,11 +455,11 @@ LDFLAGS += $(EXTRA_LDFLAGS)
 DEFINES += $(EXTRA_DEFINES)
 LDLIBS += $(EXTRA_LDLIBS)
 
-HOST_CPPFLAGS = $(CPPFLAGS)
-HOST_CFLAGS = $(CFLAGS)
-HOST_CXXFLAGS = $(CXXFLAGS)
-HOST_LDFLAGS = $(LDFLAGS)
-HOST_LDLIBS = $(LDLIBS)
+HOST_CPPFLAGS += $(CPPFLAGS)
+HOST_CFLAGS += $(CFLAGS)
+HOST_CXXFLAGS += $(CXXFLAGS)
+HOST_LDFLAGS += $(LDFLAGS)
+HOST_LDLIBS += $(LDLIBS)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
