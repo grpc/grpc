@@ -30,9 +30,15 @@ namespace internal {
 namespace {
 class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
  public:
-  CallbackWithSuccessImpl(CallbackWithSuccessTag* parent,
-                          std::function<void(bool)> f, bool self_delete)
-      : parent_(parent), func_(std::move(f)), self_delete_(self_delete) {}
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CallbackWithSuccessImpl));
+  }
+
+  CallbackWithSuccessImpl(grpc_call* call, CallbackWithSuccessTag* parent,
+                          std::function<void(bool)> f)
+      : call_(call), parent_(parent), func_(std::move(f)) {
+    grpc_call_ref(call);
+  }
 
   void Run(bool ok) override {
     void* ignored = parent_->ops();
@@ -40,27 +46,27 @@ class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
     GPR_ASSERT(parent_->ops()->FinalizeResult(&ignored, &new_ok));
     GPR_ASSERT(ignored == parent_->ops());
     func_(ok);
-    if (self_delete_) {
-      delete parent_;
-      // Must use grpc_core::Delete since base is GRPC_ABSTRACT
-      grpc_core::Delete(this);
-    }
+    func_ = nullptr;  // release the function
+    grpc_call_unref(call_);
   }
 
  private:
+  grpc_call* call_;
   CallbackWithSuccessTag* parent_;
   std::function<void(bool)> func_;
-  bool self_delete_;
 };
 
 class CallbackWithStatusImpl : public grpc_core::CQCallbackInterface {
  public:
-  CallbackWithStatusImpl(CallbackWithStatusTag* parent,
-                         std::function<void(Status)> f, bool self_delete)
-      : parent_(parent),
-        func_(std::move(f)),
-        status_(),
-        self_delete_(self_delete) {}
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CallbackWithStatusImpl));
+  }
+
+  CallbackWithStatusImpl(grpc_call* call, CallbackWithStatusTag* parent,
+                         std::function<void(Status)> f)
+      : call_(call), parent_(parent), func_(std::move(f)), status_() {
+    grpc_call_ref(call);
+  }
 
   void Run(bool ok) override {
     void* ignored = parent_->ops();
@@ -69,36 +75,35 @@ class CallbackWithStatusImpl : public grpc_core::CQCallbackInterface {
     GPR_ASSERT(ignored == parent_->ops());
 
     func_(status_);
-    if (self_delete_) {
-      delete parent_;
-      // Must use grpc_core::Delete since base is GRPC_ABSTRACT
-      grpc_core::Delete(this);
-    }
+    func_ = nullptr;  // release the function
+    grpc_call_unref(call_);
   }
   Status* status_ptr() { return &status_; }
 
  private:
+  grpc_call* call_;
   CallbackWithStatusTag* parent_;
   std::function<void(Status)> func_;
   Status status_;
-  bool self_delete_;
 };
 
 }  // namespace
 
-CallbackWithSuccessTag::CallbackWithSuccessTag(std::function<void(bool)> f,
-                                               bool self_delete,
+CallbackWithSuccessTag::CallbackWithSuccessTag(grpc_call* call,
+                                               std::function<void(bool)> f,
                                                CompletionQueueTag* ops)
-    : impl_(grpc_core::New<CallbackWithSuccessImpl>(this, f, self_delete)),
+    : impl_(new (grpc_call_arena_alloc(call, sizeof(CallbackWithSuccessImpl)))
+                CallbackWithSuccessImpl(call, this, std::move(f))),
       ops_(ops) {}
 
 void CallbackWithSuccessTag::force_run(bool ok) { impl_->Run(ok); }
 
-CallbackWithStatusTag::CallbackWithStatusTag(std::function<void(Status)> f,
-                                             bool self_delete,
+CallbackWithStatusTag::CallbackWithStatusTag(grpc_call* call,
+                                             std::function<void(Status)> f,
                                              CompletionQueueTag* ops)
     : ops_(ops) {
-  auto* impl = grpc_core::New<CallbackWithStatusImpl>(this, f, self_delete);
+  auto* impl = new (grpc_call_arena_alloc(call, sizeof(CallbackWithStatusImpl)))
+      CallbackWithStatusImpl(call, this, std::move(f));
   impl_ = impl;
   status_ = impl->status_ptr();
 }

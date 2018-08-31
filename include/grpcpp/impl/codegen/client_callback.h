@@ -57,18 +57,21 @@ class CallbackUnaryCallImpl {
                         std::function<void(Status)> on_completion) {
     CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
+    Call call(channel->CreateCall(method, context, cq));
 
-    // TODO(vjpai): Allocate this as part of the tag's arena
-    auto* ops = new CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
-                              CallOpRecvInitialMetadata,
-                              CallOpRecvMessage<OutputMessage>,
-                              CallOpClientSendClose, CallOpClientRecvStatus>;
+    using FullCallOpSet =
+        CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
+                  CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
+                  CallOpClientSendClose, CallOpClientRecvStatus>;
 
-    // TODO(vjpai): Move to using pre-allocated tags rather than new/self-delete
-    auto* tag = new CallbackWithStatusTag(on_completion, true, ops);
+    auto* ops = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(FullCallOpSet))) FullCallOpSet;
+
+    auto* tag = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call.call(), sizeof(CallbackWithStatusTag)))
+        CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    Call call(channel->CreateCall(method, context, cq));
     Status s = ops->SendMessage(*request);
     if (!s.ok()) {
       tag->force_run(s);
