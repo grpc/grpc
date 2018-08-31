@@ -68,6 +68,8 @@ class CallOpClientRecvStatus;
 class CallOpRecvInitialMetadata;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+template <class InputMessage, class OutputMessage>
+class CallbackUnaryCallImpl;
 }  // namespace internal
 
 template <class R>
@@ -389,6 +391,8 @@ class ClientContext {
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+  template <class InputMessage, class OutputMessage>
+  friend class ::grpc::internal::CallbackUnaryCallImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {

@@ -98,6 +98,25 @@ grpc_cc_binary(
     ],
 )
 
+grpc_cc_test(
+    name = "client_callback_end2end_test",
+    srcs = ["client_callback_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "end2end_test_lib",
     testonly = True,

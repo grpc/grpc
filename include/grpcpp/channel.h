@@ -78,8 +78,13 @@ class Channel final : public ChannelInterface,
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
+  CompletionQueue* CallbackCQ() override;
+
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
+
+  CompletionQueue* callback_cq_ = nullptr;
+  std::mutex mu_;
 };
 
 }  // namespace grpc
