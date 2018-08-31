@@ -100,7 +100,6 @@ grpc_channel* grpc_channel_create_with_builder(
     return channel;
   }
 
-  memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
