@@ -189,6 +189,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
 }
 
 void shutdown_finishes_calls(grpc_end2end_test_config config) {
+  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   test_early_server_shutdown_finishes_inflight_calls(config);
 }
 
