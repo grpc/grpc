@@ -45,9 +45,9 @@
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
 
-#define CRONET_LOG(...)                          \
-  do {                                           \
-    if (grpc_cronet_trace) gpr_log(__VA_ARGS__); \
+#define CRONET_LOG(...)   \
+  do {                    \
+    gpr_log(__VA_ARGS__); \
   } while (0)
 
 /* TODO (makdharma): Hook up into the wider tracing mechanism */
@@ -1295,6 +1295,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
+    GRPC_LOG_IF_ERROR("recv trail meta", error);
     GRPC_CLOSURE_SCHED(
         stream_op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
         error);
