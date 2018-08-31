@@ -21,10 +21,10 @@ def generate_args():
     all_scenario_set = gen.generate_yaml()
     all_scenario_set = all_scenario_set['tests']
     json_run_localhost_scenarios = \
-        [item for item in all_scenario_set if item['name'] == 'qps_json_driver']
+        [item for item in all_scenario_set if item['name'] == 'json_run_localhost']
     json_run_localhost_arg_set = \
-        [item['args'][2] for item in json_run_localhost_scenarios \
-        if 'args' in item and len(item['args']) > 2]
+        [item['args'][1] for item in json_run_localhost_scenarios \
+        if 'args' in item and len(item['args']) > 1]
     deserialized_scenarios = [json.loads(item)['scenarios'][0] \
                               for item in json_run_localhost_arg_set]
     all_scenarios = {scenario['name'].encode('ascii', 'ignore'): \
