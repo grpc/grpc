@@ -2903,7 +2903,7 @@ bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
   }
 }
 
-void Chttp2IncomingByteStream::EnsureStreamDecompressionCtxExists() {
+void Chttp2IncomingByteStream::MaybeCreateStreamDecompressionCtx() {
   if (!stream_->stream_decompression_ctx) {
     stream_->stream_decompression_ctx = grpc_stream_compression_context_create(
         stream_->stream_decompression_method);
@@ -2916,7 +2916,7 @@ grpc_error* Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
   if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
     if (!stream_->unprocessed_incoming_frames_decompressed) {
       bool end_of_context;
-      EnsureStreamDecompressionCtxExists();
+      MaybeCreateStreamDecompressionCtx();
       if (!grpc_stream_decompress(stream_->stream_decompression_ctx,
                                   &stream_->unprocessed_incoming_frames_buffer,
                                   &stream_->decompressed_data_buffer, nullptr,
