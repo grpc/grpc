@@ -53,6 +53,11 @@ template <class R>
 class ClientAsyncResponseReaderFactory;
 }  // namespace internal
 
+namespace experimental {
+template <class W, class R>
+class ClientCallbackReaderWriterFactory;
+}  // namespace experimental
+
 /// Codegen interface for \a grpc::Channel.
 class ChannelInterface {
  public:
@@ -103,6 +108,8 @@ class ChannelInterface {
   friend class ::grpc::internal::ClientAsyncReaderWriterFactory;
   template <class R>
   friend class ::grpc::internal::ClientAsyncResponseReaderFactory;
+  template <class W, class R>
+  friend class ::grpc::experimental::ClientCallbackReaderWriterFactory;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>

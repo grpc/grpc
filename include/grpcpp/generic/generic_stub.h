@@ -24,6 +24,7 @@
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 
 namespace grpc {
@@ -75,6 +76,10 @@ class GenericStub final {
     void UnaryCall(ClientContext* context, const grpc::string& method,
                    const ByteBuffer* request, ByteBuffer* response,
                    std::function<void(Status)> on_completion);
+
+    ::grpc::experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
+    PrepareBidiStreamingCall(ClientContext* context,
+                             const grpc::string& method);
 
    private:
     GenericStub* stub_;
