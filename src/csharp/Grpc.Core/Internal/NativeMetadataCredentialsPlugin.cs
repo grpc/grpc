@@ -68,7 +68,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
+                var detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
                 Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
@@ -87,7 +88,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
+                string detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
                 Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
