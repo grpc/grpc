@@ -195,6 +195,13 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     assert(size == sizeof(ClientAsyncReader));
   }
 
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   void StartCall(void* tag) override {
     assert(!started_);
     started_ = true;
@@ -335,6 +342,13 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncWriter));
   }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
 
   void StartCall(void* tag) override {
     assert(!started_);
@@ -495,6 +509,13 @@ class ClientAsyncReaderWriter final
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(ClientAsyncReaderWriter));
   }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
 
   void StartCall(void* tag) override {
     assert(!started_);
