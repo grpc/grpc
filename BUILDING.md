@@ -132,8 +132,8 @@ you will be able to browse and build the code.
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release
-> cmake --build .
+> cmake .. -G "Visual Studio 14 2015"
+> cmake --build . --config Release
 ```
 
 ## cmake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).
