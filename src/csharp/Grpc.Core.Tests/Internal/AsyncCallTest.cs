@@ -125,6 +125,24 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void SyncUnary_RequestSerializationExceptionDoesntLeakResources()
+        {
+            string nullRequest = null;  // will throw when serializing
+            Assert.Throws(typeof(ArgumentNullException), () => asyncCall.UnaryCall(nullRequest));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void SyncUnary_StartCallFailureDoesntLeakResources()
+        {
+            fakeCall.MakeStartCallFail();
+            Assert.Throws(typeof(InvalidOperationException), () => asyncCall.UnaryCall("request1"));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
         public void ClientStreaming_StreamingReadNotAllowed()
         {
             asyncCall.ClientStreamingCallAsync();

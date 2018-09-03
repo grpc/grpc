@@ -109,6 +109,7 @@ namespace Grpc.Core.Internal.Tests
 
         public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             throw new NotImplementedException();
         }
 
