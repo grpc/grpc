@@ -95,6 +95,7 @@ static void hs_add_error(const char* error_name, grpc_error** cumulative,
 
 static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
                                                grpc_metadata_batch* b) {
+  return GRPC_ERROR_NONE;
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
@@ -335,15 +336,15 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
   if (op->send_initial_metadata) {
     grpc_error* error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
-    hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_head(
-                     op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->status, GRPC_MDELEM_STATUS_200));
-    hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_tail(
-                     op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->content_type,
-                     GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC));
+    // hs_add_error(error_name, &error,
+    //              grpc_metadata_batch_add_head(
+    //                  op->payload->send_initial_metadata.send_initial_metadata,
+    //                  &calld->status, GRPC_MDELEM_STATUS_200));
+    // hs_add_error(error_name, &error,
+    //              grpc_metadata_batch_add_tail(
+    //                  op->payload->send_initial_metadata.send_initial_metadata,
+    //                  &calld->content_type,
+    //                  GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC));
     hs_add_error(
         error_name, &error,
         hs_filter_outgoing_metadata(
