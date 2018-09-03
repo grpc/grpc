@@ -31,6 +31,7 @@ namespace Grpc.Core.Internal.Tests
     /// </summary>
     internal class FakeNativeCall : INativeCall
     {
+        private bool shouldStartCallFail;
         public IUnaryResponseClientCallback UnaryResponseClientCallback
         {
             get;
@@ -102,6 +103,7 @@ namespace Grpc.Core.Internal.Tests
 
         public void StartUnary(IUnaryResponseClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             UnaryResponseClientCallback = callback;
         }
 
@@ -112,16 +114,19 @@ namespace Grpc.Core.Internal.Tests
 
         public void StartClientStreaming(IUnaryResponseClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             UnaryResponseClientCallback = callback;
         }
 
         public void StartServerStreaming(IReceivedStatusOnClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             ReceivedStatusOnClientCallback = callback;
         }
 
         public void StartDuplexStreaming(IReceivedStatusOnClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             ReceivedStatusOnClientCallback = callback;
         }
 
@@ -164,6 +169,23 @@ namespace Grpc.Core.Internal.Tests
         public void Dispose()
         {
             IsDisposed = true;
+        }
+
+        /// <summary>
+        /// Emulate CallSafeHandle.CheckOk() failure for all future attempts
+        /// to start a call.
+        /// </summary>
+        public void MakeStartCallFail()
+        {
+            shouldStartCallFail = true;
+        }
+
+        private void StartCallMaybeFail()
+        {
+            if (shouldStartCallFail)
+            {
+                throw new InvalidOperationException("Start call has failed.");
+            }
         }
     }
 }

@@ -107,6 +107,24 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void AsyncUnary_RequestSerializationExceptionDoesntLeakResources()
+        {
+            string nullRequest = null;  // will throw when serializing
+            Assert.Throws(typeof(ArgumentNullException), () => asyncCall.UnaryCallAsync(nullRequest));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void AsyncUnary_StartCallFailureDoesntLeakResources()
+        {
+            fakeCall.MakeStartCallFail();
+            Assert.Throws(typeof(InvalidOperationException), () => asyncCall.UnaryCallAsync("request1"));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
         public void ClientStreaming_StreamingReadNotAllowed()
         {
             asyncCall.ClientStreamingCallAsync();
@@ -328,6 +346,15 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ClientStreaming_StartCallFailureDoesntLeakResources()
+        {
+            fakeCall.MakeStartCallFail();
+            Assert.Throws(typeof(InvalidOperationException), () => asyncCall.ClientStreamingCallAsync());
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
         public void ServerStreaming_StreamingSendNotAllowed()
         {
             asyncCall.StartServerStreamingCall("request1");
@@ -399,6 +426,27 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
+        }
+
+        [Test]
+        public void ServerStreaming_RequestSerializationExceptionDoesntLeakResources()
+        {
+            string nullRequest = null;  // will throw when serializing
+            Assert.Throws(typeof(ArgumentNullException), () => asyncCall.StartServerStreamingCall(nullRequest));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+        }
+
+        [Test]
+        public void ServerStreaming_StartCallFailureDoesntLeakResources()
+        {
+            fakeCall.MakeStartCallFail();
+            Assert.Throws(typeof(InvalidOperationException), () => asyncCall.StartServerStreamingCall("request1"));
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
         }
 
         [Test]
@@ -556,6 +604,15 @@ namespace Grpc.Core.Internal.Tests
             fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Cancelled));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
+        }
+
+        [Test]
+        public void DuplexStreaming_StartCallFailureDoesntLeakResources()
+        {
+            fakeCall.MakeStartCallFail();
+            Assert.Throws(typeof(InvalidOperationException), () => asyncCall.StartDuplexStreamingCall());
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
         }
 
         ClientSideStatus CreateClientSideStatus(StatusCode statusCode)
