@@ -80,8 +80,6 @@ namespace Grpc.Core.Internal
             using (profiler.NewScope("AsyncCall.UnaryCall"))
             using (CompletionQueueSafeHandle cq = CompletionQueueSafeHandle.CreateSync())
             {
-                byte[] payload = UnsafeSerialize(msg);
-
                 bool callStartedOk = false;
                 try
                 {
@@ -96,6 +94,8 @@ namespace Grpc.Core.Internal
                         halfcloseRequested = true;
                         readingDone = true;
                     }
+
+                    byte[] payload = UnsafeSerialize(msg);
 
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
