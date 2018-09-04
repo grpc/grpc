@@ -393,6 +393,7 @@ error_handler:
 static void free_timeout(void* p) { gpr_free(p); }
 
 static void on_initial_header(void* tp, grpc_mdelem md) {
+  gpr_log(GPR_INFO, "on initial header");
   GPR_TIMER_SCOPE("on_initial_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -475,6 +476,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
 }
 
 static void on_trailing_header(void* tp, grpc_mdelem md) {
+  gpr_log(GPR_INFO, "on_trailing_header");
   GPR_TIMER_SCOPE("on_trailing_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);

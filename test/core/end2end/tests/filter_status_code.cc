@@ -249,6 +249,24 @@ typedef struct final_status_data {
   grpc_call_stack* call;
 } final_status_data;
 
+static void start_transport_stream_op_batch(grpc_call_element *elem,
+                                      grpc_transport_stream_op_batch *op) {
+  auto* data = static_cast<final_status_data*>(elem->call_data);
+  if(data->call == g_server_call_stack) {
+    gpr_log(GPR_INFO, "here");
+  }
+  if(op->send_initial_metadata) {
+    auto *batch = op->payload->send_initial_metadata.send_initial_metadata;
+    gpr_log(GPR_INFO, "init %p %p", batch->idx.named.status, batch->idx.named.grpc_status);
+    grpc_metadata_batch_substitute(batch, batch->idx.named.status, GRPC_MDELEM_STATUS_404);
+  }
+  if(op->send_trailing_metadata) {
+    auto *batch = op->payload->send_trailing_metadata.send_trailing_metadata;
+    gpr_log(GPR_INFO, "trai %p %p", batch->idx.named.status, batch->idx.named.grpc_status);
+  }
+  grpc_call_next_op(elem, op);
+}
+
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   final_status_data* data = static_cast<final_status_data*>(elem->call_data);
@@ -307,7 +325,7 @@ static const grpc_channel_filter test_client_filter = {
     "client_filter_status_code"};
 
 static const grpc_channel_filter test_server_filter = {
-    grpc_call_next_op,
+    start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,
