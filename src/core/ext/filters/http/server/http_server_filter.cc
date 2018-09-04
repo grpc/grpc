@@ -262,6 +262,10 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
+  if (b->idx.named.user_agent != nullptr) {
+    grpc_metadata_batch_remove(b, b->idx.named.user_agent);
+  }
+
   return error;
 }
 
