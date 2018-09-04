@@ -68,9 +68,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                var detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
-                Logger.Error(e, GetMetadataExceptionLogMsg);
+                // eat the exception, we must not throw when inside callback from native code.
+                Logger.Error(e, "Exception occurred while invoking native metadata interceptor handler.");
             }
         }
 
