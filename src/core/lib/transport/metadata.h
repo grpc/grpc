@@ -165,8 +165,6 @@ void grpc_mdctx_global_shutdown();
 #define MIN_STATIC_HPACK_TABLE_IDX 1
 #define MAX_STATIC_HPACK_TABLE_IDX 61
 
-/* Static hpack table metadata indices */
-
 /* {:authority, ""} */
 #define GRPC_MDELEM_AUTHORITY_EMPTY_INDEX 1
 
@@ -349,6 +347,15 @@ void grpc_mdctx_global_shutdown();
 
 /* {"www-authenticate", ""} */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY_INDEX 61
+
+/* Static hpack table metadata info */
+typedef struct static_hpack_table_metadata_info {
+  uint8_t index; // Index in the static hpack table
+  uint8_t size; // Size of the metadata per RFC-7540 section 6.5.2., including 32 bytes of padding
+  uint8_t callouts_index; // For duplicate metadata detection. If GRPC_BATCH_CALLOUTS_COUNT, then the metadata is not one of the callouts.
+} static_hpack_table_metadata_info;
+
+extern static_hpack_table_metadata_info static_hpack_table_metadata[];
 
 /* Forward declarations */
 typedef struct grpc_mdelem grpc_mdelem;
