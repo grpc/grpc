@@ -17,6 +17,7 @@
  */
 
 #include <functional>
+#include <iostream>
 #include <mutex>
 
 #include <grpcpp/channel.h>
@@ -83,7 +84,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       stub_->experimental().UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv](Status s) {
-            GPR_ASSERT(s.ok());
+            EXPECT_TRUE(s.ok());
 
             EchoResponse response;
             EXPECT_TRUE(ParseFromByteBuffer(&recv_buf, &response));
@@ -98,6 +99,55 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       }
     }
   }
+
+  void SendEchoAsBidi(int num_rpcs) {
+    const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
+    grpc::string test_string("");
+    for (int i = 0; i < num_rpcs; i++) {
+      struct {
+        EchoRequest request;
+        std::unique_ptr<ByteBuffer> send_buf;
+        ByteBuffer recv_buf;
+        ClientContext cli_ctx;
+        experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
+            stream;
+        std::mutex mu;
+        std::condition_variable cv;
+        bool done = false;
+      } state;
+
+      test_string += "Hello world. ";
+
+      state.stream = stub_->experimental().PrepareBidiStreamingCall(
+          &state.cli_ctx, kMethodName);
+
+      state.stream->StartCall([&state](Status s) {
+        EXPECT_TRUE(s.ok());
+
+        EchoResponse response;
+        EXPECT_TRUE(ParseFromByteBuffer(&state.recv_buf, &response));
+        EXPECT_EQ(state.request.message(), response.message());
+
+        std::lock_guard<std::mutex> l(state.mu);
+        state.done = true;
+        state.cv.notify_one();
+      });
+      state.request.set_message(test_string);
+      state.send_buf = SerializeToByteBuffer(&state.request);
+      state.stream->Write(state.send_buf.get(), [&state](bool ok) {
+        EXPECT_TRUE(ok);
+
+        state.stream->WritesDone([](bool ok) { EXPECT_TRUE(ok); });
+      });
+      state.stream->Read(&state.recv_buf, [](bool ok) { EXPECT_TRUE(ok); });
+
+      std::unique_lock<std::mutex> l(state.mu);
+      while (!state.done) {
+        state.cv.wait(l);
+      }
+    }
+  }
+
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::GenericStub> stub_;
@@ -113,6 +163,11 @@ TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpcs(10);
+}
+
+TEST_F(ClientCallbackEnd2endTest, SequentialRpcsAsBidi) {
+  ResetStub();
+  SendEchoAsBidi(10);
 }
 
 }  // namespace

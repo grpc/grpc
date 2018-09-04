@@ -173,11 +173,11 @@ class ClientCallbackReaderWriter final {
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, std::function<void(bool)> f) {
+  void Write(const W* msg, std::function<void(bool)> f) {
     Write(msg, WriteOptions(), std::move(f));
   }
 
-  void Write(const W& msg, WriteOptions options, std::function<void(bool)> f) {
+  void Write(const W* msg, WriteOptions options, std::function<void(bool)> f) {
     auto* tag = new (g_core_codegen_interface->grpc_call_arena_alloc(
         call_.call(), sizeof(::grpc::internal::CallbackWithSuccessTag)))::grpc::
         internal::CallbackWithSuccessTag(call_.call(), f, &write_ops_);
@@ -186,7 +186,7 @@ class ClientCallbackReaderWriter final {
                                      context_->initial_metadata_flags());
     }
     // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*msg).ok());
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
