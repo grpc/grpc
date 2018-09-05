@@ -384,6 +384,7 @@ class ServerCompletionQueue : public CompletionQueue {
 
   grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
+  friend class Server;
 };
 
 }  // namespace grpc
