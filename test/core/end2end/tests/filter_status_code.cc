@@ -16,6 +16,14 @@
  *
  */
 
+/* This test verifies -
+ * 1) grpc_call_final_info passed to the filters on destroying a call contains
+ * the proper status.
+ * 2) If the response has both an HTTP status code and a gRPC status code, then
+ * we should prefer the gRPC status code as mentioned in
+ * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+ */
+
 #include "test/core/end2end/end2end_tests.h"
 
 #include <limits.h>
@@ -249,20 +257,18 @@ typedef struct final_status_data {
   grpc_call_stack* call;
 } final_status_data;
 
-static void start_transport_stream_op_batch(grpc_call_element *elem,
-                                      grpc_transport_stream_op_batch *op) {
+static void server_start_transport_stream_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   auto* data = static_cast<final_status_data*>(elem->call_data);
-  if(data->call == g_server_call_stack) {
-    gpr_log(GPR_INFO, "here");
-  }
-  if(op->send_initial_metadata) {
-    auto *batch = op->payload->send_initial_metadata.send_initial_metadata;
-    gpr_log(GPR_INFO, "init %p %p", batch->idx.named.status, batch->idx.named.grpc_status);
-    grpc_metadata_batch_substitute(batch, batch->idx.named.status, GRPC_MDELEM_STATUS_404);
-  }
-  if(op->send_trailing_metadata) {
-    auto *batch = op->payload->send_trailing_metadata.send_trailing_metadata;
-    gpr_log(GPR_INFO, "trai %p %p", batch->idx.named.status, batch->idx.named.grpc_status);
+  if (data->call == g_server_call_stack) {
+    if (op->send_initial_metadata) {
+      auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
+      if (batch->idx.named.status != nullptr) {
+        /* Replace the HTTP status with 404 */
+        grpc_metadata_batch_substitute(batch, batch->idx.named.status,
+                                       GRPC_MDELEM_STATUS_404);
+      }
+    }
   }
   grpc_call_next_op(elem, op);
 }
@@ -325,7 +331,7 @@ static const grpc_channel_filter test_client_filter = {
     "client_filter_status_code"};
 
 static const grpc_channel_filter test_server_filter = {
-    start_transport_stream_op_batch,
+    server_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,

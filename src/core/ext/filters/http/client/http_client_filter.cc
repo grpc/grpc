@@ -79,7 +79,12 @@ struct channel_data {
 static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
   if (b->idx.named.status != nullptr) {
-    if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
+    /* If both gRPC status and HTTP status are provided in the response, we
+     * should prefer the gRPC status code, as mentioned in
+     * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
+     */
+    if (b->idx.named.grpc_status != nullptr ||
+        grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
       grpc_metadata_batch_remove(b, b->idx.named.status);
     } else {
       char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
