@@ -57,18 +57,11 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task Channel_WaitForStateChangedAsync()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
-            {
-                return Task.FromResult(request);
-            });
-
             Assert.ThrowsAsync(typeof(TaskCanceledException), 
-                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+                async () => await channel.WaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(0)));
 
             var stateChangedTask = channel.WaitForStateChangedAsync(channel.State);
-
-            await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc");
-
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(5000));
             await stateChangedTask;
             Assert.AreEqual(ChannelState.Ready, channel.State);
         }
@@ -76,17 +69,10 @@ namespace Grpc.Core.Tests
         [Test]
         public async Task Channel_TryWaitForStateChangedAsync()
         {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
-            {
-                return Task.FromResult(request);
-            });
-
-            Assert.IsFalse(await channel.TryWaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(10)));
+            Assert.IsFalse(await channel.TryWaitForStateChangedAsync(channel.State, DateTime.UtcNow.AddMilliseconds(0)));
 
             var stateChangedTask = channel.TryWaitForStateChangedAsync(channel.State);
-
-            await Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "abc");
-
+            await channel.ConnectAsync(DateTime.UtcNow.AddMilliseconds(5000));
             Assert.IsTrue(await stateChangedTask);
             Assert.AreEqual(ChannelState.Ready, channel.State);
         }
