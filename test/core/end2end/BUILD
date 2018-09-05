@@ -193,3 +193,29 @@ grpc_cc_test(
         '//test/core/util:grpc_test_util',
     ],
 )
+
+grpc_cc_test(
+    name = "h2_ssl_cert_reload_test",
+    srcs = ["h2_ssl_cert_reload_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        ':end2end_tests',
+        '//:gpr',
+        '//:grpc',
+        '//:tsi',
+        '//test/core/util:gpr_test_util',
+        '//test/core/util:grpc_test_util',
+    ],
+    data = [
+        '//src/core/tsi/test_creds:ca.pem',
+        '//src/core/tsi/test_creds:client.key',
+        '//src/core/tsi/test_creds:client.pem',
+        '//src/core/tsi/test_creds:client1.key',
+        '//src/core/tsi/test_creds:client1.pem',
+        '//src/core/tsi/test_creds:server1.key',
+        '//src/core/tsi/test_creds:server1.pem',
+    ],
+)
