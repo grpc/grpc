@@ -979,10 +979,9 @@ grpcsharp_ssl_server_credentials_create(
       key_cert_pairs[i].private_key = key_cert_pair_private_key_array[i];
     }
   }
-  creds = grpc_ssl_server_credentials_create_ex(
-      pem_root_certs, key_cert_pairs, num_key_cert_pairs,
-      client_request_type,
-      NULL);
+  creds = grpc_ssl_server_credentials_create_ex(pem_root_certs, key_cert_pairs,
+                                                num_key_cert_pairs,
+                                                client_request_type, NULL);
   gpr_free(key_cert_pairs);
   return creds;
 }
