@@ -267,7 +267,6 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
   }
-  gpr_cmdline_destroy(cl);
   // Run the test.
   grpc_test_init(argc, argv);
   grpc_init();
@@ -279,7 +278,7 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    if (gpr_stricmp(gpr_getenv("GRPC_DNS_RESOLVER"), "ares") != 0) {
+    if (gpr_stricmp(resolver_type, "ares") != 0) {
       // These tests can trigger DNS queries to the nearby nameserver
       // that need to come back in order for the test to succeed.
       // c-ares is prone to not using the local system caches that the
@@ -290,6 +289,7 @@ int main(int argc, char** argv) {
     }
     grpc_executor_shutdown();
   }
+  gpr_cmdline_destroy(cl);
 
   grpc_shutdown();
   return 0;
