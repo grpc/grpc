@@ -277,22 +277,6 @@ GPRAPI intptr_t gpr_stats_read(const gpr_stats_counter* c);
 
 #ifdef __cplusplus
 }  // extern "C"
-
-namespace grpc_core {
-
-class mu_guard {
- public:
-  mu_guard(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu); }
-  ~mu_guard() { gpr_mu_unlock(mu_); }
-
-  mu_guard(const mu_guard&) = delete;
-  mu_guard& operator=(const mu_guard&) = delete;
-
- private:
-  gpr_mu* const mu_;
-};
-
-}  // namespace grpc_core
 #endif
 
 #endif /* GRPC_SUPPORT_SYNC_H */

@@ -50,6 +50,7 @@ namespace Grpc.Core
         static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
+        static readonly AtomicCounter nativeInitCounter = new AtomicCounter();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
@@ -360,12 +361,25 @@ namespace Grpc.Core
 
         internal static void GrpcNativeInit()
         {
+            if (!IsNativeShutdownAllowed && nativeInitCounter.Count > 0)
+            {
+                // Normally grpc_init and grpc_shutdown calls should come in pairs (C core does reference counting),
+                // but in case we avoid grpc_shutdown calls altogether, calling grpc_init has no effect
+                // besides incrementing an internal C core counter that could theoretically overflow.
+                // To avoid this theoretical possibility we guard repeated calls to grpc_init()
+                // with a 64-bit atomic counter (that can't realistically overflow).
+                return;
+            }
             NativeMethods.Get().grpcsharp_init();
+            nativeInitCounter.Increment();
         }
 
         internal static void GrpcNativeShutdown()
         {
-            NativeMethods.Get().grpcsharp_shutdown();
+            if (IsNativeShutdownAllowed)
+            {
+                NativeMethods.Get().grpcsharp_shutdown();
+            }
         }
 
         /// <summary>
@@ -411,6 +425,14 @@ namespace Grpc.Core
             return GetThreadPoolSizeOrDefault();
         }
 
+        // On some platforms (specifically iOS), thread local variables in native code
+        // require initialization/destruction. By skipping the grpc_shutdown() call,
+        // we avoid a potential crash where grpc_shutdown() has already destroyed
+        // the thread local variables, but some C core's *_destroy() methods still
+        // need to run (e.g. they may be run by finalizer thread which is out of our control)
+        // For more context, see https://github.com/grpc/grpc/issues/16294
+        private static bool IsNativeShutdownAllowed => !PlatformApis.IsXamarinIOS && !PlatformApis.IsUnityIOS;
+
         private static class ShutdownHooks
         {
             static object staticLock = new object();
@@ -422,9 +444,32 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
+                        // Under normal circumstances, the user is expected to shutdown all
+                        // the gRPC channels and servers before the application exits. The following
+                        // hooks provide some extra handling for cases when this is not the case,
+                        // in the effort to achieve a reasonable behavior on shutdown.
 #if NETSTANDARD1_5
-                        System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += (assemblyLoadContext) => { HandleShutdown(); };
+                        // No action required at shutdown on .NET Core
+                        // - In-progress P/Invoke calls (such as grpc_completion_queue_next) don't seem
+                        //   to prevent a .NET core application from terminating, so no special handling
+                        //   is needed.
+                        // - .NET core doesn't run finalizers on shutdown, so there's no risk of getting
+                        //   a crash because grpc_*_destroy methods for native objects being invoked
+                        //   in wrong order.
+                        // TODO(jtattermusch): Verify that the shutdown hooks are still not needed
+                        // once we add support for new platforms using netstandard (e.g. Xamarin).
 #else
+                        // On desktop .NET framework and Mono, we need to register for a shutdown
+                        // event to explicitly shutdown the GrpcEnvironment.
+                        // - On Desktop .NET framework, we need to do a proper shutdown to prevent a crash
+                        //   when the framework attempts to run the finalizers for SafeHandle object representing the native
+                        //   grpc objects. The finalizers calls the native grpc_*_destroy methods (e.g. grpc_server_destroy)
+                        //   in a random order, which is not supported by gRPC.
+                        // - On Mono, the process would hang as the GrpcThreadPool threads are sleeping
+                        //   in grpc_completion_queue_next P/Invoke invocation and mono won't let the
+                        //   process shutdown until the P/Invoke calls return. We achieve that by shutting down
+                        //   the completion queue(s) which associated with the GrpcThreadPool, which will
+                        //   cause the grpc_completion_queue_next calls to return immediately.
                         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
                         AppDomain.CurrentDomain.DomainUnload += (sender, eventArgs) => { HandleShutdown(); };
 #endif

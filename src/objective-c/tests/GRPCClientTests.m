@@ -548,4 +548,82 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testTimeoutBackoffWithTimeout:(double)timeout Backoff:(double)backoff {
+  const double maxConnectTime = timeout > backoff ? timeout : backoff;
+  const double kMargin = 0.1;
+
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
+  NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+                                             path:@""
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  [GRPCCall setMinConnectTimeout:timeout * 1000
+                  initialBackoff:backoff * 1000
+                      maxBackoff:0
+                         forHost:kDummyAddress];
+  NSDate *startTime = [NSDate date];
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
+    XCTAssert(NO, @"Received message. Should not reach here");
+  }
+      completionHandler:^(NSError *errorOrNil) {
+        XCTAssertNotNil(errorOrNil, @"Finished with no error");
+        // The call must fail before maxConnectTime. However there is no lower bound on the time
+        // taken for connection. A shorter time happens when connection is actively refused
+        // by 8.8.8.8:1 before maxConnectTime elapsed.
+        XCTAssertLessThan([[NSDate date] timeIntervalSinceDate:startTime],
+                          maxConnectTime + kMargin);
+        [completion fulfill];
+      }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+// The numbers of the following three tests are selected to be smaller than the default values of
+// initial backoff (1s) and min_connect_timeout (20s), so that if they fail we know the default
+// values fail to be overridden by the channel args.
+- (void)testTimeoutBackoff2 {
+  [self testTimeoutBackoffWithTimeout:0.7 Backoff:0.3];
+}
+
+- (void)testTimeoutBackoff3 {
+  [self testTimeoutBackoffWithTimeout:0.3 Backoff:0.7];
+}
+
+- (void)testErrorDebugInformation {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteSSLHost
+                                             path:kUnaryCallMethod.HTTPPath
+                                   requestsWriter:requestsWriter];
+
+  call.oauth2AccessToken = @"bogusToken";
+
+  id<GRXWriteable> responsesWriteable =
+      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+        XCTFail(@"Received unexpected response: %@", value);
+      }
+          completionHandler:^(NSError *errorOrNil) {
+            XCTAssertNotNil(errorOrNil, @"Finished without error!");
+            NSDictionary *userInfo = errorOrNil.userInfo;
+            NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
+            XCTAssertNotNil(debugInformation);
+            XCTAssertNotEqual([debugInformation length], 0);
+            NSString *challengeHeader = call.oauth2ChallengeHeader;
+            XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
+                                 call.responseHeaders);
+            [expectation fulfill];
+          }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 @end

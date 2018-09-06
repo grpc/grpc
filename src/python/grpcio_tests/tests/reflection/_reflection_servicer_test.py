@@ -171,6 +171,10 @@ class ReflectionServicerTest(unittest.TestCase):
                     for name in _SERVICE_NAMES))),)
         self.assertSequenceEqual(expected_responses, responses)
 
+    def testReflectionServiceName(self):
+        self.assertEqual(reflection.SERVICE_NAME,
+                         'grpc.reflection.v1alpha.ServerReflection')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

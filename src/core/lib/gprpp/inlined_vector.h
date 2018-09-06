@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cassert>
+#include <cstring>
 
 #include "src/core/lib/gprpp/memory.h"
 
@@ -50,9 +51,33 @@ class InlinedVector {
   InlinedVector() { init_data(); }
   ~InlinedVector() { destroy_elements(); }
 
-  // For now, we do not support copying.
-  InlinedVector(const InlinedVector&) = delete;
-  InlinedVector& operator=(const InlinedVector&) = delete;
+  // copy constructor
+  InlinedVector(const InlinedVector& v) {
+    init_data();
+    copy_from(v);
+  }
+
+  InlinedVector& operator=(const InlinedVector& v) {
+    if (this != &v) {
+      clear();
+      copy_from(v);
+    }
+    return *this;
+  }
+
+  // move constructor
+  InlinedVector(InlinedVector&& v) {
+    init_data();
+    move_from(v);
+  }
+
+  InlinedVector& operator=(InlinedVector&& v) {
+    if (this != &v) {
+      clear();
+      move_from(v);
+    }
+    return *this;
+  }
 
   T* data() {
     return dynamic_ != nullptr ? dynamic_ : reinterpret_cast<T*>(inline_);
@@ -97,6 +122,33 @@ class InlinedVector {
   void push_back(const T& value) { emplace_back(value); }
 
   void push_back(T&& value) { emplace_back(std::move(value)); }
+
+  void copy_from(const InlinedVector& v) {
+    // if v is allocated, copy over the buffer.
+    if (v.dynamic_ != nullptr) {
+      reserve(v.capacity_);
+      memcpy(dynamic_, v.dynamic_, v.size_ * sizeof(T));
+    } else {
+      memcpy(inline_, v.inline_, v.size_ * sizeof(T));
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+  }
+
+  void move_from(InlinedVector& v) {
+    // if v is allocated, then we steal its buffer, else we copy it.
+    if (v.dynamic_ != nullptr) {
+      dynamic_ = v.dynamic_;
+    } else {
+      memcpy(inline_, v.inline_, v.size_ * sizeof(T));
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+    // null out the original
+    v.init_data();
+  }
 
   size_t size() const { return size_; }
   bool empty() const { return size_ == 0; }

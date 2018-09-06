@@ -37,10 +37,10 @@
 
     # warnings we'd like, but that dont exist in all compilers
     PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
 
     def warning_var(fmt, warning):
-      return fmt % warning.replace('-', '_').upper()
+      return fmt % warning.replace('-', '_').replace('+', 'X').upper()
 
     def neg_warning(warning):
       if warning[0:3] == 'no-':
@@ -189,6 +189,12 @@
   TMPOUT = /dev/null
   else
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
+  endif
+
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
+  W_NO_CXX14_COMPAT=-Wno-c++14-compat
   endif
 
   %for warning in CHECK_WARNINGS:
@@ -662,11 +668,20 @@
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
   endif
 
+  # gpr .pc file
+  PC_NAME = gpr
+  PC_DESCRIPTION = gRPC platform support library
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
+  PC_LIB = -lgpr
+  GPR_PC_FILE := $(CORE_PC_TEMPLATE)
+
   # grpc .pc file
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -675,7 +690,7 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
   PC_LIB = -lgrpc
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -915,6 +930,16 @@
   % endfor
 
 
+  static_csharp: static_c \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'csharp':
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+
+
   shared: shared_c shared_cxx
 
   shared_c: pc_c pc_c_unsecure cache.mk\
@@ -960,9 +985,9 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -1183,6 +1208,11 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
+  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
+
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1267,6 +1297,11 @@
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
   $(OBJDIR)/$(CONFIG)/%.o : %.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+  $(OBJDIR)/$(CONFIG)/%.o : %.cpp
   	$(E) "[CXX]     Compiling $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
@@ -1376,6 +1411,7 @@
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 

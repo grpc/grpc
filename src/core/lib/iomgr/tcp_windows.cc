@@ -53,7 +53,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-static grpc_error* set_non_block(SOCKET sock) {
+grpc_error* grpc_tcp_set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;
@@ -90,7 +90,7 @@ static grpc_error* enable_loopback_fast_path(SOCKET sock) {
 
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
   grpc_error* err;
-  err = set_non_block(sock);
+  err = grpc_tcp_set_non_block(sock);
   if (err != GRPC_ERROR_NONE) return err;
   err = set_dualstack(sock);
   if (err != GRPC_ERROR_NONE) return err;
@@ -296,7 +296,7 @@ static void on_write(void* tcpp, grpc_error* error) {
 
 /* Initiates a write. */
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                      grpc_closure* cb) {
+                      grpc_closure* cb, void* arg) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;

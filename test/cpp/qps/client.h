@@ -19,6 +19,8 @@
 #ifndef TEST_QPS_CLIENT_H
 #define TEST_QPS_CLIENT_H
 
+#include <stdlib.h>
+
 #include <condition_variable>
 #include <mutex>
 #include <unordered_map>
@@ -34,6 +36,7 @@
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/payloads.pb.h"
 
+#include "src/core/lib/gpr/env.h"
 #include "src/cpp/util/core_stats.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
@@ -177,6 +180,19 @@ class Client {
       timer_result = timer_->Mark();
     }
 
+    // Print the median latency per interval for one thread.
+    // If the number of warmup seconds is x, then the first x + 1 numbers in the
+    // vector are from the warmup period and should be discarded.
+    if (median_latency_collection_interval_seconds_ > 0) {
+      std::vector<double> medians_per_interval =
+          threads_[0]->GetMedianPerIntervalList();
+      gpr_log(GPR_INFO, "Num threads: %ld", threads_.size());
+      gpr_log(GPR_INFO, "Number of medians: %ld", medians_per_interval.size());
+      for (size_t j = 0; j < medians_per_interval.size(); j++) {
+        gpr_log(GPR_INFO, "%f", medians_per_interval[j]);
+      }
+    }
+
     grpc_stats_data core_stats;
     grpc_stats_collect(&core_stats);
 
@@ -207,6 +223,12 @@ class Client {
     }
   }
 
+  // Returns the interval (in seconds) between collecting latency medians. If 0,
+  // no periodic median latencies will be collected.
+  double GetLatencyCollectionIntervalInSeconds() {
+    return median_latency_collection_interval_seconds_;
+  }
+
   virtual int GetPollCount() {
     // For sync client.
     return 0;
@@ -215,6 +237,7 @@ class Client {
  protected:
   bool closed_loop_;
   gpr_atm thread_pool_done_;
+  double median_latency_collection_interval_seconds_;  // In seconds
 
   void StartThreads(size_t num_threads) {
     gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
@@ -296,10 +319,27 @@ class Client {
       MergeStatusHistogram(statuses_, s);
     }
 
+    std::vector<double> GetMedianPerIntervalList() {
+      return medians_each_interval_list_;
+    }
+
     void UpdateHistogram(HistogramEntry* entry) {
       std::lock_guard<std::mutex> g(mu_);
       if (entry->value_used()) {
         histogram_.Add(entry->value());
+        if (client_->GetLatencyCollectionIntervalInSeconds() > 0) {
+          histogram_per_interval_.Add(entry->value());
+          double now = UsageTimer::Now();
+          if ((now - interval_start_time_) >=
+              client_->GetLatencyCollectionIntervalInSeconds()) {
+            // Record the median latency of requests from the last interval.
+            // Divide by 1e3 to get microseconds.
+            medians_each_interval_list_.push_back(
+                histogram_per_interval_.Percentile(50) / 1e3);
+            histogram_per_interval_.Reset();
+            interval_start_time_ = now;
+          }
+        }
       }
       if (entry->status_used()) {
         statuses_[entry->status()]++;
@@ -331,6 +371,11 @@ class Client {
     Client* client_;
     const size_t idx_;
     std::thread impl_;
+    // The following are used only if
+    // median_latency_collection_interval_seconds_ is greater than 0
+    Histogram histogram_per_interval_;
+    std::vector<double> medians_each_interval_list_;
+    double interval_start_time_;
   };
 
   bool ThreadCompleted() {
@@ -389,7 +434,8 @@ class ClientImpl : public Client {
     for (auto& t : connecting_threads) {
       t->join();
     }
-
+    median_latency_collection_interval_seconds_ =
+        config.median_latency_collection_interval_millis() / 1e3;
     ClientRequestCreator<RequestType> create_req(&request_,
                                                  config.payload_config());
   }
@@ -441,9 +487,24 @@ class ClientImpl : public Client {
     std::unique_ptr<std::thread> WaitForReady() {
       return std::unique_ptr<std::thread>(new std::thread([this]() {
         if (!is_inproc_) {
-          GPR_ASSERT(channel_->WaitForConnected(
-              gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                           gpr_time_from_seconds(10, GPR_TIMESPAN))));
+          int connect_deadline = 10;
+          /* Allow optionally overriding connect_deadline in order
+           * to deal with benchmark environments in which the server
+           * can take a long time to become ready. */
+          char* channel_connect_timeout_str =
+              gpr_getenv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT");
+          if (channel_connect_timeout_str != nullptr &&
+              strcmp(channel_connect_timeout_str, "") != 0) {
+            connect_deadline = atoi(channel_connect_timeout_str);
+          }
+          gpr_log(GPR_INFO,
+                  "Waiting for up to %d seconds for the channel %p to connect",
+                  connect_deadline, channel_.get());
+          gpr_free(channel_connect_timeout_str);
+          GPR_ASSERT(channel_->WaitForConnected(gpr_time_add(
+              gpr_now(GPR_CLOCK_REALTIME),
+              gpr_time_from_seconds(connect_deadline, GPR_TIMESPAN))));
+          gpr_log(GPR_INFO, "Channel %p connected!", channel_.get());
         }
       }));
     }

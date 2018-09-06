@@ -110,7 +110,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
  */
 static tsi_result create_alts_grpc_record_protocol(
     const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
-    bool is_integrity_only, bool is_protect,
+    bool is_integrity_only, bool is_protect, bool enable_extra_copy,
     alts_grpc_record_protocol** record_protocol) {
   if (key == nullptr || record_protocol == nullptr) {
     return TSI_INVALID_ARGUMENT;
@@ -130,13 +130,13 @@ static tsi_result create_alts_grpc_record_protocol(
                                    : kAltsRecordProtocolFrameLimit;
   /* Creates alts_grpc_record_protocol with AEAD crypter ownership transferred.
    */
-  tsi_result result =
-      is_integrity_only
-          ? alts_grpc_integrity_only_record_protocol_create(
-                crypter, overflow_limit, is_client, is_protect, record_protocol)
-          : alts_grpc_privacy_integrity_record_protocol_create(
-                crypter, overflow_limit, is_client, is_protect,
-                record_protocol);
+  tsi_result result = is_integrity_only
+                          ? alts_grpc_integrity_only_record_protocol_create(
+                                crypter, overflow_limit, is_client, is_protect,
+                                enable_extra_copy, record_protocol)
+                          : alts_grpc_privacy_integrity_record_protocol_create(
+                                crypter, overflow_limit, is_client, is_protect,
+                                record_protocol);
   if (result != TSI_OK) {
     gsec_aead_crypter_destroy(crypter);
     return result;
@@ -241,7 +241,8 @@ static const tsi_zero_copy_grpc_protector_vtable
 
 tsi_result alts_zero_copy_grpc_protector_create(
     const uint8_t* key, size_t key_size, bool is_rekey, bool is_client,
-    bool is_integrity_only, size_t* max_protected_frame_size,
+    bool is_integrity_only, bool enable_extra_copy,
+    size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   if (grpc_core::ExecCtx::Get() == nullptr || key == nullptr ||
       protector == nullptr) {
@@ -257,11 +258,11 @@ tsi_result alts_zero_copy_grpc_protector_create(
   /* Creates alts_grpc_record_protocol objects.  */
   tsi_result status = create_alts_grpc_record_protocol(
       key, key_size, is_rekey, is_client, is_integrity_only,
-      /*is_protect=*/true, &impl->record_protocol);
+      /*is_protect=*/true, enable_extra_copy, &impl->record_protocol);
   if (status == TSI_OK) {
     status = create_alts_grpc_record_protocol(
         key, key_size, is_rekey, is_client, is_integrity_only,
-        /*is_protect=*/false, &impl->unrecord_protocol);
+        /*is_protect=*/false, enable_extra_copy, &impl->unrecord_protocol);
     if (status == TSI_OK) {
       /* Sets maximum frame size.  */
       size_t max_protected_frame_size_to_set = kDefaultFrameLength;

@@ -225,7 +225,7 @@ namespace Grpc.Core
         /// </summary>
         public class Entry
         {
-            private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
+            private static readonly Regex ValidKeyRegex = new Regex("^[.a-z0-9_-]+$");
 
             readonly string key;
             readonly string value;
@@ -360,7 +360,7 @@ namespace Grpc.Core
             {
                 var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLowerInvariant();
                 GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
-                    "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
+                    "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores, hyphens and dots.");
                 return normalized;
             }
 

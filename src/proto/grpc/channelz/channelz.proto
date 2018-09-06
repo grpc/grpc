@@ -1,4 +1,4 @@
-// Copyright 2018 gRPC authors.
+// Copyright 2018 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This file defines an interface for exporting monitoring information
+// out of gRPC servers.  See the full design at
+// https://github.com/grpc/proposal/blob/master/A14-channelz.md
+//
+// The canonical version of this proto can be found at
+// https://github.com/grpc/grpc-proto/blob/master/grpc/channelz/v1/channelz.proto
+
 syntax = "proto3";
 
-package grpc.channelz;
+package grpc.channelz.v1;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-// See go/grpc-channelz.
+option go_package = "google.golang.org/grpc/channelz/grpc_channelz_v1";
+option java_multiple_files = true;
+option java_package = "io.grpc.channelz.v1";
+option java_outer_classname = "ChannelzProto";
 
 // Channel is a logical grouping of channels, subchannels, and sockets.
 message Channel {
-  // The identifier for this channel.
+  // The identifier for this channel. This should bet set.
   ChannelRef ref = 1;
   // Data specific to this channel.
   ChannelData data = 2;
@@ -43,7 +53,7 @@ message Channel {
   repeated SubchannelRef subchannel_ref = 4;
 
   // There are no ordering guarantees on the order of sockets.
-  repeated SocketRef socket = 5;
+  repeated SocketRef socket_ref = 5;
 }
 
 // Subchannel is a logical grouping of channels, subchannels, and sockets.
@@ -67,7 +77,7 @@ message Subchannel {
   repeated SubchannelRef subchannel_ref = 4;
 
   // There are no ordering guarantees on the order of sockets.
-  repeated SocketRef socket = 5;
+  repeated SocketRef socket_ref = 5;
 }
 
 // These come from the specified states in this document:
@@ -84,20 +94,23 @@ message ChannelConnectivityState {
   State state = 1;
 }
 
+// Channel data is data related to a specific Channel or Subchannel.
 message ChannelData {
-
+  // The connectivity state of the channel or subchannel.  Implementations
+  // should always set this.
   ChannelConnectivityState state = 1;
 
   // The target this channel originally tried to connect to.  May be absent
   string target = 2;
 
+  // A trace of recent events on the channel.  May be absent.
   ChannelTrace trace = 3;
 
   // The number of calls started on the channel
   int64 calls_started = 4;
   // The number of calls that have completed with an OK status
   int64 calls_succeeded = 5;
-  // The number of calls that have a completed with a non-OK status
+  // The number of calls that have completed with a non-OK status
   int64 calls_failed = 6;
 
   // The last time a call was started on the channel.
@@ -130,26 +143,29 @@ message ChannelTraceEvent {
   }
 }
 
+// ChannelTrace represents the recent events that have occurred on the channel.
 message ChannelTrace {
   // Number of events ever logged in this tracing object. This can differ from
   // events.size() because events can be overwritten or garbage collected by
   // implementations.
   int64 num_events_logged = 1;
   // Time that this channel was created.
-  google.protobuf.Timestamp creation_time = 2;
+  google.protobuf.Timestamp creation_timestamp = 2;
   // List of events that have occurred on this channel.
   repeated ChannelTraceEvent events = 3;
 }
 
+// ChannelRef is a reference to a Channel.
 message ChannelRef {
   // The globally unique id for this channel.  Must be a positive number.
   int64 channel_id = 1;
   // An optional name associated with the channel.
   string name = 2;
   // Intentionally don't use field numbers from other refs.
-  reserved 3, 4, 5, 6;
+  reserved 3, 4, 5, 6, 7, 8;
 }
 
+// ChannelRef is a reference to a Subchannel.
 message SubchannelRef {
   // The globally unique id for this subchannel.  Must be a positive number.
   int64 subchannel_id = 7;
@@ -159,6 +175,7 @@ message SubchannelRef {
   reserved 1, 2, 3, 4, 5, 6;
 }
 
+// SocketRef is a reference to a Socket.
 message SocketRef {
   int64 socket_id = 3;
   // An optional name associated with the socket.
@@ -167,8 +184,9 @@ message SocketRef {
   reserved 1, 2, 5, 6, 7, 8;
 }
 
+// ServerRef is a reference to a Server.
 message ServerRef {
-  // A globally unique identifier for this server.   Must be a positive number.
+  // A globally unique identifier for this server.  Must be a positive number.
   int64 server_id = 5;
   // An optional name associated with the server.
   string name = 6;
@@ -176,16 +194,22 @@ message ServerRef {
   reserved 1, 2, 3, 4, 7, 8;
 }
 
+// Server represents a single server.  There may be multiple servers in a single
+// program.
 message Server {
+  // The identifier for a Server.  This should be set.
   ServerRef ref = 1;
+  // The associated data of the Server.
   ServerData data = 2;
 
   // The sockets that the server is listening on.  There are no ordering
-  // guarantees.
+  // guarantees.  This may be absent.
   repeated SocketRef listen_socket = 3;
 }
 
+// ServerData is data for a specific Server.
 message ServerData {
+  // A trace of recent events on the server.  May be absent.
   ChannelTrace trace = 1;
 
   // The number of incoming calls started on the server
@@ -201,13 +225,17 @@ message ServerData {
 
 // Information about an actual connection.  Pronounced "sock-ay".
 message Socket {
+  // The identifier for the Socket.
   SocketRef ref = 1;
 
+  // Data specific to this Socket.
   SocketData data = 2;
   // The locally bound address.
   Address local = 3;
   // The remote bound address.  May be absent.
   Address remote = 4;
+  // Security details for this socket.  May be absent if not available, or
+  // there is no security on the socket.
   Security security = 5;
 
   // Optional, represents the name of the remote endpoint, if different than
@@ -215,17 +243,23 @@ message Socket {
   string remote_name = 6;
 }
 
+// SocketData is data associated for a specific Socket.  The fields present
+// are specific to the implementation, so there may be minor differences in
+// the semantics.  (e.g. flow control windows)
 message SocketData {
   // The number of streams that have been started.
   int64 streams_started = 1;
-  // The number of streams that have ended successfully with the EoS bit set for
-  //  both end points
+  // The number of streams that have ended successfully:
+  // On client side, received frame with eos bit set;
+  // On server side, sent frame with eos bit set.
   int64 streams_succeeded = 2;
-  // The number of incoming streams that have a completed with a non-OK status
+  // The number of streams that have ended unsuccessfully:
+  // On client side, ended without receiving frame with eos bit set;
+  // On server side, ended without sending frame with eos bit set.
   int64 streams_failed = 3;
-
-  // The number of messages successfully sent on this socket.
+  // The number of grpc messages successfully sent on this socket.
   int64 messages_sent = 4;
+  // The number of grpc messages received on this socket.
   int64 messages_received = 5;
 
   // The number of keep alives sent.  This is typically implemented with HTTP/2
@@ -254,12 +288,14 @@ message SocketData {
   // include stream level or TCP level flow control info.
   google.protobuf.Int64Value  remote_flow_control_window = 12;
 
+  // Socket options set on this socket.  May be absent.
   repeated SocketOption option = 13;
 }
 
+// Address represents the address used to create the socket.
 message Address {
   message TcpIpAddress {
-    // Either the IPv4 or IPv6 address in bytes.  Will either be 4 bytes or 16
+    // Either the IPv4 or IPv6 address in bytes.  Will be either 4 bytes or 16
     // bytes in length.
     bytes ip_address = 1;
     // 0-64k, or -1 if not appropriate.
@@ -271,7 +307,7 @@ message Address {
   }
   // An address type not included above.
   message OtherAddress {
-    // The human readable version of the value.
+    // The human readable version of the value.  This value should be set.
     string name = 1;
     // The actual address message.
     google.protobuf.Any value = 2;
@@ -284,12 +320,17 @@ message Address {
   }
 }
 
+// Security represents details about how secure the socket is.
 message Security {
   message Tls {
-    // The key exchange used.  e.g. X25519
-    string key_exchange = 1;
-    // The cipher used. e.g. AES_128_GCM.
-    string cipher = 2;
+    oneof cipher_suite {
+      // The cipher suite name in the RFC 4346 format:
+      // https://tools.ietf.org/html/rfc4346#appendix-C
+      string standard_name = 1;
+      // Some other way to describe the cipher suite if
+      // the RFC 4346 name is not available.
+      string other_name = 2;
+    }
     // the certificate used by this endpoint.
     bytes local_certificate = 3;
     // the certificate used by the remote endpoint.
@@ -307,7 +348,11 @@ message Security {
   }
 }
 
+// SocketOption represents socket options for a socket.  Specifically, these
+// are the options returned by getsockopt().
 message SocketOption {
+  // The full name of the socket option.  Typically this will be the upper case
+  // name, such as "SO_REUSEPORT".
   string name = 1;
   // The human readable value of this socket option.  At least one of value or
   // additional will be set.
@@ -323,12 +368,17 @@ message SocketOptionTimeout {
   google.protobuf.Duration duration = 1;
 }
 
+// For use with SocketOption's additional field.  This is primarily used for
+// SO_LINGER.
 message SocketOptionLinger {
+  // active maps to `struct linger.l_onoff`
   bool active = 1;
+  // duration maps to `struct linger.l_linger`
   google.protobuf.Duration duration = 2;
 }
 
-// Tcp info for SOL_TCP, TCP_INFO
+// For use with SocketOption's additional field.  Tcp info for
+// SOL_TCP and TCP_INFO.
 message SocketOptionTcpInfo {
   uint32 tcpi_state = 1;
 
@@ -366,8 +416,10 @@ message SocketOptionTcpInfo {
   uint32 tcpi_reordering = 29;
 }
 
+// Channelz is a service exposed by gRPC servers that provides detailed debug
+// information.
 service Channelz {
-  // Gets all root channels (e.g. channels the application has directly
+  // Gets all root channels (i.e. channels the application has directly
   // created). This does not include subchannels nor non-top level channels.
   rpc GetTopChannels(GetTopChannelsRequest) returns (GetTopChannelsResponse);
   // Gets all servers that exist in the process.
@@ -380,6 +432,22 @@ service Channelz {
   rpc GetSubchannel(GetSubchannelRequest) returns (GetSubchannelResponse);
   // Returns a single Socket or else a NOT_FOUND code.
   rpc GetSocket(GetSocketRequest) returns (GetSocketResponse);
+}
+
+message GetTopChannelsRequest {
+  // start_channel_id indicates that only channels at or above this id should be
+  // included in the results.
+  int64 start_channel_id = 1;
+}
+
+message GetTopChannelsResponse {
+  // list of channels that the connection detail service knows about.  Sorted in
+  // ascending channel_id order.
+  repeated Channel channel = 1;
+  // If set, indicates that the list of channels is the final list.  Requesting
+  // more channels can only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
 }
 
 message GetServersRequest {
@@ -415,42 +483,35 @@ message GetServerSocketsResponse {
   bool end = 2;
 }
 
-message GetTopChannelsRequest {
-  // start_channel_id indicates that only channels at or above this id should be
-  // included in the results.
-  int64 start_channel_id = 1;
-}
-
-message GetTopChannelsResponse {
-  // list of channels that the connection detail service knows about.  Sorted in
-  // ascending channel_id order.
-  repeated Channel channel = 1;
-  // If set, indicates that the list of channels is the final list.  Requesting
-  // more channels can only return more if they are created after this RPC
-  // completes.
-  bool end = 2;
-}
-
 message GetChannelRequest {
+  // channel_id is the identifier of the specific channel to get.
   int64 channel_id = 1;
 }
 
 message GetChannelResponse {
+  // The Channel that corresponds to the requested channel_id.  This field
+  // should be set.
   Channel channel = 1;
 }
 
 message GetSubchannelRequest {
+  // subchannel_id is the identifier of the specific subchannel to get.
   int64 subchannel_id = 1;
 }
 
 message GetSubchannelResponse {
+  // The Subchannel that corresponds to the requested subchannel_id.  This
+  // field should be set.
   Subchannel subchannel = 1;
 }
 
 message GetSocketRequest {
+  // socket_id is the identifier of the specific socket to get.
   int64 socket_id = 1;
 }
 
 message GetSocketResponse {
+  // The Socket that corresponds to the requested socket_id.  This field
+  // should be set.
   Socket socket = 1;
 }

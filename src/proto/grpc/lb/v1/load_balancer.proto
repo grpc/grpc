@@ -1,4 +1,4 @@
-// Copyright 2016 gRPC authors.
+// Copyright 2015 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,42 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// This file defines the GRPCLB LoadBalancing protocol.
+//
+// The canonical version of this proto can be found at
+// https://github.com/grpc/grpc-proto/blob/master/grpc/lb/v1/load_balancer.proto
 syntax = "proto3";
 
 package grpc.lb.v1;
 
-message Duration {
-  // Signed seconds of the span of time. Must be from -315,576,000,000
-  // to +315,576,000,000 inclusive.
-  int64 seconds = 1;
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
 
-  // Signed fractions of a second at nanosecond resolution of the span
-  // of time. Durations less than one second are represented with a 0
-  // `seconds` field and a positive or negative `nanos` field. For durations
-  // of one second or more, a non-zero value for the `nanos` field must be
-  // of the same sign as the `seconds` field. Must be from -999,999,999
-  // to +999,999,999 inclusive.
-  int32 nanos = 2;
-}
-
-message Timestamp {
-
-  // Represents seconds of UTC time since Unix epoch
-  // 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to
-  // 9999-12-31T23:59:59Z inclusive.
-  int64 seconds = 1;
-
-  // Non-negative fractions of a second at nanosecond resolution. Negative
-  // second values with fractions must still have non-negative nanos values
-  // that count forward in time. Must be from 0 to 999,999,999
-  // inclusive.
-  int32 nanos = 2;
-}
+option go_package = "google.golang.org/grpc/balancer/grpclb/grpc_lb_v1";
+option java_multiple_files = true;
+option java_outer_classname = "LoadBalancerProto";
+option java_package = "io.grpc.grpclb";
 
 service LoadBalancer {
   // Bidirectional rpc to get a list of servers.
-  rpc BalanceLoad(stream LoadBalanceRequest)
-      returns (stream LoadBalanceResponse);
+  rpc BalanceLoad(stream LoadBalanceRequest) returns (stream LoadBalanceResponse);
 }
 
 message LoadBalanceRequest {
@@ -62,8 +45,8 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // The name of the load balanced service (e.g., balancer.service.com). The max
-  // length of the name is 256 bytes.
+  // The name of the load balanced service (e.g., service.googleapis.com). Its
+  // length should be less than 256 bytes.
   // The name might include a port number. How to handle the port number is up
   // to the balancer.
   string name = 1;
@@ -82,7 +65,7 @@ message ClientStatsPerToken {
 // count except the timestamp should be reset to zero after reporting the stats.
 message ClientStats {
   // The timestamp of generating the report.
-  Timestamp timestamp = 1;
+  google.protobuf.Timestamp timestamp = 1;
 
   // The total number of RPCs that started.
   int64 num_calls_started = 2;
@@ -125,7 +108,7 @@ message InitialLoadBalanceResponse {
   // This interval defines how often the client should send the client stats
   // to the load balancer. Stats should only be reported when the duration is
   // positive.
-  Duration client_stats_report_interval = 2;
+  google.protobuf.Duration client_stats_report_interval = 2;
 }
 
 message ServerList {
@@ -149,13 +132,13 @@ message Server {
   // A resolved port number for the server.
   int32 port = 2;
 
-  // An opaque but printable token given to the frontend for each pick. All
-  // frontend requests for that pick must include the token in its initial
-  // metadata. The token is used by the backend to verify the request and to
-  // allow the backend to report load to the gRPC LB system. The token is also
-  // used in client stats for reporting dropped calls.
+  // An opaque but printable token for load reporting. The client must include
+  // the token of the picked server into the initial metadata when it starts a
+  // call to that server. The token is used by the server to verify the request
+  // and to allow the server to report load to the gRPC LB system. The token is
+  // also used in client stats for reporting dropped calls.
   //
-  // Its length is variable but less than 50 bytes.
+  // Its length can be variable but must be less than 50 bytes.
   string load_balance_token = 3;
 
   // Indicates whether this particular request should be dropped by the client.

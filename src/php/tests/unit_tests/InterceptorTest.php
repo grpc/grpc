@@ -24,6 +24,7 @@ require_once(dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/Interceptor.php');
+require_once(dirname(__FILE__).'/../../lib/Grpc/CallInvoker.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php');
 
 class SimpleRequest
@@ -94,17 +95,18 @@ class ChangeMetadataInterceptor extends Grpc\Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
+                                        $deserialize,
                                         array $metadata = [],
                                         array $options = [],
                                         $continuation)
     {
         $metadata["foo"] = array('interceptor_from_unary_request');
-        return $continuation($method, $argument, $metadata, $options);
+        return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
-    public function interceptStreamUnary($method, array $metadata = [], array $options = [], $continuation)
+    public function interceptStreamUnary($method, $deserialize, array $metadata = [], array $options = [], $continuation)
     {
         $metadata["foo"] = array('interceptor_from_stream_request');
-        return $continuation($method, $metadata, $options);
+        return $continuation($method, $deserialize, $metadata, $options);
     }
 }
 
@@ -112,6 +114,7 @@ class ChangeMetadataInterceptor2 extends Grpc\Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
+                                        $deserialize,
                                         array $metadata = [],
                                         array $options = [],
                                         $continuation)
@@ -121,9 +124,10 @@ class ChangeMetadataInterceptor2 extends Grpc\Interceptor
         } else {
             $metadata["bar"] = array('interceptor_from_unary_request');
         }
-        return $continuation($method, $argument, $metadata, $options);
+        return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
     public function interceptStreamUnary($method,
+                                         $deserialize,
                                          array $metadata = [],
                                          array $options = [],
                                          $continuation)
@@ -133,7 +137,7 @@ class ChangeMetadataInterceptor2 extends Grpc\Interceptor
         } else {
             $metadata["bar"] = array('interceptor_from_stream_request');
         }
-        return $continuation($method, $metadata, $options);
+        return $continuation($method, $deserialize, $metadata, $options);
     }
 }
 
@@ -166,17 +170,18 @@ class ChangeRequestInterceptor extends Grpc\Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
+                                        $deserialize,
                                         array $metadata = [],
                                         array $options = [],
                                         $continuation)
     {
         $argument->setData('intercepted_unary_request');
-        return $continuation($method, $argument, $metadata, $options);
+        return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
-    public function interceptStreamUnary($method, array $metadata = [], array $options = [], $continuation)
+    public function interceptStreamUnary($method, $deserialize, array $metadata = [], array $options = [], $continuation)
     {
         return new ChangeRequestCall(
-            $continuation($method, $metadata, $options)
+            $continuation($method, $deserialize, $metadata, $options)
         );
     }
 }

@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/cpp/server/load_reporter")
 
@@ -26,6 +26,39 @@ grpc_cc_test(
     ],
     deps = [
         "//:lb_load_data_store",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "lb_load_reporter_test",
+    srcs = ["load_reporter_test.cc"],
+    external_deps = [
+        "gtest",
+        "gmock",
+        "opencensus-stats-test",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:lb_load_reporter",
+        "//:lb_server_load_reporting_filter",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "lb_get_cpu_stats_test",
+    srcs = ["get_cpu_stats_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:lb_get_cpu_stats",
+        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

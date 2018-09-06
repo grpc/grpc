@@ -513,9 +513,24 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
 
 grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
   GPR_TIMER_SCOPE("grpc_error_add_child", 0);
-  grpc_error* new_err = copy_error_and_unref(src);
-  internal_add_error(&new_err, child);
-  return new_err;
+  if (src != GRPC_ERROR_NONE) {
+    if (child == GRPC_ERROR_NONE) {
+      /* \a child is empty. Simply return the ref to \a src */
+      return src;
+    } else if (child != src) {
+      grpc_error* new_err = copy_error_and_unref(src);
+      internal_add_error(&new_err, child);
+      return new_err;
+    } else {
+      /* \a src and \a child are the same. Drop one of the references and return
+       * the other */
+      GRPC_ERROR_UNREF(child);
+      return src;
+    }
+  } else {
+    /* \a src is empty. Simply return the ref to \a child */
+    return child;
+  }
 }
 
 static const char* no_error_string = "\"No Error\"";

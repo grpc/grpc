@@ -94,7 +94,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   if (default_authority_arg == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-        "channels must explicity specify a value for this argument.");
+        "channels must explicitly specify a value for this argument.");
   }
   const char* default_authority_str =
       grpc_channel_arg_get_string(default_authority_arg);

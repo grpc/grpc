@@ -174,10 +174,6 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->UpdateServerBuilder(this);
-  }
-
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
@@ -185,6 +181,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateServerBuilder(this);
     (*plugin)->UpdateChannelArguments(&args);
   }
 
@@ -266,7 +263,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<Server> server(new Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec));
+      sync_server_settings_.cq_timeout_msec, resource_quota_));
 
   if (has_sync_methods) {
     // This is a Sync server

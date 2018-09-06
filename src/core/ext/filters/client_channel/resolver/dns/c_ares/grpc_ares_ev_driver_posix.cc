@@ -44,11 +44,13 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
       : as_(as) {
     gpr_asprintf(&name_, "c-ares fd: %d", (int)as);
     fd_ = grpc_fd_create((int)as, name_, false);
-    grpc_pollset_set_add_fd(driver_pollset_set, fd_);
+    driver_pollset_set_ = driver_pollset_set;
+    grpc_pollset_set_add_fd(driver_pollset_set_, fd_);
   }
 
   ~GrpcPolledFdPosix() {
     gpr_free(name_);
+    grpc_pollset_set_del_fd(driver_pollset_set_, fd_);
     /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
        immediately by another thread, and should not be closed by the following
        grpc_fd_orphan. */
@@ -81,14 +83,23 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   char* name_;
   ares_socket_t as_;
   grpc_fd* fd_;
+  grpc_pollset_set* driver_pollset_set_;
 };
 
-GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
-                                    grpc_pollset_set* driver_pollset_set) {
-  return grpc_core::New<GrpcPolledFdPosix>(as, driver_pollset_set);
-}
+class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
+ public:
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
+                                      grpc_pollset_set* driver_pollset_set,
+                                      grpc_combiner* combiner) override {
+    return New<GrpcPolledFdPosix>(as, driver_pollset_set);
+  }
 
-void ConfigureAresChannelLocked(ares_channel* channel) {}
+  void ConfigureAresChannelLocked(ares_channel channel) override {}
+};
+
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
+  return UniquePtr<GrpcPolledFdFactory>(New<GrpcPolledFdFactoryPosix>());
+}
 
 }  // namespace grpc_core
 

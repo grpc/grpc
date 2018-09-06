@@ -30,6 +30,14 @@
 struct grpc_channel;
 
 namespace grpc {
+
+namespace experimental {
+/// Resets the channel's connection backoff.
+/// TODO(roth): Once we see whether this proves useful, either create a gRFC
+/// and change this to be a method of the Channel class, or remove it.
+void ChannelResetConnectionBackoff(Channel* channel);
+}  // namespace experimental
+
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public ChannelInterface,
                       public internal::CallHook,
@@ -52,6 +60,7 @@ class Channel final : public ChannelInterface,
  private:
   template <class InputMessage, class OutputMessage>
   friend class internal::BlockingUnaryCallImpl;
+  friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> CreateChannelInternal(
       const grpc::string& host, grpc_channel* c_channel);
   Channel(const grpc::string& host, grpc_channel* c_channel);

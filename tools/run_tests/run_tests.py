@@ -883,7 +883,7 @@ class RubyLanguage(object):
         tests.append(
             self.config.job_spec(
                 ['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return tests
 
@@ -1821,8 +1821,16 @@ def _build_and_run(check_cancelled,
         for antagonist in antagonists:
             antagonist.kill()
         if args.bq_result_table and resultset:
-            upload_results_to_bq(resultset, args.bq_result_table, args,
-                                 platform_string())
+            upload_extra_fields = {
+                'compiler': args.compiler,
+                'config': args.config,
+                'iomgr_platform': args.iomgr_platform,
+                'language': args.language[
+                    0],  # args.language is a list but will always have one element when uploading to BQ is enabled.
+                'platform': platform_string()
+            }
+            upload_results_to_bq(resultset, args.bq_result_table,
+                                 upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)

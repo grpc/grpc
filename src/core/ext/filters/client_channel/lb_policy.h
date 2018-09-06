@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
@@ -70,6 +71,7 @@ class LoadBalancingPolicy
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
+    /// If null, pick will fail if a result is not available synchronously.
     grpc_closure* on_complete;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
@@ -98,10 +100,15 @@ class LoadBalancingPolicy
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.
   ///
-  /// If the pick succeeds and a result is known immediately, returns true.
-  /// Otherwise, \a pick->on_complete will be invoked once the pick is
-  /// complete with its error argument set to indicate success or failure.
-  virtual bool PickLocked(PickState* pick) GRPC_ABSTRACT;
+  /// If a result is known immediately, returns true, setting \a *error
+  /// upon failure.  Otherwise, \a pick->on_complete will be invoked once
+  /// the pick is complete with its error argument set to indicate success
+  /// or failure.
+  ///
+  /// If \a pick->on_complete is null and no result is known immediately,
+  /// a synchronous failure will be returned (i.e., \a *error will be
+  /// set and true will be returned).
+  virtual bool PickLocked(PickState* pick, grpc_error** error) GRPC_ABSTRACT;
 
   /// Cancels \a pick.
   /// The \a on_complete callback of the pending pick will be invoked with
@@ -132,16 +139,21 @@ class LoadBalancingPolicy
   virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
       GRPC_ABSTRACT;
 
-  /// Performs a connected subchannel ping via \a ConnectedSubchannel::Ping()
-  /// against one of the connected subchannels managed by the policy.
-  /// Note: This is intended only for use in tests.
-  virtual void PingOneLocked(grpc_closure* on_initiate,
-                             grpc_closure* on_ack) GRPC_ABSTRACT;
-
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,
   /// consider whether this method is still needed.
   virtual void ExitIdleLocked() GRPC_ABSTRACT;
+
+  /// Resets connection backoff.
+  virtual void ResetBackoffLocked() GRPC_ABSTRACT;
+
+  /// Populates child_subchannels and child_channels with the uuids of this
+  /// LB policy's referenced children. This is not invoked from the
+  /// client_channel's combiner. The implementation is responsible for
+  /// providing its own synchronization.
+  virtual void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                        ChildRefsList* child_channels)
+      GRPC_ABSTRACT;
 
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
@@ -196,6 +208,12 @@ class LoadBalancingPolicy
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
+
+  // Dummy classes needed for alignment issues.
+  // See https://github.com/grpc/grpc/issues/16032 for context.
+  // TODO(ncteisen): remove this as soon as the issue is resolved.
+  ChildRefsList dummy_list_foo;
+  ChildRefsList dummy_list_bar;
 };
 
 }  // namespace grpc_core

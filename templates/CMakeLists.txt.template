@@ -87,6 +87,7 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
+  option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 
   set(gRPC_INSTALL_default ON)
   if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -148,6 +149,8 @@
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
     # needed to compile protobuf
     add_definitions(/wd4065 /wd4506)
+    # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
+    add_definitions(/wd4200 /wd4291 /wd4244)
     # TODO(jtattermusch): revisit C4267 occurrences throughout the code
     add_definitions(/wd4267)
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
@@ -298,6 +301,11 @@
   if (gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif (gRPC_BUILD_TESTS)
+  % elif lib.name in ['grpc_csharp_ext']:
+  if (gRPC_BUILD_CSHARP_EXT)
+  ${cc_library(lib)}
+  ${cc_install(lib)}
+  endif (gRPC_BUILD_CSHARP_EXT)
   % else:
   ${cc_library(lib)}
   % if not lib.build in ["tool"]:

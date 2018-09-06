@@ -1,24 +1,65 @@
-[gRPC - An RPC library and framework](http://github.com/grpc/grpc)
+gRPC - An RPC library and framework
 ===================================
+
+gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can run anywhere. It enables client and server applications to communicate transparently, and makes it easier to build connected systems.
+
+<table>
+  <tr>
+    <td><b>Homepage:</b></td>
+    <td><a href="https://grpc.io/">grpc.io</a></td>
+  </tr>
+  <tr>
+    <td><b>Mailing List:</b></td>
+    <td><a href="https://groups.google.com/forum/#!forum/grpc-io">grpc-io@googlegroups.com</a></td>
+  </tr>
+</table>
 
 [![Join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Copyright 2015
-[The gRPC Authors](https://github.com/grpc/grpc/blob/master/AUTHORS)
+# To start using gRPC
 
-# Documentation
+To maximize usability, gRPC supports the standard way of adding dependencies in your language of choice (if there is one).
+In most languages, the gRPC runtime comes in form of a package available in your language's package manager.
 
-You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
+For instructions on how to use the language-specific gRPC runtime in your project, please refer to these documents
 
-# Installation & Testing
+ * [C++](src/cpp): follow the instructions under the `src/cpp` directory
+ * [C#](src/csharp): NuGet package `Grpc`
+ * [Dart](https://github.com/grpc/grpc-dart): pub package `grpc`
+ * [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
+ * [Java](https://github.com/grpc/grpc-java): Use JARs from Maven Central Repository
+ * [Node](https://github.com/grpc/grpc-node): `npm install grpc`
+ * [Objective-C](src/objective-c): Add `gRPC-ProtoRPC` dependency to podspec
+ * [PHP](src/php): `pecl install grpc`
+ * [Python](src/python/grpcio): `pip install grpcio`
+ * [Ruby](src/ruby): `gem install grpc`
+ * [WebJS](https://github.com/grpc/grpc-web): follow the grpc-web instructions
 
-See [INSTALL](INSTALL.md) for installation instructions for various platforms.
+You can find per-language quickstart guides and tutorials in [Documentation section on grpc.io website](https://grpc.io/docs/). The code examples are available in the [examples](examples) directory.
 
-See [tools/run_tests](tools/run_tests) for more guidance on how to run various test suites (e.g. unit tests, interop tests, benchmarks)
+Precompiled bleeding-edge package builds of gRPC `master` branch's `HEAD` are uploaded daily to [packages.grpc.io](https://packages.grpc.io).
+
+# To start developing gRPC
+
+Contributions are welcome!
+
+Please read [How to contribute](CONTRIBUTING.md) which will guide you through the entire workflow of how to build the source code, how to run the tests and how to contribute your changes to
+the gRPC codebase.
+The document also contains info on how the contributing process works and contains best practices for creating contributions.
+
+# Troubleshooting
+
+Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLESHOOTING.md) if you are experiencing issues with gRPC.
+
+# Performance 
 
 See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for the performance numbers for the latest released version.
 
-# Repository Structure & Status
+# Concepts
+
+See [gRPC Concepts](CONCEPTS.md)
+
+# About This Repository
 
 This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core](src/core).
 
@@ -42,70 +83,3 @@ Libraries in different languages may be in different states of development. We a
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
 
-See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
-repository.
-
-# Overview
-
-
-Remote Procedure Calls (RPCs) provide a useful abstraction for building
-distributed applications and services. The libraries in this repository
-provide a concrete implementation of the gRPC protocol, layered over HTTP/2.
-These libraries enable communication between clients and servers using any
-combination of the supported languages.
-
-
-## Interface
-
-
-Developers using gRPC typically start with the description of an RPC service
-(a collection of methods), and generate client and server side interfaces
-which they use on the client-side and implement on the server side.
-
-By default, gRPC uses [Protocol Buffers](https://github.com/google/protobuf) as the
-Interface Definition Language (IDL) for describing both the service interface
-and the structure of the payload messages. It is possible to use other
-alternatives if desired.
-
-### Surface API
-Starting from an interface definition in a .proto file, gRPC provides
-Protocol Compiler plugins that generate Client- and Server-side APIs.
-gRPC users typically call into these APIs on the Client side and implement
-the corresponding API on the server side.
-
-#### Synchronous vs. asynchronous
-Synchronous RPC calls, that block until a response arrives from the server, are
-the closest approximation to the abstraction of a procedure call that RPC
-aspires to.
-
-On the other hand, networks are inherently asynchronous and in many scenarios,
-it is desirable to have the ability to start RPCs without blocking the current
-thread.
-
-The gRPC programming surface in most languages comes in both synchronous and
-asynchronous flavors.
-
-
-## Streaming
-
-gRPC supports streaming semantics, where either the client or the server (or both)
-send a stream of messages on a single RPC call. The most general case is
-Bidirectional Streaming where a single gRPC call establishes a stream where both
-the client and the server can send a stream of messages to each other. The streamed
-messages are delivered in the order they were sent.
-
-
-# Protocol
-
-The [gRPC protocol](doc/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
-clients and servers. A concrete embedding over HTTP/2 completes the picture by
-fleshing out the details of each of the required operations.
-
-## Abstract gRPC protocol
-A gRPC RPC comprises of a bidirectional stream of messages, initiated by the client. In the client-to-server direction, this stream begins with a mandatory `Call Header`, followed by optional `Initial-Metadata`, followed by zero or more `Payload Messages`. The server-to-client direction contains an optional `Initial-Metadata`, followed by zero or more `Payload Messages` terminated with a mandatory `Status` and optional `Status-Metadata` (a.k.a.,`Trailing-Metadata`).
-
-## Implementation over HTTP/2
-The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPACK compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).
-
-## Flow Control
-gRPC inherits the flow control mechanisms in HTTP/2 and uses them to enable fine-grained control of the amount of memory used for buffering in-flight messages.

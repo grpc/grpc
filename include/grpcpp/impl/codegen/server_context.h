@@ -63,9 +63,10 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-class UnknownMethodHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
+template <StatusCode code>
+class ErrorMethodHandler;
 class Call;
 }  // namespace internal
 
@@ -201,7 +202,7 @@ class ServerContext {
   /// \param algorithm The compression algorithm used for the server call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
-  /// Set the load reporting costs in \a cost_data for the call.
+  /// Set the serialized load reporting costs in \a cost_data for the call.
   void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
 
   /// Return the authentication context for this server call.
@@ -226,6 +227,8 @@ class ServerContext {
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
+  /// TODO(vjpai): Fix this so that the tag is returned even if the call never
+  /// starts (https://github.com/grpc/grpc/issues/10136).
   void AsyncNotifyWhenDone(void* tag) {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;
@@ -262,7 +265,8 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  friend class ::grpc::internal::UnknownMethodHandler;
+  template <StatusCode code>
+  friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
 
   /// Prevent copying.
@@ -290,7 +294,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  internal::MetadataMap client_metadata_;
+  mutable internal::MetadataMap client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 

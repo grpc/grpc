@@ -51,8 +51,10 @@ typedef struct grpc_event_engine_vtable {
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_error)(grpc_fd* fd, grpc_closure* closure);
+  void (*fd_set_readable)(grpc_fd* fd);
+  void (*fd_set_writable)(grpc_fd* fd);
+  void (*fd_set_error)(grpc_fd* fd);
   bool (*fd_is_shutdown)(grpc_fd* fd);
-  grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
@@ -79,6 +81,11 @@ typedef struct grpc_event_engine_vtable {
 
   void (*shutdown_engine)(void);
 } grpc_event_engine_vtable;
+
+/* register a new event engine factory */
+void grpc_register_event_engine_factory(
+    const char* name, const grpc_event_engine_vtable* (*factory)(bool),
+    bool add_at_head);
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
@@ -142,8 +149,20 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure);
  * needs to have been set on grpc_fd_create */
 void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure);
 
-/* Return the read notifier pollset from the fd */
-grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);
+/* Forcibly set the fd to be readable, resulting in the closure registered with
+ * grpc_fd_notify_on_read being invoked.
+ */
+void grpc_fd_set_readable(grpc_fd* fd);
+
+/* Forcibly set the fd to be writable, resulting in the closure registered with
+ * grpc_fd_notify_on_write being invoked.
+ */
+void grpc_fd_set_writable(grpc_fd* fd);
+
+/* Forcibly set the fd to have errored, resulting in the closure registered with
+ * grpc_fd_notify_on_error being invoked.
+ */
+void grpc_fd_set_error(grpc_fd* fd);
 
 /* pollset_posix functions */
 
@@ -158,10 +177,5 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
-
-/* WARNING: The following two functions should be used for testing purposes
- * ONLY */
-void grpc_set_event_engine_test_only(const grpc_event_engine_vtable*);
-const grpc_event_engine_vtable* grpc_get_event_engine_test_only();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EV_POSIX_H */

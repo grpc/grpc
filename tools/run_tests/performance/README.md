@@ -104,3 +104,31 @@ Example memory profile of grpc-go server, with `go tools pprof`:
 ```
 $ go tool pprof --text --alloc_space http://localhost:<pprof_port>/debug/heap
 ```
+
+### Configuration environment variables:
+
+* QPS_WORKER_CHANNEL_CONNECT_TIMEOUT
+
+  Consuming process: qps_worker
+
+  Type: integer (number of seconds)
+
+  This can be used to configure the amount of time that benchmark
+  clients wait for channels to the benchmark server to become ready.
+  This is useful in certain benchmark environments in which the
+  server can take a long time to become ready. Note: if setting
+  this to a high value, then the scenario config under test should
+  probably also have a large "warmup_seconds".
+
+* QPS_WORKERS
+
+  Consuming process: qps_json_driver
+
+  Type: comma separated list of host:port
+
+  Set this to a comma separated list of QPS worker processes/machines.
+  Each scenario in a scenario config has specifies a certain number
+  of servers, `num_servers`, and the driver will start
+  "benchmark servers"'s on the first `num_server` `host:port` pairs in
+  the comma separated list. The rest will be told to run as clients
+  against the benchmark server.

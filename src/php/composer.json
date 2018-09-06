@@ -2,13 +2,13 @@
   "name": "grpc/grpc-dev",
   "description": "gRPC library for PHP - for Developement use only",
   "license": "Apache-2.0",
-  "version": "1.14.0",
+  "version": "1.16.0",
   "require": {
     "php": ">=5.5.0",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "v0.9"
+    "google/auth": "^v1.3.0"
   },
   "autoload": {
     "psr-4": {

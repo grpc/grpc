@@ -196,8 +196,8 @@ typedef struct {
     data frame, Int valued, milliseconds. */
 #define GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_time_between_pings_ms"
-/** Minimum allowed time between receiving successive ping frames without
-    sending any data frame. Int valued, milliseconds */
+/** Minimum allowed time between a server receiving successive ping frames
+   without sending any data frame. Int valued, milliseconds */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
@@ -289,6 +289,10 @@ typedef struct {
  * subchannel. The default is 10. If set to 0, channel tracing is disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE \
   "grpc.max_channel_trace_events_per_node"
+/** If non-zero, gRPC library will track stats and information at at per channel
+ * level. Disabling channelz naturally disables channel tracing. The default
+ * is for channelz to be disabled. */
+#define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
@@ -647,10 +651,16 @@ typedef enum {
   GRPC_CQ_NEXT,
 
   /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
-  GRPC_CQ_PLUCK
+  GRPC_CQ_PLUCK,
+
+  /** EXPERIMENTAL: Events trigger a callback specified as the tag */
+  GRPC_CQ_CALLBACK
 } grpc_cq_completion_type;
 
-#define GRPC_CQ_CURRENT_VERSION 1
+/* The upgrade to version 2 is currently experimental. */
+
+#define GRPC_CQ_CURRENT_VERSION 2
+#define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2
 typedef struct grpc_completion_queue_attributes {
   /** The version number of this structure. More fields might be added to this
      structure in future. */
@@ -659,6 +669,15 @@ typedef struct grpc_completion_queue_attributes {
   grpc_cq_completion_type cq_completion_type;
 
   grpc_cq_polling_type cq_polling_type;
+
+  /* END OF VERSION 1 CQ ATTRIBUTES */
+
+  /* EXPERIMENTAL: START OF VERSION 2 CQ ATTRIBUTES */
+  /** When creating a callbackable CQ, pass in a functor to get invoked when
+   * shutdown is complete */
+  void* cq_shutdown_cb;
+
+  /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;
 
 /** The completion queue factory structure is opaque to the callers of grpc */
