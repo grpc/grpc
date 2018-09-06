@@ -151,7 +151,7 @@ static void assert_valid_callouts(grpc_metadata_batch* batch) {
     grpc_metadata_batch_callouts_index callout_idx;
     if (is_mdelem_index_used(l->md_index)) {
       GPR_ASSERT(is_valid_mdelem_index(l->md_index));
-      callout_idx = get_callouts_index(l->md_index);
+      callout_idx = get_callouts_index(l);
       if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
         GPR_ASSERT(batch->idx.array[callout_idx] == l);
       }

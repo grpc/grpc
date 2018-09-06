@@ -557,12 +557,12 @@ class StreamWriteContext {
     if (s_->send_initial_metadata->idx.named.status != nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.status->md;
+              s_->send_initial_metadata->idx.named.status;
     }
     if (s_->send_initial_metadata->idx.named.content_type != nullptr) {
       extra_headers_for_trailing_metadata_
           [num_extra_headers_for_trailing_metadata_++] =
-              &s_->send_initial_metadata->idx.named.content_type->md;
+              s_->send_initial_metadata->idx.named.content_type;
     }
   }
 
@@ -583,7 +583,7 @@ class StreamWriteContext {
   grpc_chttp2_transport* const t_;
   grpc_chttp2_stream* const s_;
   bool stream_became_writable_ = false;
-  grpc_mdelem* extra_headers_for_trailing_metadata_[2];
+  grpc_linked_mdelem* extra_headers_for_trailing_metadata_[2];
   size_t num_extra_headers_for_trailing_metadata_ = 0;
 };
 }  // namespace

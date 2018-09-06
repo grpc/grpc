@@ -663,7 +663,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 }
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_mdelem** extra_headers,
+                               grpc_linked_mdelem** extra_headers,
                                size_t extra_headers_size,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
@@ -688,7 +688,12 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     emit_advertise_table_size_change(c, &st);
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
-    hpack_enc(c, *extra_headers[i], &st);
+    grpc_linked_mdelem* linked_md = extra_headers[i];
+    if (is_valid_mdelem_index(linked_md->md_index)) {
+      emit_indexed(c, linked_md->md_index, &st);
+    } else {
+      hpack_enc(c, linked_md->md, &st);
+    }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {

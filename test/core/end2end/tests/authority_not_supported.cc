@@ -93,11 +93,11 @@ static void test_with_authority_header(grpc_end2end_test_config config) {
   grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
                               grpc_slice_from_static_string("val1"),
                               0,
-                              {{nullptr, nullptr, nullptr, nullptr}}},
+                              {0, {nullptr, nullptr, nullptr, nullptr}}},
                              {grpc_slice_from_static_string("key2"),
                               grpc_slice_from_static_string("val2"),
                               0,
-                              {{nullptr, nullptr, nullptr, nullptr}}}};
+                              {0, {nullptr, nullptr, nullptr, nullptr}}}};
   grpc_end2end_test_fixture f =
       begin_test(config, "test_with_authority_header", nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);

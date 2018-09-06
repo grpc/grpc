@@ -101,23 +101,23 @@ static void test_request_response_with_metadata_and_payload(
        grpc_slice_from_static_string(
            "\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc"),
        0,
-       {{nullptr, nullptr, nullptr, nullptr}}},
+       {0, {nullptr, nullptr, nullptr, nullptr}}},
       {grpc_slice_from_static_string("key2-bin"),
        grpc_slice_from_static_string(
            "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d"),
        0,
-       {{nullptr, nullptr, nullptr, nullptr}}}};
+       {0, {nullptr, nullptr, nullptr, nullptr}}}};
   grpc_metadata meta_s[2] = {
       {grpc_slice_from_static_string("key3-bin"),
        grpc_slice_from_static_string(
            "\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee"),
        0,
-       {{nullptr, nullptr, nullptr, nullptr}}},
+       {0, {nullptr, nullptr, nullptr, nullptr}}},
       {grpc_slice_from_static_string("key4-bin"),
        grpc_slice_from_static_string(
            "\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"),
        0,
-       {{nullptr, nullptr, nullptr, nullptr}}}};
+       {0, {nullptr, nullptr, nullptr, nullptr}}}};
   grpc_end2end_test_fixture f =
       begin_test(config, "test_request_response_with_metadata_and_payload",
                  nullptr, nullptr);
