@@ -607,6 +607,17 @@ void PrintHeaderServerAsyncMethodsHelper(
         "}\n");
     printer->Print(
         *vars,
+        "void Request("
+        "::grpc::ServerContext* context, $RealRequest$* request, "
+        "::grpc::ServerAsyncResponseWriter< $RealResponse$>* response, "
+        "::grpc::CompletionQueue* new_call_cq, "
+        "::grpc::ServerCompletionQueue* notification_cq, void *tag) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::Service::RequestAsyncUnary($Idx$, context, "
+                   "request, response, new_call_cq, notification_cq, tag);\n");
+    printer->Print("}\n");
+    printer->Print(
+        *vars,
         "void Request$Method$("
         "::grpc::ServerContext* context, $RealRequest$* request, "
         "::grpc::ServerAsyncResponseWriter< $RealResponse$>* response, "
