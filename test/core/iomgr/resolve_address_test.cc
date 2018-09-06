@@ -279,8 +279,15 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    test_invalid_ip_addresses();
-    test_unparseable_hostports();
+    if (gpr_stricmp(gpr_getenv("GRPC_DNS_RESOLVER"), "ares") != 0) {
+      // These tests can trigger DNS queries to the nearby nameserver
+      // that need to come back in order for the test to succeed.
+      // c-ares is prone to not using the local system caches that the
+      // native getaddrinfo implementations take advantage of, so running
+      // these unit tests under c-ares risks flakiness.
+      test_invalid_ip_addresses();
+      test_unparseable_hostports();
+    }
     grpc_executor_shutdown();
   }
 
