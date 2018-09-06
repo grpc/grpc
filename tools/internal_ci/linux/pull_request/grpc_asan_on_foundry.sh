@@ -14,6 +14,6 @@
 # limitations under the License.
 
 EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address --test_timeout=3600"
-EXCLUDE_TESTS="-//test/cpp/qps/..."
+EXCLUDE_TESTS="--test_tag_filters=-qps_json_driver,-json_run_localhost"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}" "${EXCLUDE_TESTS}"
 

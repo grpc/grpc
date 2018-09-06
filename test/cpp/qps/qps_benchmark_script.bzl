@@ -32,7 +32,7 @@ load("//test/cpp/qps:json_run_localhost_scenarios.bzl", "JSON_RUN_LOCALHOST_SCEN
 def qps_json_driver_batch():
     for scenario in QPS_JSON_DRIVER_SCENARIOS:
         grpc_cc_test(
-            name = "qps_json_driver_test_%s" % scenario,
+            name = "qps_json_driver_test/%s" % scenario,
             srcs = ["qps_json_driver.cc"],
             args = [
                 "--run_inproc",
@@ -49,12 +49,15 @@ def qps_json_driver_batch():
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
             ],
+            tags = [
+                "qps_json_driver",
+            ],
         )
 
 def json_run_localhost_batch():
     for scenario in JSON_RUN_LOCALHOST_SCENARIOS:
         grpc_cc_test(
-            name = "json_run_localhost_%s" % scenario,
+            name = "json_run_localhost/%s" % scenario,
             srcs = ["json_run_localhost.cc"],
             args = [
                 "--scenarios_json",
@@ -70,5 +73,8 @@ def json_run_localhost_batch():
                 "//test/core/util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
+            ],
+            tags = [
+                "json_run_localhost",
             ],
         )
