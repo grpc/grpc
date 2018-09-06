@@ -38,14 +38,15 @@
 // TODO(dgq): When we C++-ify the relevant code, we need to make sure that any
 // static variable in this file is trivially-destructible.
 
-// If a subchannel only has one ref left, which is held by the subchannel index,
-// it is not used by any LB policy, callback, etc. Instead of unregistering a
-// subchannel once it's unused, the subchannel index will periodically sweep
-// these unused subchannels, like a garbage collector. This mechanism can
-// alleviate subchannel registration/unregistration churn. The subchannel can
-// keep unchanged if it's re-used shortly after it's unused, which is desirable
-// in the gRPC LB use case.
-constexpr grpc_millis kDefaultSweepIntervalMs = 10000;
+// If a subchannel only has one external ref left, which is held by the
+// subchannel index, it is not used by any other external user (typically, LB
+// policy). Instead of unregistering a subchannel once it's unused, the
+// subchannel index will periodically sweep these unused subchannels, like a
+// garbage collector. This mechanism can alleviate subchannel
+// registration/unregistration churn. The subchannel can keep unchanged if it's
+// re-used shortly after it's unused, which is desirable in the gRPC LB use
+// case.
+constexpr grpc_millis kDefaultSweepIntervalMs = 1000;
 // This number was picked pseudo-randomly and could probably be tuned for
 // performance reasons.
 constexpr size_t kUnusedSubchannelsInlinedSize = 4;
@@ -305,6 +306,9 @@ void grpc_subchannel_index_shutdown(void) {
   // shut down safely.
   grpc_timer_cancel(&g_sweeper_timer);
   grpc_subchannel_index_unref();
+  // Some subchannels might have been unregistered and disconnected during
+  // shutdown time. We should flush the closures before we wait for the iomgr
+  // objects to be freed.
   grpc_core::ExecCtx::Get()->Flush();
 }
 

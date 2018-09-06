@@ -57,6 +57,16 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
+#ifndef NDEBUG
+#define GRPC_SUBCHANNEL_INTERNAL_REF(p, r) \
+  grpc_subchannel_internal_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_INTERNAL_UNREF(p, r) \
+  grpc_subchannel_internal_unref((p), __FILE__, __LINE__, (r))
+#else
+#define GRPC_SUBCHANNEL_INTERNAL_REF(p, r) grpc_subchannel_internal_ref((p))
+#define GRPC_SUBCHANNEL_INTERNAL_UNREF(p, r) grpc_subchannel_internal_unref((p))
+#endif
+
 namespace {
 struct state_watcher {
   grpc_closure closure;
@@ -77,8 +87,12 @@ typedef struct external_state_watcher {
 struct grpc_subchannel {
   grpc_connector* connector;
 
-  /** refcount */
+  // TODO(dgq): This should be translated to two layers of RefCounted<> during
+  // C++-ification.
+  /** when external refcount goes to 0, disconnect the subchannel */
   gpr_refcount refs;
+  /** when internal refcount goes to 0, destroy the subchannel */
+  gpr_refcount internal_refs;
 
   /** non-transport related channel filters */
   const grpc_channel_filter** filters;
@@ -175,16 +189,19 @@ grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c) {
 }
 
 bool grpc_subchannel_is_unused(grpc_subchannel* c) {
+  // From an external viewpoint, a subchannel is unused if the subchannel index
+  // is holding its last ref.
+  return static_cast<bool>(gpr_ref_is_unique(&c->refs));
+}
+
+static void disconnect(grpc_subchannel* c) {
   gpr_mu_lock(&c->mu);
-  gpr_atm refs = gpr_atm_acq_load(&c->refs.count);
-  // From the view of the subchannel index, a subchannel is unused if the
-  // subchannel index is holding its last ref or the other ref is for either
-  // connecting the subchannel or watching the connected subchannel.
-  bool unused =
-      refs == 1 ||
-      (refs == 2 && (c->connecting || c->connected_subchannel != nullptr));
+  GPR_ASSERT(!c->disconnected);
+  c->disconnected = true;
+  grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "Subchannel disconnected"));
+  c->connected_subchannel.reset();
   gpr_mu_unlock(&c->mu);
-  return unused;
 }
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
@@ -198,6 +215,20 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel_key_destroy(c->key);
   gpr_mu_destroy(&c->mu);
   gpr_free(c);
+}
+
+grpc_subchannel* grpc_subchannel_internal_ref(
+    grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+#ifndef NDEBUG
+  gpr_atm old_refs = gpr_atm_no_barrier_load(&c->internal_refs.count);
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SUBCHANNEL (internal): %p %" PRIdPTR " -> %" PRIdPTR " [%s]", c,
+            old_refs, old_refs + 1, reason);
+  }
+#endif
+  gpr_ref_non_zero(&c->internal_refs);
+  return c;
 }
 
 grpc_subchannel* grpc_subchannel_ref(
@@ -214,12 +245,21 @@ grpc_subchannel* grpc_subchannel_ref(
   return c;
 }
 
-void disconnect(grpc_subchannel* c) {
-  GPR_ASSERT(!c->disconnected);
-  c->disconnected = true;
-  grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                            "Subchannel disconnected"));
-  c->connected_subchannel.reset();
+void grpc_subchannel_internal_unref(
+    grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+#ifndef NDEBUG
+  gpr_atm old_refs = gpr_atm_no_barrier_load(&c->internal_refs.count);
+  if (grpc_trace_stream_refcount.enabled()) {
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "SUBCHANNEL (internal): %p %" PRIdPTR " -> %" PRIdPTR " [%s]", c,
+            old_refs, old_refs - 1, reason);
+  }
+#endif
+  if (gpr_unref(&c->internal_refs)) {
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(subchannel_destroy, c, grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
+  }
 }
 
 void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
@@ -232,16 +272,8 @@ void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 #endif
   if (gpr_unref(&c->refs)) {
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(subchannel_destroy, c, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
-  } else if (gpr_ref_is_unique(&c->refs)) {
-    gpr_mu_lock(&c->mu);
-    bool connection_has_last_ref =
-        gpr_ref_is_unique(&c->refs) &&
-        (c->connecting || c->connected_subchannel != nullptr);
-    if (connection_has_last_ref) disconnect(c);
-    gpr_mu_unlock(&c->mu);
+    disconnect(c);
+    GRPC_SUBCHANNEL_INTERNAL_UNREF(c, "external_ref_is_zero");
   }
 }
 
@@ -301,11 +333,11 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
     grpc_subchannel_key_destroy(key);
     return c;
   }
-
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = static_cast<grpc_subchannel*>(gpr_zalloc(sizeof(*c)));
   c->key = key;
   gpr_ref_init(&c->refs, 1);
+  gpr_ref_init(&c->internal_refs, 1);
   c->connector = connector;
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;
@@ -399,7 +431,7 @@ static void on_external_state_watcher_done(void* arg, grpc_error* error) {
   w->next->prev = w->prev;
   w->prev->next = w->next;
   gpr_mu_unlock(&w->subchannel->mu);
-  GRPC_SUBCHANNEL_UNREF(w->subchannel, "external_state_watcher");
+  GRPC_SUBCHANNEL_INTERNAL_UNREF(w->subchannel, "external_state_watcher");
   gpr_free(w);
   GRPC_CLOSURE_SCHED(follow_up, GRPC_ERROR_REF(error));
 }
@@ -423,7 +455,7 @@ static void on_alarm(void* arg, grpc_error* error) {
     gpr_mu_unlock(&c->mu);
   } else {
     gpr_mu_unlock(&c->mu);
-    GRPC_SUBCHANNEL_UNREF(c, "connecting");
+    GRPC_SUBCHANNEL_INTERNAL_UNREF(c, "connecting");
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -446,7 +478,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     return;
   }
   c->connecting = true;
-  GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+  GRPC_SUBCHANNEL_INTERNAL_REF(c, "connecting");
   if (!c->backoff_begun) {
     c->backoff_begun = true;
     continue_connect_locked(c);
@@ -470,7 +502,6 @@ void grpc_subchannel_notify_on_state_change(
     grpc_subchannel* c, grpc_pollset_set* interested_parties,
     grpc_connectivity_state* state, grpc_closure* notify) {
   external_state_watcher* w;
-
   if (state == nullptr) {
     gpr_mu_lock(&c->mu);
     for (w = c->root_external_state_watcher.next;
@@ -491,7 +522,7 @@ void grpc_subchannel_notify_on_state_change(
     if (interested_parties != nullptr) {
       grpc_pollset_set_add_pollset_set(c->pollset_set, interested_parties);
     }
-    GRPC_SUBCHANNEL_REF(c, "external_state_watcher");
+    GRPC_SUBCHANNEL_INTERNAL_REF(c, "external_state_watcher");
     gpr_mu_lock(&c->mu);
     w->next = &c->root_external_state_watcher;
     w->prev = w->next->prev;
@@ -509,9 +540,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
   grpc_subchannel* c = connected_subchannel_watcher->subchannel;
   grpc_connectivity_state state =
       connected_subchannel_watcher->connectivity_state;
-  gpr_mu* mu = &c->mu;
-  bool need_unref = false;
-  gpr_mu_lock(mu);
+  gpr_mu_lock(&c->mu);
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
       state == GRPC_CHANNEL_SHUTDOWN) {
     if (!c->disconnected && c->connected_subchannel != nullptr) {
@@ -533,7 +562,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
       connected_subchannel_watcher->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
     }
     gpr_free(connected_subchannel_watcher);
-    need_unref = true;
+    GRPC_SUBCHANNEL_INTERNAL_UNREF(c, "state_watcher");
   } else {
     grpc_connectivity_state_set(&c->state_tracker, state, GRPC_ERROR_REF(error),
                                 "reflect_child");
@@ -541,8 +570,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
         nullptr, &connected_subchannel_watcher->connectivity_state,
         &connected_subchannel_watcher->closure);
   }
-  gpr_mu_unlock(mu);
-  if (need_unref) GRPC_SUBCHANNEL_UNREF(c, "state_watcher");
+  gpr_mu_unlock(&c->mu);
 }
 
 static bool publish_transport_locked(grpc_subchannel* c) {
@@ -593,7 +621,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
           c->connected_subchannel.get(), c);
 
   /* setup subchannel watching connected subchannel for changes */
-  GRPC_SUBCHANNEL_REF(c, "state_watcher");
+  GRPC_SUBCHANNEL_INTERNAL_REF(c, "state_watcher");
   c->connected_subchannel->NotifyOnStateChange(
       c->pollset_set, &connected_subchannel_watcher->connectivity_state,
       &connected_subchannel_watcher->closure);
@@ -622,11 +650,10 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 
     const char* errmsg = grpc_error_string(error);
     gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-
     maybe_start_connecting_locked(c);
   }
   gpr_mu_unlock(&c->mu);
-  GRPC_SUBCHANNEL_UNREF(c, "connecting");
+  GRPC_SUBCHANNEL_INTERNAL_UNREF(c, "connecting");
   grpc_channel_args_destroy(delete_channel_args);
 }
 

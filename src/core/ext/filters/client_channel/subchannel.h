@@ -54,11 +54,7 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
   , const char *file, int line, const char *reason
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \
-  grpc_subchannel_ref_from_weak_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
-#define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
-#define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) grpc_subchannel_weak_unref((p))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
@@ -161,7 +157,7 @@ grpc_call_stack* grpc_subchannel_call_get_call_stack(
 /** Gets the subchannel_key of the subchannel. */
 grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c);
 
-/** Returns whether the subchannel only has one ref left. */
+/** Returns whether the subchannel only has one external ref left. */
 bool grpc_subchannel_is_unused(grpc_subchannel* c);
 
 struct grpc_subchannel_args {
