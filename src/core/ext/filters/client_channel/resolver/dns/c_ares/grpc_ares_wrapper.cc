@@ -489,10 +489,11 @@ error_cleanup:
   return nullptr;
 }
 
-static bool inner_resolve_as_ip_literal(const char* name,
-                                        const char* default_port,
-                                        grpc_lb_addresses** addrs, char** host,
-                                        char** port, char** hostport) {
+static bool inner_resolve_as_ip_literal_locked(const char* name,
+                                               const char* default_port,
+                                               grpc_lb_addresses** addrs,
+                                               char** host, char** port,
+                                               char** hostport) {
   gpr_split_host_port(name, host, port);
   if (*host == nullptr) {
     gpr_log(GPR_ERROR,
@@ -525,13 +526,14 @@ static bool inner_resolve_as_ip_literal(const char* name,
   return false;
 }
 
-static bool resolve_as_ip_literal(const char* name, const char* default_port,
-                                  grpc_lb_addresses** addrs) {
+static bool resolve_as_ip_literal_locked(const char* name,
+                                         const char* default_port,
+                                         grpc_lb_addresses** addrs) {
   char* host = nullptr;
   char* port = nullptr;
   char* hostport = nullptr;
-  bool out = inner_resolve_as_ip_literal(name, default_port, addrs, &host,
-                                         &port, &hostport);
+  bool out = inner_resolve_as_ip_literal_locked(name, default_port, addrs,
+                                                &host, &port, &hostport);
   gpr_free(host);
   gpr_free(port);
   gpr_free(hostport);
@@ -544,7 +546,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
     grpc_combiner* combiner) {
   // Early out if the target is an ipv4 or ipv6 literal.
-  if (resolve_as_ip_literal(name, default_port, addrs)) {
+  if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
     GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
     return nullptr;
   }
