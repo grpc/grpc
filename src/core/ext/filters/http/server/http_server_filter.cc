@@ -445,7 +445,7 @@ static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
   chand->surface_user_agent = grpc_channel_arg_get_bool(
       grpc_channel_args_find(args->channel_args,
                              const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
-      false);
+      true);
   return GRPC_ERROR_NONE;
 }
 

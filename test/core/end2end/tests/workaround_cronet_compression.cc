@@ -149,15 +149,6 @@ static void request_with_payload_template(
     arg.value.string = user_agent_override;
     client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
     grpc_channel_args_destroy(client_args_old);
-    // force grpc lib to pass the user agent back up to server.
-    grpc_channel_args* server_args_old = server_args;
-    grpc_arg server_arg;
-    server_arg.key = const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT);
-    server_arg.type = GRPC_ARG_INTEGER;
-    server_arg.value.integer = 1;
-    server_args =
-        grpc_channel_args_copy_and_add(server_args_old, &server_arg, 1);
-    grpc_channel_args_destroy(server_args_old);
   }
 
   f = begin_test(config, test_name, client_args, server_args);
