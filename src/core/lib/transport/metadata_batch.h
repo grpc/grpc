@@ -32,13 +32,13 @@
 
 /** Each grpc_linked_mdelem refers to a particular metadata element by either:
     1) grpc_mdelem md
-    2) int64_t md_index
+    2) uint8_t md_index
     md_index is an optional optimization. It can only be used for metadata in
     the hpack static table and is equivalent to the metadata's index in the
     table. If a metadata elem is not contained in the hpack static table, then
     md must be used instead. */
 typedef struct grpc_linked_mdelem {
-  int64_t md_index;  // If -1, not used. Else, use this field instead of md.
+  uint8_t md_index;  // If 0, not used. Else, use this field instead of md.
   grpc_mdelem md;    // If md_index is 0, use this field instead of md_index.
   struct grpc_linked_mdelem* next;
   struct grpc_linked_mdelem* prev;
@@ -115,7 +115,7 @@ grpc_error* grpc_metadata_batch_add_head(
     be a valid static hpack table index */
 grpc_error* grpc_metadata_batch_add_head_index(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    int64_t index_to_add) GRPC_MUST_USE_RESULT;
+    uint8_t index_to_add) GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -132,11 +132,26 @@ grpc_error* grpc_metadata_batch_add_tail(
     be a valid static hpack table index */
 grpc_error* grpc_metadata_batch_add_head_index(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    int64_t index_to_add) GRPC_MUST_USE_RESULT;
+    uint8_t index_to_add) GRPC_MUST_USE_RESULT;
 
 grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
 
-bool is_valid_mdelem_index(int64_t index);
+/** Returns if the index is a valid static hpack table index, and thus if the
+    grpc_linked_mdelem stores the index rather than the actual grpc_mdelem **/
+bool is_valid_mdelem_index(uint8_t index);
+
+/* Static hpack table metadata info */
+typedef struct static_hpack_table_metadata_info {
+  uint8_t index;  // Index in the static hpack table
+  uint8_t size;   // Size of the metadata per RFC-7540 section 6.5.2., including
+                  // 32 bytes of padding
+  grpc_metadata_batch_callouts_index
+      callouts_index;  // For duplicate metadata detection. If
+                       // GRPC_BATCH_CALLOUTS_COUNT, then the metadata is not
+                       // one of the callouts.
+} static_hpack_table_metadata_info;
+
+extern static_hpack_table_metadata_info static_hpack_table_metadata[];
 
 typedef struct {
   grpc_error* error;
