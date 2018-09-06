@@ -244,15 +244,17 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     BuildAndStartServer(processor);
   }
 
-  void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
+  void RestartServer(const std::shared_ptr<AuthMetadataProcessor>& processor,
+                     bool surface_user_agent = false) {
     if (is_server_started_) {
       server_->Shutdown();
-      BuildAndStartServer(processor);
+      BuildAndStartServer(processor, surface_user_agent);
     }
   }
 
   void BuildAndStartServer(
-      const std::shared_ptr<AuthMetadataProcessor>& processor) {
+      const std::shared_ptr<AuthMetadataProcessor>& processor,
+      bool surface_user_agent = false) {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -268,6 +270,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     builder.SetSyncServerOption(ServerBuilder::SyncServerOption::NUM_CQS, 4);
     builder.SetSyncServerOption(
         ServerBuilder::SyncServerOption::CQ_TIMEOUT_MSEC, 10);
+    if (surface_user_agent) {
+      builder.AddChannelArgument(GRPC_ARG_SURFACE_USER_AGENT, 1);
+    }
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
@@ -664,6 +669,8 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   }
   user_agent_prefix_ = "custom_prefix";
   ResetStub();
+  RestartServer(std::shared_ptr<AuthMetadataProcessor>(), true);
+  ResetChannel();
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello hello hello hello");
