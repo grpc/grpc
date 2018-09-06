@@ -77,7 +77,6 @@
 #define GRPC_LINUX_SOCKETUTILS 1
 #endif
 #endif
-#include <linux/version.h>
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
 #define GRPC_HAVE_TCP_USER_TIMEOUT
