@@ -134,7 +134,7 @@ static void assert_valid_list(grpc_mdelem_list* list) {
 
   size_t verified_count = 0;
   for (l = list->head; l; l = l->next) {
-    GPR_ASSERT(!GRPC_MDISNULL(l->md));
+    GPR_ASSERT(is_mdelem_index_used(l->md_index) || !GRPC_MDISNULL(l->md));
     GPR_ASSERT((l->prev == nullptr) == (l == list->head));
     GPR_ASSERT((l->next == nullptr) == (l == list->tail));
     if (l->next) GPR_ASSERT(l->next->prev == l);
