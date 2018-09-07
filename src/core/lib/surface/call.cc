@@ -954,6 +954,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
     const grpc_metadata* md =
         get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
+    l->md_index = 0;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
