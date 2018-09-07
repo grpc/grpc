@@ -167,8 +167,6 @@ struct grpc_call {
   grpc_completion_queue* cq;
   grpc_polling_entity pollent;
   grpc_channel* channel;
-  // backpointer to owning server if this is a server side call.
-  grpc_server* server;
   gpr_timespec start_time;
   /* parent_call* */ gpr_atm parent_call_atm;
   child_call* child;
@@ -250,6 +248,8 @@ struct grpc_call {
     } client;
     struct {
       int* cancelled;
+      // backpointer to owning server if this is a server side call.
+      grpc_server* server;
     } server;
   } final_op;
 
@@ -369,7 +369,6 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-    call->server = nullptr;
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
@@ -384,7 +383,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
         static_cast<int>(args->add_initial_metadata_count);
   } else {
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
-    call->server = args->server;
+    call->final_op.server.server = args->server;
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
@@ -496,7 +495,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     }
   } else {
     grpc_core::channelz::ServerNode* channelz_server =
-        grpc_server_get_channelz_node(call->server);
+        grpc_server_get_channelz_node(call->final_op.server.server);
     if (channelz_server != nullptr) {
       channelz_server->RecordCallStarted();
     }
@@ -1286,7 +1285,7 @@ static void post_batch_completion(batch_control* bctl) {
       get_final_status(call, set_cancelled_value,
                        call->final_op.server.cancelled, nullptr, nullptr);
       grpc_core::channelz::ServerNode* channelz_server =
-          grpc_server_get_channelz_node(call->server);
+          grpc_server_get_channelz_node(call->final_op.server.server);
       if (channelz_server != nullptr) {
         if (*call->final_op.server.cancelled) {
           channelz_server->RecordCallFailed();

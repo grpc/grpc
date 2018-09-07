@@ -166,8 +166,8 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  // only track client channels since server channels are held in the
-  // grpc_server channel.
+  // we only need to do the channelz bookkeeping for clients here. The channelz
+  // bookkeeping for server channels occurs in src/core/lib/surface/server.cc
   if (channelz_enabled && channel->is_client) {
     channel->channelz_channel = channel_node_create_func(
         channel, channel_tracer_max_nodes, !internal_channel);

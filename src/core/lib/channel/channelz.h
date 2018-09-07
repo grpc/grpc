@@ -174,8 +174,6 @@ class ServerNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  void PopulateSockets(grpc_json* json) {}
-
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
     trace_.AddTraceEvent(severity, data);
