@@ -573,7 +573,13 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   for (const bool force_creation : {true, false}) {
     grpc_subchannel_index_test_only_set_force_creation(force_creation);
     gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
-    for (size_t i = 0; i < 1000; ++i) {
+    // If we force creating new subchannels, the subchannel index can be very
+    // large because of subchannel retention, which slows down the test. If we
+    // make the subchannel sweeping more frequent, the subchannel registration
+    // can still be slow because of more likely data race of the subchannel
+    // index thus registration retry.
+    const size_t update_nums = force_creation ? 200 : 1000;
+    for (size_t i = 0; i < update_nums; ++i) {
       std::shuffle(ports.begin(), ports.end(),
                    std::mt19937(std::random_device()()));
       SetNextResolution(ports);
