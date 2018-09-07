@@ -136,7 +136,7 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
         /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
-        /// <param name="clientCertificateRequest">Options for requesting and verification of client certificate.</param>
+        /// <param name="clientCertificateRequest">Options for requesting and verifying client certificate.</param>
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, SslClientCertificateRequestType clientCertificateRequest)
         {
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
@@ -153,7 +153,8 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates server-side SSL credentials.
-        /// This constructor should be use if you do not wish to autheticate client at all.
+        /// This constructor should be used if you do not wish to authenticate the client.
+        /// (client certificate won't be requested and checked by the server at all).
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, SslClientCertificateRequestType.DontRequestClientCertificate)

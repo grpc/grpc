@@ -182,9 +182,9 @@ namespace Grpc.IntegrationTesting
         public void Constructor_NullRootCerts()
         {
             var keyCertPairs = new[] { keyCertPair };
-            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.DontRequestClientCertificate);
-            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestClientCertificateAndVerify);
-            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.DontRequestClientCertificate));
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestClientCertificateAndVerify));
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify));
             Assert.Throws(typeof(ArgumentNullException), () => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify));
         }
 
