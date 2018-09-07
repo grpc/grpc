@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>GreeterClient</AssemblyTitle>
-    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>GreeterClient</AssemblyName>
     <OutputType>Exe</OutputType>

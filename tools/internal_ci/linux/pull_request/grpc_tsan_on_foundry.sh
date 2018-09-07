@@ -14,4 +14,5 @@
 # limitations under the License.
 
 EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=thread --linkopt=-fsanitize=thread --test_timeout=3600 --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+EXCLUDE_TESTS="--test_tag_filters=-qps_json_driver,-json_run_localhost"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}" "${EXCLUDE_TESTS}"

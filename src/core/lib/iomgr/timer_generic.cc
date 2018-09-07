@@ -291,7 +291,7 @@ static void timer_list_init() {
 static void timer_list_shutdown() {
   size_t i;
   run_some_expired_timers(
-      GPR_ATM_MAX, nullptr,
+      GRPC_MILLIS_INF_FUTURE, nullptr,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Timer list shutdown"));
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -714,9 +714,10 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
 #if GPR_ARCH_64
     gpr_log(GPR_INFO,
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
-            " glob_min=%" PRIdPTR,
+            " glob_min=%" PRId64,
             now, next_str, min_timer,
-            gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
+            static_cast<grpc_millis>(gpr_atm_no_barrier_load(
+                (gpr_atm*)(&g_shared_mutables.min_timer))));
 #else
     gpr_log(GPR_INFO, "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64,
             now, next_str, min_timer);

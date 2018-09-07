@@ -149,6 +149,9 @@ struct call_data {
   grpc_closure server_on_recv_initial_metadata;
   grpc_closure kill_zombie_closure;
   grpc_closure* on_done_recv_initial_metadata;
+  grpc_closure recv_trailing_metadata_ready;
+  grpc_error* error;
+  grpc_closure* original_recv_trailing_metadata_ready;
 
   grpc_closure publish;
 
@@ -730,6 +733,14 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
   GRPC_CLOSURE_RUN(calld->on_done_recv_initial_metadata, error);
 }
 
+static void server_recv_trailing_metadata_ready(void* user_data,
+                                                grpc_error* err) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+}
+
 static void server_mutate_op(grpc_call_element* elem,
                              grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -744,6 +755,12 @@ static void server_mutate_op(grpc_call_element* elem,
         &calld->server_on_recv_initial_metadata;
     op->payload->recv_initial_metadata.recv_flags =
         &calld->recv_initial_metadata_flags;
+  }
+  if (op->recv_trailing_metadata) {
+    calld->original_recv_trailing_metadata_ready =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &calld->recv_trailing_metadata_ready;
   }
 }
 
@@ -828,7 +845,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&calld->server_on_recv_initial_metadata,
                     server_on_recv_initial_metadata, elem,
                     grpc_schedule_on_exec_ctx);
-
+  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                    server_recv_trailing_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   server_ref(chand->server);
   return GRPC_ERROR_NONE;
 }
@@ -840,7 +859,7 @@ static void destroy_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
   GPR_ASSERT(calld->state != PENDING);
-
+  GRPC_ERROR_UNREF(calld->error);
   if (calld->host_set) {
     grpc_slice_unref_internal(calld->host);
   }
