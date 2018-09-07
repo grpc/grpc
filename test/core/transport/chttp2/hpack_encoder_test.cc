@@ -59,7 +59,7 @@ static void verify(const verify_params params, const char* expected,
   size_t i;
   va_list l;
   grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e) * nheaders));
+      static_cast<grpc_linked_mdelem*>(gpr_zalloc(sizeof(*e) * nheaders));
   grpc_metadata_batch b;
 
   grpc_metadata_batch_init(&b);
