@@ -125,7 +125,7 @@ namespace Grpc.Core.Internal
                         }
                     }
                 }
-                catch (Exception)
+                finally
                 {
                     if (!callStartedOk)
                     {
@@ -134,7 +134,6 @@ namespace Grpc.Core.Internal
                             OnFailedToStartCallLocked();
                         }
                     }
-                    throw;
                 }
                     
                 // Once the blocking call returns, the result should be available synchronously.
@@ -172,13 +171,12 @@ namespace Grpc.Core.Internal
 
                     return unaryResponseTcs.Task;
                 }
-                catch (Exception)
+                finally
                 {
                     if (!callStartedOk)
                     {
                         OnFailedToStartCallLocked();
                     }
-                    throw;
                 }
             }
         }
@@ -210,13 +208,12 @@ namespace Grpc.Core.Internal
 
                     return unaryResponseTcs.Task;
                 }
-                catch (Exception)
+                finally
                 {
                     if (!callStartedOk)
                     {
                         OnFailedToStartCallLocked();
                     }
-                    throw;
                 }
             }
         }
@@ -248,13 +245,12 @@ namespace Grpc.Core.Internal
                     }
                     call.StartReceiveInitialMetadata(ReceivedResponseHeadersCallback);
                 }
-                catch (Exception)
+                finally
                 {
                     if (!callStartedOk)
                     {
                         OnFailedToStartCallLocked();
                     }
-                    throw;
                 }
             }
         }
@@ -283,13 +279,12 @@ namespace Grpc.Core.Internal
                     }
                     call.StartReceiveInitialMetadata(ReceivedResponseHeadersCallback);
                 }
-                catch (Exception)
+                finally
                 {
                     if (!callStartedOk)
                     {
                         OnFailedToStartCallLocked();
                     }
-                    throw;
                 }
             }
         }
