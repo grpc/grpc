@@ -67,6 +67,8 @@ struct call_data {
   grpc_closure on_send_message_next_done;
   grpc_closure* original_send_message_on_complete;
   grpc_closure send_message_on_complete;
+  grpc_error* recv_trailing_metadata_err;
+  bool seen_recv_trailing_metadata_ready;
 };
 
 struct channel_data {
@@ -157,12 +159,25 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   } else {
     GRPC_ERROR_REF(error);
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, error);
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_metadata_ready) {
+    GRPC_CALL_COMBINER_START(
+        calld->call_combiner, &calld->recv_trailing_metadata_ready,
+        calld->recv_trailing_metadata_err, "continue recv trailing metadata");
+  }
+  GRPC_CLOSURE_RUN(closure, error);
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->original_recv_initial_metadata_ready != nullptr) {
+    calld->recv_trailing_metadata_err = GRPC_ERROR_REF(error);
+    calld->seen_recv_trailing_metadata_ready = true;
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for initial metadata");
+    return;
+  }
   if (error == GRPC_ERROR_NONE) {
     error =
         client_filter_incoming_metadata(elem, calld->recv_trailing_metadata);
@@ -427,6 +442,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
+  calld->seen_recv_trailing_metadata_ready = false;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);

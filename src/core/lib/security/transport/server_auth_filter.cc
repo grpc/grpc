@@ -49,6 +49,8 @@ struct call_data {
   size_t num_consumed_md;
   grpc_closure cancel_closure;
   gpr_atm state;  // async_state
+  grpc_error* recv_trailing_metadata_error;
+  bool seen_recv_trailing_ready;
 };
 
 struct channel_data {
@@ -115,7 +117,14 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
         remove_consumed_md, elem, "Response metadata filtering error");
   }
   calld->error = GRPC_ERROR_REF(error);
-  GRPC_CLOSURE_SCHED(calld->original_recv_initial_metadata_ready, error);
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_ready) {
+    GRPC_CALL_COMBINER_START(
+        calld->call_combiner, &calld->recv_trailing_metadata_ready,
+        calld->recv_trailing_metadata_error, "continue recv trailing metadata");
+  }
+  GRPC_CLOSURE_SCHED(closure, error);
 }
 
 // Called from application code.
@@ -184,13 +193,24 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
       return;
     }
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_ready) {
+    GRPC_CALL_COMBINER_START(
+        calld->call_combiner, &calld->recv_trailing_metadata_ready,
+        calld->recv_trailing_metadata_error, "continue recv trailing metadata");
+  }
+  GRPC_CLOSURE_RUN(closure, GRPC_ERROR_REF(error));
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->original_recv_initial_metadata_ready) {
+    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(err);
+    calld->seen_recv_trailing_ready = true;
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for initial metadata");
+  }
   err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
 }
@@ -228,6 +248,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
                     recv_trailing_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
+  calld->seen_recv_trailing_ready = false;
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context* server_ctx =
