@@ -32,7 +32,6 @@ Status ChannelzService::GetTopChannels(
     ServerContext* unused, const channelz::v1::GetTopChannelsRequest* request,
     channelz::v1::GetTopChannelsResponse* response) {
   char* json_str = grpc_channelz_get_top_channels(request->start_channel_id());
-  // gpr_log(GPR_ERROR, "%s", json_str);
   google::protobuf::util::Status s =
       google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
@@ -46,7 +45,6 @@ Status ChannelzService::GetChannel(
     ServerContext* unused, const channelz::v1::GetChannelRequest* request,
     channelz::v1::GetChannelResponse* response) {
   char* json_str = grpc_channelz_get_channel(request->channel_id());
-  // gpr_log(GPR_ERROR, "%s", json_str);
   google::protobuf::util::Status s =
       google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
@@ -60,7 +58,6 @@ Status ChannelzService::GetSubchannel(
     ServerContext* unused, const channelz::v1::GetSubchannelRequest* request,
     channelz::v1::GetSubchannelResponse* response) {
   char* json_str = grpc_channelz_get_subchannel(request->subchannel_id());
-  // gpr_log(GPR_ERROR, "%s", json_str);
   google::protobuf::util::Status s =
       google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);

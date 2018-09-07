@@ -360,7 +360,6 @@ TEST_F(ChannelzServerTest, ManySubchannels) {
     SendFailedEcho(1);
     SendFailedEcho(2);
   }
-
   GetTopChannelsRequest gtc_request;
   GetTopChannelsResponse gtc_response;
   gtc_request.set_start_channel_id(0);
@@ -369,11 +368,6 @@ TEST_F(ChannelzServerTest, ManySubchannels) {
       channelz_stub_->GetTopChannels(&context, gtc_request, &gtc_response);
   EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(gtc_response.channel_size(), kNumChannels);
-
-  // std::string gtc_str;
-  // google::protobuf::TextFormat::PrintToString(gtc_response, &gtc_str);
-  // std::cout << "GetTopChannels:\n" << gtc_str << "\n";
-
   for (int i = 0; i < gtc_response.channel_size(); ++i) {
     // if the channel sent no RPCs, then expect no subchannels to have been
     // created.
@@ -381,8 +375,7 @@ TEST_F(ChannelzServerTest, ManySubchannels) {
       EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 0);
       continue;
     }
-    // Since this is pick first, we know that there was only one subchannel
-    // used. We request it here.
+    // The resolver must return at least one address.
     ASSERT_GT(gtc_response.channel(i).subchannel_ref_size(), 0);
     GetSubchannelRequest gsc_request;
     GetSubchannelResponse gsc_response;
