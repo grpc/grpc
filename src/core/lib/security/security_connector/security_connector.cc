@@ -59,8 +59,8 @@ static const char* installed_roots_path =
 
 /** Environment variable used as a flag to enable/disable loading system root
     certificates from the OS trust store. */
-#ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
-#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
+#ifndef GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+#define GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_NOT_USE_SYSTEM_SSL_ROOTS"
 #endif
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
@@ -1192,10 +1192,10 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  char* use_system_roots_env_value =
-      gpr_getenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
-  const bool use_system_roots = gpr_is_true(use_system_roots_env_value);
-  gpr_free(use_system_roots_env_value);
+  char* not_use_system_roots_env_value =
+      gpr_getenv(GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
+  const bool not_use_system_roots = gpr_is_true(not_use_system_roots_env_value);
+  gpr_free(not_use_system_roots_env_value);
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
@@ -1218,7 +1218,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     gpr_free(pem_root_certs);
   }
   // Try loading roots from OS trust store if flag is enabled.
-  if (GRPC_SLICE_IS_EMPTY(result) && use_system_roots) {
+  if (GRPC_SLICE_IS_EMPTY(result) && !not_use_system_roots) {
     result = LoadSystemRootCerts();
   }
   // Fallback to roots manually shipped with gRPC.

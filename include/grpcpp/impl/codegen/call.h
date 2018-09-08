@@ -50,8 +50,6 @@ namespace internal {
 class Call;
 class CallHook;
 
-const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
-
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
@@ -531,7 +529,6 @@ class CallOpRecvInitialMetadata {
 
   void FinishOp(bool* status) {
     if (metadata_map_ == nullptr) return;
-    metadata_map_->FillMap();
     metadata_map_ = nullptr;
   }
 
@@ -566,13 +563,7 @@ class CallOpClientRecvStatus {
 
   void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
-    metadata_map_->FillMap();
-    grpc::string binary_error_details;
-    auto iter = metadata_map_->map()->find(kBinaryErrorDetailsKey);
-    if (iter != metadata_map_->map()->end()) {
-      binary_error_details =
-          grpc::string(iter->second.begin(), iter->second.length());
-    }
+    grpc::string binary_error_details = metadata_map_->GetBinaryErrorDetails();
     *recv_status_ =
         Status(static_cast<StatusCode>(status_code_),
                GRPC_SLICE_IS_EMPTY(error_message_)

@@ -189,7 +189,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected abstract Exception GetRpcExceptionClientOnly();
 
-        private void ReleaseResources()
+        protected void ReleaseResources()
         {
             if (call != null)
             {
