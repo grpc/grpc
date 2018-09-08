@@ -47,8 +47,8 @@ namespace testing {
 // testing peer to access channel internals
 class CallCountingHelperPeer {
  public:
-  CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
-  grpc_millis last_call_started_millis() {
+  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  grpc_millis last_call_started_millis() const {
     return (grpc_millis)gpr_atm_no_barrier_load(
         &node_->last_call_started_millis_);
   }

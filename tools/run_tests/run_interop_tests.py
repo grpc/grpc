@@ -776,9 +776,9 @@ def cloud_to_prod_jobspec(language,
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
-        transport_security_options += ['--use_tls=true']
+        transport_security_options = ['--use_tls=true']
     elif transport_security == 'google_default_credentials' and language == 'c++':
-        transport_security_options += [
+        transport_security_options = [
             '--custom_credentials_type=google_default_credentials'
         ]
     else:
@@ -1494,7 +1494,7 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run)
     if args.bq_result_table and resultset:
-        upload_interop_results_to_bq(resultset, args.bq_result_table, args)
+        upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
         jobset.message('FAILED', 'Some tests failed', do_newline=True)
     else:
@@ -1519,9 +1519,6 @@ try:
         sys.exit(1)
     else:
         sys.exit(0)
-except Exception as e:
-    print('exception occurred:')
-    traceback.print_exc(file=sys.stdout)
 finally:
     # Check if servers are still running.
     for server, job in server_jobs.items():

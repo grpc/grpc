@@ -136,7 +136,7 @@ namespace Grpc.Core
         /// </summary>
         public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            var result = await WaitForStateChangedInternalAsync(lastObservedState, deadline).ConfigureAwait(false);
+            var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
             if (!result)
             {
                 throw new TaskCanceledException("Reached deadline.");
@@ -147,7 +147,7 @@ namespace Grpc.Core
         /// Returned tasks completes once channel state has become different from
         /// given lastObservedState (<c>true</c> is returned) or if the wait has timed out (<c>false</c> is returned).
         /// </summary>
-        internal Task<bool> WaitForStateChangedInternalAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        public Task<bool> TryWaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
             GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
                 "Shutdown is a terminal state. No further state changes can occur.");
@@ -295,6 +295,12 @@ namespace Grpc.Core
             handle.DangerousRelease();
 
             activeCallCounter.Decrement();
+        }
+
+        // for testing only
+        internal long GetCallReferenceCount()
+        {
+            return activeCallCounter.Count;
         }
 
         private ChannelState GetConnectivityState(bool tryToConnect)

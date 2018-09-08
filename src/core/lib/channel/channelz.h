@@ -79,7 +79,7 @@ class BaseNode : public RefCounted<BaseNode> {
   const intptr_t uuid_;
 };
 
-// This class is a helper class for channelz entities that deal with Channels
+// This class is a helper class for channelz entities that deal with Channels,
 // Subchannels, and Servers, since those have similar proto definitions.
 // This class has the ability to:
 //   - track calls_{started,succeeded,failed}
@@ -133,6 +133,9 @@ class ChannelNode : public BaseNode {
   // so it leaves these implementations blank.
   //
   // This is utilizing the template method design pattern.
+  //
+  // TODO(ncteisen): remove these template methods in favor of manual traversal
+  // and mutation of the grpc_json object.
   virtual void PopulateConnectivityState(grpc_json* json) {}
   virtual void PopulateChildRefs(grpc_json* json) {}
 
@@ -158,7 +161,7 @@ class ChannelNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  // to allow the channel trace test to access trace();
+  // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
