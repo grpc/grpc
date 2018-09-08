@@ -104,18 +104,18 @@ static void con_start_transport_stream_op_batch(
   if (batch->recv_initial_metadata) {
     callback_state* state = &calld->recv_initial_metadata_ready;
     intercept_callback(
-        calld, state, false, "connected_recv_initial_metadata_ready",
+        calld, state, false, "recv_initial_metadata_ready",
         &batch->payload->recv_initial_metadata.recv_initial_metadata_ready);
   }
   if (batch->recv_message) {
     callback_state* state = &calld->recv_message_ready;
-    intercept_callback(calld, state, false, "connected_recv_message_ready",
+    intercept_callback(calld, state, false, "recv_message_ready",
                        &batch->payload->recv_message.recv_message_ready);
   }
   if (batch->recv_trailing_metadata) {
     callback_state* state = &calld->recv_trailing_metadata_ready;
     intercept_callback(
-        calld, state, false, "connected_recv_trailing_metadata_ready",
+        calld, state, false, "recv_trailing_metadata_ready",
         &batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready);
   }
   if (batch->cancel_stream) {

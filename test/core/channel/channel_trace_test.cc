@@ -44,8 +44,8 @@ namespace testing {
 // testing peer to access channel internals
 class ChannelNodePeer {
  public:
-  ChannelNodePeer(ChannelNode* node) : node_(node) {}
-  ChannelTrace* trace() { return &node_->trace_; }
+  explicit ChannelNodePeer(ChannelNode* node) : node_(node) {}
+  ChannelTrace* trace() const { return &node_->trace_; }
 
  private:
   ChannelNode* node_;

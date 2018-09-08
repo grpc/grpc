@@ -33,10 +33,8 @@ namespace Grpc.Core
         /// Creates a new <c>RpcException</c> associated with given status.
         /// </summary>
         /// <param name="status">Resulting status of a call.</param>
-        public RpcException(Status status) : base(status.ToString())
+        public RpcException(Status status) : this(status, Metadata.Empty, status.ToString())
         {
-            this.status = status;
-            this.trailers = Metadata.Empty;
         }
 
         /// <summary>
@@ -44,10 +42,8 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="status">Resulting status of a call.</param>
         /// <param name="message">The exception message.</param> 
-        public RpcException(Status status, string message) : base(message)
+        public RpcException(Status status, string message) : this(status, Metadata.Empty, message)
         {
-            this.status = status;
-            this.trailers = Metadata.Empty;
         }
 
         /// <summary>
@@ -55,7 +51,17 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="status">Resulting status of a call.</param>
         /// <param name="trailers">Response trailing metadata.</param> 
-        public RpcException(Status status, Metadata trailers) : base(status.ToString())
+        public RpcException(Status status, Metadata trailers) : this(status, trailers, status.ToString())
+        {
+        }
+
+        /// <summary>
+        /// Creates a new <c>RpcException</c> associated with given status, message and trailing response metadata.
+        /// </summary>
+        /// <param name="status">Resulting status of a call.</param>
+        /// <param name="trailers">Response trailing metadata.</param>
+        /// <param name="message">The exception message.</param>
+        public RpcException(Status status, Metadata trailers, string message) : base(message)
         {
             this.status = status;
             this.trailers = GrpcPreconditions.CheckNotNull(trailers);
