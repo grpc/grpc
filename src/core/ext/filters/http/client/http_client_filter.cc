@@ -175,6 +175,9 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   if (calld->original_recv_initial_metadata_ready != nullptr) {
     calld->recv_trailing_metadata_err = GRPC_ERROR_REF(error);
     calld->seen_recv_trailing_metadata_ready = true;
+    GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                      recv_trailing_metadata_ready, elem,
+                      grpc_schedule_on_exec_ctx);
     GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for initial metadata");
     return;
   }

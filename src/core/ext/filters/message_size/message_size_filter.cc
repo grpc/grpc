@@ -167,6 +167,9 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   if (calld->next_recv_message_ready) {
     calld->seen_recv_trailing_metadata = true;
     calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
+    GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                      recv_trailing_metadata_ready, elem,
+                      grpc_schedule_on_exec_ctx);
     GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for recv message");
     return;
   }
