@@ -49,9 +49,8 @@ static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
   for (m = md.list.head; m != nullptr; m = m->next) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
     if (is_valid_mdelem_index(m->md_index)) {
-      char* tmp;
-      gpr_asprintf(&tmp, "index=%d", m->md_index);
-      gpr_strvec_add(b, tmp);
+      // TODO(hcaseyal): print out the mdelem index
+      gpr_strvec_add(b, gpr_strdup("indexed mdelem"));
     } else {
       put_metadata(b, m->md);
     }
