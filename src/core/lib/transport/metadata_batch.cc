@@ -264,6 +264,7 @@ grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
                                          grpc_linked_mdelem* storage,
                                          grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
+  storage->md_index = 0;
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_head(batch, storage);
 }
@@ -310,6 +311,7 @@ grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
                                          grpc_mdelem elem_to_add) {
   GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
+  storage->md_index = 0;
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
@@ -459,12 +461,15 @@ grpc_error* grpc_metadata_batch_filter(grpc_metadata_batch* batch,
   grpc_error* error = GRPC_ERROR_NONE;
   while (l) {
     grpc_linked_mdelem* next = l->next;
-    grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
-    add_error(&error, new_mdelem.error, composite_error_string);
-    if (GRPC_MDISNULL(new_mdelem.md)) {
-      grpc_metadata_batch_remove(batch, l);
-    } else if (new_mdelem.md.payload != l->md.payload) {
-      grpc_metadata_batch_substitute(batch, l, new_mdelem.md);
+    //TODO(hcaseyal): provide a mechanism to filter mdelems with indices
+    if (!is_mdelem_index_used(l->md_index)) {
+      grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
+      add_error(&error, new_mdelem.error, composite_error_string);
+      if (GRPC_MDISNULL(new_mdelem.md)) {
+        grpc_metadata_batch_remove(batch, l);
+      } else if (new_mdelem.md.payload != l->md.payload) {
+        grpc_metadata_batch_substitute(batch, l, new_mdelem.md);
+      }
     }
     l = next;
   }
@@ -479,8 +484,13 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
   size_t i = 0;
   for (grpc_linked_mdelem* elem = src->list.head; elem != nullptr;
        elem = elem->next) {
-    grpc_error* error = grpc_metadata_batch_add_tail(dst, &storage[i++],
+    grpc_error* error = nullptr;
+    if (is_mdelem_index_used(elem->md_index)) {
+      error = grpc_metadata_batch_add_tail_index(dst, &storage[i++], elem->md_index);
+    } else {
+      error = grpc_metadata_batch_add_tail(dst, &storage[i++],
                                                      GRPC_MDELEM_REF(elem->md));
+    }
     // The only way that grpc_metadata_batch_add_tail() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be
     // the case here, because we would not have been allowed to create

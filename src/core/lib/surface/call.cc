@@ -374,6 +374,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
+      call->send_extra_metadata[i].md_index = 0;
       if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
                         GRPC_MDSTR_PATH)) {
         path = grpc_slice_ref_internal(
