@@ -97,6 +97,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   grpc_uri* uri = grpc_uri_parse(uri_text, 0);
   grpc_resolved_address addr;
   GPR_ASSERT(!grpc_parse_ipv6(uri, &addr));
+  grpc_uri_destroy(uri);
 }
 
 int main(int argc, char** argv) {
