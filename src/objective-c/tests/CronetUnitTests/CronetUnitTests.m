@@ -140,11 +140,11 @@ grpc_channel_args *add_disable_client_authority_filter_args(grpc_channel_args *a
   grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
                               grpc_slice_from_static_string("val1"),
                               0,
-                              {{NULL, NULL, NULL, NULL}}},
+                              {0, {NULL, NULL, NULL, NULL}}},
                              {grpc_slice_from_static_string("key2"),
                               grpc_slice_from_static_string("val2"),
                               0,
-                              {{NULL, NULL, NULL, NULL}}}};
+                              {0, {NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
   char *addr;
@@ -274,11 +274,11 @@ grpc_channel_args *add_disable_client_authority_filter_args(grpc_channel_args *a
   grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
                               grpc_slice_from_static_string("val1"),
                               0,
-                              {{NULL, NULL, NULL, NULL}}},
+                              {0, {NULL, NULL, NULL, NULL}}},
                              {grpc_slice_from_static_string("key2"),
                               grpc_slice_from_static_string("val2"),
                               0,
-                              {{NULL, NULL, NULL, NULL}}}};
+                              {0, {NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
   char *addr;
