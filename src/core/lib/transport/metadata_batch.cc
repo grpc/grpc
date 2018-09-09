@@ -461,7 +461,7 @@ grpc_error* grpc_metadata_batch_filter(grpc_metadata_batch* batch,
   grpc_error* error = GRPC_ERROR_NONE;
   while (l) {
     grpc_linked_mdelem* next = l->next;
-    //TODO(hcaseyal): provide a mechanism to filter mdelems with indices
+    // TODO(hcaseyal): provide a mechanism to filter mdelems with indices
     if (!is_mdelem_index_used(l->md_index)) {
       grpc_filtered_mdelem new_mdelem = func(user_data, l->md);
       add_error(&error, new_mdelem.error, composite_error_string);
@@ -486,10 +486,11 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
        elem = elem->next) {
     grpc_error* error = nullptr;
     if (is_mdelem_index_used(elem->md_index)) {
-      error = grpc_metadata_batch_add_tail_index(dst, &storage[i++], elem->md_index);
+      error = grpc_metadata_batch_add_tail_index(dst, &storage[i++],
+                                                 elem->md_index);
     } else {
       error = grpc_metadata_batch_add_tail(dst, &storage[i++],
-                                                     GRPC_MDELEM_REF(elem->md));
+                                           GRPC_MDELEM_REF(elem->md));
     }
     // The only way that grpc_metadata_batch_add_tail() can fail is if
     // there's a duplicate entry for a callout.  However, that can't be
