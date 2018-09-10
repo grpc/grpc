@@ -14,6 +14,9 @@
 # limitations under the License.
 
 
+# TODO(vjpai): delete this file and all *sanity.cfg once the
+#              CI starts expecting files named *consistency.cfg
+
 set -e
 
 cd "$(dirname "$0")/../../.."
