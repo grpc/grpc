@@ -87,15 +87,6 @@ typedef struct grpc_ares_hostbyname_request {
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
 
-uint16_t strhtons(const char* port) {
-  if (strcmp(port, "http") == 0) {
-    return htons(80);
-  } else if (strcmp(port, "https") == 0) {
-    return htons(443);
-  }
-  return htons(static_cast<unsigned short>(atoi(port)));
-}
-
 static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
                                      const char* input_output_str) {
   for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
@@ -449,12 +440,12 @@ grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   }
   r->pending_queries = 1;
   if (grpc_ares_query_ipv6()) {
-    hr = create_hostbyname_request_locked(r, host, strhtons(port),
+    hr = create_hostbyname_request_locked(r, host, grpc_strhtons(port),
                                           false /* is_balancer */);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
                        hr);
   }
-  hr = create_hostbyname_request_locked(r, host, strhtons(port),
+  hr = create_hostbyname_request_locked(r, host, grpc_strhtons(port),
                                         false /* is_balancer */);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
                      hr);
@@ -551,7 +542,8 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     return nullptr;
   }
   // Early out if the target is localhost and we're on Windows.
-  if (maybe_resolve_localhost_manually_locked(name, default_port, addrs)) {
+  if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
+                                                        addrs)) {
     GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
     return nullptr;
   }

@@ -85,12 +85,8 @@ bool grpc_ares_query_ipv6();
  * "localhost" and if so fills in addrs with the correct sockaddr structures.
  * Returns a bool indicating whether or not such an action was performed.
  * See https://github.com/grpc/grpc/issues/15158. */
-bool maybe_resolve_localhost_manually_locked(const char* name,
-                                             const char* default_port,
-                                             grpc_lb_addresses** addrs);
-
-/* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
-uint16_t strhtons(const char* port);
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port, grpc_lb_addresses** addrs);
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs);

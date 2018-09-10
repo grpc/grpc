@@ -26,9 +26,8 @@
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
-bool maybe_resolve_localhost_manually_locked(const char* name,
-                                             const char* default_port,
-                                             grpc_lb_addresses** addrs) {
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port, grpc_lb_addresses** addrs) {
   return false;
 }
 

@@ -84,9 +84,8 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   return false;
 }
 
-bool maybe_resolve_localhost_manually_locked(const char* name,
-                                             const char* default_port,
-                                             grpc_lb_addresses** addrs) {
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port, grpc_lb_addresses** addrs) {
   char* host = nullptr;
   char* port = nullptr;
   bool out = inner_maybe_resolve_localhost_manually_locked(name, default_port,
