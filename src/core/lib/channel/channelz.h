@@ -170,12 +170,30 @@ class ChannelNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for servers
-// TODO(ncteisen): implement in subsequent PR.
 class ServerNode : public BaseNode {
  public:
-  explicit ServerNode(size_t channel_tracer_max_nodes)
-      : BaseNode(EntityType::kServer) {}
-  ~ServerNode() override {}
+  explicit ServerNode(size_t channel_tracer_max_nodes);
+  ~ServerNode() override;
+
+  grpc_json* RenderJson() override;
+
+  // proxy methods to composed classes.
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_.AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_.AddTraceEventWithReference(severity, data,
+                                      std::move(referenced_channel));
+  }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
+
+ private:
+  CallCountingHelper call_counter_;
+  ChannelTrace trace_;
 };
 
 // Handles channelz bookkeeping for sockets

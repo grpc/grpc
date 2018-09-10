@@ -48,6 +48,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
@@ -202,6 +203,8 @@ struct grpc_call {
     } client;
     struct {
       int* cancelled;
+      // backpointer to owning server if this is a server side call.
+      grpc_server* server;
     } server;
   } final_op;
   grpc_error* status_error;
@@ -311,14 +314,10 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   /* Always support no compression */
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_MESSAGE_COMPRESS_NONE);
   call->is_client = args->server_transport_data == nullptr;
-  if (call->is_client) {
-    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
-  } else {
-    GRPC_STATS_INC_SERVER_CALLS_CREATED();
-  }
   call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
+    GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
@@ -332,6 +331,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     call->send_extra_metadata_count =
         static_cast<int>(args->add_initial_metadata_count);
   } else {
+    GRPC_STATS_INC_SERVER_CALLS_CREATED();
+    call->final_op.server.server = args->server;
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
@@ -435,10 +436,18 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
-  grpc_core::channelz::ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(call->channel);
-  if (channelz_channel != nullptr) {
-    channelz_channel->RecordCallStarted();
+  if (call->is_client) {
+    grpc_core::channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
+    if (channelz_channel != nullptr) {
+      channelz_channel->RecordCallStarted();
+    }
+  } else {
+    grpc_core::channelz::ServerNode* channelz_server =
+        grpc_server_get_channelz_node(call->final_op.server.server);
+    if (channelz_server != nullptr) {
+      channelz_server->RecordCallStarted();
+    }
   }
 
   grpc_slice_unref_internal(path);
@@ -709,14 +718,15 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
-    /* TODO(ncteisen) : Update channelz handling for server
-      if (channelz_channel != nullptr) {
+    grpc_core::channelz::ServerNode* channelz_server =
+        grpc_server_get_channelz_node(call->final_op.server.server);
+    if (channelz_server != nullptr) {
       if (*call->final_op.server.cancelled) {
-        channelz_channel->RecordCallFailed();
+        channelz_server->RecordCallFailed();
       } else {
-        channelz_channel->RecordCallSucceeded();
+        channelz_server->RecordCallSucceeded();
       }
-    } */
+    }
     GRPC_ERROR_UNREF(error);
   }
 }

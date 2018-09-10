@@ -97,6 +97,7 @@ grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
 grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
+grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
 grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
 grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
@@ -352,6 +353,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_resource_quota_set_max_threads_import = (grpc_resource_quota_set_max_threads_type) GetProcAddress(library, "grpc_resource_quota_set_max_threads");
   grpc_resource_quota_arg_vtable_import = (grpc_resource_quota_arg_vtable_type) GetProcAddress(library, "grpc_resource_quota_arg_vtable");
   grpc_channelz_get_top_channels_import = (grpc_channelz_get_top_channels_type) GetProcAddress(library, "grpc_channelz_get_top_channels");
+  grpc_channelz_get_servers_import = (grpc_channelz_get_servers_type) GetProcAddress(library, "grpc_channelz_get_servers");
   grpc_channelz_get_channel_import = (grpc_channelz_get_channel_type) GetProcAddress(library, "grpc_channelz_get_channel");
   grpc_channelz_get_subchannel_import = (grpc_channelz_get_subchannel_type) GetProcAddress(library, "grpc_channelz_get_subchannel");
   grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");

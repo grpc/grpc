@@ -48,6 +48,7 @@ BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
 
 char* BaseNode::RenderJsonString() {
   grpc_json* json = RenderJson();
+  GPR_ASSERT(json != nullptr);
   char* json_str = grpc_json_dump_to_string(json, 0);
   grpc_json_destroy(json);
   return json_str;
@@ -144,6 +145,43 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
     bool is_top_level_channel) {
   return MakeRefCounted<grpc_core::channelz::ChannelNode>(
       channel, channel_tracer_max_nodes, is_top_level_channel);
+}
+
+ServerNode::ServerNode(size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
+
+ServerNode::~ServerNode() {}
+
+grpc_json* ServerNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "serverId", uuid());
+  // reset json iterators to top level object
+  json = top_level_json;
+  json_iterator = nullptr;
+  // create and fill the data child.
+  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
+                                           GRPC_JSON_OBJECT, false);
+  json = data;
+  json_iterator = nullptr;
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_.RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  return top_level_json;
 }
 
 }  // namespace channelz

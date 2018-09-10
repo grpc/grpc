@@ -112,12 +112,52 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   return json_str;
 }
 
+char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  InlinedVector<BaseNode*, 10> servers;
+  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
+  // reserved). However, we want to support requests coming in with
+  // start_server_id=0, which signifies "give me everything."
+  size_t start_idx = start_server_id == 0 ? 0 : start_server_id - 1;
+  for (size_t i = start_idx; i < entities_.size(); ++i) {
+    if (entities_[i] != nullptr &&
+        entities_[i]->type() ==
+            grpc_core::channelz::BaseNode::EntityType::kServer) {
+      servers.push_back(entities_[i]);
+    }
+  }
+  if (!servers.empty()) {
+    // create list of servers
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "server", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < servers.size(); ++i) {
+      grpc_json* server_json = servers[i]->RenderJson();
+      json_iterator =
+          grpc_json_link_child(array_parent, server_json, json_iterator);
+    }
+  }
+  // For now we do not have any pagination rules. In the future we could
+  // pick a constant for max_channels_sent for a GetServers request.
+  // Tracking: https://github.com/grpc/grpc/issues/16019.
+  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
+                                         GRPC_JSON_TRUE, false);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
+
 }  // namespace channelz
 }  // namespace grpc_core
 
 char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
   return grpc_core::channelz::ChannelzRegistry::GetTopChannels(
       start_channel_id);
+}
+
+char* grpc_channelz_get_servers(intptr_t start_server_id) {
+  return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {

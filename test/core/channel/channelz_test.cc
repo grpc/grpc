@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
@@ -102,6 +103,25 @@ void ValidateGetTopChannels(size_t expected_channels) {
   gpr_free(core_api_json_str);
 }
 
+void ValidateGetServers(size_t expected_servers) {
+  char* json_str = ChannelzRegistry::GetServers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // This check will naturally have to change when we support pagination.
+  // tracked: https://github.com/grpc/grpc/issues/16019.
+  ValidateJsonArraySize(parsed_json, "server", expected_servers);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // also check that the core API formats this correctly
+  char* core_api_json_str = grpc_channelz_get_servers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
+}
+
 class ChannelFixture {
  public:
   ChannelFixture(int max_trace_nodes = 0) {
@@ -122,6 +142,28 @@ class ChannelFixture {
 
  private:
   grpc_channel* channel_;
+};
+
+class ServerFixture {
+ public:
+  explicit ServerFixture(int max_trace_nodes = 0) {
+    grpc_arg server_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
+            max_trace_nodes),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+    };
+    grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+    server_ = grpc_server_create(&server_args, nullptr);
+  }
+
+  ~ServerFixture() { grpc_server_destroy(server_); }
+
+  grpc_server* server() const { return server_; }
+
+ private:
+  grpc_server* server_;
 };
 
 struct validate_channel_data_args {
@@ -161,6 +203,13 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
+}
+
+void ValidateServer(ServerNode* server, validate_channel_data_args args) {
+  char* json_str = server->RenderJsonString();
+  grpc::testing::ValidateServerProtoJsonTranslation(json_str);
+  ValidateCounters(json_str, args);
+  gpr_free(json_str);
 }
 
 grpc_millis GetLastCallStartedMillis(CallCountingHelper* channel) {
@@ -237,7 +286,7 @@ TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   EXPECT_NE(millis1, millis4);
 }
 
-TEST(ChannelzGetTopChannelsTest, BasicTest) {
+TEST(ChannelzGetTopChannelsTest, BasicGetTopChannelsTest) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel;
   ValidateGetTopChannels(1);
@@ -273,7 +322,47 @@ TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {
   grpc_channel_destroy(internal_channel);
 }
 
+class ChannelzServerTest : public ::testing::TestWithParam<size_t> {};
+
+TEST_P(ChannelzServerTest, BasicServerAPIFunctionality) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server(10);
+  ServerNode* channelz_server = grpc_server_get_channelz_node(server.server());
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {1, 1, 1});
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {3, 3, 3});
+}
+
+TEST(ChannelzGetServersTest, BasicGetServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server;
+  ValidateGetServers(1);
+}
+
+TEST(ChannelzGetServersTest, NoServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ValidateGetServers(0);
+}
+
+TEST(ChannelzGetServersTest, ManyServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture servers[10];
+  (void)servers;  // suppress unused variable error
+  ValidateGetServers(10);
+}
+
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
+                        ::testing::Values(0, 1, 2, 6, 10, 15));
+
+INSTANTIATE_TEST_CASE_P(ChannelzServerTestSweep, ChannelzServerTest,
                         ::testing::Values(0, 1, 2, 6, 10, 15));
 
 }  // namespace testing

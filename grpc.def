@@ -74,6 +74,7 @@ EXPORTS
     grpc_resource_quota_set_max_threads
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels
+    grpc_channelz_get_servers
     grpc_channelz_get_channel
     grpc_channelz_get_subchannel
     grpc_insecure_channel_create_from_fd
