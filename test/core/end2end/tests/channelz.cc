@@ -240,7 +240,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
-  // channel tracing is not enables, so these should not be preset.
+  // channel tracing is not enabled, so these should not be preset.
   GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));
   GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
@@ -252,7 +252,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
-  // channel tracing is not enables, so these should not be preset.
+  // channel tracing is not enabled, so these should not be preset.
   GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));
   GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));

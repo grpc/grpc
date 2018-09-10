@@ -41,10 +41,6 @@
 
 #include "gtest/gtest.h"
 
-#ifndef GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR
-#define GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_USE_SYSTEM_SSL_ROOTS"
-#endif
-
 namespace grpc {
 namespace {
 
@@ -68,7 +64,6 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 }
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
-  gpr_setenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR, "true");
   // Test that CreateRootCertsBundle returns a correct slice.
   grpc_slice roots_bundle = grpc_empty_slice();
   GRPC_LOG_IF_ERROR(
@@ -81,7 +76,6 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   EXPECT_STREQ(result_str, bundle_str);
   // Clean up.
-  unsetenv(GRPC_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
   gpr_free(result_str);
   gpr_free(bundle_str);
   grpc_slice_unref(roots_bundle);

@@ -181,9 +181,6 @@ grpc_json* ServerNode::RenderJson() {
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
-  // template method. Child classes may override this to add their specific
-  // functionality.
-  PopulateSockets(json);
   return top_level_json;
 }
 

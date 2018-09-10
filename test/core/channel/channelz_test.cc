@@ -47,8 +47,8 @@ namespace testing {
 // testing peer to access channel internals
 class CallCountingHelperPeer {
  public:
-  CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
-  grpc_millis last_call_started_millis() {
+  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  grpc_millis last_call_started_millis() const {
     return (grpc_millis)gpr_atm_no_barrier_load(
         &node_->last_call_started_millis_);
   }
@@ -146,20 +146,21 @@ class ChannelFixture {
 
 class ServerFixture {
  public:
-  ServerFixture(int max_trace_nodes = 0) {
-    grpc_arg server_a[2];
-    server_a[0] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
-        max_trace_nodes);
-    server_a[1] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
+  explicit ServerFixture(int max_trace_nodes = 0) {
+    grpc_arg server_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
+            max_trace_nodes),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+    };
     grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
     server_ = grpc_server_create(&server_args, nullptr);
   }
 
   ~ServerFixture() { grpc_server_destroy(server_); }
 
-  grpc_server* server() { return server_; }
+  grpc_server* server() const { return server_; }
 
  private:
   grpc_server* server_;

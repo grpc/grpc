@@ -415,6 +415,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now setup a permanent failure for the overridden roots and we should get
      an empty slice. */
+  gpr_setenv("GRPC_NOT_USE_SYSTEM_SSL_ROOTS", "true");
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));

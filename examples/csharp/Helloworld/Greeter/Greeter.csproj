@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>Greeter</AssemblyTitle>
-    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>Greeter</AssemblyName>
     <PackageId>Greeter</PackageId>
