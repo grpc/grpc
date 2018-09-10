@@ -116,7 +116,7 @@ for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
 assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
 
-# There are some "bazel-only" deps that are exceptions to this sanity check,
+# There are some "bazel-only" deps that are exceptions to this consistency check,
 # we don't require that there is a corresponding git module for these.
 names_without_bazel_only_deps = names_and_urls.keys()
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:

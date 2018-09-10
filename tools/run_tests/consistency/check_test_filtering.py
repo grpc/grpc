@@ -54,21 +54,21 @@ class TestFilteringTest(unittest.TestCase):
         print()
         filtered_jobs = filter_pull_request_tests.filter_tests(all_jobs, "test")
 
-        # Make sure sanity tests aren't being filtered out
-        sanity_tests_in_all_jobs = 0
-        sanity_tests_in_filtered_jobs = 0
+        # Make sure consistency tests aren't being filtered out
+        consistency_tests_in_all_jobs = 0
+        consistency_tests_in_filtered_jobs = 0
         for job in all_jobs:
-            if "sanity" in job.labels:
-                sanity_tests_in_all_jobs += 1
-        all_jobs = [job for job in all_jobs if "sanity" not in job.labels]
+            if "consistency" in job.labels:
+                consistency_tests_in_all_jobs += 1
+        all_jobs = [job for job in all_jobs if "consistency" not in job.labels]
         for job in filtered_jobs:
-            if "sanity" in job.labels:
-                sanity_tests_in_filtered_jobs += 1
+            if "consistency" in job.labels:
+                consistency_tests_in_filtered_jobs += 1
         filtered_jobs = [
-            job for job in filtered_jobs if "sanity" not in job.labels
+            job for job in filtered_jobs if "consistency" not in job.labels
         ]
-        self.assertEquals(sanity_tests_in_all_jobs,
-                          sanity_tests_in_filtered_jobs)
+        self.assertEquals(consistency_tests_in_all_jobs,
+                          consistency_tests_in_filtered_jobs)
 
         for label in labels:
             for job in filtered_jobs:

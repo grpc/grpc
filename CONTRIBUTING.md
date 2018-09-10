@@ -47,9 +47,9 @@ projects files are generated using templates and should not be edited by hand.
 Run `tools/buildgen/generate_projects.sh` to regenerate.  See
 [templates](templates) for details.
 
-As a rule of thumb, if you see the "sanity tests" failing you've most likely
-edited generated files or you didn't regenerate the projects properly (or your
-code formatting doesn't match our code style).
+As a rule of thumb, if you see the "consistency tests" failing you've most
+likely edited generated files or you didn't regenerate the projects properly (or
+your code formatting doesn't match our code style).
 
 ## Guidelines for Pull Requests
 How to get your contributions merged smoothly and quickly.

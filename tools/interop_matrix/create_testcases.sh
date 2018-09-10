@@ -18,7 +18,7 @@
 #
 # Params:
 #   LANG - The language.
-#   SKIP_TEST - If set, skip running the test cases for sanity.
+#   SKIP_TEST - If set, skip running the test cases for consistency.
 #   RELEASE - Create testcase for specific release, defautl to 'master'.
 #   KEEP_IMAGE - Do not clean local docker image created for the test cases.
 
@@ -64,7 +64,7 @@ ${GRPC_ROOT}/tools/run_tests/run_interop_tests.py -l $client_lang --use_docker \
 
 trap cleanup EXIT
 # TODO(adelez): add test auth tests but do not run if not testing on GCE.
-# Running the testcases as sanity unless we are asked to skip.
+# Running the testcases as consistency unless we are asked to skip.
 [ -z "$SKIP_TEST" ] && (echo "Running test cases: $CMDS_SH"; sh $CMDS_SH)
 
 mkdir -p $TESTCASES_DIR

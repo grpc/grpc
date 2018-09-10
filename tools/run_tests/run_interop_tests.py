@@ -622,12 +622,12 @@ _HTTP2_TEST_CASES = ['tls', 'framing']
 
 _HTTP2_SERVER_TEST_CASES = [
     'rst_after_header', 'rst_after_data', 'rst_during_data', 'goaway', 'ping',
-    'max_streams', 'data_frame_padding', 'no_df_padding_sanity_test'
+    'max_streams', 'data_frame_padding', 'no_df_padding_consistency_test'
 ]
 
 _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES = {
     'data_frame_padding': 'large_unary',
-    'no_df_padding_sanity_test': 'large_unary'
+    'no_df_padding_consistency_test': 'large_unary'
 }
 
 _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS = _GRPC_CLIENT_TEST_CASES_FOR_HTTP2_SERVER_TEST_CASES.keys(

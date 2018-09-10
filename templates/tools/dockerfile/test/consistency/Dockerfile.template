@@ -21,7 +21,7 @@
   <%include file="../../python_deps.include"/>
   <%include file="../../cxx_deps.include"/>
   #========================
-  # Sanity test dependencies
+  # Consistency test dependencies
   RUN apt-get update && apt-get install -y ${"\\"}
         python-pip ${"\\"}
         autoconf ${"\\"}

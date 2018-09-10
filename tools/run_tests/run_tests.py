@@ -1150,7 +1150,7 @@ class ObjCLanguage(object):
         return 'objc'
 
 
-class Sanity(object):
+class Consistency(object):
 
     def configure(self, config, args):
         self.config = config
@@ -1159,7 +1159,7 @@ class Sanity(object):
 
     def test_specs(self):
         import yaml
-        with open('tools/run_tests/sanity/sanity_tests.yaml', 'r') as f:
+        with open('tools/run_tests/consistency/consistency_tests.yaml', 'r') as f:
             environ = {'TEST': 'true'}
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
@@ -1191,10 +1191,10 @@ class Sanity(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/sanity'
+        return 'tools/dockerfile/test/consistency'
 
     def __str__(self):
-        return 'sanity'
+        return 'consistency'
 
 
 # different configurations we can run under
@@ -1212,7 +1212,7 @@ _LANGUAGES = {
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
-    'sanity': Sanity()
+    'consistency': Consistency()
 }
 
 _MSBUILD_CONFIG = {
@@ -1511,7 +1511,7 @@ else:
     lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-    for bad in ['grpc-node', 'objc', 'sanity']:
+    for bad in ['grpc-node', 'objc', 'consistency']:
         if bad in lang_list:
             lang_list.remove(bad)
 

@@ -23,7 +23,7 @@ then
   cd third_party/protobuf
   bazel query 'deps('$1')'
 else
-  docker build -t bazel_local_img tools/dockerfile/test/sanity
+  docker build -t bazel_local_img tools/dockerfile/test/consistency
   docker run -v "$(realpath .):/src/grpc/:ro" \
     -w /src/grpc/third_party/protobuf         \
     bazel_local_img                           \
