@@ -30,7 +30,7 @@
     "Grpc.Core.Tests.PerformanceTest",
     "Grpc.Core.Tests.PInvokeTest",
     "Grpc.Core.Tests.ResponseHeadersTest",
-    "Grpc.Core.Tests.SanityTest",
+    "Grpc.Core.Tests.ConsistencyTest",
     "Grpc.Core.Tests.ServerTest",
     "Grpc.Core.Tests.ShutdownHookClientTest",
     "Grpc.Core.Tests.ShutdownHookPendingCallTest",

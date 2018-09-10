@@ -28,9 +28,9 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class SanityTest
+    public class ConsistencyTest
     {
-        // TODO: make sanity test work for CoreCLR as well
+        // TODO: make consistency test work for CoreCLR as well
 #if !NETCOREAPP1_0
         /// <summary>
         /// Because we depend on a native library, sometimes when things go wrong, the
