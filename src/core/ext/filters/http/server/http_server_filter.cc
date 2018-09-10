@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <string.h>
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/b64.h"
@@ -64,6 +65,10 @@ struct call_data {
 
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
+};
+
+struct channel_data {
+  bool surface_user_agent;
 };
 
 }  // namespace
@@ -262,6 +267,11 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":authority")));
   }
 
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  if (!chand->surface_user_agent && b->idx.named.user_agent != nullptr) {
+    grpc_metadata_batch_remove(b, b->idx.named.user_agent);
+  }
+
   return error;
 }
 
@@ -430,7 +440,12 @@ static void hs_destroy_call_elem(grpc_call_element* elem,
 /* Constructor for channel_data */
 static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
                                         grpc_channel_element_args* args) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(!args->is_last);
+  chand->surface_user_agent = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(args->channel_args,
+                             const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
+      true);
   return GRPC_ERROR_NONE;
 }
 
@@ -444,7 +459,7 @@ const grpc_channel_filter grpc_http_server_filter = {
     hs_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     hs_destroy_call_elem,
-    0,
+    sizeof(channel_data),
     hs_init_channel_elem,
     hs_destroy_channel_elem,
     grpc_channel_next_get_info,
