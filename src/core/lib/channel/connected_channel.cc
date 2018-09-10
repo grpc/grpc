@@ -126,13 +126,11 @@ static void con_start_transport_stream_op_batch(
     // closure for each one.
     callback_state* state =
         static_cast<callback_state*>(gpr_malloc(sizeof(*state)));
-    intercept_callback(calld, state, true,
-                       "connected_on_complete (cancel_stream)",
+    intercept_callback(calld, state, true, "on_complete (cancel_stream)",
                        &batch->on_complete);
   } else if (batch->on_complete != nullptr) {
     callback_state* state = get_state_for_batch(calld, batch);
-    intercept_callback(calld, state, false, "connected_on_complete",
-                       &batch->on_complete);
+    intercept_callback(calld, state, false, "on_complete", &batch->on_complete);
   }
   grpc_transport_perform_stream_op(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), batch);
