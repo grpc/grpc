@@ -50,7 +50,7 @@ def check_op_view_of_finished_client_call(op_view,
 
   expect { op_view.start_call }.to raise_error(RuntimeError)
 
-  sanity_check_values_of_accessors(op_view,
+  consistency_check_values_of_accessors(op_view,
                                    expected_metadata,
                                    expected_trailing_metadata)
 
@@ -61,7 +61,7 @@ def check_op_view_of_finished_client_call(op_view,
   end.to_not raise_error
 end
 
-def sanity_check_values_of_accessors(op_view,
+def consistency_check_values_of_accessors(op_view,
                                      expected_metadata,
                                      expected_trailing_metadata)
   expected_status = Struct::Status.new
@@ -807,7 +807,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
           request_queue.push('first message')
           # Now wait for the server to shut down.
           server_thread.join
-          # Sanity check. This test is not interesting if
+          # Consistency check. This test is not interesting if
           # Thread.abort_on_exception is not set.
           expect(Thread.abort_on_exception).to be(true)
           # An attempt to send a second message should fail now that the
