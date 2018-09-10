@@ -21,7 +21,7 @@ import six
 import tests
 
 
-class SanityTest(unittest.TestCase):
+class ConsistencyTest(unittest.TestCase):
 
     maxDiff = 32768
 

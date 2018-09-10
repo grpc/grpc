@@ -707,8 +707,8 @@ class RPCTest(unittest.TestCase):
 
         self.assertIs(grpc.StatusCode.UNKNOWN,
                       exception_context.exception.code())
-        # sanity checks on to make sure returned string contains default members
-        # of the error
+        # consistency checks on to make sure returned string contains default
+        # members of the error
         debug_error_string = exception_context.exception.debug_error_string()
         self.assertIn("created", debug_error_string)
         self.assertIn("description", debug_error_string)

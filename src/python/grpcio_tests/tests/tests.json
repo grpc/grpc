@@ -1,5 +1,5 @@
 [
-  "_sanity._sanity_test.SanityTest",
+  "_consistency._consistency_test.ConsistencyTest",
   "health_check._health_servicer_test.HealthServicerTest",
   "interop._insecure_intraop_test.InsecureIntraopTest",
   "interop._secure_intraop_test.SecureIntraopTest",
