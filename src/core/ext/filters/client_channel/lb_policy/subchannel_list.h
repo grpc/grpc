@@ -96,9 +96,8 @@ class SubchannelData {
   // ProcessConnectivityChangeLocked()).
   grpc_connectivity_state CheckConnectivityStateLocked(grpc_error** error) {
     GPR_ASSERT(!connectivity_notification_pending_);
-    pending_connectivity_state_unsafe_ =
-        grpc_subchannel_check_connectivity(subchannel(), error,
-        subchannel_list_->inhibit_health_checking());
+    pending_connectivity_state_unsafe_ = grpc_subchannel_check_connectivity(
+        subchannel(), error, subchannel_list_->inhibit_health_checking());
     UpdateConnectedSubchannelLocked();
     return pending_connectivity_state_unsafe_;
   }

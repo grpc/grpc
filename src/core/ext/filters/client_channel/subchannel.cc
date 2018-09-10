@@ -477,6 +477,7 @@ static void parse_args_for_backoff_values(
 }
 
 namespace grpc_core {
+namespace {
 
 struct HealthCheckParams {
   UniquePtr<char> service_name;
@@ -497,6 +498,7 @@ struct HealthCheckParams {
   }
 };
 
+}  // namespace
 }  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
