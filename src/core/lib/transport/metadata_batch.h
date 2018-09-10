@@ -110,12 +110,17 @@ grpc_error* grpc_metadata_batch_add_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
-/** Identical to grpc_metadata_batch_add_head, except takes the index of the
-    metadata element to add instead of a grpc_mdelem object. The index must
-    be a valid static hpack table index */
-grpc_error* grpc_metadata_batch_add_head_index(
+/** Add the static metadata element associated with \a elem_to_add_index
+    as the first element in \a batch, using \a storage as backing storage for
+    the linked list element. \a storage is owned by the caller and must survive
+    for the lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Valid indices are in metadata.h (e.g., GRPC_MDELEM_STATUS_200_INDEX).
+    This is an optimization in the case where chttp2 is used as the underlying
+    transport. */
+grpc_error* grpc_metadata_batch_add_head_static(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    uint8_t index_to_add) GRPC_MUST_USE_RESULT;
+    uint8_t elem_to_add_index) GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -127,10 +132,15 @@ grpc_error* grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
-/** Identical to grpc_metadata_batch_add_tail, except takes the index of the
-    metadata element to add instead of a grpc_mdelem object. The index must
-    be a valid static hpack table index */
-grpc_error* grpc_metadata_batch_add_head_index(
+/** Add the static metadata element associated with \a elem_to_add_index
+    as the last element in \a batch, using \a storage as backing storage for
+    the linked list element. \a storage is owned by the caller and must survive
+    for the lifetime of batch. This usually means it should be around
+    for the lifetime of the call.
+    Valid indices are in metadata.h (e.g., GRPC_MDELEM_STATUS_200_INDEX).
+    This is an optimization in the case where chttp2 is used as the underlying
+    transport. */
+grpc_error* grpc_metadata_batch_add_tail_static(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     uint8_t index_to_add) GRPC_MUST_USE_RESULT;
 
@@ -138,7 +148,7 @@ grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
 
 /** Returns if the index is a valid static hpack table index, and thus if the
     grpc_linked_mdelem stores the index rather than the actual grpc_mdelem **/
-bool is_valid_mdelem_index(uint8_t index);
+bool grpc_metadata_batch_is_valid_mdelem_index(uint8_t index);
 
 /* Static hpack table metadata info */
 typedef struct static_hpack_table_metadata_info {

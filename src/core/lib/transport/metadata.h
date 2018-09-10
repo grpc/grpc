@@ -348,6 +348,4 @@ void grpc_mdctx_global_shutdown();
 /* {"www-authenticate", ""} */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY_INDEX 61
 
-/* Forward declarations */
-typedef struct grpc_mdelem grpc_mdelem;
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */
