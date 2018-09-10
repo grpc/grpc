@@ -60,4 +60,17 @@ Status ChannelzService::GetChannel(
   return Status::OK;
 }
 
+Status ChannelzService::GetSubchannel(
+    ServerContext* unused, const channelz::v1::GetSubchannelRequest* request,
+    channelz::v1::GetSubchannelResponse* response) {
+  char* json_str = grpc_channelz_get_subchannel(request->subchannel_id());
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
+  gpr_free(json_str);
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
+  }
+  return Status::OK;
+}
+
 }  // namespace grpc

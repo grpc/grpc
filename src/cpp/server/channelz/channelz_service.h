@@ -36,6 +36,10 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
   Status GetChannel(ServerContext* unused,
                     const channelz::v1::GetChannelRequest* request,
                     channelz::v1::GetChannelResponse* response) override;
+  // implementation of GetSubchannel rpc
+  Status GetSubchannel(ServerContext* unused,
+                       const channelz::v1::GetSubchannelRequest* request,
+                       channelz::v1::GetSubchannelResponse* response) override;
 };
 
 }  // namespace grpc
