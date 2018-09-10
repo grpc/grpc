@@ -1332,7 +1332,7 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   for (grpc_linked_mdelem* md = md_batch->list.head; md != nullptr;
        md = md->next) {
-    if (is_valid_mdelem_index(md->md_index)) {
+    if (grpc_metadata_batch_is_valid_mdelem_index(md->md_index)) {
       gpr_log(GPR_INFO, "HTTP:%d:%s:%s: hpack table index: %d", id,
               is_initial ? "HDR" : "TRL", is_client ? "CLI" : "SVR",
               md->md_index);

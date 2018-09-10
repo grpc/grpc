@@ -114,7 +114,7 @@ static_hpack_table_metadata_info static_hpack_table_metadata[] = {
 };
 
 /* This is a faster check for seeing if a mdelem index is used or not. To verify
-   that the index value is valid, use 'is_valid_mdelem_index' */
+   that the index value is valid, use 'grpc_metadata_batch_is_valid_mdelem_index' */
 static bool is_mdelem_index_used(uint8_t index);
 
 static void set_mdelem_index_unused(uint8_t* index);
@@ -150,7 +150,7 @@ static void assert_valid_callouts(grpc_metadata_batch* batch) {
   for (grpc_linked_mdelem* l = batch->list.head; l != nullptr; l = l->next) {
     grpc_metadata_batch_callouts_index callout_idx;
     if (is_mdelem_index_used(l->md_index)) {
-      GPR_ASSERT(is_valid_mdelem_index(l->md_index));
+      GPR_ASSERT(grpc_metadata_batch_is_valid_mdelem_index(l->md_index));
       callout_idx = get_callouts_index(l);
       if (callout_idx != GRPC_BATCH_CALLOUTS_COUNT) {
         GPR_ASSERT(batch->idx.array[callout_idx] == l);
@@ -219,7 +219,6 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;
   }
-
   grpc_error* err;
   if (is_mdelem_index_used(storage->md_index)) {
     char* message;
@@ -248,14 +247,14 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
   batch->idx.array[idx] = nullptr;
 }
 
-bool is_valid_mdelem_index(uint8_t index) {
+bool grpc_metadata_batch_is_valid_mdelem_index(uint8_t index) {
   return index >= MIN_STATIC_HPACK_TABLE_IDX &&
          index <= MAX_STATIC_HPACK_TABLE_IDX;
 }
 
-bool is_mdelem_index_used(uint8_t index) { return index != 0; }
+static bool is_mdelem_index_used(uint8_t index) { return index != 0; }
 
-void set_mdelem_index_unused(uint8_t* index) {
+static void set_mdelem_index_unused(uint8_t* index) {
   GPR_ASSERT(index != nullptr);
   *index = 0;
 }
@@ -269,17 +268,17 @@ grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
   return grpc_metadata_batch_link_head(batch, storage);
 }
 
-grpc_error* grpc_metadata_batch_add_head_index(grpc_metadata_batch* batch,
+grpc_error* grpc_metadata_batch_add_head_static(grpc_metadata_batch* batch,
                                                grpc_linked_mdelem* storage,
                                                uint8_t index_to_add) {
-  GPR_ASSERT(is_valid_mdelem_index(index_to_add));
+  GPR_ASSERT(grpc_metadata_batch_is_valid_mdelem_index(index_to_add));
   storage->md_index = index_to_add;
   return grpc_metadata_batch_link_head(batch, storage);
 }
 
 static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(is_valid_mdelem_index(storage->md_index) ||
+  GPR_ASSERT(grpc_metadata_batch_is_valid_mdelem_index(storage->md_index) ||
              !GRPC_MDISNULL(storage->md));
   storage->prev = nullptr;
   storage->next = list->head;
@@ -315,17 +314,17 @@ grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
-grpc_error* grpc_metadata_batch_add_tail_index(grpc_metadata_batch* batch,
+grpc_error* grpc_metadata_batch_add_tail_static(grpc_metadata_batch* batch,
                                                grpc_linked_mdelem* storage,
                                                uint8_t index_to_add) {
-  GPR_ASSERT(is_valid_mdelem_index(index_to_add));
+  GPR_ASSERT(grpc_metadata_batch_is_valid_mdelem_index(index_to_add));
   storage->md_index = index_to_add;
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(is_valid_mdelem_index(storage->md_index) ||
+  GPR_ASSERT(grpc_metadata_batch_is_valid_mdelem_index(storage->md_index) ||
              !GRPC_MDISNULL(storage->md));
   storage->prev = list->tail;
   storage->next = nullptr;
@@ -486,7 +485,7 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
        elem = elem->next) {
     grpc_error* error = nullptr;
     if (is_mdelem_index_used(elem->md_index)) {
-      error = grpc_metadata_batch_add_tail_index(dst, &storage[i++],
+      error = grpc_metadata_batch_add_tail_static(dst, &storage[i++],
                                                  elem->md_index);
     } else {
       error = grpc_metadata_batch_add_tail(dst, &storage[i++],
