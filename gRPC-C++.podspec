@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.15.0-dev'
+  # version = '1.16.0-dev'
   version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.15.0-dev'
+  grpc_version = '1.16.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -236,6 +236,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/memory.h',
+                      'src/core/lib/gprpp/mutex_lock.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -278,6 +279,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
                       'src/core/lib/security/security_connector/alts_security_connector.h',
+                      'src/core/lib/security/security_connector/load_system_roots.h',
+                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
                       'src/core/lib/security/security_connector/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
@@ -345,6 +348,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
+                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/lib/avl/avl.h',
@@ -378,6 +382,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
                       'src/core/lib/iomgr/block_annotate.h',
+                      'src/core/lib/iomgr/buffer_list.h',
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
@@ -393,6 +398,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/gethostname.h',
+                      'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_custom.h',
@@ -532,6 +538,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/memory.h',
+                              'src/core/lib/gprpp/mutex_lock.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/avl/avl.h',
@@ -565,6 +572,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
                               'src/core/lib/iomgr/block_annotate.h',
+                              'src/core/lib/iomgr/buffer_list.h',
                               'src/core/lib/iomgr/call_combiner.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
@@ -580,6 +588,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/gethostname.h',
+                              'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',

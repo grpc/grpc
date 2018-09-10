@@ -55,6 +55,9 @@ do
   "csharp")
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8 --compiler coreclr
     ;;
+  "node"|"node_purejs")
+    tools/run_tests/performance/build_performance_node.sh
+    ;;
   *)
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
     ;;

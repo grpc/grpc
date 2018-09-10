@@ -40,6 +40,7 @@ cdef class _ChannelState:
   # field and just use the NULLness of c_channel as an indication that the
   # channel is closed.
   cdef object open
+  cdef object closed_reason
 
   # A dict from _BatchOperationTag to _CallState
   cdef dict integrated_call_states

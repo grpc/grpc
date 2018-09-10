@@ -41,6 +41,9 @@ struct call_data {
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
+  grpc_error* error;
+  grpc_closure recv_trailing_metadata_ready;
+  grpc_closure* original_recv_trailing_metadata_ready;
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
@@ -111,6 +114,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
         batch->payload->recv_initial_metadata.recv_initial_metadata,
         remove_consumed_md, elem, "Response metadata filtering error");
   }
+  calld->error = GRPC_ERROR_REF(error);
   GRPC_CLOSURE_SCHED(calld->original_recv_initial_metadata_ready, error);
 }
 
@@ -156,7 +160,6 @@ static void cancel_call(void* arg, grpc_error* error) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
@@ -168,7 +171,6 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
-      GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
                         grpc_schedule_on_exec_ctx);
       grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
@@ -186,6 +188,13 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
                    GRPC_ERROR_REF(error));
 }
 
+static void recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+}
+
 static void auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -196,6 +205,12 @@ static void auth_start_transport_stream_op_batch(
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready;
+  }
+  if (batch->recv_trailing_metadata) {
+    calld->original_recv_trailing_metadata_ready =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &calld->recv_trailing_metadata_ready;
   }
   grpc_call_next_op(elem, batch);
 }
@@ -209,6 +224,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->owning_call = args->call_stack;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                    recv_trailing_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
@@ -229,7 +247,10 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+                              grpc_closure* ignored) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  GRPC_ERROR_UNREF(calld->error);
+}
 
 /* Constructor for channel_data */
 static grpc_error* init_channel_elem(grpc_channel_element* elem,

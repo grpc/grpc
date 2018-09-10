@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.15.0-dev")
+set(PACKAGE_VERSION   "1.16.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -230,6 +230,9 @@ add_dependencies(buildtests_c avl_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c buffer_list_test)
+endif()
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -331,6 +334,7 @@ if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c httpscli_test)
 endif()
 add_dependencies(buildtests_c init_test)
+add_dependencies(buildtests_c inproc_callback_test)
 add_dependencies(buildtests_c invalid_call_argument_test)
 add_dependencies(buildtests_c json_rewrite)
 add_dependencies(buildtests_c json_rewrite_test)
@@ -581,6 +585,7 @@ add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
+add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_end2end_test)
@@ -957,6 +962,7 @@ add_library(grpc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -977,6 +983,7 @@ add_library(grpc
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -1129,6 +1136,8 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
@@ -1236,7 +1245,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  src/cpp/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -1361,6 +1370,7 @@ add_library(grpc_cronet
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -1381,6 +1391,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -1559,6 +1570,8 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
@@ -1751,6 +1764,7 @@ add_library(grpc_test_util
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -1771,6 +1785,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -2059,6 +2074,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2079,6 +2095,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -2346,6 +2363,7 @@ add_library(grpc_unsecure
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2366,6 +2384,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -2555,7 +2574,7 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/cpp/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -3186,6 +3205,7 @@ add_library(grpc++_cronet
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -3206,6 +3226,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -3343,7 +3364,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/cpp/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/census/grpc_context.cc
 )
 
 if(WIN32 AND MSVC)
@@ -5831,6 +5852,37 @@ target_link_libraries(bin_encoder_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(buffer_list_test
+  test/core/iomgr/buffer_list_test.cc
+)
+
+
+target_include_directories(buffer_list_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(buffer_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 
 add_executable(channel_create_test
   test/core/surface/channel_create_test.cc
@@ -7878,6 +7930,35 @@ target_include_directories(init_test
 )
 
 target_link_libraries(init_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(inproc_callback_test
+  test/core/end2end/inproc_callback_test.cc
+)
+
+
+target_include_directories(inproc_callback_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(inproc_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -12146,6 +12227,44 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_linux_system_roots_test
+  test/core/security/linux_system_roots_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(grpc_linux_system_roots_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_linux_system_roots_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_node_plugin

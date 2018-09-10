@@ -1151,6 +1151,106 @@ class GoLanguage:
         return 'go'
 
 
+class NodeLanguage:
+
+    def __init__(self, node_purejs=False):
+        pass
+        self.node_purejs = node_purejs
+        self.safename = str(self)
+
+    def worker_cmdline(self):
+        fixture = 'native_js' if self.node_purejs else 'native_native'
+        return [
+            'tools/run_tests/performance/run_worker_node.sh', fixture,
+            '--benchmark_impl=grpc'
+        ]
+
+    def worker_port_offset(self):
+        if self.node_purejs:
+            return 1100
+        return 1000
+
+    def scenarios(self):
+        node_implementation = 'node_purejs' if self.node_purejs else 'node'
+        for secure in [True, False]:
+            secstr = 'secure' if secure else 'insecure'
+            smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
+
+            yield _ping_pong_scenario(
+                '%s_to_node_generic_async_streaming_ping_pong_%s' %
+                (node_implementation, secstr),
+                rpc_type='STREAMING',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_GENERIC_SERVER',
+                server_language='node',
+                use_generic_payload=True,
+                async_server_threads=1,
+                secure=secure,
+                categories=smoketest_categories)
+
+            yield _ping_pong_scenario(
+                '%s_to_node_protobuf_async_streaming_ping_pong_%s' %
+                (node_implementation, secstr),
+                rpc_type='STREAMING',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                server_language='node',
+                async_server_threads=1,
+                secure=secure)
+
+            yield _ping_pong_scenario(
+                '%s_to_node_protobuf_async_unary_ping_pong_%s' %
+                (node_implementation, secstr),
+                rpc_type='UNARY',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                server_language='node',
+                async_server_threads=1,
+                secure=secure,
+                categories=smoketest_categories)
+
+            yield _ping_pong_scenario(
+                '%s_to_node_protobuf_async_unary_qps_unconstrained_%s' %
+                (node_implementation, secstr),
+                rpc_type='UNARY',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                server_language='node',
+                unconstrained_client='async',
+                secure=secure,
+                categories=smoketest_categories + [SCALABLE])
+
+            yield _ping_pong_scenario(
+                '%s_to_node_protobuf_async_streaming_qps_unconstrained_%s' %
+                (node_implementation, secstr),
+                rpc_type='STREAMING',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_SERVER',
+                server_language='node',
+                unconstrained_client='async',
+                secure=secure,
+                categories=[SCALABLE])
+
+            yield _ping_pong_scenario(
+                '%s_to_node_generic_async_streaming_qps_unconstrained_%s' %
+                (node_implementation, secstr),
+                rpc_type='STREAMING',
+                client_type='ASYNC_CLIENT',
+                server_type='ASYNC_GENERIC_SERVER',
+                server_language='node',
+                unconstrained_client='async',
+                use_generic_payload=True,
+                secure=secure,
+                categories=[SCALABLE])
+
+            # TODO(murgatroid99): add scenarios node vs C++
+
+    def __str__(self):
+        if self.node_purejs:
+            return 'node_purejs'
+        return 'node'
+
+
 LANGUAGES = {
     'c++': CXXLanguage(),
     'csharp': CSharpLanguage(),
@@ -1160,4 +1260,6 @@ LANGUAGES = {
     'java': JavaLanguage(),
     'python': PythonLanguage(),
     'go': GoLanguage(),
+    'node': NodeLanguage(),
+    'node_purejs': NodeLanguage(node_purejs=True)
 }
