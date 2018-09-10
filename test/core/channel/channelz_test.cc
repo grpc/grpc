@@ -44,16 +44,16 @@ namespace channelz {
 namespace testing {
 
 // testing peer to access channel internals
-class ChannelNodePeer {
+class CallCountingHelperPeer {
  public:
-  ChannelNodePeer(ChannelNode* channel) : channel_(channel) {}
-  grpc_millis last_call_started_millis() {
+  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  grpc_millis last_call_started_millis() const {
     return (grpc_millis)gpr_atm_no_barrier_load(
-        &channel_->last_call_started_millis_);
+        &node_->last_call_started_millis_);
   }
 
  private:
-  ChannelNode* channel_;
+  CallCountingHelper* node_;
 };
 
 namespace {
@@ -157,14 +157,14 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   ValidateCounters(json_str, args);
   gpr_free(json_str);
   // also check that the core API formats this the correct way
-  char* core_api_json_str = grpc_channelz_get_channel(channel->channel_uuid());
+  char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
 }
 
-grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {
-  ChannelNodePeer peer(channel);
+grpc_millis GetLastCallStartedMillis(CallCountingHelper* channel) {
+  CallCountingHelperPeer peer(channel);
   return peer.last_call_started_millis();
 }
 
@@ -215,27 +215,25 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
 
 TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  CallCountingHelper counter;
   // start a call to set the last call started timestamp
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis1 = GetLastCallStartedMillis(&counter);
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
-  grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
+  grpc_millis millis2 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis2);
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
-  grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallFailed();
+  counter.RecordCallSucceeded();
+  grpc_millis millis3 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis3);
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis4 = GetLastCallStartedMillis(&counter);
   EXPECT_NE(millis1, millis4);
 }
 
