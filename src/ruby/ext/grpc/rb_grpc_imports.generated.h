@@ -266,7 +266,7 @@ extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import
 typedef char*(*grpc_channelz_get_top_channels_type)(intptr_t start_channel_id);
 extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
 #define grpc_channelz_get_top_channels grpc_channelz_get_top_channels_import
-typedef char*(*grpc_channelz_get_servers_type)(intptr_t start_channel_id);
+typedef char*(*grpc_channelz_get_servers_type)(intptr_t start_server_id);
 extern grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
 #define grpc_channelz_get_servers grpc_channelz_get_servers_import
 typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
