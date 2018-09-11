@@ -689,7 +689,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
     grpc_linked_mdelem* linked_md = extra_headers[i];
-    if (grpc_metadata_batch_is_valid_mdelem_index(linked_md->md_index)) {
+    if (grpc_is_mdelem_index_used(linked_md)) {
       emit_indexed(c, linked_md->md_index, &st);
     } else {
       hpack_enc(c, linked_md->md, &st);
@@ -697,7 +697,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    if (grpc_metadata_batch_is_valid_mdelem_index(l->md_index)) {
+    if (grpc_is_mdelem_index_used(l)) {
       emit_indexed(c, l->md_index, &st);
     } else {
       hpack_enc(c, l->md, &st);

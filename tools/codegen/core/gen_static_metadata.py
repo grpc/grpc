@@ -64,82 +64,82 @@ CONFIG = [
     'gzip',
     'stream/gzip',
     # metadata elements
-    ('grpc-status', '0'),
-    ('grpc-status', '1'),
-    ('grpc-status', '2'),
-    ('grpc-encoding', 'identity'),
-    ('grpc-encoding', 'gzip'),
-    ('grpc-encoding', 'deflate'),
-    ('te', 'trailers'),
-    ('content-type', 'application/grpc'),
-    (':method', 'POST'),
-    (':status', '200'),
-    (':status', '404'),
-    (':scheme', 'http'),
-    (':scheme', 'https'),
-    (':scheme', 'grpc'),
-    (':authority', ''),
-    (':method', 'GET'),
-    (':method', 'PUT'),
-    (':path', '/'),
-    (':path', '/index.html'),
-    (':status', '204'),
-    (':status', '206'),
-    (':status', '304'),
-    (':status', '400'),
-    (':status', '500'),
-    ('accept-charset', ''),
-    ('accept-encoding', ''),
-    ('accept-encoding', 'gzip, deflate'),
-    ('accept-language', ''),
-    ('accept-ranges', ''),
-    ('accept', ''),
-    ('access-control-allow-origin', ''),
-    ('age', ''),
-    ('allow', ''),
-    ('authorization', ''),
-    ('cache-control', ''),
-    ('content-disposition', ''),
-    ('content-encoding', 'identity'),
-    ('content-encoding', 'gzip'),
-    ('content-encoding', ''),
-    ('content-language', ''),
-    ('content-length', ''),
-    ('content-location', ''),
-    ('content-range', ''),
-    ('content-type', ''),
-    ('cookie', ''),
-    ('date', ''),
-    ('etag', ''),
-    ('expect', ''),
-    ('expires', ''),
-    ('from', ''),
-    ('host', ''),
-    ('if-match', ''),
-    ('if-modified-since', ''),
-    ('if-none-match', ''),
-    ('if-range', ''),
-    ('if-unmodified-since', ''),
-    ('last-modified', ''),
-    ('lb-token', ''),
-    ('lb-cost-bin', ''),
-    ('link', ''),
-    ('location', ''),
-    ('max-forwards', ''),
-    ('proxy-authenticate', ''),
-    ('proxy-authorization', ''),
-    ('range', ''),
-    ('referer', ''),
-    ('refresh', ''),
-    ('retry-after', ''),
-    ('server', ''),
-    ('set-cookie', ''),
-    ('strict-transport-security', ''),
-    ('transfer-encoding', ''),
-    ('user-agent', ''),
-    ('vary', ''),
-    ('via', ''),
-    ('www-authenticate', ''),
+    ('grpc-status', '0', 0),
+    ('grpc-status', '1', 0),
+    ('grpc-status', '2', 0),
+    ('grpc-encoding', 'identity', 0),
+    ('grpc-encoding', 'gzip', 0),
+    ('grpc-encoding', 'deflate', 0),
+    ('te', 'trailers', 0),
+    ('content-type', 'application/grpc', 0),
+    (':method', 'POST', 3),
+    (':status', '200', 8),
+    (':status', '404', 13),
+    (':scheme', 'http', 6),
+    (':scheme', 'https', 7),
+    (':scheme', 'grpc', 0),
+    (':authority', '', 1),
+    (':method', 'GET', 2),
+    (':method', 'PUT', 0),
+    (':path', '/', 4),
+    (':path', '/index.html', 5),
+    (':status', '204', 9),
+    (':status', '206', 10),
+    (':status', '304', 11),
+    (':status', '400', 12),
+    (':status', '500', 14),
+    ('accept-charset', '', 15),
+    ('accept-encoding', '', 0),
+    ('accept-encoding', 'gzip, deflate', 16),
+    ('accept-language', '', 17),
+    ('accept-ranges', '', 18),
+    ('accept', '', 19),
+    ('access-control-allow-origin', '', 20),
+    ('age', '', 21),
+    ('allow', '', 22),
+    ('authorization', '', 23),
+    ('cache-control', '', 24),
+    ('content-disposition', '', 25),
+    ('content-encoding', 'identity', 0),
+    ('content-encoding', 'gzip', 0),
+    ('content-encoding', '', 26),
+    ('content-language', '', 27),
+    ('content-length', '', 28),
+    ('content-location', '', 29),
+    ('content-range', '', 30),
+    ('content-type', '', 31),
+    ('cookie', '', 32),
+    ('date', '', 33),
+    ('etag', '', 34),
+    ('expect', '', 35),
+    ('expires', '', 36),
+    ('from', '', 37),
+    ('host', '', 38),
+    ('if-match', '', 39),
+    ('if-modified-since', '', 40),
+    ('if-none-match', '', 41),
+    ('if-range', '', 42),
+    ('if-unmodified-since', '', 43),
+    ('last-modified', '', 44),
+    ('lb-token', '', 0),
+    ('lb-cost-bin', '', 0),
+    ('link', '', 45),
+    ('location', '', 46),
+    ('max-forwards', '', 47),
+    ('proxy-authenticate', '', 48),
+    ('proxy-authorization', '', 49),
+    ('range', '', 50),
+    ('referer', '', 51),
+    ('refresh', '', 52),
+    ('retry-after', '', 53),
+    ('server', '', 54),
+    ('set-cookie', '', 55),
+    ('strict-transport-security', '', 56),
+    ('transfer-encoding', '', 57),
+    ('user-agent', '', 58),
+    ('vary', '', 59),
+    ('via', '', 60),
+    ('www-authenticate', '', 61),
 ]
 
 # Entries marked with is_default=True are ignored when counting
@@ -271,7 +271,7 @@ for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
     val = ','.join(COMPRESSION_ALGORITHMS[alg]
                    for alg in range(0, len(COMPRESSION_ALGORITHMS))
                    if (1 << alg) & mask)
-    elem = ('grpc-accept-encoding', val)
+    elem = ('grpc-accept-encoding', val, 0)
     if val not in all_strs:
         all_strs.append(val)
     if elem not in all_elems:
@@ -283,7 +283,7 @@ for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
     val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
                    for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
                    if (1 << alg) & mask)
-    elem = ('accept-encoding', val)
+    elem = ('accept-encoding', val, 0)
     if val not in all_strs:
         all_strs.append(val)
     if elem not in all_elems:
@@ -450,9 +450,9 @@ print >> H, ('extern grpc_mdelem_data '
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
 for i, elem in enumerate(all_elems):
-    print >> H, '/* "%s": "%s" */' % elem
+    print >> H, '/* "%s": "%s" Index="%d" */' % elem
     print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
-                 'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
+                 'GRPC_MDELEM_STORAGE_STATIC), %d)') % (mangle(elem).upper(), i, elem[2])
 print >> H
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
@@ -541,12 +541,12 @@ print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >> C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
-print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
+print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC, 0) : GRPC_MDNULL;'
 print >> C, '}'
 print >> C
 
 print >> C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for a, b in all_elems:
+for a, b, c in all_elems:
     print >> C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
 print >> C, '};'
 
@@ -584,7 +584,7 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >> C, '};'
 print >> C
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC), 0)'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
@@ -595,7 +595,7 @@ print >> C, '0,%s' % ','.join(
     '%d' % md_idx(elem) for elem in stream_compression_elems)
 print >> C, '};'
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC), 0)'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 
