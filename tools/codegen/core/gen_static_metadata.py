@@ -452,7 +452,7 @@ print >> H, ('extern uintptr_t '
 for i, elem in enumerate(all_elems):
     print >> H, '/* "%s": "%s" Index="%d" */' % elem
     print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
-                 'GRPC_MDELEM_STORAGE_STATIC), %d)') % (mangle(elem).upper(), i, elem[2])
+                 'GRPC_MDELEM_STORAGE_STATIC, %d))') % (mangle(elem).upper(), i, elem[2])
 print >> H
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
@@ -584,7 +584,7 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >> C, '};'
 print >> C
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC), 0)'
+print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC, 0))'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
@@ -595,7 +595,7 @@ print >> C, '0,%s' % ','.join(
     '%d' % md_idx(elem) for elem in stream_compression_elems)
 print >> C, '};'
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC), 0)'
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC, 0))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

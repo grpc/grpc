@@ -322,9 +322,9 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
     grpc_error* error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
     hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_head_static(
+                 grpc_metadata_batch_add_head(
                      op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->status, GRPC_MDELEM_STATUS_200_INDEX));
+                     &calld->status, GRPC_MDELEM_STATUS_200));
     hs_add_error(error_name, &error,
                  grpc_metadata_batch_add_tail(
                      op->payload->send_initial_metadata.send_initial_metadata,

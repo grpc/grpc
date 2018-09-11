@@ -37,7 +37,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -663,7 +663,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
 }
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_linked_mdelem** extra_headers,
+                               grpc_mdelem** extra_headers,
                                size_t extra_headers_size,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
@@ -688,17 +688,19 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     emit_advertise_table_size_change(c, &st);
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
-    grpc_linked_mdelem* linked_md = extra_headers[i];
-    if (grpc_is_mdelem_index_used(linked_md)) {
-      emit_indexed(c, linked_md->md_index, &st);
+    grpc_mdelem md = *extra_headers[i];
+    uint8_t static_index = GRPC_MDINDEX(md);
+    if (static_index > 0) {
+      emit_indexed(c, static_index, &st);
     } else {
-      hpack_enc(c, linked_md->md, &st);
+      hpack_enc(c, md, &st);
     }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    if (grpc_is_mdelem_index_used(l)) {
-      emit_indexed(c, l->md_index, &st);
+    uint8_t static_index = GRPC_MDINDEX(l->md);
+    if (static_index > 0) {
+      emit_indexed(c, static_index, &st);
     } else {
       hpack_enc(c, l->md, &st);
     }

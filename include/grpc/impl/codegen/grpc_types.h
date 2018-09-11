@@ -438,7 +438,6 @@ typedef struct grpc_metadata {
       There is no need to initialize them, and they will be set to garbage
       during calls to grpc. */
   struct /* internal */ {
-    uint8_t obfuscated_byte;
     void* obfuscated[4];
   } internal_data;
 } grpc_metadata;

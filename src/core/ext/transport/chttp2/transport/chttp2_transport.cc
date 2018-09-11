@@ -1332,9 +1332,8 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   for (grpc_linked_mdelem* md = md_batch->list.head; md != nullptr;
        md = md->next) {
-    grpc_mdelem mdelem = grpc_get_md_from_linked_mdelem(md);
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
+    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md->md));
+    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md->md));
     gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
             is_client ? "CLI" : "SVR", key, value);
     gpr_free(key);

@@ -87,7 +87,7 @@ typedef struct {
 } grpc_encode_header_options;
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
-                               grpc_linked_mdelem** extra_headers,
+                               grpc_mdelem** extra_headers,
                                size_t extra_headers_size,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
