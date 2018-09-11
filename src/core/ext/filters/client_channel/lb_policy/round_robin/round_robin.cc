@@ -89,11 +89,12 @@ class RoundRobin : public LoadBalancingPolicy {
       : public SubchannelData<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
    public:
-    RoundRobinSubchannelData(RoundRobinSubchannelList* subchannel_list,
-                             const grpc_lb_user_data_vtable* user_data_vtable,
-                             const grpc_lb_address& address,
-                             grpc_subchannel* subchannel,
-                             grpc_combiner* combiner)
+    RoundRobinSubchannelData(
+        SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
+            subchannel_list,
+        const grpc_lb_user_data_vtable* user_data_vtable,
+        const grpc_lb_address& address, grpc_subchannel* subchannel,
+        grpc_combiner* combiner)
         : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
                          combiner),
           user_data_vtable_(user_data_vtable),
