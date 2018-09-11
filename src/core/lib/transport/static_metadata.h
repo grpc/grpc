@@ -27,6 +27,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 105

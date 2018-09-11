@@ -24,6 +24,8 @@
  * an explanation of what's going on.
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/transport/static_metadata.h"
 
 #include "src/core/lib/slice/slice_internal.h"
