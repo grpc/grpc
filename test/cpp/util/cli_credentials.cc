@@ -121,7 +121,7 @@ CliCredentials::GetChannelCredentials() const {
           grpc_load_file(FLAGS_ssl_client_cert.c_str(), 1, &cert_slice));
       ssl_creds_options.pem_cert_chain =
           grpc::StringFromCopiedSlice(cert_slice);
-      grpc_slice_unref_internal(cert_slice);
+      grpc_slice_unref(cert_slice);
     }
     if (!FLAGS_ssl_client_key.empty()) {
       grpc_slice key_slice = grpc_empty_slice();
@@ -130,7 +130,7 @@ CliCredentials::GetChannelCredentials() const {
           grpc_load_file(FLAGS_ssl_client_key.c_str(), 1, &key_slice));
       ssl_creds_options.pem_private_key =
           grpc::StringFromCopiedSlice(key_slice);
-      grpc_slice_unref_internal(key_slice);
+      grpc_slice_unref(key_slice);
     }
     return grpc::SslCredentials(ssl_creds_options);
   } else if (FLAGS_channel_creds_type.compare("gdc") == 0) {
