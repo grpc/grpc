@@ -34,6 +34,13 @@ class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
     assert(size == sizeof(CallbackWithSuccessImpl));
   }
 
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   CallbackWithSuccessImpl(grpc_call* call, CallbackWithSuccessTag* parent,
                           std::function<void(bool)> f)
       : call_(call), parent_(parent), func_(std::move(f)) {
@@ -61,6 +68,13 @@ class CallbackWithStatusImpl : public grpc_core::CQCallbackInterface {
   static void operator delete(void* ptr, std::size_t size) {
     assert(size == sizeof(CallbackWithStatusImpl));
   }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
 
   CallbackWithStatusImpl(grpc_call* call, CallbackWithStatusTag* parent,
                          std::function<void(Status)> f)
