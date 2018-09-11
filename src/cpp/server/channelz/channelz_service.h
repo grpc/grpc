@@ -32,6 +32,10 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
   Status GetTopChannels(
       ServerContext* unused, const channelz::v1::GetTopChannelsRequest* request,
       channelz::v1::GetTopChannelsResponse* response) override;
+  // implementation of GetServers rpc
+  Status GetServers(ServerContext* unused,
+                    const channelz::v1::GetServersRequest* request,
+                    channelz::v1::GetServersResponse* response) override;
   // implementation of GetChannel rpc
   Status GetChannel(ServerContext* unused,
                     const channelz::v1::GetChannelRequest* request,
