@@ -59,7 +59,7 @@ static void verify(const verify_params params, const char* expected,
   size_t i;
   va_list l;
   grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_zalloc(sizeof(*e) * nheaders));
+      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e) * nheaders));
   grpc_metadata_batch b;
 
   grpc_metadata_batch_init(&b);
@@ -205,7 +205,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, use_true_binary);
   size_t initial_table_size = g_compressor.table_size;
   grpc_linked_mdelem* e =
-      static_cast<grpc_linked_mdelem*>(gpr_zalloc(sizeof(*e)));
+      static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
   e[0].md = elem;

@@ -374,7 +374,6 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                MAX_SEND_EXTRA_METADATA_COUNT);
     for (i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
-      call->send_extra_metadata[i].md_index = 0;
       if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
                         GRPC_MDSTR_PATH)) {
         path = grpc_slice_ref_internal(
@@ -955,7 +954,6 @@ static int prepare_application_metadata(grpc_call* call, int count,
     const grpc_metadata* md =
         get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
-    l->md_index = 0;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {

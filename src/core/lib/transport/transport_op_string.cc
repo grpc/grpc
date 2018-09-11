@@ -48,12 +48,7 @@ static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
   grpc_linked_mdelem* m;
   for (m = md.list.head; m != nullptr; m = m->next) {
     if (m != md.list.head) gpr_strvec_add(b, gpr_strdup(", "));
-    if (grpc_metadata_batch_is_valid_mdelem_index(m->md_index)) {
-      // TODO(hcaseyal): print out the mdelem index
-      gpr_strvec_add(b, gpr_strdup("indexed mdelem"));
-    } else {
-      put_metadata(b, m->md);
-    }
+    put_metadata(b, m->md);
   }
   if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
     char* tmp;

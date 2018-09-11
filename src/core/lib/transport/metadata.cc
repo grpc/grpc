@@ -242,7 +242,8 @@ grpc_mdelem grpc_mdelem_create(
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
     if (compatible_external_backing_store != nullptr) {
       return GRPC_MAKE_MDELEM(compatible_external_backing_store,
-                              GRPC_MDELEM_STORAGE_EXTERNAL);
+                              GRPC_MDELEM_STORAGE_EXTERNAL,
+                              GRPC_MDINDEX_UNUSED);
     }
 
     allocated_metadata* allocated =
@@ -261,7 +262,8 @@ grpc_mdelem grpc_mdelem_create(
       gpr_free(value_str);
     }
 #endif
-    return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
+    return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED,
+                            GRPC_MDINDEX_UNUSED);
   }
 
   if (GRPC_IS_STATIC_METADATA_STRING(key) &&
@@ -289,7 +291,8 @@ grpc_mdelem grpc_mdelem_create(
     if (grpc_slice_eq(key, md->key) && grpc_slice_eq(value, md->value)) {
       REF_MD_LOCKED(shard, md);
       gpr_mu_unlock(&shard->mu);
-      return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
+      return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED,
+                              GRPC_MDINDEX_UNUSED);
     }
   }
 
@@ -321,7 +324,8 @@ grpc_mdelem grpc_mdelem_create(
 
   gpr_mu_unlock(&shard->mu);
 
-  return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
+  return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED,
+                          GRPC_MDINDEX_UNUSED);
 }
 
 grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
