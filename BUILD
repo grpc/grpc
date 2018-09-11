@@ -66,9 +66,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glider"
 
-core_version = "6.0.0-pre1"
+core_version = "6.0.0"
 
-version = "1.15.0-pre1"
+version = "1.15.0"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
