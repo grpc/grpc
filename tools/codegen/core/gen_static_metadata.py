@@ -367,12 +367,12 @@ an explanation of what's going on.
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
-print >> H, '#include <grpc/impl/codegen/port_platform.h>'
+print >> H, '#include <grpc/support/port_platform.h>'
 print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
 
-print >> C, '#include <grpc/impl/codegen/port_platform.h>'
+print >> C, '#include <grpc/support/port_platform.h>'
 print >> C
 print >> C, '#include "src/core/lib/transport/static_metadata.h"'
 print >> C

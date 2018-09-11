@@ -24,7 +24,7 @@
  * an explanation of what's going on.
  */
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/static_metadata.h"
 

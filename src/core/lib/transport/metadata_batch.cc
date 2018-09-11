@@ -109,7 +109,6 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;
   }
-
   return grpc_attach_md_to_error(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"),
       storage->md);
