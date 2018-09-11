@@ -371,7 +371,6 @@ print >> H, '#include <grpc/support/port_platform.h>'
 print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
-
 print >> C, '#include <grpc/support/port_platform.h>'
 print >> C
 print >> C, '#include "src/core/lib/transport/static_metadata.h"'
