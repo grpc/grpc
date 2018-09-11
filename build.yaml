@@ -3363,7 +3363,7 @@ targets:
   - mac
   - linux
   - posix
-- name: resolve_address_test
+- name: resolve_address_using_ares_resolver_test
   build: test
   language: c
   src:
@@ -3373,6 +3373,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --resolver=ares
+- name: resolve_address_using_native_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --resolver=native
 - name: resource_quota_test
   cpu_cost: 30
   build: test
