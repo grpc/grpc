@@ -1500,5 +1500,8 @@ int grpc_server_has_open_connections(grpc_server* server) {
 
 grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
     grpc_server* server) {
+  if (server == nullptr) {
+    return nullptr;
+  }
   return server->channelz_server.get();
 }
