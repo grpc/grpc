@@ -609,7 +609,9 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// upwards.
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
 
-  /// Get the tag to be used at the CQ
+  /// Get the tag to be used at the core completion queue. Generally, the
+  /// value of cq_tag will be "this". However, it can be overridden if we
+  /// want core to process the tag differently (e.g., as a core callback)
   virtual void* cq_tag() = 0;
 };
 
@@ -659,6 +661,10 @@ class CallOpSet : public CallOpSetInterface,
 
   void* cq_tag() override { return cq_tag_; }
 
+  /// set_cq_tag is used to provide a different core CQ tag than "this".
+  /// This is used for callback-based tags, where the core tag is the core
+  /// callback function. It does not change the use or behavior of any other
+  /// function (such as FinalizeResult)
   void set_cq_tag(void* cq_tag) { cq_tag_ = cq_tag; }
 
  private:

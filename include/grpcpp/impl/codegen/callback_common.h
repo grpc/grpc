@@ -42,6 +42,13 @@ class CallbackWithStatusTag {
     assert(size == sizeof(CallbackWithStatusTag));
   }
 
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops);
   ~CallbackWithStatusTag() {}
@@ -49,7 +56,9 @@ class CallbackWithStatusTag {
   Status* status_ptr() { return status_; }
   CompletionQueueTag* ops() { return ops_; }
 
-  // force_run can only be performed on a tag before it can ever be active
+  // force_run can not be performed on a tag if operations using this tag
+  // have been sent to PerformOpsOnCall. It is intended for error conditions
+  // that are detected before the operations are internally processed.
   void force_run(Status s);
 
  private:
@@ -65,13 +74,22 @@ class CallbackWithSuccessTag {
     assert(size == sizeof(CallbackWithSuccessTag));
   }
 
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
                          CompletionQueueTag* ops);
 
   void* tag() { return static_cast<void*>(impl_); }
   CompletionQueueTag* ops() { return ops_; }
 
-  // force_run can only be performed on a tag before it can ever be active
+  // force_run can not be performed on a tag if operations using this tag
+  // have been sent to PerformOpsOnCall. It is intended for error conditions
+  // that are detected before the operations are internally processed.
   void force_run(bool ok);
 
  private:
