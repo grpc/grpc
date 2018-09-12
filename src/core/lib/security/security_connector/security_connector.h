@@ -26,10 +26,15 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+
+namespace grpc_core {
+class ClientSslConfig;
+}
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 
@@ -211,10 +216,10 @@ typedef struct {
 */
 grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
-    const grpc_ssl_config* config, const char* target_name,
+    grpc_call_credentials* request_metadata_creds, const char* target_name,
     const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache,
+    const verify_peer_options* verify_options,
     grpc_channel_security_connector** sc);
 
 /* Config for ssl servers. */
@@ -246,8 +251,43 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
 void grpc_shallow_peer_destruct(tsi_peer* peer);
 int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name);
 
-/* --- Default SSL Root Store. --- */
 namespace grpc_core {
+
+class ClientSslConfig : public RefCounted<ClientSslConfig> {
+ public:
+  static RefCountedPtr<ClientSslConfig> Create(
+      const char* pem_root_certs,
+      grpc_ssl_pem_key_cert_pair* pem_key_cert_pair);
+
+  const char* GetPemRootCerts() const { return pem_root_certs_; }
+
+  tsi_ssl_pem_key_cert_pair* GetPemKeyCertPair() const {
+    return pem_key_cert_pair_;
+  }
+
+ private:
+  // So New() can call our private ctor.
+  template <typename T2, typename... Args>
+  friend T2* New(Args&&... args);
+
+  // So Delete() can call our private dtor.
+  template <typename T2>
+  friend void Delete(T2*);
+
+  ClientSslConfig(const char* pem_root_certs,
+                  grpc_ssl_pem_key_cert_pair* pem_key_cert_pair);
+  ~ClientSslConfig();
+
+  char* pem_root_certs_ = nullptr;
+  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair_ = nullptr;
+};
+
+struct VersionedClientSslConfig {
+  int version;
+  RefCountedPtr<ClientSslConfig> config;
+};
+
+/* --- Default SSL Root Store. --- */
 
 // The class implements default SSL root store.
 class DefaultSslRootStore {

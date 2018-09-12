@@ -183,6 +183,63 @@ typedef struct {
   void (*verify_peer_destruct)(void* userdata);
 } verify_peer_options;
 
+/** Server certificate config object holds the client's public certificates and
+   associated private keys. Create using
+   grpc_ssl_channel_certificate_config_create(). */
+typedef struct grpc_ssl_channel_certificate_config
+    grpc_ssl_channel_certificate_config;
+
+/** Creates a grpc_ssl_channel_certificate_config object.
+   - pem_root_certs is the NULL-terminated string containing the PEM encoding
+     of the server root certificates. If this parameter is NULL, the
+     implementation will first try to dereference the file pointed by the
+     GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails,
+     try to get the roots set by grpc_override_ssl_default_roots. Eventually,
+     if all these fail, it will try to get the roots from a well-known place on
+     disk (in the grpc install directory).
+   - pem_key_cert_pair is a pointer on the object containing client's private
+     key and certificate chain. This parameter can be NULL if the client does
+     not have such a key/cert pair.
+   - It is the caller's responsibility to free this object via
+     grpc_ssl_channel_certificate_config_destroy(). */
+GRPCAPI grpc_ssl_channel_certificate_config*
+grpc_ssl_channel_certificate_config_create(
+    const char* pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs);
+
+/** Destroys a grpc_ssl_channel_certificate_config object. */
+GRPCAPI void grpc_ssl_channel_certificate_config_destroy(
+    grpc_ssl_channel_certificate_config* config);
+
+/** Callback to retrieve updated SSL channel certificates, private keys, and
+   trusted CAs (for server authentication).
+    - user_data parameter, if not NULL, contains opaque data to be used by the
+      callback.
+    - Use grpc_ssl_channel_certificate_config_create to create the config.
+    - The caller assumes ownership of the config. */
+typedef grpc_ssl_certificate_config_reload_status (
+    *grpc_ssl_channel_certificate_config_callback)(
+    void* user_data, grpc_ssl_channel_certificate_config** config);
+
+/** Creates an SSL credentials object using a certificate config fetcher. Use
+   this method to reload the certificates and keys of the SSL channel without
+   interrupting the operation of the channel. Initial certificate config will be
+   fetched during channel initialization.
+   - user_data parameter, if not NULL, contains opaque data which will be passed
+     to the fetcher (see definition of
+     grpc_ssl_channel_certificate_config_callback).
+   - verify_options is an optional verify_peer_options object which holds
+     additional options controlling how peer certificates are verified. For
+     example, you can supply a callback which receives the peer's certificate
+     with which you can do additional verification. Can be NULL, in which
+     case verification will retain default behavior. Any settings in
+     verify_options are copied during this call, so the verify_options
+     object can be released afterwards. */
+GRPCAPI grpc_channel_credentials*
+grpc_ssl_credentials_create_using_config_fetcher(
+    grpc_ssl_channel_certificate_config_callback cb, void* user_data,
+    const verify_peer_options* verify_options, void* reserved);
+
 /** Creates an SSL credentials object.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
