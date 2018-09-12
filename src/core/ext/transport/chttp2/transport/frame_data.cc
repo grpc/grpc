@@ -62,6 +62,7 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
 
   if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     s->received_last_frame = true;
+    s->eos_received = true;
   } else {
     s->received_last_frame = false;
   }

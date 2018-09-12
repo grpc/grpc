@@ -598,6 +598,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_skip_frame_parser(t, 1);
     }
+    if (t->channelz_socket != nullptr) {
+      t->channelz_socket->RecordStreamStartedFromRemote();
+    }
   } else {
     t->incoming_stream = s;
   }
@@ -611,6 +614,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   }
   t->parser = grpc_chttp2_header_parser_parse;
   t->parser_data = &t->hpack_parser;
+  if (t->header_eof) {
+    s->eos_received = true;
+  }
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {

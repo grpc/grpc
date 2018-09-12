@@ -197,11 +197,38 @@ class ServerNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for sockets
-// TODO(ncteisen): implement in subsequent PR.
 class SocketNode : public BaseNode {
  public:
   SocketNode() : BaseNode(EntityType::kSocket) {}
   ~SocketNode() override {}
+
+  grpc_json* RenderJson() override;
+
+  void RecordStreamStartedFromLocal();
+  void RecordStreamStartedFromRemote();
+  void RecordStreamSucceeded() {
+    gpr_atm_no_barrier_fetch_add(&streams_succeeded_, (gpr_atm(1)));
+  }
+  void RecordStreamFailed() {
+    gpr_atm_no_barrier_fetch_add(&streams_failed_, (gpr_atm(1)));
+  }
+  void RecordMessageSent();
+  void RecordMessageRecieved();
+  void RecordKeepaliveSent() {
+    gpr_atm_no_barrier_fetch_add(&keepalives_sent_, (gpr_atm(1)));
+  }
+
+ private:
+  gpr_atm streams_started_ = 0;
+  gpr_atm streams_succeeded_ = 0;
+  gpr_atm streams_failed_ = 0;
+  gpr_atm messages_sent_ = 0;
+  gpr_atm messages_recieved_ = 0;
+  gpr_atm keepalives_sent_ = 0;
+  gpr_atm last_local_stream_created_millis_ = 0;
+  gpr_atm last_remote_stream_created_millis_ = 0;
+  gpr_atm last_message_sent_millis_ = 0;
+  gpr_atm last_message_recieved_millis_ = 0;
 };
 
 // Creation functions

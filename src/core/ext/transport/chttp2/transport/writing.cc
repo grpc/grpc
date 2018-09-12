@@ -569,6 +569,7 @@ class StreamWriteContext {
   void SentLastFrame() {
     s_->send_trailing_metadata = nullptr;
     s_->sent_trailing_metadata = true;
+    s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
