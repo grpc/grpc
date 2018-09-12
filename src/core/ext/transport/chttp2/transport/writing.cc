@@ -434,7 +434,7 @@ class StreamWriteContext {
           s_->id,  // stream_id
           false,   // is_eof
           t_->settings[GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
+                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST] !=
               0,  // use_true_binary_metadata
           t_->settings[GRPC_PEER_SETTINGS]
                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
@@ -526,8 +526,7 @@ class StreamWriteContext {
       grpc_encode_header_options hopt = {
           s_->id, true,
           t_->settings[GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-              0,
+                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST] != 0,
 
           t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
           &s_->stats.outgoing};

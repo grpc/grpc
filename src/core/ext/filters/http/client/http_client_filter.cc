@@ -72,12 +72,14 @@ struct call_data {
 struct channel_data {
   grpc_mdelem static_scheme;
   grpc_mdelem user_agent;
+  grpc_transport* transport;
   size_t max_payload_size_for_get;
 };
 }  // namespace
 
 static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
+  // naturally assumes 200 if not present
   if (b->idx.named.status != nullptr) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
@@ -116,6 +118,7 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
     }
   }
 
+  // naturally skips processing if not present.
   if (b->idx.named.content_type != nullptr) {
     if (!grpc_mdelem_eq(b->idx.named.content_type->md,
                         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
@@ -391,21 +394,45 @@ static void hc_start_transport_stream_op_batch(
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    error = grpc_metadata_batch_add_head(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->method, method);
-    if (error != GRPC_ERROR_NONE) goto done;
+    const grpc_hfast_data* hfast_data =
+        grpc_transport_get_hfast_data(channeld->transport);
+    bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
+    // default for method is POST. We explicitly add the element if we are not
+    // doing hfast, or if we are using something other than POST.
+    if (hfast_enabled && grpc_mdelem_eq(method, GRPC_MDELEM_METHOD_POST)) {
+      if (grpc_trace_hfast.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "HFAST [CLI]: not adding ':method', default of 'POST'");
+      }
+    } else {
+      error = grpc_metadata_batch_add_head(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          &calld->method, method);
+      if (error != GRPC_ERROR_NONE) goto done;
+    }
+    // We add te and content_type only if we are not doing hfast, otherwise
+    // we assume the default values.
+    if (!hfast_enabled) {
+      error = grpc_metadata_batch_add_tail(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
+      if (error != GRPC_ERROR_NONE) goto done;
+      error = grpc_metadata_batch_add_tail(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          &calld->content_type,
+          GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+      if (error != GRPC_ERROR_NONE) goto done;
+    } else {
+      if (grpc_trace_hfast.enabled()) {
+        gpr_log(GPR_DEBUG, "HFAST [CLI]: not adding 'te'");
+        gpr_log(GPR_DEBUG, "HFAST [CLI]: not adding 'content-type'");
+      }
+    }
+    // We always send these for now
+    // TODO(ncteisen): look these up in a connection level cache.
     error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->scheme, channeld->static_scheme);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
@@ -542,6 +569,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != nullptr);
   chand->static_scheme = scheme_from_args(args->channel_args);
+  chand->transport = args->optional_transport;
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
   chand->user_agent = grpc_mdelem_from_slices(

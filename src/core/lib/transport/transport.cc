@@ -35,6 +35,7 @@
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
                                                          "stream_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_hfast(false, "hfast");
 
 #ifndef NDEBUG
 void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason) {
@@ -197,6 +198,11 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
   return transport->vtable->get_endpoint(transport);
+}
+
+const grpc_hfast_data* grpc_transport_get_hfast_data(
+    grpc_transport* transport) {
+  return transport->vtable->get_hfast_data(transport);
 }
 
 // This comment should be sung to the tune of

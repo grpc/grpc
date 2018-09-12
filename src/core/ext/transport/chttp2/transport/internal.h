@@ -471,6 +471,8 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+
+  grpc_hfast_data hfast_data;
 };
 
 typedef enum {

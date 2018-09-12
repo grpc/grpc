@@ -357,8 +357,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                            GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
                            {-1, 16384, 16777215},
                            {true, true}},
-                          {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
-                           GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
+                          {GRPC_ARG_HTTP2_ENABLE_HFAST,
+                           GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST,
                            {1, 0, 1},
                            {true, true}},
                           {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
@@ -480,6 +480,7 @@ static void init_transport(grpc_chttp2_transport* t,
   t->is_client = is_client;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
+  t->hfast_data.enabled = false;
   grpc_connectivity_state_init(
       &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
@@ -530,8 +531,7 @@ static void init_transport(grpc_chttp2_transport* t,
   }
   queue_setting_update(t, GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
                        DEFAULT_MAX_HEADER_LIST_SIZE);
-  queue_setting_update(t, GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
-                       1);
+  queue_setting_update(t, GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST, 1);
 
   configure_transport_ping_policy(t);
   init_transport_keepalive_settings(t);
@@ -3134,6 +3134,15 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
   return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
 }
 
+static const grpc_hfast_data* chttp2_get_hfast_data(grpc_transport* transport) {
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(transport);
+  // ensure struct is up to date with updates from our peer
+  t->hfast_data.enabled =
+      t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST];
+  return &t->hfast_data;
+}
+
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
@@ -3143,7 +3152,8 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_endpoint};
+                                             chttp2_get_endpoint,
+                                             chttp2_get_hfast_data};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 

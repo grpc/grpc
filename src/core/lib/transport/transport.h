@@ -49,6 +49,7 @@ typedef struct grpc_transport grpc_transport;
 typedef struct grpc_stream grpc_stream;
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_hfast;
 
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
@@ -86,6 +87,13 @@ typedef struct {
   uint64_t data_bytes;
   uint64_t header_bytes;
 } grpc_transport_one_way_stats;
+
+// for now, just enabled bool, because we only care about hfast being enabled
+// or disabled. In future optimizations, this will become an actual struct that
+// holds the cached data for certain metadata elements.
+typedef struct {
+  bool enabled;
+} grpc_hfast_data;
 
 typedef struct grpc_transport_stream_stats {
   grpc_transport_one_way_stats incoming;
@@ -365,6 +373,9 @@ void grpc_transport_destroy(grpc_transport* transport);
 
 /* Get the endpoint used by \a transport */
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
+
+/* gets hfast data. NULL if hfast is not enabled. Caller must always check. */
+const grpc_hfast_data* grpc_transport_get_hfast_data(grpc_transport* transport);
 
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
