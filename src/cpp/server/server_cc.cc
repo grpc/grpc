@@ -473,7 +473,8 @@ std::shared_ptr<Channel> Server::InProcessChannel(
     const ChannelArguments& args) {
   grpc_channel_args channel_args = args.c_channel_args();
   return CreateChannelInternal(
-      "inproc", grpc_inproc_channel_create(server_, &channel_args, nullptr));
+      "inproc", grpc_inproc_channel_create(server_, &channel_args, nullptr),
+      nullptr);
 }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(

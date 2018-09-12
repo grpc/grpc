@@ -50,8 +50,14 @@
 namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-Channel::Channel(const grpc::string& host, grpc_channel* channel)
+Channel::Channel(
+    const grpc::string& host, grpc_channel* channel,
+    std::unique_ptr<std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+        interceptor_creators)
     : host_(host), c_channel_(channel) {
+  auto vector = interceptor_creators.release();
+  interceptor_creators_ = std::move(*vector);
   g_gli_initializer.summon();
 }
 
