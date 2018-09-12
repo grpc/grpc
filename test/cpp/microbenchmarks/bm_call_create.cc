@@ -446,11 +446,15 @@ void Destroy(grpc_transport* self) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* self) { return nullptr; }
 
+static const grpc_hfast_data* GetHfastData(grpc_transport* t) {
+  return nullptr;
+}
+
 static const grpc_transport_vtable dummy_transport_vtable = {
-    0,          "dummy_http2", InitStream,
-    SetPollset, SetPollsetSet, PerformStreamOp,
-    PerformOp,  DestroyStream, Destroy,
-    GetEndpoint};
+    0,           "dummy_http2", InitStream,
+    SetPollset,  SetPollsetSet, PerformStreamOp,
+    PerformOp,   DestroyStream, Destroy,
+    GetEndpoint, GetHfastData};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};
 
@@ -598,7 +602,8 @@ typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+    HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
