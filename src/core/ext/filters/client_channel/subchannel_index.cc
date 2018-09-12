@@ -42,7 +42,7 @@ struct grpc_subchannel_key {
   grpc_subchannel_args args;
 };
 
-static bool g_force_creation = false;
+static gpr_atm g_force_creation = false;
 
 static grpc_subchannel_key* create_key(
     const grpc_subchannel_args* args,
@@ -73,7 +73,8 @@ static grpc_subchannel_key* subchannel_key_copy(grpc_subchannel_key* k) {
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b) {
-  if (g_force_creation) return false;
+  // To pretend the keys are different, return a non-zero value.
+  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&g_force_creation))) return 1;
   int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.filter_count > 0) {
@@ -250,5 +251,5 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
 }
 
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
-  g_force_creation = force_creation;
+  gpr_atm_no_barrier_store(&g_force_creation, force_creation);
 }

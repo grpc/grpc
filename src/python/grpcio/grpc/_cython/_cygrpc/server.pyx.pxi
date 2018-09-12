@@ -18,6 +18,7 @@ import logging
 import time
 import grpc
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 cdef class Server:

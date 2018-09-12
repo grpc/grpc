@@ -41,69 +41,34 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                         bool is_top_level_channel)
-    : channel_(channel),
-      target_(nullptr),
-      channel_uuid_(-1),
-      is_top_level_channel_(is_top_level_channel) {
-  trace_.Init(channel_tracer_max_nodes);
-  target_ = UniquePtr<char>(grpc_channel_get_target(channel_));
-  channel_uuid_ = ChannelzRegistry::RegisterChannelNode(this);
+BaseNode::BaseNode(EntityType type)
+    : type_(type), uuid_(ChannelzRegistry::Register(this)) {}
+
+BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+
+char* BaseNode::RenderJsonString() {
+  grpc_json* json = RenderJson();
+  GPR_ASSERT(json != nullptr);
+  char* json_str = grpc_json_dump_to_string(json, 0);
+  grpc_json_destroy(json);
+  return json_str;
+}
+
+CallCountingHelper::CallCountingHelper() {
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-ChannelNode::~ChannelNode() {
-  trace_.Destroy();
-  ChannelzRegistry::UnregisterChannelNode(channel_uuid_);
-}
+CallCountingHelper::~CallCountingHelper() {}
 
-void ChannelNode::RecordCallStarted() {
+void CallCountingHelper::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-void ChannelNode::PopulateConnectivityState(grpc_json* json) {}
-
-void ChannelNode::PopulateChildRefs(grpc_json* json) {}
-
-grpc_json* ChannelNode::RenderJson() {
-  // We need to track these three json objects to build our object
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
+void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
-  // create and fill the ref child
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "channelId", channel_uuid_);
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  PopulateConnectivityState(json);
-  GPR_ASSERT(target_.get() != nullptr);
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace = trace_->RenderJson();
-  if (trace != nullptr) {
-    // we manually link up and fill the child since it was created for us in
-    // ChannelTrace::RenderJson
-    trace->key = "trace";  // this object is named trace in channelz.proto
-    json_iterator = grpc_json_link_child(json, trace, json_iterator);
-  }
-  // reset the parent to be the data object.
-  json = data;
-  json_iterator = nullptr;
   if (calls_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "callsStarted", calls_started_);
@@ -121,17 +86,58 @@ grpc_json* ChannelNode::RenderJson() {
   json_iterator =
       grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
                              gpr_format_timespec(ts), GRPC_JSON_STRING, true);
-  json = top_level_json;
-  json_iterator = nullptr;
-  PopulateChildRefs(json);
-  return top_level_json;
 }
 
-char* ChannelNode::RenderJsonString() {
-  grpc_json* json = RenderJson();
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  return json_str;
+ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                         bool is_top_level_channel)
+    : BaseNode(is_top_level_channel ? EntityType::kTopLevelChannel
+                                    : EntityType::kInternalChannel),
+      channel_(channel),
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
+      trace_(channel_tracer_max_nodes) {}
+
+ChannelNode::~ChannelNode() {}
+
+grpc_json* ChannelNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "channelId", uuid());
+  // reset json iterators to top level object
+  json = top_level_json;
+  json_iterator = nullptr;
+  // create and fill the data child.
+  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
+                                           GRPC_JSON_OBJECT, false);
+  json = data;
+  json_iterator = nullptr;
+  // template method. Child classes may override this to add their specific
+  // functionality.
+  PopulateConnectivityState(json);
+  // populate the target.
+  GPR_ASSERT(target_.get() != nullptr);
+  grpc_json_create_child(nullptr, json, "target", target_.get(),
+                         GRPC_JSON_STRING, false);
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_.RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  // template method. Child classes may override this to add their specific
+  // functionality.
+  PopulateChildRefs(json);
+  return top_level_json;
 }
 
 RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
@@ -141,12 +147,41 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
-SubchannelNode::SubchannelNode() {
-  subchannel_uuid_ = ChannelzRegistry::RegisterSubchannelNode(this);
-}
+ServerNode::ServerNode(size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
 
-SubchannelNode::~SubchannelNode() {
-  ChannelzRegistry::UnregisterSubchannelNode(subchannel_uuid_);
+ServerNode::~ServerNode() {}
+
+grpc_json* ServerNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "serverId", uuid());
+  // reset json iterators to top level object
+  json = top_level_json;
+  json_iterator = nullptr;
+  // create and fill the data child.
+  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
+                                           GRPC_JSON_OBJECT, false);
+  json = data;
+  json_iterator = nullptr;
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_.RenderJson();
+  if (trace_json != nullptr) {
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+  // ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  return top_level_json;
 }
 
 }  // namespace channelz

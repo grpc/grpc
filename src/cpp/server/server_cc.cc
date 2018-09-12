@@ -687,9 +687,6 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
-  if (*status) {
-    context_->client_metadata_.FillMap();
-  }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   internal::Call call(call_, server_, call_cq_,

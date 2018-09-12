@@ -436,8 +436,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  internal::MetadataMap recv_initial_metadata_;
-  internal::MetadataMap trailing_metadata_;
+  mutable internal::MetadataMap recv_initial_metadata_;
+  mutable internal::MetadataMap trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

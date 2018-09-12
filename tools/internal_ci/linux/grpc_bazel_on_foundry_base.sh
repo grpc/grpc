@@ -34,6 +34,8 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instance"
+
 # TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
@@ -56,9 +58,9 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --remote_instance_name=grpc-testing/instances/default_instance \
   --test_env=GRPC_VERBOSITY=debug \
-  $1 \
+  --remote_instance_name=projects/grpc-testing/instances/default_instance \
+  $@ \
   -- //test/... || FAILED="true"
 
 if [ "$UPLOAD_TEST_RESULTS" != "" ]

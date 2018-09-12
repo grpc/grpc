@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
@@ -44,16 +45,16 @@ namespace channelz {
 namespace testing {
 
 // testing peer to access channel internals
-class ChannelNodePeer {
+class CallCountingHelperPeer {
  public:
-  ChannelNodePeer(ChannelNode* channel) : channel_(channel) {}
-  grpc_millis last_call_started_millis() {
+  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  grpc_millis last_call_started_millis() const {
     return (grpc_millis)gpr_atm_no_barrier_load(
-        &channel_->last_call_started_millis_);
+        &node_->last_call_started_millis_);
   }
 
  private:
-  ChannelNode* channel_;
+  CallCountingHelper* node_;
 };
 
 namespace {
@@ -102,6 +103,25 @@ void ValidateGetTopChannels(size_t expected_channels) {
   gpr_free(core_api_json_str);
 }
 
+void ValidateGetServers(size_t expected_servers) {
+  char* json_str = ChannelzRegistry::GetServers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // This check will naturally have to change when we support pagination.
+  // tracked: https://github.com/grpc/grpc/issues/16019.
+  ValidateJsonArraySize(parsed_json, "server", expected_servers);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // also check that the core API formats this correctly
+  char* core_api_json_str = grpc_channelz_get_servers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
+}
+
 class ChannelFixture {
  public:
   ChannelFixture(int max_trace_nodes = 0) {
@@ -122,6 +142,28 @@ class ChannelFixture {
 
  private:
   grpc_channel* channel_;
+};
+
+class ServerFixture {
+ public:
+  explicit ServerFixture(int max_trace_nodes = 0) {
+    grpc_arg server_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
+            max_trace_nodes),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+    };
+    grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+    server_ = grpc_server_create(&server_args, nullptr);
+  }
+
+  ~ServerFixture() { grpc_server_destroy(server_); }
+
+  grpc_server* server() const { return server_; }
+
+ private:
+  grpc_server* server_;
 };
 
 struct validate_channel_data_args {
@@ -157,14 +199,21 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   ValidateCounters(json_str, args);
   gpr_free(json_str);
   // also check that the core API formats this the correct way
-  char* core_api_json_str = grpc_channelz_get_channel(channel->channel_uuid());
+  char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
   gpr_free(core_api_json_str);
 }
 
-grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {
-  ChannelNodePeer peer(channel);
+void ValidateServer(ServerNode* server, validate_channel_data_args args) {
+  char* json_str = server->RenderJsonString();
+  grpc::testing::ValidateServerProtoJsonTranslation(json_str);
+  ValidateCounters(json_str, args);
+  gpr_free(json_str);
+}
+
+grpc_millis GetLastCallStartedMillis(CallCountingHelper* channel) {
+  CallCountingHelperPeer peer(channel);
   return peer.last_call_started_millis();
 }
 
@@ -215,31 +264,29 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
 
 TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  CallCountingHelper counter;
   // start a call to set the last call started timestamp
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis1 = GetLastCallStartedMillis(&counter);
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
-  grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
+  grpc_millis millis2 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis2);
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
-  grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallFailed();
+  counter.RecordCallSucceeded();
+  grpc_millis millis3 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis3);
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis4 = GetLastCallStartedMillis(&counter);
   EXPECT_NE(millis1, millis4);
 }
 
-TEST(ChannelzGetTopChannelsTest, BasicTest) {
+TEST(ChannelzGetTopChannelsTest, BasicGetTopChannelsTest) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel;
   ValidateGetTopChannels(1);
@@ -275,7 +322,47 @@ TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {
   grpc_channel_destroy(internal_channel);
 }
 
+class ChannelzServerTest : public ::testing::TestWithParam<size_t> {};
+
+TEST_P(ChannelzServerTest, BasicServerAPIFunctionality) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server(10);
+  ServerNode* channelz_server = grpc_server_get_channelz_node(server.server());
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {1, 1, 1});
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {3, 3, 3});
+}
+
+TEST(ChannelzGetServersTest, BasicGetServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server;
+  ValidateGetServers(1);
+}
+
+TEST(ChannelzGetServersTest, NoServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ValidateGetServers(0);
+}
+
+TEST(ChannelzGetServersTest, ManyServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture servers[10];
+  (void)servers;  // suppress unused variable error
+  ValidateGetServers(10);
+}
+
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
+                        ::testing::Values(0, 1, 2, 6, 10, 15));
+
+INSTANTIATE_TEST_CASE_P(ChannelzServerTestSweep, ChannelzServerTest,
                         ::testing::Values(0, 1, 2, 6, 10, 15));
 
 }  // namespace testing
