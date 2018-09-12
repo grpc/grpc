@@ -76,6 +76,8 @@ class InteropClient {
   // languages
   bool DoChannelSoakTest(int32_t soak_iterations);
   bool DoRpcSoakTest(int32_t soak_iterations);
+  bool DoLongLivedChannelTest(int32_t soak_iterations,
+                              int32_t iteration_interval);
 
   // Auth tests.
   // username is a string containing the user email
