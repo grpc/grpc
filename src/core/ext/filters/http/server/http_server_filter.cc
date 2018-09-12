@@ -69,6 +69,7 @@ struct call_data {
 
 struct channel_data {
   bool surface_user_agent;
+  grpc_transport* transport;
 };
 
 }  // namespace
@@ -101,10 +102,23 @@ static void hs_add_error(const char* error_name, grpc_error** cumulative,
 static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
                                                grpc_metadata_batch* b) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
-  if (b->idx.named.method != nullptr) {
+  const grpc_hfast_data* hfast_data =
+      grpc_transport_get_hfast_data(chand->transport);
+  bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
+
+  if (hfast_enabled && b->idx.named.method == nullptr) {
+    if (grpc_trace_hfast.enabled()) {
+      gpr_log(GPR_DEBUG,
+              "HFAST [SVR]: skipping ':method' check, assuming POST");
+    }
+    *calld->recv_initial_metadata_flags &=
+        ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
+          GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
+  } else if (b->idx.named.method != nullptr) {
     if (grpc_mdelem_eq(b->idx.named.method->md, GRPC_MDELEM_METHOD_POST)) {
       *calld->recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
@@ -136,7 +150,11 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":method")));
   }
 
-  if (b->idx.named.te != nullptr) {
+  if (hfast_enabled && b->idx.named.te == nullptr) {
+    if (grpc_trace_hfast.enabled()) {
+      gpr_log(GPR_DEBUG, "HFAST [SVR]: skipping 'te' check");
+    }
+  } else if (b->idx.named.te != nullptr) {
     if (!grpc_mdelem_eq(b->idx.named.te->md, GRPC_MDELEM_TE_TRAILERS)) {
       hs_add_error(error_name, &error,
                    grpc_attach_md_to_error(
@@ -169,6 +187,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":scheme")));
   }
 
+  // naturally skips processing if not present
   if (b->idx.named.content_type != nullptr) {
     if (!grpc_mdelem_eq(b->idx.named.content_type->md,
                         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
@@ -341,19 +360,31 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
                                 grpc_transport_stream_op_batch* op) {
   /* grab pointers to our data from the call element */
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
 
   if (op->send_initial_metadata) {
     grpc_error* error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
-    hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_head(
-                     op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->status, GRPC_MDELEM_STATUS_200));
-    hs_add_error(error_name, &error,
-                 grpc_metadata_batch_add_tail(
-                     op->payload->send_initial_metadata.send_initial_metadata,
-                     &calld->content_type,
-                     GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC));
+    const grpc_hfast_data* hfast_data =
+        grpc_transport_get_hfast_data(chand->transport);
+    bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
+    if (hfast_enabled) {
+      if (grpc_trace_hfast.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "HFAST [SVR]: not adding ':status', default of '200'");
+        gpr_log(GPR_DEBUG, "HFAST [SVR]: not adding 'content-type'");
+      }
+    } else {
+      hs_add_error(error_name, &error,
+                   grpc_metadata_batch_add_head(
+                       op->payload->send_initial_metadata.send_initial_metadata,
+                       &calld->status, GRPC_MDELEM_STATUS_200));
+      hs_add_error(error_name, &error,
+                   grpc_metadata_batch_add_tail(
+                       op->payload->send_initial_metadata.send_initial_metadata,
+                       &calld->content_type,
+                       GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC));
+    }
     hs_add_error(
         error_name, &error,
         hs_filter_outgoing_metadata(
@@ -446,6 +477,8 @@ static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
       grpc_channel_args_find(args->channel_args,
                              const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
       true);
+  GPR_ASSERT(args->optional_transport != nullptr);
+  chand->transport = args->optional_transport;
   return GRPC_ERROR_NONE;
 }
 
