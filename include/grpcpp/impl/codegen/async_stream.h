@@ -114,7 +114,7 @@ class AsyncWriterInterface {
   /// queue BEFORE calling Write again.
   /// This is thread-safe with respect to \a AsyncReaderInterface::Read
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
   ///
   /// \param[in] msg The message to be written.
@@ -130,7 +130,7 @@ class AsyncWriterInterface {
   /// WriteOptions \a options is used to set the write options of this message.
   /// This is thread-safe with respect to \a AsyncReaderInterface::Read
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
   ///
   /// \param[in] msg The message to be written.
@@ -150,7 +150,7 @@ class AsyncWriterInterface {
   /// the flow control window size. If \a msg size is larger than the window
   /// size, it will be sent on wire without buffering.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a msg, so it is safe to
   /// to deallocate once Write returns.
   ///
   /// \param[in] msg The message to be written.
@@ -639,7 +639,7 @@ class ServerAsyncReaderInterface
   /// metadata (if not sent already), response message, and status, or if
   /// some failure occurred when trying to do so.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg or \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg or \a status, so it
   /// is safe to to deallocate once Finish returns.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -662,7 +662,7 @@ class ServerAsyncReaderInterface
   /// metadata (if not sent already), and status, or if some failure occurred
   /// when trying to do so.
   ///
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once FinishWithError returns.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -713,7 +713,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   ///
   /// Note: \a msg is not sent if \a status has a non-OK code.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg and \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
   /// is safe to to deallocate once Finish returns.
   void Finish(const W& msg, const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
@@ -742,7 +742,7 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   ///   - uses the \a ServerContext associated with this call to send possible
   ///     initial and trailing metadata.
   ///
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once FinishWithError returns.
   void FinishWithError(const Status& status, void* tag) override {
     GPR_CODEGEN_ASSERT(!status.ok());
@@ -794,7 +794,7 @@ class ServerAsyncWriterInterface
   /// metadata (if not sent already), response message, and status, or if
   /// some failure occurred when trying to do so.
   ///
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once Finish returns.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -808,7 +808,7 @@ class ServerAsyncWriterInterface
   /// WriteAndFinish is equivalent of performing WriteLast and Finish
   /// in a single step.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg and \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
   /// is safe to to deallocate once WriteAndFinish returns.
   ///
   /// \param[in] msg The message to be written.
@@ -875,7 +875,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   ///
   /// Note: \a status must have an OK code.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg and \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
   /// is safe to to deallocate once WriteAndFinish returns.
   void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
@@ -896,7 +896,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   /// Note: there are no restrictions are the code of
   /// \a status,it may be non-OK
   ///
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once Finish returns.
   void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
@@ -957,7 +957,7 @@ class ServerAsyncReaderWriterInterface
   /// metadata (if not sent already), response message, and status, or if some
   /// failure occurred when trying to do so.
   ///
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once Finish returns.
   ///
   /// \param[in] tag Tag identifying this request.
@@ -971,7 +971,7 @@ class ServerAsyncReaderWriterInterface
   /// WriteAndFinish is equivalent of performing WriteLast and Finish in a
   /// single step.
   ///
-  /// GRPC doesn't take ownership or a reference to \a msg and \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
   /// is safe to to deallocate once WriteAndFinish returns.
   ///
   /// \param[in] msg The message to be written.
@@ -1046,7 +1046,7 @@ class ServerAsyncReaderWriter final
   ///
   /// Note: \a status must have an OK code.
   //
-  /// GRPC doesn't take ownership or a reference to \a msg and \a status, so it
+  /// gRPC doesn't take ownership or a reference to \a msg and \a status, so it
   /// is safe to to deallocate once WriteAndFinish returns.
   void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
@@ -1067,7 +1067,7 @@ class ServerAsyncReaderWriter final
   /// Note: there are no restrictions are the code of \a status,
   /// it may be non-OK
   //
-  /// GRPC doesn't take ownership or a reference to \a status, so it is safe to
+  /// gRPC doesn't take ownership or a reference to \a status, so it is safe to
   /// to deallocate once Finish returns.
   void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
