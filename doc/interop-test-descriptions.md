@@ -944,6 +944,11 @@ the experimental flag, `soak_iterations`.
 This tests puts stress on several gRPC components; the resolver, the load 
 balancer, and the RPC hotpath.
 
+#### long_connection
+
+The client performs a number of large_unary RPCs over a single connection
+with a fixed but configuration interval between the RPCs.
+
 ### TODO Tests
 
 #### High priority:
