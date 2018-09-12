@@ -657,8 +657,8 @@ void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
-  auto result =
-      grpc_call_start_batch(call->call(), cops, nops, ops->cq_tag(), nullptr);
+  // TODO(vjpai): Use ops->cq_tag once this case supports callbacks
+  auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   if (result != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
     grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
