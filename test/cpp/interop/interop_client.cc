@@ -1052,8 +1052,8 @@ bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
   return true;
 }
 
-bool InteropClient::DoLongConnectionTest(int32_t soak_iterations,
-                                         int32_t iteration_interval) {
+bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
+                                           int32_t iteration_interval) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   GPR_ASSERT(iteration_interval > 0);
@@ -1071,10 +1071,10 @@ bool InteropClient::DoLongConnectionTest(int32_t soak_iterations,
                      gpr_time_from_seconds(iteration_interval, GPR_TIMESPAN)));
   }
   if (num_failures == 0) {
-    gpr_log(GPR_DEBUG, "long_connection test done.");
+    gpr_log(GPR_DEBUG, "long_lived_channel test done.");
     return true;
   } else {
-    gpr_log(GPR_DEBUG, "long_connection test failed with %d rpc failures.",
+    gpr_log(GPR_DEBUG, "long_lived_channel test failed with %d rpc failures.",
             num_failures);
     return false;
   }

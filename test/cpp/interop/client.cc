@@ -57,7 +57,7 @@ DEFINE_string(
     "half_duplex : half-duplex streaming;\n"
     "jwt_token_creds: large_unary with JWT token auth;\n"
     "large_unary : single request and (large) response;\n"
-    "long_connection: sends large_unary rpcs over a single long connection;\n"
+    "long_lived_channel: sends large_unary rpcs over a long-lived channel;\n"
     "oauth2_auth_token: raw oauth2 access token auth;\n"
     "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
     "ping_pong : full-duplex streaming;\n"
@@ -166,8 +166,8 @@ int main(int argc, char** argv) {
                 FLAGS_soak_iterations);
   actions["rpc_soak"] = std::bind(&grpc::testing::InteropClient::DoRpcSoakTest,
                                   &client, FLAGS_soak_iterations);
-  actions["long_connection"] =
-      std::bind(&grpc::testing::InteropClient::DoLongConnectionTest, &client,
+  actions["long_lived_channel"] =
+      std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest, &client,
                 FLAGS_soak_iterations, FLAGS_iteration_interval);
 
   UpdateActions(&actions);
