@@ -68,8 +68,6 @@ struct grpc_ares_ev_driver {
   grpc_combiner* combiner;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node* fds;
-  /** is this event driver currently working? */
-  bool working;
   /** is this event driver being shut down */
   bool shutting_down;
   /** request object that's using this ev driver */
@@ -78,7 +76,7 @@ struct grpc_ares_ev_driver {
   grpc_core::UniquePtr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
 };
 
-static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
+void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
     grpc_ares_ev_driver* ev_driver) {
@@ -139,7 +137,6 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
-  (*ev_driver)->working = false;
   (*ev_driver)->shutting_down = false;
   (*ev_driver)->request = request;
   (*ev_driver)->polled_fd_factory =
@@ -236,7 +233,7 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
 
 // Get the file descriptors used by the ev_driver's ares channel, register
 // driver_closure with these filedescriptors.
-static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
+void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   fd_node* new_list = nullptr;
   if (!ev_driver->shutting_down) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
@@ -305,15 +302,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   ev_driver->fds = new_list;
   // If the ev driver has no working fd, all the tasks are done.
   if (new_list == nullptr) {
-    ev_driver->working = false;
-    gpr_log(GPR_DEBUG, "ev driver stop working");
-  }
-}
-
-void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
-  if (!ev_driver->working) {
-    ev_driver->working = true;
-    grpc_ares_notify_on_event_locked(ev_driver);
+    gpr_log(GPR_DEBUG, "ev driver no fds left to work on");
   }
 }
 

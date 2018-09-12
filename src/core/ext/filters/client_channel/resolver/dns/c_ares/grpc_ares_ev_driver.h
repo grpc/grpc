@@ -28,10 +28,12 @@
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
 
-/* Start \a ev_driver. It will keep working until all IO on its ares_channel is
-   done, or grpc_ares_ev_driver_destroy() is called. It may notify the callbacks
-   bound to its ares_channel when necessary. */
-void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver);
+/* Examine the file descriptors of interest to the \a ev_driver and check if we
+ * should watch, shutdown, or destroy any of them. IO work started here
+ * will continue until all IO on this ares_channel is done due to completion
+ * or cancellation. The \a ev_driver may notify the callbacks bound to its
+ * ares_channel when necessary. */
+void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 
 /* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
    \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the

@@ -277,7 +277,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
             r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
         ares_gethostbyname(*channel, hr->host, AF_INET,
                            on_hostbyname_done_locked, hr);
-        grpc_ares_ev_driver_start_locked(r->ev_driver);
+        grpc_ares_notify_on_event_locked(r->ev_driver);
       }
     }
     if (reply != nullptr) {
@@ -466,7 +466,7 @@ grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
                 r);
     gpr_free(config_name);
   }
-  grpc_ares_ev_driver_start_locked(r->ev_driver);
+  grpc_ares_notify_on_event_locked(r->ev_driver);
   grpc_ares_request_unref_locked(r);
   gpr_free(host);
   gpr_free(port);
