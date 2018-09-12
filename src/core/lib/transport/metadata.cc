@@ -242,8 +242,7 @@ grpc_mdelem grpc_mdelem_create(
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
     if (compatible_external_backing_store != nullptr) {
       return GRPC_MAKE_MDELEM(compatible_external_backing_store,
-                              GRPC_MDELEM_STORAGE_EXTERNAL,
-                              GRPC_MDINDEX_UNUSED);
+                              GRPC_MDELEM_STORAGE_EXTERNAL);
     }
 
     allocated_metadata* allocated =
@@ -262,8 +261,7 @@ grpc_mdelem grpc_mdelem_create(
       gpr_free(value_str);
     }
 #endif
-    return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED,
-                            GRPC_MDINDEX_UNUSED);
+    return GRPC_MAKE_MDELEM(allocated, GRPC_MDELEM_STORAGE_ALLOCATED);
   }
 
   if (GRPC_IS_STATIC_METADATA_STRING(key) &&
@@ -291,8 +289,7 @@ grpc_mdelem grpc_mdelem_create(
     if (grpc_slice_eq(key, md->key) && grpc_slice_eq(value, md->value)) {
       REF_MD_LOCKED(shard, md);
       gpr_mu_unlock(&shard->mu);
-      return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED,
-                              GRPC_MDINDEX_UNUSED);
+      return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
     }
   }
 
@@ -324,8 +321,7 @@ grpc_mdelem grpc_mdelem_create(
 
   gpr_mu_unlock(&shard->mu);
 
-  return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED,
-                          GRPC_MDINDEX_UNUSED);
+  return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
 grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
@@ -361,6 +357,15 @@ size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
                                    : get_base64_encoded_size(value_len));
   } else {
     return overhead_and_key + value_len;
+  }
+}
+
+uint8_t grpc_mdelem_get_static_hpack_table_index(grpc_mdelem md) {
+  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    return grpc_hpack_static_mdelem_indices[GRPC_MDELEM_DATA(md) -
+                                            grpc_static_mdelem_table];
+  } else {
+    return 0;
   }
 }
 

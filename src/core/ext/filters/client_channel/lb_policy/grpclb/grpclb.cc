@@ -352,13 +352,11 @@ class GrpcLb : public LoadBalancingPolicy {
 void* lb_token_copy(void* token) {
   return token == nullptr
              ? nullptr
-             : (void*)GRPC_MDELEM_REF(
-                   (grpc_mdelem{(uintptr_t)token, GRPC_MDINDEX_UNUSED}))
-                   .payload;
+             : (void*)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
 }
 void lb_token_destroy(void* token) {
   if (token != nullptr) {
-    GRPC_MDELEM_UNREF((grpc_mdelem{(uintptr_t)token, GRPC_MDINDEX_UNUSED}));
+    GRPC_MDELEM_UNREF(grpc_mdelem{(uintptr_t)token});
   }
 }
 int lb_token_cmp(void* token1, void* token2) {

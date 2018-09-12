@@ -99,19 +99,19 @@ static void test_request_response_with_metadata_and_payload(
   grpc_metadata meta_c[2] = {{grpc_slice_from_static_string("key1"),
                               grpc_slice_from_static_string("val1"),
                               0,
-                              {0, {nullptr, nullptr, nullptr, nullptr}}},
+                              {{nullptr, nullptr, nullptr, nullptr}}},
                              {grpc_slice_from_static_string("key2"),
                               grpc_slice_from_static_string("val2"),
                               0,
-                              {0, {nullptr, nullptr, nullptr, nullptr}}}};
+                              {{nullptr, nullptr, nullptr, nullptr}}}};
   grpc_metadata meta_s[2] = {{grpc_slice_from_static_string("key3"),
                               grpc_slice_from_static_string("val3"),
                               0,
-                              {0, {nullptr, nullptr, nullptr, nullptr}}},
+                              {{nullptr, nullptr, nullptr, nullptr}}},
                              {grpc_slice_from_static_string("key4"),
                               grpc_slice_from_static_string("val4"),
                               0,
-                              {0, {nullptr, nullptr, nullptr, nullptr}}}};
+                              {{nullptr, nullptr, nullptr, nullptr}}}};
   grpc_end2end_test_fixture f =
       begin_test(config, "test_request_response_with_metadata_and_payload",
                  nullptr, nullptr);

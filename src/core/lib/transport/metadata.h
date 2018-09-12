@@ -92,20 +92,17 @@ struct grpc_mdelem {
   /* a grpc_mdelem_data* generally, with the two lower bits signalling memory
      ownership as per grpc_mdelem_data_storage */
   uintptr_t payload;
-  /* The static index of this mdelem. This is equivalent to the
-     mdelem's index into the hpack static table. 0 if unused. */
-  uint8_t static_index;
 };
 
 #define GRPC_MDELEM_DATA(md) ((grpc_mdelem_data*)((md).payload & ~(uintptr_t)3))
 #define GRPC_MDELEM_STORAGE(md) \
   ((grpc_mdelem_data_storage)((md).payload & (uintptr_t)3))
 #ifdef __cplusplus
-#define GRPC_MAKE_MDELEM(data, storage, index) \
-  (grpc_mdelem{((uintptr_t)(data)) | ((uintptr_t)storage), index})
+#define GRPC_MAKE_MDELEM(data, storage) \
+  (grpc_mdelem{((uintptr_t)(data)) | ((uintptr_t)storage)})
 #else
-#define GRPC_MAKE_MDELEM(data, storage, index) \
-  ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage), index})
+#define GRPC_MAKE_MDELEM(data, storage) \
+  ((grpc_mdelem){((uintptr_t)(data)) | ((uintptr_t)storage)})
 #endif
 #define GRPC_MDELEM_IS_INTERNED(md)          \
   ((grpc_mdelem_data_storage)((md).payload & \
@@ -131,6 +128,11 @@ bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
 size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata);
 
+/* Returns the static hpack table index that corresponds to /a elem. Returns 0
+  if /a elem is not statically stored or if it is not in the static hpack
+  table */
+uint8_t grpc_mdelem_get_static_hpack_table_index(grpc_mdelem md);
+
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));
@@ -151,10 +153,8 @@ void grpc_mdelem_unref(grpc_mdelem md);
 
 #define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
 #define GRPC_MDVALUE(md) (GRPC_MDELEM_DATA(md)->value)
-#define GRPC_MDINDEX(md) (md.static_index)
-#define GRPC_MDINDEX_UNUSED 0
 
-#define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL, 0)
+#define GRPC_MDNULL GRPC_MAKE_MDELEM(NULL, GRPC_MDELEM_STORAGE_EXTERNAL)
 #define GRPC_MDISNULL(md) (GRPC_MDELEM_DATA(md) == NULL)
 
 /* We add 32 bytes of padding as per RFC-7540 section 6.5.2. */

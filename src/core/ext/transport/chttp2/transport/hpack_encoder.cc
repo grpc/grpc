@@ -689,8 +689,8 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
     grpc_mdelem md = *extra_headers[i];
-    uint8_t static_index = GRPC_MDINDEX(md);
-    if (static_index != GRPC_MDINDEX_UNUSED) {
+    uint8_t static_index = grpc_mdelem_get_static_hpack_table_index(md);
+    if (static_index) {
       emit_indexed(c, static_index, &st);
     } else {
       hpack_enc(c, md, &st);
@@ -698,8 +698,8 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    uint8_t static_index = GRPC_MDINDEX(l->md);
-    if (static_index != GRPC_MDINDEX_UNUSED) {
+    uint8_t static_index = grpc_mdelem_get_static_hpack_table_index(l->md);
+    if (static_index) {
       emit_indexed(c, static_index, &st);
     } else {
       hpack_enc(c, l->md, &st);

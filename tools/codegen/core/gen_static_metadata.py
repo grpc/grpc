@@ -23,10 +23,13 @@ import subprocess
 import re
 import perfection
 
-# configuration: a list of either strings or 2-tuples of strings
-# a single string represents a static grpc_mdstr
-# a 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
-# also be created)
+# Configuration: a list of either strings or 2-tuples of strings.
+# A single string represents a static grpc_mdstr.
+# A 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
+# also be created).
+# A 3-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
+# also be created), with the last value equivalent to the mdelem's static hpack
+# table index as defined by RFC 7541
 
 CONFIG = [
     # metadata strings
@@ -64,14 +67,14 @@ CONFIG = [
     'gzip',
     'stream/gzip',
     # metadata elements
-    ('grpc-status', '0', 0),
-    ('grpc-status', '1', 0),
-    ('grpc-status', '2', 0),
-    ('grpc-encoding', 'identity', 0),
-    ('grpc-encoding', 'gzip', 0),
-    ('grpc-encoding', 'deflate', 0),
-    ('te', 'trailers', 0),
-    ('content-type', 'application/grpc', 0),
+    ('grpc-status', '0'),
+    ('grpc-status', '1'),
+    ('grpc-status', '2'),
+    ('grpc-encoding', 'identity'),
+    ('grpc-encoding', 'gzip'),
+    ('grpc-encoding', 'deflate'),
+    ('te', 'trailers'),
+    ('content-type', 'application/grpc'),
     (':method', 'POST', 3),
     (':status', '200', 8),
     (':status', '404', 13),
@@ -80,7 +83,7 @@ CONFIG = [
     (':scheme', 'grpc', 0),
     (':authority', '', 1),
     (':method', 'GET', 2),
-    (':method', 'PUT', 0),
+    (':method', 'PUT'),
     (':path', '/', 4),
     (':path', '/index.html', 5),
     (':status', '204', 9),
@@ -89,7 +92,7 @@ CONFIG = [
     (':status', '400', 12),
     (':status', '500', 14),
     ('accept-charset', '', 15),
-    ('accept-encoding', '', 0),
+    ('accept-encoding', ''),
     ('accept-encoding', 'gzip, deflate', 16),
     ('accept-language', '', 17),
     ('accept-ranges', '', 18),
@@ -100,8 +103,8 @@ CONFIG = [
     ('authorization', '', 23),
     ('cache-control', '', 24),
     ('content-disposition', '', 25),
-    ('content-encoding', 'identity', 0),
-    ('content-encoding', 'gzip', 0),
+    ('content-encoding', 'identity'),
+    ('content-encoding', 'gzip'),
     ('content-encoding', '', 26),
     ('content-language', '', 27),
     ('content-length', '', 28),
@@ -121,8 +124,8 @@ CONFIG = [
     ('if-range', '', 42),
     ('if-unmodified-since', '', 43),
     ('last-modified', '', 44),
-    ('lb-token', '', 0),
-    ('lb-cost-bin', '', 0),
+    ('lb-token', ''),
+    ('lb-cost-bin', ''),
     ('link', '', 45),
     ('location', '', 46),
     ('max-forwards', '', 47),
@@ -271,7 +274,7 @@ for mask in range(1, 1 << len(COMPRESSION_ALGORITHMS)):
     val = ','.join(COMPRESSION_ALGORITHMS[alg]
                    for alg in range(0, len(COMPRESSION_ALGORITHMS))
                    if (1 << alg) & mask)
-    elem = ('grpc-accept-encoding', val, 0)
+    elem = ('grpc-accept-encoding', val)
     if val not in all_strs:
         all_strs.append(val)
     if elem not in all_elems:
@@ -283,7 +286,7 @@ for mask in range(1, 1 << len(STREAM_COMPRESSION_ALGORITHMS)):
     val = ','.join(STREAM_COMPRESSION_ALGORITHMS[alg]
                    for alg in range(0, len(STREAM_COMPRESSION_ALGORITHMS))
                    if (1 << alg) & mask)
-    elem = ('accept-encoding', val, 0)
+    elem = ('accept-encoding', val)
     if val not in all_strs:
         all_strs.append(val)
     if elem not in all_elems:
@@ -453,11 +456,28 @@ print >> H, ('extern grpc_mdelem_data '
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
 for i, elem in enumerate(all_elems):
-    print >> H, '/* "%s": "%s" Index="%d" */' % elem
+    print >> H, '/* "%s": "%s" */' % (elem[0], elem[1])
     print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
-                 'GRPC_MDELEM_STORAGE_STATIC, %d))') % (mangle(elem).upper(), i,
-                                                        elem[2])
+                 'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
 print >> H
+
+# Print out the chttp2 mapping between static mdelem index and the hpack static
+# table index
+print >> H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
+             'GRPC_STATIC_MDELEM_COUNT];')
+print >> H
+print >> C, ('const uint8_t grpc_hpack_static_mdelem_indices['
+             'GRPC_STATIC_MDELEM_COUNT] = {')
+indices = ''
+for i, elem in enumerate(all_elems):
+    index = 0
+    if len(elem) == 3:
+        index = elem[2]
+    indices += '%d,' % index
+print >> C, '  %s' % indices
+print >> C, '};'
+print >> C
+
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
 print >> C, '  %s' % ','.join(
@@ -545,13 +565,14 @@ print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {'
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >> C, '  uint32_t k = (uint32_t)(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
-print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC, 0) : GRPC_MDNULL;'
+print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]], GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >> C, '}'
 print >> C
 
 print >> C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for a, b, c in all_elems:
-    print >> C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
+for i, elem in enumerate(all_elems):
+    print >> C, '{%s,%s},' % (slice_def(str_idx(elem[0])),
+                              slice_def(str_idx(elem[1])))
 print >> C, '};'
 
 print >> H, 'typedef enum {'
@@ -588,7 +609,7 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >> C, '};'
 print >> C
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC, 0))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
@@ -599,7 +620,7 @@ print >> C, '0,%s' % ','.join(
     '%d' % md_idx(elem) for elem in stream_compression_elems)
 print >> C, '};'
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC, 0))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

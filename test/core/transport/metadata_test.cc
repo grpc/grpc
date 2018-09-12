@@ -350,9 +350,8 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_core::ExecCtx exec_ctx;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
-    grpc_mdelem p =
-        GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],
-                         GRPC_MDELEM_STORAGE_STATIC, GRPC_MDINDEX_UNUSED);
+    grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],
+                                     GRPC_MDELEM_STORAGE_STATIC);
     grpc_mdelem q =
         grpc_mdelem_from_slices(maybe_dup(GRPC_MDKEY(p), dup_key),
                                 maybe_dup(GRPC_MDVALUE(p), dup_value));
