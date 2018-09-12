@@ -565,6 +565,7 @@ add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
 add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
 add_dependencies(buildtests_cxx cli_call_test)
+add_dependencies(buildtests_cxx client_callback_end2end_test)
 add_dependencies(buildtests_cxx client_channel_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
@@ -2772,6 +2773,7 @@ add_library(grpc++
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
+  src/cpp/common/callback_common.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -2918,6 +2920,7 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
@@ -3015,7 +3018,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -3130,6 +3135,7 @@ add_library(grpc++_cronet
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
+  src/cpp/common/callback_common.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -3487,6 +3493,7 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
@@ -3584,7 +3591,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -3994,7 +4003,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -4172,7 +4183,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -4248,6 +4261,7 @@ add_library(grpc++_unsecure
   src/cpp/client/credentials_cc.cc
   src/cpp/client/generic_stub.cc
   src/cpp/common/alarm.cc
+  src/cpp/common/callback_common.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/channel_filter.cc
   src/cpp/common/completion_queue_cc.cc
@@ -4393,6 +4407,7 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
@@ -4490,7 +4505,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
@@ -11315,6 +11332,46 @@ target_link_libraries(cli_call_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_cli_libs
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(client_callback_end2end_test
+  test/cpp/end2end/client_callback_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_callback_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_callback_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
   grpc_test_util
   grpc++

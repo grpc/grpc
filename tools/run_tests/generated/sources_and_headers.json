@@ -3348,6 +3348,25 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_callback_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_callback_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [
       "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
       "src/proto/grpc/lb/v1/load_balancer.pb.h", 
@@ -11098,7 +11117,9 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
@@ -11164,7 +11185,9 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
@@ -11322,6 +11345,7 @@
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/client_callback.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
@@ -11426,6 +11450,7 @@
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/client_callback.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
@@ -11445,6 +11470,7 @@
       "src/cpp/client/credentials_cc.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/common/alarm.cc", 
+      "src/cpp/common/callback_common.cc", 
       "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/channel_filter.cc", 
       "src/cpp/common/channel_filter.h", 
