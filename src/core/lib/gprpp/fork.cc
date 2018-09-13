@@ -158,11 +158,13 @@ class ThreadState {
 
 void Fork::GlobalInit() {
   if (!override_enabled_) {
-#ifdef GRPC_ENABLE_FORK_SUPPORT
-    support_enabled_ = true;
+// early out if this macro is not defined. We stick to the global default
+// of support_enabled_=false.
+#ifndef GRPC_ENABLE_FORK_SUPPORT
+    return;
 #else
-    support_enabled_ = false;
-#endif
+    // if GRPC_ENABLE_FORK_SUPPORT is defined, we still support the env var
+    // GRPC_ENABLE_FORK_SUPPORT toggling off fork support.
     bool env_var_set = false;
     char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
     if (env != nullptr) {
@@ -188,6 +190,7 @@ void Fork::GlobalInit() {
       }
       gpr_free(env);
     }
+#endif
   }
   if (support_enabled_) {
     exec_ctx_state_ = grpc_core::New<internal::ExecCtxState>();
