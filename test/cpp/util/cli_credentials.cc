@@ -118,7 +118,7 @@ std::shared_ptr<grpc::CallCredentials> CliCredentials::GetCallCredentials()
   if (IsAccessToken(FLAGS_call_creds)) {
     return grpc::AccessTokenCredentials(AccessToken(FLAGS_call_creds));
   }
-  if (FLAGS_call_creds.compare("none") != 0) {
+  if (FLAGS_call_creds.compare("none") == 0) {
     // Nothing to do; creds, if any, are baked into the channel.
     return std::shared_ptr<grpc::CallCredentials>();
   }
