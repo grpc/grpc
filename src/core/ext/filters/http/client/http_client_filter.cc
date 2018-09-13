@@ -394,9 +394,7 @@ static void hc_start_transport_stream_op_batch(
 
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
-    const grpc_hfast_data* hfast_data =
-        grpc_transport_get_hfast_data(channeld->transport);
-    bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
+    bool hfast_enabled = grpc_transport_hfast_enabled(channeld->transport);
     // default for method is POST. We explicitly add the element if we are not
     // doing hfast, or if we are using something other than POST.
     if (hfast_enabled && grpc_mdelem_eq(method, GRPC_MDELEM_METHOD_POST)) {

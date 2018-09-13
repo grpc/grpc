@@ -200,9 +200,8 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
   return transport->vtable->get_endpoint(transport);
 }
 
-const grpc_hfast_data* grpc_transport_get_hfast_data(
-    grpc_transport* transport) {
-  return transport->vtable->get_hfast_data(transport);
+bool grpc_transport_hfast_enabled(grpc_transport* transport) {
+  return transport->vtable->hfast_enabled(transport);
 }
 
 // This comment should be sung to the tune of

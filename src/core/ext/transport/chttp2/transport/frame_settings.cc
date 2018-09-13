@@ -223,6 +223,9 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
             }
           }
           parser->incoming_settings[id] = parser->value;
+          if (id == GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST) {
+            gpr_atm_no_barrier_store(&t->hfast_enabled, parser->value);
+          }
           if (grpc_http_trace.enabled()) {
             gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
                     t->is_client ? "CLI" : "SVR", t->peer_string, sp->name,

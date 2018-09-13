@@ -61,8 +61,8 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_get_endpoint */
   grpc_endpoint* (*get_endpoint)(grpc_transport* self);
 
-  /* implementation of grpc_transport_get_hfast_data */
-  const grpc_hfast_data* (*get_hfast_data)(grpc_transport* self);
+  /* implementation of grpc_transport_hfast_enabled */
+  bool (*hfast_enabled)(grpc_transport* self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */

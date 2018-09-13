@@ -480,7 +480,6 @@ static void init_transport(grpc_chttp2_transport* t,
   t->is_client = is_client;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
-  t->hfast_data.enabled = false;
   grpc_connectivity_state_init(
       &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
@@ -3134,13 +3133,10 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
   return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
 }
 
-static const grpc_hfast_data* chttp2_get_hfast_data(grpc_transport* transport) {
+static bool chttp2_hfast_enabled(grpc_transport* transport) {
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
-  // ensure struct is up to date with updates from our peer
-  t->hfast_data.enabled =
-      t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_HFAST];
-  return &t->hfast_data;
+  return static_cast<bool>(gpr_atm_no_barrier_load(&t->hfast_enabled));
 }
 
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
@@ -3153,7 +3149,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              destroy_stream,
                                              destroy_transport,
                                              chttp2_get_endpoint,
-                                             chttp2_get_hfast_data};
+                                             chttp2_hfast_enabled};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 

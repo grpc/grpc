@@ -446,15 +446,13 @@ void Destroy(grpc_transport* self) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* self) { return nullptr; }
 
-static const grpc_hfast_data* GetHfastData(grpc_transport* t) {
-  return nullptr;
-}
+static bool HfastEnabled(grpc_transport* t) { return false; }
 
 static const grpc_transport_vtable dummy_transport_vtable = {
     0,           "dummy_http2", InitStream,
     SetPollset,  SetPollsetSet, PerformStreamOp,
     PerformOp,   DestroyStream, Destroy,
-    GetEndpoint, GetHfastData};
+    GetEndpoint, HfastEnabled};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};
 

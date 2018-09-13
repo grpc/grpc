@@ -105,11 +105,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
-
-  const grpc_hfast_data* hfast_data =
-      grpc_transport_get_hfast_data(chand->transport);
-  bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
-
+  bool hfast_enabled = grpc_transport_hfast_enabled(chand->transport);
   if (hfast_enabled && b->idx.named.method == nullptr) {
     if (grpc_trace_hfast.enabled()) {
       gpr_log(GPR_DEBUG,
@@ -364,9 +360,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
   if (op->send_initial_metadata) {
     grpc_error* error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
-    const grpc_hfast_data* hfast_data =
-        grpc_transport_get_hfast_data(chand->transport);
-    bool hfast_enabled = hfast_data != nullptr && hfast_data->enabled;
+    bool hfast_enabled = grpc_transport_hfast_enabled(chand->transport);
     if (hfast_enabled) {
       if (grpc_trace_hfast.enabled()) {
         gpr_log(GPR_DEBUG,

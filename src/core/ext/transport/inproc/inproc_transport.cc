@@ -1190,9 +1190,7 @@ void grpc_inproc_transport_init(void) {
   g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
 }
 
-static const grpc_hfast_data* inproc_get_hfast_data(grpc_transport* t) {
-  return nullptr;
-}
+static bool inproc_hfast_enabled(grpc_transport* t) { return false; }
 
 static const grpc_transport_vtable inproc_vtable = {
     sizeof(inproc_stream), "inproc",
@@ -1200,7 +1198,7 @@ static const grpc_transport_vtable inproc_vtable = {
     set_pollset_set,       perform_stream_op,
     perform_transport_op,  destroy_stream,
     destroy_transport,     get_endpoint,
-    inproc_get_hfast_data};
+    inproc_hfast_enabled};
 
 /*******************************************************************************
  * Main inproc transport functions
