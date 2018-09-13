@@ -27,6 +27,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -766,8 +767,59 @@ class RepresentativeServerTrailingMetadata {
 
 static void free_timeout(void* p) { gpr_free(p); }
 
-// New implementation.
-static void OnHeaderNew(void* user_data, grpc_mdelem md) {
+// Benchmark the current on_initial_header implementation
+static void OnInitialHeader(void* user_data, grpc_mdelem md) {
+  // Setup for benchmark. this will bloat the absolute values of this benchmark
+  grpc_chttp2_incoming_metadata_buffer buffer;
+  gpr_arena* arena = gpr_arena_create(1024);
+  grpc_chttp2_incoming_metadata_buffer_init(&buffer, arena);
+  bool seen_error = false;
+
+  // Below here is the code we actually care about benchmarking
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+    seen_error = true;
+  }
+  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
+    grpc_millis* cached_timeout =
+        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
+    grpc_millis timeout;
+    if (cached_timeout != nullptr) {
+      timeout = *cached_timeout;
+    } else {
+      if (GPR_UNLIKELY(
+              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
+        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+        gpr_free(val);
+        timeout = GRPC_MILLIS_INF_FUTURE;
+      }
+      if (GRPC_MDELEM_IS_INTERNED(md)) {
+        /* not already parsed: parse it now, and store the
+         * result away */
+        cached_timeout =
+            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+        *cached_timeout = timeout;
+        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+      }
+    }
+    benchmark::DoNotOptimize(timeout);
+    GRPC_MDELEM_UNREF(md);
+  } else {
+    const size_t new_size = buffer.size + GRPC_MDELEM_LENGTH(md);
+    if (!seen_error) {
+      buffer.size = new_size;
+    }
+    grpc_error* error = grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
+    if (error != GRPC_ERROR_NONE) {
+      GPR_ASSERT(0);
+    }
+  }
+  gpr_arena_destroy(arena);
+}
+
+// Benchmark timeout handling
+static void OnHeaderTimeout(void* user_data, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
@@ -853,8 +905,13 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerInitialMetadata, UnrefHeader);
 BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
                    RepresentativeServerTrailingMetadata, UnrefHeader);
-
-BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderNew);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   RepresentativeClientInitialMetadata, OnInitialHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   MoreRepresentativeClientInitialMetadata, OnInitialHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader,
+                   RepresentativeServerInitialMetadata, OnInitialHeader);
+BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderTimeout);
 
 }  // namespace hpack_parser_fixtures
 
