@@ -51,6 +51,7 @@ struct call_data {
   grpc_linked_mdelem user_agent;
   // State for handling recv_initial_metadata ops.
   grpc_metadata_batch* recv_initial_metadata;
+  grpc_error* recv_initial_metadata_error;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
   // State for handling recv_trailing_metadata ops.
@@ -78,7 +79,12 @@ struct channel_data {
 static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
   if (b->idx.named.status != nullptr) {
-    if (grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
+    /* If both gRPC status and HTTP status are provided in the response, we
+     * should prefer the gRPC status code, as mentioned in
+     * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
+     */
+    if (b->idx.named.grpc_status != nullptr ||
+        grpc_mdelem_eq(b->idx.named.status->md, GRPC_MDELEM_STATUS_200)) {
       grpc_metadata_batch_remove(b, b->idx.named.status);
     } else {
       char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
@@ -147,6 +153,7 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
     error = client_filter_incoming_metadata(elem, calld->recv_initial_metadata);
+    calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -162,6 +169,8 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   } else {
     GRPC_ERROR_REF(error);
   }
+  error = grpc_error_add_child(
+      error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
 }
 
@@ -434,7 +443,10 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+                              grpc_closure* ignored) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  GRPC_ERROR_UNREF(calld->recv_initial_metadata_error);
+}
 
 static grpc_mdelem scheme_from_args(const grpc_channel_args* args) {
   unsigned i;

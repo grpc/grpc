@@ -10,7 +10,7 @@ target 'ConnectivityTestingApp' do
   pod 'gRPC-ProtoRPC/CFStream', :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
-  pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
 end
 
 pre_install do |installer|

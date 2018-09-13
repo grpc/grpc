@@ -174,9 +174,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resolve_address_test",
+    name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
     language = "C++",
+    args = [
+        "--resolver=ares",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "resolve_address_using_native_resolver_test",
+    srcs = ["resolve_address_test.cc"],
+    language = "C++",
+    args = [
+        "--resolver=native",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -245,6 +263,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "buffer_list_test",
+    srcs = ["buffer_list_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 
 grpc_cc_test(
     name = "tcp_server_posix_test",

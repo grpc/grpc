@@ -14,7 +14,9 @@ Makefile | all other cases | all | :x:
 Bazel | | Linux | :heavy_check_mark:
 Bazel | | MacOS | :heavy_check_mark:
 Bazel | | Windows | :x:
-CMake | boringssl from submodule (default) | all | :x:
+CMake | boringssl from submodule (default) | Linux or MacOS | :heavy_check_mark:
+CMake | boringssl from submodule (default), generator=Ninja | Windows | :heavy_check_mark:
+CMake | boringssl from submodule (default), generator=Visual Studio | Windows | :x:
 CMake | pre-installed OpenSSL 1.0.2+ (`gRPC_SSL_PROVIDER=package`) | all | :heavy_check_mark:
 
 ## Other Languages: Binary/Source Packages

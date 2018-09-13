@@ -237,14 +237,19 @@ void grpc_event_engine_shutdown(void) {
 }
 
 bool grpc_event_engine_can_track_errors(void) {
+/* Only track errors if platform supports errqueue. */
+#ifdef GRPC_LINUX_ERRQUEUE
   return g_event_engine->can_track_err;
+#else
+  return false;
+#endif /* GRPC_LINUX_ERRQUEUE */
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  GPR_DEBUG_ASSERT(!track_err || g_event_engine->can_track_err);
-  return g_event_engine->fd_create(fd, name, track_err);
+  return g_event_engine->fd_create(fd, name,
+                                   track_err && g_event_engine->can_track_err);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {

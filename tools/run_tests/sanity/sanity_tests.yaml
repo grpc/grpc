@@ -3,6 +3,7 @@
 - script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_owners.sh
+- script: tools/run_tests/sanity/check_qps_scenario_changes.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py
@@ -22,4 +23,5 @@
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/yapf_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
+- script: tools/distrib/check_shadow_boringssl_symbol_list.sh
   cpu_cost: 1000

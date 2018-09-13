@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.15.0-dev'
+  # version = '1.16.0-dev'
   version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.15.0-dev'
+  grpc_version = '1.16.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -111,6 +111,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/async_unary_call.h',
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
+                      'include/grpcpp/support/client_callback.h',
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
@@ -127,7 +128,9 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/byte_buffer.h',
                       'include/grpcpp/impl/codegen/call.h',
                       'include/grpcpp/impl/codegen/call_hook.h',
+                      'include/grpcpp/impl/codegen/callback_common.h',
                       'include/grpcpp/impl/codegen/channel_interface.h',
+                      'include/grpcpp/impl/codegen/client_callback.h',
                       'include/grpcpp/impl/codegen/client_context.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
@@ -187,6 +190,7 @@ Pod::Spec.new do |s|
                       'src/cpp/client/credentials_cc.cc',
                       'src/cpp/client/generic_stub.cc',
                       'src/cpp/common/alarm.cc',
+                      'src/cpp/common/callback_common.cc',
                       'src/cpp/common/channel_arguments.cc',
                       'src/cpp/common/channel_filter.cc',
                       'src/cpp/common/completion_queue_cc.cc',
@@ -348,6 +352,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
+                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/lib/avl/avl.h',
@@ -381,6 +386,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
                       'src/core/lib/iomgr/block_annotate.h',
+                      'src/core/lib/iomgr/buffer_list.h',
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
@@ -396,6 +402,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/gethostname.h',
+                      'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_custom.h',
@@ -569,6 +576,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
                               'src/core/lib/iomgr/block_annotate.h',
+                              'src/core/lib/iomgr/buffer_list.h',
                               'src/core/lib/iomgr/call_combiner.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
@@ -584,6 +592,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/gethostname.h',
+                              'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',

@@ -226,7 +226,7 @@ static void on_read(void* arg, grpc_error* err) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
-    grpc_fd* fdobj = grpc_fd_create(fd, name, false);
+    grpc_fd* fdobj = grpc_fd_create(fd, name, true);
 
     read_notifier_pollset =
         sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
@@ -362,7 +362,7 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     listener->sibling = sp;
     sp->server = listener->server;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name, false);
+    sp->emfd = grpc_fd_create(fd, name, true);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = listener->port_index;

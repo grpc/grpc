@@ -111,6 +111,10 @@ message ClientConfig {
 
   // Use coalescing API when possible.
   bool use_coalesce_api = 19;
+
+  // If 0, disabled. Else, specifies the period between gathering latency
+  // medians in milliseconds.
+  int32 median_latency_collection_interval_millis = 20;
 }
 
 message ClientStatus { ClientStats stats = 1; }

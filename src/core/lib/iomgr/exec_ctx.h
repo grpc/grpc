@@ -192,6 +192,8 @@ class ExecCtx {
     now_is_valid_ = true;
   }
 
+  static void TestOnlyGlobalInit(gpr_timespec new_val);
+
   /** Global initialization for ExecCtx. Called by iomgr. */
   static void GlobalInit(void);
 

@@ -657,6 +657,7 @@ void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
+  // TODO(vjpai): Use ops->cq_tag once this case supports callbacks
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   if (result != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
@@ -686,9 +687,6 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
-  if (*status) {
-    context_->client_metadata_.FillMap();
-  }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   internal::Call call(call_, server_, call_cq_,

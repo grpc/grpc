@@ -149,6 +149,9 @@ struct call_data {
   grpc_closure server_on_recv_initial_metadata;
   grpc_closure kill_zombie_closure;
   grpc_closure* on_done_recv_initial_metadata;
+  grpc_closure recv_trailing_metadata_ready;
+  grpc_error* error;
+  grpc_closure* original_recv_trailing_metadata_ready;
 
   grpc_closure publish;
 
@@ -219,6 +222,8 @@ struct grpc_server {
 
   /** when did we print the last shutdown progress message */
   gpr_timespec last_shutdown_message_time;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::ServerNode> channelz_server;
 };
 
 #define SERVER_FROM_CALL_ELEM(elem) \
@@ -364,6 +369,7 @@ static void server_ref(grpc_server* server) {
 static void server_delete(grpc_server* server) {
   registered_method* rm;
   size_t i;
+  server->channelz_server.reset();
   grpc_channel_args_destroy(server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
@@ -730,6 +736,14 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
   GRPC_CLOSURE_RUN(calld->on_done_recv_initial_metadata, error);
 }
 
+static void server_recv_trailing_metadata_ready(void* user_data,
+                                                grpc_error* err) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+}
+
 static void server_mutate_op(grpc_call_element* elem,
                              grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -744,6 +758,12 @@ static void server_mutate_op(grpc_call_element* elem,
         &calld->server_on_recv_initial_metadata;
     op->payload->recv_initial_metadata.recv_flags =
         &calld->recv_initial_metadata_flags;
+  }
+  if (op->recv_trailing_metadata) {
+    calld->original_recv_trailing_metadata_ready =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &calld->recv_trailing_metadata_ready;
   }
 }
 
@@ -779,6 +799,7 @@ static void accept_stream(void* cd, grpc_transport* transport,
   args.channel = chand->channel;
   args.server_transport_data = transport_server_data;
   args.send_deadline = GRPC_MILLIS_INF_FUTURE;
+  args.server = chand->server;
   grpc_call* call;
   grpc_error* error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
@@ -828,7 +849,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&calld->server_on_recv_initial_metadata,
                     server_on_recv_initial_metadata, elem,
                     grpc_schedule_on_exec_ctx);
-
+  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                    server_recv_trailing_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   server_ref(chand->server);
   return GRPC_ERROR_NONE;
 }
@@ -840,7 +863,7 @@ static void destroy_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
   GPR_ASSERT(calld->state != PENDING);
-
+  GRPC_ERROR_UNREF(calld->error);
   if (calld->host_set) {
     grpc_slice_unref_internal(calld->host);
   }
@@ -941,6 +964,7 @@ void grpc_server_register_completion_queue(grpc_server* server,
 }
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
   grpc_server* server =
@@ -956,6 +980,20 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
       &server->root_channel_data;
 
   server->channel_args = grpc_channel_args_copy(args);
+
+  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    arg = grpc_channel_args_find(args,
+                                 GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
+    size_t trace_events_per_node =
+        grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
+    server->channelz_server =
+        grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
+            trace_events_per_node);
+    server->channelz_server->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Server created"));
+  }
 
   return server;
 }
@@ -1458,4 +1496,12 @@ int grpc_server_has_open_connections(grpc_server* server) {
   r = server->root_channel_data.next != &server->root_channel_data;
   gpr_mu_unlock(&server->mu_global);
   return r;
+}
+
+grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
+    grpc_server* server) {
+  if (server == nullptr) {
+    return nullptr;
+  }
+  return server->channelz_server.get();
 }
