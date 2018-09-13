@@ -287,6 +287,11 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
     }
   }
   if (enable) {
+    extern grpc_core::TraceFlag grpc_tcp_trace;
+    if (grpc_tcp_trace.enabled()) {
+      gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
+              timeout);
+    }
     int newval;
     socklen_t len = sizeof(newval);
     if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
