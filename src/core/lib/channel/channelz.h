@@ -43,14 +43,52 @@ namespace grpc_core {
 namespace channelz {
 
 namespace testing {
+class CallCountingHelperPeer;
 class ChannelNodePeer;
-}
+}  // namespace testing
 
-class ChannelNode : public RefCounted<ChannelNode> {
+// base class for all channelz entities
+class BaseNode : public RefCounted<BaseNode> {
  public:
-  static RefCountedPtr<ChannelNode> MakeChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes,
-      bool is_top_level_channel);
+  // There are only four high level channelz entities. However, to support
+  // GetTopChannelsRequest, we split the Channel entity into two different
+  // types. All children of BaseNode must be one of these types.
+  enum class EntityType {
+    kTopLevelChannel,
+    kInternalChannel,
+    kSubchannel,
+    kServer,
+    kSocket,
+  };
+
+  explicit BaseNode(EntityType type);
+  virtual ~BaseNode();
+
+  // All children must implement this function.
+  virtual grpc_json* RenderJson() GRPC_ABSTRACT;
+
+  // Renders the json and returns allocated string that must be freed by the
+  // caller.
+  char* RenderJsonString();
+
+  EntityType type() const { return type_; }
+  intptr_t uuid() const { return uuid_; }
+
+ private:
+  const EntityType type_;
+  const intptr_t uuid_;
+};
+
+// This class is a helper class for channelz entities that deal with Channels,
+// Subchannels, and Servers, since those have similar proto definitions.
+// This class has the ability to:
+//   - track calls_{started,succeeded,failed}
+//   - track last_call_started_timestamp
+//   - perform rendering of the above items
+class CallCountingHelper {
+ public:
+  CallCountingHelper();
+  ~CallCountingHelper();
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -60,17 +98,46 @@ class ChannelNode : public RefCounted<ChannelNode> {
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
 
-  grpc_json* RenderJson();
-  char* RenderJsonString();
+  // Common rendering of the call count data and last_call_started_timestamp.
+  void PopulateCallCounts(grpc_json* json);
 
-  // helper for getting and populating connectivity state. It is virtual
-  // because it allows the client_channel specific code to live in ext/
-  // instead of lib/
-  virtual void PopulateConnectivityState(grpc_json* json);
+ private:
+  // testing peer friend.
+  friend class testing::CallCountingHelperPeer;
 
-  virtual void PopulateChildRefs(grpc_json* json);
+  gpr_atm calls_started_ = 0;
+  gpr_atm calls_succeeded_ = 0;
+  gpr_atm calls_failed_ = 0;
+  gpr_atm last_call_started_millis_ = 0;
+};
 
-  ChannelTrace* trace() { return trace_.get(); }
+// Handles channelz bookkeeping for channels
+class ChannelNode : public BaseNode {
+ public:
+  static RefCountedPtr<ChannelNode> MakeChannelNode(
+      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      bool is_top_level_channel);
+
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+              bool is_top_level_channel);
+  ~ChannelNode() override;
+
+  grpc_json* RenderJson() override;
+
+  // template methods. RenderJSON uses these methods to render its JSON
+  // representation. These are virtual so that children classes may provide
+  // their specific mechanism for populating these parts of the channelz
+  // object.
+  //
+  // ChannelNode does not have a notion of connectivity state or child refs,
+  // so it leaves these implementations blank.
+  //
+  // This is utilizing the template method design pattern.
+  //
+  // TODO(ncteisen): remove these template methods in favor of manual traversal
+  // and mutation of the grpc_json object.
+  virtual void PopulateConnectivityState(grpc_json* json) {}
+  virtual void PopulateChildRefs(grpc_json* json) {}
 
   void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
@@ -79,47 +146,62 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
-  intptr_t channel_uuid() { return channel_uuid_; }
-  bool is_top_level_channel() { return is_top_level_channel_; }
-
- protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-              bool is_top_level_channel);
-  virtual ~ChannelNode();
+  // proxy methods to composed classes.
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_.AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_.AddTraceEventWithReference(severity, data,
+                                      std::move(referenced_channel));
+  }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  // testing peer friend.
+  // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
-
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
-  gpr_atm calls_started_ = 0;
-  gpr_atm calls_succeeded_ = 0;
-  gpr_atm calls_failed_ = 0;
-  gpr_atm last_call_started_millis_ = 0;
-  intptr_t channel_uuid_;
-  bool is_top_level_channel_ = true;
-  ManualConstructor<ChannelTrace> trace_;
+  CallCountingHelper call_counter_;
+  ChannelTrace trace_;
 };
 
-// Placeholds channelz class for subchannels. All this can do now is track its
-// uuid (this information is needed by the parent channelz class).
-// TODO(ncteisen): build this out to support the GetSubchannel channelz request.
-class SubchannelNode : public RefCounted<SubchannelNode> {
+// Handles channelz bookkeeping for servers
+class ServerNode : public BaseNode {
  public:
-  SubchannelNode();
-  virtual ~SubchannelNode();
+  explicit ServerNode(size_t channel_tracer_max_nodes);
+  ~ServerNode() override;
 
-  intptr_t subchannel_uuid() { return subchannel_uuid_; }
+  grpc_json* RenderJson() override;
 
- protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  // proxy methods to composed classes.
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_.AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_.AddTraceEventWithReference(severity, data,
+                                      std::move(referenced_channel));
+  }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  intptr_t subchannel_uuid_;
+  CallCountingHelper call_counter_;
+  ChannelTrace trace_;
+};
+
+// Handles channelz bookkeeping for sockets
+// TODO(ncteisen): implement in subsequent PR.
+class SocketNode : public BaseNode {
+ public:
+  SocketNode() : BaseNode(EntityType::kSocket) {}
+  ~SocketNode() override {}
 };
 
 // Creation functions

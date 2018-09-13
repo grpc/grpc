@@ -28,8 +28,8 @@ void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb) {
-  ep->vtable->write(ep, slices, cb);
+                         grpc_closure* cb, void* arg) {
+  ep->vtable->write(ep, slices, cb, arg);
 }
 
 void grpc_endpoint_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {

@@ -35,10 +35,16 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <google/protobuf/text_format.h>
+
 #include <gtest/gtest.h>
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
+using grpc::channelz::v1::GetServersRequest;
+using grpc::channelz::v1::GetServersResponse;
+using grpc::channelz::v1::GetSubchannelRequest;
+using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
 
@@ -140,7 +146,7 @@ class ChannelzServerTest : public ::testing::Test {
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   }
 
   void SendFailedEcho(int channel_idx) {
@@ -154,6 +160,19 @@ class ChannelzServerTest : public ::testing::Test {
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
     EXPECT_FALSE(s.ok());
+  }
+
+  // Uses GetTopChannels to return the channel_id of a particular channel,
+  // so that the unit tests may test GetChannel call.
+  intptr_t GetChannelId(int channel_idx) {
+    GetTopChannelsRequest request;
+    GetTopChannelsResponse response;
+    request.set_start_channel_id(0);
+    ClientContext context;
+    Status s = channelz_stub_->GetTopChannels(&context, request, &response);
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+    EXPECT_GT(response.channel_size(), channel_idx);
+    return response.channel(channel_idx).ref().channel_id();
   }
 
   static string to_string(const int number) {
@@ -190,7 +209,7 @@ TEST_F(ChannelzServerTest, BasicTest) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
 }
 
@@ -202,7 +221,7 @@ TEST_F(ChannelzServerTest, HighStartId) {
   request.set_start_channel_id(10000);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 0);
 }
 
@@ -212,10 +231,10 @@ TEST_F(ChannelzServerTest, SuccessfulRequestTest) {
   SendSuccessfulEcho(0);
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 1);
   EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -227,10 +246,10 @@ TEST_F(ChannelzServerTest, FailedRequestTest) {
   SendFailedEcho(0);
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
   EXPECT_EQ(response.channel().data().calls_failed(), 1);
@@ -250,10 +269,10 @@ TEST_F(ChannelzServerTest, ManyRequestsTest) {
   }
   GetChannelRequest request;
   GetChannelResponse response;
-  request.set_channel_id(1);
+  request.set_channel_id(GetChannelId(0));
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(),
             kNumSuccess + kNumFailed);
   EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -269,7 +288,7 @@ TEST_F(ChannelzServerTest, ManyChannels) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), kNumChannels);
 }
 
@@ -292,10 +311,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(1);
+    request.set_channel_id(GetChannelId(0));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -305,10 +324,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(2);
+    request.set_channel_id(GetChannelId(1));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
@@ -318,10 +337,10 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(3);
+    request.set_channel_id(GetChannelId(2));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(),
               kNumSuccess + kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -332,14 +351,101 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
   {
     GetChannelRequest request;
     GetChannelResponse response;
-    request.set_channel_id(4);
+    request.set_channel_id(GetChannelId(3));
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), 0);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
   }
+}
+
+TEST_F(ChannelzServerTest, ManySubchannels) {
+  ResetStubs();
+  const int kNumChannels = 4;
+  ConfigureProxy(kNumChannels);
+  const int kNumSuccess = 10;
+  const int kNumFailed = 11;
+  for (int i = 0; i < kNumSuccess; ++i) {
+    SendSuccessfulEcho(0);
+    SendSuccessfulEcho(2);
+  }
+  for (int i = 0; i < kNumFailed; ++i) {
+    SendFailedEcho(1);
+    SendFailedEcho(2);
+  }
+  GetTopChannelsRequest gtc_request;
+  GetTopChannelsResponse gtc_response;
+  gtc_request.set_start_channel_id(0);
+  ClientContext context;
+  Status s =
+      channelz_stub_->GetTopChannels(&context, gtc_request, &gtc_response);
+  EXPECT_TRUE(s.ok()) << s.error_message();
+  EXPECT_EQ(gtc_response.channel_size(), kNumChannels);
+  for (int i = 0; i < gtc_response.channel_size(); ++i) {
+    // if the channel sent no RPCs, then expect no subchannels to have been
+    // created.
+    if (gtc_response.channel(i).data().calls_started() == 0) {
+      EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 0);
+      continue;
+    }
+    // The resolver must return at least one address.
+    ASSERT_GT(gtc_response.channel(i).subchannel_ref_size(), 0);
+    GetSubchannelRequest gsc_request;
+    GetSubchannelResponse gsc_response;
+    gsc_request.set_subchannel_id(
+        gtc_response.channel(i).subchannel_ref(0).subchannel_id());
+    ClientContext context;
+    Status s =
+        channelz_stub_->GetSubchannel(&context, gsc_request, &gsc_response);
+    EXPECT_TRUE(s.ok()) << s.error_message();
+    EXPECT_EQ(gtc_response.channel(i).data().calls_started(),
+              gsc_response.subchannel().data().calls_started());
+    EXPECT_EQ(gtc_response.channel(i).data().calls_succeeded(),
+              gsc_response.subchannel().data().calls_succeeded());
+    EXPECT_EQ(gtc_response.channel(i).data().calls_failed(),
+              gsc_response.subchannel().data().calls_failed());
+  }
+}
+
+TEST_F(ChannelzServerTest, BasicServerTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest request;
+  GetServersResponse response;
+  request.set_start_server_id(0);
+  ClientContext context;
+  Status s = channelz_stub_->GetServers(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(response.server_size(), 1);
+}
+
+TEST_F(ChannelzServerTest, ServerCallTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  const int kNumSuccess = 10;
+  const int kNumFailed = 11;
+  for (int i = 0; i < kNumSuccess; ++i) {
+    SendSuccessfulEcho(0);
+  }
+  for (int i = 0; i < kNumFailed; ++i) {
+    SendFailedEcho(0);
+  }
+  GetServersRequest request;
+  GetServersResponse response;
+  request.set_start_server_id(0);
+  ClientContext context;
+  Status s = channelz_stub_->GetServers(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(response.server_size(), 1);
+  EXPECT_EQ(response.server(0).data().calls_succeeded(), kNumSuccess);
+  EXPECT_EQ(response.server(0).data().calls_failed(), kNumFailed);
+  // This is success+failure+1 because the call that retrieved this information
+  // will be counted as started. It will not track success/failure until after
+  // it has returned, so that is not included in the response.
+  EXPECT_EQ(response.server(0).data().calls_started(),
+            kNumSuccess + kNumFailed + 1);
 }
 
 }  // namespace testing

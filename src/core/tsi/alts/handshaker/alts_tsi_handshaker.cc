@@ -31,6 +31,7 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
@@ -182,7 +183,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->peer_identity);
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
-  grpc_slice_unref(result->rpc_versions);
+  grpc_slice_unref_internal(result->rpc_versions);
   gpr_free(result);
 }
 
@@ -269,12 +270,12 @@ static tsi_result handshaker_next(
     handshaker->has_sent_start_message = true;
   } else {
     if (!GRPC_SLICE_IS_EMPTY(handshaker->recv_bytes)) {
-      grpc_slice_unref(handshaker->recv_bytes);
+      grpc_slice_unref_internal(handshaker->recv_bytes);
     }
     handshaker->recv_bytes = grpc_slice_ref(slice);
     ok = alts_handshaker_client_next(handshaker->client, event, &slice);
   }
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   if (ok != TSI_OK) {
     gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
     return ok;
@@ -299,8 +300,8 @@ static void handshaker_destroy(tsi_handshaker* self) {
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   alts_handshaker_client_destroy(handshaker->client);
-  grpc_slice_unref(handshaker->recv_bytes);
-  grpc_slice_unref(handshaker->target_name);
+  grpc_slice_unref_internal(handshaker->recv_bytes);
+  grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   gpr_free(handshaker->buffer);
   gpr_free(handshaker);
