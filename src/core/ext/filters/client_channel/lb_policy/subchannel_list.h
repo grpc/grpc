@@ -65,6 +65,10 @@ class MySubchannelList
 
 namespace grpc_core {
 
+// Forward declaration.
+template <typename SubchannelListType, typename SubchannelDataType>
+class SubchannelList;
+
 // Stores data for a particular subchannel in a subchannel list.
 // Callers must create a subclass that implements the
 // ProcessConnectivityChangeLocked() method.
@@ -72,7 +76,9 @@ template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelData {
  public:
   // Returns a pointer to the subchannel list containing this object.
-  SubchannelListType* subchannel_list() const { return subchannel_list_; }
+  SubchannelListType* subchannel_list() const {
+    return static_cast<SubchannelListType*>(subchannel_list_);
+  }
 
   // Returns the index into the subchannel list of this object.
   size_t Index() const {
@@ -133,10 +139,11 @@ class SubchannelData {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  SubchannelData(SubchannelListType* subchannel_list,
-                 const grpc_lb_user_data_vtable* user_data_vtable,
-                 const grpc_lb_address& address, grpc_subchannel* subchannel,
-                 grpc_combiner* combiner);
+  SubchannelData(
+      SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
+      const grpc_lb_user_data_vtable* user_data_vtable,
+      const grpc_lb_address& address, grpc_subchannel* subchannel,
+      grpc_combiner* combiner);
 
   virtual ~SubchannelData();
 
@@ -161,7 +168,7 @@ class SubchannelData {
   static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
 
   // Backpointer to owning subchannel list.  Not owned.
-  SubchannelListType* subchannel_list_;
+  SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list_;
 
   // The subchannel and connected subchannel.
   grpc_subchannel* subchannel_;
@@ -200,7 +207,7 @@ class SubchannelList
         grpc_core::channelz::SubchannelNode* subchannel_node =
             grpc_subchannel_get_channelz_node(subchannels_[i].subchannel());
         if (subchannel_node != nullptr) {
-          refs_list->push_back(subchannel_node->subchannel_uuid());
+          refs_list->push_back(subchannel_node->uuid());
         }
       }
     }
@@ -268,7 +275,7 @@ class SubchannelList
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
-    SubchannelListType* subchannel_list,
+    SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
     const grpc_lb_user_data_vtable* user_data_vtable,
     const grpc_lb_address& address, grpc_subchannel* subchannel,
     grpc_combiner* combiner)
@@ -532,8 +539,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
               address_uri);
       gpr_free(address_uri);
     }
-    subchannels_.emplace_back(static_cast<SubchannelListType*>(this),
-                              addresses->user_data_vtable,
+    subchannels_.emplace_back(this, addresses->user_data_vtable,
                               addresses->addresses[i], subchannel, combiner);
   }
 }

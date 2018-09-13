@@ -49,6 +49,9 @@ def qps_json_driver_batch():
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
             ],
+            tags = [
+                "qps_json_driver",
+            ],
         )
 
 def json_run_localhost_batch():
@@ -70,5 +73,8 @@ def json_run_localhost_batch():
                 "//test/core/util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
+            ],
+            tags = [
+                "json_run_localhost",
             ],
         )

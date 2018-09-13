@@ -30,8 +30,8 @@
 
 #include "test/core/util/port.h"
 
-#define MIN_PORT 49152
-#define MAX_PORT 65535
+#define MIN_PORT 1025
+#define MAX_PORT 32766
 
 static int get_random_port_offset() {
   srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);

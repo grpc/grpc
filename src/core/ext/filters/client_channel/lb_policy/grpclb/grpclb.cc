@@ -1265,7 +1265,7 @@ void GrpcLb::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);
     if (channel_node != nullptr) {
-      child_channels->push_back(channel_node->channel_uuid());
+      child_channels->push_back(channel_node->uuid());
     }
   }
 }
