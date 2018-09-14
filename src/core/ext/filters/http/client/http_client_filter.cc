@@ -508,9 +508,8 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
     }
   }
 
-  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s; %s)", is_first ? "" : " ",
-               grpc_version_string(), GPR_PLATFORM_STRING, transport_name,
-               grpc_g_stands_for());
+  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s)", is_first ? "" : " ",
+               grpc_version_string(), GPR_PLATFORM_STRING, transport_name);
   is_first = 0;
   gpr_strvec_add(&v, tmp);
 
