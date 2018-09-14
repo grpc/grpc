@@ -35,6 +35,9 @@ namespace Grpc.Core.Internal
         /// </summary>
         public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
+            if (len == 0)
+                return "";
+
             var bytes = new byte[len];
             Marshal.Copy(ptr, bytes, 0, len);
             return EncodingUTF8.GetString(bytes);
