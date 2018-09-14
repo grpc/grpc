@@ -502,7 +502,8 @@ if __name__ == "__main__":
         default=False,
         action='store_const',
         const=True,
-        help='(Deprecated, has no effect) Put reports into subdirectories to improve presentation of '
+        help=
+        '(Deprecated, has no effect) Put reports into subdirectories to improve presentation of '
         'results by Kokoro.')
     argp.add_argument(
         '--bq_result_table',
