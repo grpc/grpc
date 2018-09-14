@@ -43,9 +43,6 @@ _OBJC_RUNTESTS_TIMEOUT = 90 * 60
 # Number of jobs assigned to each run_tests.py instance
 _DEFAULT_INNER_JOBS = 2
 
-# report suffix is important for reports to get picked up by internal CI
-_REPORT_SUFFIX = 'sponge_log.xml'
-
 
 def _safe_report_name(name):
     """Reports with '+' in target name won't show correctly in ResultStore"""
@@ -54,7 +51,14 @@ def _safe_report_name(name):
 
 def _report_filename(name):
     """Generates report file name with directory structure that leads to better presentation by internal CI"""
-    return '%s/%s' % (_safe_report_name(name), _REPORT_SUFFIX)
+    # 'sponge_log.xml' suffix must be there for results to get recognized by kokoro.
+    return '%s/%s' % (_safe_report_name(name), 'sponge_log.xml')
+
+
+def _report_logfilename(name):
+    """Generates report file name with directory structure that leads to better presentation by internal CI"""
+    # 'sponge_log.log' suffix must be there for test log to get recognized by kokoro.
+    return '%s/%s' % (_safe_report_name(name), 'sponge_log.log')
 
 
 def _docker_jobspec(name,
@@ -75,7 +79,8 @@ def _docker_jobspec(name,
         ] + runtests_args,
         environ=runtests_envs,
         shortname='run_tests_%s' % name,
-        timeout_seconds=timeout_seconds)
+        timeout_seconds=timeout_seconds,
+        logfilename=_report_logfilename(name))
     return test_job
 
 
@@ -102,7 +107,8 @@ def _workspace_jobspec(name,
         ] + runtests_args,
         environ=env,
         shortname='run_tests_%s' % name,
-        timeout_seconds=timeout_seconds)
+        timeout_seconds=timeout_seconds,
+        logfilename=_report_logfilename(name))
     return test_job
 
 
