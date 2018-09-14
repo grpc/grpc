@@ -457,8 +457,10 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_chttp2_hpack_parser p;
   grpc_chttp2_hpack_parser_init(&p);
+  const int kArenaSize = 4096;
+  gpr_arena* arena = gpr_arena_create(kArenaSize);
   p.on_header = OnHeader;
-  p.on_header_user_data = nullptr;
+  p.on_header_user_data = arena;
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
   }
@@ -467,6 +469,11 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
     }
     grpc_core::ExecCtx::Get()->Flush();
+    // recreate arena every 64k iterations to avoid oom
+    if (0 == (state.iterations() & 0xffff)) {
+      gpr_arena_destroy(arena);
+      arena = gpr_arena_create(kArenaSize);
+    }
   }
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
@@ -769,10 +776,9 @@ static void free_timeout(void* p) { gpr_free(p); }
 
 // Benchmark the current on_initial_header implementation
 static void OnInitialHeader(void* user_data, grpc_mdelem md) {
-  // Setup for benchmark. this will bloat the absolute values of this benchmark
+  // Setup for benchmark. This will bloat the absolute values of this benchmark
   grpc_chttp2_incoming_metadata_buffer buffer;
-  gpr_arena* arena = gpr_arena_create(1024);
-  grpc_chttp2_incoming_metadata_buffer_init(&buffer, arena);
+  grpc_chttp2_incoming_metadata_buffer_init(&buffer, (gpr_arena*)user_data);
   bool seen_error = false;
 
   // Below here is the code we actually care about benchmarking
@@ -815,7 +821,6 @@ static void OnInitialHeader(void* user_data, grpc_mdelem md) {
       GPR_ASSERT(0);
     }
   }
-  gpr_arena_destroy(arena);
 }
 
 // Benchmark timeout handling
