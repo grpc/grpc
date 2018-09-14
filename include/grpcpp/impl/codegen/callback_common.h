@@ -35,6 +35,10 @@ class CQCallbackInterface;
 namespace grpc {
 namespace internal {
 
+// The contract on these tags is that they are single-shot. They must be
+// constructed and then fired at exactly one point. There is no expectation
+// that they can be reused without reconstruction.
+
 class CallbackWithStatusTag {
  public:
   // always allocated against a call arena, no memory free required
