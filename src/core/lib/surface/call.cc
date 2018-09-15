@@ -207,7 +207,7 @@ struct grpc_call {
       grpc_server* server;
     } server;
   } final_op;
-  grpc_error* status_error;
+  gpr_atm status_error;
 
   /* recv_state can contain one of the following values:
      RECV_NONE :                 :  no initial metadata and messages received
@@ -519,10 +519,12 @@ static void destroy_call(void* call, grpc_error* error) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
 
-  grpc_error_get_status(c->status_error, c->send_deadline,
+  grpc_error* status_error =
+      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&c->status_error));
+  grpc_error_get_status(status_error, c->send_deadline,
                         &c->final_info.final_status, nullptr, nullptr,
                         &(c->final_info.error_string));
-  GRPC_ERROR_UNREF(c->status_error);
+  GRPC_ERROR_UNREF(status_error);
   c->final_info.stats.latency =
       gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
 
@@ -705,7 +707,7 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
                           call->final_op.client.error_string);
     // explicitly take a ref
     grpc_slice_ref_internal(*call->final_op.client.status_details);
-    call->status_error = error;
+    gpr_atm_rel_store(&call->status_error, reinterpret_cast<gpr_atm>(error));
     grpc_core::channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel);
     if (channelz_channel != nullptr) {
@@ -717,7 +719,9 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     }
   } else {
     *call->final_op.server.cancelled =
-        error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
+        error != GRPC_ERROR_NONE ||
+        reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&call->status_error)) !=
+            GRPC_ERROR_NONE;
     grpc_core::channelz::ServerNode* channelz_server =
         grpc_server_get_channelz_node(call->final_op.server.server);
     if (channelz_server != nullptr) {
@@ -1686,7 +1690,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           }
         }
 
-        call->status_error = status_error;
+        gpr_atm_rel_store(&call->status_error,
+                          reinterpret_cast<gpr_atm>(status_error));
         if (!prepare_application_metadata(
                 call,
                 static_cast<int>(
