@@ -152,9 +152,10 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
   grpc_closure* closure = calld->next_recv_message_ready;
   calld->next_recv_message_ready = nullptr;
   if (calld->seen_recv_trailing_metadata) {
-    GRPC_CALL_COMBINER_START(
-        calld->call_combiner, &calld->recv_trailing_metadata_ready,
-        calld->recv_trailing_metadata_error, "continue recv trailing metadata");
+    GRPC_CALL_COMBINER_START(calld->call_combiner,
+                             &calld->recv_trailing_metadata_ready,
+                             calld->recv_trailing_metadata_error,
+                             "continue recv_trailing_metadata_ready");
   }
   GRPC_CLOSURE_RUN(closure, error);
 }
@@ -164,13 +165,15 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->next_recv_message_ready) {
+  if (calld->next_recv_message_ready != nullptr) {
     calld->seen_recv_trailing_metadata = true;
     calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
     GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
                       recv_trailing_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for recv message");
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "deferring recv_trailing_metadata_ready until "
+                            "after recv_message_ready");
     return;
   }
   error =
@@ -227,7 +230,6 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->next_recv_message_ready = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
   calld->error = GRPC_ERROR_NONE;
-  calld->seen_recv_trailing_metadata = false;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,

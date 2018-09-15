@@ -63,9 +63,9 @@ struct call_data {
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
   bool seen_recv_message_ready;
 
+  // State for intercepting recv_trailing_metadata
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
-
   grpc_error* recv_trailing_metadata_ready_error;
   bool seen_recv_trailing_metadata_ready;
 };
@@ -304,15 +304,14 @@ static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
   } else {
     GRPC_ERROR_REF(err);
   }
-  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
-  calld->original_recv_initial_metadata_ready = nullptr;
   if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,
                              &calld->recv_trailing_metadata_ready,
                              calld->recv_trailing_metadata_ready_error,
-                             "continue recv trailing metadata");
+                             "resuming hs_recv_trailing_metadata_ready from "
+                             "hs_recv_initial_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(closure, err);
+  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, err);
 }
 
 static void hs_recv_message_ready(void* user_data, grpc_error* err) {
@@ -342,13 +341,15 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
 static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->original_recv_initial_metadata_ready) {
+  if (!calld->seen_recv_initial_metadata_ready) {
     calld->recv_trailing_metadata_ready_error = GRPC_ERROR_REF(err);
     calld->seen_recv_trailing_metadata_ready = true;
     GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
                       hs_recv_trailing_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner, "wait for initial metadata");
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "deferring hs_recv_trailing_metadata_ready until "
+                            "ater hs_recv_initial_metadata_ready");
     return;
   }
   err = grpc_error_add_child(
@@ -435,7 +436,6 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
-  calld->seen_recv_trailing_metadata_ready = false;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     hs_recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
