@@ -45,7 +45,7 @@ struct call_data {
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
   grpc_error* recv_trailing_metadata_error;
-  bool seen_recv_trailing_ready;
+  bool seen_recv_trailing_metadata_ready;
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
@@ -119,7 +119,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
   calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   grpc_closure* closure = calld->original_recv_initial_metadata_ready;
   calld->original_recv_initial_metadata_ready = nullptr;
-  if (calld->seen_recv_trailing_ready) {
+  if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,
                              &calld->recv_trailing_metadata_ready,
                              calld->recv_trailing_metadata_error,
@@ -196,7 +196,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   }
   grpc_closure* closure = calld->original_recv_initial_metadata_ready;
   calld->original_recv_initial_metadata_ready = nullptr;
-  if (calld->seen_recv_trailing_ready) {
+  if (calld->seen_recv_trailing_metadata_ready) {
     GRPC_CALL_COMBINER_START(calld->call_combiner,
                              &calld->recv_trailing_metadata_ready,
                              calld->recv_trailing_metadata_error,
@@ -210,13 +210,11 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->original_recv_initial_metadata_ready != nullptr) {
     calld->recv_trailing_metadata_error = GRPC_ERROR_REF(err);
-    calld->seen_recv_trailing_ready = true;
-    GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
-                      recv_trailing_metadata_ready, elem,
-                      grpc_schedule_on_exec_ctx);
+    calld->seen_recv_trailing_metadata_ready = true;
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "deferring recv_trailing_metadata_ready until "
                             "after recv_initial_metadata_ready");
+    return;
   }
   err = grpc_error_add_child(
       GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->recv_initial_metadata_error));
