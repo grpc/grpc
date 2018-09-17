@@ -44,22 +44,22 @@ namespace channelz {
 namespace testing {
 
 TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
-  ChannelNode* channelz_channel = nullptr;
-  intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
+  BaseNode* channelz_channel = nullptr;
+  intptr_t uuid = ChannelzRegistry::Register(channelz_channel);
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
                         "https://github.com/grpc/proposal/blob/master/"
                         "A14-channelz.md";
-  ChannelzRegistry::UnregisterChannelNode(uuid);
+  ChannelzRegistry::Unregister(uuid);
 }
 
 TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
-  ChannelNode* channelz_channel = nullptr;
+  BaseNode* channelz_channel = nullptr;
   std::vector<intptr_t> uuids;
   uuids.reserve(10);
   for (int i = 0; i < 10; ++i) {
     // reregister the same object. It's ok since we are just testing uuids
-    uuids.push_back(ChannelzRegistry::RegisterChannelNode(channelz_channel));
+    uuids.push_back(ChannelzRegistry::Register(channelz_channel));
   }
   for (size_t i = 1; i < uuids.size(); ++i) {
     EXPECT_LT(uuids[i - 1], uuids[i]) << "Uuids must always be increasing";
@@ -68,30 +68,30 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
 
 TEST(ChannelzRegistryTest, RegisterGetTest) {
   // we hackily jam an intptr_t into this pointer to check for equality later
-  ChannelNode* channelz_channel = (ChannelNode*)42;
-  intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
-  ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
+  BaseNode* channelz_channel = (BaseNode*)42;
+  intptr_t uuid = ChannelzRegistry::Register(channelz_channel);
+  BaseNode* retrieved = ChannelzRegistry::Get(uuid);
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
 TEST(ChannelzRegistryTest, RegisterManyItems) {
   // we hackily jam an intptr_t into this pointer to check for equality later
-  ChannelNode* channelz_channel = (ChannelNode*)42;
+  BaseNode* channelz_channel = (BaseNode*)42;
   for (int i = 0; i < 100; i++) {
-    intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
-    ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
+    intptr_t uuid = ChannelzRegistry::Register(channelz_channel);
+    BaseNode* retrieved = ChannelzRegistry::Get(uuid);
     EXPECT_EQ(channelz_channel, retrieved);
   }
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
   // we hackily jam an intptr_t into this pointer to check for equality later
-  ChannelNode* channelz_channel = (ChannelNode*)42;
-  intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
+  BaseNode* channelz_channel = (BaseNode*)42;
+  intptr_t uuid = ChannelzRegistry::Register(channelz_channel);
   // try to pull out a uuid that does not exist.
-  ChannelNode* nonexistant = ChannelzRegistry::GetChannelNode(uuid + 1);
+  BaseNode* nonexistant = ChannelzRegistry::Get(uuid + 1);
   EXPECT_EQ(nonexistant, nullptr);
-  ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
+  BaseNode* retrieved = ChannelzRegistry::Get(uuid);
   EXPECT_EQ(channelz_channel, retrieved);
 }
 

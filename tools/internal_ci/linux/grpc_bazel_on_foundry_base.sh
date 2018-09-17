@@ -60,7 +60,7 @@ export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instan
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
   --test_env=GRPC_VERBOSITY=debug \
   --remote_instance_name=projects/grpc-testing/instances/default_instance \
-  $1 \
+  $@ \
   -- //test/... || FAILED="true"
 
 if [ "$UPLOAD_TEST_RESULTS" != "" ]

@@ -297,6 +297,12 @@ namespace Grpc.Core
             activeCallCounter.Decrement();
         }
 
+        // for testing only
+        internal long GetCallReferenceCount()
+        {
+            return activeCallCounter.Count;
+        }
+
         private ChannelState GetConnectivityState(bool tryToConnect)
         {
             try

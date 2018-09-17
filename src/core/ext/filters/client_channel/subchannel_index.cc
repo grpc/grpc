@@ -64,7 +64,7 @@ struct grpc_subchannel_key {
   grpc_subchannel_args args;
 };
 
-static bool g_force_creation = false;
+static gpr_atm g_force_creation = false;
 
 static grpc_subchannel_key* create_key(
     const grpc_subchannel_args* args,
