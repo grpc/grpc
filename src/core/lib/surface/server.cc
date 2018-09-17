@@ -731,9 +731,11 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
     /* do nothing */
   } else {
     /* Pass the error reference to calld->recv_initial_metadata_error */
-    calld->recv_initial_metadata_error =
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Missing :authority or :path", &error, 1);
+    grpc_error* src_error = error;
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Missing :authority or :path", &src_error, 1);
+    GRPC_ERROR_UNREF(src_error);
+    calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   }
   grpc_closure* closure = calld->on_done_recv_initial_metadata;
   calld->on_done_recv_initial_metadata = nullptr;
