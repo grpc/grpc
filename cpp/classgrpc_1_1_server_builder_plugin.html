@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac337c61dcb4d6c41e669e510f1faca48"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#ac337c61dcb4d6c41e669e510f1faca48">name</a> ()=0</td></tr>
 <tr class="separator:ac337c61dcb4d6c41e669e510f1faca48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d3d5be23a10ea272aeb11118233147d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a9d3d5be23a10ea272aeb11118233147d">UpdateServerBuilder</a> (<a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> *builder)</td></tr>
-<tr class="memdesc:a9d3d5be23a10ea272aeb11118233147d"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateServerBuilder will be called at the beginning of <em><a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a></em>.  <a href="#a9d3d5be23a10ea272aeb11118233147d">More...</a><br /></td></tr>
+<tr class="memdesc:a9d3d5be23a10ea272aeb11118233147d"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates.  <a href="#a9d3d5be23a10ea272aeb11118233147d">More...</a><br /></td></tr>
 <tr class="separator:a9d3d5be23a10ea272aeb11118233147d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aae901e058799d699f029fd80f05b46d1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#aae901e058799d699f029fd80f05b46d1">InitServer</a> (<a class="el" href="classgrpc_1_1_server_initializer.html">ServerInitializer</a> *si)=0</td></tr>
 <tr class="memdesc:aae901e058799d699f029fd80f05b46d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">InitServer will be called in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, after the <a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> instance is created.  <a href="#aae901e058799d699f029fd80f05b46d1">More...</a><br /></td></tr>
@@ -352,7 +352,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>UpdateServerBuilder will be called at the beginning of <em><a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a></em>. </p>
+<p>UpdateServerBuilder will be called at an early stage in <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, right after the ServerBuilderOptions have done their updates. </p>
 
 </div>
 </div>
@@ -362,7 +362,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

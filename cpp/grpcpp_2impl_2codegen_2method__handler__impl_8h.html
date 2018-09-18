@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -66,6 +66,7 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">method_handler_impl.h File Reference</div>  </div>
@@ -98,8 +99,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_unknown_method_handler.html">grpc::internal::UnknownMethodHandler</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handle unknown method by returning UNIMPLEMENTED error.  <a href="classgrpc_1_1internal_1_1_unknown_method_handler.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">grpc::internal::ErrorMethodHandler&lt; code &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">General method handler class for errors that prevent real method use e.g., handle unknown method by returning UNIMPLEMENTED error.  <a href="classgrpc_1_1internal_1_1_error_method_handler.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
@@ -111,6 +112,13 @@ Namespaces</h2></td></tr>
 <tr class="memdesc:namespacegrpc_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Models a gRPC server. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:aadad19d5473515e912bc2abdcffacae5"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt; StatusCode::UNIMPLEMENTED &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#aadad19d5473515e912bc2abdcffacae5">grpc::internal::UnknownMethodHandler</a></td></tr>
+<tr class="separator:aadad19d5473515e912bc2abdcffacae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8644abe728be83718a18f5faf44110d3"><td class="memItemLeft" align="right" valign="top">typedef ErrorMethodHandler&lt; StatusCode::RESOURCE_EXHAUSTED &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a8644abe728be83718a18f5faf44110d3">grpc::internal::ResourceExhaustedHandler</a></td></tr>
+<tr class="separator:a8644abe728be83718a18f5faf44110d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ae548f7c35cdcccbd9b8453b99ba1e326"><td class="memTemplParams" colspan="2">template&lt;class Callable &gt; </td></tr>
@@ -120,7 +128,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

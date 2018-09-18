@@ -1,7 +1,7 @@
 var searchData=
 [
   ['gpr_5fclock_5ftype',['gpr_clock_type',['../gpr__types_8h.html#a2441bd1fbe80e86ff741e0757725b281',1,'gpr_types.h']]],
-  ['gpr_5flog_5fseverity',['gpr_log_severity',['../log_8h.html#af10334b4085ac6985a2af9c08478ad48',1,'log.h']]],
+  ['gpr_5flog_5fseverity',['gpr_log_severity',['../impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48',1,'log.h']]],
   ['grpc_5farg_5ftype',['grpc_arg_type',['../grpc__types_8h.html#a0b06eae05e70404aedbceaebce6de593',1,'grpc_types.h']]],
   ['grpc_5fbyte_5fbuffer_5ftype',['grpc_byte_buffer_type',['../grpc__types_8h.html#acdc94363b280bde9c82e3d9b5dc3b3e6',1,'grpc_types.h']]],
   ['grpc_5fcall_5ferror',['grpc_call_error',['../grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b',1,'grpc_types.h']]],
@@ -11,6 +11,7 @@ var searchData=
   ['grpc_5fconnectivity_5fstate',['grpc_connectivity_state',['../connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2',1,'connectivity_state.h']]],
   ['grpc_5fcq_5fcompletion_5ftype',['grpc_cq_completion_type',['../grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8',1,'grpc_types.h']]],
   ['grpc_5fcq_5fpolling_5ftype',['grpc_cq_polling_type',['../grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343',1,'grpc_types.h']]],
+  ['grpc_5flocal_5fconnect_5ftype',['grpc_local_connect_type',['../grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11',1,'grpc_security_constants.h']]],
   ['grpc_5fop_5ftype',['grpc_op_type',['../grpc__types_8h.html#a41dc9abf9678decbfcef1a037e35939a',1,'grpc_types.h']]],
   ['grpc_5fserver_5fregister_5fmethod_5fpayload_5fhandling',['grpc_server_register_method_payload_handling',['../grpc_8h.html#aab04022748000f50c2590230f985acbc',1,'grpc.h']]],
   ['grpc_5fslice_5fref_5fwhom',['grpc_slice_ref_whom',['../grpc_2slice_8h.html#a4a42e5de5c07151adf96278ea466ef4d',1,'slice.h']]],

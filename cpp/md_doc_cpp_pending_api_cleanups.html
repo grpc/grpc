@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -68,12 +68,13 @@ $(function() {
 <ul>
 <li>remove <code>ServerBuilder::SetMaxMessageSize()</code> method from <code>include/grpc++/server_builder.h</code> (commit <code>6980362</code>)</li>
 <li>remove <code>ClientContext::set_fail_fast()</code> method from <code>include/grpc++/impl/codegen/client_context.h</code> (commit <code>9477724</code>)</li>
-<li>remove directory <code>include/grpc++</code> and all headers in it (commit <code>eb06572</code>) </li>
+<li>remove directory <code>include/grpc++</code> and all headers in it (commit <code>eb06572</code>)</li>
+<li>make all <code>Request</code> and <code>Mark</code> methods in <code><a class="el" href="classgrpc_1_1_service.html" title="Desriptor of an RPC service and its various RPC methods. ">grpc::Service</a></code> take a <code>size_t</code> argument for <code>index</code> rather than <code>int</code> (since that is only used as a vector index) </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -13,6 +13,7 @@ var searchData=
   ['clientstreaminghandler',['ClientStreamingHandler',['../classgrpc_1_1_server_reader.html#a420e7af1f016c295b28389810b472ea5',1,'grpc::ServerReader']]],
   ['clientwriterfactory_3c_20w_20_3e',['ClientWriterFactory&lt; W &gt;',['../classgrpc_1_1_client_writer.html#aaf47eddb323a45d41fc685be03d970c9',1,'grpc::ClientWriter']]],
   ['deserializefunctype',['DeserializeFuncType',['../classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c',1,'grpc::ByteBuffer']]],
+  ['errormethodhandler',['ErrorMethodHandler',['../classgrpc_1_1_byte_buffer.html#a91a3296cb8faa9b7afad2f0db836df4d',1,'grpc::ByteBuffer::ErrorMethodHandler()'],['../classgrpc_1_1_server_context.html#a91a3296cb8faa9b7afad2f0db836df4d',1,'grpc::ServerContext::ErrorMethodHandler()']]],
   ['grpcbytebufferpeer',['GrpcByteBufferPeer',['../classgrpc_1_1_byte_buffer.html#a26d1eb015b546436fbfb535a20e2f115',1,'grpc::ByteBuffer']]],
   ['ignoreerror',['IgnoreError',['../classgrpc_1_1_status.html#ab7bcfb5c361084879d3cd0ba2ee9dfa4',1,'grpc::Status']]],
   ['index',['index',['../uniongrpc__byte__buffer__reader_1_1grpc__byte__buffer__reader__current.html#a75e9e86942ca6b95cba101775f7c15ea',1,'grpc_byte_buffer_reader::grpc_byte_buffer_reader_current']]],

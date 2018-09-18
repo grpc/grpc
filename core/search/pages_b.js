@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['pending_5fapi_5fcleanups',['pending_api_cleanups',['../md_doc_core_pending_api_cleanups.html',1,'']]]
+  ['ordering_20status_20and_20reads_20in_20the_20grpc_20api',['Ordering Status and Reads in the gRPC API',['../md_doc_status_ordering.html',1,'']]]
 ];

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['moving_20grpc_20core_20to_20c_2b_2b',['Moving gRPC core to C++',['../md_doc_core_moving-to-c_09_09.html',1,'']]]
+  ['load_20balancing_20in_20grpc',['Load Balancing in gRPC',['../md_doc_load-balancing.html',1,'']]]
 ];

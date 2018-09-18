@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -83,17 +83,30 @@ $(function() {
 </li>
 <li>Call()
 : <a class="el" href="classgrpc_1_1_generic_stub.html#a29d999cf06468cfe12d3cdc912cb0afb">grpc::GenericStub</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_call.html#a4a32e4ff067a03b9e95a9d37d7763463">grpc::internal::Call</a>
 </li>
 <li>call()
 : <a class="el" href="classgrpc_1_1internal_1_1_call.html#a1ea7cfae5dc2ca7a3bc261825edb6d24">grpc::internal::Call</a>
-, <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e0e2ef7ba90888f51dafe804ecffe6a">grpc::internal::MethodHandler::HandlerParameter</a>
+</li>
+<li>Call()
+: <a class="el" href="classgrpc_1_1internal_1_1_call.html#a4a32e4ff067a03b9e95a9d37d7763463">grpc::internal::Call</a>
+</li>
+<li>call
+: <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e0e2ef7ba90888f51dafe804ecffe6a">grpc::internal::MethodHandler::HandlerParameter</a>
 </li>
 <li>call_
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a54c3a6173cfd54c784475f95d20a77d8">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>call_cq_
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a1372192c43404f40e7046aab632569ab">grpc::ServerInterface::BaseAsyncRequest</a>
+</li>
+<li>CallbackUnaryCallImpl()
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_call_impl.html#a93cfb3d39e42f6a8542ddb2485bd63ed">grpc::internal::CallbackUnaryCallImpl&lt; InputMessage, OutputMessage &gt;</a>
+</li>
+<li>CallbackWithStatusTag()
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#a90541e7784fd49209cae06ce464446b1">grpc::internal::CallbackWithStatusTag</a>
+</li>
+<li>CallbackWithSuccessTag()
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#ad259830f898f240faa96e30db7a9e379">grpc::internal::CallbackWithSuccessTag</a>
 </li>
 <li>CallCredentials()
 : <a class="el" href="classgrpc_1_1_call_credentials.html#af28714fa5ebfe120cd02f26aaaca595a">grpc::CallCredentials</a>
@@ -216,7 +229,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1string__ref.html#a2e3fa91fae8362cd8afd0eb0a7f0174e">grpc::string_ref</a>
 </li>
 <li>CompletionQueue()
-: <a class="el" href="classgrpc_1_1_completion_queue.html#a081a954044215a7ca8554da4220fb369">grpc::CompletionQueue</a>
+: <a class="el" href="classgrpc_1_1_completion_queue.html#abf1d4810de32ca2cc2c14c591b41d2cd">grpc::CompletionQueue</a>
 </li>
 <li>CompositeCallCredentials
 : <a class="el" href="classgrpc_1_1_call_credentials.html#a064b061a7e2a80e1d6466addd8600779">grpc::CallCredentials</a>
@@ -266,6 +279,13 @@ $(function() {
 <li>cq_polling_type
 : <a class="el" href="structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575">grpc_completion_queue_attributes</a>
 </li>
+<li>cq_shutdown_cb
+: <a class="el" href="structgrpc__completion__queue__attributes.html#a70f7b7706b732d72a2707b743ed80b4c">grpc_completion_queue_attributes</a>
+</li>
+<li>cq_tag()
+: <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a32bcbbd3c7b0cbf7b8f950e6c14f615c">grpc::internal::CallOpSetInterface</a>
+</li>
 <li>CQ_TIMEOUT_MSEC
 : <a class="el" href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88dad9d34ee45d9bdf2344c6463deea14f4c">grpc::ServerBuilder</a>
 </li>
@@ -303,7 +323,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

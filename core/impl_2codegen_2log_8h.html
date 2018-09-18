@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC Core: include/grpc/support/log.h File Reference</title>
+<title>GRPC Core: include/grpc/impl/codegen/log.h File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -59,7 +59,7 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_cad3142e04109052413f2d2a2d1813b0.html">support</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_9d7a14d6d9adcbe4c35dbdb88d867e2e.html">grpc</a></li><li class="navelem"><a class="el" href="dir_4b3e2ed696753daba329e2683e0f6479.html">impl</a></li><li class="navelem"><a class="el" href="dir_7a167954ab48275cc692d783196d1f28.html">codegen</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -77,7 +77,7 @@ $(function() {
 <code>#include &lt;stdarg.h&gt;</code><br />
 <code>#include &lt;stdlib.h&gt;</code><br />
 </div>
-<p><a href="log_8h_source.html">Go to the source code of this file.</a></p>
+<p><a href="impl_2codegen_2log_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
@@ -87,58 +87,58 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:afce870efb3d4bff38f747f79cb6c0f18"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#afce870efb3d4bff38f747f79cb6c0f18">GPR_LOG_VERBOSITY_UNSET</a>&#160;&#160;&#160;-1</td></tr>
+<tr class="memitem:afce870efb3d4bff38f747f79cb6c0f18"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#afce870efb3d4bff38f747f79cb6c0f18">GPR_LOG_VERBOSITY_UNSET</a>&#160;&#160;&#160;-1</td></tr>
 <tr class="separator:afce870efb3d4bff38f747f79cb6c0f18"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e793245091f13bb7318a18b1166a773"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a3e793245091f13bb7318a18b1166a773">GPR_DEBUG</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></td></tr>
+<tr class="memitem:a3e793245091f13bb7318a18b1166a773"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a3e793245091f13bb7318a18b1166a773">GPR_DEBUG</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></td></tr>
 <tr class="memdesc:a3e793245091f13bb7318a18b1166a773"><td class="mdescLeft">&#160;</td><td class="mdescRight">Macros to build log contexts at various severity levels.  <a href="#a3e793245091f13bb7318a18b1166a773">More...</a><br /></td></tr>
 <tr class="separator:a3e793245091f13bb7318a18b1166a773"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0d0d75690f79edc9294498c88f96703"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#af0d0d75690f79edc9294498c88f96703">GPR_INFO</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a></td></tr>
+<tr class="memitem:af0d0d75690f79edc9294498c88f96703"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#af0d0d75690f79edc9294498c88f96703">GPR_INFO</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a></td></tr>
 <tr class="separator:af0d0d75690f79edc9294498c88f96703"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a63faedb3eefd93d1c0e79974be80cc36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a></td></tr>
+<tr class="memitem:a63faedb3eefd93d1c0e79974be80cc36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a>&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a></td></tr>
 <tr class="separator:a63faedb3eefd93d1c0e79974be80cc36"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ccf52ff690655cc22cd9d053650876f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td></tr>
+<tr class="memitem:a6ccf52ff690655cc22cd9d053650876f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td></tr>
 <tr class="memdesc:a6ccf52ff690655cc22cd9d053650876f"><td class="mdescLeft">&#160;</td><td class="mdescRight">abort() the process if x is zero, having written a line to the log.  <a href="#a6ccf52ff690655cc22cd9d053650876f">More...</a><br /></td></tr>
 <tr class="separator:a6ccf52ff690655cc22cd9d053650876f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4720a11176c735c4456815394edb6bff"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a4720a11176c735c4456815394edb6bff">GPR_DEBUG_ASSERT</a>(x)&#160;&#160;&#160;<a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td></tr>
+<tr class="memitem:a4720a11176c735c4456815394edb6bff"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a4720a11176c735c4456815394edb6bff">GPR_DEBUG_ASSERT</a>(x)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td></tr>
 <tr class="separator:a4720a11176c735c4456815394edb6bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:ad49303346a78cf4881129958214fde8d"><td class="memItemLeft" align="right" valign="top">typedef enum <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#ad49303346a78cf4881129958214fde8d">gpr_log_severity</a></td></tr>
+<tr class="memitem:ad49303346a78cf4881129958214fde8d"><td class="memItemLeft" align="right" valign="top">typedef enum <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#ad49303346a78cf4881129958214fde8d">gpr_log_severity</a></td></tr>
 <tr class="memdesc:ad49303346a78cf4881129958214fde8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">GPR log API.  <a href="#ad49303346a78cf4881129958214fde8d">More...</a><br /></td></tr>
 <tr class="separator:ad49303346a78cf4881129958214fde8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adce8dc81f07a98265e917de7d7f3cde5"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#adce8dc81f07a98265e917de7d7f3cde5">gpr_log_func_args</a></td></tr>
+<tr class="memitem:adce8dc81f07a98265e917de7d7f3cde5"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#adce8dc81f07a98265e917de7d7f3cde5">gpr_log_func_args</a></td></tr>
 <tr class="separator:adce8dc81f07a98265e917de7d7f3cde5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bba35ee3180d11d8ff5a71cc2ee2a05"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>) (<a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a> *args)</td></tr>
+<tr class="memitem:a3bba35ee3180d11d8ff5a71cc2ee2a05"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>) (<a class="el" href="structgpr__log__func__args.html">gpr_log_func_args</a> *args)</td></tr>
 <tr class="separator:a3bba35ee3180d11d8ff5a71cc2ee2a05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:af10334b4085ac6985a2af9c08478ad48"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> { <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a>, 
-<a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a>, 
-<a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a>
- }<tr class="memdesc:af10334b4085ac6985a2af9c08478ad48"><td class="mdescLeft">&#160;</td><td class="mdescRight">GPR log API.  <a href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">More...</a><br /></td></tr>
+<tr class="memitem:af10334b4085ac6985a2af9c08478ad48"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> { <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a>, 
+<a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a>, 
+<a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a>
+ }<tr class="memdesc:af10334b4085ac6985a2af9c08478ad48"><td class="mdescLeft">&#160;</td><td class="mdescRight">GPR log API.  <a href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">More...</a><br /></td></tr>
 </td></tr>
 <tr class="separator:af10334b4085ac6985a2af9c08478ad48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae794448965328d305d0b44417199a915"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#ae794448965328d305d0b44417199a915">gpr_log_severity_string</a> (<a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity)</td></tr>
+<tr class="memitem:ae794448965328d305d0b44417199a915"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#ae794448965328d305d0b44417199a915">gpr_log_severity_string</a> (<a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity)</td></tr>
 <tr class="memdesc:ae794448965328d305d0b44417199a915"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a string representation of the log severity.  <a href="#ae794448965328d305d0b44417199a915">More...</a><br /></td></tr>
 <tr class="separator:ae794448965328d305d0b44417199a915"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a938a283d9a10c3ddfe46dfc22e21077f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a> (const char *file, int line, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *format,...) <a class="el" href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a>(4</td></tr>
+<tr class="memitem:a938a283d9a10c3ddfe46dfc22e21077f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">gpr_log</a> (const char *file, int line, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *format,...) <a class="el" href="impl_2codegen_2port__platform_8h.html#a3364659cddcdfeae3897c3300de03d05">GPR_PRINT_FORMAT_CHECK</a>(4</td></tr>
 <tr class="memdesc:a938a283d9a10c3ddfe46dfc22e21077f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Log a message.  <a href="#a938a283d9a10c3ddfe46dfc22e21077f">More...</a><br /></td></tr>
 <tr class="separator:a938a283d9a10c3ddfe46dfc22e21077f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7fb54337c9f6a34074ab181eb98ace47"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void <a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a7fb54337c9f6a34074ab181eb98ace47">gpr_should_log</a> (<a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity)</td></tr>
+<tr class="memitem:a7fb54337c9f6a34074ab181eb98ace47"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void <a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a7fb54337c9f6a34074ab181eb98ace47">gpr_should_log</a> (<a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity)</td></tr>
 <tr class="separator:a7fb54337c9f6a34074ab181eb98ace47"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a182dc49f7d429e28b35cb78133e542d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a182dc49f7d429e28b35cb78133e542d8">gpr_log_message</a> (const char *file, int line, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message)</td></tr>
+<tr class="memitem:a182dc49f7d429e28b35cb78133e542d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a182dc49f7d429e28b35cb78133e542d8">gpr_log_message</a> (const char *file, int line, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> severity, const char *message)</td></tr>
 <tr class="separator:a182dc49f7d429e28b35cb78133e542d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec0c537cb1e244060c65d9d9d153979f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#aec0c537cb1e244060c65d9d9d153979f">gpr_set_log_verbosity</a> (<a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> min_severity_to_print)</td></tr>
+<tr class="memitem:aec0c537cb1e244060c65d9d9d153979f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#aec0c537cb1e244060c65d9d9d153979f">gpr_set_log_verbosity</a> (<a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a> min_severity_to_print)</td></tr>
 <tr class="memdesc:aec0c537cb1e244060c65d9d9d153979f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set global log verbosity.  <a href="#aec0c537cb1e244060c65d9d9d153979f">More...</a><br /></td></tr>
 <tr class="separator:aec0c537cb1e244060c65d9d9d153979f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a920f1611251015a9806177ed78931aa5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#a920f1611251015a9806177ed78931aa5">gpr_log_verbosity_init</a> (void)</td></tr>
+<tr class="memitem:a920f1611251015a9806177ed78931aa5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#a920f1611251015a9806177ed78931aa5">gpr_log_verbosity_init</a> (void)</td></tr>
 <tr class="separator:a920f1611251015a9806177ed78931aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae437062e3540eeebb4c95f119fe56be5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="log_8h.html#ae437062e3540eeebb4c95f119fe56be5">gpr_set_log_function</a> (<a class="el" href="log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a> func)</td></tr>
+<tr class="memitem:ae437062e3540eeebb4c95f119fe56be5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2log_8h.html#ae437062e3540eeebb4c95f119fe56be5">gpr_set_log_function</a> (<a class="el" href="impl_2codegen_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a> func)</td></tr>
 <tr class="separator:ae437062e3540eeebb4c95f119fe56be5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
@@ -157,8 +157,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">do</span> {                                                \</div><div class="line">    if (<a class="code" href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(!(x))) {                         \</div><div class="line">      gpr_log(<a class="code" href="log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a>, <span class="stringliteral">&quot;assertion failed: %s&quot;</span>, #x); \</div><div class="line">      abort();                                        \</div><div class="line">    }                                                 \</div><div class="line">  } <span class="keywordflow">while</span> (0)</div><div class="ttc" id="impl_2codegen_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:514</div></div>
-<div class="ttc" id="log_8h_html_a63faedb3eefd93d1c0e79974be80cc36"><div class="ttname"><a href="log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a></div><div class="ttdeci">#define GPR_ERROR</div><div class="ttdef"><b>Definition:</b> log.h:57</div></div>
+<b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">do</span> {                                                \</div><div class="line">    if (<a class="code" href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(!(x))) {                         \</div><div class="line">      gpr_log(<a class="code" href="impl_2codegen_2log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a>, <span class="stringliteral">&quot;assertion failed: %s&quot;</span>, #x); \</div><div class="line">      abort();                                        \</div><div class="line">    }                                                 \</div><div class="line">  } <span class="keywordflow">while</span> (0)</div><div class="ttc" id="impl_2codegen_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="impl_2codegen_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:552</div></div>
+<div class="ttc" id="impl_2codegen_2log_8h_html_a63faedb3eefd93d1c0e79974be80cc36"><div class="ttname"><a href="impl_2codegen_2log_8h.html#a63faedb3eefd93d1c0e79974be80cc36">GPR_ERROR</a></div><div class="ttdeci">#define GPR_ERROR</div><div class="ttdef"><b>Definition:</b> log.h:57</div></div>
 </div><!-- fragment -->
 <p>abort() the process if x is zero, having written a line to the log. </p>
 <p>Intended for internal invariants. If the error can be recovered from, without the possibility of corruption, or might best be reflected via an exception in a higher-level language, consider returning error code. </p>
@@ -172,7 +172,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GPR_DEBUG&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></td>
+          <td class="memname">#define GPR_DEBUG&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6">GPR_LOG_SEVERITY_DEBUG</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -192,7 +192,7 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">x</td><td>)</td>
-          <td>&#160;&#160;&#160;<a class="el" href="log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td>
+          <td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2log_8h.html#a6ccf52ff690655cc22cd9d053650876f">GPR_ASSERT</a>(x)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -206,7 +206,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GPR_ERROR&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a></td>
+          <td class="memname">#define GPR_ERROR&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4">GPR_LOG_SEVERITY_ERROR</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -220,7 +220,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GPR_INFO&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a></td>
+          <td class="memname">#define GPR_INFO&#160;&#160;&#160;__FILE__, __LINE__, <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">GPR_LOG_SEVERITY_INFO</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -277,7 +277,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef enum <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>  <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></td>
+          <td class="memname">typedef enum <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>  <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -296,7 +296,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">enum <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></td>
+          <td class="memname">enum <a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -334,7 +334,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
           <td class="paramname"><em>severity</em>, </td>
         </tr>
         <tr>
@@ -383,7 +383,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
           <td class="paramname"><em>severity</em>, </td>
         </tr>
         <tr>
@@ -411,7 +411,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> const char* gpr_log_severity_string </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
           <td class="paramname"><em>severity</em></td><td>)</td>
           <td></td>
         </tr>
@@ -449,7 +449,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_set_log_function </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#a3bba35ee3180d11d8ff5a71cc2ee2a05">gpr_log_func</a>&#160;</td>
           <td class="paramname"><em>func</em></td><td>)</td>
           <td></td>
         </tr>
@@ -467,7 +467,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void gpr_set_log_verbosity </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
           <td class="paramname"><em>min_severity_to_print</em></td><td>)</td>
           <td></td>
         </tr>
@@ -487,7 +487,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> void <a class="el" href="impl_2codegen_2port__platform_8h.html#af89d3610372fc35178e83e06916aa808">GPRAPI</a> int gpr_should_log </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="impl_2codegen_2log_8h.html#af10334b4085ac6985a2af9c08478ad48">gpr_log_severity</a>&#160;</td>
           <td class="paramname"><em>severity</em></td><td>)</td>
           <td></td>
         </tr>
@@ -499,7 +499,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

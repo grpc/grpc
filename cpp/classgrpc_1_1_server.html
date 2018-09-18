@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -129,9 +129,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a8b8678faf043eaecc0fda4ebf526d5db"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a8b8678faf043eaecc0fda4ebf526d5db">AddListeningPort</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> *creds) override</td></tr>
 <tr class="memdesc:a8b8678faf043eaecc0fda4ebf526d5db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Try binding the server to the given <em>addr</em> endpoint (port, and optionally including IP address to bind to).  <a href="#a8b8678faf043eaecc0fda4ebf526d5db">More...</a><br /></td></tr>
 <tr class="separator:a8b8678faf043eaecc0fda4ebf526d5db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab7c814470486b256eef7c202de2ef9f7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#ab7c814470486b256eef7c202de2ef9f7">Server</a> (int max_message_size, <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> *args, std::shared_ptr&lt; std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&gt;&gt; sync_server_cqs, int min_pollers, int max_pollers, int sync_cq_timeout_msec)</td></tr>
-<tr class="memdesc:ab7c814470486b256eef7c202de2ef9f7"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> constructors.  <a href="#ab7c814470486b256eef7c202de2ef9f7">More...</a><br /></td></tr>
-<tr class="separator:ab7c814470486b256eef7c202de2ef9f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab31574c6fccb7386402ab9fcab4c4c57"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#ab31574c6fccb7386402ab9fcab4c4c57">Server</a> (int max_message_size, <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> *args, std::shared_ptr&lt; std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> &gt;&gt;&gt; sync_server_cqs, int min_pollers, int max_pollers, int sync_cq_timeout_msec, <a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *server_rq=nullptr)</td></tr>
+<tr class="memdesc:ab31574c6fccb7386402ab9fcab4c4c57"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: This is <em>NOT</em> a public API.  <a href="#ab31574c6fccb7386402ab9fcab4c4c57">More...</a><br /></td></tr>
+<tr class="separator:ab31574c6fccb7386402ab9fcab4c4c57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:affff5d179b3a71617cbb02062f49eea4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">Start</a> (<a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> **cqs, size_t num_cqs) override</td></tr>
 <tr class="memdesc:affff5d179b3a71617cbb02062f49eea4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start the server.  <a href="#affff5d179b3a71617cbb02062f49eea4">More...</a><br /></td></tr>
 <tr class="separator:affff5d179b3a71617cbb02062f49eea4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -176,8 +176,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="ab7c814470486b256eef7c202de2ef9f7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab7c814470486b256eef7c202de2ef9f7">&#9670;&nbsp;</a></span>Server()</h2>
+<a id="ab31574c6fccb7386402ab9fcab4c4c57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab31574c6fccb7386402ab9fcab4c4c57">&#9670;&nbsp;</a></span>Server()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -219,7 +219,13 @@ Friends</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>sync_cq_timeout_msec</em>&#160;</td>
+          <td class="paramname"><em>sync_cq_timeout_msec</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td>
+          <td class="paramname"><em>server_rq</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -234,8 +240,9 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> constructors. </p>
-<p>To be used by <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em> only.</p>
+<p>NOTE: This is <em>NOT</em> a public API. </p>
+<p>The server constructors are supposed to be used by <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em> class only. The constructor will be made 'private' very soon.</p>
+<p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> constructors. To be used by <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em> only.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">max_message_size</td><td>Maximum message length that the channel can receive.</td></tr>
@@ -615,7 +622,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

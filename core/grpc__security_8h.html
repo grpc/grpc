@@ -292,6 +292,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_alts_server_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates an ALTS server credential object.  <a href="#a5dde4a563a9f7b8b1fc595ecd8d357fa">More...</a><br /></td></tr>
 <tr class="separator:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c5c11ac702b466c9dd0773cff01e72f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a6c5c11ac702b466c9dd0773cff01e72f">grpc_local_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memdesc:a6c5c11ac702b466c9dd0773cff01e72f"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Local channel/server credentials &mdash;  <a href="#a6c5c11ac702b466c9dd0773cff01e72f">More...</a><br /></td></tr>
+<tr class="separator:a6c5c11ac702b466c9dd0773cff01e72f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39e8a41f7f9a8d7587343964b18fc464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a39e8a41f7f9a8d7587343964b18fc464">grpc_local_server_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memdesc:a39e8a41f7f9a8d7587343964b18fc464"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a local server credential object.  <a href="#a39e8a41f7f9a8d7587343964b18fc464">More...</a><br /></td></tr>
+<tr class="separator:a39e8a41f7f9a8d7587343964b18fc464"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -1281,6 +1287,56 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a6c5c11ac702b466c9dd0773cff01e72f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6c5c11ac702b466c9dd0773cff01e72f">&#9670;&nbsp;</a></span>grpc_local_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_local_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; Local channel/server credentials &mdash; </p>
+<p>This method creates a local channel credential object. It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>type: local connection type</li>
+</ul>
+<p>It returns the created local channel credential object. </p>
+
+</div>
+</div>
+<a id="a39e8a41f7f9a8d7587343964b18fc464"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39e8a41f7f9a8d7587343964b18fc464">&#9670;&nbsp;</a></span>grpc_local_server_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_local_server_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates a local server credential object. </p>
+<p>It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>type: local connection type</li>
+</ul>
+<p>It returns the created local server credential object. </p>
+
+</div>
+</div>
 <a id="a4274ad26c037943386451f437c768961"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4274ad26c037943386451f437c768961">&#9670;&nbsp;</a></span>grpc_max_auth_token_lifetime()</h2>
 
@@ -1912,7 +1968,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

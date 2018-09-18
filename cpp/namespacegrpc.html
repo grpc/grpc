@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -200,7 +200,7 @@ Data Structures</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is a specialization of the protobuf class ZeroCopyOutputStream.  <a href="classgrpc_1_1_proto_buffer_writer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory usage by the gRPC library.  <a href="classgrpc_1_1_resource_quota.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory and thread usage by the gRPC library.  <a href="classgrpc_1_1_resource_quota.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_serialization_traits.html">SerializationTraits</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defines how to serialize and deserialize some type.  <a href="classgrpc_1_1_serialization_traits.html#details">More...</a><br /></td></tr>
@@ -309,12 +309,18 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_reader_writer.html">ServerAsyncReaderWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a">GenericServerAsyncReaderWriter</a></td></tr>
-<tr class="separator:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba53fb6f2502caa167e9528e5c560539"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">ClientAsyncReaderWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539">GenericClientAsyncReaderWriter</a></td></tr>
 <tr class="separator:aba53fb6f2502caa167e9528e5c560539"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ee9bd108774bc00defacc5b4fb695df"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7ee9bd108774bc00defacc5b4fb695df">GenericClientAsyncResponseReader</a></td></tr>
 <tr class="separator:a7ee9bd108774bc00defacc5b4fb695df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_reader_writer.html">ServerAsyncReaderWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a">GenericServerAsyncReaderWriter</a></td></tr>
+<tr class="separator:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad31a4cf505207152c0ffacd00d2120c8"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_response_writer.html">ServerAsyncResponseWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ad31a4cf505207152c0ffacd00d2120c8">GenericServerAsyncResponseWriter</a></td></tr>
+<tr class="separator:ad31a4cf505207152c0ffacd00d2120c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ab7f966b77578bc8033dd1198ef4ca0"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_reader.html">ServerAsyncReader</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0ab7f966b77578bc8033dd1198ef4ca0">GenericServerAsyncReader</a></td></tr>
+<tr class="separator:a0ab7f966b77578bc8033dd1198ef4ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a881afd211852397742952ee4058e0f8b"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="classgrpc_1_1_server_async_writer.html">ServerAsyncWriter</a>&lt; <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">GenericServerAsyncWriter</a></td></tr>
+<tr class="separator:a881afd211852397742952ee4058e0f8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab04a87625da3bf85cdaf5e7856b00203"><td class="memItemLeft" align="right" valign="top">typedef std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a></td></tr>
 <tr class="separator:ab04a87625da3bf85cdaf5e7856b00203"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a61e9fd24c9d1cea5eaaabc58525d0e"><td class="memItemLeft" align="right" valign="top">typedef std::pair&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a3a61e9fd24c9d1cea5eaaabc58525d0e">AuthProperty</a></td></tr>
@@ -512,6 +518,20 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a0ab7f966b77578bc8033dd1198ef4ca0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ab7f966b77578bc8033dd1198ef4ca0">&#9670;&nbsp;</a></span>GenericServerAsyncReader</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef <a class="el" href="classgrpc_1_1_server_async_reader.html">ServerAsyncReader</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#a0ab7f966b77578bc8033dd1198ef4ca0">grpc::GenericServerAsyncReader</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a7b3db9e9e4d0c7faf701c9ebd455196a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7b3db9e9e4d0c7faf701c9ebd455196a">&#9670;&nbsp;</a></span>GenericServerAsyncReaderWriter</h2>
 
@@ -520,6 +540,34 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef <a class="el" href="classgrpc_1_1_server_async_reader_writer.html">ServerAsyncReaderWriter</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a">grpc::GenericServerAsyncReaderWriter</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad31a4cf505207152c0ffacd00d2120c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad31a4cf505207152c0ffacd00d2120c8">&#9670;&nbsp;</a></span>GenericServerAsyncResponseWriter</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef <a class="el" href="classgrpc_1_1_server_async_response_writer.html">ServerAsyncResponseWriter</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#ad31a4cf505207152c0ffacd00d2120c8">grpc::GenericServerAsyncResponseWriter</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a881afd211852397742952ee4058e0f8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a881afd211852397742952ee4058e0f8b">&#9670;&nbsp;</a></span>GenericServerAsyncWriter</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef <a class="el" href="classgrpc_1_1_server_async_writer.html">ServerAsyncWriter</a>&lt;<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&gt; <a class="el" href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">grpc::GenericServerAsyncWriter</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1722,7 +1770,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -64,6 +64,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::internal::RpcServiceMethod Class Reference</div>  </div>
@@ -75,6 +76,21 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2rpc__service__method_8h_source.html">rpc_service_method.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:abca6086892af5c8262cd0304d80997c9"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9">AsyncType</a> { <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9a666a87025ab0d8965e221050c8948001">AsyncType::UNSET</a>, 
+<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9abe553330beb7b3d994656e0a4e66cd96">AsyncType::ASYNC</a>, 
+<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9a633d6abff0a3fc22404347728d195059">AsyncType::RAW</a>
+ }</td></tr>
+<tr class="separator:abca6086892af5c8262cd0304d80997c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_types_classgrpc_1_1internal_1_1_rpc_method"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classgrpc_1_1internal_1_1_rpc_method')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></td></tr>
+<tr class="memitem:a40ce84e3569f6a327468ae59f04c7dd1 inherit pub_types_classgrpc_1_1internal_1_1_rpc_method"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">RpcType</a> { <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a73dbd8998b4364e284ade7c00a57ec37">NORMAL_RPC</a> = 0, 
+<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a4138c4a820e1b96d502f32548e88d3fd">CLIENT_STREAMING</a>, 
+<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a3b3eb41de854898c2481fb454fc8e2f6">SERVER_STREAMING</a>, 
+<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a8308d189db6d81509042a321ac91b00f">BIDI_STREAMING</a>
+ }</td></tr>
+<tr class="separator:a40ce84e3569f6a327468ae59f04c7dd1 inherit pub_types_classgrpc_1_1internal_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:acf2c8f9cd802005c855a85221ba56502"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#acf2c8f9cd802005c855a85221ba56502">RpcServiceMethod</a> (const char *<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#aa3d98227a1a0481308de6bc398163713">name</a>, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">RpcMethod::RpcType</a> type, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">MethodHandler</a> *<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#addf88f4f66e8deebf663bc9f93a45383">handler</a>)</td></tr>
@@ -87,10 +103,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:addf88f4f66e8deebf663bc9f93a45383"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">MethodHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#addf88f4f66e8deebf663bc9f93a45383">handler</a> () const</td></tr>
 <tr class="memdesc:addf88f4f66e8deebf663bc9f93a45383"><td class="mdescLeft">&#160;</td><td class="mdescRight">if <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html" title="Base class for running an RPC handler. ">MethodHandler</a> is nullptr, then this is an async method  <a href="#addf88f4f66e8deebf663bc9f93a45383">More...</a><br /></td></tr>
 <tr class="separator:addf88f4f66e8deebf663bc9f93a45383"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62b046ce59de00bcc3755fe6a7cde51d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#a62b046ce59de00bcc3755fe6a7cde51d">ResetHandler</a> ()</td></tr>
-<tr class="separator:a62b046ce59de00bcc3755fe6a7cde51d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3a27a411f3f9ded5027bf671b16067d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#a3a27a411f3f9ded5027bf671b16067d2">SetHandler</a> (<a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">MethodHandler</a> *<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#addf88f4f66e8deebf663bc9f93a45383">handler</a>)</td></tr>
 <tr class="separator:a3a27a411f3f9ded5027bf671b16067d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1cdeb8fc86fb728d8c7ffe1c9f977db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac1cdeb8fc86fb728d8c7ffe1c9f977db">SetServerAsyncType</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9">RpcServiceMethod::AsyncType</a> type)</td></tr>
+<tr class="separator:ac1cdeb8fc86fb728d8c7ffe1c9f977db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_rpc_method')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></td></tr>
 <tr class="memitem:a1c13d569c84898f688b74958a4d7db49 inherit pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a1c13d569c84898f688b74958a4d7db49">RpcMethod</a> (const char *<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#aa3d98227a1a0481308de6bc398163713">name</a>, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">RpcType</a> type)</td></tr>
 <tr class="separator:a1c13d569c84898f688b74958a4d7db49 inherit pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -104,20 +120,38 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a3d84cbcc47861ba127f053bb9590ff1f inherit pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a32ba89bda8a4242ff6e18f66d84d671d inherit pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a32ba89bda8a4242ff6e18f66d84d671d">channel_tag</a> () const</td></tr>
 <tr class="separator:a32ba89bda8a4242ff6e18f66d84d671d inherit pub_methods_classgrpc_1_1internal_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_types_classgrpc_1_1internal_1_1_rpc_method"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classgrpc_1_1internal_1_1_rpc_method')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></td></tr>
-<tr class="memitem:a40ce84e3569f6a327468ae59f04c7dd1 inherit pub_types_classgrpc_1_1internal_1_1_rpc_method"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">RpcType</a> { <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a73dbd8998b4364e284ade7c00a57ec37">NORMAL_RPC</a> = 0, 
-<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a4138c4a820e1b96d502f32548e88d3fd">CLIENT_STREAMING</a>, 
-<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a3b3eb41de854898c2481fb454fc8e2f6">SERVER_STREAMING</a>, 
-<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a8308d189db6d81509042a321ac91b00f">BIDI_STREAMING</a>
- }</td></tr>
-<tr class="separator:a40ce84e3569f6a327468ae59f04c7dd1 inherit pub_types_classgrpc_1_1internal_1_1_rpc_method"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a> side rpc method class. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="abca6086892af5c8262cd0304d80997c9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abca6086892af5c8262cd0304d80997c9">&#9670;&nbsp;</a></span>AsyncType</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9">grpc::internal::RpcServiceMethod::AsyncType</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="abca6086892af5c8262cd0304d80997c9a666a87025ab0d8965e221050c8948001"></a>UNSET&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="abca6086892af5c8262cd0304d80997c9abe553330beb7b3d994656e0a4e66cd96"></a>ASYNC&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="abca6086892af5c8262cd0304d80997c9a633d6abff0a3fc22404347728d195059"></a>RAW&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="acf2c8f9cd802005c855a85221ba56502"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#acf2c8f9cd802005c855a85221ba56502">&#9670;&nbsp;</a></span>RpcServiceMethod()</h2>
 
@@ -187,31 +221,6 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>if <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html" title="Base class for running an RPC handler. ">MethodHandler</a> is nullptr, then this is an async method </p>
-
-</div>
-</div>
-<a id="a62b046ce59de00bcc3755fe6a7cde51d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a62b046ce59de00bcc3755fe6a7cde51d">&#9670;&nbsp;</a></span>ResetHandler()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::internal::RpcServiceMethod::ResetHandler </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -292,13 +301,39 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="ac1cdeb8fc86fb728d8c7ffe1c9f977db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac1cdeb8fc86fb728d8c7ffe1c9f977db">&#9670;&nbsp;</a></span>SetServerAsyncType()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::RpcServiceMethod::SetServerAsyncType </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#abca6086892af5c8262cd0304d80997c9">RpcServiceMethod::AsyncType</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2rpc__service__method_8h_source.html">rpc_service_method.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

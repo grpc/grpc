@@ -11,5 +11,7 @@ var searchData=
   ['ends_5fwith',['ends_with',['../classgrpc_1_1string__ref.html#a01d324952877020ab466e56fcd50ee52',1,'grpc::string_ref']]],
   ['error_5fcode',['error_code',['../classgrpc_1_1_status.html#a28f68560a6810c553a1aed2506a581f1',1,'grpc::Status']]],
   ['error_5fdetails',['error_details',['../classgrpc_1_1_status.html#a4208cf5c7f73ee88109d1da07b8c53d7',1,'grpc::Status']]],
-  ['error_5fmessage',['error_message',['../classgrpc_1_1_status.html#a3149ca594dcf3fbd0d2f5100062b0e9e',1,'grpc::Status']]]
+  ['error_5fmessage',['error_message',['../classgrpc_1_1_status.html#a3149ca594dcf3fbd0d2f5100062b0e9e',1,'grpc::Status']]],
+  ['experimental',['experimental',['../classgrpc_1_1_generic_stub.html#a568c88e2f01ecd46ba97bc28996f37be',1,'grpc::GenericStub']]],
+  ['experimental_5ftype',['experimental_type',['../classgrpc_1_1_generic_stub_1_1experimental__type.html#a79ebad820cf39a6946cbff09edfd437d',1,'grpc::GenericStub::experimental_type']]]
 ];

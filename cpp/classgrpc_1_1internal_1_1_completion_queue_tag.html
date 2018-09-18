@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a53fa1b2f86702495363df0b8edef8758"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a53fa1b2f86702495363df0b8edef8758">~CompletionQueueTag</a> ()</td></tr>
 <tr class="separator:a53fa1b2f86702495363df0b8edef8758"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a554869ba610e1dca49b86bd6913587ba"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a> (void **tag, bool *status)=0</td></tr>
-<tr class="memdesc:a554869ba610e1dca49b86bd6913587ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#a554869ba610e1dca49b86bd6913587ba">More...</a><br /></td></tr>
+<tr class="memdesc:a554869ba610e1dca49b86bd6913587ba"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="#a554869ba610e1dca49b86bd6913587ba">More...</a><br /></td></tr>
 <tr class="separator:a554869ba610e1dca49b86bd6913587ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -146,8 +146,15 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do). </p>
-<p>If this function returns false, the tag is dropped and not returned from the completion queue </p>
+<p>FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed. </p>
+<p>In practice, this means:</p>
+<ol type="1">
+<li>For the sync API - before returning from Pluck</li>
+<li>For the CQ-based async API - before returning from Next</li>
+<li>For the callback-based API - before invoking the user callback</li>
+</ol>
+<p>This is the method that translates from core-side tag/status to C++ API-observable tag/status.</p>
+<p>The return value is the status of the operation (returning status is the general behavior of this function). If this function returns false, the tag is dropped and not returned from the completion queue: this concept is for events that are observed at core but not requested by the user application (e.g., server shutdown, for server unimplemented method responses, or for cases where a server-side RPC doesn't have a completion notification registered using AsyncNotifyWhenDone) </p>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpClientSendClose &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpClientSendClose, grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpRecvMessage&lt; R &gt;, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpGenericRecvMessage, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvMessage&lt; R &gt;, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage &gt;</a>, <a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html#a16e173f0b71c49cc6d945d2d981cd0c1">grpc::ServerInterface::GenericAsyncRequest</a>, <a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html#a7b30fb67e83af11c447f76e9ca0471c8">grpc::ServerInterface::PayloadAsyncRequest&lt; Message &gt;</a>, and <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a097df5db59705c330ac2b2860c915a41">grpc::ServerInterface::BaseAsyncRequest</a>.</p>
 
@@ -159,7 +166,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
