@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -71,9 +71,11 @@ $(function() {
 <div class="title">generic_stub.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="grpcpp_2support_2async__stream_8h_source.html">grpcpp/support/async_stream.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;functional&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpcpp_2support_2async__stream_8h_source.html">grpcpp/support/async_stream.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2async__unary__call_8h_source.html">grpcpp/support/async_unary_call.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2byte__buffer_8h_source.html">grpcpp/support/byte_buffer.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpcpp_2support_2status_8h_source.html">grpcpp/support/status.h</a>&gt;</code><br />
 </div>
 <p><a href="grpcpp_2generic_2generic__stub_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -81,6 +83,9 @@ $(function() {
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub.html">grpc::GenericStub</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generic stubs provide a type-unsafe interface to call gRPC methods by name.  <a href="classgrpc_1_1_generic_stub.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html">grpc::GenericStub::experimental_type</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: class <a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html" title="NOTE: class experimental_type is not part of the public API of this class TODO(vjpai): Move these con...">experimental_type</a> is not part of the public API of this class TODO(vjpai): Move these contents to the public API of <a class="el" href="classgrpc_1_1_generic_stub.html" title="Generic stubs provide a type-unsafe interface to call gRPC methods by name. ">GenericStub</a> when they are no longer experimental.  <a href="classgrpc_1_1_generic_stub_1_1experimental__type.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
@@ -99,7 +104,7 @@ Typedefs</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

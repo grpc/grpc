@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -62,6 +62,9 @@ $(function() {
 <div class="textblock">Here is a list of all struct and union fields with links to the structures/unions they belong to:</div>
 
 <h3><a id="index_0x3a"></a>- : -</h3><ul>
+<li>::grpc::Channel
+: <a class="el" href="classgrpc_1_1_completion_queue.html#a82418631373400a3f110c97c937a9533">grpc::CompletionQueue</a>
+</li>
 <li>::grpc::ClientAsyncReader
 : <a class="el" href="classgrpc_1_1_client_context.html#af5343062a44a5633b144751e59969237">grpc::ClientContext</a>
 </li>
@@ -97,6 +100,10 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_client_context.html#ad26a823fee699f97244d581f400fe39a">grpc::ClientContext</a>
 , <a class="el" href="classgrpc_1_1_completion_queue.html#ad26a823fee699f97244d581f400fe39a">grpc::CompletionQueue</a>
 </li>
+<li>::grpc::internal::CallbackUnaryCallImpl
+: <a class="el" href="classgrpc_1_1_channel_interface.html#a039f3a4023eccbecbb5c9925722e9ef7">grpc::ChannelInterface</a>
+, <a class="el" href="classgrpc_1_1_client_context.html#a039f3a4023eccbecbb5c9925722e9ef7">grpc::ClientContext</a>
+</li>
 <li>::grpc::internal::CallOpClientRecvStatus
 : <a class="el" href="classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b">grpc::ClientContext</a>
 </li>
@@ -119,6 +126,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_completion_queue.html#aee2bfad715a7c61f2839cdc9b5be6ef5">grpc::CompletionQueue</a>
 , <a class="el" href="classgrpc_1_1_server_context.html#aee2bfad715a7c61f2839cdc9b5be6ef5">grpc::ServerContext</a>
 </li>
+<li>::grpc::internal::ErrorMethodHandler
+: <a class="el" href="classgrpc_1_1_completion_queue.html#a388eaf44b2f41899396d4b5b05cf857c">grpc::CompletionQueue</a>
+</li>
 <li>::grpc::internal::RpcMethod
 : <a class="el" href="classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2">grpc::ChannelInterface</a>
 </li>
@@ -137,10 +147,6 @@ $(function() {
 <li>::grpc::internal::TemplatedBidiStreamingHandler
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b">grpc::CompletionQueue</a>
 , <a class="el" href="classgrpc_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b">grpc::ServerContext</a>
-</li>
-<li>::grpc::internal::UnknownMethodHandler
-: <a class="el" href="classgrpc_1_1_completion_queue.html#a7a445fc31dd2f75f5686fd6bd1c6be5c">grpc::CompletionQueue</a>
-, <a class="el" href="classgrpc_1_1_server_context.html#a7a445fc31dd2f75f5686fd6bd1c6be5c">grpc::ServerContext</a>
 </li>
 <li>::grpc::Server
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a8c3fa4c066981aae114e41c3f9340144">grpc::CompletionQueue</a>
@@ -195,7 +201,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

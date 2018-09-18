@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -83,14 +83,12 @@ $(function() {
 <li>Serialize()
 : <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a5a4c3007da4742be050c0d58de8c0590">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
 </li>
+<li>Server()
+: <a class="el" href="classgrpc_1_1_server.html#ab31574c6fccb7386402ab9fcab4c4c57">grpc::Server</a>
+</li>
 <li>server()
 : <a class="el" href="classgrpc_1_1_server.html#a01bdfb4554d12a10bdc9cf875ffa74dd">grpc::Server</a>
-</li>
-<li>Server()
-: <a class="el" href="classgrpc_1_1_server.html#ab7c814470486b256eef7c202de2ef9f7">grpc::Server</a>
-</li>
-<li>server()
-: <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
+, <a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">grpc::ServerInterface</a>
 </li>
 <li>server_tag()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#a0f3a941703c2ac64318b37c4bfdfdf4e">grpc::internal::RpcServiceMethod</a>
@@ -166,6 +164,9 @@ $(function() {
 </li>
 <li>set_corked()
 : <a class="el" href="classgrpc_1_1_write_options.html#abda047d0f7b1f18fbbfb5f9858c33f9d">grpc::WriteOptions</a>
+</li>
+<li>set_cq_tag()
+: <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a96446999130cd3402a1c0e0e6d3ecb27">grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>
 </li>
 <li>set_credentials()
 : <a class="el" href="classgrpc_1_1_client_context.html#a768356886d37231b3f0853b3c38e48a9">grpc::ClientContext</a>
@@ -248,6 +249,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#ac1fa513191e8104ec57dfd6598297ce5">grpc::ChannelArguments</a>
 , <a class="el" href="classgrpc_1_1_server_builder.html#ac6deb0d17c9439febcd04f813fec8a05">grpc::ServerBuilder</a>
 </li>
+<li>SetMaxThreads()
+: <a class="el" href="classgrpc_1_1_resource_quota.html#ae6845dbf2ca8d94df38c36fff9ac15ca">grpc::ResourceQuota</a>
+</li>
 <li>SetMethodType()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a3d84cbcc47861ba127f053bb9590ff1f">grpc::internal::RpcMethod</a>
 </li>
@@ -267,11 +271,14 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#af569e816b047a77f08f0e8e0f585a4a5">grpc::ChannelArguments</a>
 , <a class="el" href="classgrpc_1_1_server_builder.html#acf8de0a3b6a99a32a6c52328eaaebf23">grpc::ServerBuilder</a>
 </li>
+<li>SetServerAsyncType()
+: <a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac1cdeb8fc86fb728d8c7ffe1c9f977db">grpc::internal::RpcServiceMethod</a>
+</li>
 <li>SetServiceConfigJSON()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a1537a3ed35f0f19d7aa8193fd1a1a513">grpc::ChannelArguments</a>
 </li>
 <li>SetServingStatus()
-: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a9d99470b4074938af24e5ae723301f80">grpc::HealthCheckServiceInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">grpc::HealthCheckServiceInterface</a>
 </li>
 <li>SetSocketMutator()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a520690f499be85159a20200ddb986a96">grpc::ChannelArguments</a>
@@ -321,7 +328,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#a61ae16d66133d5caa66087e57416298b">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>
@@ -345,11 +352,14 @@ $(function() {
 <li>Status()
 : <a class="el" href="classgrpc_1_1_status.html#a46537b45349a95126a16dcd67b5cf54c">grpc::Status</a>
 </li>
+<li>status_ptr()
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#af1165bb5dcac25fadc2069064760c84b">grpc::internal::CallbackWithStatusTag</a>
+</li>
 <li>StreamedUnaryHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html#ac01ea3100141d3c12807a6e9f91065db">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a0631f7099a7fc8b1bbf16f3353074400">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a10c3455e679004ab4c61708ce0403601">grpc::string_ref</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae9c7f6a6af76030d720b135cc251c08b">grpc::string_ref</a>
@@ -365,7 +375,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

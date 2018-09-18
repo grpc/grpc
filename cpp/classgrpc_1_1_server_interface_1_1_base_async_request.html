@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -80,7 +80,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3977611e5acdeaab9ebb464565db4f80"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a3977611e5acdeaab9ebb464565db4f80">~BaseAsyncRequest</a> ()</td></tr>
 <tr class="separator:a3977611e5acdeaab9ebb464565db4f80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a097df5db59705c330ac2b2860c915a41"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a097df5db59705c330ac2b2860c915a41">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
-<tr class="memdesc:a097df5db59705c330ac2b2860c915a41"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#a097df5db59705c330ac2b2860c915a41">More...</a><br /></td></tr>
+<tr class="memdesc:a097df5db59705c330ac2b2860c915a41"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="#a097df5db59705c330ac2b2860c915a41">More...</a><br /></td></tr>
 <tr class="separator:a097df5db59705c330ac2b2860c915a41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a></td></tr>
 <tr class="memitem:a53fa1b2f86702495363df0b8edef8758 inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a53fa1b2f86702495363df0b8edef8758">~CompletionQueueTag</a> ()</td></tr>
@@ -216,8 +216,15 @@ Protected Attributes</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do). </p>
-<p>If this function returns false, the tag is dropped and not returned from the completion queue </p>
+<p>FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed. </p>
+<p>In practice, this means:</p>
+<ol type="1">
+<li>For the sync API - before returning from Pluck</li>
+<li>For the CQ-based async API - before returning from Next</li>
+<li>For the callback-based API - before invoking the user callback</li>
+</ol>
+<p>This is the method that translates from core-side tag/status to C++ API-observable tag/status.</p>
+<p>The return value is the status of the operation (returning status is the general behavior of this function). If this function returns false, the tag is dropped and not returned from the completion queue: this concept is for events that are observed at core but not requested by the user application (e.g., server shutdown, for server unimplemented method responses, or for cases where a server-side RPC doesn't have a completion notification registered using AsyncNotifyWhenDone) </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">grpc::internal::CompletionQueueTag</a>.</p>
 
@@ -386,7 +393,7 @@ Protected Attributes</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

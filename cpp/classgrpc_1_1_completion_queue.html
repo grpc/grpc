@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -155,8 +155,9 @@ Friends</h2></td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplParams" colspan="2">template&lt;class Streamer , bool WriteNeeded&gt; </td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b">::grpc::internal::TemplatedBidiStreamingHandler</a></td></tr>
 <tr class="separator:a65ae6d263727d1e67e811969f909212b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a7a445fc31dd2f75f5686fd6bd1c6be5c">::grpc::internal::UnknownMethodHandler</a></td></tr>
-<tr class="separator:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a388eaf44b2f41899396d4b5b05cf857c"><td class="memTemplParams" colspan="2">template&lt;StatusCode code&gt; </td></tr>
+<tr class="memitem:a388eaf44b2f41899396d4b5b05cf857c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a388eaf44b2f41899396d4b5b05cf857c">::grpc::internal::ErrorMethodHandler</a></td></tr>
+<tr class="separator:a388eaf44b2f41899396d4b5b05cf857c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c3fa4c066981aae114e41c3f9340144"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a8c3fa4c066981aae114e41c3f9340144">::grpc::Server</a></td></tr>
 <tr class="separator:a8c3fa4c066981aae114e41c3f9340144"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c5b4f4c66d254f341915982a17aac95"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a6c5b4f4c66d254f341915982a17aac95">::grpc::ServerContext</a></td></tr>
@@ -166,6 +167,8 @@ Friends</h2></td></tr>
 <tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
 <tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
 <tr class="separator:ad26a823fee699f97244d581f400fe39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82418631373400a3f110c97c937a9533"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a82418631373400a3f110c97c937a9533">::grpc::Channel</a></td></tr>
+<tr class="separator:a82418631373400a3f110c97c937a9533"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A thin wrapper around <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> (see src/core/lib/surface/completion_queue.h). </p>
@@ -536,6 +539,28 @@ template&lt;typename T , typename F &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a82418631373400a3f110c97c937a9533"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82418631373400a3f110c97c937a9533">&#9670;&nbsp;</a></span>::grpc::Channel</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_channel.html">grpc::Channel</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ade499098cc91745c1c87147d7a7fb7bf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ade499098cc91745c1c87147d7a7fb7bf">&#9670;&nbsp;</a></span>::grpc::ClientReader</h2>
 
@@ -656,6 +681,30 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 
 </div>
 </div>
+<a id="a388eaf44b2f41899396d4b5b05cf857c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a388eaf44b2f41899396d4b5b05cf857c">&#9670;&nbsp;</a></span>::grpc::internal::ErrorMethodHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;StatusCode code&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">grpc::internal::ErrorMethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ab4e0fda6a3be8543f0d9f79f297533e9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab4e0fda6a3be8543f0d9f79f297533e9">&#9670;&nbsp;</a></span>::grpc::internal::RpcMethodHandler</h2>
 
@@ -741,28 +790,6 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc::internal::TemplatedBidiStreamingHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a7a445fc31dd2f75f5686fd6bd1c6be5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a445fc31dd2f75f5686fd6bd1c6be5c">&#9670;&nbsp;</a></span>::grpc::internal::UnknownMethodHandler</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_unknown_method_handler.html">grpc::internal::UnknownMethodHandler</a></td>
         </tr>
       </table>
   </td>
@@ -894,7 +921,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

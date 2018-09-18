@@ -6,8 +6,10 @@ var searchData=
   ['line',['line',['../structgpr__log__func__args.html#ae1a051bbc7e0ef6c58de0db3efda24bb',1,'gpr_log_func_args']]],
   ['load_2dbalancing_2emd',['load-balancing.md',['../load-balancing_8md.html',1,'']]],
   ['load_5freporting_2eh',['load_reporting.h',['../load__reporting_8h.html',1,'']]],
+  ['localcredentials',['LocalCredentials',['../namespacegrpc_1_1experimental.html#a9354c3cab0a74d9d405c00781f789507',1,'grpc::experimental']]],
+  ['localservercredentials',['LocalServerCredentials',['../namespacegrpc_1_1experimental.html#a6076d466bcfdcb7d7678c2dcafe01f5f',1,'grpc::experimental']]],
   ['locked',['locked',['../structgpr__mu.html#ac16a7b74cd7175a34b776215fd357342',1,'gpr_mu']]],
-  ['log_2eh',['log.h',['../log_8h.html',1,'']]],
+  ['log_2eh',['log.h',['../impl_2codegen_2log_8h.html',1,'(Global Namespace)'],['../support_2log_8h.html',1,'(Global Namespace)']]],
   ['log_5fwindows_2eh',['log_windows.h',['../log__windows_8h.html',1,'']]],
   ['load_20balancing_20in_20grpc',['Load Balancing in gRPC',['../md_doc_load-balancing.html',1,'']]]
 ];

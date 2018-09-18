@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -80,16 +80,49 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad1c584d78ab0d75edc5608490c101db8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#ad1c584d78ab0d75edc5608490c101db8">FillOps</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops)=0</td></tr>
 <tr class="memdesc:ad1c584d78ab0d75edc5608490c101db8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#ad1c584d78ab0d75edc5608490c101db8">More...</a><br /></td></tr>
 <tr class="separator:ad1c584d78ab0d75edc5608490c101db8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32bcbbd3c7b0cbf7b8f950e6c14f615c"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a32bcbbd3c7b0cbf7b8f950e6c14f615c">cq_tag</a> ()=0</td></tr>
+<tr class="memdesc:a32bcbbd3c7b0cbf7b8f950e6c14f615c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the tag to be used at the core completion queue.  <a href="#a32bcbbd3c7b0cbf7b8f950e6c14f615c">More...</a><br /></td></tr>
+<tr class="separator:a32bcbbd3c7b0cbf7b8f950e6c14f615c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a></td></tr>
 <tr class="memitem:a53fa1b2f86702495363df0b8edef8758 inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a53fa1b2f86702495363df0b8edef8758">~CompletionQueueTag</a> ()</td></tr>
 <tr class="separator:a53fa1b2f86702495363df0b8edef8758 inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a554869ba610e1dca49b86bd6913587ba inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">FinalizeResult</a> (void **tag, bool *status)=0</td></tr>
-<tr class="memdesc:a554869ba610e1dca49b86bd6913587ba inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">More...</a><br /></td></tr>
+<tr class="memdesc:a554869ba610e1dca49b86bd6913587ba inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a554869ba610e1dca49b86bd6913587ba">More...</a><br /></td></tr>
 <tr class="separator:a554869ba610e1dca49b86bd6913587ba inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the lower layers, and as it is-a <a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html" title="An interface allowing implementors to process and filter event tags. ">CompletionQueueTag</a>, also massages the final completion into the correct form for consumption in the C++ API. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a32bcbbd3c7b0cbf7b8f950e6c14f615c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32bcbbd3c7b0cbf7b8f950e6c14f615c">&#9670;&nbsp;</a></span>cq_tag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void* grpc::internal::CallOpSetInterface::cq_tag </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the tag to be used at the core completion queue. </p>
+<p>Generally, the value of cq_tag will be "this". However, it can be overridden if we want core to process the tag differently (e.g., as a core callback) </p>
+
+<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpClientSendClose &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpClientSendClose, grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpRecvMessage&lt; R &gt;, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpServerSendStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpGenericRecvMessage, grpc::internal::CallOpClientRecvStatus &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvInitialMetadata, grpc::internal::CallOpRecvMessage&lt; R &gt; &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpRecvMessage&lt; R &gt;, grpc::internal::CallOpClientRecvStatus &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">grpc::internal::CallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage &gt;</a>.</p>
+
+</div>
+</div>
 <a id="ad1c584d78ab0d75edc5608490c101db8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad1c584d78ab0d75edc5608490c101db8">&#9670;&nbsp;</a></span>FillOps()</h2>
 
@@ -142,7 +175,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:47 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -200,7 +200,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum time between sending successive ping frames without receiving any data frame, Int valued, milliseconds.  <a href="group__grpc__arg__keys.html#ga69583c8efdbdcb7cdf9055ee80a07014">More...</a><br /></td></tr>
 <tr class="separator:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4494709dc5c7c899af4ed67ec7728549"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_ping_interval_without_data_ms&quot;</td></tr>
-<tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between receiving successive ping frames without sending any data frame.  <a href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br /></td></tr>
+<tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between a server receiving successive ping frames without sending any data frame.  <a href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br /></td></tr>
 <tr class="separator:ga4494709dc5c7c899af4ed67ec7728549"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
@@ -327,6 +327,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa3f69f6e1e789e36d2d9c6083fec0257">GRPC_ARG_ENABLE_HTTP_PROXY</a>&#160;&#160;&#160;&quot;grpc.enable_http_proxy&quot;</td></tr>
 <tr class="memdesc:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to zero, disables use of http proxies.  <a href="group__grpc__arg__keys.html#gaa3f69f6e1e789e36d2d9c6083fec0257">More...</a><br /></td></tr>
 <tr class="separator:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga37014e47791a777718aac4250180d92e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga37014e47791a777718aac4250180d92e">GRPC_ARG_SURFACE_USER_AGENT</a>&#160;&#160;&#160;&quot;grpc.surface_user_agent&quot;</td></tr>
+<tr class="memdesc:ga37014e47791a777718aac4250180d92e"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to non zero, surfaces the user agent string to the server.  <a href="group__grpc__arg__keys.html#ga37014e47791a777718aac4250180d92e">More...</a><br /></td></tr>
+<tr class="separator:ga37014e47791a777718aac4250180d92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4e5d829393a2ad7a98e53c4856057220"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a4e5d829393a2ad7a98e53c4856057220">GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH</a>&#160;&#160;&#160;-1</td></tr>
 <tr class="memdesc:a4e5d829393a2ad7a98e53c4856057220"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default send/receive message size limits in bytes.  <a href="#a4e5d829393a2ad7a98e53c4856057220">More...</a><br /></td></tr>
 <tr class="separator:a4e5d829393a2ad7a98e53c4856057220"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -362,8 +365,10 @@ Macros</h2></td></tr>
 <tr class="memitem:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#aca7fa3c1b87589e5829f508ee3fc1f84">GRPC_INITIAL_METADATA_USED_MASK</a></td></tr>
 <tr class="memdesc:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mask of all valid flags.  <a href="#aca7fa3c1b87589e5829f508ee3fc1f84">More...</a><br /></td></tr>
 <tr class="separator:aca7fa3c1b87589e5829f508ee3fc1f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a52497b2b6db8035126a8b45467a14d97"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a>&#160;&#160;&#160;1</td></tr>
+<tr class="memitem:a52497b2b6db8035126a8b45467a14d97"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a52497b2b6db8035126a8b45467a14d97">GRPC_CQ_CURRENT_VERSION</a>&#160;&#160;&#160;2</td></tr>
 <tr class="separator:a52497b2b6db8035126a8b45467a14d97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe45714f4d9413f5be902df773347f67"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#abe45714f4d9413f5be902df773347f67">GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE</a>&#160;&#160;&#160;2</td></tr>
+<tr class="separator:abe45714f4d9413f5be902df773347f67"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
@@ -476,7 +481,8 @@ Enumerations</h2></td></tr>
 </td></tr>
 <tr class="separator:a6f3d3ec662c2a8ac669c98163d511343"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1d6272e15d32381a9ffa027cefd60bf8"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">grpc_cq_completion_type</a> { <a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676">GRPC_CQ_NEXT</a>, 
-<a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">GRPC_CQ_PLUCK</a>
+<a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a">GRPC_CQ_PLUCK</a>, 
+<a class="el" href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a931c6eb465b1df23059edaefc1698ff2">GRPC_CQ_CALLBACK</a>
  }<tr class="memdesc:a1d6272e15d32381a9ffa027cefd60bf8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specifies the type of APIs to use to pop events from the completion queue.  <a href="grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8">More...</a><br /></td></tr>
 </td></tr>
 <tr class="separator:a1d6272e15d32381a9ffa027cefd60bf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -489,7 +495,21 @@ Enumerations</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GRPC_CQ_CURRENT_VERSION&#160;&#160;&#160;1</td>
+          <td class="memname">#define GRPC_CQ_CURRENT_VERSION&#160;&#160;&#160;2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="abe45714f4d9413f5be902df773347f67"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe45714f4d9413f5be902df773347f67">&#9670;&nbsp;</a></span>GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE&#160;&#160;&#160;2</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -588,8 +608,8 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">(<a class="code" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a> |            \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \</div><div class="line">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \</div><div class="line">   GRPC_INITIAL_METADATA_CORKED | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div><div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:402</div></div>
-<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:409</div></div>
+<b>Value:</b><div class="fragment"><div class="line">(<a class="code" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a> |            \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \</div><div class="line">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \</div><div class="line">   GRPC_INITIAL_METADATA_CORKED | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div><div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:405</div></div>
+<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:412</div></div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -1094,6 +1114,8 @@ Enumerations</h2></td></tr>
 </td></tr>
 <tr><td class="fieldname"><a id="a1d6272e15d32381a9ffa027cefd60bf8a7ddd2051625309ecc657b658c021476a"></a>GRPC_CQ_PLUCK&#160;</td><td class="fielddoc"><p>Events are popped out by calling <a class="el" href="grpc_8h.html#a0292bf7a0c794771cd66766dc4b8276c" title="Blocks until an event with tag &#39;tag&#39; is available, the completion queue is being shutdown or deadline...">grpc_completion_queue_pluck()</a> API ONLY. </p>
 </td></tr>
+<tr><td class="fieldname"><a id="a1d6272e15d32381a9ffa027cefd60bf8a931c6eb465b1df23059edaefc1698ff2"></a>GRPC_CQ_CALLBACK&#160;</td><td class="fielddoc"><p>EXPERIMENTAL: Events trigger a callback specified as the tag. </p>
+</td></tr>
 </table>
 
 </div>
@@ -1168,7 +1190,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

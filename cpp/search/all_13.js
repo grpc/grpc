@@ -1,7 +1,7 @@
 var searchData=
 [
   ['channelargumentstest',['ChannelArgumentsTest',['../classgrpc_1_1_channel_arguments.html#ab9fc942609a77bb3021ba172be262c7b',1,'grpc::ChannelArguments']]],
-  ['tag',['tag',['../structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201',1,'grpc_event']]],
+  ['tag',['tag',['../structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201',1,'grpc_event::tag()'],['../classgrpc_1_1internal_1_1_callback_with_status_tag.html#a5b3196a1b39c392ced5b7728ab0d1e1b',1,'grpc::internal::CallbackWithStatusTag::tag()'],['../classgrpc_1_1internal_1_1_callback_with_success_tag.html#ac19f858cf67da06a374d95a62d2b6e12',1,'grpc::internal::CallbackWithSuccessTag::tag()']]],
   ['tag_5f',['tag_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#ace41bf173c28a84f9f9311cc4fafef9d',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['target_5fservice_5faccounts',['target_service_accounts',['../structgrpc_1_1experimental_1_1_alts_credentials_options.html#a631955176e3f90143b42a89047353bc4',1,'grpc::experimental::AltsCredentialsOptions']]],
   ['templatedbidistreaminghandler',['TemplatedBidiStreamingHandler',['../classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html',1,'grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;'],['../classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#ae5aaa2d49f0b9b0c4616315260354c32',1,'grpc::internal::TemplatedBidiStreamingHandler::TemplatedBidiStreamingHandler()']]],

@@ -2,6 +2,7 @@ var searchData=
 [
   ['server_2dside_20api_20for_20authenticating_20clients',['Server-side API for Authenticating Clients',['../md_doc_server_side_auth.html',1,'']]],
   ['service_20config_20in_20grpc',['Service Config in gRPC',['../md_doc_service_config.html',1,'']]],
+  ['ssl_20in_20grpc_20and_20performance',['SSL in gRPC and performance',['../md_doc_ssl-performance.html',1,'']]],
   ['status_20codes_20and_20their_20use_20in_20grpc',['Status codes and their use in gRPC',['../md_doc_statuscodes.html',1,'']]],
   ['send_5finitial_5fmetadata',['send_initial_metadata',['../uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f',1,'grpc_op::grpc_op_data']]],
   ['send_5fmessage',['send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759',1,'grpc_op::grpc_op_data::grpc_op_send_message::send_message()'],['../uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c',1,'grpc_op::grpc_op_data::send_message()']]],
@@ -17,6 +18,7 @@ var searchData=
   ['slice_5fbuffer',['slice_buffer',['../structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a89f407381d073054e2227572dd920f37',1,'grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer']]],
   ['slice_5fbuffer_2eh',['slice_buffer.h',['../slice__buffer_8h.html',1,'']]],
   ['slices',['slices',['../structgrpc__slice__buffer.html#ac37e9d19ec31eab8f429d2b4af908256',1,'grpc_slice_buffer']]],
+  ['ssl_2dperformance_2emd',['ssl-performance.md',['../ssl-performance_8md.html',1,'']]],
   ['state',['state',['../structgrpc__metadata__credentials__plugin.html#a3b571f8cbf3cffd887dec1ed5a662571',1,'grpc_metadata_credentials_plugin::state()'],['../structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc',1,'grpc_auth_metadata_processor::state()'],['../structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9',1,'gpr_event::state()']]],
   ['status',['status',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#ab4f0d42f69e3920aea595fd1e02da398',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::status()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a2118d693bf827b6098f6963ffedc0758',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::status()']]],
   ['status_2eh',['status.h',['../impl_2codegen_2status_8h.html',1,'(Global Namespace)'],['../status_8h.html',1,'(Global Namespace)']]],

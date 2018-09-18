@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -118,6 +118,10 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a29ffe63a8bb3b4945ecab42d82758f09"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> { <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768">UDS</a> = 0
+ }<tr class="memdesc:a31d00ce5c064e1fff4261a6d6298dc11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of local connection for which local channel/server credentials will be applied.  <a href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a48565da473b7c82fa2453798f620fd59"></a>
@@ -239,6 +243,26 @@ Enumerations</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="a31d00ce5c064e1fff4261a6d6298dc11"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31d00ce5c064e1fff4261a6d6298dc11">&#9670;&nbsp;</a></span>grpc_local_connect_type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Type of local connection for which local channel/server credentials will be applied. </p>
+<p>It only supports UDS for now. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768"></a>UDS&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <a id="a4f19e93998bbda68d9c24f27673ff627"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4f19e93998bbda68d9c24f27673ff627">&#9670;&nbsp;</a></span>grpc_ssl_certificate_config_reload_status</h2>
 
@@ -273,23 +297,23 @@ Enumerations</h2></td></tr>
 </div><div class="memdoc">
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a8bced4a94b58d31fd0718d3203da376f"></a>GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE&#160;</td><td class="fielddoc"><p>Server does not request client certificate. </p>
-<p>A client can present a self signed or signed certificates if it wishes to do so and they would be accepted. </p>
+<p>The certificate presented by the client is not checked by the server at all. (A client may present a self signed or signed certificate or not present a certificate at all and any of those option would be accepted) </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09af7c66a36be648bf7e396a145654d79f1"></a>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate but does not enforce that the client presents a certificate. </p>
-<p>If the client presents a certificate, the client authentication is left to the application based on the metadata like certificate etc.</p>
-<p>The key cert pair should still be valid for the SSL connection to be established. </p>
+<p>If the client presents a certificate, the client authentication is left to the application (the necessary metadata will be available to the application via authentication context properties, see grpc_auth_context).</p>
+<p>The client's key certificate pair must be valid for the SSL connection to be established. </p>
 </td></tr>
 <tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a7390ee04c71c633589eefdad872c2048"></a>GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate but does not enforce that the client presents a certificate. </p>
-<p>If the client presents a certificate, the client authentication is done by grpc framework (The client needs to either present a signed cert or skip no certificate for a successful connection).</p>
-<p>The key cert pair should still be valid for the SSL connection to be established. </p>
+<p>If the client presents a certificate, the client authentication is done by the gRPC framework. (For a successful connection the client needs to either present a certificate that can be verified against the root certificate configured by the server or not present a certificate at all)</p>
+<p>The client's key certificate pair must be valid for the SSL connection to be established. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a6522b7d489da328ef7c9745039a93f42"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate but enforces that the client presents a certificate. </p>
-<p>If the client presents a certificate, the client authentication is left to the application based on the metadata like certificate etc.</p>
-<p>The key cert pair should still be valid for the SSL connection to be established. </p>
+<tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a6522b7d489da328ef7c9745039a93f42"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate and enforces that the client presents a certificate. </p>
+<p>If the client presents a certificate, the client authentication is left to the application (the necessary metadata will be available to the application via authentication context properties, see grpc_auth_context).</p>
+<p>The client's key certificate pair must be valid for the SSL connection to be established. </p>
 </td></tr>
-<tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a1041edab0ab12d270937f066f1e1ea0d"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate but enforces that the client presents a certificate. </p>
-<p>The cerificate presented by the client is verified by grpc framework (The client needs to present signed certs for a successful connection).</p>
-<p>The key cert pair should still be valid for the SSL connection to be established. </p>
+<tr><td class="fieldname"><a id="a29ffe63a8bb3b4945ecab42d82758f09a1041edab0ab12d270937f066f1e1ea0d"></a>GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY&#160;</td><td class="fielddoc"><p>Server requests client certificate and enforces that the client presents a certificate. </p>
+<p>The cerificate presented by the client is verified by the gRPC framework. (For a successful connection the client needs to present a certificate that can be verified against the root certificate configured by the server)</p>
+<p>The client's key certificate pair must be valid for the SSL connection to be established. </p>
 </td></tr>
 </table>
 
@@ -320,7 +344,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

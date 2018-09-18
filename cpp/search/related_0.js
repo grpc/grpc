@@ -1,8 +1,10 @@
 var searchData=
 [
   ['blockingunarycallimpl',['BlockingUnaryCallImpl',['../classgrpc_1_1_channel_interface.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::ChannelInterface::BlockingUnaryCallImpl()'],['../classgrpc_1_1_client_context.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::ClientContext::BlockingUnaryCallImpl()'],['../classgrpc_1_1_completion_queue.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::CompletionQueue::BlockingUnaryCallImpl()']]],
+  ['callbackunarycallimpl',['CallbackUnaryCallImpl',['../classgrpc_1_1_channel_interface.html#a039f3a4023eccbecbb5c9925722e9ef7',1,'grpc::ChannelInterface::CallbackUnaryCallImpl()'],['../classgrpc_1_1_client_context.html#a039f3a4023eccbecbb5c9925722e9ef7',1,'grpc::ClientContext::CallbackUnaryCallImpl()']]],
   ['callopclientrecvstatus',['CallOpClientRecvStatus',['../classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b',1,'grpc::ClientContext']]],
   ['calloprecvinitialmetadata',['CallOpRecvInitialMetadata',['../classgrpc_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf',1,'grpc::ClientContext']]],
+  ['channel',['Channel',['../classgrpc_1_1_completion_queue.html#a82418631373400a3f110c97c937a9533',1,'grpc::CompletionQueue']]],
   ['clientasyncreader',['ClientAsyncReader',['../classgrpc_1_1_client_context.html#af5343062a44a5633b144751e59969237',1,'grpc::ClientContext']]],
   ['clientasyncreaderfactory',['ClientAsyncReaderFactory',['../classgrpc_1_1_channel_interface.html#a2175726e9cbee09a493f40e1c3b5b088',1,'grpc::ChannelInterface']]],
   ['clientasyncreaderwriter',['ClientAsyncReaderWriter',['../classgrpc_1_1_client_context.html#a5c0c96957129933bfe94a299c764eaa7',1,'grpc::ClientContext']]],
@@ -16,6 +18,7 @@ var searchData=
   ['clientreaderwriter',['ClientReaderWriter',['../classgrpc_1_1_channel_interface.html#a6d5659aa24edba057895be774e2752ec',1,'grpc::ChannelInterface::ClientReaderWriter()'],['../classgrpc_1_1_client_context.html#a6d5659aa24edba057895be774e2752ec',1,'grpc::ClientContext::ClientReaderWriter()'],['../classgrpc_1_1_completion_queue.html#a6d5659aa24edba057895be774e2752ec',1,'grpc::CompletionQueue::ClientReaderWriter()']]],
   ['clientstreaminghandler',['ClientStreamingHandler',['../classgrpc_1_1_completion_queue.html#aee2bfad715a7c61f2839cdc9b5be6ef5',1,'grpc::CompletionQueue::ClientStreamingHandler()'],['../classgrpc_1_1_server_context.html#aee2bfad715a7c61f2839cdc9b5be6ef5',1,'grpc::ServerContext::ClientStreamingHandler()']]],
   ['clientwriter',['ClientWriter',['../classgrpc_1_1_channel_interface.html#a4498fada67d531d99a8642f47d746544',1,'grpc::ChannelInterface::ClientWriter()'],['../classgrpc_1_1_client_context.html#a4498fada67d531d99a8642f47d746544',1,'grpc::ClientContext::ClientWriter()'],['../classgrpc_1_1_completion_queue.html#a4498fada67d531d99a8642f47d746544',1,'grpc::CompletionQueue::ClientWriter()']]],
+  ['errormethodhandler',['ErrorMethodHandler',['../classgrpc_1_1_completion_queue.html#a388eaf44b2f41899396d4b5b05cf857c',1,'grpc::CompletionQueue']]],
   ['interopclientcontextinspector',['InteropClientContextInspector',['../classgrpc_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c',1,'grpc::ClientContext']]],
   ['interopservercontextinspector',['InteropServerContextInspector',['../classgrpc_1_1_server_context.html#a23b6c885fa0656c25c2a46ab22e99270',1,'grpc::ServerContext']]],
   ['rpcmethod',['RpcMethod',['../classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2',1,'grpc::ChannelInterface']]],
@@ -34,6 +37,5 @@ var searchData=
   ['serverstreaminghandler',['ServerStreamingHandler',['../classgrpc_1_1_completion_queue.html#abba72ec6d1dbf06ecb1bf48e1c916c48',1,'grpc::CompletionQueue::ServerStreamingHandler()'],['../classgrpc_1_1_server_context.html#abba72ec6d1dbf06ecb1bf48e1c916c48',1,'grpc::ServerContext::ServerStreamingHandler()']]],
   ['serverwriter',['ServerWriter',['../classgrpc_1_1_completion_queue.html#a2f2dfa831a62c43ad5647a45080488e3',1,'grpc::CompletionQueue::ServerWriter()'],['../classgrpc_1_1_server_context.html#a2f2dfa831a62c43ad5647a45080488e3',1,'grpc::ServerContext::ServerWriter()']]],
   ['service',['Service',['../classgrpc_1_1_server_interface.html#ae167bce70b5b1c42985d3a22425c8e66',1,'grpc::ServerInterface']]],
-  ['templatedbidistreaminghandler',['TemplatedBidiStreamingHandler',['../classgrpc_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b',1,'grpc::CompletionQueue::TemplatedBidiStreamingHandler()'],['../classgrpc_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b',1,'grpc::ServerContext::TemplatedBidiStreamingHandler()']]],
-  ['unknownmethodhandler',['UnknownMethodHandler',['../classgrpc_1_1_completion_queue.html#a7a445fc31dd2f75f5686fd6bd1c6be5c',1,'grpc::CompletionQueue::UnknownMethodHandler()'],['../classgrpc_1_1_server_context.html#a7a445fc31dd2f75f5686fd6bd1c6be5c',1,'grpc::ServerContext::UnknownMethodHandler()']]]
+  ['templatedbidistreaminghandler',['TemplatedBidiStreamingHandler',['../classgrpc_1_1_completion_queue.html#a65ae6d263727d1e67e811969f909212b',1,'grpc::CompletionQueue::TemplatedBidiStreamingHandler()'],['../classgrpc_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b',1,'grpc::ServerContext::TemplatedBidiStreamingHandler()']]]
 ];

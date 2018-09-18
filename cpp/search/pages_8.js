@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['negative_20http_2f2_20interop_20test_20case_20descriptions',['Negative HTTP/2 Interop Test Case Descriptions',['../md_doc_http2-interop-test-descriptions.html',1,'']]]
+  ['load_20balancing_20in_20grpc',['Load Balancing in gRPC',['../md_doc_load-balancing.html',1,'']]]
 ];

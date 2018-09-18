@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -447,6 +447,21 @@ $(function() {
 <li>received status code is the same as the sent code for both Procedure steps 1 and 2</li>
 <li>received status message is the same as the sent message for both Procedure steps 1 and 2</li>
 </ul>
+<h3>special_status_message</h3>
+<p>This test verifies Unicode and whitespace is correctly processed in status message. "\t" is horizontal tab. "\r" is carriage return. "\n" is line feed.</p>
+<p>Server features:</p><ul>
+<li><a href="#unarycall">UnaryCall</a></li>
+<li><a href="#echo-status">Echo Status</a></li>
+</ul>
+<p>Procedure:</p><ol type="1">
+<li><p class="startli">Client calls UnaryCall with:</p>
+<p class="startli">``` { response_status:{ code: 2 message: "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n" } } ```</p>
+</li>
+</ol>
+<p>Client asserts:</p><ul>
+<li>received status code is the same as the sent code for Procedure step 1</li>
+<li>received status message is the same as the sent message for Procedure step 1, including all whitespace characters</li>
+</ul>
 <h3>unimplemented_method</h3>
 <p>This test verifies that calling an unimplemented RPC method returns the UNIMPLEMENTED status code.</p>
 <p>Server features: N/A</p>
@@ -513,6 +528,15 @@ $(function() {
 <h3>Flow control. Pushback at client for large messages (TODO: fix name)</h3>
 <p>Status: TODO</p>
 <p>This test verifies that a client sending faster than a server can drain sees pushback (i.e., attempts to send succeed only after appropriate delays).</p>
+<h3>Experimental Tests</h3>
+<p>These tests are not yet standardized, and are not yet implemented in all languages. Therefore they are not part of our interop matrix.</p>
+<h4>rpc_soak</h4>
+<p>The client performs many large_unary RPCs in sequence over the same channel. The number of RPCs is configured by the experimental flag, <code>soak_iterations</code>.</p>
+<h4>channel_soak</h4>
+<p>The client performs many large_unary RPCs in sequence. Before each RPC, it tears down and rebuilds the channel. The number of RPCs is configured by the experimental flag, <code>soak_iterations</code>.</p>
+<p>This tests puts stress on several gRPC components; the resolver, the load balancer, and the RPC hotpath.</p>
+<h4>long_lived_channel</h4>
+<p>The client performs a number of large_unary RPCs over a single long-lived channel with a fixed but configurable interval between each RPC.</p>
 <h3>TODO Tests</h3>
 <h4>High priority:</h4>
 <p>Propagation of status code and message (yangg)</p>
@@ -590,7 +614,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

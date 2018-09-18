@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -147,12 +147,13 @@ $(function() {
 </ul>
 </li>
 <li>GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS Default: 5000 Declares the interval between two backup polls on client channels. These polls are run in the timer thread so that gRPC can process connection failures while there is no active polling thread. They help reconnect disconnected client channels (mostly due to idleness), so that the next RPC on this channel won't fail. Set to 0 to turn off the backup polls.</li>
-<li>GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL if set, flow control will be effectively disabled. Max out all values and assume the remote peer does the same. Thus we can ignore any flow control bookkeeping, error checking, and decision making </li>
+<li>GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL if set, flow control will be effectively disabled. Max out all values and assume the remote peer does the same. Thus we can ignore any flow control bookkeeping, error checking, and decision making</li>
+<li>grpc_cfstream set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

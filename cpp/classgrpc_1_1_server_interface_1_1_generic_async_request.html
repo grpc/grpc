@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -77,7 +77,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3aac8f4a693835e4b2d444105fa748f6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html#a3aac8f4a693835e4b2d444105fa748f6">GenericAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, bool delete_on_finalize)</td></tr>
 <tr class="separator:a3aac8f4a693835e4b2d444105fa748f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16e173f0b71c49cc6d945d2d981cd0c1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_generic_async_request.html#a16e173f0b71c49cc6d945d2d981cd0c1">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
-<tr class="memdesc:a16e173f0b71c49cc6d945d2d981cd0c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#a16e173f0b71c49cc6d945d2d981cd0c1">More...</a><br /></td></tr>
+<tr class="memdesc:a16e173f0b71c49cc6d945d2d981cd0c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="#a16e173f0b71c49cc6d945d2d981cd0c1">More...</a><br /></td></tr>
 <tr class="separator:a16e173f0b71c49cc6d945d2d981cd0c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_server_interface_1_1_base_async_request"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_interface_1_1_base_async_request')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html">grpc::ServerInterface::BaseAsyncRequest</a></td></tr>
 <tr class="memitem:abffa887b1da5a143e92e28c90b80a4dd inherit pub_methods_classgrpc_1_1_server_interface_1_1_base_async_request"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#abffa887b1da5a143e92e28c90b80a4dd">BaseAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, void *tag, bool delete_on_finalize)</td></tr>
@@ -200,8 +200,15 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do). </p>
-<p>If this function returns false, the tag is dropped and not returned from the completion queue </p>
+<p>FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed. </p>
+<p>In practice, this means:</p>
+<ol type="1">
+<li>For the sync API - before returning from Pluck</li>
+<li>For the CQ-based async API - before returning from Next</li>
+<li>For the callback-based API - before invoking the user callback</li>
+</ol>
+<p>This is the method that translates from core-side tag/status to C++ API-observable tag/status.</p>
+<p>The return value is the status of the operation (returning status is the general behavior of this function). If this function returns false, the tag is dropped and not returned from the completion queue: this concept is for events that are observed at core but not requested by the user application (e.g., server shutdown, for server unimplemented method responses, or for cases where a server-side RPC doesn't have a completion notification registered using AsyncNotifyWhenDone) </p>
 
 <p>Reimplemented from <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a097df5db59705c330ac2b2860c915a41">grpc::ServerInterface::BaseAsyncRequest</a>.</p>
 
@@ -213,7 +220,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

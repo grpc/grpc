@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -82,12 +82,21 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:ab4c7e40417b37179d52667f3208f69a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ab4c7e40417b37179d52667f3208f69a3">ChannelResetConnectionBackoff</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel)</td></tr>
+<tr class="memdesc:ab4c7e40417b37179d52667f3208f69a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the channel's connection backoff.  <a href="#ab4c7e40417b37179d52667f3208f69a3">More...</a><br /></td></tr>
+<tr class="separator:ab4c7e40417b37179d52667f3208f69a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad871e11876b9e9893ee4f57fc283abfb"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ad871e11876b9e9893ee4f57fc283abfb">AltsCredentials</a> (const <a class="el" href="structgrpc_1_1experimental_1_1_alts_credentials_options.html">AltsCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:ad871e11876b9e9893ee4f57fc283abfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds ALTS Credentials given ALTS specific options.  <a href="#ad871e11876b9e9893ee4f57fc283abfb">More...</a><br /></td></tr>
 <tr class="separator:ad871e11876b9e9893ee4f57fc283abfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9354c3cab0a74d9d405c00781f789507"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a9354c3cab0a74d9d405c00781f789507">LocalCredentials</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memdesc:a9354c3cab0a74d9d405c00781f789507"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Local Credentials.  <a href="#a9354c3cab0a74d9d405c00781f789507">More...</a><br /></td></tr>
+<tr class="separator:a9354c3cab0a74d9d405c00781f789507"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abfae1568a31fb0a10b4d973953ddc3b2"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#abfae1568a31fb0a10b4d973953ddc3b2">AltsServerCredentials</a> (const <a class="el" href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html">AltsServerCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:abfae1568a31fb0a10b4d973953ddc3b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds ALTS <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a> given ALTS specific options.  <a href="#abfae1568a31fb0a10b4d973953ddc3b2">More...</a><br /></td></tr>
 <tr class="separator:abfae1568a31fb0a10b4d973953ddc3b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a6076d466bcfdcb7d7678c2dcafe01f5f">LocalServerCredentials</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memdesc:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Local <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a>.  <a href="#a6076d466bcfdcb7d7678c2dcafe01f5f">More...</a><br /></td></tr>
+<tr class="separator:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ad871e11876b9e9893ee4f57fc283abfb"></a>
@@ -130,10 +139,71 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab4c7e40417b37179d52667f3208f69a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4c7e40417b37179d52667f3208f69a3">&#9670;&nbsp;</a></span>ChannelResetConnectionBackoff()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::experimental::ChannelResetConnectionBackoff </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel.html">Channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Resets the channel's connection backoff. </p>
+<p>TODO(roth): Once we see whether this proves useful, either create a gRFC and change this to be a method of the <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a> class, or remove it. </p>
+
+</div>
+</div>
+<a id="a9354c3cab0a74d9d405c00781f789507"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9354c3cab0a74d9d405c00781f789507">&#9670;&nbsp;</a></span>LocalCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::experimental::LocalCredentials </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds Local Credentials. </p>
+
+</div>
+</div>
+<a id="a6076d466bcfdcb7d7678c2dcafe01f5f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6076d466bcfdcb7d7678c2dcafe01f5f">&#9670;&nbsp;</a></span>LocalServerCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a>&gt; grpc::experimental::LocalServerCredentials </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
+          <td class="paramname"><em>type</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds Local <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a>. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

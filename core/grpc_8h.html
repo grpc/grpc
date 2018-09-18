@@ -116,6 +116,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a35f55253e80714c17f4f3a0657e06f1b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b">grpc_shutdown</a> (void)</td></tr>
 <tr class="memdesc:a35f55253e80714c17f4f3a0657e06f1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shut down the grpc library.  <a href="#a35f55253e80714c17f4f3a0657e06f1b">More...</a><br /></td></tr>
 <tr class="separator:a35f55253e80714c17f4f3a0657e06f1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ea297b71413c4fe9ad668c425bb094a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a0ea297b71413c4fe9ad668c425bb094a">grpc_is_initialized</a> (void)</td></tr>
+<tr class="memdesc:a0ea297b71413c4fe9ad668c425bb094a"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="#a0ea297b71413c4fe9ad668c425bb094a">More...</a><br /></td></tr>
+<tr class="separator:a0ea297b71413c4fe9ad668c425bb094a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3">grpc_version_string</a> (void)</td></tr>
 <tr class="memdesc:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a string representing the current version of grpc.  <a href="#a8bf40c680565d2d3b29b85e8a9e661f3">More...</a><br /></td></tr>
 <tr class="separator:a8bf40c680565d2d3b29b85e8a9e661f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -131,6 +134,9 @@ Functions</h2></td></tr>
 <tr class="memitem:ae9ceac4996a8c73159e3dc8dd560b882"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ae9ceac4996a8c73159e3dc8dd560b882">grpc_completion_queue_create_for_pluck</a> (void *reserved)</td></tr>
 <tr class="memdesc:ae9ceac4996a8c73159e3dc8dd560b882"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_PLUCK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.  <a href="#ae9ceac4996a8c73159e3dc8dd560b882">More...</a><br /></td></tr>
 <tr class="separator:ae9ceac4996a8c73159e3dc8dd560b882"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d4dc2583e43faef74613f77c30bee61"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a5d4dc2583e43faef74613f77c30bee61">grpc_completion_queue_create_for_callback</a> (void *shutdown_callback, void *reserved)</td></tr>
+<tr class="memdesc:a5d4dc2583e43faef74613f77c30bee61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.  <a href="#a5d4dc2583e43faef74613f77c30bee61">More...</a><br /></td></tr>
+<tr class="separator:a5d4dc2583e43faef74613f77c30bee61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa47ec388be96d8b90e5dd6812234664c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa47ec388be96d8b90e5dd6812234664c">grpc_completion_queue_create</a> (const <a class="el" href="grpc__types_8h.html#a7598a0f60120f40389e6e264d23b88a6">grpc_completion_queue_factory</a> *factory, const <a class="el" href="structgrpc__completion__queue__attributes.html">grpc_completion_queue_attributes</a> *attributes, void *reserved)</td></tr>
 <tr class="memdesc:aa47ec388be96d8b90e5dd6812234664c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue.  <a href="#aa47ec388be96d8b90e5dd6812234664c">More...</a><br /></td></tr>
 <tr class="separator:aa47ec388be96d8b90e5dd6812234664c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -197,6 +203,9 @@ Functions</h2></td></tr>
 <tr class="memitem:afacde78420397fae74276ec522bd4dba"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#afacde78420397fae74276ec522bd4dba">grpc_channel_get_info</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel, const <a class="el" href="structgrpc__channel__info.html">grpc_channel_info</a> *channel_info)</td></tr>
 <tr class="memdesc:afacde78420397fae74276ec522bd4dba"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request info about the channel.  <a href="#afacde78420397fae74276ec522bd4dba">More...</a><br /></td></tr>
 <tr class="separator:afacde78420397fae74276ec522bd4dba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a573dd68a1ef6a69eac510197589b3c8d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a573dd68a1ef6a69eac510197589b3c8d">grpc_channel_reset_connect_backoff</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
+<tr class="memdesc:a573dd68a1ef6a69eac510197589b3c8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="#a573dd68a1ef6a69eac510197589b3c8d">More...</a><br /></td></tr>
+<tr class="separator:a573dd68a1ef6a69eac510197589b3c8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#af41ff1c02a6c4bcf59d6b38daa95d5e4">grpc_insecure_channel_create</a> (const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args, void *reserved)</td></tr>
 <tr class="memdesc:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a client channel to 'target'.  <a href="#af41ff1c02a6c4bcf59d6b38daa95d5e4">More...</a><br /></td></tr>
 <tr class="separator:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -275,9 +284,21 @@ Functions</h2></td></tr>
 <tr class="memitem:aee71b01d5d8e91607258d01e1d15785d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aee71b01d5d8e91607258d01e1d15785d">grpc_resource_quota_resize</a> (<a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *resource_quota, size_t new_size)</td></tr>
 <tr class="memdesc:aee71b01d5d8e91607258d01e1d15785d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the size of a buffer pool.  <a href="#aee71b01d5d8e91607258d01e1d15785d">More...</a><br /></td></tr>
 <tr class="separator:aee71b01d5d8e91607258d01e1d15785d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affc13775130fa5f376d885f742cacfe7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#affc13775130fa5f376d885f742cacfe7">grpc_resource_quota_set_max_threads</a> (<a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *resource_quota, int new_max_threads)</td></tr>
+<tr class="memdesc:affc13775130fa5f376d885f742cacfe7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update the size of the maximum number of threads allowed.  <a href="#affc13775130fa5f376d885f742cacfe7">More...</a><br /></td></tr>
+<tr class="separator:affc13775130fa5f376d885f742cacfe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3878872e5415c8b8f7765221a8dc961d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> const <a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a3878872e5415c8b8f7765221a8dc961d">grpc_resource_quota_arg_vtable</a> (void)</td></tr>
 <tr class="memdesc:a3878872e5415c8b8f7765221a8dc961d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota.  <a href="#a3878872e5415c8b8f7765221a8dc961d">More...</a><br /></td></tr>
 <tr class="separator:a3878872e5415c8b8f7765221a8dc961d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe4d34fb3ed282c259bc94f5ed45b183"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#afe4d34fb3ed282c259bc94f5ed45b183">grpc_channelz_get_top_channels</a> (intptr_t start_channel_id)</td></tr>
+<tr class="memdesc:afe4d34fb3ed282c259bc94f5ed45b183"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channelz is under active development.  <a href="#afe4d34fb3ed282c259bc94f5ed45b183">More...</a><br /></td></tr>
+<tr class="separator:afe4d34fb3ed282c259bc94f5ed45b183"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4581bf691bc258f4280c1da8c79f817d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a4581bf691bc258f4280c1da8c79f817d">grpc_channelz_get_servers</a> (intptr_t start_server_id)</td></tr>
+<tr class="separator:a4581bf691bc258f4280c1da8c79f817d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7254f9b17f4efa3d5111b928bd78d3c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c">grpc_channelz_get_channel</a> (intptr_t channel_id)</td></tr>
+<tr class="separator:ab7254f9b17f4efa3d5111b928bd78d3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e4a297b24f0e9b4ec59f3098b29ff0a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a">grpc_channelz_get_subchannel</a> (intptr_t subchannel_id)</td></tr>
+<tr class="separator:a3e4a297b24f0e9b4ec59f3098b29ff0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a7fa47963513b9ce50ca4006b9db94c5e"></a>
@@ -977,6 +998,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a573dd68a1ef6a69eac510197589b3c8d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a573dd68a1ef6a69eac510197589b3c8d">&#9670;&nbsp;</a></span>grpc_channel_reset_connect_backoff()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_channel_reset_connect_backoff </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Resets the channel's connect backoff. TODO(roth): When we see whether this proves useful, either promote to non-experimental or remove it. </p>
+
+</div>
+</div>
 <a id="a2fa5cfcbb0f87e4e71e1644f0305cf89"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2fa5cfcbb0f87e4e71e1644f0305cf89">&#9670;&nbsp;</a></span>grpc_channel_support_connectivity_watcher()</h2>
 
@@ -1046,6 +1088,83 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="ab7254f9b17f4efa3d5111b928bd78d3c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab7254f9b17f4efa3d5111b928bd78d3c">&#9670;&nbsp;</a></span>grpc_channelz_get_channel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char* grpc_channelz_get_channel </td>
+          <td>(</td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>channel_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4581bf691bc258f4280c1da8c79f817d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4581bf691bc258f4280c1da8c79f817d">&#9670;&nbsp;</a></span>grpc_channelz_get_servers()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char* grpc_channelz_get_servers </td>
+          <td>(</td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>start_server_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3e4a297b24f0e9b4ec59f3098b29ff0a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e4a297b24f0e9b4ec59f3098b29ff0a">&#9670;&nbsp;</a></span>grpc_channelz_get_subchannel()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char* grpc_channelz_get_subchannel </td>
+          <td>(</td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>subchannel_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afe4d34fb3ed282c259bc94f5ed45b183"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe4d34fb3ed282c259bc94f5ed45b183">&#9670;&nbsp;</a></span>grpc_channelz_get_top_channels()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char* grpc_channelz_get_top_channels </td>
+          <td>(</td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>start_channel_id</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Channelz is under active development. </p>
+<p>The following APIs will see some churn as the feature is implemented. This comment will be removed once channelz is officially supported, and these APIs become stable. For now you may track the progress by following this github issue: <a href="https://github.com/grpc/grpc/issues/15340">https://github.com/grpc/grpc/issues/15340</a></p>
+<p>the following APIs return allocated JSON strings that match the response objects from the channelz proto, found here: <a href="https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto">https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto</a>.</p>
+<p>For easy conversion to protobuf, The JSON is formatted according to: <a href="https://developers.google.com/protocol-buffers/docs/proto3#json">https://developers.google.com/protocol-buffers/docs/proto3#json</a>. </p>
+
+</div>
+</div>
 <a id="aa47ec388be96d8b90e5dd6812234664c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa47ec388be96d8b90e5dd6812234664c">&#9670;&nbsp;</a></span>grpc_completion_queue_create()</h2>
 
@@ -1079,6 +1198,37 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Create a completion queue. </p>
+
+</div>
+</div>
+<a id="a5d4dc2583e43faef74613f77c30bee61"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5d4dc2583e43faef74613f77c30bee61">&#9670;&nbsp;</a></span>grpc_completion_queue_create_for_callback()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a>* grpc_completion_queue_create_for_callback </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>shutdown_callback</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Helper function to create a completion queue with grpc_cq_completion_type of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING. </p>
+<p>This function is experimental. </p>
 
 </div>
 </div>
@@ -1404,6 +1554,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Initialize the grpc library. </p>
+<p>After it's called, a matching invocation to <a class="el" href="grpc_8h.html#a35f55253e80714c17f4f3a0657e06f1b" title="Shut down the grpc library. ">grpc_shutdown()</a> is expected.</p>
 <p>It is not safe to call any other grpc functions before calling this. (To avoid overhead, little checking is done, and some things may work. We do not warrant that they will continue to do so in future revisions of this library). </p>
 
 </div>
@@ -1462,6 +1613,27 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Check whether a metadata key corresponds to a binary value. </p>
+
+</div>
+</div>
+<a id="a0ea297b71413c4fe9ad668c425bb094a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0ea297b71413c4fe9ad668c425bb094a">&#9670;&nbsp;</a></span>grpc_is_initialized()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_is_initialized </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL. </p>
+<p>Returns 1 if the grpc library has been initialized. TODO(ericgribkoff) Decide if this should be promoted to non-experimental as part of stabilizing the fork support API, as tracked in <a href="https://github.com/grpc/grpc/issues/15334">https://github.com/grpc/grpc/issues/15334</a> </p>
 
 </div>
 </div>
@@ -1655,6 +1827,36 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Update the size of a buffer pool. </p>
+
+</div>
+</div>
+<a id="affc13775130fa5f376d885f742cacfe7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affc13775130fa5f376d885f742cacfe7">&#9670;&nbsp;</a></span>grpc_resource_quota_set_max_threads()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_resource_quota_set_max_threads </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td>
+          <td class="paramname"><em>resource_quota</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>new_max_threads</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Update the size of the maximum number of threads allowed. </p>
 
 </div>
 </div>
@@ -2076,6 +2278,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Shut down the grpc library. </p>
+<p>Before it's called, there should haven been a matching invocation to <a class="el" href="grpc_8h.html#a573aed8e200997856a227c7eb798a185" title="Initialize the grpc library. ">grpc_init()</a>.</p>
 <p>No memory is used by grpc after this call returns, nor are any instructions executing within the grpc library. Prior to calling, all application owned grpc objects must have been destroyed. </p>
 
 </div>
@@ -2135,7 +2338,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

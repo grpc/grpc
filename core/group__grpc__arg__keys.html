@@ -137,7 +137,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum time between sending successive ping frames without receiving any data frame, Int valued, milliseconds.  <a href="#ga69583c8efdbdcb7cdf9055ee80a07014">More...</a><br /></td></tr>
 <tr class="separator:ga69583c8efdbdcb7cdf9055ee80a07014"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga4494709dc5c7c899af4ed67ec7728549"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_ping_interval_without_data_ms&quot;</td></tr>
-<tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between receiving successive ping frames without sending any data frame.  <a href="#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br /></td></tr>
+<tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between a server receiving successive ping frames without sending any data frame.  <a href="#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br /></td></tr>
 <tr class="separator:ga4494709dc5c7c899af4ed67ec7728549"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
@@ -264,6 +264,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa3f69f6e1e789e36d2d9c6083fec0257">GRPC_ARG_ENABLE_HTTP_PROXY</a>&#160;&#160;&#160;&quot;grpc.enable_http_proxy&quot;</td></tr>
 <tr class="memdesc:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to zero, disables use of http proxies.  <a href="#gaa3f69f6e1e789e36d2d9c6083fec0257">More...</a><br /></td></tr>
 <tr class="separator:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga37014e47791a777718aac4250180d92e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga37014e47791a777718aac4250180d92e">GRPC_ARG_SURFACE_USER_AGENT</a>&#160;&#160;&#160;&quot;grpc.surface_user_agent&quot;</td></tr>
+<tr class="memdesc:ga37014e47791a777718aac4250180d92e"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to non zero, surfaces the user agent string to the server.  <a href="#ga37014e47791a777718aac4250180d92e">More...</a><br /></td></tr>
+<tr class="separator:ga37014e47791a777718aac4250180d92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -639,7 +642,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Minimum allowed time between receiving successive ping frames without sending any data frame. </p>
+<p>Minimum allowed time between a server receiving successive ping frames without sending any data frame. </p>
 <p>Int valued, milliseconds </p>
 
 </div>
@@ -1177,6 +1180,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga37014e47791a777718aac4250180d92e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga37014e47791a777718aac4250180d92e">&#9670;&nbsp;</a></span>GRPC_ARG_SURFACE_USER_AGENT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_SURFACE_USER_AGENT&#160;&#160;&#160;&quot;grpc.surface_user_agent&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If set to non zero, surfaces the user agent string to the server. </p>
+<p>User agent is surfaced by default. </p>
+
+</div>
+</div>
 <a id="gadeaad8ae5b50ee8d2fb44d289aeb223d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gadeaad8ae5b50ee8d2fb44d289aeb223d">&#9670;&nbsp;</a></span>GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE</h2>
 
@@ -1358,7 +1378,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

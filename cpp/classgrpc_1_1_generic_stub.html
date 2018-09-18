@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -64,6 +64,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::GenericStub Class Reference<span class="mlabels"><span class="mlabel">final</span></span></div>  </div>
@@ -75,6 +76,12 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2generic_2generic__stub_8h_source.html">generic_stub.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html">experimental_type</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: class <a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html" title="NOTE: class experimental_type is not part of the public API of this class TODO(vjpai): Move these con...">experimental_type</a> is not part of the public API of this class TODO(vjpai): Move these contents to the public API of <a class="el" href="classgrpc_1_1_generic_stub.html" title="Generic stubs provide a type-unsafe interface to call gRPC methods by name. ">GenericStub</a> when they are no longer experimental.  <a href="classgrpc_1_1_generic_stub_1_1experimental__type.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a1523f381907ac18b841bb4064f2a3b88"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub.html#a1523f381907ac18b841bb4064f2a3b88">GenericStub</a> (std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> &gt; channel)</td></tr>
@@ -88,6 +95,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a29d999cf06468cfe12d3cdc912cb0afb"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539">GenericClientAsyncReaderWriter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub.html#a29d999cf06468cfe12d3cdc912cb0afb">Call</a> (<a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;method, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *cq, void *tag)</td></tr>
 <tr class="memdesc:a29d999cf06468cfe12d3cdc912cb0afb"><td class="mdescLeft">&#160;</td><td class="mdescRight">DEPRECATED for multi-threaded use Begin a call to a named method <em>method</em> using <em>context</em>.  <a href="#a29d999cf06468cfe12d3cdc912cb0afb">More...</a><br /></td></tr>
 <tr class="separator:a29d999cf06468cfe12d3cdc912cb0afb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a568c88e2f01ecd46ba97bc28996f37be"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html">experimental_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_stub.html#a568c88e2f01ecd46ba97bc28996f37be">experimental</a> ()</td></tr>
+<tr class="memdesc:a568c88e2f01ecd46ba97bc28996f37be"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: The function <a class="el" href="classgrpc_1_1_generic_stub.html#a568c88e2f01ecd46ba97bc28996f37be" title="NOTE: The function experimental() is not stable public API. ">experimental()</a> is not stable public API.  <a href="#a568c88e2f01ecd46ba97bc28996f37be">More...</a><br /></td></tr>
+<tr class="separator:a568c88e2f01ecd46ba97bc28996f37be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Generic stubs provide a type-unsafe interface to call gRPC methods by name. </p>
@@ -159,6 +169,34 @@ Public Member Functions</h2></td></tr>
 
 <p>DEPRECATED for multi-threaded use Begin a call to a named method <em>method</em> using <em>context</em>. </p>
 <p>A tag <em>tag</em> will be delivered to <em>cq</em> when the call has been started (i.e, initial metadata has been sent). The return value only indicates whether or not registration of the call succeeded (i.e. the call won't proceed if the return value is nullptr). </p>
+
+</div>
+</div>
+<a id="a568c88e2f01ecd46ba97bc28996f37be"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a568c88e2f01ecd46ba97bc28996f37be">&#9670;&nbsp;</a></span>experimental()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_generic_stub_1_1experimental__type.html">experimental_type</a> grpc::GenericStub::experimental </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>NOTE: The function <a class="el" href="classgrpc_1_1_generic_stub.html#a568c88e2f01ecd46ba97bc28996f37be" title="NOTE: The function experimental() is not stable public API. ">experimental()</a> is not stable public API. </p>
+<p>It is a view to the experimental components of this class. It may be changed or removed at any time. </p>
 
 </div>
 </div>
@@ -248,7 +286,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

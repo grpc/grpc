@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -70,7 +70,7 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory usage by the gRPC library.  
+<p><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory and thread usage by the gRPC library.  
  <a href="classgrpc_1_1_resource_quota.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2resource__quota_8h_source.html">resource_quota.h</a>&gt;</code></p>
@@ -84,14 +84,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad398badd3b31871dce142e9ba18b45ce"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#ad398badd3b31871dce142e9ba18b45ce">~ResourceQuota</a> ()</td></tr>
 <tr class="separator:ad398badd3b31871dce142e9ba18b45ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e9034af4f310baa9bcc11ccfe46170f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#a3e9034af4f310baa9bcc11ccfe46170f">Resize</a> (size_t new_size)</td></tr>
-<tr class="memdesc:a3e9034af4f310baa9bcc11ccfe46170f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a></em> to a new size.  <a href="#a3e9034af4f310baa9bcc11ccfe46170f">More...</a><br /></td></tr>
+<tr class="memdesc:a3e9034af4f310baa9bcc11ccfe46170f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a></em> to a new size.  <a href="#a3e9034af4f310baa9bcc11ccfe46170f">More...</a><br /></td></tr>
 <tr class="separator:a3e9034af4f310baa9bcc11ccfe46170f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae6845dbf2ca8d94df38c36fff9ac15ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#ae6845dbf2ca8d94df38c36fff9ac15ca">SetMaxThreads</a> (int new_max_threads)</td></tr>
+<tr class="memdesc:ae6845dbf2ca8d94df38c36fff9ac15ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the max number of threads that can be allocated from this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> object.  <a href="#ae6845dbf2ca8d94df38c36fff9ac15ca">More...</a><br /></td></tr>
+<tr class="separator:ae6845dbf2ca8d94df38c36fff9ac15ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c8f03a21aba636ba5ed2504a0754085"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05">grpc_resource_quota</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html#a1c8f03a21aba636ba5ed2504a0754085">c_resource_quota</a> () const</td></tr>
 <tr class="separator:a1c8f03a21aba636ba5ed2504a0754085"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory usage by the gRPC library. </p>
-<p>A <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> can be attached to a server (via <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em>), or a client channel (via <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em>). gRPC will attempt to keep memory used by all attached entities below the <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> bound. </p>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory and thread usage by the gRPC library. </p>
+<p>A <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> can be attached to a server (via <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances. ">ServerBuilder</a></em>), or a client channel (via <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation. ">ChannelArguments</a></em>). gRPC will attempt to keep memory and threads used by all attached entities below the <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> bound. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a5014fc19c5c5e8e6cdb8eb9c21a1f170"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5014fc19c5c5e8e6cdb8eb9c21a1f170">&#9670;&nbsp;</a></span>ResourceQuota() <span class="overload">[1/2]</span></h2>
@@ -118,7 +121,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">name</td><td>- a unique name for this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a>. </td></tr>
+    <tr><td class="paramname">name</td><td>- a unique name for this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a>. </td></tr>
   </table>
   </dd>
 </dl>
@@ -201,8 +204,29 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a></em> to a new size. </p>
+<p>Resize this <em><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a></em> to a new size. </p>
 <p>If <em>new_size</em> is smaller than the current size of the pool, memory usage will be monotonically decreased until it falls under <em>new_size</em>. No time bound is given for this to occur however. </p>
+
+</div>
+</div>
+<a id="ae6845dbf2ca8d94df38c36fff9ac15ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae6845dbf2ca8d94df38c36fff9ac15ca">&#9670;&nbsp;</a></span>SetMaxThreads()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a>&amp; grpc::ResourceQuota::SetMaxThreads </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>new_max_threads</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set the max number of threads that can be allocated from this <a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory and thread usage by the gRPC library. ">ResourceQuota</a> object. </p>
+<p>If the new_max_threads value is smaller than the current value, no new threads are allocated until the number of active threads fall below new_max_threads. There is no time bound on when this may happen i.e none of the current threads are forcefully destroyed and all threads run their normal course. </p>
 
 </div>
 </div>
@@ -212,7 +236,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

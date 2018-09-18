@@ -8,6 +8,7 @@ var searchData=
   ['_7eauthpropertyiterator',['~AuthPropertyIterator',['../classgrpc_1_1_auth_property_iterator.html#a91a3a2ce5085a948aac11d7371c13b49',1,'grpc::AuthPropertyIterator']]],
   ['_7ebaseasyncrequest',['~BaseAsyncRequest',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a3977611e5acdeaab9ebb464565db4f80',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['_7ebytebuffer',['~ByteBuffer',['../classgrpc_1_1_byte_buffer.html#aeb5dd0045ed262de06481465326bd64a',1,'grpc::ByteBuffer']]],
+  ['_7ecallbackwithstatustag',['~CallbackWithStatusTag',['../classgrpc_1_1internal_1_1_callback_with_status_tag.html#a921ddcf3e51f455b40317819e06ddfda',1,'grpc::internal::CallbackWithStatusTag']]],
   ['_7ecallcredentials',['~CallCredentials',['../classgrpc_1_1_call_credentials.html#a0744bcf7ac3104015230b0e68a337ee6',1,'grpc::CallCredentials']]],
   ['_7ecallhook',['~CallHook',['../classgrpc_1_1internal_1_1_call_hook.html#a351f3060b7d6378dabcec53d21842487',1,'grpc::internal::CallHook']]],
   ['_7echannel',['~Channel',['../classgrpc_1_1_channel.html#af12754677a599351077d6f68cc0c9159',1,'grpc::Channel']]],

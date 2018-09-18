@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['load_20balancing_20in_20grpc',['Load Balancing in gRPC',['../md_doc_load-balancing.html',1,'']]]
+  ['keepalive_20user_20guide_20for_20grpc_20core_20_28and_20dependants_29',['Keepalive User Guide for gRPC Core (and dependants)',['../md_doc_keepalive.html',1,'']]]
 ];

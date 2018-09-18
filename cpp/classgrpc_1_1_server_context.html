@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.14.0-dev</span>
+   &#160;<span id="projectnumber">1.16.0-dev</span>
    </div>
   </td>
  </tr>
@@ -119,7 +119,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ade949b886faed50627e5cbd35fe4ec72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the server call.  <a href="#ade949b886faed50627e5cbd35fe4ec72">More...</a><br /></td></tr>
 <tr class="separator:ade949b886faed50627e5cbd35fe4ec72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#afbc7d2c4cbd82ec7da26389b0ba648b0">SetLoadReportingCosts</a> (const std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;cost_data)</td></tr>
-<tr class="memdesc:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the load reporting costs in <em>cost_data</em> for the call.  <a href="#afbc7d2c4cbd82ec7da26389b0ba648b0">More...</a><br /></td></tr>
+<tr class="memdesc:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the serialized load reporting costs in <em>cost_data</em> for the call.  <a href="#afbc7d2c4cbd82ec7da26389b0ba648b0">More...</a><br /></td></tr>
 <tr class="separator:afbc7d2c4cbd82ec7da26389b0ba648b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4fab4435aac1be0a92e246507e4167ce"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a4fab4435aac1be0a92e246507e4167ce">auth_context</a> () const</td></tr>
 <tr class="memdesc:a4fab4435aac1be0a92e246507e4167ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the authentication context for this server call.  <a href="#a4fab4435aac1be0a92e246507e4167ce">More...</a><br /></td></tr>
@@ -180,8 +180,9 @@ Friends</h2></td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplParams" colspan="2">template&lt;class Streamer , bool WriteNeeded&gt; </td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b">::grpc::internal::TemplatedBidiStreamingHandler</a></td></tr>
 <tr class="separator:a65ae6d263727d1e67e811969f909212b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a7a445fc31dd2f75f5686fd6bd1c6be5c">::grpc::internal::UnknownMethodHandler</a></td></tr>
-<tr class="separator:a7a445fc31dd2f75f5686fd6bd1c6be5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplParams" colspan="2">template&lt;StatusCode code&gt; </td></tr>
+<tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a91a3296cb8faa9b7afad2f0db836df4d">internal::ErrorMethodHandler</a></td></tr>
+<tr class="separator:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ad5c51aa9b375ed1597b0a57f339f59d5">::grpc::ClientContext</a></td></tr>
 <tr class="separator:ad5c51aa9b375ed1597b0a57f339f59d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -334,7 +335,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Async only. </p>
-<p>Has to be called before the rpc starts. Returns the tag in completion queue when the rpc finishes. <a class="el" href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966" title="IsCancelled is always safe to call when using sync API. ">IsCancelled()</a> can then be called to check whether the rpc was cancelled. </p>
+<p>Has to be called before the rpc starts. Returns the tag in completion queue when the rpc finishes. <a class="el" href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966" title="IsCancelled is always safe to call when using sync API. ">IsCancelled()</a> can then be called to check whether the rpc was cancelled. TODO(vjpai): Fix this so that the tag is returned even if the call never starts (<a href="https://github.com/grpc/grpc/issues/10136">https://github.com/grpc/grpc/issues/10136</a>). </p>
 
 </div>
 </div>
@@ -695,7 +696,7 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set the load reporting costs in <em>cost_data</em> for the call. </p>
+<p>Set the serialized load reporting costs in <em>cost_data</em> for the call. </p>
 
 </div>
 </div>
@@ -853,28 +854,6 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc::internal::TemplatedBidiStreamingHandler</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a7a445fc31dd2f75f5686fd6bd1c6be5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a445fc31dd2f75f5686fd6bd1c6be5c">&#9670;&nbsp;</a></span>::grpc::internal::UnknownMethodHandler</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_unknown_method_handler.html">grpc::internal::UnknownMethodHandler</a></td>
         </tr>
       </table>
   </td>
@@ -1118,13 +1097,37 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
+<a id="a91a3296cb8faa9b7afad2f0db836df4d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91a3296cb8faa9b7afad2f0db836df4d">&#9670;&nbsp;</a></span>internal::ErrorMethodHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;StatusCode code&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">internal::ErrorMethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2server__context_8h_source.html">server_context.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
