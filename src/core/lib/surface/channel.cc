@@ -100,7 +100,6 @@ grpc_channel* grpc_channel_create_with_builder(
     return channel;
   }
 
-  memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
@@ -166,11 +165,12 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  if (channelz_enabled) {
-    bool is_top_level_channel = channel->is_client && !internal_channel;
+  // we only need to do the channelz bookkeeping for clients here. The channelz
+  // bookkeeping for server channels occurs in src/core/lib/surface/server.cc
+  if (channelz_enabled && channel->is_client) {
     channel->channelz_channel = channel_node_create_func(
-        channel, channel_tracer_max_nodes, is_top_level_channel);
-    channel->channelz_channel->trace()->AddTraceEvent(
+        channel, channel_tracer_max_nodes, !internal_channel);
+    channel->channelz_channel->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));
   }
@@ -428,6 +428,9 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_channel != nullptr) {
+    channel->channelz_channel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Channel destroyed"));
     channel->channelz_channel->MarkChannelDestroyed();
     channel->channelz_channel.reset();
   }

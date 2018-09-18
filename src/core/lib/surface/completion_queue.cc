@@ -1364,9 +1364,11 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
   }
   cqd->shutdown_called = true;
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
+    gpr_mu_unlock(cq->mu);
     cq_finish_shutdown_callback(cq);
+  } else {
+    gpr_mu_unlock(cq->mu);
   }
-  gpr_mu_unlock(cq->mu);
   GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down (callback cq)");
 }
 

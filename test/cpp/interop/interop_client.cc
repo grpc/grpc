@@ -1052,6 +1052,34 @@ bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
   return true;
 }
 
+bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
+                                           int32_t iteration_interval) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  GPR_ASSERT(iteration_interval > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  int num_failures = 0;
+  for (int i = 0; i < soak_iterations; ++i) {
+    gpr_log(GPR_DEBUG, "Sending RPC number %d...", i);
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "Iteration %d failed.", i);
+      num_failures++;
+    }
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(iteration_interval, GPR_TIMESPAN)));
+  }
+  if (num_failures == 0) {
+    gpr_log(GPR_DEBUG, "long_lived_channel test done.");
+    return true;
+  } else {
+    gpr_log(GPR_DEBUG, "long_lived_channel test failed with %d rpc failures.",
+            num_failures);
+    return false;
+  }
+}
+
 bool InteropClient::DoUnimplementedService() {
   gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
 
