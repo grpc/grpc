@@ -65,7 +65,6 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
     }
   }
 
-<<<<<<< HEAD
   void SendRpcs(int num_rpcs) {
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -96,10 +95,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SendRpcsGeneric(int num_rpcs) {
-=======
-  void SendRpcs(int num_rpcs, bool maybe_except) {
->>>>>>> master
+  void SendRpcsGeneric(int num_rpcs, bool maybe_except) {
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -149,23 +145,23 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
   ResetStub();
-  SendRpcs(1, false);
+  SendRpcs(1);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
-  SendRpcs(10, false);
+  SendRpcs(10);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
   ResetStub();
-  SendRpcsGeneric(10);
+  SendRpcsGeneric(10, false);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS
 TEST_F(ClientCallbackEnd2endTest, ExceptingRpc) {
   ResetStub();
-  SendRpcs(10, true);
+  SendRpcsGeneric(10, true);
 }
 #endif
 
