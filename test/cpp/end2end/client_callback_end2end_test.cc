@@ -65,6 +65,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
     }
   }
 
+<<<<<<< HEAD
   void SendRpcs(int num_rpcs) {
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -96,6 +97,9 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
   }
 
   void SendRpcsGeneric(int num_rpcs) {
+=======
+  void SendRpcs(int num_rpcs, bool maybe_except) {
+>>>>>>> master
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -113,7 +117,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       bool done = false;
       generic_stub_->experimental().UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
-          [&request, &recv_buf, &done, &mu, &cv](Status s) {
+          [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
             GPR_ASSERT(s.ok());
 
             EchoResponse response;
@@ -122,6 +126,11 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
             std::lock_guard<std::mutex> l(mu);
             done = true;
             cv.notify_one();
+#if GRPC_ALLOW_EXCEPTIONS
+            if (maybe_except) {
+              throw - 1;
+            }
+#endif
           });
       std::unique_lock<std::mutex> l(mu);
       while (!done) {
@@ -140,18 +149,25 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
   ResetStub();
-  SendRpcs(1);
+  SendRpcs(1, false);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
-  SendRpcs(10);
+  SendRpcs(10, false);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
   ResetStub();
   SendRpcsGeneric(10);
 }
+
+#if GRPC_ALLOW_EXCEPTIONS
+TEST_F(ClientCallbackEnd2endTest, ExceptingRpc) {
+  ResetStub();
+  SendRpcs(10, true);
+}
+#endif
 
 }  // namespace
 }  // namespace testing
