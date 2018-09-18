@@ -55,7 +55,8 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
   void ResetStub() {
     ChannelArguments args;
     channel_ = server_->InProcessChannel(args);
-    stub_.reset(new GenericStub(channel_));
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    generic_stub_.reset(new GenericStub(channel_));
   }
 
   void TearDown() override {
@@ -65,6 +66,36 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
   }
 
   void SendRpcs(int num_rpcs) {
+    grpc::string test_string("");
+    for (int i = 0; i < num_rpcs; i++) {
+      EchoRequest request;
+      EchoResponse response;
+      ClientContext cli_ctx;
+
+      test_string += "Hello world. ";
+      request.set_message(test_string);
+
+      std::mutex mu;
+      std::condition_variable cv;
+      bool done = false;
+      stub_->experimental_async()->Echo(
+          &cli_ctx, &request, &response,
+          [&request, &response, &done, &mu, &cv](Status s) {
+            GPR_ASSERT(s.ok());
+
+            EXPECT_EQ(request.message(), response.message());
+            std::lock_guard<std::mutex> l(mu);
+            done = true;
+            cv.notify_one();
+          });
+      std::unique_lock<std::mutex> l(mu);
+      while (!done) {
+        cv.wait(l);
+      }
+    }
+  }
+
+  void SendRpcsGeneric(int num_rpcs) {
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -80,7 +111,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental().UnaryCall(
+      generic_stub_->experimental().UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv](Status s) {
             GPR_ASSERT(s.ok());
@@ -98,9 +129,11 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       }
     }
   }
+
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::GenericStub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::GenericStub> generic_stub_;
   TestServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
@@ -113,6 +146,11 @@ TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpcs(10);
+}
+
+TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
+  ResetStub();
+  SendRpcsGeneric(10);
 }
 
 }  // namespace
