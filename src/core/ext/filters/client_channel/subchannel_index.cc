@@ -53,6 +53,7 @@ constexpr size_t kUnusedSubchannelsInlinedSize = 4;
 static grpc_millis g_sweep_interval_ms = kDefaultSweepIntervalMs;
 static grpc_timer g_sweeper_timer;
 static grpc_closure g_sweep_unused_subchannels;
+static gpr_atm g_sweep_active;
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them
@@ -127,11 +128,12 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 static void scv_avl_destroy(void* p, void* user_data) {
-  GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p,
+                        "subchannel_index_scv_avl_destroy");
 }
 
 static void* scv_avl_copy(void* p, void* unused) {
-  GRPC_SUBCHANNEL_REF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_REF((grpc_subchannel*)p, "subchannel_index_scv_avl_copy");
   return p;
 }
 
@@ -184,14 +186,14 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
         grpc_avl_get(index, key, grpc_core::ExecCtx::Get()));
     if (c != nullptr) {
       // Already exists -> we're done.
-      GRPC_SUBCHANNEL_REF(c, "index_register");
-      GRPC_SUBCHANNEL_UNREF(constructed, "index_register");
+      GRPC_SUBCHANNEL_REF(c, "index_register_reuse");
+      GRPC_SUBCHANNEL_UNREF(constructed, "index_register_found_existing");
     } else {
       // Doesn't exist -> update the avl and compare/swap.
       grpc_avl updated =
           grpc_avl_add(grpc_avl_ref(index, grpc_core::ExecCtx::Get()),
                        subchannel_key_copy(key),
-                       GRPC_SUBCHANNEL_REF(constructed, "index_register"),
+                       GRPC_SUBCHANNEL_REF(constructed, "index_register_new"),
                        grpc_core::ExecCtx::Get());
       // It may happen (but it's expected to be unlikely) that some other thread
       // has changed the index. We need to retry in such cases.
@@ -264,7 +266,8 @@ static void schedule_next_sweep() {
 }
 
 static void sweep_unused_subchannels(void* /* arg */, grpc_error* error) {
-  if (error != GRPC_ERROR_NONE) return;
+  if (error != GRPC_ERROR_NONE || !gpr_atm_no_barrier_load(&g_sweep_active))
+    return;
   grpc_core::InlinedVector<grpc_subchannel*, kUnusedSubchannelsInlinedSize>
       unused_subchannels;
   gpr_mu_lock(&g_mu);
@@ -315,4 +318,16 @@ void grpc_subchannel_index_shutdown(void) {
 
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
   gpr_atm_no_barrier_store(&g_force_creation, force_creation);
+}
+
+void grpc_subchannel_index_test_only_stop_sweep() {
+  // For cancelling timer.
+  grpc_core::ExecCtx exec_ctx;
+  gpr_atm_no_barrier_store(&g_sweep_active, 0);
+  grpc_timer_cancel(&g_sweeper_timer);
+}
+
+void grpc_subchannel_index_test_only_start_sweep() {
+  grpc_core::ExecCtx exec_ctx;
+  schedule_next_sweep();
 }

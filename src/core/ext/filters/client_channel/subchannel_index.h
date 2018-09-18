@@ -69,4 +69,12 @@ void grpc_subchannel_index_unref(void);
  * force_creation set. */
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
 
+/** \em TEST ONLY.
+ * Stops subchannel sweeping. */
+void grpc_subchannel_index_test_only_stop_sweep();
+
+/** \em TEST ONLY.
+ * Starts (schedules next) subchannel sweeping. */
+void grpc_subchannel_index_test_only_start_sweep();
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

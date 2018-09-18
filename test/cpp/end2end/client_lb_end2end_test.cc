@@ -637,6 +637,35 @@ TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
+  // Stops subchannel sweeping so that the unused subchannel can remain in the
+  // subchannel index.
+  grpc_subchannel_index_test_only_stop_sweep();
+  std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  StartServers(1, ports);
+  {
+    auto channel = BuildChannel("pick_first");
+    auto stub = BuildStub(channel);
+    SetNextResolution(ports);
+    gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
+    WaitForServer(stub, 0, DEBUG_LOCATION);
+  }
+  // The subchannel is now unused. But its I/O should be polled by someone.
+  gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
+  servers_[0]->Shutdown();
+  sleep(1);
+  // The subchannel should be IDLE now.
+  gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
+  StartServers(1, ports);
+  sleep(1);
+  auto channel = BuildChannel("pick_first");
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  grpc_subchannel_index_test_only_start_sweep();
+}
+
 TEST_F(ClientLbEnd2endTest,
        PickFirstReconnectWithoutNewResolverResultStartsFromTopOfList) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die(),
