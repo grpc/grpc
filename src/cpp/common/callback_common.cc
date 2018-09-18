@@ -26,8 +26,21 @@
 
 namespace grpc {
 namespace internal {
-
 namespace {
+
+template <class Func, class Arg>
+void CatchingCallback(Func&& func, Arg&& arg) {
+#if GRPC_ALLOW_EXCEPTIONS
+  try {
+    func(arg);
+  } catch (...) {
+    // nothing to return or change here, just don't crash the library
+  }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  func(arg);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+}
+
 class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
  public:
   static void operator delete(void* ptr, std::size_t size) {
@@ -52,8 +65,11 @@ class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
     bool new_ok = ok;
     GPR_ASSERT(parent_->ops()->FinalizeResult(&ignored, &new_ok));
     GPR_ASSERT(ignored == parent_->ops());
-    func_(ok);
-    func_ = nullptr;  // release the function
+
+    // Last use of func_ or ok, so ok to move them out for rvalue call above
+    CatchingCallback(std::move(func_), std::move(ok));
+
+    func_ = nullptr;  // reset to clear this out for sure
     grpc_call_unref(call_);
   }
 
@@ -88,8 +104,10 @@ class CallbackWithStatusImpl : public grpc_core::CQCallbackInterface {
     GPR_ASSERT(parent_->ops()->FinalizeResult(&ignored, &ok));
     GPR_ASSERT(ignored == parent_->ops());
 
-    func_(status_);
-    func_ = nullptr;  // release the function
+    // Last use of func_ or status_, so ok to move them out
+    CatchingCallback(std::move(func_), std::move(status_));
+
+    func_ = nullptr;  // reset to clear this out for sure
     grpc_call_unref(call_);
   }
   Status* status_ptr() { return &status_; }

@@ -217,6 +217,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   MEMZERO(&args, grpc_channel_args, 1);
 
   grpc_ruby_once_init();
+  grpc_ruby_fork_guard();
   rb_thread_call_without_gvl(
       wait_until_channel_polling_thread_started_no_gil,
       &stop_waiting_for_thread_start,
@@ -374,6 +375,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   watch_state_stack stack;
   void* op_success = 0;
 
+  grpc_ruby_fork_guard();
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
 
   if (wrapper->bg_wrapped == NULL) {
@@ -415,6 +417,7 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
   grpc_slice* host_slice_ptr = NULL;
   char* tmp_str = NULL;
 
+  grpc_ruby_fork_guard();
   if (host != Qnil) {
     host_slice =
         grpc_slice_from_copied_buffer(RSTRING_PTR(host), RSTRING_LEN(host));
