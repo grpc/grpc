@@ -164,6 +164,9 @@ grpc_call_stack* grpc_subchannel_call_get_call_stack(
 /** Gets the subchannel_key of the subchannel. */
 grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c);
 
+/** Gets the pollset_set of the subchannel. */
+grpc_pollset_set* grpc_subchannel_get_pollset_set(grpc_subchannel* c);
+
 /** Returns whether the subchannel only has one external ref left. */
 bool grpc_subchannel_is_unused(grpc_subchannel* c);
 

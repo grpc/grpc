@@ -112,11 +112,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
-      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {
-    // Make the backup poller poll very frequently in order to pick up
-    // updates from all the subchannels's FDs.
-    gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
-  }
+      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {}
 
   void SetUp() override {
     grpc_init();
@@ -593,7 +589,7 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   // make the subchannel sweeping more frequent, the subchannel registration
   // can still be slow because of more likely data race of the subchannel
   // index thus registration retry.
-  const size_t update_nums = force_creation ? 200 : 1000;
+  const size_t update_nums = GetParam() ? 200 : 1000;
   for (size_t i = 0; i < update_nums; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
@@ -669,18 +665,21 @@ TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
     gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
     WaitForServer(stub, 0, DEBUG_LOCATION);
   }
-  // The subchannel is now unused. But its I/O should be polled by someone.
+  // The subchannel is now unused. But its I/O should be polled by the backup
+  // poller.
   gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
   servers_[0]->Shutdown();
+  // Wait longer than backup polling interval.
   sleep(1);
   // The subchannel should be IDLE now.
   gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
   StartServers(1, ports);
+  // Wait longer than backup polling interval.
   sleep(1);
   auto channel = BuildChannel("pick_first");
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
-  gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
+  gpr_log(GPR_INFO, "****** SECOND CONNECTION *******");
   WaitForServer(stub, 0, DEBUG_LOCATION);
   grpc_subchannel_index_test_only_start_sweep();
 }
@@ -1038,6 +1037,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
   const auto result = RUN_ALL_TESTS();
   return result;
 }

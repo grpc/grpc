@@ -188,6 +188,10 @@ grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c) {
   return c->key;
 }
 
+grpc_pollset_set* grpc_subchannel_get_pollset_set(grpc_subchannel* c) {
+  return c->pollset_set;
+}
+
 bool grpc_subchannel_is_unused(grpc_subchannel* c) {
   // From an external viewpoint, a subchannel is unused if the subchannel index
   // is holding its last ref.

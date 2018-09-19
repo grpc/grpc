@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -60,6 +61,8 @@ static gpr_atm g_sweep_active;
 static grpc_avl g_subchannel_index;
 static gpr_mu g_mu;
 static gpr_refcount g_refcount;
+// For backup polling.
+static grpc_pollset_set* g_pollset_set;
 
 struct grpc_subchannel_key {
   grpc_subchannel_args args;
@@ -201,6 +204,8 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
       if (index.root == g_subchannel_index.root) {
         GPR_SWAP(grpc_avl, updated, g_subchannel_index);
         c = constructed;
+        grpc_pollset_set_add_pollset_set(grpc_subchannel_get_pollset_set(c),
+                                         g_pollset_set);
       }
       gpr_mu_unlock(&g_mu);
       grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
@@ -246,6 +251,8 @@ static void unregister_unused_subchannels(
         gpr_mu_lock(&g_mu);
         if (index.root == g_subchannel_index.root) {
           GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+          grpc_pollset_set_del_pollset_set(grpc_subchannel_get_pollset_set(c),
+                                           g_pollset_set);
           done = true;
         }
         gpr_mu_unlock(&g_mu);
@@ -284,6 +291,8 @@ void grpc_subchannel_index_init(void) {
   g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
   gpr_ref_init(&g_refcount, 1);
+  g_pollset_set = grpc_pollset_set_create();
+  grpc_client_channel_start_backup_polling(g_pollset_set);
   // Set up the subchannel sweeper.
   char* sweep_interval_env =
       gpr_getenv("GRPC_SUBCHANNEL_INDEX_SWEEP_INTERVAL_MS");
@@ -305,6 +314,8 @@ void grpc_subchannel_index_init(void) {
 }
 
 void grpc_subchannel_index_shutdown(void) {
+  grpc_client_channel_stop_backup_polling(g_pollset_set);
+  grpc_pollset_set_destroy(g_pollset_set);
   // TODO(juanlishen): This refcounting mechanism may lead to memory leak. To
   // solve that, we should force polling to flush any pending callbacks, then
   // shut down safely.
