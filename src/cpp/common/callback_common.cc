@@ -66,8 +66,8 @@ class CallbackWithSuccessImpl : public grpc_core::CQCallbackInterface {
     GPR_ASSERT(parent_->ops()->FinalizeResult(&ignored, &new_ok));
     GPR_ASSERT(ignored == parent_->ops());
 
-    // Last use of func_ or ok, so ok to move them out for rvalue call above
-    CatchingCallback(std::move(func_), std::move(ok));
+    // Last use of func_, so ok to move it out for rvalue call above
+    CatchingCallback(std::move(func_), ok);
 
     func_ = nullptr;  // reset to clear this out for sure
     grpc_call_unref(call_);

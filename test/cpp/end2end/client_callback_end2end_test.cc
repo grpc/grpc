@@ -95,6 +95,8 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
             if (maybe_except) {
               throw - 1;
             }
+#else
+            GPR_ASSERT(!maybe_except);
 #endif
           });
       std::unique_lock<std::mutex> l(mu);
