@@ -119,6 +119,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
+    grpc_init();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   }
@@ -127,6 +128,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < servers_.size(); ++i) {
       servers_[i]->Shutdown();
     }
+    grpc_shutdown();
   }
 
   void CreateServers(size_t num_servers,
@@ -560,7 +562,23 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
-TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
+class ClientLbEnd2endWithParamTest
+    : public ClientLbEnd2endTest,
+      public ::testing::WithParamInterface<bool> {
+ protected:
+  void SetUp() override {
+    grpc_subchannel_index_test_only_set_force_creation(GetParam());
+    ClientLbEnd2endTest::SetUp();
+  }
+
+  void TearDown() override {
+    ClientLbEnd2endTest::TearDown();
+    grpc_subchannel_index_test_only_set_force_creation(false);
+  }
+};
+
+TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
+  gpr_log(GPR_INFO, "subchannel force creation: %d", GetParam());
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -570,25 +588,26 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     ports.emplace_back(servers_[i]->port_);
   }
-  for (const bool force_creation : {true, false}) {
-    grpc_subchannel_index_test_only_set_force_creation(force_creation);
-    gpr_log(GPR_INFO, "Force subchannel creation: %d", force_creation);
-    // If we force creating new subchannels, the subchannel index can be very
-    // large because of subchannel retention, which slows down the test. If we
-    // make the subchannel sweeping more frequent, the subchannel registration
-    // can still be slow because of more likely data race of the subchannel
-    // index thus registration retry.
-    const size_t update_nums = force_creation ? 200 : 1000;
-    for (size_t i = 0; i < update_nums; ++i) {
-      std::shuffle(ports.begin(), ports.end(),
-                   std::mt19937(std::random_device()()));
-      SetNextResolution(ports);
-      if (i % 10 == 0) CheckRpcSendOk(stub, DEBUG_LOCATION);
-    }
+  // If we force creating new subchannels, the subchannel index can be very
+  // large because of subchannel retention, which slows down the test. If we
+  // make the subchannel sweeping more frequent, the subchannel registration
+  // can still be slow because of more likely data race of the subchannel
+  // index thus registration retry.
+  const size_t update_nums = force_creation ? 200 : 1000;
+  for (size_t i = 0; i < update_nums; ++i) {
+    std::shuffle(ports.begin(), ports.end(),
+                 std::mt19937(std::random_device()()));
+    SetNextResolution(ports);
+    // We should re-enter core at the end of the loop to give the resolution
+    // setting closure a chance to run.
+    if ((i + 1) % 10 == 0) CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
+
+INSTANTIATE_TEST_CASE_P(SubchannelForceCreation, ClientLbEnd2endWithParamTest,
+                        ::testing::Bool());
 
 TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   // Prepare the ports for up servers and down servers.
@@ -1019,8 +1038,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
-  grpc_init();
   const auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }
