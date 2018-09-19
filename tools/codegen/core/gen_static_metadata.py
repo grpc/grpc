@@ -326,6 +326,15 @@ else:
             os.path.dirname(sys.argv[0]),
             '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
 
+HPACK_H = open(
+        os.path.join(
+            os.path.dirname(sys.argv[0]),
+            '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.h'), 'w')
+HPACK_C = open(
+        os.path.join(
+            os.path.dirname(sys.argv[0]),
+            '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.cc'), 'w')
+
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
     copyright = []
@@ -340,7 +349,7 @@ with open(sys.argv[0]) as my_source:
         if line[0] != '#':
             break
         copyright.append(line)
-    put_banner([H, C], [line[2:].rstrip() for line in copyright])
+    put_banner([H, C, HPACK_H, HPACK_C], [line[2:].rstrip() for line in copyright])
 
 hex_bytes = [ord(c) for c in 'abcdefABCDEF0123456789']
 
@@ -367,6 +376,17 @@ See metadata.h for an explanation of the interface here, and metadata.cc for
 an explanation of what's going on.
 """.splitlines())
 
+put_banner([HPACK_H, HPACK_C], """WARNING: Auto-generated code.
+
+To make changes to this file, change
+tools/codegen/core/gen_static_metadata.py, and then re-run it.
+
+This file contains the mapping from the index of each metadata element in the 
+grpc static metadata table to the index of that element in the hpack static 
+metadata table. If the element is not contained in the static hpack table, then
+the returned index is 0.
+""".splitlines())
+
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
@@ -380,6 +400,20 @@ print >> C, '#include "src/core/lib/transport/static_metadata.h"'
 print >> C
 print >> C, '#include "src/core/lib/slice/slice_internal.h"'
 print >> C
+print >> HPACK_H, ('#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
+                   'MAPPING_H')
+print >> HPACK_H, ('#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
+                   'MAPPING_H')
+print >> HPACK_H
+print >> HPACK_H, '#include <grpc/support/port_platform.h>'
+print >> HPACK_H
+print >> HPACK_H, '#include "src/core/lib/transport/static_metadata.h"'
+print >> HPACK_H
+print >> HPACK_C, '#include <grpc/support/port_platform.h>'
+print >> HPACK_C
+print >> HPACK_C, ('#include '
+                   '"src/core/ext/transport/chttp2/transport/hpack_mapping.h"')
+print >> HPACK_C
 
 str_ofs = 0
 id2strofs = {}
@@ -463,10 +497,10 @@ print >> H
 
 # Print out the chttp2 mapping between static mdelem index and the hpack static
 # table index
-print >> H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
+print >> HPACK_H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
              'GRPC_STATIC_MDELEM_COUNT];')
-print >> H
-print >> C, ('const uint8_t grpc_hpack_static_mdelem_indices['
+print >> HPACK_H
+print >> HPACK_C, ('const uint8_t grpc_hpack_static_mdelem_indices['
              'GRPC_STATIC_MDELEM_COUNT] = {')
 indices = ''
 for i, elem in enumerate(all_elems):
@@ -474,9 +508,9 @@ for i, elem in enumerate(all_elems):
     if len(elem) == 3:
         index = elem[2]
     indices += '%d,' % index
-print >> C, '  %s' % indices
-print >> C, '};'
-print >> C
+print >> HPACK_C, '  %s' % indices
+print >> HPACK_C, '};'
+print >> HPACK_C
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
@@ -570,7 +604,7 @@ print >> C, '}'
 print >> C
 
 print >> C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for i, elem in enumerate(all_elems):
+for elem in all_elems:
     print >> C, '{%s,%s},' % (slice_def(str_idx(elem[0])),
                               slice_def(str_idx(elem[1])))
 print >> C, '};'
@@ -623,6 +657,9 @@ print >> C, '};'
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
+
+print >> HPACK_H, ('#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_' 
+                   'MAPPING_H */')
 
 H.close()
 C.close()

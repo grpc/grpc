@@ -521,8 +521,6 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[85], GRPC_MDELEM_STORAGE_STATIC))
 
-extern const uint8_t grpc_hpack_static_mdelem_indices[GRPC_STATIC_MDELEM_COUNT];
-
 grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
 typedef enum {
   GRPC_BATCH_PATH,

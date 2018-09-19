@@ -293,7 +293,7 @@ static void verify_ascii_header_size(const char* key, const char* value,
   grpc_mdelem elem = grpc_mdelem_from_slices(
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
   size_t expected_size = 32 + strlen(key) + strlen(value);
   GPR_ASSERT(expected_size == elem_size);
   GRPC_MDELEM_UNREF(elem);
@@ -307,7 +307,7 @@ static void verify_binary_header_size(const char* key, const uint8_t* value,
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
   GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, false);
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
       reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
