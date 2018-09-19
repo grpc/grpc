@@ -69,7 +69,7 @@ static NSMutableDictionary *kHostCache;
   // gRPC library.
   // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
   NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL.host && !hostURL.port) {
+  if (hostURL.host && hostURL.port == nil) {
     address = [hostURL.host stringByAppendingString:@":443"];
   }
 
@@ -137,7 +137,10 @@ static NSMutableDictionary *kHostCache;
                         completionQueue:queue];
 }
 
-- (NSData *)nullTerminatedDataWithString:(NSString *)string {
+- (NSData *)nullTerminatedDataWithString:(NSString *_Nullable)string {
+  if (string == nil) {
+    return nil;
+  }
   // dataUsingEncoding: does not return a null-terminated string.
   NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
   NSMutableData *nullTerminated = [NSMutableData dataWithData:data];
@@ -226,7 +229,7 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
   }
 
-  if (_responseSizeLimitOverride) {
+  if (_responseSizeLimitOverride != nil) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
 
