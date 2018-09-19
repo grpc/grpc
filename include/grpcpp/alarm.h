@@ -85,6 +85,9 @@ class Alarm : private GrpcLibraryCodegen {
    public:
     explicit experimental_type(Alarm* alarm) : alarm_(alarm) {}
 
+    /// Set an alarm to invoke callback \a f. The argument to the callback
+    /// states whether the alarm expired at \a deadline (true) or was cancelled
+    /// (false)
     template <typename T>
     void Set(const T& deadline, std::function<void(bool)> f) {
       alarm_->SetInternal(TimePoint<T>(deadline).raw_time(), std::move(f));
