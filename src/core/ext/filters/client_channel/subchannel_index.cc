@@ -133,6 +133,8 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 static void scv_avl_destroy(void* p, void* user_data) {
   GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p,
                         "subchannel_index_scv_avl_destroy");
+  grpc_pollset_set_del_pollset_set(
+      grpc_subchannel_get_pollset_set((grpc_subchannel*)p), g_pollset_set);
 }
 
 static void* scv_avl_copy(void* p, void* unused) {
@@ -251,8 +253,6 @@ static void unregister_unused_subchannels(
         gpr_mu_lock(&g_mu);
         if (index.root == g_subchannel_index.root) {
           GPR_SWAP(grpc_avl, updated, g_subchannel_index);
-          grpc_pollset_set_del_pollset_set(grpc_subchannel_get_pollset_set(c),
-                                           g_pollset_set);
           done = true;
         }
         gpr_mu_unlock(&g_mu);
@@ -314,13 +314,13 @@ void grpc_subchannel_index_init(void) {
 }
 
 void grpc_subchannel_index_shutdown(void) {
-  grpc_client_channel_stop_backup_polling(g_pollset_set);
-  grpc_pollset_set_destroy(g_pollset_set);
   // TODO(juanlishen): This refcounting mechanism may lead to memory leak. To
   // solve that, we should force polling to flush any pending callbacks, then
   // shut down safely.
-  grpc_timer_cancel(&g_sweeper_timer);
   grpc_subchannel_index_unref();
+  grpc_timer_cancel(&g_sweeper_timer);
+  grpc_client_channel_stop_backup_polling(g_pollset_set);
+  grpc_pollset_set_destroy(g_pollset_set);
   // Some subchannels might have been unregistered and disconnected during
   // shutdown time. We should flush the closures before we wait for the iomgr
   // objects to be freed.
