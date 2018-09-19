@@ -23,7 +23,8 @@ import subprocess
 import re
 import perfection
 
-# Configuration: a list of either strings or 2-tuples of strings.
+# Configuration: a list of either strings or 2-tuples of strings or 3-tuples of
+# strings.
 # A single string represents a static grpc_mdstr.
 # A 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
 # also be created).
@@ -327,13 +328,15 @@ else:
             '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
 
 HPACK_H = open(
-        os.path.join(
-            os.path.dirname(sys.argv[0]),
-            '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.h'), 'w')
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.h'),
+    'w')
 HPACK_C = open(
-        os.path.join(
-            os.path.dirname(sys.argv[0]),
-            '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.cc'), 'w')
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.cc'),
+    'w')
 
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
@@ -349,7 +352,8 @@ with open(sys.argv[0]) as my_source:
         if line[0] != '#':
             break
         copyright.append(line)
-    put_banner([H, C, HPACK_H, HPACK_C], [line[2:].rstrip() for line in copyright])
+    put_banner([H, C, HPACK_H, HPACK_C],
+               [line[2:].rstrip() for line in copyright])
 
 hex_bytes = [ord(c) for c in 'abcdefABCDEF0123456789']
 
@@ -498,12 +502,12 @@ print >> H
 # Print out the chttp2 mapping between static mdelem index and the hpack static
 # table index
 print >> HPACK_H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
-             'GRPC_STATIC_MDELEM_COUNT];')
+                   'GRPC_STATIC_MDELEM_COUNT];')
 print >> HPACK_H
 print >> HPACK_C, ('const uint8_t grpc_hpack_static_mdelem_indices['
-             'GRPC_STATIC_MDELEM_COUNT] = {')
+                   'GRPC_STATIC_MDELEM_COUNT] = {')
 indices = ''
-for i, elem in enumerate(all_elems):
+for elem in all_elems:
     index = 0
     if len(elem) == 3:
         index = elem[2]
@@ -658,7 +662,7 @@ print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GR
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 
-print >> HPACK_H, ('#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_' 
+print >> HPACK_H, ('#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
                    'MAPPING_H */')
 
 H.close()
