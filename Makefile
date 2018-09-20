@@ -5228,7 +5228,6 @@ LIBGRPC++_SRC = \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/common/alarm.cc \
-    src/cpp/common/callback_common.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -5598,7 +5597,6 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/common/alarm.cc \
-    src/cpp/common/callback_common.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -6682,7 +6680,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/common/alarm.cc \
-    src/cpp/common/callback_common.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
