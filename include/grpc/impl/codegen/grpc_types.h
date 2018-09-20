@@ -669,7 +669,7 @@ typedef struct grpc_experimental_completion_queue_functor {
   /** The run member specifies a function that will be called when this
       tag is extracted from the completion queue. Its arguments will be a
       pointer to this functor and a boolean that indicates whether the
-      success status of this operation */
+      operation succeeded (non-zero) or failed (zero) */
   void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
 } grpc_experimental_completion_queue_functor;
 
