@@ -458,9 +458,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_chttp2_hpack_parser p;
   grpc_chttp2_hpack_parser_init(&p);
   const int kArenaSize = 4096 * 4096;
-  gpr_arena* arena = gpr_arena_create(kArenaSize);
+  p.on_header_user_data = gpr_arena_create(kArenaSize);
   p.on_header = OnHeader;
-  p.on_header_user_data = arena;
   for (auto slice : init_slices) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_chttp2_hpack_parser_parse(&p, slice));
   }
@@ -471,12 +470,12 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     grpc_core::ExecCtx::Get()->Flush();
     // Recreate arena every 4k iterations to avoid oom
     if (0 == (state.iterations() & 0xfff)) {
-      gpr_arena_destroy(arena);
-      arena = gpr_arena_create(kArenaSize);
+      gpr_arena_destroy((gpr_arena*)p.on_header_user_data);
+      p.on_header_user_data = gpr_arena_create(kArenaSize);
     }
   }
   // Clean up
-  gpr_arena_destroy(arena);
+  gpr_arena_destroy((gpr_arena*)p.on_header_user_data);
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   grpc_chttp2_hpack_parser_destroy(&p);
