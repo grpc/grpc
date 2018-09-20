@@ -475,6 +475,8 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena = gpr_arena_create(kArenaSize);
     }
   }
+  // Clean up
+  gpr_arena_destroy(arena);
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
   grpc_chttp2_hpack_parser_destroy(&p);
