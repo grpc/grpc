@@ -560,6 +560,7 @@ void PrintHeaderClientMethodCallbackInterfacesStart(
   // "Raw" methods since the callback-based API returns unowned raw pointers
   printer->Print(" public:\n");
   printer->Indent();
+  printer->Print("virtual ~experimental_async_interface() {}\n");
 }
 
 void PrintHeaderClientMethodCallbackInterfaces(
