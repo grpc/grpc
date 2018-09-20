@@ -38,7 +38,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL-GRPC'
-  version = '0.0.1'
+  version = '0.0.2'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
   # Adapted from the homepage:
@@ -81,7 +81,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '5.0'
   s.osx.deployment_target = '10.7'
 
-  name = 'openssl'
+  name = 'openssl_grpc'
 
   # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
   # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
