@@ -94,8 +94,8 @@ class CallbackWithStatusTag
   void Run(bool ok) {
     void* ignored = ops_;
 
-    GPR_ASSERT(ops_->FinalizeResult(&ignored, &ok));
-    GPR_ASSERT(ignored == ops_);
+    GPR_CODEGEN_ASSERT(ops_->FinalizeResult(&ignored, &ok));
+    GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_ or status_, so ok to move them out
     CatchingCallback(std::move(func_), std::move(status_));
@@ -147,8 +147,8 @@ class CallbackWithSuccessTag
   void Run(bool ok) {
     void* ignored = ops_;
     bool new_ok = ok;
-    GPR_ASSERT(ops_->FinalizeResult(&ignored, &new_ok));
-    GPR_ASSERT(ignored == ops_);
+    GPR_CODEGEN_ASSERT(ops_->FinalizeResult(&ignored, &new_ok));
+    GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_, so ok to move it out for rvalue call above
     CatchingCallback(std::move(func_), ok);
