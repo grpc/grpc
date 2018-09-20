@@ -27,8 +27,6 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/metadata.h"
 
 #define GRPC_STATIC_MDSTR_COUNT 105
@@ -586,8 +584,6 @@ typedef union {
              GRPC_STATIC_METADATA_INDEX((slice)), 0,    \
              GRPC_BATCH_CALLOUTS_COUNT)                 \
        : GRPC_BATCH_CALLOUTS_COUNT)
-
-extern bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT];
 
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs)                       \

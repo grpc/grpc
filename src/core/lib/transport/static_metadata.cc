@@ -24,8 +24,6 @@
  * an explanation of what's going on.
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/static_metadata.h"
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -568,33 +566,6 @@ grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {
     {{&grpc_static_metadata_refcounts[16], {{g_bytes + 186, 15}}},
      {&grpc_static_metadata_refcounts[102], {{g_bytes + 1101, 13}}}},
 };
-bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {
-    true,  // :path
-    true,  // :method
-    true,  // :status
-    true,  // :authority
-    true,  // :scheme
-    true,  // te
-    true,  // grpc-message
-    true,  // grpc-status
-    true,  // grpc-payload-bin
-    true,  // grpc-encoding
-    true,  // grpc-accept-encoding
-    true,  // grpc-server-stats-bin
-    true,  // grpc-tags-bin
-    true,  // grpc-trace-bin
-    true,  // content-type
-    true,  // content-encoding
-    true,  // accept-encoding
-    true,  // grpc-internal-encoding-request
-    true,  // grpc-internal-stream-encoding-request
-    true,  // user-agent
-    true,  // host
-    true,  // lb-token
-    true,  // grpc-previous-rpc-attempts
-    true,  // grpc-retry-pushback-ms
-};
-
 const uint8_t grpc_static_accept_encoding_metadata[8] = {0,  76, 77, 78,
                                                          79, 80, 81, 82};
 
