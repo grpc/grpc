@@ -302,9 +302,9 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_slice_unref(key_slice);
   grpc_slice_unref(ca_slice);
 
-  thd.Join();
-
   grpc_shutdown();
+
+  thd.Join();
 
   return success;
 }
