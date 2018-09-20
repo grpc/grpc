@@ -504,6 +504,10 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
         md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
       s->seen_error = true;
     }
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+             !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+    /* TODO(ctiller): check for a status like " 0" */
+    s->seen_error = true;
   }
 
   const size_t new_size = s->metadata_buffer[1].size + GRPC_MDELEM_LENGTH(md);
