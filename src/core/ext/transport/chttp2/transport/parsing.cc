@@ -410,6 +410,12 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
   }
 
   if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    // We don't use grpc_mdelem_eq here to avoid executing additional
+    // instructions. The reasoning is if the payload is not equal, we already
+    // know that the metadata elements are not equal because the md is
+    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
+    // payloads are not equal, grpc_mdelem_eq executes more instructions to
+    // determine if they're equal or not.
     if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
         md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
       s->seen_error = true;
@@ -500,6 +506,12 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
   }
 
   if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    // We don't use grpc_mdelem_eq here to avoid executing additional
+    // instructions. The reasoning is if the payload is not equal, we already
+    // know that the metadata elements are not equal because the md is
+    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
+    // payloads are not equal, grpc_mdelem_eq executes more instructions to
+    // determine if they're equal or not.
     if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
         md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
       s->seen_error = true;
