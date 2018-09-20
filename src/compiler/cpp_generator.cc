@@ -593,7 +593,7 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
   printer->Print("};\n");
 
   // Declare a function to give the async stub contents. It can't be pure
-  // since this is new API in StubInterface, but it is meaningless by default
+  // since this is a new API in StubInterface, but it is meaningless by default
   // (since any stub that wants to use it must have its own implementation of
   // the callback functions therein), so make the default return value nullptr.
   // Intentionally include the word "class" to avoid possible shadowing.
@@ -1379,7 +1379,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "void $ns$$Service$::Stub::experimental_async::$Method$("
                    "::grpc::ClientContext* context, "
                    "const $Request$* request, $Response$* response, "
-                   "std::function<void(Status)> f) {\n");
+                   "std::function<void(::grpc::Status)> f) {\n");
     printer->Print(*vars,
                    "  return ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
