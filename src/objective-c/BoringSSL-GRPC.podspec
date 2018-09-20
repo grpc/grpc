@@ -1546,6 +1546,7 @@ Pod::Spec.new do |s|
     sed -i'.back' '/^#define \\([A-Za-z0-9_]*\\) \\1/d' include/openssl/ssl.h
     sed -i'.back' 'N;/^#define \\([A-Za-z0-9_]*\\) *\\\\\\n *\\1/d' include/openssl/ssl.h
     sed -i'.back' 's/#ifndef md5_block_data_order/#ifndef GRPC_SHADOW_md5_block_data_order/g' crypto/fipsmodule/md5/md5.c
+    find . -type f -path '*.h' -or -path '*.cc' -or -path '*.c' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
   END_OF_COMMAND
 
   # Redefine symbols to avoid conflict when the same app also depends on OpenSSL. The list of
