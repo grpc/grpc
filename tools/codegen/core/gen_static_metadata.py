@@ -146,35 +146,34 @@ CONFIG = [
     ('www-authenticate', '', 61),
 ]
 
-# Entries marked with is_default=True are ignored when counting
-# non-default initial metadata that prevents the chttp2 server from
-# sending a Trailers-Only response.
+# All entries here are ignored when counting non-default initial metadata that
+# prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    # (name, is_default)
-    (':path', True),
-    (':method', True),
-    (':status', True),
-    (':authority', True),
-    (':scheme', True),
-    ('te', True),
-    ('grpc-message', True),
-    ('grpc-status', True),
-    ('grpc-payload-bin', True),
-    ('grpc-encoding', True),
-    ('grpc-accept-encoding', True),
-    ('grpc-server-stats-bin', True),
-    ('grpc-tags-bin', True),
-    ('grpc-trace-bin', True),
-    ('content-type', True),
-    ('content-encoding', True),
-    ('accept-encoding', True),
-    ('grpc-internal-encoding-request', True),
-    ('grpc-internal-stream-encoding-request', True),
-    ('user-agent', True),
-    ('host', True),
-    ('lb-token', True),
-    ('grpc-previous-rpc-attempts', True),
-    ('grpc-retry-pushback-ms', True),
+    # (name)
+    (':path'),
+    (':method'),
+    (':status'),
+    (':authority'),
+    (':scheme'),
+    ('te'),
+    ('grpc-message'),
+    ('grpc-status'),
+    ('grpc-payload-bin'),
+    ('grpc-encoding'),
+    ('grpc-accept-encoding'),
+    ('grpc-server-stats-bin'),
+    ('grpc-tags-bin'),
+    ('grpc-trace-bin'),
+    ('content-type'),
+    ('content-encoding'),
+    ('accept-encoding'),
+    ('grpc-internal-encoding-request'),
+    ('grpc-internal-stream-encoding-request'),
+    ('user-agent'),
+    ('host'),
+    ('lb-token'),
+    ('grpc-previous-rpc-attempts'),
+    ('grpc-retry-pushback-ms'),
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -256,7 +255,7 @@ all_elems = list()
 static_userdata = {}
 # put metadata batch callouts first, to make the check of if a static metadata
 # string is a callout trivial
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     if elem not in all_strs:
         all_strs.append(elem)
 for elem in CONFIG:
@@ -432,7 +431,7 @@ def slice_def(i):
 
 
 # validate configuration
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
 
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -614,7 +613,7 @@ for elem in all_elems:
 print >> C, '};'
 
 print >> H, 'typedef enum {'
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     print >> H, '  %s,' % mangle(elem, 'batch').upper()
 print >> H, '  GRPC_BATCH_CALLOUTS_COUNT'
 print >> H, '} grpc_metadata_batch_callouts_index;'
@@ -622,7 +621,7 @@ print >> H
 print >> H, 'typedef union {'
 print >> H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
 print >> H, '  struct {'
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     print >> H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
 print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
@@ -630,14 +629,6 @@ print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
 print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
-print >> H, ('extern bool grpc_static_callout_is_default['
-             'GRPC_BATCH_CALLOUTS_COUNT];')
-print >> H
-print >> C, 'bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {'
-for elem, is_default in METADATA_BATCH_CALLOUTS:
-    print >> C, '  %s, // %s' % (str(is_default).lower(), elem)
-print >> C, '};'
-print >> C
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
     1 << len(COMPRESSION_ALGORITHMS))

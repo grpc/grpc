@@ -587,8 +587,6 @@ typedef union {
              GRPC_BATCH_CALLOUTS_COUNT)                 \
        : GRPC_BATCH_CALLOUTS_COUNT)
 
-extern bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT];
-
 extern const uint8_t grpc_static_accept_encoding_metadata[8];
 #define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs)                       \
   (GRPC_MAKE_MDELEM(                                                           \
