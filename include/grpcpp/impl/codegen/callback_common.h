@@ -100,7 +100,8 @@ class CallbackWithStatusTag
     // Last use of func_ or status_, so ok to move them out
     CatchingCallback(std::move(func_), std::move(status_));
 
-    func_ = nullptr;  // reset to clear this out for sure
+    func_ = nullptr;     // reset to clear this out for sure
+    status_ = Status();  // reset to clear this out for sure
     g_core_codegen_interface->grpc_call_unref(call_);
   }
 };
