@@ -83,6 +83,15 @@ grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
 /* add a table entry to the index */
 grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
                                   grpc_mdelem md) GRPC_MUST_USE_RESULT;
+
+size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
+                                           bool use_true_binary_metadata);
+
+/* Returns the static hpack table index that corresponds to /a elem. Returns 0
+  if /a elem is not statically stored or if it is not in the static hpack
+  table */
+uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md);
+
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
 typedef struct {

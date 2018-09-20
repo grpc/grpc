@@ -178,7 +178,7 @@ class Verifier {
           EXPECT_EQ(it2->second.ok, ok);
         }
       } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", tag);
+        gpr_log(GPR_ERROR, "Unexpected tag: %p", got_tag);
         abort();
       }
     }
