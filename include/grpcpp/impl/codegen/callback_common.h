@@ -66,7 +66,7 @@ class CallbackWithStatusTag
 
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
-      : call_(call), func_(std::move(f)), ops_(ops), status_() {
+      : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
   }
