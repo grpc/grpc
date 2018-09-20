@@ -84,7 +84,7 @@ class CallbackUnaryCallImpl {
     ops->AllowNoMessage();
     ops->ClientSendClose();
     ops->ClientRecvStatus(context, tag->status_ptr());
-    ops->set_cq_tag(tag->tag());
+    ops->set_cq_tag(tag);
     call.PerformOps(ops);
   }
 };

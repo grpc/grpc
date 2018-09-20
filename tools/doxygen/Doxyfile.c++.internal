@@ -1190,7 +1190,6 @@ src/cpp/client/secure_credentials.h \
 src/cpp/codegen/codegen_init.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
-src/cpp/common/callback_common.cc \
 src/cpp/common/channel_arguments.cc \
 src/cpp/common/channel_filter.cc \
 src/cpp/common/channel_filter.h \
