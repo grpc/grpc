@@ -822,6 +822,7 @@ static void OnInitialHeader(void* user_data, grpc_mdelem md) {
       GPR_ASSERT(0);
     }
   }
+  grpc_chttp2_incoming_metadata_buffer_destroy(&buffer);
 }
 
 // Benchmark timeout handling
