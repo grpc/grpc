@@ -1345,7 +1345,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   GPR_ASSERT(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
-  callback->functor_run(callback, true);
+  (*callback->functor_run)(callback, true);
 }
 
 static void cq_shutdown_callback(grpc_completion_queue* cq) {
