@@ -152,6 +152,7 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
   grpc_closure* closure = calld->next_recv_message_ready;
   calld->next_recv_message_ready = nullptr;
   if (calld->seen_recv_trailing_metadata) {
+    calld->seen_recv_trailing_metadata = false;
     GRPC_CALL_COMBINER_START(calld->call_combiner,
                              &calld->recv_trailing_metadata_ready,
                              calld->recv_trailing_metadata_error,
