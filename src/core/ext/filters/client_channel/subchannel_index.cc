@@ -248,7 +248,8 @@ static void unregister_unused_subchannels(
       grpc_avl index = grpc_avl_ref(g_subchannel_index, &user_data);
       gpr_mu_unlock(&g_mu);
       if (grpc_subchannel_is_unused(c)) {
-        grpc_avl updated = grpc_avl_remove(grpc_avl_ref(index, &user_data), key, &user_data);
+        grpc_avl updated =
+            grpc_avl_remove(grpc_avl_ref(index, &user_data), key, &user_data);
         // It may happen (but it's expected to be unlikely) that some other
         // thread has changed the index. We need to retry in such cases.
         gpr_mu_lock(&g_mu);
