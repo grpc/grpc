@@ -130,11 +130,18 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
                                      static_cast<grpc_subchannel_key*>(b));
 }
 
+typedef struct user_data_t {
+  grpc_core::ExecCtx* exec_ctx;
+  bool unreffing_subchannel_index;
+} user_data_t;
+
 static void scv_avl_destroy(void* p, void* user_data) {
   GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p,
                         "subchannel_index_scv_avl_destroy");
-  grpc_pollset_set_del_pollset_set(
-      grpc_subchannel_get_pollset_set((grpc_subchannel*)p), g_pollset_set);
+  if (static_cast<user_data_t*>(user_data)->unreffing_subchannel_index) {
+    grpc_pollset_set_del_pollset_set(
+        grpc_subchannel_get_pollset_set((grpc_subchannel*)p), g_pollset_set);
+  }
 }
 
 static void* scv_avl_copy(void* p, void* unused) {
@@ -152,8 +159,9 @@ static const grpc_avl_vtable subchannel_avl_vtable = {
 
 void grpc_subchannel_index_unref(void) {
   if (gpr_unref(&g_refcount)) {
+    user_data_t user_data = {grpc_core::ExecCtx::Get(), true};
+    grpc_avl_unref(g_subchannel_index, &user_data);
     gpr_mu_destroy(&g_mu);
-    grpc_avl_unref(g_subchannel_index, grpc_core::ExecCtx::Get());
   }
 }
 
@@ -162,44 +170,39 @@ void grpc_subchannel_index_ref(void) { gpr_ref_non_zero(&g_refcount); }
 grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.
+  user_data_t user_data = {grpc_core::ExecCtx::Get(), false};
   gpr_mu_lock(&g_mu);
-  grpc_avl index = grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+  grpc_avl index = grpc_avl_ref(g_subchannel_index, &user_data);
   gpr_mu_unlock(&g_mu);
-
-  grpc_subchannel* c =
-      (grpc_subchannel*)grpc_avl_get(index, key, grpc_core::ExecCtx::Get());
+  grpc_subchannel* c = (grpc_subchannel*)grpc_avl_get(index, key, &user_data);
   if (c != nullptr) {
     GRPC_SUBCHANNEL_REF(c, "index_find");
   }
-  grpc_avl_unref(index, grpc_core::ExecCtx::Get());
-
+  grpc_avl_unref(index, &user_data);
   return c;
 }
 
 grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
                                                 grpc_subchannel* constructed) {
   grpc_subchannel* c = nullptr;
+  user_data_t user_data = {grpc_core::ExecCtx::Get(), false};
   // Compare and swap loop:
   while (c == nullptr) {
     // Take a reference to the current index.
     gpr_mu_lock(&g_mu);
-    grpc_avl index =
-        grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+    grpc_avl index = grpc_avl_ref(g_subchannel_index, &user_data);
     gpr_mu_unlock(&g_mu);
     // Check to see if a subchannel already exists.
-    c = static_cast<grpc_subchannel*>(
-        grpc_avl_get(index, key, grpc_core::ExecCtx::Get()));
+    c = static_cast<grpc_subchannel*>(grpc_avl_get(index, key, &user_data));
     if (c != nullptr) {
       // Already exists -> we're done.
       GRPC_SUBCHANNEL_REF(c, "index_register_reuse");
       GRPC_SUBCHANNEL_UNREF(constructed, "index_register_found_existing");
     } else {
       // Doesn't exist -> update the avl and compare/swap.
-      grpc_avl updated =
-          grpc_avl_add(grpc_avl_ref(index, grpc_core::ExecCtx::Get()),
-                       subchannel_key_copy(key),
-                       GRPC_SUBCHANNEL_REF(constructed, "index_register_new"),
-                       grpc_core::ExecCtx::Get());
+      grpc_avl updated = grpc_avl_add(
+          grpc_avl_ref(index, &user_data), subchannel_key_copy(key),
+          GRPC_SUBCHANNEL_REF(constructed, "index_register_new"), &user_data);
       // It may happen (but it's expected to be unlikely) that some other thread
       // has changed the index. We need to retry in such cases.
       gpr_mu_lock(&g_mu);
@@ -210,9 +213,9 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
                                          g_pollset_set);
       }
       gpr_mu_unlock(&g_mu);
-      grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
+      grpc_avl_unref(updated, &user_data);
     }
-    grpc_avl_unref(index, grpc_core::ExecCtx::Get());
+    grpc_avl_unref(index, &user_data);
   }
   return c;
 }
@@ -233,6 +236,7 @@ static void find_unused_subchannels_locked(
 static void unregister_unused_subchannels(
     const grpc_core::InlinedVector<
         grpc_subchannel*, kUnusedSubchannelsInlinedSize>& unused_subchannels) {
+  user_data_t user_data = {grpc_core::ExecCtx::Get(), false};
   for (size_t i = 0; i < unused_subchannels.size(); ++i) {
     grpc_subchannel* c = unused_subchannels[i];
     grpc_subchannel_key* key = grpc_subchannel_get_key(c);
@@ -241,26 +245,25 @@ static void unregister_unused_subchannels(
     while (!done) {
       // Take a reference to the current index.
       gpr_mu_lock(&g_mu);
-      grpc_avl index =
-          grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+      grpc_avl index = grpc_avl_ref(g_subchannel_index, &user_data);
       gpr_mu_unlock(&g_mu);
       if (grpc_subchannel_is_unused(c)) {
-        grpc_avl updated =
-            grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
-                            grpc_core::ExecCtx::Get());
+        grpc_avl updated = grpc_avl_remove(grpc_avl_ref(index, &user_data), key, &user_data);
         // It may happen (but it's expected to be unlikely) that some other
         // thread has changed the index. We need to retry in such cases.
         gpr_mu_lock(&g_mu);
         if (index.root == g_subchannel_index.root) {
           GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+          grpc_pollset_set_del_pollset_set(grpc_subchannel_get_pollset_set(c),
+                                           g_pollset_set);
           done = true;
         }
         gpr_mu_unlock(&g_mu);
-        grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
+        grpc_avl_unref(updated, &user_data);
       } else {
         done = true;
       }
-      grpc_avl_unref(index, grpc_core::ExecCtx::Get());
+      grpc_avl_unref(index, &user_data);
     }
   }
 }
