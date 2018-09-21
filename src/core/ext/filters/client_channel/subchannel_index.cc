@@ -295,8 +295,12 @@ void grpc_subchannel_index_init(void) {
   g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
   gpr_ref_init(&g_refcount, 1);
-  g_pollset_set = grpc_pollset_set_create();
-  grpc_client_channel_start_backup_polling(g_pollset_set);
+  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
+  if (s == nullptr || strcmp(s, "none") != 0) {
+    g_pollset_set = grpc_pollset_set_create();
+    grpc_client_channel_start_backup_polling(g_pollset_set);
+  }
+  gpr_free(s);
   // Set up the subchannel sweeper.
   char* sweep_interval_env =
       gpr_getenv("GRPC_SUBCHANNEL_INDEX_SWEEP_INTERVAL_MS");
@@ -323,8 +327,10 @@ void grpc_subchannel_index_shutdown(void) {
   // shut down safely.
   grpc_subchannel_index_unref();
   grpc_timer_cancel(&g_sweeper_timer);
-  grpc_client_channel_stop_backup_polling(g_pollset_set);
-  grpc_pollset_set_destroy(g_pollset_set);
+  if (g_pollset_set != nullptr) {
+    grpc_client_channel_stop_backup_polling(g_pollset_set);
+    grpc_pollset_set_destroy(g_pollset_set);
+  }
   // Some subchannels might have been unregistered and disconnected during
   // shutdown time. We should flush the closures before we wait for the iomgr
   // objects to be freed.
