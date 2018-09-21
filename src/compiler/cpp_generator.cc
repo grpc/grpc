@@ -128,6 +128,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
                     "");
     }
     static const char* headers_strs[] = {
+        "functional",
         "grpcpp/impl/codegen/async_generic_service.h",
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
@@ -547,6 +548,116 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
   }
 }
 
+void PrintHeaderClientMethodCallbackInterfacesStart(
+    grpc_generator::Printer* printer,
+    std::map<grpc::string, grpc::string>* vars) {
+  // This declares the interface for the callback-based API. The components
+  // are pure; even though this is new (post-1.0) API, it can be pure because
+  // it is an entirely new interface that happens to be scoped within
+  // StubInterface, not new additions to StubInterface itself
+  printer->Print("class experimental_async_interface {\n");
+  // All methods in this new interface are public. There is no need for private
+  // "Raw" methods since the callback-based API returns unowned raw pointers
+  printer->Print(" public:\n");
+  printer->Indent();
+  printer->Print("virtual ~experimental_async_interface() {}\n");
+}
+
+void PrintHeaderClientMethodCallbackInterfaces(
+    grpc_generator::Printer* printer, const grpc_generator::Method* method,
+    std::map<grpc::string, grpc::string>* vars, bool is_public) {
+  // Reserve is_public for future expansion
+  assert(is_public);
+
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+
+  if (method->NoStreaming()) {
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "std::function<void(::grpc::Status)>) = 0;\n");
+  } else if (ClientOnlyStreaming(method)) {
+    // TODO(vjpai): Add support for client-side streaming
+  } else if (ServerOnlyStreaming(method)) {
+    // TODO(vjpai): Add support for server-side streaming
+  } else if (method->BidiStreaming()) {
+    // TODO(vjpai): Add support for bidi streaming
+  }
+}
+
+void PrintHeaderClientMethodCallbackInterfacesEnd(
+    grpc_generator::Printer* printer,
+    std::map<grpc::string, grpc::string>* vars) {
+  printer->Outdent();
+  printer->Print("};\n");
+
+  // Declare a function to give the async stub contents. It can't be pure
+  // since this is a new API in StubInterface, but it is meaningless by default
+  // (since any stub that wants to use it must have its own implementation of
+  // the callback functions therein), so make the default return value nullptr.
+  // Intentionally include the word "class" to avoid possible shadowing.
+  printer->Print(
+      "virtual class experimental_async_interface* experimental_async() { "
+      "return nullptr; }\n");
+}
+
+void PrintHeaderClientMethodCallbackStart(
+    grpc_generator::Printer* printer,
+    std::map<grpc::string, grpc::string>* vars) {
+  // This declares the stub entry for the callback-based API.
+  printer->Print("class experimental_async final :\n");
+  printer->Print("  public StubInterface::experimental_async_interface {\n");
+  printer->Print(" public:\n");
+  printer->Indent();
+}
+
+void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
+                                     const grpc_generator::Method* method,
+                                     std::map<grpc::string, grpc::string>* vars,
+                                     bool is_public) {
+  // Reserve is_public for future expansion
+  assert(is_public);
+
+  (*vars)["Method"] = method->name();
+  (*vars)["Request"] = method->input_type_name();
+  (*vars)["Response"] = method->output_type_name();
+
+  if (method->NoStreaming()) {
+    printer->Print(*vars,
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "std::function<void(::grpc::Status)>) override;\n");
+  } else if (ClientOnlyStreaming(method)) {
+    // TODO(vjpai): Add support for client-side streaming
+  } else if (ServerOnlyStreaming(method)) {
+    // TODO(vjpai): Add support for server-side streaming
+  } else if (method->BidiStreaming()) {
+    // TODO(vjpai): Add support for bidi streaming
+  }
+}
+
+void PrintHeaderClientMethodCallbackEnd(
+    grpc_generator::Printer* printer,
+    std::map<grpc::string, grpc::string>* vars) {
+  printer->Outdent();
+  printer->Print(" private:\n");
+  printer->Indent();
+  printer->Print("friend class Stub;\n");
+  printer->Print("explicit experimental_async(Stub* stub): stub_(stub) { }\n");
+  // include a function with a dummy use of stub_ to avoid an unused
+  // private member warning for service with no methods
+  printer->Print("Stub* stub() { return stub_; }\n");
+  printer->Print("Stub* stub_;\n");
+  printer->Outdent();
+  printer->Print("};\n");
+
+  printer->Print(
+      "class experimental_async_interface* experimental_async() override { "
+      "return &async_stub_; }\n");
+}
+
 void PrintHeaderClientMethodData(grpc_generator::Printer* printer,
                                  const grpc_generator::Method* method,
                                  std::map<grpc::string, grpc::string>* vars) {
@@ -951,6 +1062,14 @@ void PrintHeaderService(grpc_generator::Printer* printer,
                                       true);
     printer->Print(service->method(i)->GetTrailingComments("//").c_str());
   }
+  PrintHeaderClientMethodCallbackInterfacesStart(printer, vars);
+  for (int i = 0; i < service->method_count(); ++i) {
+    printer->Print(service->method(i)->GetLeadingComments("//").c_str());
+    PrintHeaderClientMethodCallbackInterfaces(printer, service->method(i).get(),
+                                              vars, true);
+    printer->Print(service->method(i)->GetTrailingComments("//").c_str());
+  }
+  PrintHeaderClientMethodCallbackInterfacesEnd(printer, vars);
   printer->Outdent();
   printer->Print("private:\n");
   printer->Indent();
@@ -970,10 +1089,17 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i).get(), vars, true);
   }
+  PrintHeaderClientMethodCallbackStart(printer, vars);
+  for (int i = 0; i < service->method_count(); ++i) {
+    PrintHeaderClientMethodCallback(printer, service->method(i).get(), vars,
+                                    true);
+  }
+  PrintHeaderClientMethodCallbackEnd(printer, vars);
   printer->Outdent();
   printer->Print("\n private:\n");
   printer->Indent();
   printer->Print("std::shared_ptr< ::grpc::ChannelInterface> channel_;\n");
+  printer->Print("class experimental_async async_stub_{this};\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i).get(), vars, false);
   }
@@ -1199,10 +1325,12 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
     std::map<grpc::string, grpc::string> vars;
 
     static const char* headers_strs[] = {
+        "functional",
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
         "grpcpp/impl/codegen/channel_interface.h",
         "grpcpp/impl/codegen/client_unary_call.h",
+        "grpcpp/impl/codegen/client_callback.h",
         "grpcpp/impl/codegen/method_handler_impl.h",
         "grpcpp/impl/codegen/rpc_service_method.h",
         "grpcpp/impl/codegen/service_type.h",
@@ -1247,6 +1375,17 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "  return ::grpc::internal::BlockingUnaryCall"
                    "(channel_.get(), rpcmethod_$Method$_, "
                    "context, request, response);\n}\n\n");
+
+    printer->Print(*vars,
+                   "void $ns$$Service$::Stub::experimental_async::$Method$("
+                   "::grpc::ClientContext* context, "
+                   "const $Request$* request, $Response$* response, "
+                   "std::function<void(::grpc::Status)> f) {\n");
+    printer->Print(*vars,
+                   "  return ::grpc::internal::CallbackUnaryCall"
+                   "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
+                   "context, request, response, std::move(f));\n}\n\n");
+
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
       (*vars)["AsyncStart"] = async_prefix.start;
@@ -1277,6 +1416,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "rpcmethod_$Method$_, "
         "context, response);\n"
         "}\n\n");
+
+    // TODO(vjpai): Add callback version
+
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
       (*vars)["AsyncStart"] = async_prefix.start;
@@ -1308,6 +1450,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "rpcmethod_$Method$_, "
         "context, request);\n"
         "}\n\n");
+
+    // TODO(vjpai): Add callback version
+
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
       (*vars)["AsyncStart"] = async_prefix.start;
@@ -1339,6 +1484,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "rpcmethod_$Method$_, "
                    "context);\n"
                    "}\n\n");
+
+    // TODO(vjpai): Add callback version
+
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
       (*vars)["AsyncStart"] = async_prefix.start;

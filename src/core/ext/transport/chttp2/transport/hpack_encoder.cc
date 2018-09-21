@@ -525,7 +525,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
 
   /* should this elem be in the table? */
   size_t decoder_space_usage =
-      grpc_mdelem_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
+      grpc_chttp2_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
   bool should_add_elem = elem_interned &&
                          decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
                          c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
@@ -688,11 +688,22 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     emit_advertise_table_size_change(c, &st);
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
-    hpack_enc(c, *extra_headers[i], &st);
+    grpc_mdelem md = *extra_headers[i];
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, md, &st);
+    }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    hpack_enc(c, l->md, &st);
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, l->md, &st);
+    }
   }
   grpc_millis deadline = metadata->deadline;
   if (deadline != GRPC_MILLIS_INF_FUTURE) {

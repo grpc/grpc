@@ -181,7 +181,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.1'
+    ss.dependency 'BoringSSL-GRPC', '0.0.2'
     ss.dependency 'nanopb', '~> 0.3'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
@@ -263,6 +263,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                      'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -681,6 +682,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.cc',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
+                      'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_table.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
@@ -866,6 +868,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
+                              'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -1307,5 +1310,6 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
     find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
   END_OF_COMMAND
 end

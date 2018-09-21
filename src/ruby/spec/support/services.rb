@@ -50,7 +50,9 @@ class EchoService
   def a_client_streaming_rpc(call)
     # iterate through requests so call can complete
     call.output_metadata.update(@trailing_metadata)
-    call.each_remote_read.each { |r| p r }
+    call.each_remote_read.each do |r|
+      GRPC.logger.info(r)
+    end
     EchoMsg.new
   end
 
@@ -61,7 +63,9 @@ class EchoService
 
   def a_bidi_rpc(requests, call)
     call.output_metadata.update(@trailing_metadata)
-    requests.each { |r| p r }
+    requests.each do |r|
+      GRPC.logger.info(r)
+    end
     [EchoMsg.new, EchoMsg.new]
   end
 end
@@ -71,35 +75,37 @@ EchoStub = EchoService.rpc_stub_class
 # For testing server interceptors
 class TestServerInterceptor < GRPC::ServerInterceptor
   def request_response(request:, call:, method:)
-    p "Received request/response call at method #{method}" \
-      " with request #{request} for call #{call}"
+    GRPC.logger.info("Received request/response call at method #{method}" \
+      " with request #{request} for call #{call}")
     call.output_metadata[:interc] = 'from_request_response'
-    p "[GRPC::Ok] (#{method.owner.name}.#{method.name})"
+    GRPC.logger.info("[GRPC::Ok] (#{method.owner.name}.#{method.name})")
     yield
   end
 
   def client_streamer(call:, method:)
     call.output_metadata[:interc] = 'from_client_streamer'
     call.each_remote_read.each do |r|
-      p "In interceptor: #{r}"
+      GRPC.logger.info("In interceptor: #{r}")
     end
-    p "Received client streamer call at method #{method} for call #{call}"
+    GRPC.logger.info(
+      "Received client streamer call at method #{method} for call #{call}"
+    )
     yield
   end
 
   def server_streamer(request:, call:, method:)
-    p "Received server streamer call at method #{method} with request" \
-      " #{request} for call #{call}"
+    GRPC.logger.info("Received server streamer call at method #{method} with request" \
+      " #{request} for call #{call}")
     call.output_metadata[:interc] = 'from_server_streamer'
     yield
   end
 
   def bidi_streamer(requests:, call:, method:)
     requests.each do |r|
-      p "Bidi request: #{r}"
+      GRPC.logger.info("Bidi request: #{r}")
     end
-    p "Received bidi streamer call at method #{method} with requests" \
-      " #{requests} for call #{call}"
+    GRPC.logger.info("Received bidi streamer call at method #{method} with requests" \
+      " #{requests} for call #{call}")
     call.output_metadata[:interc] = 'from_bidi_streamer'
     yield
   end
@@ -108,38 +114,38 @@ end
 # For testing client interceptors
 class TestClientInterceptor < GRPC::ClientInterceptor
   def request_response(request:, call:, method:, metadata: {})
-    p "Intercepted request/response call at method #{method}" \
+    GRPC.logger.info("Intercepted request/response call at method #{method}" \
       " with request #{request} for call #{call}" \
-      " and metadata: #{metadata}"
+      " and metadata: #{metadata}")
     metadata['foo'] = 'bar_from_request_response'
     yield
   end
 
   def client_streamer(requests:, call:, method:, metadata: {})
-    p "Received client streamer call at method #{method}" \
+    GRPC.logger.info("Received client streamer call at method #{method}" \
       " with requests #{requests} for call #{call}" \
-      " and metadata: #{metadata}"
+      " and metadata: #{metadata}")
     requests.each do |r|
-      p "In client interceptor: #{r}"
+      GRPC.logger.info("In client interceptor: #{r}")
     end
     metadata['foo'] = 'bar_from_client_streamer'
     yield
   end
 
   def server_streamer(request:, call:, method:, metadata: {})
-    p "Received server streamer call at method #{method}" \
+    GRPC.logger.info("Received server streamer call at method #{method}" \
       " with request #{request} for call #{call}" \
-      " and metadata: #{metadata}"
+      " and metadata: #{metadata}")
     metadata['foo'] = 'bar_from_server_streamer'
     yield
   end
 
   def bidi_streamer(requests:, call:, method:, metadata: {})
-    p "Received bidi streamer call at method #{method}" \
+    GRPC.logger.info("Received bidi streamer call at method #{method}" \
       "with requests #{requests} for call #{call}" \
-      " and metadata: #{metadata}"
+      " and metadata: #{metadata}")
     requests.each do |r|
-      p "In client interceptor: #{r}"
+      GRPC.logger.info("In client interceptor: #{r}")
     end
     metadata['foo'] = 'bar_from_bidi_streamer'
     yield
