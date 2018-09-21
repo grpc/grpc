@@ -936,6 +936,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_mapping.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -957,6 +958,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_mapping.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -1327,7 +1329,6 @@ filegroups:
   - src/cpp/client/credentials_cc.cc
   - src/cpp/client/generic_stub.cc
   - src/cpp/common/alarm.cc
-  - src/cpp/common/callback_common.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
@@ -5859,6 +5860,7 @@ defaults:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+    CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

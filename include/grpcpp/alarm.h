@@ -21,6 +21,8 @@
 #ifndef GRPCPP_ALARM_H
 #define GRPCPP_ALARM_H
 
+#include <functional>
+
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
@@ -76,8 +78,33 @@ class Alarm : private GrpcLibraryCodegen {
   /// has already fired has no effect.
   void Cancel();
 
+  /// NOTE: class experimental_type is not part of the public API of this class
+  /// TODO(vjpai): Move these contents to the public API of Alarm when
+  ///              they are no longer experimental
+  class experimental_type {
+   public:
+    explicit experimental_type(Alarm* alarm) : alarm_(alarm) {}
+
+    /// Set an alarm to invoke callback \a f. The argument to the callback
+    /// states whether the alarm expired at \a deadline (true) or was cancelled
+    /// (false)
+    template <typename T>
+    void Set(const T& deadline, std::function<void(bool)> f) {
+      alarm_->SetInternal(TimePoint<T>(deadline).raw_time(), std::move(f));
+    }
+
+   private:
+    Alarm* alarm_;
+  };
+
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
+
  private:
   void SetInternal(CompletionQueue* cq, gpr_timespec deadline, void* tag);
+  void SetInternal(gpr_timespec deadline, std::function<void(bool)> f);
 
   internal::CompletionQueueTag* alarm_;
 };
