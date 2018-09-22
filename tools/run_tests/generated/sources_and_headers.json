@@ -493,23 +493,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "ev_epollsig_linux_test", 
-    "src": [
-      "test/core/iomgr/ev_epollsig_linux_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "fake_resolver_test", 
     "src": [
       "test/core/client_channel/resolvers/fake_resolver_test.cc"
@@ -1849,23 +1832,6 @@
     "name": "percent_encoding_test", 
     "src": [
       "test/core/slice/percent_encoding_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "pollset_set_test", 
-    "src": [
-      "test/core/iomgr/pollset_set_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -9551,7 +9517,6 @@
       "src/core/lib/iomgr/error.cc", 
       "src/core/lib/iomgr/ev_epoll1_linux.cc", 
       "src/core/lib/iomgr/ev_epollex_linux.cc", 
-      "src/core/lib/iomgr/ev_epollsig_linux.cc", 
       "src/core/lib/iomgr/ev_poll_posix.cc", 
       "src/core/lib/iomgr/ev_posix.cc", 
       "src/core/lib/iomgr/ev_windows.cc", 
@@ -9732,7 +9697,6 @@
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
@@ -9884,7 +9848,6 @@
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
