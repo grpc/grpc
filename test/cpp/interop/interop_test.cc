@@ -16,10 +16,6 @@
  *
  */
 
-#ifndef _POSIX_SOURCE
-#define _POSIX_SOURCE
-#endif
-
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
