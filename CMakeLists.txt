@@ -253,9 +253,6 @@ add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c ev_epollex_linux_test)
 endif()
-if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c ev_epollsig_linux_test)
-endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fake_transport_security_test)
@@ -355,9 +352,6 @@ add_dependencies(buildtests_c no_server_test)
 add_dependencies(buildtests_c num_external_connectivity_watchers_test)
 add_dependencies(buildtests_c parse_address_test)
 add_dependencies(buildtests_c percent_encoding_test)
-if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c pollset_set_test)
-endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c resolve_address_posix_test)
 endif()
@@ -974,7 +968,6 @@ add_library(grpc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1383,7 +1376,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1778,7 +1770,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -2089,7 +2080,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -2379,7 +2369,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -3226,7 +3215,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -6396,37 +6384,6 @@ target_link_libraries(ev_epollex_linux_test
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX)
-
-add_executable(ev_epollsig_linux_test
-  test/core/iomgr/ev_epollsig_linux_test.cc
-)
-
-
-target_include_directories(ev_epollsig_linux_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(ev_epollsig_linux_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
 
 add_executable(fake_resolver_test
   test/core/client_channel/resolvers/fake_resolver_test.cc
@@ -8509,37 +8466,6 @@ target_link_libraries(percent_encoding_test
   gpr
 )
 
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX)
-
-add_executable(pollset_set_test
-  test/core/iomgr/pollset_set_test.cc
-)
-
-
-target_include_directories(pollset_set_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(pollset_set_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)

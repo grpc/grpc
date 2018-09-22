@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+POLLERS = ['epollex', 'epoll1', 'poll', 'poll-cv']
 
 load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc_library")
 
