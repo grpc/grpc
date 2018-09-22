@@ -24,7 +24,7 @@
 #
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epollsig", "epoll1", "poll", "poll-cv"]
+POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
 
 def if_not_windows(a):
     return select({

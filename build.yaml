@@ -266,7 +266,6 @@ filegroups:
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
-  - src/core/lib/iomgr/ev_epollsig_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
@@ -446,7 +445,6 @@ filegroups:
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
-  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -2372,21 +2370,6 @@ targets:
   - uv
   platforms:
   - linux
-- name: ev_epollsig_linux_test
-  cpu_cost: 3
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/ev_epollsig_linux_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
 - name: fake_resolver_test
   build: test
   language: c
@@ -3338,20 +3321,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: pollset_set_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/pollset_set_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
 - name: resolve_address_posix_test
   build: test
   language: c
