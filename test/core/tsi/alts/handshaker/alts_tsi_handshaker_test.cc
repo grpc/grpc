@@ -752,6 +752,7 @@ void check_handshaker_success() {
 int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
+  grpc_tsi_g_alts_resource_ref();
   /* Tests. */
   check_handshaker_success();
   check_handshaker_next_invalid_input();
@@ -763,6 +764,7 @@ int main(int argc, char** argv) {
   check_handle_response_failure();
   check_handle_response_after_shutdown();
   /* Cleanup. */
+  grpc_tsi_g_alts_resource_unref();
   grpc_shutdown();
   return 0;
 }

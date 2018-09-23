@@ -29,6 +29,7 @@
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/security_connector/alts_security_connector.h"
+#include "src/core/tsi/alts_transport_security.h"
 
 #define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal:8080"
@@ -37,6 +38,7 @@ static void alts_credentials_destruct(grpc_channel_credentials* creds) {
   grpc_alts_credentials* alts_creds =
       reinterpret_cast<grpc_alts_credentials*>(creds);
   grpc_alts_credentials_options_destroy(alts_creds->options);
+  grpc_tsi_g_alts_resource_unref();
   gpr_free(alts_creds->handshaker_service_url);
 }
 
@@ -44,6 +46,7 @@ static void alts_server_credentials_destruct(grpc_server_credentials* creds) {
   grpc_alts_server_credentials* alts_creds =
       reinterpret_cast<grpc_alts_server_credentials*>(creds);
   grpc_alts_credentials_options_destroy(alts_creds->options);
+  grpc_tsi_g_alts_resource_unref();
   gpr_free(alts_creds->handshaker_service_url);
 }
 
@@ -84,6 +87,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
   creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
   creds->base.vtable = &alts_credentials_vtable;
   gpr_ref_init(&creds->base.refcount, 1);
+  grpc_tsi_g_alts_resource_ref();
   return &creds->base;
 }
 
@@ -103,6 +107,7 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
   creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
   creds->base.vtable = &alts_server_credentials_vtable;
   gpr_ref_init(&creds->base.refcount, 1);
+  grpc_tsi_g_alts_resource_ref();
   return &creds->base;
 }
 

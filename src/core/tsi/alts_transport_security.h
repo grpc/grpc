@@ -31,8 +31,11 @@ typedef struct alts_shared_resource {
   grpc_channel* channel;
   grpc_completion_queue* cq;
   gpr_mu mu;
-  gpr_cv cv;
+  gpr_cv cq_cv;
+  gpr_cv res_cv;
+  bool can_destroy_resource;
   bool is_cq_drained;
+  gpr_refcount refcount;
 } alts_shared_resource;
 
 /* This method returns the address of alts_shared_resource object shared by all
@@ -41,7 +44,12 @@ alts_shared_resource* alts_get_shared_resource(void);
 
 /* This method signals the thread that invokes grpc_tsi_alts_shutdown() to
  * continue with destroying the cq as a part of shutdown process. */
-
 void grpc_tsi_alts_signal_for_cq_destroy(void);
+
+/** This method add a ref to the alts_shared_resource object. */
+void grpc_tsi_g_alts_resource_ref();
+
+/** This method removes a ref from the alts_shared_resource object. */
+void grpc_tsi_g_atls_resource_unref();
 
 #endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */

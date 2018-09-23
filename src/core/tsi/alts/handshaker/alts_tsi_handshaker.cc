@@ -334,7 +334,6 @@ static void init_shared_resources(const char* handshaker_service_url) {
   GPR_ASSERT(handshaker_service_url != nullptr);
   gpr_mu_lock(&kSharedResource->mu);
   if (kSharedResource->channel == nullptr) {
-    gpr_cv_init(&kSharedResource->cv);
     kSharedResource->channel =
         grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
     kSharedResource->cq = grpc_completion_queue_create_for_next(nullptr);
