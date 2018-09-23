@@ -167,7 +167,8 @@ module GRPC
             if desc.request_response?
               define_method(mth_name) do |req, metadata = {}|
                 GRPC.logger.debug("calling #{@host}:#{route}")
-                request_response(route, req, marshal, unmarshal, metadata)
+                request_response(
+                  route, req, marshal, unmarshal, metadata: metadata)
               end
             elsif desc.client_streamer?
               define_method(mth_name) do |reqs, metadata = {}|
