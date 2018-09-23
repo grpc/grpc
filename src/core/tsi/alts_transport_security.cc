@@ -79,7 +79,7 @@ void grpc_tsi_alts_shutdown() {
 
 void grpc_tsi_g_alts_resource_ref() {
   gpr_mu_lock(&g_alts_resource.mu);
-  g_alts_resource.can_destroy = false;
+  g_alts_resource.can_destroy_resource = false;
   gpr_ref(&g_alts_resource.refcount);
   gpr_mu_unlock(&g_alts_resource.mu);
 }

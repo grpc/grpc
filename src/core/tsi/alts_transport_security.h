@@ -50,6 +50,6 @@ void grpc_tsi_alts_signal_for_cq_destroy(void);
 void grpc_tsi_g_alts_resource_ref();
 
 /** This method removes a ref from the alts_shared_resource object. */
-void grpc_tsi_g_atls_resource_unref();
+void grpc_tsi_g_alts_resource_unref();
 
 #endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */
