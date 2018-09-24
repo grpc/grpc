@@ -28,7 +28,7 @@ alts_shared_resource* alts_get_shared_resource(void) {
   return &g_alts_resource;
 }
 
-static void wait_for_cq_drain() {
+/*static void wait_for_cq_drain() {
   gpr_mu_lock(&g_alts_resource.mu);
   while (!g_alts_resource.is_cq_drained) {
     gpr_cv_wait(&g_alts_resource.cq_cv, &g_alts_resource.mu,
@@ -36,6 +36,7 @@ static void wait_for_cq_drain() {
   }
   gpr_mu_unlock(&g_alts_resource.mu);
 }
+*/
 
 static void wait_for_resource_destroy() {
   gpr_mu_lock(&g_alts_resource.mu);
@@ -71,13 +72,7 @@ void grpc_tsi_alts_init() {
 
 void grpc_tsi_alts_shutdown() {
   wait_for_resource_destroy();
-  if (g_alts_resource.cq != nullptr) {
-    grpc_completion_queue_shutdown(g_alts_resource.cq);
-    wait_for_cq_drain();
-    grpc_completion_queue_destroy(g_alts_resource.cq);
-    grpc_channel_destroy(g_alts_resource.channel);
-    g_alts_resource.thread.Join();
-  }
+  GPR_ASSERT(g_alts_resource.cq == nullptr);
   gpr_cv_destroy(&g_alts_resource.cq_cv);
   gpr_cv_destroy(&g_alts_resource.res_cv);
   gpr_mu_destroy(&g_alts_resource.mu);
@@ -93,6 +88,12 @@ void grpc_tsi_g_alts_resource_ref() {
 void grpc_tsi_g_alts_resource_unref() {
   gpr_mu_lock(&g_alts_resource.mu);
   if (gpr_unref(&g_alts_resource.refcount)) {
+    grpc_completion_queue_shutdown(g_alts_resource.cq);
+    grpc_completion_queue_destroy(g_alts_resource.cq);
+    g_alts_resource.cq = nullptr;
+    grpc_channel_destroy(g_alts_resource.channel);
+    g_alts_resource.channel = nullptr;
+    g_alts_resource.thread.Join();
     signal_resource_destroy_locked();
   }
   gpr_mu_unlock(&g_alts_resource.mu);
