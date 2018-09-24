@@ -68,7 +68,7 @@ g_stands_for = "glider"
 
 core_version = "6.0.0"
 
-version = "1.15.0"
+version = "1.15.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
