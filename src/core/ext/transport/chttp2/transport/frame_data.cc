@@ -192,6 +192,9 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         GPR_ASSERT(stream_out != nullptr);
         GPR_ASSERT(p->parsing_frame == nullptr);
         p->frame_size |= (static_cast<uint32_t>(*cur));
+        if (t->channelz_socket != nullptr) {
+          t->channelz_socket->RecordMessageReceived();
+        }
         p->state = GRPC_CHTTP2_DATA_FRAME;
         ++cur;
         message_flags = 0;

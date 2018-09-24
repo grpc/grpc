@@ -633,6 +633,11 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
   GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
 
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);
+  }
+  t->num_messages_in_next_write = 0;
+
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sending_bytes != 0) {
       update_list(t, s, static_cast<int64_t>(s->sending_bytes),

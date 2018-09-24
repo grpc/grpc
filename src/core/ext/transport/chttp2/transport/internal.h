@@ -474,6 +474,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_keepalive_state keepalive_state;
 
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
+  uint32_t num_messages_in_next_write;
 };
 
 typedef enum {

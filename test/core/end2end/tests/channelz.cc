@@ -202,12 +202,12 @@ static grpc_slice generate_random_slice() {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char* output;
-  const size_t output_size = 1024 * 1024;
-  output = static_cast<char*>(gpr_malloc(output_size));
-  for (i = 0; i < output_size - 1; ++i) {
+  const size_t kOutputSize = 1024 * 1024;
+  output = static_cast<char*>(gpr_malloc(kOutputSize));
+  for (i = 0; i < kOutputSize - 1; ++i) {
     output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
-  output[output_size - 1] = '\0';
+  output[kOutputSize - 1] = '\0';
   grpc_slice out = grpc_slice_from_copied_string(output);
   gpr_free(output);
   return out;
@@ -430,9 +430,31 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
   gpr_free(json);
 
+  // TODO(ncteisen): add logic to query for socket id once child socket support
+  // is in place. For now, we hardcode uuid=5, which we know is a socket.
+  json = grpc_channelz_get_socket(5);
+  GPR_ASSERT(json != nullptr);
+  gpr_log(GPR_INFO, "%s", json);
+  GPR_ASSERT(nullptr != strstr(json, "\"socketId\":\"5\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"streamsStarted\":\"2\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"streamsSucceeded\":\"2\""));
+  // no messaged sent yet.
+  GPR_ASSERT(nullptr == strstr(json, "\"messagesSent\""));
+  GPR_ASSERT(nullptr == strstr(json, "\"messagesReceived\""));
+  gpr_free(json);
+
   // one successful request with payload to test socket data
-  // TODO(ncteisen): add some programatic spot checks on the socket json.
   run_one_request_with_payload(config, f);
+
+  json = grpc_channelz_get_socket(5);
+  GPR_ASSERT(json != nullptr);
+  gpr_log(GPR_INFO, "%s", json);
+  GPR_ASSERT(nullptr != strstr(json, "\"socketId\":\"5\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"streamsStarted\":\"3\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"streamsSucceeded\":\"3\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"messagesSent\":\"1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"messagesReceived\":\"1\""));
+  gpr_free(json);
 
   end_test(&f);
   config.tear_down_data(&f);

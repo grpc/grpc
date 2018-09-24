@@ -92,10 +92,10 @@ class CallCountingHelper {
 
   void RecordCallStarted();
   void RecordCallFailed() {
-    gpr_atm_no_barrier_fetch_add(&calls_failed_, (gpr_atm(1)));
+    gpr_atm_no_barrier_fetch_add(&calls_failed_, static_cast<gpr_atm>(1));
   }
   void RecordCallSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
+    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, static_cast<gpr_atm>(1));
   }
 
   // Common rendering of the call count data and last_call_started_timestamp.
@@ -199,7 +199,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode() : BaseNode(EntityType::kSocket) {}
+  SocketNode();
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -207,15 +207,15 @@ class SocketNode : public BaseNode {
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
   void RecordStreamSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&streams_succeeded_, (gpr_atm(1)));
+    gpr_atm_no_barrier_fetch_add(&streams_succeeded_, static_cast<gpr_atm>(1));
   }
   void RecordStreamFailed() {
-    gpr_atm_no_barrier_fetch_add(&streams_failed_, (gpr_atm(1)));
+    gpr_atm_no_barrier_fetch_add(&streams_failed_, static_cast<gpr_atm>(1));
   }
-  void RecordMessageSent();
-  void RecordMessageRecieved();
+  void RecordMessagesSent(uint32_t num_sent);
+  void RecordMessageReceived();
   void RecordKeepaliveSent() {
-    gpr_atm_no_barrier_fetch_add(&keepalives_sent_, (gpr_atm(1)));
+    gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
   }
 
  private:
@@ -223,12 +223,13 @@ class SocketNode : public BaseNode {
   gpr_atm streams_succeeded_ = 0;
   gpr_atm streams_failed_ = 0;
   gpr_atm messages_sent_ = 0;
-  gpr_atm messages_recieved_ = 0;
+  gpr_atm messages_received_ = 0;
   gpr_atm keepalives_sent_ = 0;
   gpr_atm last_local_stream_created_millis_ = 0;
   gpr_atm last_remote_stream_created_millis_ = 0;
   gpr_atm last_message_sent_millis_ = 0;
-  gpr_atm last_message_recieved_millis_ = 0;
+  gpr_atm last_message_received_millis_ = 0;
+  UniquePtr<char> peer_string_;
 };
 
 // Creation functions

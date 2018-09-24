@@ -1507,9 +1507,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_message) {
     GRPC_STATS_INC_HTTP2_OP_SEND_MESSAGE();
-    if (t->channelz_socket != nullptr) {
-      t->channelz_socket->RecordMessageSent();
-    }
+    t->num_messages_in_next_write++;
     GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(
         op->payload->send_message.send_message->length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
@@ -1627,9 +1625,6 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_message) {
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
-    if (t->channelz_socket != nullptr) {
-      t->channelz_socket->RecordMessageRecieved();
-    }
     size_t before = 0;
     GPR_ASSERT(s->recv_message_ready == nullptr);
     GPR_ASSERT(!s->pending_byte_stream);
