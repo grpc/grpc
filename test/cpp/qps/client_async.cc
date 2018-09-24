@@ -949,9 +949,186 @@ std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config) {
       return nullptr;
   }
 }
+
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args) {
   return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
+}
+/*
+class CallbackClientRpcContextUnaryImpl : public ClientRpcContext {
+ public:
+  CallbackClientRpcContextUnaryImpl(
+      BenchmarkService::Stub* stub, const RequestType& req,
+      std::function<gpr_timespec()> next_issue,
+      std::function<
+          std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
+              BenchmarkService::Stub*, grpc::ClientContext*, const RequestType&,
+              CompletionQueue*)>
+          prepare_req,
+      std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> on_done)
+      : context_(),
+        stub_(stub),
+        req_(req),
+        response_(),
+        next_state_(State::READY),
+        callback_(on_done),
+        next_issue_(std::move(next_issue)),
+        prepare_req_(prepare_req) {}
+  ~CallbackClientRpcContextUnaryImpl() override {}
+ private:
+  grpc::ClientContext context_;
+  BenchmarkService::Stub* stub_;
+  std::unique_ptr<Alarm> alarm_;
+  const RequestType& req_;
+  ResponseType response_;
+  enum State { INVALID, READY, RESP_DONE };
+  State next_state_;
+  std::function<void(grpc::Status, ResponseType*, HistogramEntry*)> callback_;
+  std::function<gpr_timespec()> next_issue_;
+  std::function<std::unique_ptr<grpc::ClientAsyncResponseReader<ResponseType>>(
+      BenchmarkService::Stub*, grpc::ClientContext*, const RequestType)>
+      prepare_req_;
+  grpc::Status status_;
+  double start_;
+  void StartInternal(Thread *t, int thread_idx) {
+    cq_ = cq;
+    if (!next_issue_) {  // ready to issue
+      RunNextState(true, nullptr);
+    } else {  // wait for the issue time
+      alarm_.reset(new Alarm);
+      alarm_->experimental().Set(next_issue_time,
+                               [this, t, thread_idx, alarm_](bool ok) {
+                                 ThreadFuncImpl(t, thread_idx);
+                                 delete alarm;
+                                 });
+    }
+  }
+}
+*/
+class CallbackClient
+    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
+ public:
+  CallbackClient(const ClientConfig& config)
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
+            config, BenchmarkStubCreator) {
+    num_threads_ =
+        config.outstanding_rpcs_per_channel() * config.client_channels();
+    SetupLoadTest(config, num_threads_);
+    threads_done_ = num_threads_;
+    if (closed_loop_)
+      gpr_log(GPR_ERROR,"Closed loop\n");
+  }
+
+  virtual ~CallbackClient() {}
+
+  virtual bool InitThreadFuncImpl(size_t thread_idx) {
+    return true;
+  }
+
+  virtual bool ThreadFuncImpl(Thread *t, size_t thread_idx) = 0;
+
+  void ThreadFunc(size_t thread_idx, Thread* t) override {
+    if (!InitThreadFuncImpl(thread_idx)) {
+      return;
+    }
+
+    gpr_timespec next_issue_time = gpr_now(GPR_CLOCK_REALTIME);
+    if (!closed_loop_)
+      next_issue_time = NextIssueTime(thread_idx);
+    // Start an alarm call back to run the internal callback after
+    // next_issue_time
+    Alarm *alarm = new Alarm();
+    alarm->experimental().Set(next_issue_time,
+                               [this, t, thread_idx, alarm](bool ok) {
+                                 ThreadFuncImpl(t, thread_idx);
+                                 delete alarm;
+                                 });
+
+    //ThreadFuncImpl(t, thread_idx);
+  }
+
+ protected:
+  size_t num_threads_;
+  std::mutex mu_;
+  std::condition_variable cv_;
+  int threads_done_;
+};
+
+class CallbackUnaryClient final : public CallbackClient {
+ public:
+  CallbackUnaryClient(const ClientConfig& config)
+      : CallbackClient(config) {
+    StartThreads(num_threads_);
+  }
+  ~CallbackUnaryClient() {
+    std::unique_lock<std::mutex> l(mu_);
+    while(threads_done_ != num_threads_)
+      cv_.wait(l);
+    gpr_log(GPR_ERROR,"Callback destroyed\n");
+  }
+
+  bool InitThreadFuncImpl(size_t thread_idx) override { return true; }
+
+  bool ThreadFuncImpl(Thread *t, size_t thread_idx) override {
+    gpr_log(GPR_ERROR,"ThreadFuncImpl called\n");
+    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
+    ClientContext* context = new grpc::ClientContext();
+    SimpleResponse *response = new SimpleResponse();
+    double start = UsageTimer::Now();
+    stub->experimental_async()->UnaryCall(
+        context, &request_, response,
+                       [this, t, thread_idx, start, context, response](grpc::Status s) {
+                         if (ThreadCompleted()) {
+                           delete context;
+                           delete response;
+                           std::unique_lock<std::mutex> l(mu_);
+                           l.lock();
+                           threads_done_++;
+                           if (threads_done_ == num_threads_)
+                            cv_.notify_one();
+                           else
+                            l.unlock();
+                           return;
+                         }
+                         // Update Histogram with data from the callback run
+                         HistogramEntry entry;
+                         if (s.ok()) {
+                           entry.set_value((UsageTimer::Now() - start) * 1e9);
+                         }
+                         entry.set_status(s.error_code());
+                         t->UpdateHistogram(&entry);
+
+                         gpr_log(GPR_ERROR,"Callback called\n");
+                         // Start a new Unary call
+                         delete context;
+                         delete response;
+                         ThreadFunc(thread_idx, t);
+                       });
+    return true;
+  }
+
+ private:
+  void DestroyMultithreading() override final {
+    EndThreads();
+  }
+};
+
+std::unique_ptr<Client> CreateCallbackClient(
+    const ClientConfig& config) {
+  switch (config.rpc_type()) {
+    case UNARY:
+      return std::unique_ptr<Client>(new CallbackUnaryClient(config));
+    case STREAMING:
+    case STREAMING_FROM_CLIENT:
+    case STREAMING_FROM_SERVER:
+    case STREAMING_BOTH_WAYS:
+      assert(false);
+      return nullptr;
+    default:
+      assert(false);
+      return nullptr;
+  }
 }
 
 }  // namespace testing

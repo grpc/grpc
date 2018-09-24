@@ -156,12 +156,17 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
   ResetStub();
-  SendRpcs(1, false);
+  SendRpcs(1);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
-  SendRpcs(10, false);
+  SendRpcs(10);
+}
+
+TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
+  ResetStub();
+  SendRpcsGeneric(10, false);
 }
 
 TEST_F(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {

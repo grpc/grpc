@@ -85,6 +85,7 @@ class Alarm : private GrpcLibraryCodegen {
    public:
     explicit experimental_type(Alarm* alarm) : alarm_(alarm) {}
 
+
     /// Set an alarm to invoke callback \a f. The argument to the callback
     /// states whether the alarm expired at \a deadline (true) or was cancelled
     /// (false)

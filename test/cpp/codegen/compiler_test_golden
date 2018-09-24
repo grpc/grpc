@@ -521,6 +521,7 @@ class ServiceB final {
     class experimental_async_interface {
      public:
       virtual ~experimental_async_interface() {}
+
       // MethodB1 leading comment 1
       virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
       // MethodB1 trailing comment 1
