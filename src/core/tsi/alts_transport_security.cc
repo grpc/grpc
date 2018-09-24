@@ -29,15 +29,21 @@ alts_shared_resource* alts_get_shared_resource(void) {
 }
 
 static void wait_for_cq_drain() {
-  while (!g_alts_resource.is_cq_drained)
+  gpr_mu_lock(&g_alts_resource.mu);
+  while (!g_alts_resource.is_cq_drained) {
     gpr_cv_wait(&g_alts_resource.cq_cv, &g_alts_resource.mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&g_alts_resource.mu);
 }
 
 static void wait_for_resource_destroy() {
-  while (!g_alts_resource.can_destroy_resource)
+  gpr_mu_lock(&g_alts_resource.mu);
+  while (!g_alts_resource.can_destroy_resource) {
     gpr_cv_wait(&g_alts_resource.res_cv, &g_alts_resource.mu,
                 gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&g_alts_resource.mu);
 }
 
 static void signal_resource_destroy_locked() {
