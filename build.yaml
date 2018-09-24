@@ -3145,6 +3145,17 @@ targets:
   - mac
   - linux
   - posix
+- name: mac_poll
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/mac_poll.cc
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: memory_profile_client
   build: test
   run: false
