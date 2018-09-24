@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <mutex>
+#include <thread>
 
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -55,7 +56,8 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
   void ResetStub() {
     ChannelArguments args;
     channel_ = server_->InProcessChannel(args);
-    stub_.reset(new GenericStub(channel_));
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    generic_stub_.reset(new GenericStub(channel_));
   }
 
   void TearDown() override {
@@ -64,7 +66,45 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SendRpcs(int num_rpcs, bool maybe_except) {
+  void SendRpcs(int num_rpcs, bool with_binary_metadata) {
+    grpc::string test_string("");
+    for (int i = 0; i < num_rpcs; i++) {
+      EchoRequest request;
+      EchoResponse response;
+      ClientContext cli_ctx;
+
+      test_string += "Hello world. ";
+      request.set_message(test_string);
+
+      if (with_binary_metadata) {
+        char bytes[8] = {'\0', '\1', '\2', '\3',
+                         '\4', '\5', '\6', static_cast<char>(i)};
+        cli_ctx.AddMetadata("custom-bin", grpc::string(bytes, 8));
+      }
+
+      cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+
+      std::mutex mu;
+      std::condition_variable cv;
+      bool done = false;
+      stub_->experimental_async()->Echo(
+          &cli_ctx, &request, &response,
+          [&request, &response, &done, &mu, &cv](Status s) {
+            GPR_ASSERT(s.ok());
+
+            EXPECT_EQ(request.message(), response.message());
+            std::lock_guard<std::mutex> l(mu);
+            done = true;
+            cv.notify_one();
+          });
+      std::unique_lock<std::mutex> l(mu);
+      while (!done) {
+        cv.wait(l);
+      }
+    }
+  }
+
+  void SendRpcsGeneric(int num_rpcs, bool maybe_except) {
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -80,7 +120,7 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental().UnaryCall(
+      generic_stub_->experimental().UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
             GPR_ASSERT(s.ok());
@@ -95,6 +135,8 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
             if (maybe_except) {
               throw - 1;
             }
+#else
+            GPR_ASSERT(!maybe_except);
 #endif
           });
       std::unique_lock<std::mutex> l(mu);
@@ -103,9 +145,11 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       }
     }
   }
+
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::GenericStub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::GenericStub> generic_stub_;
   TestServiceImpl service_;
   std::unique_ptr<Server> server_;
 };
@@ -120,12 +164,71 @@ TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
   SendRpcs(10, false);
 }
 
-#if GRPC_ALLOW_EXCEPTIONS
-TEST_F(ClientCallbackEnd2endTest, ExceptingRpc) {
+TEST_F(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   SendRpcs(10, true);
 }
+
+TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
+  ResetStub();
+  SendRpcsGeneric(10, false);
+}
+
+#if GRPC_ALLOW_EXCEPTIONS
+TEST_F(ClientCallbackEnd2endTest, ExceptingRpc) {
+  ResetStub();
+  SendRpcsGeneric(10, true);
+}
 #endif
+
+TEST_F(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
+  ResetStub();
+  std::vector<std::thread> threads;
+  threads.reserve(10);
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back([this] { SendRpcs(10, true); });
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads[i].join();
+  }
+}
+
+TEST_F(ClientCallbackEnd2endTest, MultipleRpcs) {
+  ResetStub();
+  std::vector<std::thread> threads;
+  threads.reserve(10);
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back([this] { SendRpcs(10, false); });
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads[i].join();
+  }
+}
+
+TEST_F(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.TryCancel();
+
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  stub_->experimental_async()->Echo(
+      &context, &request, &response, [&response, &done, &mu, &cv](Status s) {
+        EXPECT_EQ("", response.message());
+        EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+        std::lock_guard<std::mutex> l(mu);
+        done = true;
+        cv.notify_one();
+      });
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
+}
 
 }  // namespace
 }  // namespace testing

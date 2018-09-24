@@ -23,10 +23,14 @@ import subprocess
 import re
 import perfection
 
-# configuration: a list of either strings or 2-tuples of strings
-# a single string represents a static grpc_mdstr
-# a 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
-# also be created)
+# Configuration: a list of either strings or 2-tuples of strings or 3-tuples of
+# strings.
+# A single string represents a static grpc_mdstr.
+# A 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
+# also be created).
+# A 3-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
+# also be created), with the last value equivalent to the mdelem's static hpack
+# table index as defined by RFC 7541
 
 CONFIG = [
     # metadata strings
@@ -72,105 +76,104 @@ CONFIG = [
     ('grpc-encoding', 'deflate'),
     ('te', 'trailers'),
     ('content-type', 'application/grpc'),
-    (':method', 'POST'),
-    (':status', '200'),
-    (':status', '404'),
-    (':scheme', 'http'),
-    (':scheme', 'https'),
-    (':scheme', 'grpc'),
-    (':authority', ''),
-    (':method', 'GET'),
+    (':method', 'POST', 3),
+    (':status', '200', 8),
+    (':status', '404', 13),
+    (':scheme', 'http', 6),
+    (':scheme', 'https', 7),
+    (':scheme', 'grpc', 0),
+    (':authority', '', 1),
+    (':method', 'GET', 2),
     (':method', 'PUT'),
-    (':path', '/'),
-    (':path', '/index.html'),
-    (':status', '204'),
-    (':status', '206'),
-    (':status', '304'),
-    (':status', '400'),
-    (':status', '500'),
-    ('accept-charset', ''),
+    (':path', '/', 4),
+    (':path', '/index.html', 5),
+    (':status', '204', 9),
+    (':status', '206', 10),
+    (':status', '304', 11),
+    (':status', '400', 12),
+    (':status', '500', 14),
+    ('accept-charset', '', 15),
     ('accept-encoding', ''),
-    ('accept-encoding', 'gzip, deflate'),
-    ('accept-language', ''),
-    ('accept-ranges', ''),
-    ('accept', ''),
-    ('access-control-allow-origin', ''),
-    ('age', ''),
-    ('allow', ''),
-    ('authorization', ''),
-    ('cache-control', ''),
-    ('content-disposition', ''),
+    ('accept-encoding', 'gzip, deflate', 16),
+    ('accept-language', '', 17),
+    ('accept-ranges', '', 18),
+    ('accept', '', 19),
+    ('access-control-allow-origin', '', 20),
+    ('age', '', 21),
+    ('allow', '', 22),
+    ('authorization', '', 23),
+    ('cache-control', '', 24),
+    ('content-disposition', '', 25),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
-    ('content-encoding', ''),
-    ('content-language', ''),
-    ('content-length', ''),
-    ('content-location', ''),
-    ('content-range', ''),
-    ('content-type', ''),
-    ('cookie', ''),
-    ('date', ''),
-    ('etag', ''),
-    ('expect', ''),
-    ('expires', ''),
-    ('from', ''),
-    ('host', ''),
-    ('if-match', ''),
-    ('if-modified-since', ''),
-    ('if-none-match', ''),
-    ('if-range', ''),
-    ('if-unmodified-since', ''),
-    ('last-modified', ''),
+    ('content-encoding', '', 26),
+    ('content-language', '', 27),
+    ('content-length', '', 28),
+    ('content-location', '', 29),
+    ('content-range', '', 30),
+    ('content-type', '', 31),
+    ('cookie', '', 32),
+    ('date', '', 33),
+    ('etag', '', 34),
+    ('expect', '', 35),
+    ('expires', '', 36),
+    ('from', '', 37),
+    ('host', '', 38),
+    ('if-match', '', 39),
+    ('if-modified-since', '', 40),
+    ('if-none-match', '', 41),
+    ('if-range', '', 42),
+    ('if-unmodified-since', '', 43),
+    ('last-modified', '', 44),
     ('lb-token', ''),
     ('lb-cost-bin', ''),
-    ('link', ''),
-    ('location', ''),
-    ('max-forwards', ''),
-    ('proxy-authenticate', ''),
-    ('proxy-authorization', ''),
-    ('range', ''),
-    ('referer', ''),
-    ('refresh', ''),
-    ('retry-after', ''),
-    ('server', ''),
-    ('set-cookie', ''),
-    ('strict-transport-security', ''),
-    ('transfer-encoding', ''),
-    ('user-agent', ''),
-    ('vary', ''),
-    ('via', ''),
-    ('www-authenticate', ''),
+    ('link', '', 45),
+    ('location', '', 46),
+    ('max-forwards', '', 47),
+    ('proxy-authenticate', '', 48),
+    ('proxy-authorization', '', 49),
+    ('range', '', 50),
+    ('referer', '', 51),
+    ('refresh', '', 52),
+    ('retry-after', '', 53),
+    ('server', '', 54),
+    ('set-cookie', '', 55),
+    ('strict-transport-security', '', 56),
+    ('transfer-encoding', '', 57),
+    ('user-agent', '', 58),
+    ('vary', '', 59),
+    ('via', '', 60),
+    ('www-authenticate', '', 61),
 ]
 
-# Entries marked with is_default=True are ignored when counting
-# non-default initial metadata that prevents the chttp2 server from
-# sending a Trailers-Only response.
+# All entries here are ignored when counting non-default initial metadata that
+# prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    # (name, is_default)
-    (':path', True),
-    (':method', True),
-    (':status', True),
-    (':authority', True),
-    (':scheme', True),
-    ('te', True),
-    ('grpc-message', True),
-    ('grpc-status', True),
-    ('grpc-payload-bin', True),
-    ('grpc-encoding', True),
-    ('grpc-accept-encoding', True),
-    ('grpc-server-stats-bin', True),
-    ('grpc-tags-bin', True),
-    ('grpc-trace-bin', True),
-    ('content-type', True),
-    ('content-encoding', True),
-    ('accept-encoding', True),
-    ('grpc-internal-encoding-request', True),
-    ('grpc-internal-stream-encoding-request', True),
-    ('user-agent', True),
-    ('host', True),
-    ('lb-token', True),
-    ('grpc-previous-rpc-attempts', True),
-    ('grpc-retry-pushback-ms', True),
+    # (name)
+    (':path'),
+    (':method'),
+    (':status'),
+    (':authority'),
+    (':scheme'),
+    ('te'),
+    ('grpc-message'),
+    ('grpc-status'),
+    ('grpc-payload-bin'),
+    ('grpc-encoding'),
+    ('grpc-accept-encoding'),
+    ('grpc-server-stats-bin'),
+    ('grpc-tags-bin'),
+    ('grpc-trace-bin'),
+    ('content-type'),
+    ('content-encoding'),
+    ('accept-encoding'),
+    ('grpc-internal-encoding-request'),
+    ('grpc-internal-stream-encoding-request'),
+    ('user-agent'),
+    ('host'),
+    ('lb-token'),
+    ('grpc-previous-rpc-attempts'),
+    ('grpc-retry-pushback-ms'),
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -252,7 +255,7 @@ all_elems = list()
 static_userdata = {}
 # put metadata batch callouts first, to make the check of if a static metadata
 # string is a callout trivial
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     if elem not in all_strs:
         all_strs.append(elem)
 for elem in CONFIG:
@@ -323,6 +326,17 @@ else:
             os.path.dirname(sys.argv[0]),
             '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
 
+HPACK_H = open(
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.h'),
+    'w')
+HPACK_C = open(
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.cc'),
+    'w')
+
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
     copyright = []
@@ -337,7 +351,8 @@ with open(sys.argv[0]) as my_source:
         if line[0] != '#':
             break
         copyright.append(line)
-    put_banner([H, C], [line[2:].rstrip() for line in copyright])
+    put_banner([H, C, HPACK_H, HPACK_C],
+               [line[2:].rstrip() for line in copyright])
 
 hex_bytes = [ord(c) for c in 'abcdefABCDEF0123456789']
 
@@ -364,16 +379,44 @@ See metadata.h for an explanation of the interface here, and metadata.cc for
 an explanation of what's going on.
 """.splitlines())
 
+put_banner([HPACK_H, HPACK_C], """WARNING: Auto-generated code.
+
+To make changes to this file, change
+tools/codegen/core/gen_static_metadata.py, and then re-run it.
+
+This file contains the mapping from the index of each metadata element in the 
+grpc static metadata table to the index of that element in the hpack static 
+metadata table. If the element is not contained in the static hpack table, then
+the returned index is 0.
+""".splitlines())
+
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
+print >> H, '#include <grpc/support/port_platform.h>'
+print >> H
 print >> H, '#include "src/core/lib/transport/metadata.h"'
 print >> H
-
+print >> C, '#include <grpc/support/port_platform.h>'
+print >> C
 print >> C, '#include "src/core/lib/transport/static_metadata.h"'
 print >> C
 print >> C, '#include "src/core/lib/slice/slice_internal.h"'
 print >> C
+print >> HPACK_H, ('#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
+                   'MAPPING_H')
+print >> HPACK_H, ('#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
+                   'MAPPING_H')
+print >> HPACK_H
+print >> HPACK_H, '#include <grpc/support/port_platform.h>'
+print >> HPACK_H
+print >> HPACK_H, '#include "src/core/lib/transport/static_metadata.h"'
+print >> HPACK_H
+print >> HPACK_C, '#include <grpc/support/port_platform.h>'
+print >> HPACK_C
+print >> HPACK_C, ('#include '
+                   '"src/core/ext/transport/chttp2/transport/hpack_mapping.h"')
+print >> HPACK_C
 
 str_ofs = 0
 id2strofs = {}
@@ -388,7 +431,7 @@ def slice_def(i):
 
 
 # validate configuration
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
 
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
@@ -450,10 +493,28 @@ print >> H, ('extern grpc_mdelem_data '
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
 for i, elem in enumerate(all_elems):
-    print >> H, '/* "%s": "%s" */' % elem
+    print >> H, '/* "%s": "%s" */' % (elem[0], elem[1])
     print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
                  'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
 print >> H
+
+# Print out the chttp2 mapping between static mdelem index and the hpack static
+# table index
+print >> HPACK_H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
+                   'GRPC_STATIC_MDELEM_COUNT];')
+print >> HPACK_H
+print >> HPACK_C, ('const uint8_t grpc_hpack_static_mdelem_indices['
+                   'GRPC_STATIC_MDELEM_COUNT] = {')
+indices = ''
+for elem in all_elems:
+    index = 0
+    if len(elem) == 3:
+        index = elem[2]
+    indices += '%d,' % index
+print >> HPACK_C, '  %s' % indices
+print >> HPACK_C, '};'
+print >> HPACK_C
+
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
 print >> C, '  %s' % ','.join(
@@ -546,12 +607,13 @@ print >> C, '}'
 print >> C
 
 print >> C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for a, b in all_elems:
-    print >> C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
+for elem in all_elems:
+    print >> C, '{%s,%s},' % (slice_def(str_idx(elem[0])),
+                              slice_def(str_idx(elem[1])))
 print >> C, '};'
 
 print >> H, 'typedef enum {'
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     print >> H, '  %s,' % mangle(elem, 'batch').upper()
 print >> H, '  GRPC_BATCH_CALLOUTS_COUNT'
 print >> H, '} grpc_metadata_batch_callouts_index;'
@@ -559,7 +621,7 @@ print >> H
 print >> H, 'typedef union {'
 print >> H, '  struct grpc_linked_mdelem *array[GRPC_BATCH_CALLOUTS_COUNT];'
 print >> H, '  struct {'
-for elem, _ in METADATA_BATCH_CALLOUTS:
+for elem in METADATA_BATCH_CALLOUTS:
     print >> H, '  struct grpc_linked_mdelem *%s;' % mangle(elem, '').lower()
 print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
@@ -567,14 +629,6 @@ print >> H
 print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
 print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? (grpc_metadata_batch_callouts_index)GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, GRPC_BATCH_CALLOUTS_COUNT) : GRPC_BATCH_CALLOUTS_COUNT)'
 print >> H
-print >> H, ('extern bool grpc_static_callout_is_default['
-             'GRPC_BATCH_CALLOUTS_COUNT];')
-print >> H
-print >> C, 'bool grpc_static_callout_is_default[GRPC_BATCH_CALLOUTS_COUNT] = {'
-for elem, is_default in METADATA_BATCH_CALLOUTS:
-    print >> C, '  %s, // %s' % (str(is_default).lower(), elem)
-print >> C, '};'
-print >> C
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
     1 << len(COMPRESSION_ALGORITHMS))
@@ -598,6 +652,9 @@ print >> C, '};'
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
+
+print >> HPACK_H, ('#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
+                   'MAPPING_H */')
 
 H.close()
 C.close()

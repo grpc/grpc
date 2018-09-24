@@ -15,12 +15,12 @@
  * limitations under the License.
  *
  */
+#include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 
 #include <memory>
 #include <sstream>
 #include <string>
 
-#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/async_stream.h>
@@ -32,10 +32,6 @@
 #include "test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/handshaker.pb.h"
 #include "test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h"
-#include "test/cpp/util/test_config.h"
-
-DEFINE_int32(handshaker_port, 55056,
-             "TCP port on which the fake handshaker server listens to.");
 
 // Fake handshake messages.
 constexpr char kClientInitFrame[] = "ClientInit";
@@ -243,26 +239,9 @@ class FakeHandshakerService : public HandshakerService::Service {
   }
 };
 
+std::unique_ptr<grpc::Service> CreateFakeHandshakerService() {
+  return std::unique_ptr<grpc::Service>{new grpc::gcp::FakeHandshakerService};
+}
+
 }  // namespace gcp
 }  // namespace grpc
-
-void RunServer() {
-  GPR_ASSERT(FLAGS_handshaker_port != 0);
-  std::ostringstream server_address;
-  server_address << "[::1]:" << FLAGS_handshaker_port;
-  grpc::gcp::FakeHandshakerService service;
-  grpc::ServerBuilder builder;
-  builder.AddListeningPort(server_address.str(),
-                           grpc::InsecureServerCredentials());
-  builder.RegisterService(&service);
-  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-          server_address.str().c_str());
-  server->Wait();
-}
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  RunServer();
-  return 0;
-}
