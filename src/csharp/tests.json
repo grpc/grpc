@@ -23,6 +23,7 @@
     "Grpc.Core.Tests.ClientServerTest",
     "Grpc.Core.Tests.CompressionTest",
     "Grpc.Core.Tests.ContextPropagationTest",
+    "Grpc.Core.Tests.ContextualMarshallerTest",
     "Grpc.Core.Tests.GrpcEnvironmentTest",
     "Grpc.Core.Tests.HalfcloseTest",
     "Grpc.Core.Tests.MarshallingErrorsTest",
