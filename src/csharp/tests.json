@@ -26,6 +26,7 @@
     "Grpc.Core.Tests.ContextualMarshallerTest",
     "Grpc.Core.Tests.GrpcEnvironmentTest",
     "Grpc.Core.Tests.HalfcloseTest",
+    "Grpc.Core.Tests.MarshallerTest",
     "Grpc.Core.Tests.MarshallingErrorsTest",
     "Grpc.Core.Tests.MetadataTest",
     "Grpc.Core.Tests.PerformanceTest",
