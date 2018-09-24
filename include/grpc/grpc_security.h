@@ -532,14 +532,14 @@ typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_alts_credentials_options*
-grpc_alts_credentials_client_options_create();
+grpc_alts_credentials_client_options_create(void);
 
 /**
  * This method creates a grpc ALTS credentials server options instance.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_alts_credentials_options*
-grpc_alts_credentials_server_options_create();
+grpc_alts_credentials_server_options_create(void);
 
 /**
  * This method adds a target service account to grpc client's ALTS credentials
