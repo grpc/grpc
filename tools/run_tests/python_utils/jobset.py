@@ -274,9 +274,9 @@ class Job(object):
                 os.path.abspath(self._spec.logfilename))
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
-            self._tempfile = open(self._spec.logfilename, 'w+')
+            self._logfile = open(self._spec.logfilename, 'w+')
         else:
-            self._tempfile = tempfile.TemporaryFile()
+            self._logfile = tempfile.TemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -292,7 +292,7 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(args=cmdline,
                                              stderr=subprocess.STDOUT,
-                                             stdout=self._tempfile,
+                                             stdout=self._logfile,
                                              cwd=self._spec.cwd,
                                              shell=self._spec.shell,
                                              env=env)
@@ -315,7 +315,7 @@ class Job(object):
         """Poll current state of the job. Prints messages at completion."""
 
         def stdout(self=self):
-            stdout = read_from_start(self._tempfile)
+            stdout = read_from_start(self._logfile)
             self.result.message = stdout[-_MAX_RESULT_SIZE:]
             return stdout
 
