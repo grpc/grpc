@@ -266,7 +266,6 @@ filegroups:
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
-  - src/core/lib/iomgr/ev_epollsig_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
@@ -446,7 +445,6 @@ filegroups:
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
-  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
@@ -936,6 +934,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_mapping.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -957,6 +956,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_mapping.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -1169,7 +1169,9 @@ filegroups:
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
+  - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
+  - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_context.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
@@ -1297,6 +1299,7 @@ filegroups:
   - include/grpcpp/support/async_unary_call.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
+  - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/config.h
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
@@ -2367,21 +2370,6 @@ targets:
   - uv
   platforms:
   - linux
-- name: ev_epollsig_linux_test
-  cpu_cost: 3
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/ev_epollsig_linux_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
 - name: fake_resolver_test
   build: test
   language: c
@@ -3333,20 +3321,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: pollset_set_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/pollset_set_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
 - name: resolve_address_posix_test
   build: test
   language: c
@@ -3363,7 +3337,7 @@ targets:
   - mac
   - linux
   - posix
-- name: resolve_address_test
+- name: resolve_address_using_ares_resolver_test
   build: test
   language: c
   src:
@@ -3373,6 +3347,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --resolver=ares
+- name: resolve_address_using_native_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --resolver=native
 - name: resource_quota_test
   cpu_cost: 30
   build: test
@@ -4459,6 +4447,20 @@ targets:
   - test/cpp/util/cli_call_test.cc
   deps:
   - grpc_cli_libs
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: client_callback_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/client_callback_end2end_test.cc
+  deps:
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -5827,6 +5829,7 @@ defaults:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+    CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

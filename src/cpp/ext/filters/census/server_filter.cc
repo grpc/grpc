@@ -93,7 +93,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
     FilterInitialMetadata(initial_metadata, &sml);
     calld->path_ = grpc_slice_ref_internal(sml.path);
     calld->method_ = GetMethod(&calld->path_);
-    calld->qualified_method_ = StrCat("Recv.", calld->method_);
+    calld->qualified_method_ = absl::StrCat("Recv.", calld->method_);
     const char* tracing_str =
         GRPC_SLICE_IS_EMPTY(sml.tracing_slice)
             ? ""

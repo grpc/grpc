@@ -369,11 +369,15 @@ static void test_callback(void) {
   LOG_TEST("test_callback");
 
   bool got_shutdown = false;
-  class ShutdownCallback : public grpc_core::CQCallbackInterface {
+  class ShutdownCallback : public grpc_experimental_completion_queue_functor {
    public:
-    ShutdownCallback(bool* done) : done_(done) {}
+    ShutdownCallback(bool* done) : done_(done) {
+      functor_run = &ShutdownCallback::Run;
+    }
     ~ShutdownCallback() {}
-    void Run(bool ok) override { *done_ = ok; }
+    static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+      *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
+    }
 
    private:
     bool* done_;
@@ -391,14 +395,17 @@ static void test_callback(void) {
         grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 
     int counter = 0;
-    class TagCallback : public grpc_core::CQCallbackInterface {
+    class TagCallback : public grpc_experimental_completion_queue_functor {
      public:
-      TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {}
+      TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
+        functor_run = &TagCallback::Run;
+      }
       ~TagCallback() {}
-      void Run(bool ok) override {
-        GPR_ASSERT(ok);
-        *counter_ += tag_;
-        grpc_core::Delete(this);
+      static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+        GPR_ASSERT(static_cast<bool>(ok));
+        auto* callback = static_cast<TagCallback*>(cb);
+        *callback->counter_ += callback->tag_;
+        grpc_core::Delete(callback);
       };
 
      private:

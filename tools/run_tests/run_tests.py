@@ -61,7 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv'],
+    'linux': ['epollex', 'epoll1', 'poll', 'poll-cv'],
     'mac': ['poll'],
 }
 
@@ -1430,7 +1430,7 @@ argp.add_argument(
     default=None,
     type=str,
     help='Only use the specified comma-delimited list of polling engines. '
-    'Example: --force_use_pollers epollsig,poll '
+    'Example: --force_use_pollers epoll1,poll '
     ' (This flag has no effect if --force_default_poller flag is also used)')
 argp.add_argument(
     '--max_time', default=-1, type=int, help='Maximum test runtime in seconds')

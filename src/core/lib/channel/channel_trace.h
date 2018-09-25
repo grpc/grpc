@@ -63,7 +63,7 @@ class ChannelTrace {
   // stack, determine if it makes more sense to accept a char* instead of a
   // slice.
   void AddTraceEventWithReference(Severity severity, grpc_slice data,
-                                  RefCountedPtr<BaseNode> referenced_channel);
+                                  RefCountedPtr<BaseNode> referenced_entity);
 
   // Creates and returns the raw grpc_json object, so a parent channelz
   // object may incorporate the json before rendering.

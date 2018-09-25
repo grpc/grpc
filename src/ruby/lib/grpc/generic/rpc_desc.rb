@@ -32,7 +32,7 @@ module GRPC
 
     # @return [Proc] { |instance| marshalled(instance) }
     def marshal_proc
-      proc { |o| o.class.method(marshal_method).call(o).to_s }
+      proc { |o| o.class.send(marshal_method, o).to_s }
     end
 
     # @param [:input, :output] target determines whether to produce the an
@@ -42,9 +42,9 @@ module GRPC
     # @return [Proc] An unmarshal proc { |marshalled(instance)| instance }
     def unmarshal_proc(target)
       fail ArgumentError unless [:input, :output].include?(target)
-      unmarshal_class = method(target).call
+      unmarshal_class = send(target)
       unmarshal_class = unmarshal_class.type if unmarshal_class.is_a? Stream
-      proc { |o| unmarshal_class.method(unmarshal_method).call(o) }
+      proc { |o| unmarshal_class.send(unmarshal_method, o) }
     end
 
     def handle_request_response(active_call, mth, inter_ctx)
