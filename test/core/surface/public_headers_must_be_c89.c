@@ -139,6 +139,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channelz_get_servers);
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
+  printf("%lx", (unsigned long) grpc_channelz_get_socket);
   printf("%lx", (unsigned long) grpc_auth_property_iterator_next);
   printf("%lx", (unsigned long) grpc_auth_context_property_iterator);
   printf("%lx", (unsigned long) grpc_auth_context_peer_identity);
