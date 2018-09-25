@@ -57,6 +57,8 @@ namespace Grpc.Core
         {
             this.contextualSerializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.contextualDeserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
+            // TODO(jtattermusch): once gRPC C# library switches to using contextual (de)serializer,
+            // emulating the simple (de)serializer will become unnecessary.
             this.serializer = EmulateSimpleSerializer;
             this.deserializer = EmulateSimpleDeserializer;
         }
@@ -87,6 +89,7 @@ namespace Grpc.Core
         private byte[] EmulateSimpleSerializer(T msg)
         {
             // TODO(jtattermusch): avoid the allocation by passing a thread-local instance
+            // This code will become unnecessary once gRPC C# library switches to using contextual (de)serializer.
             var context = new EmulatedSerializationContext();
             this.contextualSerializer(msg, context);
             return context.GetPayload();
@@ -96,6 +99,7 @@ namespace Grpc.Core
         private T EmulateSimpleDeserializer(byte[] payload)
         {
             // TODO(jtattermusch): avoid the allocation by passing a thread-local instance
+            // This code will become unnecessary once gRPC C# library switches to using contextual (de)serializer.
             var context = new EmulatedDeserializationContext(payload);
             return this.contextualDeserializer(context);
         }
@@ -134,6 +138,7 @@ namespace Grpc.Core
         internal class EmulatedDeserializationContext : DeserializationContext
         {
             readonly byte[] payload;
+            bool alreadyCalledPayloadAsNewBuffer;
 
             public EmulatedDeserializationContext(byte[] payload)
             {
@@ -144,6 +149,8 @@ namespace Grpc.Core
 
             public override byte[] PayloadAsNewBuffer()
             {
+                GrpcPreconditions.CheckState(!alreadyCalledPayloadAsNewBuffer);
+                alreadyCalledPayloadAsNewBuffer = true;
                 return payload;
             }
         }
