@@ -58,6 +58,8 @@ struct call_data {
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_closure* original_recv_trailing_metadata_ready;
   grpc_closure recv_trailing_metadata_ready;
+  grpc_error* recv_trailing_metadata_error;
+  bool seen_recv_trailing_metadata_ready;
   // State for handling send_message ops.
   grpc_transport_stream_op_batch* send_message_batch;
   size_t send_message_bytes_read;
@@ -157,12 +159,27 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   } else {
     GRPC_ERROR_REF(error);
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, error);
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_metadata_ready) {
+    GRPC_CALL_COMBINER_START(
+        calld->call_combiner, &calld->recv_trailing_metadata_ready,
+        calld->recv_trailing_metadata_error, "continue recv_trailing_metadata");
+  }
+  GRPC_CLOSURE_RUN(closure, error);
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->original_recv_initial_metadata_ready != nullptr) {
+    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
+    calld->seen_recv_trailing_metadata_ready = true;
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "deferring recv_trailing_metadata_ready until "
+                            "after recv_initial_metadata_ready");
+    return;
+  }
   if (error == GRPC_ERROR_NONE) {
     error =
         client_filter_incoming_metadata(elem, calld->recv_trailing_metadata);

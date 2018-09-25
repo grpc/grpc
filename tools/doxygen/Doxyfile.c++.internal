@@ -1080,7 +1080,6 @@ src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_epoll1_linux.h \
 src/core/lib/iomgr/ev_epollex_linux.h \
-src/core/lib/iomgr/ev_epollsig_linux.h \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/exec_ctx.h \
@@ -1190,7 +1189,6 @@ src/cpp/client/secure_credentials.h \
 src/cpp/codegen/codegen_init.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
-src/cpp/common/callback_common.cc \
 src/cpp/common/channel_arguments.cc \
 src/cpp/common/channel_filter.cc \
 src/cpp/common/channel_filter.h \

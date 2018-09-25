@@ -181,7 +181,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.1'
+    ss.dependency 'BoringSSL-GRPC', '0.0.2'
     ss.dependency 'nanopb', '~> 0.3'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
@@ -405,7 +405,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error_internal.h',
                       'src/core/lib/iomgr/ev_epoll1_linux.h',
                       'src/core/lib/iomgr/ev_epollex_linux.h',
-                      'src/core/lib/iomgr/ev_epollsig_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
@@ -551,7 +550,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error.cc',
                       'src/core/lib/iomgr/ev_epoll1_linux.cc',
                       'src/core/lib/iomgr/ev_epollex_linux.cc',
-                      'src/core/lib/iomgr/ev_epollsig_linux.cc',
                       'src/core/lib/iomgr/ev_poll_posix.cc',
                       'src/core/lib/iomgr/ev_posix.cc',
                       'src/core/lib/iomgr/ev_windows.cc',
@@ -1010,7 +1008,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/error_internal.h',
                               'src/core/lib/iomgr/ev_epoll1_linux.h',
                               'src/core/lib/iomgr/ev_epollex_linux.h',
-                              'src/core/lib/iomgr/ev_epollsig_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
@@ -1310,5 +1307,6 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
     find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
   END_OF_COMMAND
 end

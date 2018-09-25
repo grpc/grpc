@@ -37,13 +37,16 @@ typedef struct inproc_fixture_data {
 
 namespace {
 template <typename F>
-class CQDeletingCallback : public grpc_core::CQCallbackInterface {
+class CQDeletingCallback : public grpc_experimental_completion_queue_functor {
  public:
-  explicit CQDeletingCallback(F f) : func_(f) {}
-  ~CQDeletingCallback() override {}
-  void Run(bool ok) override {
-    func_(ok);
-    grpc_core::Delete(this);
+  explicit CQDeletingCallback(F f) : func_(f) {
+    functor_run = &CQDeletingCallback::Run;
+  }
+  ~CQDeletingCallback() {}
+  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+    auto* callback = static_cast<CQDeletingCallback*>(cb);
+    callback->func_(static_cast<bool>(ok));
+    grpc_core::Delete(callback);
   }
 
  private:
@@ -51,18 +54,24 @@ class CQDeletingCallback : public grpc_core::CQCallbackInterface {
 };
 
 template <typename F>
-grpc_core::CQCallbackInterface* NewDeletingCallback(F f) {
+grpc_experimental_completion_queue_functor* NewDeletingCallback(F f) {
   return grpc_core::New<CQDeletingCallback<F>>(f);
 }
 
-class ShutdownCallback : public grpc_core::CQCallbackInterface {
+class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback() : done_(false) {
+    functor_run = &ShutdownCallback::StaticRun;
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }
-  ~ShutdownCallback() override {}
-  void Run(bool ok) override {
+  ~ShutdownCallback() {}
+  static void StaticRun(grpc_experimental_completion_queue_functor* cb,
+                        int ok) {
+    auto* callback = static_cast<ShutdownCallback*>(cb);
+    callback->Run(static_cast<bool>(ok));
+  }
+  void Run(bool ok) {
     gpr_log(GPR_DEBUG, "CQ shutdown notification invoked");
     gpr_mu_lock(&mu_);
     done_ = true;
@@ -170,7 +179,7 @@ static void verify_tags(gpr_timespec deadline) {
 
 // This function creates a callback functor that emits the
 // desired tag into the global tag set
-static grpc_core::CQCallbackInterface* tag(intptr_t t) {
+static grpc_experimental_completion_queue_functor* tag(intptr_t t) {
   auto func = [t](bool ok) {
     gpr_mu_lock(&tags_mu);
     gpr_log(GPR_DEBUG, "Completing operation %" PRIdPTR, t);
