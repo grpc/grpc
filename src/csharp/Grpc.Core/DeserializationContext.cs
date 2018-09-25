@@ -37,6 +37,8 @@ namespace Grpc.Core
         /// Also, allocating a new buffer each time can put excessive pressure on GC, especially if
         /// the payload is more than 86700 bytes large (which means the newly allocated buffer will be placed in LOH,
         /// and LOH object can only be garbage collected via a full ("stop the world") GC run).
+        /// NOTE: Deserializers are expected not to call this method more than once per received message
+        /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
         /// </summary>
         /// <returns>byte array containing the entire payload.</returns>
         public abstract byte[] PayloadAsNewBuffer();
