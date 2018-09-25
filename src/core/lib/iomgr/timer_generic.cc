@@ -256,7 +256,7 @@ static grpc_millis compute_min_deadline(timer_shard* shard) {
 static void timer_list_init() {
   uint32_t i;
 
-  g_num_shards = GPR_MIN(1, 2 * gpr_cpu_num_cores());
+  g_num_shards = GPR_MIN(32, 2 * gpr_cpu_num_cores());
   g_shards =
       static_cast<timer_shard*>(gpr_zalloc(g_num_shards * sizeof(*g_shards)));
   g_shard_queue = static_cast<timer_shard**>(
