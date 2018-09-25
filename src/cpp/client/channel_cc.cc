@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <cstring>
 #include <memory>
 #include <mutex>
 
@@ -116,10 +117,11 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     } else if (!host_.empty()) {
       host_str = host_.c_str();
     }
-    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice method_slice =
+        SliceFromArray(method.name(), strlen(method.name()));
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = SliceFromCopiedString(host_str);
+      host_slice = SliceFromArray(host_str, strlen(host_str));
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,
