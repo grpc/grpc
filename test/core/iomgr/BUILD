@@ -40,7 +40,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.cc"],
-    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
+    data = ["//third_party/toolchains/machine-size:large"],
     language = "C++",
     deps = [
         "//:gpr",

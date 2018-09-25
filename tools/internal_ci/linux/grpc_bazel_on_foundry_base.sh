@@ -55,9 +55,9 @@ export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instan
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
   --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default \
-  --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large \
   --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
-  --platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large \
   --test_env=GRPC_VERBOSITY=debug \
   --remote_instance_name=projects/grpc-testing/instances/default_instance \
   $@ \

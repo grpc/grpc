@@ -168,7 +168,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
-    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
+    data = ["//third_party/toolchains/machine-size:large"],
     deps = [
         ":benchmark_config",
         ":driver_impl",

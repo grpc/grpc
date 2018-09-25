@@ -16,36 +16,60 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["RBE_USE_MACHINE_TYPE_LARGE",])
-
 # Latest RBE Ubuntu16_04 container
 # Update every time when a new container is released.
 alias(
     name = "rbe_ubuntu1604",
-    actual = ":rbe_ubuntu1604_r328903",
+    actual = ":rbe_ubuntu1604_r340178",
 )
 
-# RBE Ubuntu16_04 r328903
+alias(
+    name = "rbe_ubuntu1604_large",
+    actual = ":rbe_ubuntu1604_r340178_large",
+)
+
+# RBE Ubuntu16_04 r340178
 platform(
-    name = "rbe_ubuntu1604_r328903",
+    name = "rbe_ubuntu1604_r340178",
     constraint_values = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//tools/cpp:clang",
-        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
-        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
+        "//constraints:xenial",
+        "//constraints/sanitizers:support_msan",
+        "//third_party/toolchains/machine-size:standard",
     ],
     remote_execution_properties = """
         properties: {
           name: "container-image"
-          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f"
+          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:9bd8ba020af33edb5f11eff0af2f63b3bcb168cd6566d7b27c6685e717787928"
         }
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-highmem-2"
         }
+        """,
+)
+
+# RBE Ubuntu16_04 r340178
+platform(
+    name = "rbe_ubuntu1604_r340178_large",
+    constraint_values = [
+        "//third_party" +
+        "@bazel_tools//platforms:x86_64",
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//tools/cpp:clang",
+        "//constraints:xenial",
+        "//constraints/sanitizers:support_msan",
+        "//third_party/toolchains/machine-size:large",
+    ],
+    remote_execution_properties = """
         properties: {
-          name: "gceMachineType_LARGE"  # Large machines for a small set of resource-consuming tests such as combiner_tests under TSAN.
+          name: "container-image"
+          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:9bd8ba020af33edb5f11eff0af2f63b3bcb168cd6566d7b27c6685e717787928"
+        }
+        properties: {
+          name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-standard-8"
         }
         """,
