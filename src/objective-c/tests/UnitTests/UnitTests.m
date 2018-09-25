@@ -32,18 +32,26 @@
   const char *kDetails = "test details";
   const char *kErrorString = "test errorString";
   NSError *error1 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_OK details:nil errorString:nil];
-  NSError *error2 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_CANCELLED details:kDetails errorString:kErrorString];
-  NSError *error3 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAUTHENTICATED details:kDetails errorString:nil];
-  NSError *error4 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAVAILABLE details:nil errorString:nil];
+  NSError *error2 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_CANCELLED
+                                              details:kDetails
+                                          errorString:kErrorString];
+  NSError *error3 = [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAUTHENTICATED
+                                              details:kDetails
+                                          errorString:nil];
+  NSError *error4 =
+      [NSError grpc_errorFromStatusCode:GRPC_STATUS_UNAVAILABLE details:nil errorString:nil];
 
   XCTAssertNil(error1);
   XCTAssertEqual(error2.code, 1);
   XCTAssertEqualObjects(error2.domain, @"io.grpc");
-  XCTAssertEqualObjects(error2.userInfo[NSLocalizedDescriptionKey], [NSString stringWithUTF8String:kDetails]);
-  XCTAssertEqualObjects(error2.userInfo[NSDebugDescriptionErrorKey], [NSString stringWithUTF8String:kErrorString]);
+  XCTAssertEqualObjects(error2.userInfo[NSLocalizedDescriptionKey],
+                        [NSString stringWithUTF8String:kDetails]);
+  XCTAssertEqualObjects(error2.userInfo[NSDebugDescriptionErrorKey],
+                        [NSString stringWithUTF8String:kErrorString]);
   XCTAssertEqual(error3.code, 16);
   XCTAssertEqualObjects(error3.domain, @"io.grpc");
-  XCTAssertEqualObjects(error3.userInfo[NSLocalizedDescriptionKey], [NSString stringWithUTF8String:kDetails]);
+  XCTAssertEqualObjects(error3.userInfo[NSLocalizedDescriptionKey],
+                        [NSString stringWithUTF8String:kDetails]);
   XCTAssertNil(error3.userInfo[NSDebugDescriptionErrorKey]);
   XCTAssertEqual(error4.code, 14);
   XCTAssertEqualObjects(error4.domain, @"io.grpc");
