@@ -157,6 +157,10 @@ bool g_flow_control_enabled = true;
 static void destruct_transport(grpc_chttp2_transport* t) {
   size_t i;
 
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket.reset();
+  }
+
   grpc_endpoint_destroy(t->ep);
 
   grpc_slice_buffer_destroy_internal(&t->qbuf);
