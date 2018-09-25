@@ -670,12 +670,12 @@ TEST_F(ClientLbEnd2endTest, PickFirstRestartedUnusedSubchannel) {
   gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
   servers_[0]->Shutdown();
   // Wait longer than backup polling interval.
-  sleep(1);
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
   // The subchannel should be IDLE now.
   gpr_log(GPR_INFO, "****** RESTARTING SERVER ******");
   StartServers(1, ports);
   // Wait longer than backup polling interval.
-  sleep(1);
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1000));
   auto channel = BuildChannel("pick_first");
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
