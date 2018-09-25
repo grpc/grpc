@@ -231,9 +231,24 @@ grpc_json* SocketNode::RenderJson() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
+  gpr_timespec ts;
   if (streams_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "streamsStarted", streams_started_);
+    if (last_local_stream_created_millis_ != 0) {
+      ts = grpc_millis_to_timespec(last_local_stream_created_millis_,
+                                   GPR_CLOCK_REALTIME);
+      json_iterator = grpc_json_create_child(
+          json_iterator, json, "lastLocalStreamCreatedTimestamp",
+          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    }
+    if (last_remote_stream_created_millis_ != 0) {
+      ts = grpc_millis_to_timespec(last_remote_stream_created_millis_,
+                                   GPR_CLOCK_REALTIME);
+      json_iterator = grpc_json_create_child(
+          json_iterator, json, "lastRemoteStreamCreatedTimestamp",
+          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    }
   }
   if (streams_succeeded_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
@@ -243,7 +258,6 @@ grpc_json* SocketNode::RenderJson() {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "streamsFailed", streams_failed_);
   }
-  gpr_timespec ts;
   if (messages_sent_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "messagesSent", messages_sent_);
@@ -264,22 +278,6 @@ grpc_json* SocketNode::RenderJson() {
   if (keepalives_sent_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "keepAlivesSent", keepalives_sent_);
-  }
-  if (streams_started_ != 0) {
-    if (last_local_stream_created_millis_ != 0) {
-      ts = grpc_millis_to_timespec(last_local_stream_created_millis_,
-                                   GPR_CLOCK_REALTIME);
-      json_iterator = grpc_json_create_child(
-          json_iterator, json, "lastLocalStreamCreatedTimestamp",
-          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
-    }
-    if (last_remote_stream_created_millis_ != 0) {
-      ts = grpc_millis_to_timespec(last_remote_stream_created_millis_,
-                                   GPR_CLOCK_REALTIME);
-      json_iterator = grpc_json_create_child(
-          json_iterator, json, "lastRemoteStreamCreatedTimestamp",
-          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
-    }
   }
   return top_level_json;
 }
