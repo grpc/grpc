@@ -201,6 +201,7 @@ class JobSpec(object):
         self.verbose_success = verbose_success
         self.logfilename = logfilename
         if self.logfilename and self.flake_retries != 0 and self.timeout_retries != 0:
+            # Forbidden to avoid overwriting the test log when retrying.
             raise Exception(
                 'Cannot use custom logfile when retries are enabled')
 
