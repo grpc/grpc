@@ -1478,6 +1478,9 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/custom/custom_resolver.cc",
     ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/custom/custom_resolver.h",
+    ],
     language = "c++",
     deps = [
         "grpc_base",

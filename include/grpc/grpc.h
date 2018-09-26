@@ -201,96 +201,13 @@ GRPCAPI void grpc_channel_watch_connectivity_state(
 /** Check whether a grpc channel supports connectivity watcher */
 GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
 
-/** Returns a grpc_addresses struct with enough space for
-    \a capacity addresses. */
-GRPCAPI grpc_addresses* grpc_addresses_create_with_capacity(size_t capacity,
-                                                            void* reserved);
-
-/** Destroy addresses list. */
-GRPCAPI void grpc_addresses_destroy(grpc_addresses* addresses);
-
-/** Add backend address with \a target to \a addresses.
- * Channel will connect to \a target directly.
- * \a target is an uri with the ipv4, ipv6, or unix scheme. */
-GRPCAPI bool grpc_addresses_add_backend_address(grpc_addresses* addresses,
-                                                const char* target,
-                                                void* reserved);
-
-/** Add remote balancer address with \a target to \a addresses.
- * Channel will connect to remote balancer using \a address.
- * \a target is an uri with the ipv4, ipv6, or unix scheme.
- * \a balancer_name is used for overriding server name in secure connections and
- * can be empty. If set grpc creates its copy. */
-GRPCAPI bool grpc_addresses_add_balancer_address(grpc_addresses* addresses,
-                                                 const char* target,
-                                                 const char* balancer_name,
-                                                 void* reserved);
-
 /**
- * Get the scheme of \a uri.
- */
-GRPCAPI const char* grpc_uri_get_scheme(const grpc_uri* uri);
-
-/**
- * Get the authority of \a uri.
- */
-GRPCAPI const char* grpc_uri_get_authority(const grpc_uri* uri);
-
-/**
- * Get the path of \a uri.
- */
-GRPCAPI const char* grpc_uri_get_path(const grpc_uri* uri);
-
-/**
- * Get the value of \a uri argument with value \a key, or NULL \a key is not
- * present.
- */
-GRPCAPI const char* grpc_uri_get_query_arg(const grpc_uri* uri,
-                                           const char* key);
-
-typedef struct grpc_uri_query_iterator {
-  const grpc_uri* uri;
-  size_t index;
-  const char* key;
-  const char* value;
-} grpc_uri_query_iterator;
-
-/**
- * Get the iterator over query of \a uri.
- * Returned iterator points before the first element.
- */
-GRPCAPI grpc_uri_query_iterator
-grpc_uri_get_query_iterator(const grpc_uri* uri);
-
-/**
- * Returns NULL when \a iterator is at the end.
- */
-GRPCAPI grpc_uri_query_iterator* grpc_uri_query_iterator_next(
-    grpc_uri_query_iterator* iterator);
-
-/**
- * Get the fragment of \a uri.
- */
-GRPCAPI const char* grpc_uri_get_fragment(const grpc_uri* uri);
-
-/**
- * Get the target to resolve from \a args.
- */
-GRPCAPI grpc_uri* grpc_resolver_args_get_target(grpc_resolver_args* args);
-
-/**
- * Create and register a new resolver factory with \a scheme and callbacks.
+ * Create and register a new resolver \a factory with \a scheme.
  * \a scheme must be unique.
- * Thread Safety: All factories have to be registered before creating Channels.
+ * Thread Safety: All factories have to be registered at plugin initialization.
  */
-GRPCAPI void grpc_resolver_factory_register(
-    const char* scheme, void* factory_user_data,
-    void* (*resolver_factory_resolve)(void* factory_user_data,
-                                      grpc_resolver_args* args,
-                                      grpc_resolver_observer* observer),
-    void (*resolver_factory_destroy)(void* factory_user_data),
-    void (*resolver_request_reresolution)(void* resolver_user_data),
-    void (*resolver_destroy)(void* resolver_user_data), void* reserved);
+GRPCAPI void grpc_resolver_factory_register(const char* scheme,
+                                            grpc_resolver_factory factory);
 
 /**
  * Destroy \a observer.
@@ -302,8 +219,12 @@ GRPCAPI void grpc_resolver_observer_destroy(grpc_resolver_observer* observer);
 /**
  * Set new list of \a addresses to \a observer.
  */
-GRPCAPI void grpc_resolver_observer_set_addresses(
-    grpc_resolver_observer* observer, grpc_addresses* addresses);
+GRPCAPI void grpc_resolver_observer_set_result(
+    grpc_resolver_observer* observer, const grpc_resolver_result* result);
+
+GRPCAPI void grpc_resolver_observer_set_error(grpc_resolver_observer* observer,
+                                              const char* file, int line,
+                                              grpc_slice desc);
 
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only

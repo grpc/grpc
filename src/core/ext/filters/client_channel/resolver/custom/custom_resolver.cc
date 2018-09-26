@@ -29,10 +29,12 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/ext/filters/client_channel/resolver/custom/custom_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -40,143 +42,103 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/service_config.h"
 
 struct grpc_addresses {};
-struct grpc_resolver {};
 struct grpc_resolver_observer {};
-struct grpc_resolver_factory {};
-struct grpc_resolver_args {
-  const grpc_core::ResolverArgs* args;
-};
 
 namespace grpc_core {
 
 namespace {
 
-struct ResolverFactoryVTable {
-  void* (*resolve)(void* factory_user_data, grpc_resolver_args* args,
-                   grpc_resolver_observer* observer);
-  void (*destroy)(void* factory_user_data);
-};
+class PluginResolverObserver;
+class PluginResolverFactory;
 
-struct ResolverVTable {
-  void (*request_reresolution)(void* resolver_user_data);
-  void (*destroy)(void* resolver_user_data);
-};
-
-class CustomResolverObserver;
-
-class ResolverAddresses : public grpc_addresses {
+class PluginResolver : public Resolver {
  public:
-  ResolverAddresses(size_t capacity) : capacity_(capacity) {
-    addresses_ = grpc_lb_addresses_create(capacity, nullptr);
-    addresses_->num_addresses = 0;
+  explicit PluginResolver(const ResolverArgs& args);
+
+  bool Init(grpc_resolver resolver) {
+    resolver_ = resolver;
+    return resolver_.user_data != nullptr;
   }
-
-  ~ResolverAddresses() { grpc_lb_addresses_destroy(addresses_); }
-
-  bool AddAddress(const char* target, bool is_balancer,
-                  const char* balancer_name) {
-    if (addresses_->num_addresses >= capacity_) {
-      return false;
-    };
-    grpc_uri* uri = grpc_uri_parse(target, false);
-    if (!uri) return false;
-    size_t index = addresses_->num_addresses++;
-    bool result = grpc_lb_addresses_set_address_from_uri(
-        addresses_, index, uri, is_balancer, balancer_name, nullptr);
-    grpc_uri_destroy(uri);
-    if (!result) {
-      addresses_->num_addresses--;
-    }
-    return result;
-  }
-
-  grpc_lb_addresses* GetAddresses() { return addresses_; }
-
- private:
-  grpc_lb_addresses* addresses_;
-  size_t capacity_;
-};
-
-class CustomResolverFactory;
-
-class CustomResolver : public Resolver {
- public:
-  explicit CustomResolver(const ResolverArgs& args,
-                          const ResolverVTable& vtable);
-
-  void Init(void* user_data) { user_data_ = user_data; }
-  void SetNextResult(grpc_channel_args* resolved_channel_args);
+  void SetNextResult(grpc_channel_args* resolved_channel_args,
+                     grpc_error* error);
+  static void SetNextResultLocked(void* raw_args, grpc_error* error);
 
   void NextLocked(grpc_channel_args** result,
                   grpc_closure* on_complete) override;
 
   void RequestReresolutionLocked() override;
 
-  void InitObserver(CustomResolverObserver* observer);
+  void InitObserver(PluginResolverObserver* observer);
 
  private:
-  friend class CustomResolverFactory;
+  friend class PluginResolverFactory;
 
-  virtual ~CustomResolver();
+  virtual ~PluginResolver();
 
   void MaybeFinishNextLocked();
 
   void ShutdownLocked() override;
 
-  void* user_data_ = nullptr;
-  ResolverVTable vtable_;
+  grpc_resolver resolver_;
 
   // Next resolved addresses.
-  gpr_mu resolved_lock_;
   grpc_closure resolved_closure_;
   grpc_channel_args* resolved_channel_args_ = nullptr;
+  grpc_error* resolved_error_ = nullptr;
   // Pending next completion, or NULL.
   grpc_closure* next_completion_ = nullptr;
   grpc_channel_args** target_result_ = nullptr;
 };
 
-CustomResolver::CustomResolver(const ResolverArgs& args,
-                               const ResolverVTable& vtable)
-    : Resolver(args.combiner), vtable_(vtable) {
-  gpr_mu_init(&resolved_lock_);
+PluginResolver::PluginResolver(const ResolverArgs& args)
+    : Resolver(args.combiner) {
+  memset(&resolver_, 0, sizeof(resolver_));
 }
 
-CustomResolver::~CustomResolver() {
+PluginResolver::~PluginResolver() {
   grpc_channel_args_destroy(resolved_channel_args_);
-  gpr_mu_destroy(&resolved_lock_);
 }
 
 struct SetNextArgs {
-  CustomResolver* resolver;
-  RefCountedPtr<Resolver> resolver_guard;
+  SetNextArgs(RefCountedPtr<Resolver> resolver,
+              grpc_channel_args* resolved_channel_args, grpc_error* error,
+              grpc_closure_scheduler* scheduler)
+      : resolver(std::move(resolver)),
+        resolved_channel_args(resolved_channel_args),
+        error(error) {
+    GRPC_CLOSURE_INIT(&closure, PluginResolver::SetNextResultLocked, this,
+                      scheduler);
+    GRPC_CLOSURE_SCHED(&closure, GRPC_ERROR_NONE);
+  }
+
+  RefCountedPtr<Resolver> resolver;
+  grpc_channel_args* resolved_channel_args;
+  grpc_error* error;
+  grpc_closure closure;
 };
 
-void CustomResolver::SetNextResult(grpc_channel_args* resolved_channel_args) {
-  bool has_scheduled_closure = false;
-  {
-    MutexLock lock(&resolved_lock_);
-    if (resolved_channel_args_ != nullptr) {
-      has_scheduled_closure = true;
-      grpc_channel_args_destroy(resolved_channel_args_);
-    }
-    resolved_channel_args_ = resolved_channel_args;
-  }
-  if (!has_scheduled_closure) {
-    auto args = New<SetNextArgs>(SetNextArgs{this, Ref()});
-    GRPC_CLOSURE_INIT(&resolved_closure_,
-                      [](void* raw_args, grpc_error* error) {
-                        auto args = static_cast<SetNextArgs*>(raw_args);
-                        args->resolver->MaybeFinishNextLocked();
-                        Delete(args);
-                      },
-                      args, grpc_combiner_scheduler(combiner()));
-    GRPC_CLOSURE_SCHED(&resolved_closure_, GRPC_ERROR_NONE);
-  }
+void PluginResolver::SetNextResult(grpc_channel_args* resolved_channel_args,
+                                   grpc_error* error) {
+  New<SetNextArgs>(Ref(), resolved_channel_args, error,
+                   grpc_combiner_scheduler(combiner()));
 }
 
-void CustomResolver::NextLocked(grpc_channel_args** target_result,
+void PluginResolver::SetNextResultLocked(void* raw_args, grpc_error* error) {
+  auto* args = static_cast<SetNextArgs*>(raw_args);
+  auto* resolver = static_cast<PluginResolver*>(args->resolver.get());
+  grpc_channel_args_destroy(resolver->resolved_channel_args_);
+  if (resolver->resolved_error_ != nullptr)
+    GRPC_ERROR_UNREF(resolver->resolved_error_);
+  resolver->resolved_channel_args_ = args->resolved_channel_args;
+  resolver->resolved_error_ = args->error;
+  resolver->MaybeFinishNextLocked();
+  Delete(args);
+}
+
+void PluginResolver::NextLocked(grpc_channel_args** target_result,
                                 grpc_closure* on_complete) {
   GPR_ASSERT(next_completion_ == nullptr);
   next_completion_ = on_complete;
@@ -184,32 +146,28 @@ void CustomResolver::NextLocked(grpc_channel_args** target_result,
   MaybeFinishNextLocked();
 }
 
-void CustomResolver::RequestReresolutionLocked() {
-  vtable_.request_reresolution(user_data_);
+void PluginResolver::RequestReresolutionLocked() {
+  resolver_.request_reresolution(resolver_.user_data);
 }
 
-void CustomResolver::MaybeFinishNextLocked() {
-  if (next_completion_ != nullptr) {
-    grpc_channel_args* channel_args;
-    {
-      MutexLock lock(&resolved_lock_);
-      channel_args = resolved_channel_args_;
-      resolved_channel_args_ = nullptr;
-    }
-    if (channel_args != nullptr) {
-      *target_result_ = channel_args;
-      auto next_completion = next_completion_;
-      next_completion_ = nullptr;
-      GRPC_CLOSURE_SCHED(next_completion, GRPC_ERROR_NONE);
-    }
+void PluginResolver::MaybeFinishNextLocked() {
+  if (next_completion_ == nullptr) return;
+  if (resolved_channel_args_ == nullptr && resolved_error_ == nullptr) return;
+  *target_result_ = resolved_channel_args_;
+  auto* next_completion = next_completion_;
+  next_completion_ = nullptr;
+  GRPC_CLOSURE_SCHED(next_completion, resolved_error_);
+  resolved_channel_args_ = nullptr;
+  resolved_error_ = nullptr;
+}
+
+void PluginResolver::ShutdownLocked() {
+  if (resolver_.user_data != nullptr) {
+    resolver_.destroy(resolver_.user_data);
   }
-}
-
-void CustomResolver::ShutdownLocked() {
-  vtable_.destroy(user_data_);
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    auto next_completion = next_completion_;
+    auto* next_completion = next_completion_;
     next_completion_ = nullptr;
     GRPC_CLOSURE_SCHED(next_completion, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                             "Resolver Shutdown"));
@@ -220,144 +178,145 @@ void CustomResolver::ShutdownLocked() {
 // Observer
 //
 
-class CustomResolverObserver : public grpc_resolver_observer {
+class PluginResolverObserver : public grpc_resolver_observer {
  public:
-  CustomResolverObserver(const ResolverArgs& args,
-                         RefCountedPtr<Resolver> resolver) {
-    resolver_ = std::move(resolver);
-    channel_args_ = grpc_channel_args_copy(args.args);
+  PluginResolverObserver(const ResolverArgs& args,
+                         RefCountedPtr<Resolver> resolver)
+      : resolver_(std::move(resolver)),
+        channel_args_(grpc_channel_args_copy(args.args)) {}
+
+  ~PluginResolverObserver() { grpc_channel_args_destroy(channel_args_); }
+
+  void SetResult(const grpc_resolver_result* result) {
+    auto* channel_args =
+        add_resolver_result_to_channel_args(channel_args_, result);
+    auto* resolver = static_cast<PluginResolver*>(resolver_.get());
+    resolver->SetNextResult(channel_args, nullptr);
   }
 
-  ~CustomResolverObserver() { grpc_channel_args_destroy(channel_args_); }
-
-  void SetAddresses(grpc_lb_addresses* addresses) {
-    grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(addresses);
-    auto channel_args =
-        grpc_channel_args_copy_and_add(channel_args_, &new_arg, 1);
-    auto resolver = static_cast<CustomResolver*>(resolver_.get());
-    resolver->SetNextResult(channel_args);
+  void SetError(grpc_error* error) {
+    auto* resolver = static_cast<PluginResolver*>(resolver_.get());
+    resolver->SetNextResult(nullptr, error);
   }
 
  private:
   RefCountedPtr<Resolver> resolver_;
-  grpc_channel_args* channel_args_ = nullptr;
+  grpc_channel_args* channel_args_;
 };
 
 //
 // Factory
 //
 
-class CustomResolverFactory : public ResolverFactory,
+class PluginResolverFactory : public ResolverFactory,
                               public grpc_resolver_factory {
  public:
-  CustomResolverFactory(const char* scheme, void* user_data,
-                        const ResolverFactoryVTable& factory_vtable,
-                        const ResolverVTable& resolver_vtable)
-      : scheme_(gpr_strdup(scheme)),
-        user_data_(user_data),
-        factory_vtable_(factory_vtable),
-        resolver_vtable_(resolver_vtable) {}
+  PluginResolverFactory(const char* scheme,
+                        const grpc_resolver_factory& factory)
+      : scheme_(gpr_strdup(scheme)), factory_(factory) {}
 
-  ~CustomResolverFactory() {
-    gpr_free(scheme_);
-    factory_vtable_.destroy(user_data_);
-  }
+  ~PluginResolverFactory() { factory_.destroy(factory_.user_data); }
 
   OrphanablePtr<Resolver> CreateResolver(
       const ResolverArgs& args) const override {
-    auto resolver = New<CustomResolver>(args, resolver_vtable_);
-    auto observer = New<CustomResolverObserver>(args, resolver->Ref());
-    grpc_resolver_args api_args = {&args};
-    auto user_data = factory_vtable_.resolve(user_data_, &api_args, observer);
-    if (user_data == nullptr) {
-      resolver->Unref();
+    auto resolver = MakeOrphanable<PluginResolver>(args);
+    auto* observer = New<PluginResolverObserver>(args, resolver->Ref());
+    grpc_resolver_args api_args = {args.target, observer};
+    if (!resolver->Init(
+            factory_.create_resolver(factory_.user_data, &api_args))) {
       Delete(observer);
       return nullptr;
     }
-    resolver->Init(user_data);
-    return OrphanablePtr<Resolver>(resolver);
+    return OrphanablePtr<Resolver>(resolver.release());
   }
 
-  const char* scheme() const override { return scheme_; }
+  const char* scheme() const override { return scheme_.get(); }
 
  private:
-  char* scheme_;
-  void* user_data_;
-  ResolverFactoryVTable factory_vtable_;
-  ResolverVTable resolver_vtable_;
+  UniquePtr<char> scheme_;
+  grpc_resolver_factory factory_;
 };
+
+grpc_lb_addresses* grpc_lb_addresses_create_from_resolver_result(
+    const grpc_resolver_result* result) {
+  grpc_lb_addresses* addresses =
+      grpc_lb_addresses_create(result->num_addresses, nullptr);
+  size_t index = 0;
+  for (size_t i = 0; i < result->num_addresses; ++i) {
+    const grpc_address* address = &result->addresses[i];
+    grpc_uri* uri = grpc_uri_parse(address->target, false);
+    if (!uri) continue;
+    bool result = grpc_lb_addresses_set_address_from_uri(
+        addresses, index, uri, address->is_balancer, address->balancer_name,
+        nullptr);
+    if (result) index++;
+    grpc_uri_destroy(uri);
+  }
+  addresses->num_addresses = index;
+  return addresses;
+}
 
 }  // namespace
 
+grpc_channel_args* add_resolver_result_to_channel_args(
+    grpc_channel_args* base_args, const grpc_resolver_result* result) {
+  InlinedVector<const char*, 2> args_to_remove;
+  InlinedVector<grpc_arg, 3> new_args;
+  grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config;
+  grpc_lb_addresses* addresses =
+      grpc_lb_addresses_create_from_resolver_result(result);
+  new_args.emplace_back(grpc_lb_addresses_create_channel_arg(addresses));
+  if (result->json_service_config != nullptr) {
+    args_to_remove.emplace_back(GRPC_ARG_SERVICE_CONFIG);
+    new_args.emplace_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+        const_cast<char*>(result->json_service_config)));
+    service_config =
+        grpc_core::ServiceConfig::Create(result->json_service_config);
+    if (service_config != nullptr) {
+      const char* lb_policy_name = service_config->GetLoadBalancingPolicyName();
+      if (lb_policy_name != nullptr) {
+        args_to_remove.emplace_back(GRPC_ARG_LB_POLICY_NAME);
+        new_args.emplace_back(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_LB_POLICY_NAME),
+            const_cast<char*>(lb_policy_name)));
+      }
+    }
+  }
+  auto* channel_args = grpc_channel_args_copy_and_add_and_remove(
+      base_args, args_to_remove.data(), args_to_remove.size(), new_args.data(),
+      new_args.size());
+  grpc_lb_addresses_destroy(addresses);
+  return channel_args;
+}
+
 }  // namespace grpc_core
 
-grpc_uri* grpc_resolver_args_get_target(grpc_resolver_args* args) {
-  GPR_ASSERT(args != nullptr);
-  return args->args->uri;
-}
-
-grpc_addresses* grpc_addresses_create_with_capacity(size_t capacity,
-                                                    void* reserved) {
-  GPR_ASSERT(reserved == nullptr);
-  return grpc_core::New<grpc_core::ResolverAddresses>(capacity);
-}
-
-void grpc_addresses_destroy(grpc_addresses* addresses) {
-  grpc_core::Delete(addresses);
-}
-
-grpc_lb_addresses* grpc_addresses_copy_lb_addresses_for_test(
-    grpc_addresses* addresses) {
-  auto resolver_addrs = static_cast<grpc_core::ResolverAddresses*>(addresses);
-  return grpc_lb_addresses_copy(resolver_addrs->GetAddresses());
-}
-
-bool grpc_addresses_add_backend_address(grpc_addresses* addresses,
-                                        const char* target, void* reserved) {
-  GPR_ASSERT(reserved == nullptr);
-  auto resolver_addrs = static_cast<grpc_core::ResolverAddresses*>(addresses);
-  return resolver_addrs->AddAddress(target, false, nullptr);
-}
-
-bool grpc_addresses_add_balancer_address(grpc_addresses* addresses,
-                                         const char* target,
-                                         const char* balancer_name,
-                                         void* reserved) {
-  GPR_ASSERT(reserved == nullptr);
-  auto resolver_addrs = static_cast<grpc_core::ResolverAddresses*>(addresses);
-  return resolver_addrs->AddAddress(target, true, balancer_name);
-}
-
-void grpc_resolver_factory_register(
-    const char* scheme, void* factory_user_data,
-    void* (*resolver_factory_resolve)(void* factory_user_data,
-                                      grpc_resolver_args* args,
-                                      grpc_resolver_observer* observer),
-    void (*resolver_factory_destroy)(void* factory_user_data),
-    void (*resolver_request_reresolution)(void* resolver_user_data),
-    void (*resolver_destroy)(void* resolver_user_data), void* reserved) {
-  GPR_ASSERT(reserved == nullptr);
-  grpc_core::ResolverFactoryVTable resolver_factory_vtable = {
-      resolver_factory_resolve, resolver_factory_destroy};
-  grpc_core::ResolverVTable resolver_vtable = {resolver_request_reresolution,
-                                               resolver_destroy};
+void grpc_resolver_factory_register(const char* scheme,
+                                    grpc_resolver_factory factory) {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::CustomResolverFactory>(
-              scheme, factory_user_data, resolver_factory_vtable,
-              resolver_vtable)));
+          grpc_core::New<grpc_core::PluginResolverFactory>(scheme, factory)));
 }
 
 void grpc_resolver_observer_destroy(grpc_resolver_observer* observer) {
-  auto custom_observer =
-      static_cast<grpc_core::CustomResolverObserver*>(observer);
-  grpc_core::Delete(custom_observer);
+  auto* plugin_observer =
+      static_cast<grpc_core::PluginResolverObserver*>(observer);
+  grpc_core::Delete(plugin_observer);
 }
 
-void grpc_resolver_observer_set_addresses(grpc_resolver_observer* observer,
-                                          grpc_addresses* addresses) {
-  auto resolver_addrs = static_cast<grpc_core::ResolverAddresses*>(addresses);
-  auto custom_observer =
-      static_cast<grpc_core::CustomResolverObserver*>(observer);
-  custom_observer->SetAddresses(resolver_addrs->GetAddresses());
+void grpc_resolver_observer_set_result(grpc_resolver_observer* observer,
+                                       const grpc_resolver_result* result) {
+  auto* plugin_observer =
+      static_cast<grpc_core::PluginResolverObserver*>(observer);
+  plugin_observer->SetResult(result);
+}
+
+void grpc_resolver_observer_set_error(grpc_resolver_observer* observer,
+                                      const char* file, int line,
+                                      grpc_slice desc) {
+  auto* plugin_observer =
+      static_cast<grpc_core::PluginResolverObserver*>(observer);
+  grpc_error* error = grpc_error_create(file, line, desc, nullptr, 0);
+  plugin_observer->SetError(error);
 }
