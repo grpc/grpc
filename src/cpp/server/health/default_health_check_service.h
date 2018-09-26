@@ -168,20 +168,24 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       // Spawns a new handler so that we can keep servicing future calls.
       void OnCallReceived(std::shared_ptr<CallHandler> self, bool ok);
 
-      // Requires holding mu_.
+      // Requires holding send_mu_.
       void SendHealthLocked(std::shared_ptr<CallHandler> self,
                             ServingStatus status);
 
       // When sending a health result finishes.
       void OnSendHealthDone(std::shared_ptr<CallHandler> self, bool ok);
 
+      void SendFinish(std::shared_ptr<CallHandler> self, const Status& status);
+
+      // Requires holding service_->cq_shutdown_mu_.
+      void SendFinishLocked(std::shared_ptr<CallHandler> self,
+                            const Status& status);
+
       // Called when Finish() is done.
       void OnFinishDone(std::shared_ptr<CallHandler> self, bool ok);
 
       // Called when AsyncNotifyWhenDone() notifies us.
       void OnDoneNotified(std::shared_ptr<CallHandler> self, bool ok);
-
-      void Shutdown(std::shared_ptr<CallHandler> self, const char* reason);
 
       // The members passed down from HealthCheckServiceImpl.
       ServerCompletionQueue* cq_;
@@ -193,21 +197,12 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       GenericServerAsyncWriter stream_;
       ServerContext ctx_;
 
-      std::mutex mu_;
+      std::mutex send_mu_;
       bool send_in_flight_ = false;               // Guarded by mu_.
       ServingStatus pending_status_ = NOT_FOUND;  // Guarded by mu_.
 
-      // The state of the RPC progress.
-      enum CallState {
-        WAITING_FOR_CALL,
-        CALL_RECEIVED,
-        SEND_MESSAGE_PENDING,
-        FINISH_CALLED
-      } call_state_;
-
-      bool shutdown_ = false;
-      bool done_notified_ = false;
-      bool is_cancelled_ = false;
+      bool call_started_ = false;
+      bool finish_called_ = false;
       CallableTag next_;
       CallableTag on_done_notified_;
       CallableTag on_finish_done_;
@@ -229,8 +224,6 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
     DefaultHealthCheckService* database_;
     std::unique_ptr<ServerCompletionQueue> cq_;
-    internal::RpcServiceMethod* check_method_;
-    internal::RpcServiceMethod* watch_method_;
 
     // To synchronize the operations related to shutdown state of cq_, so that
     // we don't enqueue new tags into cq_ after it is already shut down.

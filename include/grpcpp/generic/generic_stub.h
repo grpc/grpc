@@ -19,9 +19,12 @@
 #ifndef GRPCPP_GENERIC_GENERIC_STUB_H
 #define GRPCPP_GENERIC_GENERIC_STUB_H
 
+#include <functional>
+
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/status.h>
 
 namespace grpc {
 
@@ -61,6 +64,26 @@ class GenericStub final {
   std::unique_ptr<GenericClientAsyncReaderWriter> Call(
       ClientContext* context, const grpc::string& method, CompletionQueue* cq,
       void* tag);
+
+  /// NOTE: class experimental_type is not part of the public API of this class
+  /// TODO(vjpai): Move these contents to the public API of GenericStub when
+  ///              they are no longer experimental
+  class experimental_type {
+   public:
+    explicit experimental_type(GenericStub* stub) : stub_(stub) {}
+
+    void UnaryCall(ClientContext* context, const grpc::string& method,
+                   const ByteBuffer* request, ByteBuffer* response,
+                   std::function<void(Status)> on_completion);
+
+   private:
+    GenericStub* stub_;
+  };
+
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
 
  private:
   std::shared_ptr<ChannelInterface> channel_;

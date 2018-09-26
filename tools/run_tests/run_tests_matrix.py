@@ -53,12 +53,7 @@ def _safe_report_name(name):
 
 
 def _report_filename(name):
-    """Generates report file name"""
-    return 'report_%s_%s' % (_safe_report_name(name), _REPORT_SUFFIX)
-
-
-def _report_filename_internal_ci(name):
-    """Generates report file name that leads to better presentation by internal CI"""
+    """Generates report file name with directory structure that leads to better presentation by internal CI"""
     return '%s/%s' % (_safe_report_name(name), _REPORT_SUFFIX)
 
 
@@ -507,8 +502,9 @@ if __name__ == "__main__":
         default=False,
         action='store_const',
         const=True,
-        help='Put reports into subdirectories to improve presentation of '
-        'results by Internal CI.')
+        help=
+        '(Deprecated, has no effect) Put reports into subdirectories to improve presentation of '
+        'results by Kokoro.')
     argp.add_argument(
         '--bq_result_table',
         default='',
@@ -516,9 +512,6 @@ if __name__ == "__main__":
         nargs='?',
         help='Upload test results to a specified BQ table.')
     args = argp.parse_args()
-
-    if args.internal_ci:
-        _report_filename = _report_filename_internal_ci  # override the function
 
     extra_args = []
     if args.build_only:

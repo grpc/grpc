@@ -41,9 +41,11 @@ struct call_data {
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
-  grpc_error* error;
+  grpc_error* recv_initial_metadata_error;
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
+  grpc_error* recv_trailing_metadata_error;
+  bool seen_recv_trailing_metadata_ready;
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
@@ -114,8 +116,16 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
         batch->payload->recv_initial_metadata.recv_initial_metadata,
         remove_consumed_md, elem, "Response metadata filtering error");
   }
-  calld->error = GRPC_ERROR_REF(error);
-  GRPC_CLOSURE_SCHED(calld->original_recv_initial_metadata_ready, error);
+  calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_metadata_ready) {
+    GRPC_CALL_COMBINER_START(calld->call_combiner,
+                             &calld->recv_trailing_metadata_ready,
+                             calld->recv_trailing_metadata_error,
+                             "continue recv_trailing_metadata_ready");
+  }
+  GRPC_CLOSURE_SCHED(closure, error);
 }
 
 // Called from application code.
@@ -184,14 +194,30 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
       return;
     }
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  if (calld->seen_recv_trailing_metadata_ready) {
+    GRPC_CALL_COMBINER_START(calld->call_combiner,
+                             &calld->recv_trailing_metadata_ready,
+                             calld->recv_trailing_metadata_error,
+                             "continue recv_trailing_metadata_ready");
+  }
+  GRPC_CLOSURE_RUN(closure, GRPC_ERROR_REF(error));
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  err = grpc_error_add_child(GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->error));
+  if (calld->original_recv_initial_metadata_ready != nullptr) {
+    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(err);
+    calld->seen_recv_trailing_metadata_ready = true;
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "deferring recv_trailing_metadata_ready until "
+                            "after recv_initial_metadata_ready");
+    return;
+  }
+  err = grpc_error_add_child(
+      GRPC_ERROR_REF(err), GRPC_ERROR_REF(calld->recv_initial_metadata_error));
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
 }
 
@@ -249,7 +275,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  GRPC_ERROR_UNREF(calld->error);
+  GRPC_ERROR_UNREF(calld->recv_initial_metadata_error);
 }
 
 /* Constructor for channel_data */

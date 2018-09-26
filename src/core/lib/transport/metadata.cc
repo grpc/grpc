@@ -342,24 +342,6 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
       changed ? nullptr : reinterpret_cast<grpc_mdelem_data*>(metadata));
 }
 
-static size_t get_base64_encoded_size(size_t raw_length) {
-  static const uint8_t tail_xtra[3] = {0, 2, 3};
-  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
-}
-
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata) {
-  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
-    return overhead_and_key + (use_true_binary_metadata
-                                   ? value_len + 1
-                                   : get_base64_encoded_size(value_len));
-  } else {
-    return overhead_and_key + value_len;
-  }
-}
-
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
   switch (GRPC_MDELEM_STORAGE(gmd)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:

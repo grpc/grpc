@@ -71,11 +71,12 @@ class PickFirst : public LoadBalancingPolicy {
       : public SubchannelData<PickFirstSubchannelList,
                               PickFirstSubchannelData> {
    public:
-    PickFirstSubchannelData(PickFirstSubchannelList* subchannel_list,
-                            const grpc_lb_user_data_vtable* user_data_vtable,
-                            const grpc_lb_address& address,
-                            grpc_subchannel* subchannel,
-                            grpc_combiner* combiner)
+    PickFirstSubchannelData(
+        SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
+            subchannel_list,
+        const grpc_lb_user_data_vtable* user_data_vtable,
+        const grpc_lb_address& address, grpc_subchannel* subchannel,
+        grpc_combiner* combiner)
         : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
                          combiner) {}
 

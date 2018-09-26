@@ -40,6 +40,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.cc"],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -47,7 +48,6 @@ grpc_cc_test(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
-    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
 )
 
 grpc_cc_test(
@@ -79,18 +79,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "ev_epollex_linux_test",
     srcs = ["ev_epollex_linux_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "ev_epollsig_linux_test",
-    srcs = ["ev_epollsig_linux_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -136,22 +124,9 @@ grpc_cc_test(
     ],
 )
 
-
 grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "pollset_set_test",
-    srcs = ["pollset_set_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -174,8 +149,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resolve_address_test",
+    name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
+    args = [
+        "--resolver=ares",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "resolve_address_using_native_resolver_test",
+    srcs = ["resolve_address_test.cc"],
+    args = [
+        "--resolver=native",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -257,7 +250,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
 
 grpc_cc_test(
     name = "tcp_server_posix_test",

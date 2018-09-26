@@ -852,10 +852,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     }
   } else {
     // No valid initial response or serverlist found.
+    char* response_slice_str =
+        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
             "[grpclb %p] Invalid LB response received: '%s'. Ignoring.",
-            grpclb_policy,
-            grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
+            grpclb_policy, response_slice_str);
+    gpr_free(response_slice_str);
   }
   grpc_slice_unref_internal(response_slice);
   if (!grpclb_policy->shutting_down_) {
@@ -1265,7 +1267,7 @@ void GrpcLb::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);
     if (channel_node != nullptr) {
-      child_channels->push_back(channel_node->channel_uuid());
+      child_channels->push_back(channel_node->uuid());
     }
   }
 }

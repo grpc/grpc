@@ -61,6 +61,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
+  /// TODO(vjpai): Allow override of cq_tag if appropriate for callback API
+  void* cq_tag() override { return this; }
+
   void Unref();
 
  private:

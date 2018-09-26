@@ -78,8 +78,19 @@ class Channel final : public ChannelInterface,
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
+  CompletionQueue* CallbackCQ() override;
+
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
+
+  // mu_ protects callback_cq_ (the per-channel callbackable completion queue)
+  std::mutex mu_;
+
+  // callback_cq_ references the callbackable completion queue associated
+  // with this channel (if any). It is set on the first call to CallbackCQ().
+  // It is _not owned_ by the channel; ownership belongs with its internal
+  // shutdown callback tag (invoked when the CQ is fully shutdown).
+  CompletionQueue* callback_cq_ = nullptr;
 };
 
 }  // namespace grpc

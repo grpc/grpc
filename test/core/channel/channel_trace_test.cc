@@ -40,6 +40,17 @@
 namespace grpc_core {
 namespace channelz {
 namespace testing {
+
+// testing peer to access channel internals
+class ChannelNodePeer {
+ public:
+  explicit ChannelNodePeer(ChannelNode* node) : node_(node) {}
+  ChannelTrace* trace() const { return &node_->trace_; }
+
+ private:
+  ChannelNode* node_;
+};
+
 namespace {
 
 grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
@@ -156,28 +167,29 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   ChannelFixture channel1(GetParam());
   RefCountedPtr<ChannelNode> sc1 =
       MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingSubchannel(
+  ChannelNodePeer sc1_peer(sc1.get());
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
   ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 6, GetParam());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  ValidateChannelTrace(sc1_peer.trace(), 3, GetParam());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  ValidateChannelTrace(sc1_peer.trace(), 6, GetParam());
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 5, GetParam());
   ChannelFixture channel2(GetParam());
   RefCountedPtr<ChannelNode> sc2 =
       MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("LB channel two created"), sc2);
-  tracer.AddTraceEventReferencingSubchannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   ValidateChannelTrace(&tracer, 7, GetParam());
@@ -203,33 +215,35 @@ TEST_P(ChannelTracerTest, TestNesting) {
   ChannelFixture channel1(GetParam());
   RefCountedPtr<ChannelNode> sc1 =
       MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  ChannelNodePeer sc1_peer(sc1.get());
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
   ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(sc1->trace());
+  AddSimpleTrace(sc1_peer.trace());
   ChannelFixture channel2(GetParam());
   RefCountedPtr<ChannelNode> conn1 =
       MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
+  ChannelNodePeer conn1_peer(conn1.get());
   // nesting one level deeper.
-  sc1->trace()->AddTraceEventReferencingSubchannel(
+  sc1_peer.trace()->AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("connection one created"), conn1);
   ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(conn1->trace());
+  AddSimpleTrace(conn1_peer.trace());
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   ValidateChannelTrace(&tracer, 5, GetParam());
-  ValidateChannelTrace(conn1->trace(), 1, GetParam());
+  ValidateChannelTrace(conn1_peer.trace(), 1, GetParam());
   ChannelFixture channel3(GetParam());
   RefCountedPtr<ChannelNode> sc2 =
       MakeRefCounted<ChannelNode>(channel3.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingSubchannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel two created"), sc2);
   // this trace should not get added to the parents children since it is already
   // present in the tracer.
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   AddSimpleTrace(&tracer);

@@ -380,7 +380,6 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<internal::RpcServiceMethod> unknown_method_;
-  std::unique_ptr<internal::RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -566,7 +565,11 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       DefaultHealthCheckServiceEnabled()) {
     auto* default_hc_service = new DefaultHealthCheckService;
     health_check_service_.reset(default_hc_service);
-    health_check_cq = new ServerCompletionQueue(GRPC_CQ_DEFAULT_POLLING);
+    // We create a non-polling CQ to avoid impacting application
+    // performance.  This ensures that we don't introduce thread hops
+    // for application requests that wind up on this CQ, which is polled
+    // in its own thread.
+    health_check_cq = new ServerCompletionQueue(GRPC_CQ_NON_POLLING);
     grpc_server_register_completion_queue(server_, health_check_cq->cq(),
                                           nullptr);
     default_health_check_service_impl =
@@ -668,6 +671,7 @@ void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
+  // TODO(vjpai): Use ops->cq_tag once this case supports callbacks
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   if (result != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);

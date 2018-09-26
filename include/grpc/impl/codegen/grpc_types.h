@@ -342,6 +342,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** If set to non zero, surfaces the user agent string to the server. User
+    agent is surfaced by default. */
+#define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
@@ -660,6 +663,19 @@ typedef enum {
   GRPC_CQ_CALLBACK
 } grpc_cq_completion_type;
 
+/** EXPERIMENTAL: Specifies an interface class to be used as a tag
+    for callback-based completion queues. This can be used directly,
+    as the first element of a struct in C, or as a base class in C++.
+    Its "run" value should be assigned to some non-member function, such as
+    a static method. */
+typedef struct grpc_experimental_completion_queue_functor {
+  /** The run member specifies a function that will be called when this
+      tag is extracted from the completion queue. Its arguments will be a
+      pointer to this functor and a boolean that indicates whether the
+      operation succeeded (non-zero) or failed (zero) */
+  void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+} grpc_experimental_completion_queue_functor;
+
 /* The upgrade to version 2 is currently experimental. */
 
 #define GRPC_CQ_CURRENT_VERSION 2
@@ -678,7 +694,7 @@ typedef struct grpc_completion_queue_attributes {
   /* EXPERIMENTAL: START OF VERSION 2 CQ ATTRIBUTES */
   /** When creating a callbackable CQ, pass in a functor to get invoked when
    * shutdown is complete */
-  void* cq_shutdown_cb;
+  grpc_experimental_completion_queue_functor* cq_shutdown_cb;
 
   /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;
