@@ -31,6 +31,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -312,6 +313,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
     while ((state = channel->GetState(false /* try_to_connect */)) ==
+           GRPC_CHANNEL_READY) {
+      if (!channel->WaitForStateChange(state, deadline)) return false;
+    }
+    return true;
+  }
+
+  bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
+    const gpr_timespec deadline =
+        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    grpc_connectivity_state state;
+    while ((state = channel->GetState(true /* try_to_connect */)) !=
            GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
@@ -995,6 +1007,68 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // the server was fully back up).
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
+
+TEST_F(ClientLbEnd2endTest, RoundRobinServersHealthCheckingNotSupported) {
+  StartServers(1);  // Single server
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel = BuildChannel("round_robin", args);
+  SetNextResolution({servers_[0]->port_});
+  EXPECT_FALSE(WaitForChannelReady(channel.get()));
+}
+
+#if 0
+class ClientLbEnd2endWithHealthCheckingTest : public ClientLbEnd2endTest {
+ protected:
+  void SetUp() override {
+    EnableDefaultHealthCheckService(true);
+    ClientLbEnd2endTest::SetUp();
+  }
+
+  void TearDown() override {
+    ClientLbEnd2endTest::TearDown();
+    EnableDefaultHealthCheckService(false);
+  }
+};
+
+TEST_F(ClientLbEnd2endWithHealthCheckingTest, RoundRobin) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel = BuildChannel("round_robin", args);
+  auto stub = BuildStub(channel);
+  std::vector<int> ports;
+  for (const auto& server : servers_) {
+    ports.emplace_back(server->port_);
+  }
+  SetNextResolution(ports);
+  // Wait until all backends are ready.
+  do {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  } while (!SeenAllServers());
+  ResetCounters();
+  // "Sync" to the end of the list. Next sequence of picks will start at the
+  // first server (index 0).
+  WaitForServer(stub, servers_.size() - 1, DEBUG_LOCATION);
+  std::vector<int> connection_order;
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    UpdateConnectionOrder(servers_, &connection_order);
+  }
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
+  const auto expected = std::vector<int>{0, 1, 2};
+  EXPECT_EQ(expected, connection_order);
+  // Check LB policy name for the channel.
+  EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
+}
+#endif
 
 }  // namespace
 }  // namespace testing

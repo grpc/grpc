@@ -47,6 +47,8 @@ class HealthCheckClient
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                     grpc_pollset_set* interested_parties);
 
+  ~HealthCheckClient() { GRPC_ERROR_UNREF(error_); }
+
   // When the health state changes from *state, sets *state to the new
   // value and schedules closure.
   // Only one closure can be outstanding at a time.
@@ -69,6 +71,9 @@ class HealthCheckClient
 
    private:
     void Cancel();
+
+    void StartBatch(grpc_transport_stream_op_batch* batch);
+    static void StartBatchInCallCombiner(void* arg, grpc_error* error);
 
     static void CallEndedRetry(void* arg, grpc_error* error);
     void CallEnded(bool retry);
@@ -97,6 +102,7 @@ class HealthCheckClient
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;
+    grpc_transport_stream_op_batch recv_message_batch_;
     grpc_transport_stream_op_batch recv_trailing_metadata_batch_;
 
     grpc_closure on_complete_;
@@ -122,6 +128,7 @@ class HealthCheckClient
 
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;
+    grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
   };
 
@@ -131,8 +138,8 @@ class HealthCheckClient
   void StartRetryTimer();
   static void OnRetryTimer(void* arg, grpc_error* error);
 
-  void SetHealthStatus(grpc_connectivity_state state);
-  void SetHealthStatusLocked(grpc_connectivity_state state);
+  void SetHealthStatus(grpc_connectivity_state state, grpc_error* error);
+  void SetHealthStatusLocked(grpc_connectivity_state state, grpc_error* error);
 
   const char* service_name_;  // Do not own.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -140,6 +147,7 @@ class HealthCheckClient
 
   gpr_mu mu_;
   grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
+  grpc_error* error_ = GRPC_ERROR_NONE;
   grpc_connectivity_state* notify_state_ = nullptr;
   grpc_closure* on_health_changed_ = nullptr;
   bool shutting_down_ = false;

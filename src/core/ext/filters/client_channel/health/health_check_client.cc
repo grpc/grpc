@@ -64,24 +64,28 @@ void HealthCheckClient::NotifyOnHealthChange(grpc_connectivity_state* state,
   GPR_ASSERT(notify_state_ == nullptr);
   if (*state != state_) {
     *state = state_;
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_REF(error_));
     return;
   }
   notify_state_ = state;
   on_health_changed_ = closure;
 }
 
-void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state) {
+void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
+                                        grpc_error* error) {
   MutexLock lock(&mu_);
-  SetHealthStatusLocked(state);
+  SetHealthStatusLocked(state, error);
 }
 
-void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state) {
+void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
+                                              grpc_error* error) {
   if (notify_state_ != nullptr && *notify_state_ != state) {
     *notify_state_ = state;
-    GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_NONE);
+    notify_state_ = nullptr;
+    GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_REF(error));
   }
   state_ = state;
+  error_ = error;
 }
 
 void HealthCheckClient::Orphan() {
@@ -109,7 +113,7 @@ void HealthCheckClient::StartCall() {
 void HealthCheckClient::StartCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(call_state_ == nullptr);
-  SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING);
+  SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE);
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
 // FIXME
 #if 0
@@ -124,7 +128,10 @@ void HealthCheckClient::StartCallLocked() {
 
 void HealthCheckClient::StartRetryTimer() {
   MutexLock lock(&mu_);
-  SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
+  SetHealthStatusLocked(
+      GRPC_CHANNEL_TRANSIENT_FAILURE,
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "health check call failed; will retry after backoff"));
   grpc_millis next_try = retry_backoff_.NextAttemptTime();
 // FIXME
 #if 0
@@ -329,7 +336,7 @@ void HealthCheckClient::CallState::StartCall() {
       &recv_message_ready_, RecvMessageReady, this, grpc_schedule_on_exec_ctx);
   batch_.recv_message = true;
   // Start batch.
-  grpc_subchannel_call_process_op(call_, &batch_);
+  StartBatch(&batch_);
   // Initialize recv_trailing_metadata batch.
   memset(&recv_trailing_metadata_batch_, 0,
          sizeof(recv_trailing_metadata_batch_));
@@ -338,6 +345,7 @@ void HealthCheckClient::CallState::StartCall() {
   grpc_metadata_batch_init(&recv_trailing_metadata_);
   payload_.recv_trailing_metadata.recv_trailing_metadata =
       &recv_trailing_metadata_;
+  payload_.recv_trailing_metadata.collect_stats = &collect_stats_;
   // This callback signals the end of the call, so it relies on the
   // initial ref instead of taking a new ref.  When it's invoked, the
   // initial ref is released.
@@ -347,7 +355,25 @@ void HealthCheckClient::CallState::StartCall() {
                         grpc_schedule_on_exec_ctx);
   recv_trailing_metadata_batch_.recv_trailing_metadata = true;
   // Start recv_trailing_metadata batch.
-  grpc_subchannel_call_process_op(call_, &recv_trailing_metadata_batch_);
+  StartBatch(&recv_trailing_metadata_batch_);
+}
+
+void HealthCheckClient::CallState::StartBatchInCallCombiner(void* arg,
+                                                            grpc_error* error) {
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
+  grpc_subchannel_call* call =
+      static_cast<grpc_subchannel_call*>(batch->handler_private.extra_arg);
+  grpc_subchannel_call_process_op(call, batch);
+}
+
+void HealthCheckClient::CallState::StartBatch(
+    grpc_transport_stream_op_batch* batch) {
+  batch->handler_private.extra_arg = call_;
+  GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
+                    batch, grpc_schedule_on_exec_ctx);
+  GRPC_CALL_COMBINER_START(&call_combiner_, &batch->handler_private.closure,
+                           GRPC_ERROR_NONE, "start_subchannel_batch");
 }
 
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,
@@ -399,16 +425,29 @@ void HealthCheckClient::CallState::RecvInitialMetadataReady(void* arg,
 void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   recv_message_.reset();
   if (error != GRPC_ERROR_NONE) {
+    GRPC_ERROR_UNREF(error);
     Cancel();
-  } else {
-    const bool healthy = DecodeResponse(&recv_message_buffer_);
-    const grpc_connectivity_state state =
-        healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-    health_check_client_->SetHealthStatus(state);
-    gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
+    grpc_slice_buffer_destroy(&recv_message_buffer_);
+    Unref(DEBUG_LOCATION, "recv_message_ready");
+    return;
   }
+  const bool healthy = DecodeResponse(&recv_message_buffer_);
+  const grpc_connectivity_state state =
+      healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
+  health_check_client_->SetHealthStatus(state, error);
+  gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
   grpc_slice_buffer_destroy(&recv_message_buffer_);
-  Unref(DEBUG_LOCATION, "recv_message_ready");
+  // Start another recv_message batch.
+  // This re-uses the ref we're holding.
+  // Note: Can't just reuse batch_ here, since we don't know that all
+  // callbacks from the original batch have completed yet.
+  memset(&recv_message_batch_, 0, sizeof(recv_message_batch_));
+  recv_message_batch_.payload = &payload_;
+  payload_.recv_message.recv_message = &recv_message_;
+  payload_.recv_message.recv_message_ready = GRPC_CLOSURE_INIT(
+      &recv_message_ready_, RecvMessageReady, this, grpc_schedule_on_exec_ctx);
+  recv_message_batch_.recv_message = true;
+  StartBatch(&recv_message_batch_);
 }
 
 grpc_error* HealthCheckClient::CallState::PullSliceFromRecvMessage() {
@@ -439,7 +478,7 @@ void HealthCheckClient::CallState::OnByteStreamNext(void* arg,
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   if (error != GRPC_ERROR_NONE) {
-    self->DoneReadingRecvMessage(error);
+    self->DoneReadingRecvMessage(GRPC_ERROR_REF(error));
     return;
   }
   error = self->PullSliceFromRecvMessage();
@@ -459,6 +498,10 @@ void HealthCheckClient::CallState::RecvMessageReady(void* arg,
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
+  if (self->recv_message_ == nullptr) {
+    self->Unref(DEBUG_LOCATION, "recv_message_ready");
+    return;
+  }
   grpc_slice_buffer_init(&self->recv_message_buffer_);
   GRPC_CLOSURE_INIT(&self->recv_message_ready_, OnByteStreamNext, self,
                     grpc_schedule_on_exec_ctx);
@@ -488,7 +531,8 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   bool retry = true;
   if (status == GRPC_STATUS_UNIMPLEMENTED) {
 // FIXME: log and add subchannel trace event
-    self->health_check_client_->SetHealthStatus(GRPC_CHANNEL_READY);
+    self->health_check_client_->SetHealthStatus(GRPC_CHANNEL_READY,
+                                                GRPC_ERROR_NONE);
     retry = false;
   }
   self->CallEnded(retry);
