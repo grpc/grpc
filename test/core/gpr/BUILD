@@ -81,7 +81,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
-    data = ["//third_party/toolchains/machine-size:large"],
+    exec_compatible_with = ["//third_party/toolchains/machine-size:large"],
     language = "C++",
     deps = [
         "//:gpr",

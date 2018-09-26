@@ -168,10 +168,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
-    data = ["//third_party/toolchains/machine-size:large"],
+    exec_compatible_with = ["//third_party/toolchains/machine-size:large"],
     deps = [
         ":benchmark_config",
-        ":driver_impl",
+        ":driver_impl",r
         ":qps_worker_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
