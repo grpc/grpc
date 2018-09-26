@@ -70,6 +70,7 @@ class HealthCheckClient
    private:
     void Cancel();
 
+    static void CallEndedRetry(void* arg, grpc_error* error);
     void CallEnded(bool retry);
 
     static void OnComplete(void* arg, grpc_error* error);
@@ -125,6 +126,7 @@ class HealthCheckClient
   };
 
   void StartCall();
+  void StartCallLocked();  // Requires holding mu_.
 
   void StartRetryTimer();
   static void OnRetryTimer(void* arg, grpc_error* error);

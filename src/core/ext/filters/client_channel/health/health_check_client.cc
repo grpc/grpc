@@ -85,22 +85,28 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state) {
 }
 
 void HealthCheckClient::Orphan() {
-  MutexLock lock(&mu_);
-  if (on_health_changed_ != nullptr) {
-    GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_CANCELLED);
-    notify_state_ = nullptr;
-    on_health_changed_ = nullptr;
-  }
-  shutting_down_ = true;
-  call_state_.reset();
-  if (retry_timer_callback_pending_) {
-    grpc_timer_cancel(&retry_timer_);
+  {
+    MutexLock lock(&mu_);
+    if (on_health_changed_ != nullptr) {
+      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_CANCELLED);
+      notify_state_ = nullptr;
+      on_health_changed_ = nullptr;
+    }
+    shutting_down_ = true;
+    call_state_.reset();
+    if (retry_timer_callback_pending_) {
+      grpc_timer_cancel(&retry_timer_);
+    }
   }
   Unref(DEBUG_LOCATION, "orphan");
 }
 
 void HealthCheckClient::StartCall() {
   MutexLock lock(&mu_);
+  StartCallLocked();
+}
+
+void HealthCheckClient::StartCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(call_state_ == nullptr);
   SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING);
@@ -144,18 +150,20 @@ void HealthCheckClient::StartRetryTimer() {
 
 void HealthCheckClient::OnRetryTimer(void* arg, grpc_error* error) {
   HealthCheckClient* self = static_cast<HealthCheckClient*>(arg);
-  MutexLock lock(&self->mu_);
-  self->retry_timer_callback_pending_ = false;
-  if (!self->shutting_down_ && error == GRPC_ERROR_NONE &&
-      self->call_state_ == nullptr) {
+  {
+    MutexLock lock(&self->mu_);
+    self->retry_timer_callback_pending_ = false;
+    if (!self->shutting_down_ && error == GRPC_ERROR_NONE &&
+        self->call_state_ == nullptr) {
 // FIXME
 #if 0
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server",
-              grpclb_policy);
-    }
+      if (grpc_lb_glb_trace.enabled()) {
+        gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server",
+                grpclb_policy);
+      }
 #endif
-    self->StartCall();
+      self->StartCallLocked();
+    }
   }
   self->Unref(DEBUG_LOCATION, "health_retry_timer");
 }
@@ -273,7 +281,12 @@ void HealthCheckClient::CallState::StartCall() {
   if (error != GRPC_ERROR_NONE) {
 // FIXME: log
     GRPC_ERROR_UNREF(error);
-    CallEnded(true /* retry */);
+    // Schedule instead of running directly, since we must not be
+    // holding health_check_client_->mu_ when CallEnded() is called.
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry,
+                          this, grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
     return;
   }
   // Initialize payload and batch.
@@ -479,6 +492,13 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     retry = false;
   }
   self->CallEnded(retry);
+}
+
+void HealthCheckClient::CallState::CallEndedRetry(void* arg,
+                                                  grpc_error* error) {
+  HealthCheckClient::CallState* self =
+      static_cast<HealthCheckClient::CallState*>(arg);
+  self->CallEnded(true /* retry */);
 }
 
 void HealthCheckClient::CallState::CallEnded(bool retry) {
