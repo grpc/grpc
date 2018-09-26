@@ -99,18 +99,18 @@ Add/Remove fd to the `grpc_pollset_set`
 
 __Relation between grpc_pollset_worker, grpc_pollset and grpc_fd:__
 
-![image](images/grpc-ps-pss-fd.png)
+![image](../images/grpc-ps-pss-fd.png)
 
 __grpc_pollset_set__
 
-![image](images/grpc-pss.png)
+![image](../images/grpc-pss.png)
 
 
 ## Polling Engine Implementations
 
 ### epoll1
 
-![image](images/grpc-epoll1.png)
+![image](../images/grpc-epoll1.png)
 
 Code at `src/core/lib/iomgr/ev_epoll1_posix.cc`
 
@@ -124,7 +124,7 @@ Code at `src/core/lib/iomgr/ev_epoll1_posix.cc`
 
 ### epollex
 
-![image](images/grpc-epollex.png)
+![image](../images/grpc-epollex.png)
 
 Code at `src/core/lib/iomgr/ev_epollex_posix.cc`
 
