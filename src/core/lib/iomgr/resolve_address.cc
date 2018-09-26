@@ -44,7 +44,8 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
 
 grpc_error* grpc_blocking_resolve_address(const char* name,
                                           const char* default_port,
-                                          grpc_resolved_addresses** addresses) {
+                                          grpc_resolved_addresses** addresses,
+                                          grpc_channel_args* channel_args) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
-                                                             addresses);
+                                                             addresses, channel_args);
 }

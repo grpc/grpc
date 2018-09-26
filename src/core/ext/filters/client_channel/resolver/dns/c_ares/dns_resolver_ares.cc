@@ -454,9 +454,9 @@ static grpc_address_resolver_vtable* default_resolver;
 
 static grpc_error* blocking_resolve_address_ares(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args* channel_args) {
   return default_resolver->blocking_resolve_address(name, default_port,
-                                                    addresses);
+                                                    addresses, channel_args);
 }
 
 static grpc_address_resolver_vtable ares_resolver = {

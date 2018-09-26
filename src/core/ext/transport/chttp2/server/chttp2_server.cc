@@ -266,7 +266,7 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   *port_num = -1;
 
   /* resolve address */
-  err = grpc_blocking_resolve_address(addr, "https", &resolved);
+  err = grpc_blocking_resolve_address(addr, "https", &resolved, args);
   if (err != GRPC_ERROR_NONE) {
     goto error;
   }
