@@ -127,7 +127,8 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
   if (subchannel_ == nullptr) {
     state = GRPC_CHANNEL_SHUTDOWN;
   } else {
-    state = grpc_subchannel_check_connectivity(subchannel_, nullptr);
+    state = grpc_subchannel_check_connectivity(
+        subchannel_, nullptr, true /* inhibit_health_checking */);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
