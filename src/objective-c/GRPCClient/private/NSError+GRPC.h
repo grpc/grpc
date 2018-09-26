@@ -25,6 +25,6 @@
  * and whose domain is |kGRPCErrorDomain|.
  */
 + (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode
-                                 details:(char *)details
+                                 details:(const char *)details
                              errorString:(const char *)errorString;
 @end
