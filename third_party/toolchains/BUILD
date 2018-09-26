@@ -51,7 +51,7 @@ platform(
         """,
 )
 
-# RBE Ubuntu16_04 r340178
+# RBE Ubuntu16_04 r340178 large
 platform(
     name = "rbe_ubuntu1604_r340178_large",
     constraint_values = [

@@ -171,7 +171,7 @@ grpc_cc_test(
     exec_compatible_with = ["//third_party/toolchains/machine-size:large"],
     deps = [
         ":benchmark_config",
-        ":driver_impl",r
+        ":driver_impl",
         ":qps_worker_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
