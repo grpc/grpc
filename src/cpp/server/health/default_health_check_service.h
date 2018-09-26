@@ -201,7 +201,6 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       bool send_in_flight_ = false;               // Guarded by mu_.
       ServingStatus pending_status_ = NOT_FOUND;  // Guarded by mu_.
 
-      bool call_started_ = false;
       bool finish_called_ = false;
       CallableTag next_;
       CallableTag on_done_notified_;
