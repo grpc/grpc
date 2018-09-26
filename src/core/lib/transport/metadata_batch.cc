@@ -156,6 +156,7 @@ grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
   grpc_error* err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
     assert_valid_callouts(batch);
+    GRPC_MDELEM_UNREF(storage->md);
     return err;
   }
   link_head(&batch->list, storage);
@@ -193,6 +194,7 @@ grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
   grpc_error* err = maybe_link_callout(batch, storage);
   if (err != GRPC_ERROR_NONE) {
     assert_valid_callouts(batch);
+    GRPC_MDELEM_UNREF(storage->md);
     return err;
   }
   link_tail(&batch->list, storage);
