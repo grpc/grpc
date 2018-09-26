@@ -949,9 +949,128 @@ std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config) {
       return nullptr;
   }
 }
+
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args) {
   return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
+}
+
+class CallbackClient
+    : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
+ public:
+  CallbackClient(const ClientConfig& config)
+      : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
+            config, BenchmarkStubCreator) {
+    num_threads_ =
+        config.outstanding_rpcs_per_channel() * config.client_channels();
+    SetupLoadTest(config, num_threads_);
+    threads_done_ = 0;
+  }
+
+  virtual ~CallbackClient() {}
+
+  virtual bool InitThreadFuncImpl(size_t thread_idx) {
+    return true;
+  }
+
+  virtual bool ThreadFuncImpl(Thread *t, size_t thread_idx) = 0;
+
+  void ThreadFunc(size_t thread_idx, Thread* t) override {
+    if (!InitThreadFuncImpl(thread_idx)) {
+      return;
+    }
+
+    if (!closed_loop_) {
+      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      // Start an alarm call back to run the internal callback after
+      // next_issue_time
+      Alarm *alarm = new Alarm();
+      alarm->experimental().Set(next_issue_time,
+                                [this, t, thread_idx, alarm](bool ok) {
+                                  delete alarm;
+                                  ThreadFuncImpl(t, thread_idx);
+                                  });
+    } else {
+      ThreadFuncImpl(t, thread_idx);
+    }
+  }
+
+ protected:
+  size_t num_threads_;
+  std::mutex mu_;
+  std::condition_variable cv_;
+  size_t threads_done_;
+};
+
+class CallbackUnaryClient final : public CallbackClient {
+ public:
+  CallbackUnaryClient(const ClientConfig& config)
+      : CallbackClient(config) {
+    StartThreads(num_threads_);
+  }
+  ~CallbackUnaryClient() {}
+
+  bool ThreadFuncImpl(Thread *t, size_t thread_idx) override {
+    auto* stub = channels_[thread_idx % channels_.size()].get_stub();
+    ClientContext* context = new grpc::ClientContext();
+    SimpleResponse *response = new SimpleResponse();
+    GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
+    double start = UsageTimer::Now();
+    stub->experimental_async()->UnaryCall(
+        context, &request_, response,
+                       [this, t, thread_idx, start, context, response](grpc::Status s) {
+                         // Update Histogram with data from the callback run
+                         HistogramEntry entry;
+                         if (s.ok()) {
+                           entry.set_value((UsageTimer::Now() - start) * 1e9);
+                         }
+                         entry.set_status(s.error_code());
+                         t->UpdateHistogram(&entry);
+
+                         // Clean up after this callback and check for
+                         // termination
+                         delete context;
+                         delete response;
+                         if (ThreadCompleted()) {
+                           std::lock_guard<std::mutex> l(mu_);
+                           threads_done_++;
+                           if (threads_done_ == num_threads_) {
+                            cv_.notify_one();
+                           }
+                           return;
+                         }
+
+                         // Start a new Unary call
+                         ThreadFunc(thread_idx, t);
+                       });
+    return true;
+  }
+
+ private:
+  void DestroyMultithreading() override final {
+    std::unique_lock<std::mutex> l(mu_);
+    while(threads_done_ != num_threads_) {
+      cv_.wait(l);
+    }
+    EndThreads();
+  }
+};
+
+std::unique_ptr<Client> CreateCallbackClient(
+    const ClientConfig& config) {
+  switch (config.rpc_type()) {
+    case UNARY:
+      return std::unique_ptr<Client>(new CallbackUnaryClient(config));
+    case STREAMING:
+    case STREAMING_FROM_CLIENT:
+    case STREAMING_FROM_SERVER:
+    case STREAMING_BOTH_WAYS:
+      assert(false);
+      return nullptr;
+    default:
+      assert(false);
+      return nullptr;
+  }
 }
 
 }  // namespace testing
