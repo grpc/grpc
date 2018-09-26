@@ -42,7 +42,9 @@ output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
 
-unless windows
+if ENV['PREFIX']
+  grpc_lib_dir = ENV['PREFIX'] + '/lib'
+else not windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
