@@ -47,7 +47,7 @@ class HealthCheckClient
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                     grpc_pollset_set* interested_parties);
 
-  ~HealthCheckClient() { GRPC_ERROR_UNREF(error_); }
+  ~HealthCheckClient();
 
   // When the health state changes from *state, sets *state to the new
   // value and schedules closure.

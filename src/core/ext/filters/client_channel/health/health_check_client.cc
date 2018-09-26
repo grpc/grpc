@@ -25,6 +25,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "src/core/ext/filters/client_channel/health/health.pb.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
@@ -33,6 +34,9 @@
 #define HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define HEALTH_CHECK_RECONNECT_JITTER 0.2
+
+grpc_core::TraceFlag grpc_health_check_client_trace(false,
+                                                    "health_check_client");
 
 namespace grpc_core {
 
@@ -44,7 +48,9 @@ HealthCheckClient::HealthCheckClient(
     const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties)
-    : service_name_(service_name),
+    : InternallyRefCountedWithTracing<HealthCheckClient>(
+          &grpc_health_check_client_trace),
+      service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       retry_backoff_(
@@ -55,7 +61,16 @@ HealthCheckClient::HealthCheckClient(
               .set_jitter(HEALTH_CHECK_RECONNECT_JITTER)
               .set_max_backoff(HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
+  }
+  gpr_mu_init(&mu_);
   StartCall();
+}
+
+HealthCheckClient::~HealthCheckClient() {
+  GRPC_ERROR_UNREF(error_);
+  gpr_mu_destroy(&mu_);
 }
 
 void HealthCheckClient::NotifyOnHealthChange(grpc_connectivity_state* state,
@@ -115,14 +130,10 @@ void HealthCheckClient::StartCallLocked() {
   GPR_ASSERT(call_state_ == nullptr);
   SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE);
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
-// FIXME
-#if 0
-  if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
-            this, lb_channel_, lb_calld_.get());
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
+            call_state_.get());
   }
-#endif
   call_state_->StartCall();
 }
 
@@ -133,20 +144,18 @@ void HealthCheckClient::StartRetryTimer() {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "health check call failed; will retry after backoff"));
   grpc_millis next_try = retry_backoff_.NextAttemptTime();
-// FIXME
-#if 0
-  if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
-      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
-              this, timeout);
+      gpr_log(GPR_INFO,
+              "HealthCheckClient %p: ... will retry in %" PRId64 "ms.", this,
+              timeout);
     } else {
-      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
+      gpr_log(GPR_INFO, "HealthCheckClient %p: ... retrying immediately.",
               this);
     }
   }
-#endif
   // Ref for callback, tracked manually.
   Ref(DEBUG_LOCATION, "health_retry_timer").release();
   GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
@@ -162,13 +171,10 @@ void HealthCheckClient::OnRetryTimer(void* arg, grpc_error* error) {
     self->retry_timer_callback_pending_ = false;
     if (!self->shutting_down_ && error == GRPC_ERROR_NONE &&
         self->call_state_ == nullptr) {
-// FIXME
-#if 0
-      if (grpc_lb_glb_trace.enabled()) {
-        gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server",
-                grpclb_policy);
+      if (grpc_health_check_client_trace.enabled()) {
+        gpr_log(GPR_INFO, "HealthCheckClient %p: restarting health check call",
+                self);
       }
-#endif
       self->StartCallLocked();
     }
   }
@@ -251,10 +257,15 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer) {
 HealthCheckClient::CallState::CallState(
     RefCountedPtr<HealthCheckClient> health_check_client,
     grpc_pollset_set* interested_parties)
-    : health_check_client_(std::move(health_check_client)),
+    : InternallyRefCountedWithTracing<CallState>(
+          &grpc_health_check_client_trace),
+      health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(gpr_arena_create(health_check_client_->connected_subchannel_
                                   ->GetInitialCallSizeEstimate(0))) {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "created HealthCheckClient::CallState %p", this);
+  }
   memset(&call_combiner_, 0, sizeof(call_combiner_));
   grpc_call_combiner_init(&call_combiner_);
   memset(context_, 0, sizeof(context_));
@@ -262,7 +273,7 @@ HealthCheckClient::CallState::CallState(
 }
 
 HealthCheckClient::CallState::~CallState() {
-  GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
+  if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
   gpr_arena_destroy(arena_);
   grpc_call_combiner_destroy(&call_combiner_);
 }
@@ -290,6 +301,7 @@ void HealthCheckClient::CallState::StartCall() {
     GRPC_ERROR_UNREF(error);
     // Schedule instead of running directly, since we must not be
     // holding health_check_client_->mu_ when CallEnded() is called.
+    Ref(DEBUG_LOCATION, "call_end_closure").release();
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry,
                           this, grpc_schedule_on_exec_ctx),
@@ -543,6 +555,7 @@ void HealthCheckClient::CallState::CallEndedRetry(void* arg,
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   self->CallEnded(true /* retry */);
+  self->Unref(DEBUG_LOCATION, "call_end_closure");
 }
 
 void HealthCheckClient::CallState::CallEnded(bool retry) {
