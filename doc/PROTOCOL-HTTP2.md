@@ -102,10 +102,11 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 ### Responses
 
 * **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
-* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
+* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type [Server] \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
 * **Trailers** → Status [Status-Message] \*Custom-Metadata
 * **HTTP-Status** → ":status 200"
+* **Server** → "server" {_structured user-agent string_}
 * **Status** → "grpc-status" 1\*DIGIT ; 0-9
 * **Status-Message** → "grpc-message" Percent-Encoded
 * **Percent-Encoded** → 1\*(Percent-Byte-Unencoded / Percent-Byte-Encoded)
@@ -173,7 +174,11 @@ trace-proto-bin = jher831yy13JHy3hc
 
 #### User Agents
 
-While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
+While the protocol does not require a user-agent to function it is recommended
+that clients and servers provide a structured user-agent string that provides a
+basic description of the calling library, version & platform to facilitate issue
+diagnosis in heterogeneous environments. The following structure is recommended
+to library developers
 ```
 User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " ("  *(AdditionalProperty ";") ")" )
 ```
