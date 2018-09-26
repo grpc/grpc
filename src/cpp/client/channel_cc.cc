@@ -111,17 +111,17 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
         context->propagation_options_.c_bitmask(), cq->cq(),
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
-    const char* host_str = nullptr;
+    const string* host_str = nullptr;
     if (!context->authority().empty()) {
-      host_str = context->authority_.c_str();
+      host_str = &context->authority_;
     } else if (!host_.empty()) {
-      host_str = host_.c_str();
+      host_str = &host_;
     }
     grpc_slice method_slice =
         SliceFromArray(method.name(), strlen(method.name()));
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = SliceFromArray(host_str, strlen(host_str));
+      host_slice = SliceFromCopiedString(*host_str);
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,
