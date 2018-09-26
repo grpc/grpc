@@ -3168,6 +3168,174 @@ install-certs: etc/roots.pem
 	$(Q) $(INSTALL) -d $(prefix)/share/grpc
 	$(Q) $(INSTALL) etc/roots.pem $(prefix)/share/grpc/roots.pem
 
+
+uninstall: uninstall_c uninstall_cxx uninstall-plugins uninstall-certs
+
+uninstall_c: uninstall-headers_c uninstall-static_c uninstall-shared_c
+
+uninstall_cxx: uninstall-headers_cxx uninstall-static_cxx uninstall-shared_cxx
+
+uninstall_csharp: uninstall-shared_csharp uninstall_c
+
+uninstall_grpc_csharp_ext: uninstall_csharp
+
+uninstall-headers: uninstall-headers_c uninstall-headers_cxx
+
+uninstall-headers_c:
+	$(E) "[UNINSTALL] Uninstalling public C headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(RM) $(prefix)/$(h) && ) exit 0 || exit 1
+
+uninstall-headers_cxx:
+	$(E) "[UNINSTALL] Uninstalling public C++ headers"
+	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(RM) $(prefix)/$(h) && ) exit 0 || exit 1
+
+uninstall-static: uninstall-static_c uninstall-static_cxx
+
+uninstall-static_c: uninstall-pkg-config_c
+	$(E) "[UNINSTALL] Uninstalling libgpr.a"
+	$(Q) $(RM) $(prefix)/lib/libgpr.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc_cronet.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc_unsecure.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.a
+
+uninstall-static_cxx: uninstall-pkg-config_cxx
+	$(E) "[UNINSTALL] Uninstalling libgrpc++.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc++_cronet.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc++_reflection.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.a
+	$(E) "[UNINSTALL] Uninstalling libgrpc++_unsecure.a"
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.a
+
+
+
+uninstall-shared: uninstall-shared_c uninstall-shared_cxx uninstall-shared_csharp
+
+uninstall-shared_c: uninstall-pkg-config_c
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgpr.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgpr.so.3
+	$(Q) $(RM) $(prefix)/lib/libgpr.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc_cronet.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc_unsecure.so
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-shared_cxx: uninstall-shared_c uninstall-pkg-config_cxx
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc++.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_cronet.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_reflection.so
+endif
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc++_unsecure.so
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-shared_csharp:
+	$(E) "[UNINSTALL] Uninstalling $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)"
+	$(Q) $(RM) $(prefix)/lib/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
+ifeq ($(SYSTEM),MINGW32)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.a
+else ifneq ($(SYSTEM),Darwin)
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so.3
+	$(Q) $(RM) $(prefix)/lib/libgrpc_csharp_ext.so
+endif
+ifneq ($(SYSTEM),MINGW32)
+ifneq ($(SYSTEM),Darwin)
+	$(Q) ldconfig || true
+endif
+endif
+
+
+uninstall-plugins:
+	$(E) "[UNINSTALL] Uninstalling grpc protoc plugins"
+	$(Q) $(RM) $(prefix)/bin/grpc_cpp_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_csharp_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_node_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_objective_c_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_php_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_python_plugin
+	$(Q) $(RM) $(prefix)/bin/grpc_ruby_plugin
+
+uninstall-pkg-config_c:
+	$(E) "[UNINSTALL] Uninstalling C pkg-config files"
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+
+uninstall-pkg-config_cxx:
+	$(E) "[UNINSTALL] Uninstalling C++ pkg-config files"
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++.pc
+	$(Q) $(RM) $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+
+uninstall-certs:
+	$(E) "[UNINSTALL] Uninstalling root certificates"
+	$(Q) $(RM) $(prefix)/share/grpc/roots.pem
+
+
 clean:
 	$(E) "[CLEAN]   Cleaning build directories."
 	$(Q) $(RM) -rf $(OBJDIR) $(LIBDIR) $(BINDIR) $(GENDIR) cache.mk
