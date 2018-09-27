@@ -58,7 +58,7 @@ void notify_on_write() {
 
 ```
 
-##### What does "Covering a write" mean? - and what is an "endpoint backup poller" ?
+##### What does "Covering a write" mean? and what is an "endpoint backup poller" ?
 gRPC API considers a Write operation to be done the moment it clears ‘flow control’ i.e., and not necessarily sent on the wire.
 
 This means that the application MAY NOT call `grpc_completion_queue_next/pluck` in a timely manner when its `Write()` API is acked. So when a tcp `sendmsg()` returns EAGAIN, the TCP write endpoint needs to make sure that some thread is monitoring the fd-writable event and does the actual writing on the wire. This is the reason why it ‘covers’ the write by adding the endpoint fd to the backup poller
