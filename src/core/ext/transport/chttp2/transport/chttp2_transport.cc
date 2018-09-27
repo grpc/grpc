@@ -3157,16 +3157,6 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
   return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
 }
 
-static intptr_t get_socket_uuid(grpc_transport* transport) {
-  grpc_chttp2_transport* t =
-      reinterpret_cast<grpc_chttp2_transport*>(transport);
-  if (t->channelz_socket != nullptr) {
-    return t->channelz_socket->uuid();
-  } else {
-    return 0;
-  }
-}
-
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
@@ -3176,10 +3166,19 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_endpoint,
-                                             get_socket_uuid};
+                                             chttp2_get_endpoint};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
+
+intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(transport);
+  if (t->channelz_socket != nullptr) {
+    return t->channelz_socket->uuid();
+  } else {
+    return 0;
+  }
+}
 
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {

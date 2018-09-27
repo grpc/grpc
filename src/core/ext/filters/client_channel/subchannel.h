@@ -107,7 +107,7 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
   // owning subchannel.
   channelz::SubchannelNode* channelz_subchannel_;
   // uuid of this subchannel's socket. 0 if this subchannel is not connected.
-  intptr_t socket_uuid_;
+  const intptr_t socket_uuid_;
 };
 
 }  // namespace grpc_core

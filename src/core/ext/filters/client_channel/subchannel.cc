@@ -629,8 +629,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
-  intptr_t socket_uuid =
-      grpc_transport_get_socket_uuid(c->connecting_result.transport);
+  intptr_t socket_uuid = c->connecting_result.socket_uuid;
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
