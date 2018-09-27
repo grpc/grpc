@@ -157,6 +157,10 @@ bool g_flow_control_enabled = true;
 static void destruct_transport(grpc_chttp2_transport* t) {
   size_t i;
 
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket.reset();
+  }
+
   grpc_endpoint_destroy(t->ep);
 
   grpc_slice_buffer_destroy_internal(&t->qbuf);
@@ -335,6 +339,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                 GRPC_ARG_OPTIMIZATION_TARGET,
                 channel_args->args[i].value.string);
       }
+    } else if (0 ==
+               strcmp(channel_args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
+      t->channelz_socket =
+          grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
     } else {
       static const struct {
         const char* channel_arg_name;
@@ -719,6 +727,14 @@ static void destroy_stream_locked(void* sp, grpc_error* error) {
   GPR_TIMER_SCOPE("destroy_stream", 0);
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t;
+
+  if (t->channelz_socket != nullptr) {
+    if ((t->is_client && s->eos_received) || (!t->is_client && s->eos_sent)) {
+      t->channelz_socket->RecordStreamSucceeded();
+    } else {
+      t->channelz_socket->RecordStreamFailed();
+    }
+  }
 
   GPR_ASSERT((s->write_closed && s->read_closed) || s->id == 0);
   if (s->id != 0) {
@@ -1407,6 +1423,9 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
+    if (t->is_client && t->channelz_socket != nullptr) {
+      t->channelz_socket->RecordStreamStartedFromLocal();
+    }
     GRPC_STATS_INC_HTTP2_OP_SEND_INITIAL_METADATA();
     GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
@@ -1492,6 +1511,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_message) {
     GRPC_STATS_INC_HTTP2_OP_SEND_MESSAGE();
+    t->num_messages_in_next_write++;
     GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(
         op->payload->send_message.send_message->length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
@@ -2707,6 +2727,9 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     return;
   }
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordKeepaliveSent();
+  }
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
   grpc_timer_init(&t->keepalive_watchdog_timer,
                   grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
@@ -3146,6 +3169,16 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              chttp2_get_endpoint};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
+
+intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(transport);
+  if (t->channelz_socket != nullptr) {
+    return t->channelz_socket->uuid();
+  } else {
+    return 0;
+  }
+}
 
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {

@@ -275,6 +275,9 @@ extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 typedef char*(*grpc_channelz_get_subchannel_type)(intptr_t subchannel_id);
 extern grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
 #define grpc_channelz_get_subchannel grpc_channelz_get_subchannel_import
+typedef char*(*grpc_channelz_get_socket_type)(intptr_t socket_id);
+extern grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
+#define grpc_channelz_get_socket grpc_channelz_get_socket_import
 typedef grpc_channel*(*grpc_insecure_channel_create_from_fd_type)(const char* target, int fd, const grpc_channel_args* args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import

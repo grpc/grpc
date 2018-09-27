@@ -197,3 +197,21 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_json_destroy(top_level_json);
   return json_str;
 }
+
+char* grpc_channelz_get_socket(intptr_t socket_id) {
+  grpc_core::channelz::BaseNode* socket_node =
+      grpc_core::channelz::ChannelzRegistry::Get(socket_id);
+  if (socket_node == nullptr ||
+      socket_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kSocket) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* socket_json = socket_node->RenderJson();
+  socket_json->key = "socket";
+  grpc_json_link_child(json, socket_json, nullptr);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}

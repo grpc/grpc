@@ -569,6 +569,7 @@ class StreamWriteContext {
   void SentLastFrame() {
     s_->send_trailing_metadata = nullptr;
     s_->sent_trailing_metadata = true;
+    s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
       grpc_slice_buffer_add(
@@ -631,6 +632,11 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
   GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
+
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordMessagesSent(t->num_messages_in_next_write);
+  }
+  t->num_messages_in_next_write = 0;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
     if (s->sending_bytes != 0) {
