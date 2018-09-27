@@ -352,10 +352,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     WatchCallHandler(ServerCompletionQueue* cq,
                      DefaultHealthCheckService* database,
                      HealthCheckServiceImpl* service)
-    : cq_(cq),
-      database_(database),
-      service_(service),
-      stream_(&ctx_) {}
+    : cq_(cq), database_(database), service_(service), stream_(&ctx_) {}
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     OnCallReceived(std::shared_ptr<CallHandler> self, bool ok) {
