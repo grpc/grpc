@@ -1105,6 +1105,39 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
   EnableDefaultHealthCheckService(false);
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel1 = BuildChannel("round_robin", args);
+  auto stub1 = BuildStub(channel1);
+  std::vector<int> ports;
+  for (const auto& server : servers_) {
+    ports.emplace_back(server->port_);
+  }
+  SetNextResolution(ports);
+  // Create a channel with health checking enabled but inhibited.
+  args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
+  auto channel2 = BuildChannel("round_robin", args);
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  // First channel should not become READY, because health checks should be
+  // failing.
+  EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
+  CheckRpcSendFailure(stub1);
+  // Second channel should be READY.
+  EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
