@@ -100,6 +100,10 @@ void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
 
 void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
                                               grpc_error* error) {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%d error=%s", this,
+            state, grpc_error_string(error));
+  }
   if (notify_state_ != nullptr && *notify_state_ != state) {
     *notify_state_ = state;
     notify_state_ = nullptr;
@@ -112,6 +116,9 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
 }
 
 void HealthCheckClient::Orphan() {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: shutting down", this);
+  }
   {
     MutexLock lock(&mu_);
     if (on_health_changed_ != nullptr) {
@@ -219,10 +226,14 @@ void EncodeRequest(const char* service_name,
 }
 
 // Returns true if healthy.
-bool DecodeResponse(grpc_slice_buffer* slice_buffer) {
+// If there was an error parsing the response, sets *error and returns false.
+bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error** error) {
   // If message is empty, assume unhealthy.
-// FIXME: log this
-  if (slice_buffer->length == 0) return false;
+  if (slice_buffer->length == 0) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check response was empty");
+    return false;
+  }
   // Concatenate the slices to form a single string.
   UniquePtr<uint8_t> recv_message_deleter;
   uint8_t* recv_message;
@@ -246,12 +257,14 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer) {
   if (!pb_decode(&istream, grpc_health_v1_HealthCheckResponse_fields,
                  &response_struct)) {
     // Can't parse message; assume unhealthy.
-// FIXME: log this
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "cannot parse health check response");
     return false;
   }
   if (!response_struct.has_status) {
     // Field not present; assume unhealthy.
-// FIXME: log this
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "status field not present in health check response");
     return false;
   }
   return response_struct.status ==
@@ -316,7 +329,10 @@ void HealthCheckClient::CallState::StartCall() {
   grpc_error* error =
       health_check_client_->connected_subchannel_->CreateCall(args, &call_);
   if (error != GRPC_ERROR_NONE) {
-// FIXME: log
+    gpr_log(GPR_ERROR,
+            "HealthCheckClient %p CallState %p: error creating health "
+            "checking call on subchannel (%s); will retry",
+            health_check_client_.get(), this, grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     // Schedule instead of running directly, since we must not be
     // holding health_check_client_->mu_ when CallEnded() is called.
@@ -468,11 +484,14 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
     Unref(DEBUG_LOCATION, "recv_message_ready");
     return;
   }
-  const bool healthy = DecodeResponse(&recv_message_buffer_);
+  const bool healthy = DecodeResponse(&recv_message_buffer_, &error);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-  error = healthy ? GRPC_ERROR_NONE
-                  : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
+  if (error == GRPC_ERROR_NONE) {
+    error = healthy
+        ? GRPC_ERROR_NONE
+        : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
+  }
   health_check_client_->SetHealthStatus(state, error);
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
   grpc_slice_buffer_destroy(&recv_message_buffer_);
