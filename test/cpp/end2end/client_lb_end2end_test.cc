@@ -1008,7 +1008,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
 
-TEST_F(ClientLbEnd2endTest, RoundRobinServersHealthCheckingNotSupported) {
+// If health checking is required by client but no health checking
+// service is running on the server, the channel should be treated as
+// healthy.
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinServersHealthCheckingUnimplementedTreatedAsHealthy) {
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -1016,7 +1020,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinServersHealthCheckingNotSupported) {
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto channel = BuildChannel("round_robin", args);
   SetNextResolution({servers_[0]->port_});
-  EXPECT_FALSE(WaitForChannelReady(channel.get()));
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
 }
 
 #if 0

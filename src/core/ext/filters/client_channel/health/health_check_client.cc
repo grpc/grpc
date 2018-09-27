@@ -274,8 +274,16 @@ HealthCheckClient::CallState::CallState(
 
 HealthCheckClient::CallState::~CallState() {
   if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
-  gpr_arena_destroy(arena_);
+  // Unset the call combiner cancellation closure.  This has the
+  // effect of scheduling the previously set cancellation closure, if
+  // any, so that it can release any internal references it may be
+  // holding to the call stack. Also flush the closures on exec_ctx so that
+  // filters that schedule cancel notification closures on exec_ctx do not
+  // need to take a ref of the call stack to guarantee closure liveness.
+  grpc_call_combiner_set_notify_on_cancel(&call_combiner_, nullptr);
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_call_combiner_destroy(&call_combiner_);
+  gpr_arena_destroy(arena_);
 }
 
 void HealthCheckClient::CallState::Orphan() {
@@ -318,6 +326,12 @@ void HealthCheckClient::CallState::StartCall() {
                                          grpc_schedule_on_exec_ctx);
   // Add send_initial_metadata op.
   grpc_metadata_batch_init(&send_initial_metadata_);
+  error = grpc_metadata_batch_add_head(
+      &send_initial_metadata_, &path_metadata_storage_,
+      grpc_mdelem_from_slices(
+          GRPC_MDSTR_PATH,
+          GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -537,12 +551,17 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
     status = grpc_get_status_code_from_metadata(
         self->recv_trailing_metadata_.idx.named.grpc_status->md);
   }
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "HealthCheckClient %p CallState %p: health watch failed with "
+            "status %d", self->health_check_client_.get(), self, status);
+  }
   // Clean up.
   grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);
   // For status unimplemented, give up and assume always healthy.
   bool retry = true;
   if (status == GRPC_STATUS_UNIMPLEMENTED) {
-// FIXME: log and add subchannel trace event
+// FIXME: log at priority ERROR and add subchannel trace event
     self->health_check_client_->SetHealthStatus(GRPC_CHANNEL_READY,
                                                 GRPC_ERROR_NONE);
     retry = false;

@@ -109,6 +109,7 @@ class HealthCheckClient
 
     // send_initial_metadata
     grpc_metadata_batch send_initial_metadata_;
+    grpc_linked_mdelem path_metadata_storage_;
 
     // send_message
     ManualConstructor<SliceBufferByteStream> send_message_;
