@@ -345,6 +345,8 @@ typedef struct {
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
+/** If non-zero, resolve server port only on IPv4. */
+#define GRPC_ARG_IPV4_ONLY "grpc.ipv4_only"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

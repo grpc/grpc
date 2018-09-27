@@ -44,7 +44,7 @@
 
 static grpc_error* posix_blocking_resolve_address(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args* channel_args) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
@@ -82,6 +82,13 @@ static grpc_error* posix_blocking_resolve_address(
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+
+  if (channel_args != nullptr) {
+      const grpc_arg* ipv4_arg = grpc_channel_args_find(channel_args, GRPC_ARG_IPV4_ONLY);
+      if (ipv4_arg != nullptr && ipv4_arg->type == grpc_arg_type::GRPC_ARG_INTEGER && ipv4_arg->value.integer) {
+          hints.ai_family = AF_INET;     /* ipv4 only */
+      }
+  }
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);

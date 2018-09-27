@@ -114,7 +114,7 @@ static grpc_error* try_split_host_port(const char* name,
 
 static grpc_error* blocking_resolve_address_impl(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args*) {
   char* host;
   char* port;
   grpc_error* err;
