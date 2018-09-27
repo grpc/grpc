@@ -61,8 +61,7 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_get_endpoint */
   grpc_endpoint* (*get_endpoint)(grpc_transport* self);
 
-  void (*populate_sockets)(grpc_transport* self,
-                           grpc_core::ChildRefsList* child_sockets);
+  intptr_t (*get_socket_uuid)(grpc_transport* self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */

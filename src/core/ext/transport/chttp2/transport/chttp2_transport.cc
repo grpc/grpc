@@ -3157,12 +3157,13 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
   return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
 }
 
-static void populate_sockets(grpc_transport* transport,
-                             grpc_core::ChildRefsList* child_sockets) {
+static intptr_t get_socket_uuid(grpc_transport* transport) {
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
   if (t->channelz_socket != nullptr) {
-    child_sockets->push_back(t->channelz_socket->uuid());
+    return t->channelz_socket->uuid();
+  } else {
+    return 0;
   }
 }
 
@@ -3176,7 +3177,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              destroy_stream,
                                              destroy_transport,
                                              chttp2_get_endpoint,
-                                             populate_sockets};
+                                             get_socket_uuid};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 

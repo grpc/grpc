@@ -199,9 +199,8 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
   return transport->vtable->get_endpoint(transport);
 }
 
-void grpc_transport_populate_sockets(grpc_transport* transport,
-                                     grpc_core::ChildRefsList* child_sockets) {
-  return transport->vtable->populate_sockets(transport, child_sockets);
+intptr_t grpc_transport_get_socket_uuid(grpc_transport* transport) {
+  return transport->vtable->get_socket_uuid(transport);
 }
 
 // This comment should be sung to the tune of

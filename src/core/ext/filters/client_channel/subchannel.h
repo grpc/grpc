@@ -126,8 +126,8 @@ void grpc_subchannel_call_unref(
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
     grpc_subchannel* subchannel);
 
-void grpc_subchannel_populate_child_sockets(
-    grpc_subchannel* subchannel, grpc_core::ChildRefsList* child_sockets);
+intptr_t grpc_subchannel_get_child_socket_uuid(
+    grpc_subchannel* subchannel);
 
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size

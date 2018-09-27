@@ -97,7 +97,9 @@ struct grpc_subchannel {
   /** set during connection */
   grpc_connect_out_args connecting_result;
 
-  grpc_transport* transport;
+  /** uuid of this subchannel's socket. 0 if this subchannel is not
+      connected */
+  intptr_t socket_uuid;
 
   /** callback for connection finishing */
   grpc_closure on_connected;
@@ -256,6 +258,7 @@ static void disconnect(grpc_subchannel* c) {
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                             "Subchannel disconnected"));
+  c->socket_uuid = 0;
   c->connected_subchannel.reset();
   gpr_mu_unlock(&c->mu);
 }
@@ -413,11 +416,9 @@ grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
   return subchannel->channelz_subchannel.get();
 }
 
-void grpc_subchannel_populate_child_sockets(
-    grpc_subchannel* subchannel, grpc_core::ChildRefsList* child_sockets) {
-  if (subchannel->transport != nullptr) {
-    grpc_transport_populate_sockets(subchannel->transport, child_sockets);
-  }
+intptr_t grpc_subchannel_get_child_socket_uuid(
+    grpc_subchannel* subchannel) {
+  return subchannel->socket_uuid;
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
@@ -578,6 +579,7 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                   grpc_connectivity_state_name(
                       connected_subchannel_watcher->connectivity_state));
         }
+        c->socket_uuid = 0;
         c->connected_subchannel.reset();
         grpc_connectivity_state_set(&c->state_tracker,
                                     GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -630,7 +632,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
-  c->transport = c->connecting_result.transport;
+  c->socket_uuid = grpc_transport_get_socket_uuid(c->connecting_result.transport);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
