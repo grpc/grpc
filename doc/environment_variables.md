@@ -52,6 +52,7 @@ some configuration as environment variables that can be set.
     traces epoll-fd creation/close calls for epollex polling engine
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
+  - health_check_client - traces health checking client code
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
