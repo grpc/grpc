@@ -35,8 +35,8 @@ platform(
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//tools/cpp:clang",
-        "//constraints:xenial",
-        "//constraints/sanitizers:support_msan",
+        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
+        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
         "//third_party/toolchains/machine-size:standard",
     ],
     remote_execution_properties = """
@@ -55,12 +55,11 @@ platform(
 platform(
     name = "rbe_ubuntu1604_r340178_large",
     constraint_values = [
-        "//third_party" +
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//tools/cpp:clang",
-        "//constraints:xenial",
-        "//constraints/sanitizers:support_msan",
+        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
+        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
         "//third_party/toolchains/machine-size:large",
     ],
     remote_execution_properties = """
