@@ -64,8 +64,8 @@ INSTALL_REQUIRES = (
 try:
     import health_commands as _health_commands
     # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
+        version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _health_commands.CopyProtoModules,

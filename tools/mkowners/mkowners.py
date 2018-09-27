@@ -24,8 +24,8 @@ import subprocess
 # Find the root of the git tree
 #
 
-git_root = (subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])
-            .decode('utf-8').strip())
+git_root = (subprocess.check_output(
+    ['git', 'rev-parse', '--show-toplevel']).decode('utf-8').strip())
 
 #
 # Parse command line arguments
@@ -90,9 +90,8 @@ def parse_owners(filename):
         dir=os.path.relpath(os.path.dirname(filename), git_root))
 
 
-owners_data = sorted(
-    [parse_owners(filename) for filename in owners_files],
-    key=operator.attrgetter('dir'))
+owners_data = sorted([parse_owners(filename) for filename in owners_files],
+                     key=operator.attrgetter('dir'))
 
 #
 # Modify owners so that parented OWNERS files point to the actual
@@ -139,9 +138,9 @@ def git_glob(glob):
     global gg_cache
     if glob in gg_cache: return gg_cache[glob]
     r = set(
-        subprocess.check_output(
-            ['git', 'ls-files', os.path.join(git_root, glob)]).decode('utf-8')
-        .strip().splitlines())
+        subprocess.check_output([
+            'git', 'ls-files', os.path.join(git_root, glob)
+        ]).decode('utf-8').strip().splitlines())
     gg_cache[glob] = r
     return r
 
@@ -233,7 +232,7 @@ with open(args.out, 'w') as out:
                     # affected differently by this rule and CODEOWNERS is order dependent
                     break
             if not skip:
-                out.write('/%s %s\n' % (full_dir(head.dir, glob),
-                                        ' '.join(owners)))
+                out.write(
+                    '/%s %s\n' % (full_dir(head.dir, glob), ' '.join(owners)))
                 written_globs.append((glob, owners, head.dir))
         done.add(head.dir)

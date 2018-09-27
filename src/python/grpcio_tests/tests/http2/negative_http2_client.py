@@ -32,14 +32,14 @@ def _validate_payload_type_and_length(response, expected_type, expected_length):
 
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' % (expected_code,
-                                                       call.code()))
+        raise ValueError(
+            'expected code %s, got %s' % (expected_code, call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' % (expected_details,
-                                                          call.details()))
+        raise ValueError(
+            'expected message %s, got %s' % (expected_details, call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):

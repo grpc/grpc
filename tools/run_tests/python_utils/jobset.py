@@ -220,8 +220,8 @@ class JobSpec(object):
 
     def __str__(self):
         return '%s: %s %s' % (self.shortname, ' '.join(
-            '%s=%s' % kv for kv in self.environ.items()),
-                              ' '.join(self.cmdline))
+            '%s=%s' % kv for kv in self.environ.items()), ' '.join(
+                self.cmdline))
 
 
 class JobResult(object):
@@ -302,9 +302,9 @@ class Job(object):
                 self._process = try_start()
                 break
             except OSError:
-                message('WARNING',
-                        'Failed to start %s, retrying in %f seconds' %
-                        (self._spec.shortname, delay))
+                message(
+                    'WARNING', 'Failed to start %s, retrying in %f seconds' %
+                    (self._spec.shortname, delay))
                 time.sleep(delay)
                 delay *= 2
         else:
@@ -575,11 +575,11 @@ def run(cmdlines,
             message('SKIPPED', job.shortname, do_newline=True)
             resultset[job.shortname] = [skipped_job_result]
         return 0, resultset
-    js = Jobset(check_cancelled, maxjobs if maxjobs is not None else
-                _DEFAULT_MAX_JOBS, maxjobs_cpu_agnostic
-                if maxjobs_cpu_agnostic is not None else _DEFAULT_MAX_JOBS,
-                newline_on_success, travis, stop_on_failure, add_env,
-                quiet_success, max_time)
+    js = Jobset(
+        check_cancelled, maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
+        maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else
+        _DEFAULT_MAX_JOBS, newline_on_success, travis, stop_on_failure, add_env,
+        quiet_success, max_time)
     for cmdline, remaining in tag_remaining(cmdlines):
         if not js.start(cmdline):
             break

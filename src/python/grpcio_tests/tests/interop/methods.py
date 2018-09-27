@@ -101,14 +101,14 @@ class TestService(test_pb2_grpc.TestServiceServicer):
 
 def _expect_status_code(call, expected_code):
     if call.code() != expected_code:
-        raise ValueError('expected code %s, got %s' % (expected_code,
-                                                       call.code()))
+        raise ValueError(
+            'expected code %s, got %s' % (expected_code, call.code()))
 
 
 def _expect_status_details(call, expected_details):
     if call.details() != expected_details:
-        raise ValueError('expected message %s, got %s' % (expected_details,
-                                                          call.details()))
+        raise ValueError(
+            'expected message %s, got %s' % (expected_details, call.details()))
 
 
 def _validate_status_code_and_details(call, expected_code, expected_details):
@@ -250,8 +250,8 @@ def _ping_pong(stub):
                                                request_payload_sizes):
             request = messages_pb2.StreamingOutputCallRequest(
                 response_type=messages_pb2.COMPRESSABLE,
-                response_parameters=(
-                    messages_pb2.ResponseParameters(size=response_size),),
+                response_parameters=(messages_pb2.ResponseParameters(
+                    size=response_size),),
                 payload=messages_pb2.Payload(body=b'\x00' * payload_size))
             pipe.add(request)
             response = next(response_iterator)
@@ -289,8 +289,8 @@ def _cancel_after_first_response(stub):
         payload_size = request_payload_sizes[0]
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(
-                messages_pb2.ResponseParameters(size=response_size),),
+            response_parameters=(messages_pb2.ResponseParameters(
+                size=response_size),),
             payload=messages_pb2.Payload(body=b'\x00' * payload_size))
         pipe.add(request)
         response = next(response_iterator)
@@ -425,8 +425,8 @@ def _oauth2_auth_token(stub, args):
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError(
+            'expected username %s, got %s' % (wanted_email, response.username))
     if args.oauth_scope.find(response.oauth_scope) == -1:
         raise ValueError(
             'expected to find oauth scope "{}" in received "{}"'.format(
@@ -438,8 +438,8 @@ def _jwt_token_creds(stub, args):
     wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError(
+            'expected username %s, got %s' % (wanted_email, response.username))
 
 
 def _per_rpc_creds(stub, args):
@@ -453,8 +453,8 @@ def _per_rpc_creds(stub, args):
             request=google_auth_transport_requests.Request()))
     response = _large_unary_common_behavior(stub, True, False, call_credentials)
     if wanted_email != response.username:
-        raise ValueError('expected username %s, got %s' % (wanted_email,
-                                                           response.username))
+        raise ValueError(
+            'expected username %s, got %s' % (wanted_email, response.username))
 
 
 @enum.unique

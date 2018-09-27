@@ -1660,11 +1660,10 @@ def server(thread_pool,
       A Server object.
     """
     from grpc import _server  # pylint: disable=cyclic-import
-    return _server.create_server(thread_pool, ()
-                                 if handlers is None else handlers, ()
-                                 if interceptors is None else interceptors, ()
-                                 if options is None else options,
-                                 maximum_concurrent_rpcs)
+    return _server.create_server(
+        thread_pool, () if handlers is None else handlers,
+        () if interceptors is None else interceptors,
+        () if options is None else options, maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################

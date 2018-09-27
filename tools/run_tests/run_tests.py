@@ -230,8 +230,7 @@ def _python_config_generator(name, major, minor, bits, config_vars):
 
 def _pypy_config_generator(name, major, config_vars):
     return PythonConfig(
-        name,
-        config_vars.shell + config_vars.builder +
+        name, config_vars.shell + config_vars.builder +
         config_vars.builder_prefix_arguments + [
             _pypy_pattern_function(major=major)
         ] + [name] + config_vars.venv_relative_python + config_vars.toolchain,
@@ -359,9 +358,8 @@ class CLanguage(object):
                 if self.args.iomgr_platform in target.get('exclude_iomgrs', []):
                     continue
                 if self.platform == 'windows':
-                    binary = 'cmake/build/%s/%s.exe' % (
-                        _MSBUILD_CONFIG[self.config.build_config],
-                        target['name'])
+                    binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
+                        self.config.build_config], target['name'])
                 else:
                     if self._use_cmake:
                         binary = 'cmake/build/%s' % target['name']
@@ -434,8 +432,9 @@ class CLanguage(object):
                                         environ=env))
                     else:
                         cmdline = [binary] + target['args']
-                        shortname = target.get('shortname', ' '.join(
-                            pipes.quote(arg) for arg in cmdline))
+                        shortname = target.get(
+                            'shortname', ' '.join(
+                                pipes.quote(arg) for arg in cmdline))
                         shortname += shortname_ext
                         out.append(
                             self.config.job_spec(
@@ -632,9 +631,8 @@ class PhpLanguage(object):
 
     def test_specs(self):
         return [
-            self.config.job_spec(
-                ['src/php/bin/run_tests.sh'],
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+            self.config.job_spec(['src/php/bin/run_tests.sh'],
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
 
     def pre_build_steps(self):
@@ -673,9 +671,8 @@ class Php7Language(object):
 
     def test_specs(self):
         return [
-            self.config.job_spec(
-                ['src/php/bin/run_tests.sh'],
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+            self.config.job_spec(['src/php/bin/run_tests.sh'],
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
 
     def pre_build_steps(self):
@@ -727,8 +724,8 @@ class PythonLanguage(object):
                 config.run,
                 timeout_seconds=5 * 60,
                 environ=dict(
-                    list(environment.items()) + [(
-                        'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
+                    list(environment.items()) +
+                    [('GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
                 shortname='%s.test.%s' % (config.name, suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
@@ -875,10 +872,9 @@ class RubyLanguage(object):
 
     def test_specs(self):
         tests = [
-            self.config.job_spec(
-                ['tools/run_tests/helper_scripts/run_ruby.sh'],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+            self.config.job_spec(['tools/run_tests/helper_scripts/run_ruby.sh'],
+                                 timeout_seconds=10 * 60,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
         tests.append(
             self.config.job_spec(
@@ -961,10 +957,8 @@ class CSharpLanguage(object):
 
         specs = []
         for assembly in six.iterkeys(tests_by_assembly):
-            assembly_file = 'src/csharp/%s/%s/%s%s' % (assembly,
-                                                       assembly_subdir,
-                                                       assembly,
-                                                       assembly_extension)
+            assembly_file = 'src/csharp/%s/%s/%s%s' % (
+                assembly, assembly_subdir, assembly, assembly_extension)
             if self.config.build_config != 'gcov' or self.platform != 'windows':
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
@@ -1047,18 +1041,16 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         return [
-            self.config.job_spec(
-                ['src/objective-c/tests/run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-plugin-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+            self.config.job_spec(['src/objective-c/tests/run_tests.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='objc-tests',
+                                 cpu_cost=1e6,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
+                                 timeout_seconds=60 * 60,
+                                 shortname='objc-plugin-tests',
+                                 cpu_cost=1e6,
+                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
                 timeout_seconds=10 * 60,
@@ -1531,8 +1523,7 @@ if any(language.make_options() for language in languages):
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
-                make_option
-                for lang in languages
+                make_option for lang in languages
                 for make_option in lang.make_options()
             ]))
 
@@ -1588,13 +1579,12 @@ _check_arch_option(args.arch)
 def make_jobspec(cfg, targets, makefile='Makefile'):
     if platform_string() == 'windows':
         return [
-            jobset.JobSpec(
-                [
-                    'cmake', '--build', '.', '--target',
-                    '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
-                ],
-                cwd=os.path.dirname(makefile),
-                timeout_seconds=None) for target in targets
+            jobset.JobSpec([
+                'cmake', '--build', '.', '--target',
+                '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
+            ],
+                           cwd=os.path.dirname(makefile),
+                           timeout_seconds=None) for target in targets
         ]
     else:
         if targets and makefile.startswith('cmake/build/'):
@@ -1743,8 +1733,8 @@ def _build_and_run(check_cancelled,
         return []
 
     if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[platform_string(
-    )]:
+    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
+            platform_string()]:
         print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
         _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
@@ -1758,11 +1748,11 @@ def _build_and_run(check_cancelled,
     num_test_failures = 0
     try:
         infinite_runs = runs_per_test == 0
-        one_run = set(
-            spec for language in languages for spec in language.test_specs()
-            if (re.search(args.regex, spec.shortname) and
-                (args.regex_exclude == '' or
-                 not re.search(args.regex_exclude, spec.shortname))))
+        one_run = set(spec for language in languages
+                      for spec in language.test_specs()
+                      if (re.search(args.regex, spec.shortname) and
+                          (args.regex_exclude == '' or
+                           not re.search(args.regex_exclude, spec.shortname))))
         # When running on travis, we want out test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
@@ -1785,9 +1775,8 @@ def _build_and_run(check_cancelled,
         if infinite_runs:
             assert len(massaged_one_run
                       ) > 0, 'Must have at least one test for a -n inf run'
-        runs_sequence = (itertools.repeat(massaged_one_run)
-                         if infinite_runs else itertools.repeat(
-                             massaged_one_run, runs_per_test))
+        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
+                         else itertools.repeat(massaged_one_run, runs_per_test))
         all_runs = itertools.chain.from_iterable(runs_sequence)
 
         if args.quiet_success:

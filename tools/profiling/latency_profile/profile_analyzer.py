@@ -211,9 +211,8 @@ def tidy_tag(tag):
 
 def time_string(values):
     num_values = len(values)
-    return '%.1f/%.1f/%.1f' % (1e6 * percentile(values, 0.5),
-                               1e6 * percentile(values, 0.9),
-                               1e6 * percentile(values, 0.99))
+    return '%.1f/%.1f/%.1f' % (1e6 * percentile(values, 0.5), 1e6 * percentile(
+        values, 0.9), 1e6 * percentile(values, 0.99))
 
 
 def time_format(idx):

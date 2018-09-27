@@ -34,14 +34,17 @@ python -m virtualenv $VIRTUALENV
 PYTHON=${VIRTUALENV}/bin/python
 "$PYTHON" -m pip install --upgrade pip==10.0.1
 "$PYTHON" -m pip install --upgrade futures
-"$PYTHON" -m pip install yapf==0.20.0
+"$PYTHON" -m pip install yapf==0.24.0
 
 yapf() {
     local exclusion exclusion_args=()
     for exclusion in "${EXCLUSIONS[@]}"; do
-        exclusion_args+=( "--exclude" "$1/${exclusion}" )
+        exclusion_args+=( "--exclude=$1/${exclusion}" )
     done
-    $PYTHON -m yapf -i -r --style=setup.cfg -p "${exclusion_args[@]}" "${1}"
+    $PYTHON -m yapf \
+            --in-place --recursive --style=setup.cfg --parallel --verbose \
+            "${exclusion_args[@]}" \
+            "${1}"
 }
 
 if [[ -z "${TEST}" ]]; then

@@ -104,7 +104,8 @@ def mako_plugin(dictionary):
 
     # build reverse dependency map
     things = {}
-    for thing in dictionary['libs'] + dictionary['targets'] + dictionary['filegroups']:
+    for thing in dictionary['libs'] + dictionary['targets'] + dictionary[
+            'filegroups']:
         things[thing['name']] = thing
         thing['used_by'] = []
     thing_deps = lambda t: t.get('uses', []) + t.get('filegroups', []) + t.get('deps', [])

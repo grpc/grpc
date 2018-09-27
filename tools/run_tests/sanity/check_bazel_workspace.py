@@ -30,8 +30,7 @@ git_hash_pattern = re.compile('[0-9a-f]{40}')
 git_submodules = subprocess.check_output(
     'git submodule', shell=True).strip().split('\n')
 git_submodule_hashes = {
-    re.search(git_hash_pattern, s).group()
-    for s in git_submodules
+    re.search(git_hash_pattern, s).group() for s in git_submodules
 }
 
 _BAZEL_TOOLCHAINS_DEP_NAME = 'com_github_bazelbuild_bazeltoolchains'

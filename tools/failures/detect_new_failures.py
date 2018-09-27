@@ -152,8 +152,7 @@ def get_new_failures(dates):
                 poll_strategy=row['f'][1]['v'],
                 job_name=row['f'][2]['v'],
                 build_id=row['f'][3]['v'],
-                timestamp=row['f'][4]['v'])
-            for row in rows
+                timestamp=row['f'][4]['v']) for row in rows
         }
     else:
         return {}

@@ -58,10 +58,9 @@ class Test(_common.RpcTest, unittest.TestCase):
             cygrpc.ReceiveInitialMetadataOperation(_common.EMPTY_FLAGS),
         ], client_receive_initial_metadata_tag)
 
-        client_events_future = test_utilities.SimpleFuture(
-            lambda: [
-                self.channel.next_call_event(),
-                self.channel.next_call_event(),])
+        client_events_future = test_utilities.SimpleFuture(lambda: [
+            self.channel.next_call_event(),
+            self.channel.next_call_event(),])
         server_request_call_event = self.server_driver.event_with_tag(
             server_request_call_tag)
 
@@ -116,8 +115,8 @@ class Test(_common.RpcTest, unittest.TestCase):
         )
 
     def test_rpcs(self):
-        expecteds = [(
-            _common.SUCCESSFUL_OPERATION_RESULT,) * 5] * _common.RPC_COUNT
+        expecteds = [(_common.SUCCESSFUL_OPERATION_RESULT,) * 5
+                    ] * _common.RPC_COUNT
         actuallys = _common.execute_many_times(self._do_rpcs)
         self.assertSequenceEqual(expecteds, actuallys)
 

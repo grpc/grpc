@@ -60,8 +60,8 @@ def _expect_compile(compiler, source_string, error_message):
     if _compile(compiler, source_string) is not None:
         sys.stderr.write(error_message)
         raise commands.CommandError(
-            "Diagnostics found a compilation environment issue:\n{}"
-            .format(error_message))
+            "Diagnostics found a compilation environment issue:\n{}".format(
+                error_message))
 
 
 def diagnose_compile_error(build_ext, error):

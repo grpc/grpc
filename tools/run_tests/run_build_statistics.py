@@ -106,8 +106,8 @@ def _scrape_for_known_errors(html):
                 'description': known_error,
                 'count': this_error_count
             })
-            print('====> %d failures due to %s' % (this_error_count,
-                                                   known_error))
+            print(
+                '====> %d failures due to %s' % (this_error_count, known_error))
     return error_list
 
 
@@ -116,9 +116,8 @@ def _no_report_files_found(html):
 
 
 def _get_last_processed_buildnumber(build_name):
-    query = 'SELECT max(build_number) FROM [%s:%s.%s];' % (_PROJECT_ID,
-                                                           _DATASET_ID,
-                                                           build_name)
+    query = 'SELECT max(build_number) FROM [%s:%s.%s];' % (
+        _PROJECT_ID, _DATASET_ID, build_name)
     query_job = big_query_utils.sync_query_job(bq, _PROJECT_ID, query)
     page = bq.jobs().getQueryResults(
         pageToken=None, **query_job['jobReference']).execute(num_retries=3)

@@ -1163,9 +1163,8 @@ argp.add_argument(
 args = argp.parse_args()
 
 servers = set(
-    s
-    for s in itertools.chain.from_iterable(
-        _SERVERS if x == 'all' else [x] for x in args.server))
+    s for s in itertools.chain.from_iterable(_SERVERS if x == 'all' else [x]
+                                             for x in args.server))
 # ALTS servers are only available for certain languages.
 if args.transport_security == 'alts':
     servers = servers.intersection(_SERVERS_FOR_ALTS_TEST_CASES)
@@ -1195,9 +1194,8 @@ if not args.use_docker and servers:
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
 all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(['objc'])
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(
-                    all_but_objc if x == 'all' else [x] for x in args.language))
+languages = set(_LANGUAGES[l] for l in itertools.chain.from_iterable(
+    all_but_objc if x == 'all' else [x] for x in args.language))
 # ALTS interop clients are only available for certain languages.
 if args.transport_security == 'alts':
     alts_languages = set(_LANGUAGES[l] for l in _LANGUAGES_FOR_ALTS_TEST_CASES)

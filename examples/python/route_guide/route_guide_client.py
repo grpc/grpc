@@ -43,9 +43,8 @@ def guide_get_one_feature(stub, point):
 
 
 def guide_get_feature(stub):
-    guide_get_one_feature(stub,
-                          route_guide_pb2.Point(
-                              latitude=409146138, longitude=-746188906))
+    guide_get_one_feature(
+        stub, route_guide_pb2.Point(latitude=409146138, longitude=-746188906))
     guide_get_one_feature(stub, route_guide_pb2.Point(latitude=0, longitude=0))
 
 
@@ -95,8 +94,8 @@ def generate_messages():
 def guide_route_chat(stub):
     responses = stub.RouteChat(generate_messages())
     for response in responses:
-        print("Received message %s at %s" % (response.message,
-                                             response.location))
+        print(
+            "Received message %s at %s" % (response.message, response.location))
 
 
 def run():

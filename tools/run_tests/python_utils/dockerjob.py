@@ -33,11 +33,10 @@ def random_name(base_name):
 
 def docker_kill(cid):
     """Kills a docker container. Returns True if successful."""
-    return subprocess.call(
-        ['docker', 'kill', str(cid)],
-        stdin=subprocess.PIPE,
-        stdout=_DEVNULL,
-        stderr=subprocess.STDOUT) == 0
+    return subprocess.call(['docker', 'kill', str(cid)],
+                           stdin=subprocess.PIPE,
+                           stdout=_DEVNULL,
+                           stderr=subprocess.STDOUT) == 0
 
 
 def docker_mapped_port(cid, port, timeout_seconds=15):
@@ -50,8 +49,8 @@ def docker_mapped_port(cid, port, timeout_seconds=15):
             return int(output.split(':', 2)[1])
         except subprocess.CalledProcessError as e:
             pass
-    raise Exception('Failed to get exposed port %s for container %s.' % (port,
-                                                                         cid))
+    raise Exception(
+        'Failed to get exposed port %s for container %s.' % (port, cid))
 
 
 def wait_for_healthy(cid, shortname, timeout_seconds):
@@ -59,19 +58,17 @@ def wait_for_healthy(cid, shortname, timeout_seconds):
     started = time.time()
     while time.time() - started < timeout_seconds:
         try:
-            output = subprocess.check_output(
-                [
-                    'docker', 'inspect', '--format="{{.State.Health.Status}}"',
-                    cid
-                ],
-                stderr=_DEVNULL)
+            output = subprocess.check_output([
+                'docker', 'inspect', '--format="{{.State.Health.Status}}"', cid
+            ],
+                                             stderr=_DEVNULL)
             if output.strip('\n') == 'healthy':
                 return
         except subprocess.CalledProcessError as e:
             pass
         time.sleep(1)
-    raise Exception('Timed out waiting for %s (%s) to pass health check' %
-                    (shortname, cid))
+    raise Exception(
+        'Timed out waiting for %s (%s) to pass health check' % (shortname, cid))
 
 
 def finish_jobs(jobs):
@@ -85,11 +82,10 @@ def finish_jobs(jobs):
 
 def image_exists(image):
     """Returns True if given docker image exists."""
-    return subprocess.call(
-        ['docker', 'inspect', image],
-        stdin=subprocess.PIPE,
-        stdout=_DEVNULL,
-        stderr=subprocess.STDOUT) == 0
+    return subprocess.call(['docker', 'inspect', image],
+                           stdin=subprocess.PIPE,
+                           stdout=_DEVNULL,
+                           stderr=subprocess.STDOUT) == 0
 
 
 def remove_image(image, skip_nonexistent=False, max_retries=10):
@@ -97,11 +93,10 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
     if skip_nonexistent and not image_exists(image):
         return True
     for attempt in range(0, max_retries):
-        if subprocess.call(
-            ['docker', 'rmi', '-f', image],
-                stdin=subprocess.PIPE,
-                stdout=_DEVNULL,
-                stderr=subprocess.STDOUT) == 0:
+        if subprocess.call(['docker', 'rmi', '-f', image],
+                           stdin=subprocess.PIPE,
+                           stdout=_DEVNULL,
+                           stderr=subprocess.STDOUT) == 0:
             return True
         time.sleep(2)
     print('Failed to remove docker image %s' % image)

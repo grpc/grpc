@@ -166,19 +166,21 @@ def diff(bms, loops, regex, track, old, new, counters):
             ]).splitlines():
                 stripped_line = line.strip().replace("/", "_").replace(
                     "<", "_").replace(">", "_").replace(", ", "_")
-                js_new_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, new, loop),
-                                        badjson_files, nonexistant_files)
-                js_old_opt = _read_json('%s.%s.opt.%s.%d.json' %
-                                        (bm, stripped_line, old, loop),
-                                        badjson_files, nonexistant_files)
+                js_new_opt = _read_json(
+                    '%s.%s.opt.%s.%d.json' % (bm, stripped_line, new, loop),
+                    badjson_files, nonexistant_files)
+                js_old_opt = _read_json(
+                    '%s.%s.opt.%s.%d.json' % (bm, stripped_line, old, loop),
+                    badjson_files, nonexistant_files)
                 if counters:
-                    js_new_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                            (bm, stripped_line, new, loop),
-                                            badjson_files, nonexistant_files)
-                    js_old_ctr = _read_json('%s.%s.counters.%s.%d.json' %
-                                            (bm, stripped_line, old, loop),
-                                            badjson_files, nonexistant_files)
+                    js_new_ctr = _read_json(
+                        '%s.%s.counters.%s.%d.json' % (bm, stripped_line, new,
+                                                       loop), badjson_files,
+                        nonexistant_files)
+                    js_old_ctr = _read_json(
+                        '%s.%s.counters.%s.%d.json' % (bm, stripped_line, old,
+                                                       loop), badjson_files,
+                        nonexistant_files)
                 else:
                     js_new_ctr = None
                     js_old_ctr = None

@@ -121,7 +121,8 @@ def get_status_data(statuses_url, system):
     if system == 'kokoro': string_in_target_url = 'kokoro'
     elif system == 'jenkins': string_in_target_url = 'grpc-testing'
     for status in statuses['statuses']:
-        if not status['target_url'] or string_in_target_url not in status['target_url']:
+        if not status['target_url'] or string_in_target_url not in status[
+                'target_url']:
             continue  # Ignore jenkins
         if status['state'] == 'pending': return None
         elif status['state'] == 'success': successes += 1

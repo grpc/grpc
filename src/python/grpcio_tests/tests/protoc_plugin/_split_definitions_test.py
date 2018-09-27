@@ -196,10 +196,10 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
         messages_proto_relative_file_name_forward_slashes = '/'.join(
             self.MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES +
             (self.MESSAGES_PROTO_FILE_NAME,))
-        _create_directory_tree(self._proto_path,
-                               (relative_proto_directory_names
-                                for relative_proto_directory_names, _ in
-                                proto_directories_and_names))
+        _create_directory_tree(
+            self._proto_path,
+            (relative_proto_directory_names for relative_proto_directory_names,
+             _ in proto_directories_and_names))
         self._absolute_proto_file_names = set()
         for relative_directory_names, file_name in proto_directories_and_names:
             absolute_proto_file_name = path.join(
@@ -238,8 +238,8 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
 
         self._messages_pb2 = generated_modules[self.EXPECTED_MESSAGES_PB2]
         self._services_pb2 = generated_modules[self.EXPECTED_SERVICES_PB2]
-        self._services_pb2_grpc = generated_modules[
-            self.EXPECTED_SERVICES_PB2_GRPC]
+        self._services_pb2_grpc = generated_modules[self.
+                                                    EXPECTED_SERVICES_PB2_GRPC]
 
     def _services_modules(self):
         if self.PROTOC_STYLE.grpc_in_pb2_expected():

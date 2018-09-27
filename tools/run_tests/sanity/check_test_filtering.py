@@ -134,11 +134,11 @@ class TestFilteringTest(unittest.TestCase):
             'src/objective-c/foo.bar', 'src/php/foo.bar', "src/python/foo.bar",
             "src/ruby/foo.bar"
         ], [
-            label for label in _LIST_OF_LANGUAGE_LABELS
-            if label not in filter_pull_request_tests._OBJC_TEST_SUITE.labels
-            and label not in filter_pull_request_tests._PHP_TEST_SUITE.labels
-            and label not in filter_pull_request_tests._PYTHON_TEST_SUITE.labels
-            and label not in filter_pull_request_tests._RUBY_TEST_SUITE.labels
+            label for label in _LIST_OF_LANGUAGE_LABELS if
+            label not in filter_pull_request_tests._OBJC_TEST_SUITE.labels and
+            label not in filter_pull_request_tests._PHP_TEST_SUITE.labels and
+            label not in filter_pull_request_tests._PYTHON_TEST_SUITE.labels and
+            label not in filter_pull_request_tests._RUBY_TEST_SUITE.labels
         ])
 
     def test_platform_filter(self):

@@ -274,8 +274,9 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
         jobset.message('FAILED',
                        'expected patch file |%s| to exist' % patch_file)
         sys.exit(1)
-    subprocess.check_output(
-        ['git', 'apply', patch_file], cwd=stack_base, stderr=subprocess.STDOUT)
+    subprocess.check_output(['git', 'apply', patch_file],
+                            cwd=stack_base,
+                            stderr=subprocess.STDOUT)
 
     # TODO(jtattermusch): this really would need simplification and refactoring
     # - "git add" and "git commit" can easily be done in a single command
@@ -284,19 +285,17 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
     # - we only allow a single patch with name "git_repo.patch". A better design
     #   would be to allow multiple patches that can have more descriptive names.
     for repo_relative_path in files_to_patch:
-        subprocess.check_output(
-            ['git', 'add', repo_relative_path],
-            cwd=stack_base,
-            stderr=subprocess.STDOUT)
-    subprocess.check_output(
-        [
-            'git', 'commit', '-m',
-            ('Hack performed on top of %s git '
-             'tag in order to build and run the %s '
-             'interop tests on that tag.' % (lang, release))
-        ],
-        cwd=stack_base,
-        stderr=subprocess.STDOUT)
+        subprocess.check_output(['git', 'add', repo_relative_path],
+                                cwd=stack_base,
+                                stderr=subprocess.STDOUT)
+    subprocess.check_output([
+        'git', 'commit', '-m',
+        ('Hack performed on top of %s git '
+         'tag in order to build and run the %s '
+         'interop tests on that tag.' % (lang, release))
+    ],
+                            cwd=stack_base,
+                            stderr=subprocess.STDOUT)
 
 
 def checkout_grpc_stack(lang, release):
@@ -318,9 +317,8 @@ def checkout_grpc_stack(lang, release):
         shutil.rmtree(stack_base)
 
     if not os.path.exists(stack_base):
-        subprocess.check_call(
-            ['git', 'clone', '--recursive', repo],
-            cwd=os.path.dirname(stack_base))
+        subprocess.check_call(['git', 'clone', '--recursive', repo],
+                              cwd=os.path.dirname(stack_base))
 
     # git checkout.
     jobset.message(
@@ -329,8 +327,9 @@ def checkout_grpc_stack(lang, release):
         do_newline=True)
     # We should NEVER do checkout on current tree !!!
     assert not os.path.dirname(__file__).startswith(stack_base)
-    output = subprocess.check_output(
-        ['git', 'checkout', release], cwd=stack_base, stderr=subprocess.STDOUT)
+    output = subprocess.check_output(['git', 'checkout', release],
+                                     cwd=stack_base,
+                                     stderr=subprocess.STDOUT)
     maybe_apply_patches_on_git_tag(stack_base, lang, release)
     commit_log = subprocess.check_output(['git', 'log', '-1'], cwd=stack_base)
     jobset.message(

@@ -127,9 +127,8 @@ class GuardValidator(object):
             # replace it with a properly commented one.
             if flines[-1] == '#endif':
                 flines[-1] = (
-                    '#endif' +
-                    ('  // {}\n'.format(valid_guard)
-                     if cpp_header else ' /* {} */\n'.format(valid_guard)))
+                    '#endif' + ('  // {}\n'.format(valid_guard) if cpp_header
+                                else ' /* {} */\n'.format(valid_guard)))
                 if fix:
                     fcontents = '\n'.join(flines)
                     save(fpath, fcontents)

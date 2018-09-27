@@ -76,11 +76,12 @@ def _create_client_stub(
         private_key=None,
         certificate_chain=None,
 ):
-    channel = grpc.secure_channel('localhost:{}'.format(port),
-                                  grpc.ssl_channel_credentials(
-                                      root_certificates=root_certificates,
-                                      private_key=private_key,
-                                      certificate_chain=certificate_chain))
+    channel = grpc.secure_channel(
+        'localhost:{}'.format(port),
+        grpc.ssl_channel_credentials(
+            root_certificates=root_certificates,
+            private_key=private_key,
+            certificate_chain=certificate_chain))
     if expect_success:
         # per Nathaniel: there's some robustness issue if we start
         # using a channel without waiting for it to be actually ready

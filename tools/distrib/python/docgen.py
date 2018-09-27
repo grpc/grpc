@@ -107,12 +107,11 @@ if args.submit:
     doc_branch = args.doc_branch
 
     print('Cloning your repository...')
-    subprocess.check_call(
-        [
-            'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
-                github_user, github_repository_owner)
-        ],
-        cwd=repo_parent_dir)
+    subprocess.check_call([
+        'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
+            github_user, github_repository_owner)
+    ],
+                          cwd=repo_parent_dir)
     subprocess.check_call(
         ['git', 'remote', 'add', 'upstream', 'https://github.com/grpc/grpc'],
         cwd=repo_dir)

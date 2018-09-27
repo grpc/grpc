@@ -231,9 +231,7 @@ class CSharpExtArtifact:
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={
-                    'ANDROID_ABI': self.arch_abi
-                })
+                environ={'ANDROID_ABI': self.arch_abi})
         elif self.arch == 'ios':
             return create_jobspec(
                 self.name,
@@ -349,8 +347,7 @@ class ProtocArtifact:
 def targets():
     """Gets list of supported targets"""
     return ([
-        Cls(platform, arch)
-        for Cls in (CSharpExtArtifact, ProtocArtifact)
+        Cls(platform, arch) for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
         CSharpExtArtifact('linux', 'android', arch_abi='arm64-v8a'),

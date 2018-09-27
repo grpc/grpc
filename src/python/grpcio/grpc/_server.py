@@ -255,8 +255,7 @@ class _Context(grpc.ServicerContext):
 
     def auth_context(self):
         return {
-            _common.decode(key): value
-            for key, value in six.iteritems(
+            _common.decode(key): value for key, value in six.iteritems(
                 cygrpc.auth_context(self._rpc_event.call))
         }
 

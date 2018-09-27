@@ -117,7 +117,8 @@ def start_port_server():
                 time.sleep(1)
                 waits += 1
             except:
-                logging.exception('error while contacting port server at "%s".'
-                                  'Will try killing it.', port_server_url)
+                logging.exception(
+                    'error while contacting port server at "%s".'
+                    'Will try killing it.', port_server_url)
                 port_server.kill()
                 raise

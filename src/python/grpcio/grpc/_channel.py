@@ -519,8 +519,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             raise rendezvous
         else:
             call = self._channel.segregated_call(
-                0, self._method, None, deadline, metadata, None
-                if credentials is None else credentials._credentials, ((
+                0, self._method, None, deadline, metadata,
+                None if credentials is None else credentials._credentials, ((
                     operations,
                     None,
                 ),))
@@ -544,8 +544,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         else:
             event_handler = _event_handler(state, self._response_deserializer)
             call = self._managed_call(
-                0, self._method, None, deadline, metadata, None
-                if credentials is None else credentials._credentials,
+                0, self._method, None, deadline, metadata,
+                None if credentials is None else credentials._credentials,
                 (operations,), event_handler)
             return _Rendezvous(state, call, self._response_deserializer,
                                deadline)
@@ -580,8 +580,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             )
             event_handler = _event_handler(state, self._response_deserializer)
             call = self._managed_call(
-                0, self._method, None, deadline, metadata, None
-                if credentials is None else credentials._credentials,
+                0, self._method, None, deadline, metadata,
+                None if credentials is None else credentials._credentials,
                 operationses, event_handler)
             return _Rendezvous(state, call, self._response_deserializer,
                                deadline)
@@ -601,8 +601,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         call = self._channel.segregated_call(
-            0, self._method, None, deadline, metadata, None
-            if credentials is None else credentials._credentials,
+            0, self._method, None, deadline, metadata,
+            None if credentials is None else credentials._credentials,
             _stream_unary_invocation_operationses_and_tags(metadata))
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, None)
@@ -642,8 +642,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         event_handler = _event_handler(state, self._response_deserializer)
         call = self._managed_call(
-            0, self._method, None, deadline, metadata, None
-            if credentials is None else credentials._credentials,
+            0, self._method, None, deadline, metadata,
+            None if credentials is None else credentials._credentials,
             _stream_unary_invocation_operationses(metadata), event_handler)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
@@ -676,9 +676,9 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         )
         event_handler = _event_handler(state, self._response_deserializer)
         call = self._managed_call(
-            0, self._method, None, deadline, metadata, None
-            if credentials is None else credentials._credentials, operationses,
-            event_handler)
+            0, self._method, None, deadline, metadata,
+            None if credentials is None else credentials._credentials,
+            operationses, event_handler)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
         return _Rendezvous(state, call, self._response_deserializer, deadline)
@@ -821,11 +821,11 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
     connectivity = channel.check_connectivity_state(try_to_connect)
     with state.lock:
         state.connectivity = (
-            _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
-                connectivity])
-        callbacks = tuple(callback
-                          for callback, unused_but_known_to_be_none_connectivity
-                          in state.callbacks_and_connectivities)
+            _common.
+            CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[connectivity])
+        callbacks = tuple(
+            callback for callback, unused_but_known_to_be_none_connectivity in
+            state.callbacks_and_connectivities)
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
         if callbacks:

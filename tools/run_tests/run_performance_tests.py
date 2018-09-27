@@ -207,8 +207,9 @@ def archive_repo(languages):
         cmdline=cmdline, shortname='archive_repo', timeout_seconds=3 * 60)
 
     jobset.message('START', 'Archiving local repository.', do_newline=True)
-    num_failures, _ = jobset.run(
-        [archive_job], newline_on_success=True, maxjobs=1)
+    num_failures, _ = jobset.run([archive_job],
+                                 newline_on_success=True,
+                                 maxjobs=1)
     if num_failures == 0:
         jobset.message(
             'SUCCESS',
@@ -266,8 +267,10 @@ def build_on_remote_hosts(hosts,
                 cmdline=['tools/run_tests/performance/remote_host_build.sh'] +
                 languages,
                 shortname='remote_host_build.%s' % host,
-                environ={'USER_AT_HOST': user_at_host,
-                         'CONFIG': 'opt'},
+                environ={
+                    'USER_AT_HOST': user_at_host,
+                    'CONFIG': 'opt'
+                },
                 timeout_seconds=build_timeout))
     if build_local:
         # Build locally as well
@@ -587,8 +590,7 @@ def main():
         _REMOTE_HOST_USERNAME = args.remote_host_username
 
     languages = set(
-        scenario_config.LANGUAGES[l]
-        for l in itertools.chain.from_iterable(
+        scenario_config.LANGUAGES[l] for l in itertools.chain.from_iterable(
             six.iterkeys(scenario_config.LANGUAGES) if x == 'all' else [x]
             for x in args.language))
 

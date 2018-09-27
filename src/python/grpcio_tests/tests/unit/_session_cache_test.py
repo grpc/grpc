@@ -52,10 +52,9 @@ def handle_unary_unary(request, servicer_context):
 
 
 def start_secure_server():
-    handler = grpc.method_handlers_generic_handler('test', {
-        'UnaryUnary':
-        grpc.unary_unary_rpc_method_handler(handle_unary_unary)
-    })
+    handler = grpc.method_handlers_generic_handler(
+        'test',
+        {'UnaryUnary': grpc.unary_unary_rpc_method_handler(handle_unary_unary)})
     server = test_common.test_server()
     server.add_generic_rpc_handlers((handler,))
     server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)

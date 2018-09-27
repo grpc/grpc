@@ -75,9 +75,8 @@ class _Plugin(object):
             _common.decode(service_url), _common.decode(method_name))
         callback_state = _CallbackState()
         try:
-            self._metadata_plugin(context,
-                                  _AuthMetadataPluginCallback(
-                                      callback_state, callback))
+            self._metadata_plugin(
+                context, _AuthMetadataPluginCallback(callback_state, callback))
         except Exception as exception:  # pylint: disable=broad-except
             _LOGGER.exception(
                 'AuthMetadataPluginCallback "%s" raised exception!',

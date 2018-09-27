@@ -56,8 +56,7 @@ CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
     cygrpc.StatusCode.data_loss: grpc.StatusCode.DATA_LOSS,
 }
 STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
-    grpc_code: cygrpc_code
-    for cygrpc_code, grpc_code in six.iteritems(
+    grpc_code: cygrpc_code for cygrpc_code, grpc_code in six.iteritems(
         CYGRPC_STATUS_CODE_TO_STATUS_CODE)
 }
 

@@ -66,8 +66,8 @@ def heading(name):
 
 def link(txt, tgt):
     global index_html
-    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (
-        cgi.escape(tgt, quote=True), cgi.escape(txt))
+    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (cgi.escape(
+        tgt, quote=True), cgi.escape(txt))
 
 
 def text(txt):
@@ -90,25 +90,22 @@ def collect_latency(bm_name, args):
         ['bins/basicprof/%s' % bm_name, '--benchmark_list_tests']).splitlines():
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
-            jobset.JobSpec(
-                [
-                    'bins/basicprof/%s' % bm_name,
-                    '--benchmark_filter=^%s$' % line,
-                    '--benchmark_min_time=0.05'
-                ],
-                environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
-                shortname='profile-%s' % fnize(line)))
+            jobset.JobSpec([
+                'bins/basicprof/%s' % bm_name,
+                '--benchmark_filter=^%s$' % line, '--benchmark_min_time=0.05'
+            ],
+                           environ={'LATENCY_TRACE': '%s.trace' % fnize(line)},
+                           shortname='profile-%s' % fnize(line)))
         profile_analysis.append(
-            jobset.JobSpec(
-                [
-                    sys.executable,
-                    'tools/profiling/latency_profile/profile_analyzer.py',
-                    '--source',
-                    '%s.trace' % fnize(line), '--fmt', 'simple', '--out',
-                    'reports/%s.txt' % fnize(line)
-                ],
-                timeout_seconds=20 * 60,
-                shortname='analyze-%s' % fnize(line)))
+            jobset.JobSpec([
+                sys.executable,
+                'tools/profiling/latency_profile/profile_analyzer.py',
+                '--source',
+                '%s.trace' % fnize(line), '--fmt', 'simple', '--out',
+                'reports/%s.txt' % fnize(line)
+            ],
+                           timeout_seconds=20 * 60,
+                           shortname='analyze-%s' % fnize(line)))
         cleanup.append(jobset.JobSpec(['rm', '%s.trace' % fnize(line)]))
         # periodically flush out the list of jobs: profile_analysis jobs at least
         # consume upwards of five gigabytes of ram in some cases, and so analysing
@@ -146,14 +143,13 @@ def collect_perf(bm_name, args):
         ['bins/mutrace/%s' % bm_name, '--benchmark_list_tests']).splitlines():
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
-            jobset.JobSpec(
-                [
-                    'perf', 'record', '-o',
-                    '%s-perf.data' % fnize(line), '-g', '-F', '997',
-                    'bins/mutrace/%s' % bm_name,
-                    '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
-                ],
-                shortname='perf-%s' % fnize(line)))
+            jobset.JobSpec([
+                'perf', 'record', '-o',
+                '%s-perf.data' % fnize(line), '-g', '-F', '997',
+                'bins/mutrace/%s' % bm_name,
+                '--benchmark_filter=^%s$' % line, '--benchmark_min_time=10'
+            ],
+                           shortname='perf-%s' % fnize(line)))
         profile_analysis.append(
             jobset.JobSpec(
                 [

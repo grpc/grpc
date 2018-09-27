@@ -90,9 +90,8 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                 containing_type)
             extension_numbers = tuple(
                 sorted(
-                    extension.number
-                    for extension in self._pool.FindAllExtensions(
-                        message_descriptor)))
+                    extension.number for extension in self._pool.
+                    FindAllExtensions(message_descriptor)))
         except KeyError:
             return _not_found_error()
         else:
@@ -104,11 +103,10 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
 
     def _list_services(self):
         return _reflection_pb2.ServerReflectionResponse(
-            list_services_response=_reflection_pb2.ListServiceResponse(
-                service=[
-                    _reflection_pb2.ServiceResponse(name=service_name)
-                    for service_name in self._service_names
-                ]))
+            list_services_response=_reflection_pb2.ListServiceResponse(service=[
+                _reflection_pb2.ServiceResponse(name=service_name)
+                for service_name in self._service_names
+            ]))
 
     def ServerReflectionInfo(self, request_iterator, context):
         # pylint: disable=unused-argument
@@ -131,8 +129,8 @@ class ReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                 yield _reflection_pb2.ServerReflectionResponse(
                     error_response=_reflection_pb2.ErrorResponse(
                         error_code=grpc.StatusCode.INVALID_ARGUMENT.value[0],
-                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1]
-                        .encode(),
+                        error_message=grpc.StatusCode.INVALID_ARGUMENT.value[1].
+                        encode(),
                     ))
 
 

@@ -127,8 +127,8 @@ def secure_channel(host, port, channel_credentials):
   Returns:
     A secure Channel to the remote host through which RPCs may be conducted.
   """
-    channel = grpc.secure_channel(host if port is None else
-                                  '%s:%d' % (host, port), channel_credentials)
+    channel = grpc.secure_channel(
+        host if port is None else '%s:%d' % (host, port), channel_credentials)
     return Channel(channel)
 
 

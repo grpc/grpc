@@ -207,16 +207,18 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
         )
-        self._unary_stream = channel.unary_stream('/'.join((
-            '',
-            _SERVICE,
-            _UNARY_STREAM,
-        )),)
-        self._stream_unary = channel.stream_unary('/'.join((
-            '',
-            _SERVICE,
-            _STREAM_UNARY,
-        )),)
+        self._unary_stream = channel.unary_stream(
+            '/'.join((
+                '',
+                _SERVICE,
+                _UNARY_STREAM,
+            )),)
+        self._stream_unary = channel.stream_unary(
+            '/'.join((
+                '',
+                _SERVICE,
+                _STREAM_UNARY,
+            )),)
         self._stream_stream = channel.stream_stream(
             '/'.join((
                 '',

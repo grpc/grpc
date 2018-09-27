@@ -124,9 +124,7 @@ def _get_resultstore_data(api_key, invocation_id):
             url=
             'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s'
             % (invocation_id, api_key, page_token),
-            headers={
-                'Content-Type': 'application/json'
-            })
+            headers={'Content-Type': 'application/json'})
         results = json.loads(urllib2.urlopen(req).read())
         all_actions.extend(results['actions'])
         if 'nextPageToken' not in results:

@@ -65,8 +65,8 @@ INSTALL_REQUIRES = (
 try:
     import reflection_commands as _reflection_commands
     # we are in the build environment, otherwise the above import fails
-    SETUP_REQUIRES = (
-        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    SETUP_REQUIRES = ('grpcio-tools=={version}'.format(
+        version=grpc_version.VERSION),)
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _reflection_commands.CopyProtoModules,

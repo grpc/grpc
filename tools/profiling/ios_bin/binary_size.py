@@ -61,16 +61,16 @@ def get_size(where, frameworks):
         return parse_link_map(build_dir + link_map_filename)
     else:
         framework_dir = 'Build/Products/Release-iphoneos/Sample.app/Frameworks/'
-        boringssl_size = dir_size(
-            build_dir + framework_dir + 'openssl.framework')
+        boringssl_size = dir_size(build_dir + framework_dir +
+                                  'openssl.framework')
         core_size = dir_size(build_dir + framework_dir + 'grpc.framework')
         objc_size = dir_size(build_dir + framework_dir + 'GRPCClient.framework') + \
                     dir_size(build_dir + framework_dir + 'RxLibrary.framework') + \
                     dir_size(build_dir + framework_dir + 'ProtoRPC.framework')
-        protobuf_size = dir_size(
-            build_dir + framework_dir + 'Protobuf.framework')
-        app_size = dir_size(
-            build_dir + 'Build/Products/Release-iphoneos/Sample.app')
+        protobuf_size = dir_size(build_dir + framework_dir +
+                                 'Protobuf.framework')
+        app_size = dir_size(build_dir +
+                            'Build/Products/Release-iphoneos/Sample.app')
         return core_size, objc_size, boringssl_size, protobuf_size, app_size
 
 
