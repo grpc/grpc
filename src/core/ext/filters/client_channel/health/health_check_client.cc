@@ -479,7 +479,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(error);
     Cancel();
-    grpc_slice_buffer_destroy(&recv_message_buffer_);
+    grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
     Unref(DEBUG_LOCATION, "recv_message_ready");
     return;
   }
@@ -493,7 +493,7 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   }
   health_check_client_->SetHealthStatus(state, error);
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
-  grpc_slice_buffer_destroy(&recv_message_buffer_);
+  grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
   // Note: Can't just reuse batch_ here, since we don't know that all
