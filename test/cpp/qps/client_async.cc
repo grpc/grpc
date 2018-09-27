@@ -151,9 +151,9 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
   // Specify which protected members we are using since there is no
   // member name resolution until the template types are fully resolved
  public:
-  using Client::closed_loop_;
   using Client::NextIssuer;
   using Client::SetupLoadTest;
+  using Client::closed_loop_;
   using ClientImpl<StubType, RequestType>::cores_;
   using ClientImpl<StubType, RequestType>::channels_;
   using ClientImpl<StubType, RequestType>::request_;
@@ -955,23 +955,48 @@ std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
   return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
 }
 
+struct CallbackClientRpcData {
+  CallbackClientRpcData() : thread_mu_(), thread_cv_(), alarm_() {}
+
+  ~CallbackClientRpcData() {}
+
+  std::mutex thread_mu_;
+  std::condition_variable thread_cv_;
+  bool rpc_done_;
+  Alarm alarm_;
+};
+
 class CallbackClient
     : public ClientImpl<BenchmarkService::Stub, SimpleRequest> {
  public:
   CallbackClient(const ClientConfig& config)
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
-    num_threads_ =
-        config.outstanding_rpcs_per_channel() * config.client_channels();
-    SetupLoadTest(config, num_threads_);
+    num_threads_ = NumThreads(config);
+    ctxs_.resize(num_threads_);
     threads_done_ = 0;
+    SetupLoadTest(config, num_threads_);
   }
 
   virtual ~CallbackClient() {}
 
-  virtual bool InitThreadFuncImpl(size_t thread_idx) { return true; }
+  virtual bool InitThreadFuncImpl(size_t thread_idx) {
+    // Create new contexts
+    delete ctxs_[thread_idx];
+    ctxs_[thread_idx] = new CallbackClientRpcData;
+    return true;
+  }
 
   virtual bool ThreadFuncImpl(Thread* t, size_t thread_idx) = 0;
+
+  int NumThreads(const ClientConfig& config) {
+    int num_threads = config.async_client_threads();
+    if (num_threads <= 0) {  // Use dynamic sizing
+      num_threads = cores_;
+      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
+    }
+    return num_threads;
+  }
 
   void ThreadFunc(size_t thread_idx, Thread* t) override {
     if (!InitThreadFuncImpl(thread_idx)) {
@@ -982,22 +1007,75 @@ class CallbackClient
       gpr_timespec next_issue_time = NextIssueTime(thread_idx);
       // Start an alarm call back to run the internal callback after
       // next_issue_time
-      Alarm* alarm = new Alarm();
-      alarm->experimental().Set(next_issue_time,
-                                [this, t, thread_idx, alarm](bool ok) {
-                                  delete alarm;
-                                  ThreadFuncImpl(t, thread_idx);
-                                });
+      Alarm* alarm = &ctxs_[thread_idx]->alarm_;
+      alarm->experimental().Set(
+          next_issue_time,
+          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
     } else {
       ThreadFuncImpl(t, thread_idx);
     }
+
+    WaitForCallback(thread_idx);
+
+    if (ThreadCompleted()) {
+      NotifyMainThread(thread_idx);
+      delete ctxs_[thread_idx];
+      return;
+    }
+
+    // Start a new Unary call
+    ThreadFunc(thread_idx, t);
   }
 
  protected:
   size_t num_threads_;
   std::mutex mu_;
   std::condition_variable cv_;
+  std::vector<CallbackClientRpcData*> ctxs_;
   size_t threads_done_;
+
+  void NotifyThread(size_t thread_idx) {
+    std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
+    std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
+    std::lock_guard<std::mutex> thread_lock(*thread_mu);
+    gpr_log(GPR_ERROR, "Notifying thread cv %zu - ThreadFuncImpl Done",
+            thread_idx);
+    ctxs_[thread_idx]->rpc_done_ = true;
+    thread_cv->notify_one();
+  }
+
+  void DestroyMultithreading() override final {
+    gpr_log(GPR_ERROR, "DestroyedMultithreading waiting on all threads");
+    std::unique_lock<std::mutex> l(mu_);
+    while (threads_done_ != num_threads_) {
+      cv_.wait(l);
+    }
+    EndThreads();
+  }
+
+  void WaitForCallback(size_t thread_idx) {
+    gpr_log(GPR_ERROR, "Waiting for ThreadFuncImpl to complete- Thread %zu",
+            thread_idx);
+    std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
+    std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
+    std::unique_lock<std::mutex> thread_lock(*thread_mu);
+    while (!ctxs_[thread_idx]->rpc_done_) {
+      thread_cv->wait(thread_lock);
+    }
+    ctxs_[thread_idx]->rpc_done_ = false;
+    thread_lock.unlock();
+  }
+
+  void NotifyMainThread(size_t thread_idx) {
+    gpr_log(GPR_ERROR, "Released ThreadFunc- Thread %zu ", thread_idx);
+    std::lock_guard<std::mutex> l(mu_);
+    gpr_log(GPR_ERROR, "Thread %zu done", thread_idx);
+    threads_done_++;
+    if (threads_done_ == num_threads_) {
+      gpr_log(GPR_ERROR, "All threads done, Notifying");
+      cv_.notify_one();
+    }
+  }
 };
 
 class CallbackUnaryClient final : public CallbackClient {
@@ -1028,28 +1106,11 @@ class CallbackUnaryClient final : public CallbackClient {
           // termination
           delete context;
           delete response;
-          if (ThreadCompleted()) {
-            std::lock_guard<std::mutex> l(mu_);
-            threads_done_++;
-            if (threads_done_ == num_threads_) {
-              cv_.notify_one();
-            }
-            return;
-          }
 
-          // Start a new Unary call
-          ThreadFunc(thread_idx, t);
+          // Notify thread of completion
+          NotifyThread(thread_idx);
         });
     return true;
-  }
-
- private:
-  void DestroyMultithreading() override final {
-    std::unique_lock<std::mutex> l(mu_);
-    while (threads_done_ != num_threads_) {
-      cv_.wait(l);
-    }
-    EndThreads();
   }
 };
 
