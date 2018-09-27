@@ -288,6 +288,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       if (join) thread_->join();
     }
+
+    void SetServingStatus(const grpc::string& service, bool serving) {
+      server_->GetHealthCheckService()->SetServingStatus(service, serving);
+    }
   };
 
   void ResetCounters() {
@@ -1008,9 +1012,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   WaitForServer(stub, 0, DEBUG_LOCATION);
 }
 
-// If health checking is required by client but no health checking
-// service is running on the server, the channel should be treated as
-// healthy.
+// If health checking is required by client but health checking service
+// is not running on the server, the channel should be treated as healthy.
 TEST_F(ClientLbEnd2endTest,
        RoundRobinServersHealthCheckingUnimplementedTreatedAsHealthy) {
   StartServers(1);  // Single server
@@ -1025,22 +1028,9 @@ TEST_F(ClientLbEnd2endTest,
   CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
-#if 0
-class ClientLbEnd2endWithHealthCheckingTest : public ClientLbEnd2endTest {
- protected:
-  void SetUp() override {
-    EnableDefaultHealthCheckService(true);
-    ClientLbEnd2endTest::SetUp();
-  }
-
-  void TearDown() override {
-    ClientLbEnd2endTest::TearDown();
-    EnableDefaultHealthCheckService(false);
-  }
-};
-
-TEST_F(ClientLbEnd2endWithHealthCheckingTest, RoundRobin) {
-  // Start servers and send one RPC per server.
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
+  EnableDefaultHealthCheckService(true);
+  // Start servers.
   const int kNumServers = 3;
   StartServers(kNumServers);
   ChannelArguments args;
@@ -1054,27 +1044,66 @@ TEST_F(ClientLbEnd2endWithHealthCheckingTest, RoundRobin) {
     ports.emplace_back(server->port_);
   }
   SetNextResolution(ports);
-  // Wait until all backends are ready.
-  do {
+  // Channel should not become READY, because health checks should be failing.
+  gpr_log(GPR_INFO,
+          "*** initial state: unknown health check service name for "
+          "all servers");
+  EXPECT_FALSE(WaitForChannelReady(channel.get(), 1));
+  // Now set one of the servers to be healthy.
+  // The channel should become healthy and all requests should go to
+  // the healthy server.
+  gpr_log(GPR_INFO, "*** server 0 healthy");
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  for (int i = 0; i < 10; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
-  } while (!SeenAllServers());
-  ResetCounters();
-  // "Sync" to the end of the list. Next sequence of picks will start at the
-  // first server (index 0).
-  WaitForServer(stub, servers_.size() - 1, DEBUG_LOCATION);
-  std::vector<int> connection_order;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    CheckRpcSendOk(stub, DEBUG_LOCATION);
-    UpdateConnectionOrder(servers_, &connection_order);
   }
-  // Backends should be iterated over in the order in which the addresses were
-  // given.
-  const auto expected = std::vector<int>{0, 1, 2};
-  EXPECT_EQ(expected, connection_order);
-  // Check LB policy name for the channel.
-  EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(10, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(0, servers_[2]->service_.request_count());
+  // Now set a second server to be healthy.
+  gpr_log(GPR_INFO, "*** server 2 healthy");
+  servers_[2]->SetServingStatus("health_check_service_name", true);
+  WaitForServer(stub, 2, DEBUG_LOCATION);
+  for (int i = 0; i < 10; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  EXPECT_EQ(5, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(5, servers_[2]->service_.request_count());
+  // Now set the remaining server to be healthy.
+  gpr_log(GPR_INFO, "*** server 1 healthy");
+  servers_[1]->SetServingStatus("health_check_service_name", true);
+  WaitForServer(stub, 1, DEBUG_LOCATION);
+  for (int i = 0; i < 9; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  EXPECT_EQ(3, servers_[0]->service_.request_count());
+  EXPECT_EQ(3, servers_[1]->service_.request_count());
+  EXPECT_EQ(3, servers_[2]->service_.request_count());
+  // Now set one server to be unhealthy again.  Then wait until the
+  // unhealthiness has hit the client.  We know that the client will see
+  // this when we send kNumServers requests and one of the remaining servers
+  // sees two of the requests.
+  gpr_log(GPR_INFO, "*** server 0 unhealthy");
+  servers_[0]->SetServingStatus("health_check_service_name", false);
+  do {
+    ResetCounters();
+    for (int i = 0; i < kNumServers; ++i) {
+      CheckRpcSendOk(stub, DEBUG_LOCATION);
+    }
+  } while (servers_[1]->service_.request_count() != 2 &&
+           servers_[2]->service_.request_count() != 2);
+  // Now set the remaining two servers to be unhealthy.  Make sure the
+  // channel leaves READY state and that RPCs fail.
+  gpr_log(GPR_INFO, "*** all servers unhealthy");
+  servers_[1]->SetServingStatus("health_check_service_name", false);
+  servers_[2]->SetServingStatus("health_check_service_name", false);
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  CheckRpcSendFailure(stub);
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
 }
-#endif
 
 }  // namespace
 }  // namespace testing

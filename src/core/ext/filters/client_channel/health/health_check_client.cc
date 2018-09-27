@@ -104,6 +104,7 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
     on_health_changed_ = nullptr;
   }
   state_ = state;
+  GRPC_ERROR_UNREF(error_);
   error_ = error;
 }
 
@@ -113,7 +114,7 @@ void HealthCheckClient::Orphan() {
     if (on_health_changed_ != nullptr) {
       *notify_state_ = GRPC_CHANNEL_SHUTDOWN;
       notify_state_ = nullptr;
-      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_CANCELLED);
+      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_NONE);
       on_health_changed_ = nullptr;
     }
     shutting_down_ = true;
