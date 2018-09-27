@@ -773,6 +773,7 @@ doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
+doc/core/grpc-endpoint.md \
 doc/core/grpc-error.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
