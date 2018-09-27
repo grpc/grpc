@@ -1038,14 +1038,11 @@ class CallbackClient
     std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
     std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
     std::lock_guard<std::mutex> thread_lock(*thread_mu);
-    gpr_log(GPR_ERROR, "Notifying thread cv %zu - ThreadFuncImpl Done",
-            thread_idx);
     ctxs_[thread_idx]->rpc_done_ = true;
     thread_cv->notify_one();
   }
 
   void DestroyMultithreading() override final {
-    gpr_log(GPR_ERROR, "DestroyedMultithreading waiting on all threads");
     std::unique_lock<std::mutex> l(mu_);
     while (threads_done_ != num_threads_) {
       cv_.wait(l);
@@ -1054,8 +1051,6 @@ class CallbackClient
   }
 
   void WaitForCallback(size_t thread_idx) {
-    gpr_log(GPR_ERROR, "Waiting for ThreadFuncImpl to complete- Thread %zu",
-            thread_idx);
     std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
     std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
     std::unique_lock<std::mutex> thread_lock(*thread_mu);
@@ -1067,12 +1062,9 @@ class CallbackClient
   }
 
   void NotifyMainThread(size_t thread_idx) {
-    gpr_log(GPR_ERROR, "Released ThreadFunc- Thread %zu ", thread_idx);
     std::lock_guard<std::mutex> l(mu_);
-    gpr_log(GPR_ERROR, "Thread %zu done", thread_idx);
     threads_done_++;
     if (threads_done_ == num_threads_) {
-      gpr_log(GPR_ERROR, "All threads done, Notifying");
       cv_.notify_one();
     }
   }
