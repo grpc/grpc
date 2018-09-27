@@ -33,13 +33,11 @@
 void (*g_grpc_debug_timer_manager_stats)(int64_t timer_manager_init_count,
                                          int64_t timer_manager_shutdown_count,
                                          int64_t fork_count,
-                                         int64_t timer_wait_err,
-                                         int64_t timer_wait_cv) = nullptr;
+                                         int64_t timer_wait_err) = nullptr;
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
 int64_t g_timer_wait_err = 0;
-int64_t g_timer_wait_cv = 0;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
@@ -110,10 +108,9 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   if (!(err == 0 || err == ETIMEDOUT || err == EAGAIN)) {
     if (g_grpc_debug_timer_manager_stats) {
       g_timer_wait_err = err;
-      g_timer_wait_cv = (int64_t)cv;
-      g_grpc_debug_timer_manager_stats(
-          g_timer_manager_init_count, g_timer_manager_shutdown_count,
-          g_fork_count, g_timer_wait_err, g_timer_wait_cv);
+      g_grpc_debug_timer_manager_stats(g_timer_manager_init_count,
+                                       g_timer_manager_shutdown_count,
+                                       g_fork_count, g_timer_wait_err);
     }
     GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   }

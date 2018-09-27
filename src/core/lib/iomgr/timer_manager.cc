@@ -68,7 +68,6 @@ extern int64_t g_timer_manager_init_count;
 extern int64_t g_timer_manager_shutdown_count;
 extern int64_t g_fork_count;
 extern int64_t g_timer_wait_err;
-extern int64_t g_timer_wait_cv;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 static void gc_completed_threads(void) {
@@ -334,9 +333,9 @@ static void stop_threads(void) {
 }
 
 void grpc_timer_manager_shutdown(void) {
-// For debug of the timer manager crash only.
-// TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
   g_timer_manager_shutdown_count++;
 #endif
   stop_threads();
@@ -347,9 +346,9 @@ void grpc_timer_manager_shutdown(void) {
 }
 
 void grpc_timer_manager_set_threading(bool threaded) {
-// For debug of the timer manager crash only.
-// TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
   g_fork_count++;
 #endif
   if (threaded) {
