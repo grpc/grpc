@@ -138,10 +138,6 @@ inline grpc_slice SliceFromCopiedString(const grpc::string& str) {
                                                                  str.length());
 }
 
-inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
-}
-
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_SLICE_H

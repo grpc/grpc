@@ -65,6 +65,10 @@ Channel::~Channel() {
 
 namespace {
 
+inline grpc_slice SliceFromArray(const char* arr, size_t len) {
+  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+}
+
 grpc::string GetChannelInfoField(grpc_channel* channel,
                                  grpc_channel_info* channel_info,
                                  char*** channel_info_field) {
@@ -112,7 +116,7 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
     const string* host_str = nullptr;
-    if (!context->authority().empty()) {
+    if (!context->authority_.empty()) {
       host_str = &context->authority_;
     } else if (!host_.empty()) {
       host_str = &host_;
