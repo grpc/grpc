@@ -473,7 +473,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     OnDoneNotified(std::shared_ptr<CallHandler> self, bool ok) {
   GPR_ASSERT(ok);
   gpr_log(GPR_DEBUG,
-          "[HCS %p] Healt watch call is notified done (handler: %p, "
+          "[HCS %p] Health watch call is notified done (handler: %p, "
           "is_cancelled: %d).",
           service_, this, static_cast<int>(ctx_.IsCancelled()));
   SendFinish(std::move(self), Status::CANCELLED);
