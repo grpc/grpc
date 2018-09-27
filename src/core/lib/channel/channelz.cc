@@ -62,7 +62,7 @@ CallCountingHelper::CallCountingHelper() {
 CallCountingHelper::~CallCountingHelper() {}
 
 void CallCountingHelper::RecordCallStarted() {
-  gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
+  gpr_atm_no_barrier_fetch_add(&calls_started_, static_cast<gpr_atm>(1));
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
@@ -81,11 +81,13 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "callsFailed", calls_failed_);
   }
-  gpr_timespec ts =
-      grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
-  json_iterator =
-      grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
-                             gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+  if (calls_started_ != 0) {
+    gpr_timespec ts =
+        grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
+    json_iterator =
+        grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
+                               gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+  }
 }
 
 ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
@@ -180,7 +182,103 @@ grpc_json* ServerNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  return top_level_json;
+}
+
+SocketNode::SocketNode() : BaseNode(EntityType::kSocket) {}
+
+void SocketNode::RecordStreamStartedFromLocal() {
+  gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
+  gpr_atm_no_barrier_store(&last_local_stream_created_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
+}
+
+void SocketNode::RecordStreamStartedFromRemote() {
+  gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
+  gpr_atm_no_barrier_store(&last_remote_stream_created_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
+}
+
+void SocketNode::RecordMessagesSent(uint32_t num_sent) {
+  gpr_atm_no_barrier_fetch_add(&messages_sent_, static_cast<gpr_atm>(num_sent));
+  gpr_atm_no_barrier_store(&last_message_sent_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
+}
+
+void SocketNode::RecordMessageReceived() {
+  gpr_atm_no_barrier_fetch_add(&messages_received_, static_cast<gpr_atm>(1));
+  gpr_atm_no_barrier_store(&last_message_received_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
+}
+
+grpc_json* SocketNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "socketId", uuid());
+  // reset json iterators to top level object
   json = top_level_json;
+  json_iterator = nullptr;
+  // create and fill the data child.
+  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
+                                           GRPC_JSON_OBJECT, false);
+  json = data;
+  json_iterator = nullptr;
+  gpr_timespec ts;
+  if (streams_started_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "streamsStarted", streams_started_);
+    if (last_local_stream_created_millis_ != 0) {
+      ts = grpc_millis_to_timespec(last_local_stream_created_millis_,
+                                   GPR_CLOCK_REALTIME);
+      json_iterator = grpc_json_create_child(
+          json_iterator, json, "lastLocalStreamCreatedTimestamp",
+          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    }
+    if (last_remote_stream_created_millis_ != 0) {
+      ts = grpc_millis_to_timespec(last_remote_stream_created_millis_,
+                                   GPR_CLOCK_REALTIME);
+      json_iterator = grpc_json_create_child(
+          json_iterator, json, "lastRemoteStreamCreatedTimestamp",
+          gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+    }
+  }
+  if (streams_succeeded_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "streamsSucceeded", streams_succeeded_);
+  }
+  if (streams_failed_) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "streamsFailed", streams_failed_);
+  }
+  if (messages_sent_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "messagesSent", messages_sent_);
+    ts = grpc_millis_to_timespec(last_message_sent_millis_, GPR_CLOCK_REALTIME);
+    json_iterator =
+        grpc_json_create_child(json_iterator, json, "lastMessageSentTimestamp",
+                               gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+  }
+  if (messages_received_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "messagesReceived", messages_received_);
+    ts = grpc_millis_to_timespec(last_message_received_millis_,
+                                 GPR_CLOCK_REALTIME);
+    json_iterator = grpc_json_create_child(
+        json_iterator, json, "lastMessageReceivedTimestamp",
+        gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+  }
+  if (keepalives_sent_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "keepAlivesSent", keepalives_sent_);
+  }
   return top_level_json;
 }
 
