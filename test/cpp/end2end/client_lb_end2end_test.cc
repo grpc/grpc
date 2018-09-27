@@ -1019,8 +1019,10 @@ TEST_F(ClientLbEnd2endTest,
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto channel = BuildChannel("round_robin", args);
+  auto stub = BuildStub(channel);
   SetNextResolution({servers_[0]->port_});
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
 #if 0

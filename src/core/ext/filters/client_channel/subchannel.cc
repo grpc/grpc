@@ -84,6 +84,12 @@ typedef struct external_state_watcher {
   struct external_state_watcher* prev;
 } external_state_watcher;
 
+namespace grpc_core {
+
+class ConnectedSubchannelStateWatcher;
+
+}  // namespace grpc_core
+
 struct grpc_subchannel {
   grpc_connector* connector;
 
@@ -122,6 +128,8 @@ struct grpc_subchannel {
 
   /** active connection, or null */
   grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel> connected_subchannel;
+  grpc_core::OrphanablePtr<grpc_core::ConnectedSubchannelStateWatcher>
+      connected_subchannel_watcher;
 
   /** have we seen a disconnection? */
   bool disconnected;
@@ -202,7 +210,7 @@ class ConnectedSubchannelStateWatcher
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
   }
 
-  void Orphan() override {}
+  void Orphan() override { health_check_client_.reset(); }
 
  private:
   static void OnConnectivityChanged(void* arg, grpc_error* error) {
@@ -223,6 +231,7 @@ class ConnectedSubchannelStateWatcher
                           self->pending_connectivity_state_));
             }
             c->connected_subchannel.reset();
+            c->connected_subchannel_watcher.reset();
             self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
             grpc_connectivity_state_set(&c->state_tracker,
                                         GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -267,21 +276,19 @@ class ConnectedSubchannelStateWatcher
 
   static void OnHealthChanged(void* arg, grpc_error* error) {
     auto* self = static_cast<ConnectedSubchannelStateWatcher*>(arg);
-    grpc_subchannel* c = self->subchannel_;
-    {
-      MutexLock lock(&c->mu);
-      if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
-        grpc_connectivity_state_set(
-            &c->state_and_health_tracker, self->health_state_,
-            GRPC_ERROR_REF(error), "connected");
-        self->health_check_client_->NotifyOnHealthChange(
-            &self->health_state_, &self->on_health_changed_);
-        self = nullptr;  // So we don't unref below.
-      }
+    if (self->health_state_ == GRPC_CHANNEL_SHUTDOWN) {
+      self->Unref();
+      return;
     }
-    // Don't unref until we've released the lock, because this might
-    // cause the subchannel (which contains the lock) to be destroyed.
-    if (self != nullptr) self->Unref();
+    grpc_subchannel* c = self->subchannel_;
+    MutexLock lock(&c->mu);
+    if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
+      grpc_connectivity_state_set(
+          &c->state_and_health_tracker, self->health_state_,
+          GRPC_ERROR_REF(error), "connected");
+    }
+    self->health_check_client_->NotifyOnHealthChange(
+        &self->health_state_, &self->on_health_changed_);
   }
 
   grpc_subchannel* subchannel_;
@@ -406,6 +413,7 @@ static void disconnect(grpc_subchannel* c) {
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                             "Subchannel disconnected"));
   c->connected_subchannel.reset();
+  c->connected_subchannel_watcher.reset();
   gpr_mu_unlock(&c->mu);
 }
 
@@ -786,7 +794,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
           c->connected_subchannel.get(), c);
 
   // Instantiate state watcher.  Will clean itself up.
-  grpc_core::New<grpc_core::ConnectedSubchannelStateWatcher>(c);
+  c->connected_subchannel_watcher =
+      grpc_core::MakeOrphanable<grpc_core::ConnectedSubchannelStateWatcher>(c);
 
   return true;
 }

@@ -69,6 +69,9 @@ HealthCheckClient::HealthCheckClient(
 }
 
 HealthCheckClient::~HealthCheckClient() {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "destroying HealthCheckClient %p", this);
+  }
   GRPC_ERROR_UNREF(error_);
   gpr_mu_destroy(&mu_);
 }
@@ -98,6 +101,7 @@ void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
     *notify_state_ = state;
     notify_state_ = nullptr;
     GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_REF(error));
+    on_health_changed_ = nullptr;
   }
   state_ = state;
   error_ = error;
@@ -107,8 +111,9 @@ void HealthCheckClient::Orphan() {
   {
     MutexLock lock(&mu_);
     if (on_health_changed_ != nullptr) {
-      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_CANCELLED);
+      *notify_state_ = GRPC_CHANNEL_SHUTDOWN;
       notify_state_ = nullptr;
+      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_CANCELLED);
       on_health_changed_ = nullptr;
     }
     shutting_down_ = true;
@@ -204,6 +209,7 @@ void EncodeRequest(const char* service_name,
                        &request_struct) != 0);
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
+  grpc_slice_buffer_add(&slice_buffer, request_slice);
   send_message->Init(&slice_buffer, 0);
   grpc_slice_buffer_destroy(&slice_buffer);
 }
@@ -263,9 +269,6 @@ HealthCheckClient::CallState::CallState(
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(gpr_arena_create(health_check_client_->connected_subchannel_
                                   ->GetInitialCallSizeEstimate(0))) {
-  if (grpc_health_check_client_trace.enabled()) {
-    gpr_log(GPR_INFO, "created HealthCheckClient::CallState %p", this);
-  }
   memset(&call_combiner_, 0, sizeof(call_combiner_));
   grpc_call_combiner_init(&call_combiner_);
   memset(context_, 0, sizeof(context_));
@@ -273,6 +276,10 @@ HealthCheckClient::CallState::CallState(
 }
 
 HealthCheckClient::CallState::~CallState() {
+  if (grpc_health_check_client_trace.enabled()) {
+    gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
+            health_check_client_.get(), this);
+  }
   if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
   // Unset the call combiner cancellation closure.  This has the
   // effect of scheduling the previously set cancellation closure, if
@@ -460,6 +467,8 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   const bool healthy = DecodeResponse(&recv_message_buffer_);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
+  error = healthy ? GRPC_ERROR_NONE
+                  : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
   health_check_client_->SetHealthStatus(state, error);
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
   grpc_slice_buffer_destroy(&recv_message_buffer_);
