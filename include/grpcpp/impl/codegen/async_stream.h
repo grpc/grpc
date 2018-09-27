@@ -184,8 +184,11 @@ class ClientAsyncReaderFactory {
                                       CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
                                       ClientContext* context, const W& request,
-                                      bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+                                      bool start, void* tag,
+                                      const char* static_name,
+                                      size_t static_name_len) {
+    ::grpc::internal::Call call =
+        channel->CreateCall(method, context, cq, static_name, static_name_len);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReader<R>)))
         ClientAsyncReader<R>(call, context, request, start, tag);
@@ -332,8 +335,11 @@ class ClientAsyncWriterFactory {
                                       CompletionQueue* cq,
                                       const ::grpc::internal::RpcMethod& method,
                                       ClientContext* context, R* response,
-                                      bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+                                      bool start, void* tag,
+                                      const char* static_name,
+                                      size_t static_name_len) {
+    ::grpc::internal::Call call =
+        channel->CreateCall(method, context, cq, static_name, static_name_len);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncWriter<W>)))
         ClientAsyncWriter<W>(call, context, response, start, tag);
@@ -496,8 +502,9 @@ class ClientAsyncReaderWriterFactory {
   static ClientAsyncReaderWriter<W, R>* Create(
       ChannelInterface* channel, CompletionQueue* cq,
       const ::grpc::internal::RpcMethod& method, ClientContext* context,
-      bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+      bool start, void* tag, const char* static_name, size_t static_name_len) {
+    ::grpc::internal::Call call =
+        channel->CreateCall(method, context, cq, static_name, static_name_len);
 
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReaderWriter<W, R>)))

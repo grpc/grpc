@@ -1371,10 +1371,12 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "::grpc::Status $ns$$Service$::Stub::$Method$("
                    "::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response) {\n");
-    printer->Print(*vars,
-                   "  return ::grpc::internal::BlockingUnaryCall"
-                   "(channel_.get(), rpcmethod_$Method$_, "
-                   "context, request, response);\n}\n\n");
+    printer->Print(
+        *vars,
+        "  return ::grpc::internal::BlockingUnaryCall"
+        "(channel_.get(), rpcmethod_$Method$_, "
+        "context, request, response, $prefix$$Service$_method_names[$Idx$], "
+        "$prefix$$Service$_method_name_lens[$Idx$]);\n}\n\n");
 
     printer->Print(*vars,
                    "void $ns$$Service$::Stub::experimental_async::$Method$("
@@ -1384,7 +1386,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
     printer->Print(*vars,
                    "  return ::grpc::internal::CallbackUnaryCall"
                    "(stub_->channel_.get(), stub_->rpcmethod_$Method$_, "
-                   "context, request, response, std::move(f));\n}\n\n");
+                   "context, request, response, std::move(f), "
+                   "$prefix$$Service$_method_names[$Idx$], "
+                   "$prefix$$Service$_method_name_lens[$Idx$]);\n}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
@@ -1401,7 +1405,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
           "::grpc::internal::ClientAsyncResponseReaderFactory< $Response$>"
           "::Create(channel_.get(), cq, "
           "rpcmethod_$Method$_, "
-          "context, request, $AsyncStart$);\n"
+          "context, request, $AsyncStart$, "
+          "$prefix$$Service$_method_names[$Idx$], "
+          "$prefix$$Service$_method_name_lens[$Idx$]);\n"
           "}\n\n");
     }
   } else if (ClientOnlyStreaming(method)) {
@@ -1414,7 +1420,8 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "  return ::grpc::internal::ClientWriterFactory< $Request$>::Create("
         "channel_.get(), "
         "rpcmethod_$Method$_, "
-        "context, response);\n"
+        "context, response, $prefix$$Service$_method_names[$Idx$], "
+        "$prefix$$Service$_method_name_lens[$Idx$]);\n"
         "}\n\n");
 
     // TODO(vjpai): Add callback version
@@ -1434,7 +1441,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
           "  return ::grpc::internal::ClientAsyncWriterFactory< $Request$>"
           "::Create(channel_.get(), cq, "
           "rpcmethod_$Method$_, "
-          "context, response, $AsyncStart$$AsyncCreateArgs$);\n"
+          "context, response, $AsyncStart$$AsyncCreateArgs$, "
+          "$prefix$$Service$_method_names[$Idx$], "
+          "$prefix$$Service$_method_name_lens[$Idx$]);\n"
           "}\n\n");
     }
   } else if (ServerOnlyStreaming(method)) {
@@ -1448,7 +1457,8 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "  return ::grpc::internal::ClientReaderFactory< $Response$>::Create("
         "channel_.get(), "
         "rpcmethod_$Method$_, "
-        "context, request);\n"
+        "context, request, $prefix$$Service$_method_names[$Idx$], "
+        "$prefix$$Service$_method_name_lens[$Idx$]);\n"
         "}\n\n");
 
     // TODO(vjpai): Add callback version
@@ -1469,7 +1479,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
           "  return ::grpc::internal::ClientAsyncReaderFactory< $Response$>"
           "::Create(channel_.get(), cq, "
           "rpcmethod_$Method$_, "
-          "context, request, $AsyncStart$$AsyncCreateArgs$);\n"
+          "context, request, $AsyncStart$$AsyncCreateArgs$, "
+          "$prefix$$Service$_method_names[$Idx$], "
+          "$prefix$$Service$_method_name_lens[$Idx$]);\n"
           "}\n\n");
     }
   } else if (method->BidiStreaming()) {
@@ -1482,7 +1494,8 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "$Request$, $Response$>::Create("
                    "channel_.get(), "
                    "rpcmethod_$Method$_, "
-                   "context);\n"
+                   "context, $prefix$$Service$_method_names[$Idx$], "
+                   "$prefix$$Service$_method_name_lens[$Idx$]);\n"
                    "}\n\n");
 
     // TODO(vjpai): Add callback version
@@ -1503,7 +1516,9 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                      "$Request$, $Response$>::Create("
                      "channel_.get(), cq, "
                      "rpcmethod_$Method$_, "
-                     "context, $AsyncStart$$AsyncCreateArgs$);\n"
+                     "context, $AsyncStart$$AsyncCreateArgs$, "
+                     "$prefix$$Service$_method_names[$Idx$], "
+                     "$prefix$$Service$_method_name_lens[$Idx$]);\n"
                      "}\n\n");
     }
   }
@@ -1574,11 +1589,25 @@ void PrintSourceService(grpc_generator::Printer* printer,
   (*vars)["Service"] = service->name();
 
   if (service->method_count() > 0) {
+    std::vector<size_t> method_name_lens;
     printer->Print(*vars,
                    "static const char* $prefix$$Service$_method_names[] = {\n");
     for (int i = 0; i < service->method_count(); ++i) {
       (*vars)["Method"] = service->method(i).get()->name();
       printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
+      /* The method length is the length of the package + service + method names
+         plus 2 characters for slashes */
+      method_name_lens.push_back(2 + (*vars)["Package"].length() +
+                                 (*vars)["Service"].length() +
+                                 (*vars)["Method"].length());
+    }
+    printer->Print(*vars, "};\n\n");
+    printer->Print(
+        *vars,
+        "static const size_t $prefix$$Service$_method_name_lens[] = {\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      (*vars)["MethodNameLength"] = std::to_string(method_name_lens[i]);
+      printer->Print(*vars, "  $MethodNameLength$,\n");
     }
     printer->Print(*vars, "};\n\n");
   }

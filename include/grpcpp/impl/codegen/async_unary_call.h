@@ -83,8 +83,10 @@ class ClientAsyncResponseReaderFactory {
   static ClientAsyncResponseReader<R>* Create(
       ChannelInterface* channel, CompletionQueue* cq,
       const ::grpc::internal::RpcMethod& method, ClientContext* context,
-      const W& request, bool start) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+      const W& request, bool start, const char* static_name,
+      size_t static_name_len) {
+    ::grpc::internal::Call call =
+        channel->CreateCall(method, context, cq, static_name, static_name_len);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
         ClientAsyncResponseReader<R>(call, context, request, start);

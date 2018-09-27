@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -111,6 +112,12 @@ class ChannelInterface {
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
                                     CompletionQueue* cq) = 0;
+  virtual internal::Call CreateCall(const internal::RpcMethod& method,
+                                    ClientContext* context, CompletionQueue* cq,
+                                    const char* static_name,
+                                    size_t static_name_len) {
+    return CreateCall(method, context, cq);
+  };
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                 internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;

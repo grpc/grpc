@@ -43,9 +43,11 @@ template <class InputMessage, class OutputMessage>
 void CallbackUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                        ClientContext* context, const InputMessage* request,
                        OutputMessage* result,
-                       std::function<void(Status)> on_completion) {
+                       std::function<void(Status)> on_completion,
+                       const char* static_name, size_t static_name_len) {
   CallbackUnaryCallImpl<InputMessage, OutputMessage> x(
-      channel, method, context, request, result, on_completion);
+      channel, method, context, request, result, on_completion, static_name,
+      static_name_len);
 }
 
 template <class InputMessage, class OutputMessage>
@@ -54,10 +56,12 @@ class CallbackUnaryCallImpl {
   CallbackUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
                         ClientContext* context, const InputMessage* request,
                         OutputMessage* result,
-                        std::function<void(Status)> on_completion) {
+                        std::function<void(Status)> on_completion,
+                        const char* static_name, size_t static_name_len) {
     CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
-    Call call(channel->CreateCall(method, context, cq));
+    Call call(
+        channel->CreateCall(method, context, cq, static_name, static_name_len));
 
     using FullCallOpSet =
         CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,

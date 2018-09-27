@@ -163,8 +163,11 @@ class ClientReaderFactory {
   template <class W>
   static ClientReader<R>* Create(ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ClientContext* context, const W& request) {
-    return new ClientReader<R>(channel, method, context, request);
+                                 ClientContext* context, const W& request,
+                                 const char* static_name,
+                                 size_t static_name_len) {
+    return new ClientReader<R>(channel, method, context, request, static_name,
+                               static_name_len);
   }
 };
 }  // namespace internal
@@ -240,12 +243,14 @@ class ClientReader final : public ClientReaderInterface<R> {
   template <class W>
   ClientReader(::grpc::ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ClientContext* context, const W& request)
+               ClientContext* context, const W& request,
+               const char* static_name, size_t static_name_len)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+        call_(channel->CreateCall(method, context, &cq_, static_name,
+                                  static_name_len)) {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpSendMessage,
                                 ::grpc::internal::CallOpClientSendClose>
@@ -281,8 +286,11 @@ class ClientWriterFactory {
   template <class R>
   static ClientWriter<W>* Create(::grpc::ChannelInterface* channel,
                                  const ::grpc::internal::RpcMethod& method,
-                                 ClientContext* context, R* response) {
-    return new ClientWriter<W>(channel, method, context, response);
+                                 ClientContext* context, R* response,
+                                 const char* static_name,
+                                 size_t static_name_len) {
+    return new ClientWriter<W>(channel, method, context, response, static_name,
+                               static_name_len);
   }
 };
 }  // namespace internal
@@ -374,12 +382,14 @@ class ClientWriter : public ClientWriterInterface<W> {
   template <class R>
   ClientWriter(ChannelInterface* channel,
                const ::grpc::internal::RpcMethod& method,
-               ClientContext* context, R* response)
+               ClientContext* context, R* response, const char* static_name,
+               size_t static_name_len)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+        call_(channel->CreateCall(method, context, &cq_, static_name,
+                                  static_name_len)) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
 
@@ -431,8 +441,10 @@ class ClientReaderWriterFactory {
  public:
   static ClientReaderWriter<W, R>* Create(
       ::grpc::ChannelInterface* channel,
-      const ::grpc::internal::RpcMethod& method, ClientContext* context) {
-    return new ClientReaderWriter<W, R>(channel, method, context);
+      const ::grpc::internal::RpcMethod& method, ClientContext* context,
+      const char* static_name, size_t static_name_len) {
+    return new ClientReaderWriter<W, R>(channel, method, context, static_name,
+                                        static_name_len);
   }
 };
 }  // namespace internal
@@ -548,12 +560,14 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// used to send to the server when starting the call.
   ClientReaderWriter(::grpc::ChannelInterface* channel,
                      const ::grpc::internal::RpcMethod& method,
-                     ClientContext* context)
+                     ClientContext* context, const char* static_name,
+                     size_t static_name_len)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
-        call_(channel->CreateCall(method, context, &cq_)) {
+        call_(channel->CreateCall(method, context, &cq_, static_name,
+                                  static_name_len)) {
     if (!context_->initial_metadata_corked_) {
       ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
           ops;
