@@ -26,6 +26,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -45,7 +46,8 @@ class HealthCheckClient
  public:
   HealthCheckClient(const char* service_name,
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                    grpc_pollset_set* interested_parties);
+                    grpc_pollset_set* interested_parties,
+                    RefCountedPtr<channelz::SubchannelNode> channelz_node);
 
   ~HealthCheckClient();
 
@@ -145,6 +147,7 @@ class HealthCheckClient
   const char* service_name_;  // Do not own.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
+  RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   gpr_mu mu_;
   grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;

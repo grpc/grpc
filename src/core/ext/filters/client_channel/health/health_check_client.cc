@@ -47,12 +47,15 @@ namespace grpc_core {
 HealthCheckClient::HealthCheckClient(
     const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-    grpc_pollset_set* interested_parties)
+    grpc_pollset_set* interested_parties,
+    grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+        channelz_node)
     : InternallyRefCountedWithTracing<HealthCheckClient>(
           &grpc_health_check_client_trace),
       service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
+      channelz_node_(std::move(channelz_node)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(
@@ -568,10 +571,18 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   }
   // Clean up.
   grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);
-  // For status unimplemented, give up and assume always healthy.
+  // For status UNIMPLEMENTED, give up and assume always healthy.
   bool retry = true;
   if (status == GRPC_STATUS_UNIMPLEMENTED) {
-// FIXME: log at priority ERROR and add subchannel trace event
+    static const char kErrorMessage[] =
+        "health checking Watch method returned UNIMPLEMENTED; "
+        "disabling health checks but assuming server is healthy";
+    gpr_log(GPR_ERROR, kErrorMessage);
+    if (self->health_check_client_->channelz_node_ != nullptr) {
+      self->health_check_client_->channelz_node_->AddTraceEvent(
+          channelz::ChannelTrace::Error,
+          grpc_slice_from_static_string(kErrorMessage));
+    }
     self->health_check_client_->SetHealthStatus(GRPC_CHANNEL_READY,
                                                 GRPC_ERROR_NONE);
     retry = false;

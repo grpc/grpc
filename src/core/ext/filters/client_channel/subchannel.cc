@@ -191,7 +191,7 @@ class ConnectedSubchannelStateWatcher
       health_check_client_ =
           grpc_core::MakeOrphanable<HealthCheckClient>(
               c->health_check_service_name.get(), c->connected_subchannel,
-              c->pollset_set);
+              c->pollset_set, c->channelz_subchannel);
       GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
                         grpc_schedule_on_exec_ctx);
       Ref().release();  // Ref for health callback tracked manually.
