@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_HEALTH_CHECK_CLIENT_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_HEALTH_CHECK_CLIENT_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_CLIENT_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_CLIENT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,8 +25,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -169,4 +169,4 @@ class HealthCheckClient
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_HEALTH_CHECK_CLIENT_H */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HEALTH_HEALTH_CHECK_CLIENT_H */

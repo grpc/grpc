@@ -182,16 +182,15 @@ class ConnectedSubchannelStateWatcher
     // Callback uses initial ref to this.
     GRPC_CLOSURE_INIT(&on_connectivity_changed_, OnConnectivityChanged, this,
                       grpc_schedule_on_exec_ctx);
-    c->connected_subchannel->NotifyOnStateChange(
-        c->pollset_set, &pending_connectivity_state_,
-        &on_connectivity_changed_);
+    c->connected_subchannel->NotifyOnStateChange(c->pollset_set,
+                                                 &pending_connectivity_state_,
+                                                 &on_connectivity_changed_);
     // Start health check if needed.
     grpc_connectivity_state health_state = GRPC_CHANNEL_READY;
     if (c->health_check_service_name != nullptr) {
-      health_check_client_ =
-          grpc_core::MakeOrphanable<HealthCheckClient>(
-              c->health_check_service_name.get(), c->connected_subchannel,
-              c->pollset_set, c->channelz_subchannel);
+      health_check_client_ = grpc_core::MakeOrphanable<HealthCheckClient>(
+          c->health_check_service_name.get(), c->connected_subchannel,
+          c->pollset_set, c->channelz_subchannel);
       GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
                         grpc_schedule_on_exec_ctx);
       Ref().release();  // Ref for health callback tracked manually.
@@ -254,13 +253,13 @@ class ConnectedSubchannelStateWatcher
           // this watch from.  And a connected subchannel should never go
           // from READY to CONNECTING or IDLE.
           self->last_connectivity_state_ = self->pending_connectivity_state_;
-          grpc_connectivity_state_set(
-              &c->state_tracker, self->pending_connectivity_state_,
-              GRPC_ERROR_REF(error), "reflect_child");
+          grpc_connectivity_state_set(&c->state_tracker,
+                                      self->pending_connectivity_state_,
+                                      GRPC_ERROR_REF(error), "reflect_child");
           if (self->pending_connectivity_state_ != GRPC_CHANNEL_READY) {
-            grpc_connectivity_state_set(
-                &c->state_and_health_tracker, self->pending_connectivity_state_,
-                GRPC_ERROR_REF(error), "reflect_child");
+            grpc_connectivity_state_set(&c->state_and_health_tracker,
+                                        self->pending_connectivity_state_,
+                                        GRPC_ERROR_REF(error), "reflect_child");
           }
           c->connected_subchannel->NotifyOnStateChange(
               nullptr, &self->pending_connectivity_state_,
@@ -283,12 +282,12 @@ class ConnectedSubchannelStateWatcher
     grpc_subchannel* c = self->subchannel_;
     MutexLock lock(&c->mu);
     if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
-      grpc_connectivity_state_set(
-          &c->state_and_health_tracker, self->health_state_,
-          GRPC_ERROR_REF(error), "connected");
+      grpc_connectivity_state_set(&c->state_and_health_tracker,
+                                  self->health_state_, GRPC_ERROR_REF(error),
+                                  "connected");
     }
-    self->health_check_client_->NotifyOnHealthChange(
-        &self->health_state_, &self->on_health_changed_);
+    self->health_check_client_->NotifyOnHealthChange(&self->health_state_,
+                                                     &self->on_health_changed_);
   }
 
   grpc_subchannel* subchannel_;
@@ -622,8 +621,8 @@ static void continue_connect_locked(grpc_subchannel* c) {
   grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
                               GRPC_ERROR_NONE, "connecting");
   grpc_connectivity_state_set(&c->state_and_health_tracker,
-                              GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "connecting");
+                              GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
+                              "connecting");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }

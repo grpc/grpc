@@ -48,8 +48,7 @@ HealthCheckClient::HealthCheckClient(
     const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
-    grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
-        channelz_node)
+    grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode> channelz_node)
     : InternallyRefCountedWithTracing<HealthCheckClient>(
           &grpc_health_check_client_trace),
       service_name_(service_name),
@@ -213,7 +212,7 @@ void EncodeRequest(const char* service_name,
   memset(&ostream, 0, sizeof(ostream));
   pb_encode(&ostream, grpc_health_v1_HealthCheckRequest_fields,
             &request_struct);
-  grpc_slice request_slice = grpc_slice_malloc(ostream.bytes_written);
+  grpc_slice request_slice = GRPC_SLICE_MALLOC(ostream.bytes_written);
   ostream = pb_ostream_from_buffer(GRPC_SLICE_START_PTR(request_slice),
                                    GRPC_SLICE_LENGTH(request_slice));
   GPR_ASSERT(pb_encode(&ostream, grpc_health_v1_HealthCheckRequest_fields,
@@ -222,7 +221,7 @@ void EncodeRequest(const char* service_name,
   grpc_slice_buffer_init(&slice_buffer);
   grpc_slice_buffer_add(&slice_buffer, request_slice);
   send_message->Init(&slice_buffer, 0);
-  grpc_slice_buffer_destroy(&slice_buffer);
+  grpc_slice_buffer_destroy_internal(&slice_buffer);
 }
 
 // Returns true if healthy.
@@ -338,8 +337,8 @@ void HealthCheckClient::CallState::StartCall() {
     // holding health_check_client_->mu_ when CallEnded() is called.
     Ref(DEBUG_LOCATION, "call_end_closure").release();
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry,
-                          this, grpc_schedule_on_exec_ctx),
+        GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry, this,
+                          grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
     return;
   }
@@ -489,8 +488,8 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
   if (error == GRPC_ERROR_NONE) {
     error = healthy
-        ? GRPC_ERROR_NONE
-        : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
+                ? GRPC_ERROR_NONE
+                : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
   }
   health_check_client_->SetHealthStatus(state, error);
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));
@@ -586,7 +585,8 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   if (grpc_health_check_client_trace.enabled()) {
     gpr_log(GPR_INFO,
             "HealthCheckClient %p CallState %p: health watch failed with "
-            "status %d", self->health_check_client_.get(), self, status);
+            "status %d",
+            self->health_check_client_.get(), self, status);
   }
   // Clean up.
   grpc_metadata_batch_destroy(&self->recv_trailing_metadata_);

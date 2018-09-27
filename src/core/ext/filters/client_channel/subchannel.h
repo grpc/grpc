@@ -136,8 +136,7 @@ void* grpc_connected_subchannel_call_get_parent_data(
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
-    grpc_subchannel* channel, grpc_error** error,
-    bool inhibit_health_checking);
+    grpc_subchannel* channel, grpc_error** error, bool inhibit_health_checking);
 
 /** Calls notify when the connectivity state of a channel becomes different
     from *state.  Updates *state with the new state of the channel. */
