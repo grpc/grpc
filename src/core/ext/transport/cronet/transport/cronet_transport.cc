@@ -1439,6 +1439,9 @@ static grpc_endpoint* get_endpoint(grpc_transport* gt) { return nullptr; }
 
 static void perform_op(grpc_transport* gt, grpc_transport_op* op) {}
 
+static void populate_sockets(grpc_transport* t,
+                             grpc_core::ChildRefsList* child_sockets) {}
+
 static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
     "cronet_http",
@@ -1449,7 +1452,8 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     perform_op,
     destroy_stream,
     destroy_transport,
-    get_endpoint};
+    get_endpoint,
+    populate_sockets};
 
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
                                              const grpc_channel_args* args,

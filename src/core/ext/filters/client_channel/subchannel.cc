@@ -97,6 +97,8 @@ struct grpc_subchannel {
   /** set during connection */
   grpc_connect_out_args connecting_result;
 
+  grpc_transport* transport;
+
   /** callback for connection finishing */
   grpc_closure on_connected;
 
@@ -411,6 +413,13 @@ grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
   return subchannel->channelz_subchannel.get();
 }
 
+void grpc_subchannel_populate_child_sockets(
+    grpc_subchannel* subchannel, grpc_core::ChildRefsList* child_sockets) {
+  if (subchannel->transport != nullptr) {
+    grpc_transport_populate_sockets(subchannel->transport, child_sockets);
+  }
+}
+
 static void continue_connect_locked(grpc_subchannel* c) {
   grpc_connect_in_args args;
   args.interested_parties = c->pollset_set;
@@ -621,6 +630,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
+  c->transport = c->connecting_result.transport;
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */

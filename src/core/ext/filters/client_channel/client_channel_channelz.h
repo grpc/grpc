@@ -31,11 +31,6 @@ typedef struct grpc_subchannel grpc_subchannel;
 
 namespace grpc_core {
 
-// TODO(ncteisen), this only contains the uuids of the children for now,
-// since that is all that is strictly needed. In a future enhancement we will
-// add human readable names as in the channelz.proto
-typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
 namespace channelz {
 
 // Subtype of ChannelNode that overrides and provides client_channel specific
@@ -75,6 +70,9 @@ class SubchannelNode : public BaseNode {
   }
 
   grpc_json* RenderJson() override;
+
+  // helper to populate the socket(s) that this subchannel owns.
+  void PopulateChildSockets(grpc_json* json);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {

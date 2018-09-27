@@ -39,6 +39,13 @@
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
+namespace grpc_core {
+// TODO(ncteisen), this only contains the uuids of the children for now,
+// since that is all that is strictly needed. In a future enhancement we will
+// add human readable names as in the channelz.proto
+typedef InlinedVector<intptr_t, 10> ChildRefsList;
+}  // namespace grpc_core
+
 /* forward declarations */
 
 typedef struct grpc_transport grpc_transport;
@@ -365,6 +372,9 @@ void grpc_transport_destroy(grpc_transport* transport);
 
 /* Get the endpoint used by \a transport */
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
+
+void grpc_transport_populate_sockets(grpc_transport* transport,
+                                     grpc_core::ChildRefsList* child_sockets);
 
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
