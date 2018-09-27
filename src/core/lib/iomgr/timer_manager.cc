@@ -291,13 +291,13 @@ static void start_threads(void) {
 }
 
 void grpc_timer_manager_init(void) {
+  gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_cv_wait);
 #ifdef GRPC_DEBUG_TIMER_MANAGER
   // For debug of the timer manager crash only.
   // TODO (mxyan): remove after bug is fixed.
   g_timer_manager_init_count++;
 #endif
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_cv_wait);
   gpr_cv_init(&g_cv_shutdown);
   g_threaded = false;
   g_thread_count = 0;
