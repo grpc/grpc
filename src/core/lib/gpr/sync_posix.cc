@@ -27,14 +27,20 @@
 #include <time.h>
 #include "src/core/lib/profiling/timers.h"
 
-// For debug only. Forward statistics to another module.
-void (*g_grpc_debug_timer_manager_stats)(int64_t timer_manager_init_count, int64_t timer_manager_shutdown_count, int64_t fork_count, int64_t timer_wait_err, int64_t timer_wait_cv) = nullptr;
-// For debug only. Variables storing the counters being logged.
+// For debug of the timer manager crash only.
+// TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+void (*g_grpc_debug_timer_manager_stats)(int64_t timer_manager_init_count,
+                                         int64_t timer_manager_shutdown_count,
+                                         int64_t fork_count,
+                                         int64_t timer_wait_err,
+                                         int64_t timer_wait_cv) = nullptr;
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
 int64_t g_timer_wait_err = 0;
 int64_t g_timer_wait_cv = 0;
+#endif  // GRPC_DEBUG_TIMER_MANAGER
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_mu_locks = 0;
@@ -97,18 +103,23 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
     err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
   }
+
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
   if (!(err == 0 || err == ETIMEDOUT || err == EAGAIN)) {
     if (g_grpc_debug_timer_manager_stats) {
       g_timer_wait_err = err;
       g_timer_wait_cv = (int64_t)cv;
-      g_grpc_debug_timer_manager_stats(g_timer_manager_init_count,
-                                       g_timer_manager_shutdown_count,
-                                       g_fork_count,
-                                       g_timer_wait_err,
-                                       g_timer_wait_cv);
+      g_grpc_debug_timer_manager_stats(
+          g_timer_manager_init_count, g_timer_manager_shutdown_count,
+          g_fork_count, g_timer_wait_err, g_timer_wait_cv);
     }
     GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   }
+#else
+  GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
+#endif
   return err == ETIMEDOUT;
 }
 
