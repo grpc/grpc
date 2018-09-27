@@ -449,9 +449,9 @@ grpc_endpoint* GetEndpoint(grpc_transport* self) { return nullptr; }
 intptr_t GetSocketUuid(grpc_transport* t) { return 0; }
 
 static const grpc_transport_vtable dummy_transport_vtable = {
-    0,           "dummy_http2",  InitStream,
-    SetPollset,  SetPollsetSet,  PerformStreamOp,
-    PerformOp,   DestroyStream,  Destroy,
+    0,           "dummy_http2", InitStream,
+    SetPollset,  SetPollsetSet, PerformStreamOp,
+    PerformOp,   DestroyStream, Destroy,
     GetEndpoint, GetSocketUuid};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};

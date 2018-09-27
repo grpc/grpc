@@ -76,9 +76,6 @@ class SubchannelNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  // helper to populate the socket(s) that this subchannel owns.
-  void PopulateChildSockets(grpc_json* json);
-
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
     trace_.AddTraceEvent(severity, data);

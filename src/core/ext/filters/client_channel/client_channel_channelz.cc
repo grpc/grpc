@@ -172,9 +172,8 @@ grpc_json* SubchannelNode::RenderJson() {
   if (socket_uuid != 0) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator =
-        grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                               GRPC_JSON_OBJECT, false);
+    json_iterator = grpc_json_create_child(json_iterator, array_parent, nullptr,
+                                           nullptr, GRPC_JSON_OBJECT, false);
     grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
                                       socket_uuid);
   }
