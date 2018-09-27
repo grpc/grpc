@@ -67,7 +67,14 @@ class Channel final : public ChannelInterface,
 
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
-                            CompletionQueue* cq) override;
+                            CompletionQueue* cq) override {
+    return CreateCall(method, context, cq, nullptr, 0);
+  }
+  internal::Call CreateCall(const internal::RpcMethod& method,
+                            ClientContext* context, CompletionQueue* cq,
+                            const char* static_name,
+                            size_t static_name_len) override;
+
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
   void* RegisterMethod(const char* method) override;

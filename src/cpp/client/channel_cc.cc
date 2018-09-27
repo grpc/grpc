@@ -100,8 +100,9 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 }  // namespace experimental
 
 internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+                                   ClientContext* context, CompletionQueue* cq,
+                                   const char* static_name,
+                                   size_t static_name_len) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -116,7 +117,13 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     } else if (!host_.empty()) {
       host_str = host_.c_str();
     }
-    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice method_slice;
+    if (static_name != nullptr) {
+      method_slice =
+          grpc_slice_from_static_buffer(static_name, static_name_len);
+    } else {
+      method_slice = SliceFromCopiedString(method.name());
+    }
     grpc_slice host_slice;
     if (host_str != nullptr) {
       host_slice = SliceFromCopiedString(host_str);

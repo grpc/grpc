@@ -37,9 +37,11 @@ class RpcMethod;
 template <class InputMessage, class OutputMessage>
 Status BlockingUnaryCall(ChannelInterface* channel, const RpcMethod& method,
                          ClientContext* context, const InputMessage& request,
-                         OutputMessage* result) {
+                         OutputMessage* result, const char* static_name,
+                         size_t static_name_len) {
   return BlockingUnaryCallImpl<InputMessage, OutputMessage>(
-             channel, method, context, request, result)
+             channel, method, context, request, result, static_name,
+             static_name_len)
       .status();
 }
 
@@ -48,11 +50,13 @@ class BlockingUnaryCallImpl {
  public:
   BlockingUnaryCallImpl(ChannelInterface* channel, const RpcMethod& method,
                         ClientContext* context, const InputMessage& request,
-                        OutputMessage* result) {
+                        OutputMessage* result, const char* static_name,
+                        size_t static_name_len) {
     CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
-    Call call(channel->CreateCall(method, context, &cq));
+    Call call(channel->CreateCall(method, context, &cq, static_name,
+                                  static_name_len));
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
               CallOpClientSendClose, CallOpClientRecvStatus>
