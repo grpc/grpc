@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/client_channel/health/health.pb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
 
