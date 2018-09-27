@@ -85,9 +85,9 @@ describe 'Code Generation Options' do
       expect(gen_file).to be_truthy
       begin
         $LOAD_PATH.push(tmp_dir)
-        expect { Grpc::Testing::Package::Options::TestService::Service }.to raise_error(NameError)
-        expect(require('grpc/testing/package_options_services_pb')).to be_truthy
-        expect { Grpc::Testing::Package::Options::TestService::Service }.to_not raise_error
+        expect { Grpc::Testing::Importing::ImportingTestService }.to_not raise_error(NameError)
+        expect(require('grpc/testing/importing_package_options_service_services_pb')).to be_truthy
+        expect { Grpc::Testing::Importing::ImportingTestService }.to_not raise_error
       ensure
         $LOAD_PATH.delete(tmp_dir)
       end
