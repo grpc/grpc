@@ -17,7 +17,7 @@ This document talks about how polling engine is used in gRPC core (both on clien
 ### Making progress on Async `connect()` on sub-channels  (`grpc_pollset_set` usecase)
 - A gRPC channel is created between a client and a 'target'. The 'target' may resolve in to one or more backend servers.
 - A sub-channel is the 'connection' from a client to the backend server
-- While establishing sub-cannels (i.e connections) to the backends, gRPC issues async [`connect()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/tcp_client_posix.cc#L296) calls which may not complete right away.  When the `connect()` eventually succeeds, the socket fd is makde 'writable'
+- While establishing sub-cannels (i.e connections) to the backends, gRPC issues async [`connect()`](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/tcp_client_posix.cc#L296) calls which may not complete right away.  When the `connect()` eventually succeeds, the socket fd is make 'writable'
   - This means that the polling engine must be monitoring all these sub-channel `fd`s for writable events and we need to make sure there is a polling thread that monitors all these fds
   - To accomplish this, the `grpc_pollset_set` is used the following way (see picture below)
 
