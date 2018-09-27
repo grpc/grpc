@@ -26,7 +26,7 @@ This document talks about how polling engine is used in gRPC core (both on clien
 ## gRPC server
 
 - The listening fd (i.e., the socket fd corresponding to the server listening port) is added to each of the server completion queues. Note that in gRPC we use SO_REUSEPORT option and create multiple listening fds but all of them map to the same listening port
-- A new incoming channel is randomly assigned to some server completion queue (see picture below)
+- A new incoming channel is assigned to some server completion queue picked randomly (note that we currently [round-robin](https://github.com/grpc/grpc/blob/v1.15.1/src/core/lib/iomgr/tcp_server_posix.cc#L231) over the server completion queues)
 
 ![image](../images/grpc-server-cq-fds.png)
 
