@@ -135,7 +135,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// <see cref="T:IList`1"/>
+        /// Adds a new ASCII-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
         /// </summary>
         public void Add(string key, string value)
         {
@@ -143,7 +143,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// <see cref="T:IList`1"/>
+        /// Adds a new binary-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
         /// </summary>
         public void Add(string key, byte[] valueBytes)
         {
@@ -225,8 +225,6 @@ namespace Grpc.Core
         /// </summary>
         public class Entry
         {
-            private static readonly Regex ValidKeyRegex = new Regex("^[.a-z0-9_-]+$");
-
             readonly string key;
             readonly string value;
             readonly byte[] valueBytes;
@@ -241,7 +239,7 @@ namespace Grpc.Core
             /// <summary>
             /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with a binary value.
             /// </summary>
-            /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Needs to have suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</param>
             /// <param name="valueBytes">Value bytes.</param>
             public Entry(string key, byte[] valueBytes)
             {
@@ -255,9 +253,9 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct holding an ASCII value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with an ASCII value.
             /// </summary>
-            /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Must not use suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</param>
             /// <param name="value">Value string. Only ASCII characters are allowed.</param>
             public Entry(string key, string value)
             {
@@ -358,10 +356,42 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                var normalized = GrpcPreconditions.CheckNotNull(key, "key").ToLowerInvariant();
-                GrpcPreconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
+                GrpcPreconditions.CheckNotNull(key, "key");
+
+                GrpcPreconditions.CheckArgument(IsValidKey(key, out bool isLowercase), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores, hyphens and dots.");
-                return normalized;
+                if (isLowercase)
+                {
+                    // save allocation of a new string if already lowercase
+                    return key;
+                }
+                
+                return key.ToLowerInvariant();
+            }
+
+            private static bool IsValidKey(string input, out bool isLowercase)
+            {
+                isLowercase = true;
+                for (int i = 0; i < input.Length; i++)
+                {
+                    char c = input[i];
+                    if ('a' <= c && c <= 'z' ||
+                        '0' <= c && c <= '9' ||
+                        c == '.' ||
+                        c == '_' || 
+                        c == '-' )
+                        continue;
+
+                    if ('A' <= c && c <= 'Z')
+                    {
+                        isLowercase = false;
+                        continue;
+                    }
+
+                    return false;
+                }
+
+                return true;
             }
 
             /// <summary>
