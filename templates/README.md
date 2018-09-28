@@ -87,7 +87,6 @@ src:                      # list of files to compile
 secure: boolean,          # see below
 baselib: boolean,         # this is a low level library that has system
                           # dependencies
-vs_project_guid: '{...}', # Visual Studio's unique guid for that project
 filegroups:               # list of filegroups to merge to that project
                           # note that this will be expanded automatically
 deps:                     # list of libraries this target depends on
@@ -95,12 +94,6 @@ deps_linkage: "..."       # "static"  or "dynamic". Used by the Makefile only to
                           # determine the way dependencies are linkned. Defaults
                           # to "dynamic".
 dll: "..."                # see below.
-dll_def: "..."            # Visual Studio's dll definition file.
-vs_props:                 # List of property sheets to attach to that project.
-vs_config_type: "..."     # DynamicLibrary/StaticLibrary. Used only when
-                          # creating a library. Specifies if we're building a
-                          # static library or a dll. Use in conjunction with `dll_def`.
-vs_packages:              # List of nuget packages this project depends on.
 ```
 
 ## The `"build"` tag
@@ -140,11 +133,6 @@ protobuf is for `"c++"` ones.
 Used only by Visual Studio's project files. "true" means the project will be
 built with both static and dynamic runtimes. "false" means it'll only be built
 with static runtime. "only" means it'll only be built with the dll runtime.
-
-## The `"dll_def"` tag
-
-Specifies the visual studio's dll definition file. When creating a DLL, you
-sometimes (not always) need a def file (see grpc.def).
 
 
 # The template system
