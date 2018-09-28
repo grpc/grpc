@@ -14,6 +14,13 @@ Python thread.
 
 # Current Status #
 
+## 1.13 ##
+The workaround when using fork/exec by setting
+```GRPC_ENABLE_FORK_SUPPORT=False``` is no longer needed.  Following
+[this PR](https://github.com/grpc/grpc/pull/14647), fork
+handlers will not automatically run when multiple threads are calling
+into gRPC.
+
 ## 1.11 ##
 The background Python thread was removed entirely.  This allows forking
 after creating a channel.  However, the channel must not have issued any
@@ -35,12 +42,3 @@ A ```pthread_atfork()``` handler was added in 1.7 to automatically shut down
 the background c-threads when fork was called.  This does not shut down the
 background Python thread, so users could not have any open channels when
 forking.
-
-# Future Work #
-
-## 1.13 ##
-The workaround when using fork/exec by setting
-```GRPC_ENABLE_FORK_SUPPORT=False``` should no longer be needed.  Following
-[this PR](https://github.com/grpc/grpc/pull/14647), fork
-handlers will not automatically run when multiple threads are calling
-into gRPC.
