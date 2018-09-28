@@ -24,6 +24,22 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
 require 'optparse'
+require 'logger'
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # a simple non-protobuf message class.
 class NoProtoMsg

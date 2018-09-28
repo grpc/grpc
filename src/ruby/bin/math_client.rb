@@ -120,11 +120,12 @@ def main
   # package. That practice should be avoided by defining real services.
   if options['secure']
     stub_opts = {
-      :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+      },
       timeout: INFINITE_FUTURE,
     }
-    stub = Math::Math::Stub.new(options['host'], **stub_opts)
+    stub = Math::Math::Stub.new(options['host'], test_creds, **stub_opts)
     GRPC.logger.info("... connecting securely on #{options['host']}")
   else
     stub = Math::Math::Stub.new(options['host'], :this_channel_is_insecure, timeout: INFINITE_FUTURE)

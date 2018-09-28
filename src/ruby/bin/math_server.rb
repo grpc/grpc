@@ -98,7 +98,7 @@ class Calculator < Math::Math::Service
     if div_args.divisor.zero?
       # To send non-OK status handlers raise a StatusError with the code and
       # and detail they want sent as a Status.
-      fail GRPC::StatusError.new(GRPC::Status::INVALID_ARGUMENT,
+      fail GRPC::BadStatus.new(GRPC::Core::StatusCodes::INVALID_ARGUMENT,
                                  'divisor cannot be 0')
     end
 

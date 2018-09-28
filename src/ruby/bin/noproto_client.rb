@@ -24,6 +24,22 @@ $LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
 
 require 'grpc'
 require 'optparse'
+require 'logger'
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # a simple non-protobuf message class.
 class NoProtoMsg
@@ -58,7 +74,7 @@ end
 
 def main
   options = {
-    'host' => 'localhost:7071',
+    'host' => 'localhost:9090',
     'secure' => false
   }
   OptionParser.new do |opts|
@@ -73,15 +89,16 @@ def main
 
   if options['secure']
     stub_opts = {
-      :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+      }
     }
     p stub_opts
     p options['host']
-    stub = NoProtoStub.new(options['host'], **stub_opts)
+    stub = NoProtoStub.new(options['host'], test_creds, **stub_opts)
     GRPC.logger.info("... connecting securely on #{options['host']}")
   else
-    stub = NoProtoStub.new(options['host'])
+    stub = NoProtoStub.new(options['host'], :this_channel_is_insecure)
     GRPC.logger.info("... connecting insecurely on #{options['host']}")
   end
 
