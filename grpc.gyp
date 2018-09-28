@@ -593,16 +593,6 @@
       ],
     },
     {
-      'target_name': 'grpc_dll',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-        'grpc',
-      ],
-      'sources': [
-      ],
-    },
-    {
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
