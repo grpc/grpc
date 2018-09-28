@@ -361,7 +361,10 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckArgument(IsValidKey(key, out bool isLowercase), 
                     "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores, hyphens and dots.");
                 if (isLowercase)
+                {
+                    // save allocation of a new string if already lowercase
                     return key;
+                }
                 
                 return key.ToLowerInvariant();
             }
