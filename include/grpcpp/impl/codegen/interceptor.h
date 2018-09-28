@@ -64,4 +64,4 @@ class InterceptorBatchMethods {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif /* GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H */
+#endif  // GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H

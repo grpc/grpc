@@ -20,7 +20,6 @@
 #define GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
 
 #include <grpcpp/impl/codegen/interceptor.h>
-#include <string>
 
 namespace grpc {
 namespace experimental {
@@ -41,4 +40,5 @@ class ClientInterceptorFactoryInterface {
 
 }  // namespace experimental
 }  // namespace grpc
-#endif /* GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H */
+
+#endif  // GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H

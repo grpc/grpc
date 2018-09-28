@@ -57,7 +57,9 @@ Channel::Channel(
         interceptor_creators)
     : host_(host), c_channel_(channel) {
   auto vector = interceptor_creators.release();
-  interceptor_creators_ = std::move(*vector);
+  if (vector != nullptr) {
+    interceptor_creators_ = std::move(*vector);
+  }
   g_gli_initializer.summon();
 }
 
