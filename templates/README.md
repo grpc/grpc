@@ -1,9 +1,13 @@
 # Regenerating project files
 
-Prerequisites: `python`, `pip install mako`, `go`
+Prerequisites
+- `python`
+- `pip install mako` (the template processor)
+- `pip install pyyaml` (to read the yaml files)
+- `go` (required by boringssl dependency)
 
 ```
-# Regenerate the projects files using templates
+# Regenerate the projects files (and other generated files) using templates
 tools/buildgen/generate_projects.sh
 ```
 
@@ -19,24 +23,12 @@ So instead we decided to work the following way:
 targets and files needed to build grpc and its tests, as well as a basic system
 for dependency description.
 
-* Each project file (Makefile, Visual Studio project files, Bazel's BUILD) is
-a [YAML](http://yaml.org) file used by the `build.yaml` file to generate the
-final output file.
+* Most of the build systems supported by gRPC (e.g. Makefile, cmake, XCode) have a template defined in this directory. The templates use the information from the `build.yaml` file to generate the project files specific to a given build system.
 
 This way we can maintain as many project system as we see fit, without having
 to manually maintain them when we add or remove new code to the repository.
 Only the structure of the project file is relevant to the template. The actual
 list of source code and targets isn't.
-
-We currently have template files for GNU Make, Visual Studio 2013,
-[Bazel](http://bazel.io) and [gyp](https://gyp.gsrc.io/) (albeit only for
-Node.js). In the future, we
-would like to expand to also generate [cmake](https://cmake.org)
-project files, XCode project files, and an Android.mk file allowing to compile
-gRPC using Android's NDK.
-
-We'll gladly accept contribution that'd create additional project files
-using that system.
 
 # Structure of `build.yaml`
 
@@ -130,7 +122,7 @@ protobuf is for `"c++"` ones.
 
 ## The `"dll"` tag
 
-Used only by Visual Studio's project files. "true" means the project will be
+Currently only used by cmake. "true" means the project will be
 built with both static and dynamic runtimes. "false" means it'll only be built
 with static runtime. "only" means it'll only be built with the dll runtime.
 
@@ -140,8 +132,7 @@ with static runtime. "only" means it'll only be built with the dll runtime.
 We're currently using the [mako templates](http://www.makotemplates.org/)
 renderer. That choice enables us to simply render text files without dragging
 with us a lot of other features. Feel free to explore the current templates
-in that directory. The simplest one is probably [BUILD.template](BUILD.template)
-which is used to create the [Bazel](http://bazel.io/) project file.
+in that directory.
 
 ## The renderer engine
 
