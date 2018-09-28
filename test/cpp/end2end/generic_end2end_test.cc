@@ -123,8 +123,16 @@ class GenericEnd2endTest : public ::testing::Test {
         cli_ctx.set_deadline(deadline);
       }
 
+      // Rather than using the original kMethodName, make a short-lived
+      // copy to also confirm that we don't refer to this object beyond
+      // the initial call preparation
+      const grpc::string* method_name = new grpc::string(kMethodName);
+
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
-          generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+          generic_stub_->PrepareCall(&cli_ctx, *method_name, &cli_cq_);
+
+      delete method_name;  // Make sure that this is not needed after invocation
+
       call->StartCall(tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
