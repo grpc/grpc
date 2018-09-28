@@ -255,7 +255,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
