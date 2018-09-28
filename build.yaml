@@ -1495,16 +1495,6 @@ libs:
   platforms:
   - linux
   secure: true
-- name: grpc_dll
-  build: private
-  language: c
-  src: []
-  deps:
-  - gpr
-  - grpc
-  build_system:
-  - visual_studio
-  deps_linkage: static
 - name: grpc_test_util
   build: private
   language: c
