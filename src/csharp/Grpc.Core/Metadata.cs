@@ -135,7 +135,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// <see cref="T:IList`1"/>
+        /// Adds a new ASCII-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
         /// </summary>
         public void Add(string key, string value)
         {
@@ -143,7 +143,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// <see cref="T:IList`1"/>
+        /// Adds a new binary-valued metadata entry. See <c>Metadata.Entry</c> constructor for params.
         /// </summary>
         public void Add(string key, byte[] valueBytes)
         {
@@ -239,7 +239,7 @@ namespace Grpc.Core
             /// <summary>
             /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with a binary value.
             /// </summary>
-            /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Needs to have suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</param>
             /// <param name="valueBytes">Value bytes.</param>
             public Entry(string key, byte[] valueBytes)
             {
@@ -253,9 +253,9 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct holding an ASCII value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with an ASCII value.
             /// </summary>
-            /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Must not use suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</param>
             /// <param name="value">Value string. Only ASCII characters are allowed.</param>
             public Entry(string key, string value)
             {
