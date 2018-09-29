@@ -161,7 +161,7 @@ public:
 			cos.WriteString("public import hunt.net.Result;\n");
 			cos.WriteString("import grpc;\n");
 			cos.WriteString("import google.protobuf;\n");
-			cos.WriteString("import kiss.logger;\n");
+			cos.WriteString("import hunt.logging;\n");
 		}
 
 		cos.WriteString("\n\n");
