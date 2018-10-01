@@ -7092,19 +7092,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
