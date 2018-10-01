@@ -68,6 +68,7 @@ CONFIG = [
     'gzip',
     'stream/gzip',
     # metadata elements
+    # begin hpack static elements
     (':authority', ''),
     (':method', 'GET'),
     (':method', 'POST'),
@@ -129,6 +130,7 @@ CONFIG = [
     ('vary', ''),
     ('via', ''),
     ('www-authenticate', ''),
+    # end hpack static elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
     ('grpc-status', '2'),
