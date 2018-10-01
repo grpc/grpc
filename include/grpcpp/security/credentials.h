@@ -87,11 +87,15 @@ class ChannelCredentials : private GrpcLibraryCodegen {
   virtual std::shared_ptr<Channel> CreateChannel(
       const grpc::string& target, const ChannelArguments& args) = 0;
 
+  // This function should have been a pure virtual function, but it is
+  // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const ChannelArguments& args,
       std::unique_ptr<std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
-          interceptor_creators) = 0;
+          interceptor_creators) {
+    return nullptr;
+  };
 };
 
 /// A call credentials object encapsulates the state needed by a client to

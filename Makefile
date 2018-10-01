@@ -5441,6 +5441,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6021,6 +6022,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6414,6 +6416,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6571,6 +6574,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6897,6 +6901,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
