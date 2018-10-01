@@ -14,7 +14,7 @@
 
 # Docker file for building gRPC artifacts.
 
-FROM debian:jessie
+FROM i386/debian:stretch
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -44,29 +44,10 @@ RUN apt-get update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-
-##################
-# Ruby dependencies
-
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable
-
-# Install Ruby 2.1
-RUN /bin/bash -l -c "rvm install ruby-2.1"
-RUN /bin/bash -l -c "rvm use --default ruby-2.1"
-RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
-RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
-
-
-##################
-# PHP dependencies
-
-RUN apt-get update && apt-get install -y \
-    php5 php5-dev php-pear phpunit && apt-get clean
-
+# Install Node dependencies
+RUN touch .profile
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN /bin/bash -l -c "nvm install 8 && npm install -g node-pre-gyp"
 
 RUN mkdir /var/local/jenkins
 
