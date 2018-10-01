@@ -294,7 +294,7 @@ ifndef VALID_CONFIG_$(CONFIG)
 $(error Invalid CONFIG value '$(CONFIG)')
 endif
 
-ifeq ($(SYSTEM),Linux)
+ifeq ($(SYSTEM), $(filter $(SYSTEM), Linux AIX))
 TMPOUT = /dev/null
 else
 TMPOUT = `mktemp /tmp/test-out-XXXXXX`
