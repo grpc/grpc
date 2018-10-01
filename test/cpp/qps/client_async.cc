@@ -956,7 +956,8 @@ std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
 }
 
 struct CallbackClientRpcData {
-  CallbackClientRpcData() : thread_mu_(), thread_cv_(), alarm_() {}
+  CallbackClientRpcData()
+      : thread_mu_(), thread_cv_(), rpc_done_(false), alarm_() {}
 
   ~CallbackClientRpcData() {}
 
@@ -989,44 +990,6 @@ class CallbackClient
 
   virtual bool ThreadFuncImpl(Thread* t, size_t thread_idx) = 0;
 
-  int NumThreads(const ClientConfig& config) {
-    int num_threads = config.async_client_threads();
-    if (num_threads <= 0) {  // Use dynamic sizing
-      num_threads = cores_;
-      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
-    }
-    return num_threads;
-  }
-
-  void ThreadFunc(size_t thread_idx, Thread* t) override {
-    if (!InitThreadFuncImpl(thread_idx)) {
-      return;
-    }
-
-    if (!closed_loop_) {
-      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
-      // Start an alarm call back to run the internal callback after
-      // next_issue_time
-      Alarm* alarm = &ctxs_[thread_idx]->alarm_;
-      alarm->experimental().Set(
-          next_issue_time,
-          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
-    } else {
-      ThreadFuncImpl(t, thread_idx);
-    }
-
-    WaitForCallback(thread_idx);
-
-    if (ThreadCompleted()) {
-      NotifyMainThread(thread_idx);
-      delete ctxs_[thread_idx];
-      return;
-    }
-
-    // Start a new Unary call
-    ThreadFunc(thread_idx, t);
-  }
-
  protected:
   size_t num_threads_;
   std::mutex mu_;
@@ -1042,15 +1005,53 @@ class CallbackClient
     thread_cv->notify_one();
   }
 
-  void DestroyMultithreading() override final {
-    std::unique_lock<std::mutex> l(mu_);
-    while (threads_done_ != num_threads_) {
-      cv_.wait(l);
+ private:
+  int NumThreads(const ClientConfig& config) {
+    int num_threads = config.async_client_threads();
+    if (num_threads <= 0) {  // Use dynamic sizing
+      num_threads = cores_;
+      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
     }
-    EndThreads();
+    return num_threads;
   }
 
-  void WaitForCallback(size_t thread_idx) {
+  void ThreadFunc(size_t thread_idx, Thread* t) override {
+    while (!ThreadCompleted()) {
+      if (!InitThreadFuncImpl(thread_idx)) {
+        break;
+      }
+      IssueCallback(thread_idx, t);
+      WaitForCallbackCompletion(thread_idx);
+    }
+
+    NotifyMainThread(thread_idx);
+    delete ctxs_[thread_idx];
+    return;
+  }
+
+  void IssueCallback(size_t thread_idx, Thread* t) {
+    if (!closed_loop_) {
+      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      // Start an alarm call back to run the internal callback after
+      // next_issue_time
+      Alarm* alarm = &ctxs_[thread_idx]->alarm_;
+      alarm->experimental().Set(
+          next_issue_time,
+          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
+    } else {
+      ThreadFuncImpl(t, thread_idx);
+    }
+  }
+
+  void NotifyMainThread(size_t thread_idx) {
+    std::lock_guard<std::mutex> l(mu_);
+    threads_done_++;
+    if (threads_done_ == num_threads_) {
+      cv_.notify_one();
+    }
+  }
+
+  void WaitForCallbackCompletion(size_t thread_idx) {
     std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
     std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
     std::unique_lock<std::mutex> thread_lock(*thread_mu);
@@ -1061,12 +1062,12 @@ class CallbackClient
     thread_lock.unlock();
   }
 
-  void NotifyMainThread(size_t thread_idx) {
-    std::lock_guard<std::mutex> l(mu_);
-    threads_done_++;
-    if (threads_done_ == num_threads_) {
-      cv_.notify_one();
+  void DestroyMultithreading() final {
+    std::unique_lock<std::mutex> l(mu_);
+    while (threads_done_ != num_threads_) {
+      cv_.wait(l);
     }
+    EndThreads();
   }
 };
 
