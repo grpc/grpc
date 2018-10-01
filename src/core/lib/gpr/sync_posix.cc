@@ -136,11 +136,9 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
           g_fork_count, g_timer_wait_err, g_timer_cv_value, g_timer_mu_value,
           g_abstime_sec_value, g_abstime_nsec_value);
     }
-    GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   }
-#else
-  GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
 #endif
+  GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   return err == ETIMEDOUT;
 }
 
