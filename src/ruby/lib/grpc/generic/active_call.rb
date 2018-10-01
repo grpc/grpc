@@ -205,16 +205,22 @@ module GRPC
     # list, mulitple metadata for its key are sent
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
-      return if response_status_as_trailers_only(code, details, metadata: metadata)
+      metadata_already_sent = @send_initial_md_mutex.synchronize do
+        # Can't send Trailers-Only since Response-Headers have already been sent
+        v = @metadata_sent
+        @metadata_sent ||= true
+        v
+      end
 
-      send_initial_metadata
       ops = {
         SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
+
+      ops[SEND_INITIAL_METADATA] = @metadata_to_send unless metadata_already_sent
+
       @call.run_batch(ops)
       set_output_stream_done
-
       nil
     end
 
@@ -583,23 +589,6 @@ module GRPC
     end
 
     private
-
-    # response_status_as_trailers_only sends a status as Trailers-only
-    # https://github.com/grpc/grpc/blob/ceecf80283e6ca184df587f76ed053f1f5295b7f/doc/PROTOCOL-HTTP2.md
-    def response_status_as_trailers_only(code, details, metadata: {})
-      @send_initial_md_mutex.synchronize do
-        # Can't send Trailers-Only since Response-Headers have already been sent
-        return false if @metadata_sent
-        @metadata_sent = true
-      end
-
-      @call.run_batch(
-        SEND_INITIAL_METADATA => @metadata_to_send,
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
-      )
-      set_output_stream_done
-      true
-    end
 
     # To be called once the "input stream" has been completelly
     # read through (i.e, done reading from client or received status)
