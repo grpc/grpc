@@ -112,7 +112,7 @@ def create_stub(opts)
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
       channel_args: {
-        GRPC::Core::Channel::SSL_TARGET => opts.host_override
+        GRPC::Core::Channel::SSL_TARGET => opts.server_host_override
       }
     }
 
@@ -703,14 +703,14 @@ class NamedTests
 end
 
 # Args is used to hold the command line info.
-Args = Struct.new(:default_service_account, :server_host, :host_override,
+Args = Struct.new(:default_service_account, :server_host, :server_host_override,
                   :oauth_scope, :server_port, :secure, :test_case,
                   :use_test_ca)
 
 # validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
-  args.host_override = 'foo.test.google.fr'
+  args.server_host_override = 'foo.test.google.fr'
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
@@ -723,7 +723,7 @@ def parse_args
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
-      args['host_override'] = v
+      args['server_host_override'] = v
     end
     opts.on('--server_port SERVER_PORT', 'server port') do |v|
       args['server_port'] = v
