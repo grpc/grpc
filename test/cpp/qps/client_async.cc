@@ -957,14 +957,14 @@ std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
 
 struct CallbackClientRpcData {
   CallbackClientRpcData()
-      : thread_mu_(), thread_cv_(), rpc_done_(false), alarm_() {}
+      : thread_mu_(), thread_cv_(), rpc_done_(false), alarm_(nullptr) {}
 
-  ~CallbackClientRpcData() {}
+  ~CallbackClientRpcData() { delete alarm_; }
 
   std::mutex thread_mu_;
   std::condition_variable thread_cv_;
   bool rpc_done_;
-  Alarm alarm_;
+  Alarm* alarm_;
 };
 
 class CallbackClient
@@ -981,12 +981,7 @@ class CallbackClient
 
   virtual ~CallbackClient() {}
 
-  virtual bool InitThreadFuncImpl(size_t thread_idx) {
-    // Create new contexts
-    delete ctxs_[thread_idx];
-    ctxs_[thread_idx] = new CallbackClientRpcData;
-    return true;
-  }
+  virtual bool InitThreadFuncImpl(size_t thread_idx) { return true; }
 
   virtual bool ThreadFuncImpl(Thread* t, size_t thread_idx) = 0;
 
@@ -1005,6 +1000,26 @@ class CallbackClient
     thread_cv->notify_one();
   }
 
+  void IssueCallbackRpc(size_t thread_idx, Thread* t) {
+    if (!InitThreadFuncImpl(thread_idx)) {
+      return;
+    }
+
+    if (!closed_loop_) {
+      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      // Start an alarm call back to run the internal callback after
+      // next_issue_time
+      delete ctxs_[thread_idx]->alarm_;
+      ctxs_[thread_idx]->alarm_ = new Alarm;
+      Alarm* alarm = ctxs_[thread_idx]->alarm_;
+      alarm->experimental().Set(
+          next_issue_time,
+          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
+    } else {
+      ThreadFuncImpl(t, thread_idx);
+    }
+  }
+
  private:
   int NumThreads(const ClientConfig& config) {
     int num_threads = config.async_client_threads();
@@ -1016,31 +1031,13 @@ class CallbackClient
   }
 
   void ThreadFunc(size_t thread_idx, Thread* t) override {
-    while (!ThreadCompleted()) {
-      if (!InitThreadFuncImpl(thread_idx)) {
-        break;
-      }
-      IssueCallback(thread_idx, t);
-      WaitForCallbackCompletion(thread_idx);
-    }
+    ctxs_[thread_idx] = new CallbackClientRpcData;
+    IssueCallbackRpc(thread_idx, t);
+    WaitForCompletionOfAllRpcs(thread_idx);
 
     NotifyMainThread(thread_idx);
     delete ctxs_[thread_idx];
     return;
-  }
-
-  void IssueCallback(size_t thread_idx, Thread* t) {
-    if (!closed_loop_) {
-      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
-      // Start an alarm call back to run the internal callback after
-      // next_issue_time
-      Alarm* alarm = &ctxs_[thread_idx]->alarm_;
-      alarm->experimental().Set(
-          next_issue_time,
-          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
-    } else {
-      ThreadFuncImpl(t, thread_idx);
-    }
   }
 
   void NotifyMainThread(size_t thread_idx) {
@@ -1051,10 +1048,11 @@ class CallbackClient
     }
   }
 
-  void WaitForCallbackCompletion(size_t thread_idx) {
+  void WaitForCompletionOfAllRpcs(size_t thread_idx) {
     std::mutex* thread_mu = &ctxs_[thread_idx]->thread_mu_;
     std::condition_variable* thread_cv = &ctxs_[thread_idx]->thread_cv_;
     std::unique_lock<std::mutex> thread_lock(*thread_mu);
+
     while (!ctxs_[thread_idx]->rpc_done_) {
       thread_cv->wait(thread_lock);
     }
@@ -1100,8 +1098,13 @@ class CallbackUnaryClient final : public CallbackClient {
           delete context;
           delete response;
 
-          // Notify thread of completion
-          NotifyThread(thread_idx);
+          if (ThreadCompleted()) {
+            // Notify thread of completion
+            NotifyThread(thread_idx);
+          } else {
+            // Issue a new RPC
+            IssueCallbackRpc(thread_idx, t);
+          }
         });
     return true;
   }
