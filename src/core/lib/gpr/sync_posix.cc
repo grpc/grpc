@@ -28,13 +28,9 @@
 #include "src/core/lib/profiling/timers.h"
 
 // For debug of the timer manager crash only.
-#ifndef kGMS_BuildConfig_EnableGRPCTimerCrashDebug
-#define kGMS_BuildConfig_EnableGRPCTimerCrashDebug() GRPC_DEBUG_TIMER_MANAGER
+#ifndef kGMS_BuildConfig_EnableGRPC
+#define kGMS_BuildConfig_EnableGRPC() GRPC_DEBUG_TIMER_MANAGER
 #endif
-#ifndef kBuildConfig_EnableGRPCTimerCrashDebug
-#define kBuildConfig_EnableGRPCTimerCrashDebug() GRPC_DEBUG_TIMER_MANAGER
-#endif
-
 // For debug of the timer manager crash only.
 // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
