@@ -217,6 +217,8 @@ module GRPC
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
 
+      # To send initial metadata as trailing metadata(Trailers-Only) in order to support retries.
+      # https://github.com/grpc/grpc/blob/92b45c8eefcdde5e0c0ec36373fdecb7cd7007d7/doc/PROTOCOL-HTTP2.md#responses
       ops[SEND_INITIAL_METADATA] = @metadata_to_send unless metadata_already_sent
 
       @call.run_batch(ops)
