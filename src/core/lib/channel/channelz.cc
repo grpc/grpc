@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -55,35 +56,77 @@ char* BaseNode::RenderJsonString() {
 }
 
 CallCountingHelper::CallCountingHelper() {
-  gpr_atm_no_barrier_store(&last_call_started_millis_,
-                           (gpr_atm)ExecCtx::Get()->Now());
+  num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
+  per_cpu_counter_data_storage_ =
+      static_cast<CounterData*>(gpr_zalloc(sizeof(CounterData) * num_cores_));
 }
 
-CallCountingHelper::~CallCountingHelper() {}
+CallCountingHelper::~CallCountingHelper() {
+  gpr_free(per_cpu_counter_data_storage_);
+}
 
 void CallCountingHelper::RecordCallStarted() {
-  gpr_atm_no_barrier_fetch_add(&calls_started_, static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(&last_call_started_millis_,
-                           (gpr_atm)ExecCtx::Get()->Now());
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_started_,
+      static_cast<gpr_atm>(1));
+  gpr_atm_no_barrier_store(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .last_call_started_millis_,
+      (gpr_atm)ExecCtx::Get()->Now());
+}
+
+void CallCountingHelper::RecordCallFailed() {
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_failed_,
+      static_cast<gpr_atm>(1));
+}
+
+void CallCountingHelper::RecordCallSucceeded() {
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_succeeded_,
+      static_cast<gpr_atm>(1));
+}
+
+CallCountingHelper::CounterData CallCountingHelper::Collect() {
+  CounterData out;
+  memset(&out, 0, sizeof(out));
+  for (size_t core = 0; core < num_cores_; ++core) {
+    out.calls_started_ += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_started_);
+    out.calls_succeeded_ += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_succeeded_);
+    out.calls_failed_ += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_failed_);
+    gpr_atm last_call = gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].last_call_started_millis_);
+    if (last_call > out.last_call_started_millis_) {
+      out.last_call_started_millis_ = last_call;
+    }
+  }
+  return out;
 }
 
 void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
-  if (calls_started_ != 0) {
+  CounterData data = Collect();
+  if (data.calls_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsStarted", calls_started_);
+        json, json_iterator, "callsStarted", data.calls_started_);
   }
-  if (calls_succeeded_ != 0) {
+  if (data.calls_succeeded_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsSucceeded", calls_succeeded_);
+        json, json_iterator, "callsSucceeded", data.calls_succeeded_);
   }
-  if (calls_failed_) {
+  if (data.calls_failed_) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsFailed", calls_failed_);
+        json, json_iterator, "callsFailed", data.calls_failed_);
   }
-  if (calls_started_ != 0) {
-    gpr_timespec ts =
-        grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
+  if (data.calls_started_ != 0) {
+    gpr_timespec ts = grpc_millis_to_timespec(data.last_call_started_millis_,
+                                              GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
                                gpr_format_timespec(ts), GRPC_JSON_STRING, true);
