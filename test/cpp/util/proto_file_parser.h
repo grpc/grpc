@@ -53,19 +53,35 @@ class ProtoFileParser {
   // used as the argument of Stub::Call()
   grpc::string GetFormattedMethodName(const grpc::string& method);
 
-  grpc::string GetSerializedProtoFromMethod(
+  grpc::string GetSerializedProtoFromMethodTextFormat(
       const grpc::string& method, const grpc::string& text_format_proto,
+      bool is_request);
+
+  grpc::string GetSerializedProtoFromMethodJsonFormat(
+      const grpc::string& method, const grpc::string& json_format_proto,
       bool is_request);
 
   grpc::string GetTextFormatFromMethod(const grpc::string& method,
                                        const grpc::string& serialized_proto,
                                        bool is_request);
 
-  grpc::string GetSerializedProtoFromMessageType(
+  grpc::string GetJsonFormatFromMethod(const grpc::string& method,
+                                       const grpc::string& serialized_proto,
+                                       bool is_request);
+
+  grpc::string GetSerializedProtoFromMessageTypeTextFormat(
       const grpc::string& message_type_name,
       const grpc::string& text_format_proto);
 
+  grpc::string GetSerializedProtoFromMessageTypeJsonFormat(
+      const grpc::string& message_type_name,
+      const grpc::string& json_format_proto);
+
   grpc::string GetTextFormatFromMessageType(
+      const grpc::string& message_type_name,
+      const grpc::string& serialized_proto);
+
+  grpc::string GetJsonFormatFromMessageType(
       const grpc::string& message_type_name,
       const grpc::string& serialized_proto);
 
