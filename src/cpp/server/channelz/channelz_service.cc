@@ -60,6 +60,23 @@ Status ChannelzService::GetServers(
   return Status::OK;
 }
 
+Status ChannelzService::GetServerSockets(
+    ServerContext* unused, const channelz::v1::GetServerSocketsRequest* request,
+    channelz::v1::GetServerSocketsResponse* response) {
+  char* json_str = grpc_channelz_get_server_sockets(request->server_id(),
+                                                    request->start_socket_id());
+  if (json_str == nullptr) {
+    return Status(INTERNAL, "grpc_channelz_get_server_sockets returned null");
+  }
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
+  gpr_free(json_str);
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
+  }
+  return Status::OK;
+}
+
 Status ChannelzService::GetChannel(
     ServerContext* unused, const channelz::v1::GetChannelRequest* request,
     channelz::v1::GetChannelResponse* response) {
