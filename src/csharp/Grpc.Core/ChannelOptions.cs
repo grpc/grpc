@@ -122,11 +122,17 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
         public override bool Equals(object obj)
         {
             return Equals(obj as ChannelOption);
         }
 
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
         public bool Equals(ChannelOption other)
         {
             return other != null &&
@@ -136,6 +142,9 @@ namespace Grpc.Core
                    stringValue == other.stringValue;
         }
 
+        /// <summary>
+        /// A hash code for the current object.
+        /// </summary>
         public override int GetHashCode()
         {
             var hashCode = 1412678443;
@@ -146,11 +155,17 @@ namespace Grpc.Core
             return hashCode;
         }
 
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
         public static bool operator ==(ChannelOption option1, ChannelOption option2)
         {
             return EqualityComparer<ChannelOption>.Default.Equals(option1, option2);
         }
 
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
         public static bool operator !=(ChannelOption option1, ChannelOption option2)
         {
             return !(option1 == option2);
