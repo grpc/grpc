@@ -160,6 +160,18 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
   return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
 }
 
+char* grpc_channelz_get_server_sockets(intptr_t server_id,
+                                       intptr_t start_socket_id) {
+  grpc_core::channelz::BaseNode* server_node =
+      grpc_core::channelz::ChannelzRegistry::Get(server_id);
+  if (server_node == nullptr ||
+      server_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kServer) {
+    return nullptr;
+  }
+  return server_node->RenderServerSockets(start_socket_id);
+}
+
 char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::channelz::BaseNode* channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);

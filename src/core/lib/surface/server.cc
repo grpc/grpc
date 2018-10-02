@@ -1213,7 +1213,8 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
 }
 
 void grpc_server_populate_listen_sockets(
-    grpc_server* s, grpc_core::ChildRefsList* listen_sockets) {
+    grpc_server* s, grpc_core::ChildRefsList* listen_sockets,
+    intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
@@ -1221,8 +1222,11 @@ void grpc_server_populate_listen_sockets(
       grpc_channel_element* connected_channel_elem =
           grpc_channel_stack_last_element(
               grpc_channel_get_channel_stack(c->channel));
-      listen_sockets->push_back(
-          grpc_connected_channel_get_socket_uuid(connected_channel_elem));
+      intptr_t socket_uuid =
+          grpc_connected_channel_get_socket_uuid(connected_channel_elem);
+      if (socket_uuid >= start_idx) {
+        listen_sockets->push_back(socket_uuid);
+      }
     }
   }
   gpr_mu_unlock(&s->mu_global);
