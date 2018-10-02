@@ -224,7 +224,7 @@ class ClientContext {
   /// \warning This method should only be called before invoking the rpc.
   ///
   /// \param deadline the deadline for the client call. Units are determined by
-  /// the type used.
+  /// the type used. The deadline is an absolute (not relative) time.
   template <typename T>
   void set_deadline(const T& deadline) {
     TimePoint<T> deadline_tp(deadline);
