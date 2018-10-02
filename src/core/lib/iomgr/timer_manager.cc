@@ -92,8 +92,7 @@ static void start_timer_thread_and_unlock(void) {
 
 void grpc_timer_manager_tick() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis next = GRPC_MILLIS_INF_FUTURE;
-  grpc_timer_check(&next);
+  grpc_timer_check(nullptr);
 }
 
 static void run_some_timers() {
@@ -102,9 +101,12 @@ static void run_some_timers() {
   // remove a waiter from the pool, and start another thread if necessary
   --g_waiter_count;
   if (g_waiter_count == 0 && g_threaded) {
+    // The number of timer threads is always increasing until all the threads
+    // are stopped. In rare cases, if a large number of timers fire
+    // simultaneously, we may end up using a large number of threads.
     start_timer_thread_and_unlock();
   } else {
-    // if there's no thread waiting with a timeout, kick an existing
+    // if there's no thread waiting with a timeout, kick an existing untimed
     // waiter so that the next deadline is not missed
     if (!g_has_timed_waiter) {
       if (grpc_timer_check_trace.enabled()) {
