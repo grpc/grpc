@@ -41,6 +41,8 @@
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
+using grpc::channelz::v1::GetServerSocketsRequest;
+using grpc::channelz::v1::GetServerSocketsResponse;
 using grpc::channelz::v1::GetServersRequest;
 using grpc::channelz::v1::GetServersResponse;
 using grpc::channelz::v1::GetSocketRequest;
@@ -598,6 +600,30 @@ TEST_F(ChannelzServerTest, StreamingRPC) {
   EXPECT_EQ(get_socket_response.socket().data().messages_sent(), kNumMessages);
   EXPECT_EQ(get_socket_response.socket().data().messages_received(),
             kNumMessages);
+}
+
+TEST_F(ChannelzServerTest, GetServerSocketsTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_server_request;
+  GetServersResponse get_server_response;
+  get_server_request.set_start_server_id(0);
+  ClientContext get_server_context;
+  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
+                                        &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_response.server_size(), 1);
+  GetServerSocketsRequest get_server_sockets_request;
+  GetServerSocketsResponse get_server_sockets_response;
+  get_server_sockets_request.set_server_id(
+      get_server_response.server(0).ref().server_id());
+  get_server_sockets_request.set_start_socket_id(0);
+  ClientContext get_server_sockets_context;
+  s = channelz_stub_->GetServerSockets(&get_server_sockets_context,
+                                       get_server_sockets_request,
+                                       &get_server_sockets_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
 }
 
 }  // namespace testing
