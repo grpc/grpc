@@ -161,6 +161,7 @@ which FileDescriptorProtos have been sent on a given stream, for a given value
 of valid_host, and avoid sending them repeatedly for overlapping requests.
 
 | message_request message     | Result                                          |
+| --------------------------- | ----------------------------------------------- |
 | files_for_file_name         | transitive closure of file name                 |
 | files_for_symbol_name       | transitive closure file containing symbol       |
 | file_containing_extension   | transitive closure of file containing a given extension number of a given symbol |

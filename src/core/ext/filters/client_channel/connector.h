@@ -47,6 +47,9 @@ typedef struct {
 
   /** channel arguments (to be passed to the filters) */
   grpc_channel_args* channel_args;
+
+  /** socket uuid of the connected transport. 0 if not available */
+  intptr_t socket_uuid;
 } grpc_connect_out_args;
 
 struct grpc_connector_vtable {

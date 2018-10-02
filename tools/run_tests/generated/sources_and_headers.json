@@ -7092,19 +7092,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
@@ -10660,7 +10647,6 @@
       "src/core/ext/transport/chttp2/transport/frame_settings.h", 
       "src/core/ext/transport/chttp2/transport/frame_window_update.h", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
       "src/core/ext/transport/chttp2/transport/http2_settings.h", 
@@ -10698,8 +10684,6 @@
       "src/core/ext/transport/chttp2/transport/frame_window_update.h", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.cc", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.cc", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.cc", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.cc", 

@@ -3170,6 +3170,16 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
+intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
+  grpc_chttp2_transport* t =
+      reinterpret_cast<grpc_chttp2_transport*>(transport);
+  if (t->channelz_socket != nullptr) {
+    return t->channelz_socket->uuid();
+  } else {
+    return 0;
+  }
+}
+
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(
