@@ -1015,7 +1015,7 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
         grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
     server->channelz_server =
         grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
-            trace_events_per_node);
+            server, trace_events_per_node);
     server->channelz_server->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
@@ -1210,6 +1210,22 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
   }
   grpc_transport_perform_op(transport, op);
+}
+
+void grpc_server_populate_listen_sockets(
+    grpc_server* s, grpc_core::ChildRefsList* listen_sockets) {
+  gpr_mu_lock(&s->mu_global);
+  channel_data* c = nullptr;
+  for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
+    if (c->channel != nullptr) {
+      grpc_channel_element* connected_channel_elem =
+          grpc_channel_stack_last_element(
+              grpc_channel_get_channel_stack(c->channel));
+      listen_sockets->push_back(
+          grpc_connected_channel_get_socket_uuid(connected_channel_elem));
+    }
+  }
+  gpr_mu_unlock(&s->mu_global);
 }
 
 void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {

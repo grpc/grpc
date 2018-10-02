@@ -47,6 +47,9 @@ void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args);
 
+void grpc_server_populate_listen_sockets(
+    grpc_server* server, grpc_core::ChildRefsList* listen_sockets);
+
 grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
     grpc_server* server);
 

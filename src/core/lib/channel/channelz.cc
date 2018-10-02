@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -149,8 +150,10 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
+ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer),
+      server_(server),
+      trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
 
@@ -182,6 +185,20 @@ grpc_json* ServerNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  ChildRefsList listen_sockets;
+  grpc_server_populate_listen_sockets(server_, &listen_sockets);
+  if (!listen_sockets.empty()) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "listenSocket", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < listen_sockets.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                        listen_sockets[i]);
+    }
+  }
   return top_level_json;
 }
 

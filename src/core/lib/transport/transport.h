@@ -366,6 +366,9 @@ void grpc_transport_destroy(grpc_transport* transport);
 /* Get the endpoint used by \a transport */
 grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
 
+/* Get the socket uuid used by the transport. Returns 0 if not availible. */
+intptr_t grpc_transport_get_socket_uuid(grpc_transport* transport);
+
 /* Allocate a grpc_transport_op, and preconfigure the on_consumed closure to
    \a on_consumed and then delete the returned transport op */
 grpc_transport_op* grpc_make_transport_op(grpc_closure* on_consumed);

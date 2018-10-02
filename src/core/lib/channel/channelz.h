@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -40,6 +41,12 @@
   "grpc.channelz_channel_is_internal_channel"
 
 namespace grpc_core {
+
+// TODO(ncteisen), this only contains the uuids of the children for now,
+// since that is all that is strictly needed. In a future enhancement we will
+// add human readable names as in the channelz.proto
+typedef InlinedVector<intptr_t, 10> ChildRefsList;
+
 namespace channelz {
 
 namespace testing {
@@ -172,7 +179,7 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  explicit ServerNode(size_t channel_tracer_max_nodes);
+  explicit ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
@@ -192,6 +199,7 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
+  grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
 };

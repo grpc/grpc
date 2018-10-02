@@ -252,6 +252,8 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"listenSocket\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"socketId\""));
   // channel tracing is not enabled, so these should not be preset.
   GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));

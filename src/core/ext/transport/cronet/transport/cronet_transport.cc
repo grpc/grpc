@@ -1437,6 +1437,8 @@ static void destroy_transport(grpc_transport* gt) {}
 
 static grpc_endpoint* get_endpoint(grpc_transport* gt) { return nullptr; }
 
+static intptr_t get_socket_uuid(grpc_transport* t) { return 0; }
+
 static void perform_op(grpc_transport* gt, grpc_transport_op* op) {}
 
 static const grpc_transport_vtable grpc_cronet_vtable = {
@@ -1449,7 +1451,8 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     perform_op,
     destroy_stream,
     destroy_transport,
-    get_endpoint};
+    get_endpoint,
+    get_socket_uuid};
 
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
                                              const grpc_channel_args* args,

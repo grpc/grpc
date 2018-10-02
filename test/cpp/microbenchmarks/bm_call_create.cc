@@ -446,11 +446,13 @@ void Destroy(grpc_transport* self) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* self) { return nullptr; }
 
+static intptr_t GetSocketUuid(grpc_transport* t) { return 0; }
+
 static const grpc_transport_vtable dummy_transport_vtable = {
-    0,          "dummy_http2", InitStream,
-    SetPollset, SetPollsetSet, PerformStreamOp,
-    PerformOp,  DestroyStream, Destroy,
-    GetEndpoint};
+    0,           "dummy_http2", InitStream,
+    SetPollset,  SetPollsetSet, PerformStreamOp,
+    PerformOp,   DestroyStream, Destroy,
+    GetEndpoint, GetSocketUuid};
 
 static grpc_transport dummy_transport = {&dummy_transport_vtable};
 

@@ -36,6 +36,7 @@
 
 typedef struct connected_channel_channel_data {
   grpc_transport* transport;
+  intptr_t socket_uuid;
 } channel_data;
 
 typedef struct {
@@ -217,6 +218,7 @@ static void bind_transport(grpc_channel_stack* channel_stack,
   GPR_ASSERT(elem->filter == &grpc_connected_filter);
   GPR_ASSERT(cd->transport == nullptr);
   cd->transport = static_cast<grpc_transport*>(t);
+  cd->socket_uuid = grpc_transport_get_socket_uuid(cd->transport);
 
   /* HACK(ctiller): increase call stack size for the channel to make space
      for channel data. We need a cleaner (but performant) way to do this,
@@ -235,6 +237,13 @@ bool grpc_add_connected_filter(grpc_channel_stack_builder* builder,
   GPR_ASSERT(t != nullptr);
   return grpc_channel_stack_builder_append_filter(
       builder, &grpc_connected_filter, bind_transport, t);
+}
+
+intptr_t grpc_connected_channel_get_socket_uuid(
+    grpc_channel_element* connected_channel_elem) {
+  channel_data* chand =
+      static_cast<channel_data*>(connected_channel_elem->channel_data);
+  return chand->socket_uuid;
 }
 
 grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem) {

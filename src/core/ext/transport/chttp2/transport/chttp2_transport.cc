@@ -3157,6 +3157,10 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
   return (reinterpret_cast<grpc_chttp2_transport*>(t))->ep;
 }
 
+static intptr_t get_socket_uuid(grpc_transport* t) {
+  return grpc_chttp2_transport_get_socket_uuid(t);
+}
+
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
@@ -3166,7 +3170,8 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              perform_transport_op,
                                              destroy_stream,
                                              destroy_transport,
-                                             chttp2_get_endpoint};
+                                             chttp2_get_endpoint,
+                                             get_socket_uuid};
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
