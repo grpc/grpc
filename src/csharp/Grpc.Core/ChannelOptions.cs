@@ -26,6 +26,8 @@ namespace Grpc.Core
     /// <summary>
     /// Channel option specified when creating a channel.
     /// Corresponds to grpc_channel_args from grpc/grpc.h.
+    /// Commonly used channel option names are defined in <c>ChannelOptions</c>,
+    /// but any of the GRPC_ARG_* channel options names defined in grpc_types.h can be used.
     /// </summary>
     public sealed class ChannelOption
     {
@@ -122,7 +124,8 @@ namespace Grpc.Core
     }
 
     /// <summary>
-    /// Defines names of supported channel options.
+    /// Defines names of most commonly used channel options.
+    /// Other supported options names can be found in grpc_types.h (GRPC_ARG_* definitions)
     /// </summary>
     public static class ChannelOptions
     {
