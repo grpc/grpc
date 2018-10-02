@@ -2757,10 +2757,10 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
     if (error == GRPC_ERROR_NONE) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
       close_transport_locked(
-          t,
-          grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                 "keepalive watchdog timeout"),
-                             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL));
+          t, grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                    "keepalive watchdog timeout"),
+                                GRPC_ERROR_INT_GRPC_STATUS,
+                                GRPC_STATUS_UNAVAILABLE));
     }
   } else {
     /* The watchdog timer should have been cancelled by
