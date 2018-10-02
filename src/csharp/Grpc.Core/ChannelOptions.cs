@@ -29,7 +29,7 @@ namespace Grpc.Core
     /// Commonly used channel option names are defined in <c>ChannelOptions</c>,
     /// but any of the GRPC_ARG_* channel options names defined in grpc_types.h can be used.
     /// </summary>
-    public sealed class ChannelOption
+    public sealed class ChannelOption : IEquatable<ChannelOption>
     {
         /// <summary>
         /// Type of <c>ChannelOption</c>.
@@ -120,6 +120,40 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(type == OptionType.String);
                 return stringValue;
             }
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ChannelOption);
+        }
+
+        public bool Equals(ChannelOption other)
+        {
+            return other != null &&
+                   type == other.type &&
+                   name == other.name &&
+                   intValue == other.intValue &&
+                   stringValue == other.stringValue;
+        }
+
+        public override int GetHashCode()
+        {
+            var hashCode = 1412678443;
+            hashCode = hashCode * -1521134295 + type.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(name);
+            hashCode = hashCode * -1521134295 + intValue.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(stringValue);
+            return hashCode;
+        }
+
+        public static bool operator ==(ChannelOption option1, ChannelOption option2)
+        {
+            return EqualityComparer<ChannelOption>.Default.Equals(option1, option2);
+        }
+
+        public static bool operator !=(ChannelOption option1, ChannelOption option2)
+        {
+            return !(option1 == option2);
         }
     }
 
