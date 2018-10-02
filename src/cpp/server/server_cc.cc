@@ -670,7 +670,7 @@ void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(call->call(), cops, &nops);
+  ops->FillOps(call, cops, &nops);
   // TODO(vjpai): Use ops->cq_tag once this case supports callbacks
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
   if (result != GRPC_CALL_OK) {

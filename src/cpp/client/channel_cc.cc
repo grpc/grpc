@@ -147,7 +147,9 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
-  return internal::Call(c_call, this, cq);
+
+  experimental::ClientRpcInfo info(context, method.name(), this);
+  return internal::Call(c_call, this, cq, info, interceptor_creators_);
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
@@ -155,7 +157,7 @@ void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
-  ops->FillOps(call->call(), cops, &nops);
+  ops->FillOps(call, cops, &nops);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), cops, nops,
                                                    ops->cq_tag(), nullptr));
 }

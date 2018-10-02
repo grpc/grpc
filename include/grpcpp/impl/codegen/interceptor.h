@@ -50,7 +50,7 @@ enum class InterceptionHookPoints {
 
 class InterceptorBatchMethods {
  public:
-  virtual ~InterceptorBatchMethods();
+  virtual ~InterceptorBatchMethods(){};
   // Queries to check whether the current batch has an interception hook point
   // of type \a type
   virtual bool QueryInterceptionHookPoint(InterceptionHookPoints type) = 0;

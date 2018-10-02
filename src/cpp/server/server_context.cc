@@ -47,7 +47,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
+  void FillOps(internal::Call* call, grpc_op* ops, size_t* nops) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -88,7 +88,7 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
+void ServerContext::CompletionOp::FillOps(internal::Call* call, grpc_op* ops,
                                           size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
