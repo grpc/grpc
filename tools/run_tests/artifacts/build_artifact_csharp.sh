@@ -17,7 +17,13 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+mkdir -p cmake/build
+cd cmake/build
+
+# -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON
+cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DgRPC_BUILD_TESTS=OFF "${CMAKE_ARCH_OPTION}" ../..
 make grpc_csharp_ext
+cd ../..
 
 mkdir -p "${ARTIFACTS_OUT}"
-cp libs/opt/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp libs/opt/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"
+cp cmake/build/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp cmake/build/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"

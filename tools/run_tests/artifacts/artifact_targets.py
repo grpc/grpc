@@ -248,29 +248,19 @@ class CSharpExtArtifact:
                 ],
                 use_workspace=True)
         else:
-            environ = {
-                'CONFIG': 'opt',
-                'EMBED_OPENSSL': 'true',
-                'EMBED_ZLIB': 'true',
-                'CFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
-                'CXXFLAGS': '-DGPR_BACKWARDS_COMPATIBILITY_MODE',
-                'LDFLAGS': ''
-            }
             if self.platform == 'linux':
                 return create_docker_jobspec(
                     self.name,
                     'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ=environ)
+                    'tools/run_tests/artifacts/build_artifact_csharp.sh')
             else:
-                archflag = _ARCH_FLAG_MAP[self.arch]
-                environ['CFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
-                environ['CXXFLAGS'] += ' %s %s' % (archflag, _MACOS_COMPAT_FLAG)
-                environ['LDFLAGS'] += ' %s' % archflag
+                cmake_arch_option = ''  # x64 is the default architecture
+                if self.arch == 'x86':
+                    cmake_arch_option = '-DCMAKE_OSX_ARCHITECTURES=i386'
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                    environ=environ,
+                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option},
                     use_workspace=True)
 
     def __str__(self):
