@@ -114,6 +114,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_1:
       GPR_ASSERT(cur < end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
@@ -122,6 +123,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_2:
       GPR_ASSERT(cur < end);
       t->incoming_frame_size |= *cur;
@@ -130,6 +132,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_3:
       GPR_ASSERT(cur < end);
       t->incoming_frame_type = *cur;
@@ -138,6 +141,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_4:
       GPR_ASSERT(cur < end);
       t->incoming_frame_flags = *cur;
@@ -146,6 +150,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_5:
       GPR_ASSERT(cur < end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
@@ -154,6 +159,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_6:
       GPR_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
@@ -162,6 +168,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_7:
       GPR_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
@@ -170,6 +177,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_8:
       GPR_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
@@ -206,6 +214,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FRAME:
       GPR_ASSERT(cur < end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {

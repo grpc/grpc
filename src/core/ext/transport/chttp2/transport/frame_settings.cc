@@ -143,6 +143,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
         parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*cur)) << 8);
         cur++;
       /* fallthrough */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_ID1:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID1;
@@ -151,6 +152,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
         parser->id = static_cast<uint16_t>(parser->id | (*cur));
         cur++;
       /* fallthrough */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL0:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL0;
@@ -159,6 +161,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
         parser->value = (static_cast<uint32_t>(*cur)) << 24;
         cur++;
       /* fallthrough */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL1:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL1;
@@ -167,6 +170,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
         parser->value |= (static_cast<uint32_t>(*cur)) << 16;
         cur++;
       /* fallthrough */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL2:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL2;
@@ -175,6 +179,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
         parser->value |= (static_cast<uint32_t>(*cur)) << 8;
         cur++;
       /* fallthrough */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL3:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL3;

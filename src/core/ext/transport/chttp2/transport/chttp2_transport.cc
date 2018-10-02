@@ -2435,6 +2435,7 @@ static void WithUrgency(grpc_chttp2_transport* t,
     case grpc_core::chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
       grpc_chttp2_initiate_write(t, reason);
     // fallthrough
+    GOOGLE_FALLTHROUGH_INTENDED;
     case grpc_core::chttp2::FlowControlAction::Urgency::QUEUE_UPDATE:
       action();
       break;

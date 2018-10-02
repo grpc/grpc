@@ -1489,7 +1489,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
         grpclb_policy->lb_call_backoff_.Reset();
         grpclb_policy->StartBalancerCallLocked();
       }
-      // Fall through.
+      GOOGLE_FALLTHROUGH_INTENDED;
     case GRPC_CHANNEL_SHUTDOWN:
     done:
       grpclb_policy->watching_lb_channel_ = false;
