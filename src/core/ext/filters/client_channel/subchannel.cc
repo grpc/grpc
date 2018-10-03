@@ -388,7 +388,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
-  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  bool channelz_enabled = grpc_channel_arg_get_bool(arg, true);
   arg = grpc_channel_args_find(c->args,
                                GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
   const grpc_integer_options options = {0, 0, INT_MAX};

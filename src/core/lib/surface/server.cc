@@ -1008,7 +1008,7 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   server->channel_args = grpc_channel_args_copy(args);
 
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
-  if (grpc_channel_arg_get_bool(arg, false)) {
+  if (grpc_channel_arg_get_bool(arg, true)) {
     arg = grpc_channel_args_find(args,
                                  GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
     size_t trace_events_per_node =
