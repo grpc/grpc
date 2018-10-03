@@ -124,11 +124,11 @@ void ValidateGetServers(size_t expected_servers) {
 
 class ChannelFixture {
  public:
-  ChannelFixture(int max_trace_nodes = 0) {
+  ChannelFixture(int max_tracer_event_memory = 0) {
     grpc_arg client_a[2];
     client_a[0] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
-        max_trace_nodes);
+        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+        max_tracer_event_memory);
     client_a[1] = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
@@ -146,11 +146,11 @@ class ChannelFixture {
 
 class ServerFixture {
  public:
-  explicit ServerFixture(int max_trace_nodes = 0) {
+  explicit ServerFixture(int max_tracer_event_memory = 0) {
     grpc_arg server_a[] = {
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
-            max_trace_nodes),
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            max_tracer_event_memory),
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
     };
@@ -360,10 +360,10 @@ TEST(ChannelzGetServersTest, ManyServersTest) {
 }
 
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
-                        ::testing::Values(0, 1, 2, 6, 10, 15));
+                        ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
 
 INSTANTIATE_TEST_CASE_P(ChannelzServerTestSweep, ChannelzServerTest,
-                        ::testing::Values(0, 1, 2, 6, 10, 15));
+                        ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
 
 }  // namespace testing
 }  // namespace channelz

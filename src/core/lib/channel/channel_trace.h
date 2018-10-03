@@ -37,7 +37,7 @@ class BaseNode;
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
-  ChannelTrace(size_t max_events);
+  ChannelTrace(size_t max_event_memory);
   ~ChannelTrace();
 
   enum Severity {
@@ -92,6 +92,8 @@ class ChannelTrace {
     TraceEvent* next() const { return next_; }
     void set_next(TraceEvent* next) { next_ = next; }
 
+    size_t memory_usage() { return memory_usage_; }
+
    private:
     Severity severity_;
     grpc_slice data_;
@@ -99,6 +101,7 @@ class ChannelTrace {
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
     RefCountedPtr<BaseNode> referenced_entity_;
+    size_t memory_usage_;
   };  // TraceEvent
 
   // Internal helper to add and link in a trace event
@@ -106,8 +109,8 @@ class ChannelTrace {
 
   gpr_mu tracer_mu_;
   uint64_t num_events_logged_;
-  size_t list_size_;
-  size_t max_list_size_;
+  size_t event_list_memory_usage_;
+  size_t max_event_memory_;
   TraceEvent* head_trace_;
   TraceEvent* tail_trace_;
   gpr_timespec time_created_;

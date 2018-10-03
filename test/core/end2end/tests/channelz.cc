@@ -267,8 +267,9 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
 
   grpc_arg arg[2];
   arg[0].type = GRPC_ARG_INTEGER;
-  arg[0].key = const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-  arg[0].value.integer = 5;
+  arg[0].key =
+      const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
+  arg[0].value.integer = 1024;
   arg[1].type = GRPC_ARG_INTEGER;
   arg[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
   arg[1].value.integer = true;

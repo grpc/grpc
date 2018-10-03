@@ -389,15 +389,15 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
   bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
-  arg = grpc_channel_args_find(c->args,
-                               GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
+  arg = grpc_channel_args_find(
+      c->args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
   const grpc_integer_options options = {0, 0, INT_MAX};
-  size_t channel_tracer_max_nodes =
+  size_t channel_tracer_max_memory =
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     c->channelz_subchannel =
         grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
-            c, channel_tracer_max_nodes);
+            c, channel_tracer_max_memory);
     c->channelz_subchannel->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
