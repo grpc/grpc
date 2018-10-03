@@ -25,7 +25,10 @@ In addition, we are shipping packages for language implementations. These packag
 
 Language | From source | Platform | Uses assembly optimizations
 ---|---|---|---
-C#      | n/a | all | :x:
+C#      | n/a | Linux, 64bit | :heavy_check_mark:
+C#      | n/a | Linux, 32bit | :x:
+C#      | n/a | MacOS | :heavy_check_mark:
+C#      | n/a | Windows | :x:
 Node.JS | n/a | Linux | :heavy_check_mark:
 Node.JS | n/a | MacOS | :heavy_check_mark:
 Node.JS | n/a | Windows | :x:
