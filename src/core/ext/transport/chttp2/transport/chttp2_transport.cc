@@ -341,8 +341,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
       }
     } else if (0 ==
                strcmp(channel_args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
-      t->channelz_socket =
-          grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+      if (grpc_channel_arg_get_bool(&channel_args->args[i], true)) {
+        t->channelz_socket =
+            grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+      }
     } else {
       static const struct {
         const char* channel_arg_name;

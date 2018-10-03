@@ -103,7 +103,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
-  bool channelz_enabled = false;
+  bool channelz_enabled = true;
   bool internal_channel = false;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
@@ -148,9 +148,7 @@ grpc_channel* grpc_channel_create_with_builder(
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
-      // channelz will not be enabled by default until all concerns in
-      // https://github.com/grpc/grpc/issues/15986 are addressed.
-      channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], false);
+      channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], true);
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC)) {
       GPR_ASSERT(args->args[i].type == GRPC_ARG_POINTER);
