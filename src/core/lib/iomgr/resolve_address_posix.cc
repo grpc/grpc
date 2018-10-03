@@ -44,7 +44,7 @@
 
 static grpc_error* posix_blocking_resolve_address(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args* channel_args) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;
@@ -82,6 +82,14 @@ static grpc_error* posix_blocking_resolve_address(
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+
+  // Check is channel arguments assigned and check is GRPC_ARG_IPV4_ONLY argument exists.
+  if (channel_args != nullptr) {
+      const grpc_arg* ipv4_arg = grpc_channel_args_find(channel_args, GRPC_ARG_IPV4_ONLY);
+      if (ipv4_arg != nullptr && ipv4_arg->type == grpc_arg_type::GRPC_ARG_INTEGER && ipv4_arg->value.integer) {
+          hints.ai_family = AF_INET;     /* ipv4 only */
+      }
+  }
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
@@ -147,6 +155,7 @@ typedef struct {
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs_out;
   grpc_closure request_closure;
+  grpc_channel_args* channel_args;
   void* arg;
 } request;
 
@@ -155,7 +164,8 @@ typedef struct {
 static void do_request_thread(void* rp, grpc_error* error) {
   request* r = static_cast<request*>(rp);
   GRPC_CLOSURE_SCHED(r->on_done, grpc_blocking_resolve_address(
-                                     r->name, r->default_port, r->addrs_out));
+                                     r->name, r->default_port, 
+                                     r->addrs_out, r->channel_args));
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r);
@@ -164,7 +174,8 @@ static void do_request_thread(void* rp, grpc_error* error) {
 static void posix_resolve_address(const char* name, const char* default_port,
                                   grpc_pollset_set* interested_parties,
                                   grpc_closure* on_done,
-                                  grpc_resolved_addresses** addrs) {
+                                  grpc_resolved_addresses** addrs,
+                                  grpc_channel_args* channel_args) {
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(
       &r->request_closure, do_request_thread, r,
@@ -173,6 +184,7 @@ static void posix_resolve_address(const char* name, const char* default_port,
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addrs_out = addrs;
+  r->channel_args = channel_args;
   GRPC_CLOSURE_SCHED(&r->request_closure, GRPC_ERROR_NONE);
 }
 

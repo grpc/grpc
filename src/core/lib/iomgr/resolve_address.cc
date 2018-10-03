@@ -30,9 +30,10 @@ void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
 void grpc_resolve_address(const char* addr, const char* default_port,
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
-                          grpc_resolved_addresses** addresses) {
+                          grpc_resolved_addresses** addresses,
+                          grpc_channel_args* channel_args) {
   grpc_resolve_address_impl->resolve_address(
-      addr, default_port, interested_parties, on_done, addresses);
+      addr, default_port, interested_parties, on_done, addresses, channel_args);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
@@ -44,7 +45,8 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
 
 grpc_error* grpc_blocking_resolve_address(const char* name,
                                           const char* default_port,
-                                          grpc_resolved_addresses** addresses) {
+                                          grpc_resolved_addresses** addresses,
+                                          grpc_channel_args* channel_args) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
-                                                             addresses);
+                                                             addresses, channel_args);
 }

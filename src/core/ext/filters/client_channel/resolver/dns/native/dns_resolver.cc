@@ -286,7 +286,7 @@ void NativeDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   addresses_ = nullptr;
   grpc_resolve_address(name_to_resolve_, kDefaultPort, interested_parties_,
-                       &on_resolved_, &addresses_);
+                       &on_resolved_, &addresses_, channel_args_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }
 

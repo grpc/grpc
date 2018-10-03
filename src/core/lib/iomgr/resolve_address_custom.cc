@@ -37,6 +37,7 @@
 typedef struct grpc_custom_resolver {
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
+  grpc_channel_args* channel_args;
   char* host;
   char* port;
 } grpc_custom_resolver;
@@ -114,7 +115,7 @@ static grpc_error* try_split_host_port(const char* name,
 
 static grpc_error* blocking_resolve_address_impl(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args* channel_args) {
   char* host;
   char* port;
   grpc_error* err;
@@ -132,6 +133,7 @@ static grpc_error* blocking_resolve_address_impl(
   grpc_custom_resolver resolver;
   resolver.host = host;
   resolver.port = port;
+  resolver.channel_args = channel_args;
 
   grpc_resolved_addresses* addrs;
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
@@ -155,7 +157,8 @@ static grpc_error* blocking_resolve_address_impl(
 static void resolve_address_impl(const char* name, const char* default_port,
                                  grpc_pollset_set* interested_parties,
                                  grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+                                 grpc_resolved_addresses** addrs,
+                                 grpc_channel_args* channel_args) {
   grpc_custom_resolver* r = nullptr;
   char* host = nullptr;
   char* port = nullptr;
@@ -171,6 +174,7 @@ static void resolve_address_impl(const char* name, const char* default_port,
   r = (grpc_custom_resolver*)gpr_malloc(sizeof(grpc_custom_resolver));
   r->on_done = on_done;
   r->addresses = addrs;
+  r->channel_args = channel_args;
   r->host = host;
   r->port = port;
 

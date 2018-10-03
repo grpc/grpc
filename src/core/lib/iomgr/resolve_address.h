@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include <stddef.h>
 
@@ -55,10 +56,12 @@ typedef struct grpc_address_resolver_vtable {
   void (*resolve_address)(const char* addr, const char* default_port,
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
-                          grpc_resolved_addresses** addresses);
+                          grpc_resolved_addresses** addresses,
+                          grpc_channel_args* channel_args);
   grpc_error* (*blocking_resolve_address)(const char* name,
                                           const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+                                          grpc_resolved_addresses** addresses,
+                                          grpc_channel_args* channel_args);
 } grpc_address_resolver_vtable;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
@@ -69,7 +72,8 @@ void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
 void grpc_resolve_address(const char* addr, const char* default_port,
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
-                          grpc_resolved_addresses** addresses);
+                          grpc_resolved_addresses** addresses,
+                          grpc_channel_args* channel_args = nullptr);
 
 /* Destroy resolved addresses */
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
@@ -78,6 +82,7 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
    result must be freed with grpc_resolved_addresses_destroy. */
 grpc_error* grpc_blocking_resolve_address(const char* name,
                                           const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+                                          grpc_resolved_addresses** addresses,
+                                          grpc_channel_args* channel_args = nullptr);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

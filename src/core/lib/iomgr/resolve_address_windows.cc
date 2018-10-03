@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
@@ -49,11 +50,12 @@ typedef struct {
   grpc_closure request_closure;
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
+  grpc_channel_args* channel_args;
 } request;
 
 static grpc_error* windows_blocking_resolve_address(
     const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+    grpc_resolved_addresses** addresses, grpc_channel_args* channel_args) {
   grpc_core::ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
@@ -88,6 +90,14 @@ static grpc_error* windows_blocking_resolve_address(
   hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
+
+  // Check is channel arguments assigned and check is GRPC_ARG_IPV4_ONLY argument exists.
+  if (channel_args != nullptr) {
+      const grpc_arg* ipv4_arg = grpc_channel_args_find(channel_args, GRPC_ARG_IPV4_ONLY);
+      if (ipv4_arg != nullptr && ipv4_arg->type == grpc_arg_type::GRPC_ARG_INTEGER && ipv4_arg->value.integer) {
+          hints.ai_family = AF_INET;     /* ipv4 only */
+      }
+  }
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
@@ -136,7 +146,7 @@ static void do_request_thread(void* rp, grpc_error* error) {
   request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
     error =
-        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses);
+        grpc_blocking_resolve_address(r->name, r->default_port, r->addresses, r->channel_args);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -149,7 +159,8 @@ static void do_request_thread(void* rp, grpc_error* error) {
 static void windows_resolve_address(const char* name, const char* default_port,
                                     grpc_pollset_set* interested_parties,
                                     grpc_closure* on_done,
-                                    grpc_resolved_addresses** addresses) {
+                                    grpc_resolved_addresses** addresses,
+                                    grpc_channel_args* channel_args) {
   request* r = (request*)gpr_malloc(sizeof(request));
   GRPC_CLOSURE_INIT(
       &r->request_closure, do_request_thread, r,
@@ -158,6 +169,7 @@ static void windows_resolve_address(const char* name, const char* default_port,
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addresses = addresses;
+  r->channel_args = channel_args;
   GRPC_CLOSURE_SCHED(&r->request_closure, GRPC_ERROR_NONE);
 }
 
