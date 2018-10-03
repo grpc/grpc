@@ -119,8 +119,8 @@ endif()
 if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
   add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
   if (_gRPC_PLATFORM_MAC)
-    # CMAKE_OSX_DEPLOYMENT_TARGET
-    add_definitions(-mmacosx-version-min=10.7)
+    # some C++11 constructs not supported before OS X 10.9
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
   endif()
 endif()
 
