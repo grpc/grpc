@@ -25,19 +25,47 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h"
+#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 
 const int kHandshakerClientOpNum = 4;
+static alts_shared_resource_dedicated* kSharedResourceDedicated =
+    grpc_alts_get_shared_resource_dedicated();
 
 typedef struct alts_grpc_handshaker_client {
   alts_handshaker_client base;
   grpc_call* call;
   alts_grpc_caller grpc_caller;
+  bool use_dedicated_cq;
+  grpc_closure on_handshaker_service_response_received_locked;
+  grpc_iomgr_cb_func cb;
 } alts_grpc_handshaker_client;
 
 static grpc_call_error grpc_start_batch(grpc_call* call, const grpc_op* ops,
-                                        size_t nops, void* tag) {
-  return grpc_call_start_batch(call, ops, nops, tag, nullptr);
+                                        size_t nops, void* tag,
+                                        grpc_closure* closure) {
+  if (closure == nullptr) {
+    return grpc_call_start_batch(call, ops, nops, tag, nullptr);
+  } else {
+    return grpc_call_start_batch_and_execute(call, ops, nops, closure);
+  }
+}
+
+static void on_handshaker_service_response_received_locked(void* arg,
+                                                           grpc_error* error) {
+  alts_tsi_event* event = static_cast<alts_tsi_event*>(arg);
+  if (event == nullptr) {
+    gpr_log(GPR_ERROR,
+            "ALTS TSI event is nullptr `in "
+            "on_handshaker_service_response_received_locked()");
+    return;
+  }
+  alts_tsi_handshaker_handle_response(event->handshaker, event->recv_buffer,
+                                      event->status, &event->details, event->cb,
+                                      event->user_data, true);
+  alts_tsi_event_destroy(event);
 }
 
 /**
@@ -72,9 +100,18 @@ static tsi_result make_grpc_call(alts_handshaker_client* client,
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
   GPR_ASSERT(grpc_client->grpc_caller != nullptr);
+  grpc_closure* closure =
+      grpc_client->use_dedicated_cq
+          ? nullptr
+          : &grpc_client->on_handshaker_service_response_received_locked;
+  if (!grpc_client->use_dedicated_cq) {
+    GRPC_CLOSURE_INIT(
+        &grpc_client->on_handshaker_service_response_received_locked,
+        grpc_client->cb, event, grpc_schedule_on_exec_ctx);
+  }
   if (grpc_client->grpc_caller(grpc_client->call, ops,
-                               static_cast<size_t>(op - ops),
-                               (void*)event) != GRPC_CALL_OK) {
+                               static_cast<size_t>(op - ops), (void*)event,
+                               closure) != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "Start batch operation failed");
     return TSI_INTERNAL_ERROR;
   }
@@ -243,21 +280,29 @@ static const alts_handshaker_client_vtable vtable = {
     handshaker_client_destruct};
 
 alts_handshaker_client* alts_grpc_handshaker_client_create(
-    grpc_channel* channel, grpc_completion_queue* queue,
-    const char* handshaker_service_url) {
-  if (channel == nullptr || queue == nullptr ||
-      handshaker_service_url == nullptr) {
+    grpc_channel* channel, const char* handshaker_service_url,
+    grpc_pollset_set* interested_parties) {
+  if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
     return nullptr;
   }
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
   client->grpc_caller = grpc_start_batch;
+  client->use_dedicated_cq = interested_parties == nullptr;
+  client->cb = on_handshaker_service_response_received_locked;
   grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
-  client->call = grpc_channel_create_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, queue,
-      grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  client->call =
+      client->use_dedicated_cq
+          ? grpc_channel_create_call(
+                channel, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                kSharedResourceDedicated->cq,
+                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
+                gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
+          : grpc_channel_create_pollset_set_call(
+                channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
+                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
+                GRPC_MILLIS_INF_FUTURE, nullptr);
   client->base.vtable = &vtable;
   grpc_slice_unref_internal(slice);
   return &client->base;
@@ -272,6 +317,14 @@ void alts_handshaker_client_set_grpc_caller_for_testing(
   alts_grpc_handshaker_client* grpc_client =
       reinterpret_cast<alts_grpc_handshaker_client*>(client);
   grpc_client->grpc_caller = caller;
+}
+
+void alts_handshaker_client_set_closure_cb_for_testing(
+    alts_handshaker_client* client, grpc_iomgr_cb_func cb) {
+  GPR_ASSERT(client != nullptr && cb != nullptr);
+  alts_grpc_handshaker_client* grpc_client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(client);
+  grpc_client->cb = cb;
 }
 
 }  // namespace internal

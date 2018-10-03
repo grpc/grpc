@@ -18,7 +18,9 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
@@ -44,6 +46,7 @@ typedef struct alts_handshaker_client_test_config {
   grpc_completion_queue* cq;
   alts_handshaker_client* client;
   grpc_slice out_frame;
+  grpc_pollset_set* interested_parties;
 } alts_handshaker_client_test_config;
 
 static alts_tsi_event* alts_tsi_event_create_for_testing(bool is_client) {
@@ -99,6 +102,19 @@ static void validate_target_identities(
              GRPC_SLICE_LENGTH(*service_account2));
 }
 
+static void closure_cb_should_not_be_called(void* arg,
+                                            grpc_error* error) {
+  GPR_ASSERT(false);
+}
+
+static bool validate_closure(grpc_closure* closure, void* arg) {
+  if (closure != nullptr) {
+    GPR_ASSERT(closure->cb == closure_cb_should_not_be_called); 
+    GPR_ASSERT(closure->cb_arg == arg);
+  }
+  return true;
+}
+
 /**
  * Validate if grpc operation data is correctly populated with the fields of
  * ALTS TSI event.
@@ -152,7 +168,7 @@ static grpc_gcp_handshaker_req* deserialize_handshaker_req(
  */
 static grpc_call_error check_must_not_be_called(grpc_call* call,
                                                 const grpc_op* ops, size_t nops,
-                                                void* tag) {
+                                                void* tag, grpc_closure* closure) {
   GPR_ASSERT(0);
 }
 
@@ -164,7 +180,7 @@ static grpc_call_error check_must_not_be_called(grpc_call* call,
  */
 static grpc_call_error check_client_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag) {
+                                                  size_t nops, void* tag, grpc_closure* closure) {
   alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
   grpc_gcp_handshaker_req* req =
       deserialize_handshaker_req(CLIENT_START_REQ, event->send_buffer);
@@ -195,6 +211,7 @@ static grpc_call_error check_client_start_success(grpc_call* call,
   GPR_ASSERT(GRPC_SLICE_LENGTH(*target_name) ==
              strlen(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME));
   GPR_ASSERT(validate_op(event, op, nops, true /* is_start */));
+  GPR_ASSERT(validate_closure(closure, tag));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -207,7 +224,7 @@ static grpc_call_error check_client_start_success(grpc_call* call,
  */
 static grpc_call_error check_server_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag) {
+                                                  size_t nops, void* tag, grpc_closure* closure) {
   alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
   grpc_gcp_handshaker_req* req =
       deserialize_handshaker_req(SERVER_START_REQ, event->send_buffer);
@@ -232,6 +249,7 @@ static grpc_call_error check_server_start_success(grpc_call* call,
                     GRPC_SLICE_LENGTH(*record_protocol)) == 0);
   validate_rpc_protocol_versions(&req->server_start.rpc_versions);
   GPR_ASSERT(validate_op(event, op, nops, true /* is_start */));
+  GPR_ASSERT(validate_closure(closure, tag));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -242,7 +260,11 @@ static grpc_call_error check_server_start_success(grpc_call* call,
  * and op is correctly populated.
  */
 static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
-                                          size_t nops, void* tag) {
+                                          size_t nops, void* tag, grpc_closure* closure) {
+  if (closure != nullptr) {
+    GPR_ASSERT(closure->cb == closure_cb_should_not_be_called);
+    GPR_ASSERT(closure->cb_arg == tag);
+  }
   alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
   grpc_gcp_handshaker_req* req =
       deserialize_handshaker_req(NEXT_REQ, event->send_buffer);
@@ -252,6 +274,7 @@ static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
                     ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME,
                     GRPC_SLICE_LENGTH(*in_bytes)) == 0);
   GPR_ASSERT(validate_op(event, op, nops, false /* is_start */));
+  GPR_ASSERT(validate_closure(closure, tag));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -262,20 +285,23 @@ static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
  */
 static grpc_call_error check_grpc_call_failure(grpc_call* call,
                                                const grpc_op* op, size_t nops,
-                                               void* tag) {
+                                               void* tag, grpc_closure* closure) {
   return GRPC_CALL_ERROR;
 }
 
-static alts_handshaker_client_test_config* create_config() {
+static alts_handshaker_client_test_config* create_config(bool use_dedicated_cq) {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
   config->channel = grpc_insecure_channel_create(
       ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL, nullptr, nullptr);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
+  if (!use_dedicated_cq) {
+    config->interested_parties = grpc_pollset_set_create();
+  }
   config->client = alts_grpc_handshaker_client_create(
-      config->channel, config->cq,
-      ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL);
+      config->channel, ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL,
+      config->interested_parties);
   GPR_ASSERT(config->client != nullptr);
   config->out_frame =
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME);
@@ -290,12 +316,15 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
   grpc_channel_destroy(config->channel);
   alts_handshaker_client_destroy(config->client);
   grpc_slice_unref(config->out_frame);
+  if (config->interested_parties != nullptr) {
+    grpc_pollset_set_destroy(config->interested_parties);
+  }
   gpr_free(config);
 }
 
 static void schedule_request_invalid_arg_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = create_config(true);
   alts_tsi_event* event = nullptr;
 
   /* Tests. */
@@ -334,10 +363,44 @@ static void schedule_request_invalid_arg_test() {
   destroy_config(config);
 }
 
+static void schedule_request_success_test_with_dedicated_cq() {
+  /* Initialization. */
+  alts_handshaker_client_test_config* config = create_config(true);
+  alts_tsi_event* event = nullptr;
+
+  /* Check client_start success. */
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, check_client_start_success);
+  event = alts_tsi_event_create_for_testing(true /* is_client. */);
+  GPR_ASSERT(alts_handshaker_client_start_client(config->client, event) ==
+             TSI_OK);
+  alts_tsi_event_destroy(event);
+
+  /* Check server_start success. */
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, check_server_start_success);
+  event = alts_tsi_event_create_for_testing(false /* is_client. */);
+  GPR_ASSERT(alts_handshaker_client_start_server(config->client, event,
+                                                 &config->out_frame) == TSI_OK);
+  alts_tsi_event_destroy(event);
+
+  /* Check next success. */
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     check_next_success);
+  event = alts_tsi_event_create_for_testing(true /* is_client. */);
+  GPR_ASSERT(alts_handshaker_client_next(config->client, event,
+                                         &config->out_frame) == TSI_OK);
+  alts_tsi_event_destroy(event);
+
+  /* Cleanup. */
+  destroy_config(config);
+}
+
 static void schedule_request_success_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = create_config(false);
   alts_tsi_event* event = nullptr;
+  grpc_core::internal::alts_handshaker_client_set_closure_cb_for_testing(config->client, closure_cb_should_not_be_called);
 
   /* Check client_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
@@ -369,7 +432,7 @@ static void schedule_request_success_test() {
 
 static void schedule_request_grpc_call_failure_test() {
   /* Initialization. */
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = create_config(true);
   alts_tsi_event* event = nullptr;
 
   /* Check client_start failure. */
@@ -401,13 +464,16 @@ static void schedule_request_grpc_call_failure_test() {
 int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
+  grpc_alts_shared_resource_dedicated_init();
 
   /* Tests. */
   schedule_request_invalid_arg_test();
+  schedule_request_success_test_with_dedicated_cq();
   schedule_request_success_test();
   schedule_request_grpc_call_failure_test();
 
   /* Cleanup. */
+  grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();
   return 0;
 }

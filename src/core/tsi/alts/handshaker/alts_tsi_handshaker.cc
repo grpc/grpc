@@ -34,6 +34,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 #include "src/core/tsi/alts_transport_security.h"
@@ -313,34 +314,16 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,         handshaker_destroy,
     handshaker_next, handshaker_shutdown};
 
-static void thread_worker(void* arg) {
-  while (true) {
-    grpc_event event = grpc_completion_queue_next(
-        kSharedResource->cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    GPR_ASSERT(event.type != GRPC_QUEUE_TIMEOUT);
-    if (event.type == GRPC_QUEUE_SHUTDOWN) {
-      /* signal alts_tsi_shutdown() to destroy completion queue. */
-      grpc_tsi_alts_signal_for_cq_destroy();
-      break;
-    }
-    /* event.type == GRPC_OP_COMPLETE. */
-    alts_tsi_event* alts_event = static_cast<alts_tsi_event*>(event.tag);
-    alts_tsi_event_dispatch_to_handshaker(alts_event, event.success);
-    alts_tsi_event_destroy(alts_event);
-  }
-}
-
-static void init_shared_resources(const char* handshaker_service_url) {
+static void init_shared_resources(const char* handshaker_service_url,
+                                  bool use_dedicated_cq) {
   GPR_ASSERT(handshaker_service_url != nullptr);
   gpr_mu_lock(&kSharedResource->mu);
   if (kSharedResource->channel == nullptr) {
-    gpr_cv_init(&kSharedResource->cv);
     kSharedResource->channel =
         grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
-    kSharedResource->cq = grpc_completion_queue_create_for_next(nullptr);
-    kSharedResource->thread =
-        grpc_core::Thread("alts_tsi_handshaker", &thread_worker, nullptr);
-    kSharedResource->thread.Start();
+    if (use_dedicated_cq) {
+      grpc_alts_shared_resource_dedicated_populate();
+    }
   }
   gpr_mu_unlock(&kSharedResource->mu);
 }
@@ -354,9 +337,10 @@ tsi_result alts_tsi_handshaker_create(
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
-  init_shared_resources(handshaker_service_url);
+  bool use_dedicated_cq = interested_parties == nullptr;
+  init_shared_resources(handshaker_service_url, use_dedicated_cq);
   alts_handshaker_client* client = alts_grpc_handshaker_client_create(
-      kSharedResource->channel, kSharedResource->cq, handshaker_service_url);
+      kSharedResource->channel, handshaker_service_url, interested_parties);
   if (client == nullptr) {
     gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
     return TSI_FAILED_PRECONDITION;

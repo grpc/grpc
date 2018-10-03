@@ -299,6 +299,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h',
                       'src/core/tsi/alts/frame_protector/frame_handler.h',
                       'src/core/tsi/alts/handshaker/alts_handshaker_client.h',
+                      'src/core/tsi/alts/handshaker/alts_shared_resource.h',
                       'src/core/tsi/alts/handshaker/alts_tsi_event.h',
                       'src/core/tsi/alts/handshaker/alts_tsi_handshaker.h',
                       'src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h',

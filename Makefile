@@ -3661,6 +3661,7 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
     src/core/tsi/alts/frame_protector/frame_handler.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
+    src/core/tsi/alts/handshaker/alts_shared_resource.cc \
     src/core/tsi/alts/handshaker/alts_tsi_event.cc \
     src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
@@ -4093,6 +4094,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
     src/core/tsi/alts/frame_protector/frame_handler.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
+    src/core/tsi/alts/handshaker/alts_shared_resource.cc \
     src/core/tsi/alts/handshaker/alts_tsi_event.cc \
     src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
@@ -24848,6 +24850,7 @@ src/core/tsi/alts/frame_protector/frame_handler.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_client.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_shared_resource.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_event.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
