@@ -199,10 +199,6 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
   return transport->vtable->get_endpoint(transport);
 }
 
-intptr_t grpc_transport_get_socket_uuid(grpc_transport* transport) {
-  return transport->vtable->get_socket_uuid(transport);
-}
-
 // This comment should be sung to the tune of
 // "Supercalifragilisticexpialidocious":
 //

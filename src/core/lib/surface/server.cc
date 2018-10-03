@@ -104,6 +104,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
+  uint32_t socket_uuid;
 };
 
 typedef struct shutdown_tag {
@@ -1116,9 +1117,9 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
   *pollsets = server->pollsets;
 }
 
-void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args) {
+void grpc_server_setup_transport_with_socket_uuid(
+    grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
+    const grpc_channel_args* args, intptr_t socket_uuid) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1138,6 +1139,7 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
+  chand->socket_uuid = socket_uuid;
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
@@ -1212,21 +1214,22 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   grpc_transport_perform_op(transport, op);
 }
 
-void grpc_server_populate_listen_sockets(
-    grpc_server* s, grpc_core::ChildRefsList* listen_sockets,
+void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
+                                 grpc_pollset* accepting_pollset,
+                                 const grpc_channel_args* args) {
+  grpc_server_setup_transport_with_socket_uuid(s, transport, accepting_pollset,
+                                               args, 0);
+}
+
+void grpc_server_populate_server_sockets(
+    grpc_server* s, grpc_core::ChildRefsList* server_sockets,
     intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
-    if (c->channel != nullptr) {
-      grpc_channel_element* connected_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(c->channel));
-      intptr_t socket_uuid =
-          grpc_connected_channel_get_socket_uuid(connected_channel_elem);
-      if (socket_uuid >= start_idx) {
-        listen_sockets->push_back(socket_uuid);
-      }
+    intptr_t socket_uuid = c->socket_uuid;
+    if (socket_uuid >= start_idx) {
+      server_sockets->push_back(socket_uuid);
     }
   }
   gpr_mu_unlock(&s->mu_global);

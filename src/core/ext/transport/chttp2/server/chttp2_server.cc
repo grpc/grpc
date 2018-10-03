@@ -131,9 +131,10 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     if (args->endpoint != nullptr) {
       grpc_transport* transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, false);
-      grpc_server_setup_transport(
+      grpc_server_setup_transport_with_socket_uuid(
           connection_state->svr_state->server, transport,
-          connection_state->accepting_pollset, args->args);
+          connection_state->accepting_pollset, args->args,
+          grpc_chttp2_transport_get_socket_uuid(transport));
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
       connection_state->transport =
