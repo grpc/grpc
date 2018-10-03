@@ -62,10 +62,6 @@ static uint64_t g_timed_waiter_generation;
 static void timer_thread(void* completed_thread_ptr);
 
 // For debug of the timer manager crash only.
-#ifndef kGMS_BuildConfig_EnableGRPC
-#define kGMS_BuildConfig_EnableGRPC() GRPC_DEBUG_TIMER_MANAGER
-#endif
-// For debug of the timer manager crash only.
 // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
 extern int64_t g_timer_manager_init_count;
