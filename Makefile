@@ -5428,6 +5428,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -5435,6 +5436,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6006,6 +6008,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6013,6 +6016,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6398,6 +6402,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6405,6 +6410,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6554,6 +6560,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6561,6 +6568,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6879,6 +6887,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6886,6 +6895,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
