@@ -67,7 +67,6 @@ static void timer_thread(void* completed_thread_ptr);
 extern int64_t g_timer_manager_init_count;
 extern int64_t g_timer_manager_shutdown_count;
 extern int64_t g_fork_count;
-extern int64_t g_timer_wait_err;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 static void gc_completed_threads(void) {
