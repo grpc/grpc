@@ -102,14 +102,13 @@ static void validate_target_identities(
              GRPC_SLICE_LENGTH(*service_account2));
 }
 
-static void closure_cb_should_not_be_called(void* arg,
-                                            grpc_error* error) {
+static void closure_cb_should_not_be_called(void* arg, grpc_error* error) {
   GPR_ASSERT(false);
 }
 
 static bool validate_closure(grpc_closure* closure, void* arg) {
   if (closure != nullptr) {
-    GPR_ASSERT(closure->cb == closure_cb_should_not_be_called); 
+    GPR_ASSERT(closure->cb == closure_cb_should_not_be_called);
     GPR_ASSERT(closure->cb_arg == arg);
   }
   return true;
@@ -168,7 +167,8 @@ static grpc_gcp_handshaker_req* deserialize_handshaker_req(
  */
 static grpc_call_error check_must_not_be_called(grpc_call* call,
                                                 const grpc_op* ops, size_t nops,
-                                                void* tag, grpc_closure* closure) {
+                                                void* tag,
+                                                grpc_closure* closure) {
   GPR_ASSERT(0);
 }
 
@@ -180,7 +180,8 @@ static grpc_call_error check_must_not_be_called(grpc_call* call,
  */
 static grpc_call_error check_client_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag, grpc_closure* closure) {
+                                                  size_t nops, void* tag,
+                                                  grpc_closure* closure) {
   alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
   grpc_gcp_handshaker_req* req =
       deserialize_handshaker_req(CLIENT_START_REQ, event->send_buffer);
@@ -224,7 +225,8 @@ static grpc_call_error check_client_start_success(grpc_call* call,
  */
 static grpc_call_error check_server_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag, grpc_closure* closure) {
+                                                  size_t nops, void* tag,
+                                                  grpc_closure* closure) {
   alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
   grpc_gcp_handshaker_req* req =
       deserialize_handshaker_req(SERVER_START_REQ, event->send_buffer);
@@ -260,7 +262,8 @@ static grpc_call_error check_server_start_success(grpc_call* call,
  * and op is correctly populated.
  */
 static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
-                                          size_t nops, void* tag, grpc_closure* closure) {
+                                          size_t nops, void* tag,
+                                          grpc_closure* closure) {
   if (closure != nullptr) {
     GPR_ASSERT(closure->cb == closure_cb_should_not_be_called);
     GPR_ASSERT(closure->cb_arg == tag);
@@ -285,11 +288,13 @@ static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
  */
 static grpc_call_error check_grpc_call_failure(grpc_call* call,
                                                const grpc_op* op, size_t nops,
-                                               void* tag, grpc_closure* closure) {
+                                               void* tag,
+                                               grpc_closure* closure) {
   return GRPC_CALL_ERROR;
 }
 
-static alts_handshaker_client_test_config* create_config(bool use_dedicated_cq) {
+static alts_handshaker_client_test_config* create_config(
+    bool use_dedicated_cq) {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -400,7 +405,8 @@ static void schedule_request_success_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config(false);
   alts_tsi_event* event = nullptr;
-  grpc_core::internal::alts_handshaker_client_set_closure_cb_for_testing(config->client, closure_cb_should_not_be_called);
+  grpc_core::internal::alts_handshaker_client_set_closure_cb_for_testing(
+      config->client, closure_cb_should_not_be_called);
 
   /* Check client_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
