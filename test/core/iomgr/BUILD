@@ -255,7 +255,6 @@ grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     language = "C++",
-    tags = ["manual"],  # TODO(adelez): Remove once this works on Foundry.
     deps = [
         "//:gpr",
         "//:grpc",
