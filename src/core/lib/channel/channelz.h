@@ -40,14 +40,23 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
   "grpc.channelz_channel_is_internal_channel"
 
+/** This is the default value for whether or not to enable channelz. If
+ * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+#define GRPC_ENABLE_CHANNELZ_DEFAULT false
+
+/** This is the default value for number of trace events per node. If
+ * GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE is set, it will override this
+ * default value. */
+#define GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT 0
+
 namespace grpc_core {
+
+namespace channelz {
 
 // TODO(ncteisen), this only contains the uuids of the children for now,
 // since that is all that is strictly needed. In a future enhancement we will
 // add human readable names as in the channelz.proto
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
-namespace channelz {
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -185,7 +194,7 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  explicit ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;

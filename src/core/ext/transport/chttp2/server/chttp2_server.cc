@@ -69,6 +69,7 @@ typedef struct {
   grpc_timer timer;
   grpc_closure on_timeout;
   grpc_closure on_receive_settings;
+  grpc_pollset_set* interested_parties;
 } server_connection_state;
 
 static void server_connection_state_unref(
@@ -78,6 +79,9 @@ static void server_connection_state_unref(
       GRPC_CHTTP2_UNREF_TRANSPORT(connection_state->transport,
                                   "receive settings timeout");
     }
+    grpc_pollset_set_del_pollset(connection_state->interested_parties,
+                                 connection_state->accepting_pollset);
+    grpc_pollset_set_destroy(connection_state->interested_parties);
     gpr_free(connection_state);
   }
 }
@@ -133,7 +137,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     if (args->endpoint != nullptr) {
       grpc_transport* transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, false);
-      grpc_server_setup_transport_with_socket_uuid(
+      grpc_server_setup_transport(
           connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args,
           grpc_chttp2_transport_get_socket_uuid(transport));
@@ -192,7 +196,11 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
+  connection_state->interested_parties = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(connection_state->interested_parties,
+                               connection_state->accepting_pollset);
   grpc_handshakers_add(HANDSHAKER_SERVER, state->args,
+                       connection_state->interested_parties,
                        connection_state->handshake_mgr);
   const grpc_arg* timeout_arg =
       grpc_channel_args_find(state->args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);

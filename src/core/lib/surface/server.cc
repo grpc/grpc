@@ -1010,11 +1010,11 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   server->channel_args = grpc_channel_args_copy(args);
 
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
-  if (grpc_channel_arg_get_bool(arg, false)) {
+  if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     arg = grpc_channel_args_find(args,
                                  GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    size_t trace_events_per_node =
-        grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
+    size_t trace_events_per_node = grpc_channel_arg_get_integer(
+        arg, {GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT, 0, INT_MAX});
     server->channelz_server =
         grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
             server, trace_events_per_node);
@@ -1118,9 +1118,10 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
   *pollsets = server->pollsets;
 }
 
-void grpc_server_setup_transport_with_socket_uuid(
-    grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
-    const grpc_channel_args* args, intptr_t socket_uuid) {
+void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
+                                 grpc_pollset* accepting_pollset,
+                                 const grpc_channel_args* args,
+                                 intptr_t socket_uuid) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1215,15 +1216,8 @@ void grpc_server_setup_transport_with_socket_uuid(
   grpc_transport_perform_op(transport, op);
 }
 
-void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args) {
-  grpc_server_setup_transport_with_socket_uuid(s, transport, accepting_pollset,
-                                               args, 0);
-}
-
 void grpc_server_populate_server_sockets(
-    grpc_server* s, grpc_core::ChildRefsList* server_sockets,
+    grpc_server* s, grpc_core::channelz::ChildRefsList* server_sockets,
     intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
