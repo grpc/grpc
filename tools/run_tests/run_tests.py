@@ -922,19 +922,12 @@ class CSharpLanguage(object):
         self.config = config
         self.args = args
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, ['coreclr', 'default'])
+            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
-            self._make_options = []
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
             self._docker_distro = 'jessie'
-
-            if self.platform == 'mac':
-                # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
-                self._make_options = ['EMBED_OPENSSL=true']
-            else:
-                self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -1010,7 +1003,7 @@ class CSharpLanguage(object):
         return ['grpc_csharp_ext']
 
     def make_options(self):
-        return self._make_options
+        return []
 
     def build_steps(self):
         if self.platform == 'windows':
@@ -1028,7 +1021,7 @@ class CSharpLanguage(object):
         if self.platform == 'windows':
             return 'cmake/build/%s/Makefile' % self._cmake_arch_option
         else:
-            return 'Makefile'
+            return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (
