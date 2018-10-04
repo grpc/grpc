@@ -478,17 +478,17 @@ int main(int argc, char** argv) {
     ifa = nullptr;
 
     /* Connect to same addresses as listeners. */
-    test_connect(1, nullptr, nullptr, false);
-    test_connect(10, nullptr, nullptr, false);
+    //test_connect(1, nullptr, nullptr, false);
+    //test_connect(10, nullptr, nullptr, false);
 
     /* Set dst_addrs->addrs[i].len=0 for dst_addrs that are unreachable with a
        "::" listener. */
-    test_connect(1, nullptr, dst_addrs, true);
+    //test_connect(1, nullptr, dst_addrs, true);
 
     /* Test connect(2) with dst_addrs. */
     test_connect(1, &channel_args, dst_addrs, false);
     /* Test connect(2) with dst_addrs. */
-    test_connect(10, &channel_args, dst_addrs, false);
+    //test_connect(10, &channel_args, dst_addrs, false);
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                       grpc_schedule_on_exec_ctx);
