@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/surface/channel.h"
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
@@ -50,6 +51,8 @@ class ChannelNodePeer {
  private:
   ChannelNode* node_;
 };
+
+size_t GetSizeofTraceEvent() { return sizeof(ChannelTrace::TraceEvent); }
 
 namespace {
 
@@ -119,11 +122,9 @@ void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {
 class ChannelFixture {
  public:
   ChannelFixture(int max_tracer_event_memory) {
-    grpc_arg client_a;
-    client_a.type = GRPC_ARG_INTEGER;
-    client_a.key =
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
-    client_a.value.integer = max_tracer_event_memory;
+    grpc_arg client_a = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+        max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -286,9 +287,9 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
 
 TEST(ChannelTracerTest, TestEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelTrace). If that struct has been updated,
+  // This depends on sizeof(ChannelEvent). If that struct has been updated,
   // this will too.
-  const int kTraceEventSize = 80;
+  const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
   for (int i = 1; i <= kNumEvents; ++i) {
@@ -305,9 +306,9 @@ TEST(ChannelTracerTest, TestEviction) {
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelTrace). If that struct has been updated,
+  // This depends on sizeof(ChannelEvent). If that struct has been updated,
   // this will too.
-  const int kTraceEventSize = 80;
+  const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
   for (int i = 1; i <= kNumEvents; ++i) {
@@ -326,9 +327,9 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
 
 TEST(ChannelTracerTest, TestTotalEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelTrace). If that struct has been updated,
+  // This depends on sizeof(ChannelEvent). If that struct has been updated,
   // this will too.
-  const int kTraceEventSize = 80;
+  const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
   for (int i = 1; i <= kNumEvents; ++i) {

@@ -43,7 +43,8 @@
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
 #define GRPC_ENABLE_CHANNELZ_DEFAULT false
 
-/** This is the default value for TODO. If
+/** This is the default value for the maximum amount of memory used by trace
+ * events per channel trace node. If
  * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
  * this default value. */
 #define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0

@@ -285,10 +285,10 @@ typedef struct {
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
-/** The maximum ammount of memory that the trace event can use per channel
- * trace node. Once the maximum is reached, subsequent events will evict the
- * oldest events from the buffer. The unit for this knob is bytes. Setting
- * it to zero causes channel tracing to be disabled. */
+/** The maximum amount of memory used by trace events per channel trace node.
+ * Once the maximum is reached, subsequent events will evict the oldest events
+ * from the buffer. The unit for this knob is bytes. Setting it to zero causes
+ * channel tracing to be disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE \
   "grpc.max_channel_trace_event_memory_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
