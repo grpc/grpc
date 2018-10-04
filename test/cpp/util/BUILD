@@ -117,11 +117,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_cli_libs",
+    name = "grpc_cli_utils",
     srcs = [
         "cli_call.cc",
         "cli_credentials.cc",
-        "grpc_tool.cc",
         "proto_file_parser.cc",
         "service_describer.cc",
     ],
@@ -129,7 +128,6 @@ grpc_cc_library(
         "cli_call.h",
         "cli_credentials.h",
         "config_grpc_cli.h",
-        "grpc_tool.h",
         "proto_file_parser.h",
         "service_describer.h",
     ],
@@ -142,6 +140,22 @@ grpc_cc_library(
         ":grpc++_proto_reflection_desc_db",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_cli_libs",
+    srcs = [
+        "grpc_tool.cc",
+    ],
+    hdrs = [
+        "grpc_tool.h",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+    deps = [
+        ":grpc_cli_utils",
     ],
 )
 
