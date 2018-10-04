@@ -1009,11 +1009,11 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   server->channel_args = grpc_channel_args_copy(args);
 
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
-  if (grpc_channel_arg_get_bool(arg, false)) {
+  if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     arg = grpc_channel_args_find(args,
                                  GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    size_t trace_events_per_node =
-        grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
+    size_t trace_events_per_node = grpc_channel_arg_get_integer(
+        arg, {GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT, 0, INT_MAX});
     server->channelz_server =
         grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
             server, trace_events_per_node);
