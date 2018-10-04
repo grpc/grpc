@@ -286,7 +286,7 @@ typedef struct {
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
 /** The maximum number of trace events to keep in the tracer for each channel or
- * subchannel. The default is 10. If set to 0, channel tracing is disabled. */
+ * subchannel. The default is 0. If set to 0, channel tracing is disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE \
   "grpc.max_channel_trace_events_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
