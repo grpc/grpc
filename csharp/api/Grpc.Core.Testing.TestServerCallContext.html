@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class KeyCertificatePair
+    <title>Class TestServerCallContext
    | gRPC C# </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class KeyCertificatePair
+    <meta name="title" content="Class TestServerCallContext
    | gRPC C# ">
     <meta name="generator" content="docfx 2.36.0.0">
     
@@ -78,18 +78,18 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Grpc.Core.KeyCertificatePair">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.Testing.TestServerCallContext">
   
   
-  <h1 id="Grpc_Core_KeyCertificatePair" data-uid="Grpc.Core.KeyCertificatePair" class="text-break">Class KeyCertificatePair
+  <h1 id="Grpc_Core_Testing_TestServerCallContext" data-uid="Grpc.Core.Testing.TestServerCallContext" class="text-break">Class TestServerCallContext
   </h1>
-  <div class="markdown level0 summary"><p>Key certificate pair (in PEM encoding).</p>
+  <div class="markdown level0 summary"><p>Creates test doubles for <code>ServerCallContext</code>.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">KeyCertificatePair</span></div>
+    <div class="level1"><span class="xref">TestServerCallContext</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -115,22 +115,23 @@
       <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
-  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
-  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
-  <h5 id="Grpc_Core_KeyCertificatePair_syntax">Syntax</h5>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.Testing.html">Grpc.Core.Testing</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Testing.dll</h6>
+  <h5 id="Grpc_Core_Testing_TestServerCallContext_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class KeyCertificatePair</code></pre>
+    <pre><code class="lang-csharp hljs">public static class TestServerCallContext</code></pre>
   </div>
-  <h3 id="constructors">Constructors
+  <h3 id="methods">Methods
   </h3>
-  <a id="Grpc_Core_KeyCertificatePair__ctor_" data-uid="Grpc.Core.KeyCertificatePair.#ctor*"></a>
-  <h4 id="Grpc_Core_KeyCertificatePair__ctor_System_String_System_String_" data-uid="Grpc.Core.KeyCertificatePair.#ctor(System.String,System.String)">KeyCertificatePair(String, String)</h4>
-  <div class="markdown level1 summary"><p>Creates a new certificate chain - private key pair.</p>
+  <a id="Grpc_Core_Testing_TestServerCallContext_Create_" data-uid="Grpc.Core.Testing.TestServerCallContext.Create*"></a>
+  <h4 id="Grpc_Core_Testing_TestServerCallContext_Create_System_String_System_String_System_DateTime_Grpc_Core_Metadata_System_Threading_CancellationToken_System_String_Grpc_Core_AuthContext_Grpc_Core_ContextPropagationToken_System_Func_Grpc_Core_Metadata_System_Threading_Tasks_Task__System_Func_Grpc_Core_WriteOptions__System_Action_Grpc_Core_WriteOptions__" data-uid="Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Grpc.Core.Metadata,System.Threading.CancellationToken,System.String,Grpc.Core.AuthContext,Grpc.Core.ContextPropagationToken,System.Func{Grpc.Core.Metadata,System.Threading.Tasks.Task},System.Func{Grpc.Core.WriteOptions},System.Action{Grpc.Core.WriteOptions})">Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func&lt;Metadata, Task&gt;, Func&lt;WriteOptions&gt;, Action&lt;WriteOptions&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a test double for <code>ServerCallContext</code>. Only for testing.
+Note: experimental API that can change or be removed without any prior notice.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public KeyCertificatePair(string certificateChain, string privateKey)</code></pre>
+    <pre><code class="lang-csharp hljs">public static ServerCallContext Create(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken, string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken, Func&lt;Metadata, Task&gt; writeHeadersFunc, Func&lt;WriteOptions&gt; writeOptionsGetter, Action&lt;WriteOptions&gt; writeOptionsSetter)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -144,54 +145,62 @@
     <tbody>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">certificateChain</span></td>
-        <td><p>PEM encoded certificate chain.</p>
-</td>
+        <td><span class="parametername">method</span></td>
+        <td></td>
       </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
-        <td><span class="parametername">privateKey</span></td>
-        <td><p>PEM encoded private key.</p>
-</td>
+        <td><span class="parametername">host</span></td>
+        <td></td>
       </tr>
-    </tbody>
-  </table>
-  <h3 id="properties">Properties
-  </h3>
-  <a id="Grpc_Core_KeyCertificatePair_CertificateChain_" data-uid="Grpc.Core.KeyCertificatePair.CertificateChain*"></a>
-  <h4 id="Grpc_Core_KeyCertificatePair_CertificateChain" data-uid="Grpc.Core.KeyCertificatePair.CertificateChain">CertificateChain</h4>
-  <div class="markdown level1 summary"><p>PEM encoded certificate chain.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string CertificateChain { get; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
       <tr>
-        <th>Type</th>
-        <th>Description</th>
+        <td><span class="xref">System.DateTime</span></td>
+        <td><span class="parametername">deadline</span></td>
+        <td></td>
       </tr>
-    </thead>
-    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="parametername">requestHeaders</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td></td>
+      </tr>
       <tr>
         <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">peer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.AuthContext.html">AuthContext</a></td>
+        <td><span class="parametername">authContext</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td><span class="parametername">contextPropagationToken</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>, <span class="xref">System.Threading.Tasks.Task</span>&gt;</td>
+        <td><span class="parametername">writeHeadersFunc</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a>&gt;</td>
+        <td><span class="parametername">writeOptionsGetter</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;<a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a>&gt;</td>
+        <td><span class="parametername">writeOptionsSetter</span></td>
         <td></td>
       </tr>
     </tbody>
   </table>
-  <a id="Grpc_Core_KeyCertificatePair_PrivateKey_" data-uid="Grpc.Core.KeyCertificatePair.PrivateKey*"></a>
-  <h4 id="Grpc_Core_KeyCertificatePair_PrivateKey" data-uid="Grpc.Core.KeyCertificatePair.PrivateKey">PrivateKey</h4>
-  <div class="markdown level1 summary"><p>PEM encoded private key.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string PrivateKey { get; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
+  <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
@@ -201,7 +210,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a></td>
         <td></td>
       </tr>
     </tbody>
