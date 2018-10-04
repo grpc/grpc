@@ -64,22 +64,11 @@ class CallbackClient
       : ClientImpl<BenchmarkService::Stub, SimpleRequest>(
             config, BenchmarkStubCreator) {
     num_threads_ = NumThreads(config);
-    ctxs_.resize(num_threads_);
     threads_done_ = 0;
     SetupLoadTest(config, num_threads_);
   }
 
   virtual ~CallbackClient() {}
-
-  /**
-   * Setup context data before running RPC
-   */
-  virtual bool InitThreadFuncImpl(size_t thread_idx) {
-    ctxs_[thread_idx].reset(new CallbackClientRpcContext);
-    return true;
-  }
-
-  virtual bool ThreadFuncImpl(Thread* t, size_t thread_idx) = 0;
 
  protected:
   size_t num_threads_;
@@ -87,27 +76,16 @@ class CallbackClient
   // wait on completion of all RPCs before shutdown
   std::mutex shutdown_mu_;
   std::condition_variable shutdown_cv_;
-  // Context data pointers are maintained per thread and reallocated before
-  // running a RPC
-  std::vector<std::unique_ptr<CallbackClientRpcContext>> ctxs_;
   // Number of threads that have finished issuing RPCs
   size_t threads_done_;
+  // Context data pointers for running a RPC
+  std::vector<std::unique_ptr<CallbackClientRpcContext>> ctxs_;
+  virtual void InitThreadFuncImpl(size_t thread_idx) = 0;
+  virtual bool ThreadFuncImpl(Thread* t, size_t thread_idx) = 0;
 
-  void IssueCallbackRpc(size_t thread_idx, Thread* t) {
-    if (!InitThreadFuncImpl(thread_idx)) {
-      return;
-    }
-
-    if (!closed_loop_) {
-      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
-      // Start an alarm callback to run the internal callback after
-      // next_issue_time
-      ctxs_[thread_idx]->alarm_.experimental().Set(
-          next_issue_time,
-          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
-    } else {
-      ThreadFuncImpl(t, thread_idx);
-    }
+  void ThreadFunc(size_t thread_idx, Thread* t) override {
+    InitThreadFuncImpl(thread_idx);
+    ThreadFuncImpl(t, thread_idx);
   }
 
   /**
@@ -136,13 +114,6 @@ class CallbackClient
   }
 
   /**
-   * First function invoked by the thread. This initiates one RPC callback
-   */
-  void ThreadFunc(size_t thread_idx, Thread* t) override {
-    IssueCallbackRpc(thread_idx, t);
-  }
-
-  /**
    * Wait until Callback RPCs invoked by all threads are done
    */
   void DestroyMultithreading() final {
@@ -157,11 +128,36 @@ class CallbackClient
 class CallbackUnaryClient final : public CallbackClient {
  public:
   CallbackUnaryClient(const ClientConfig& config) : CallbackClient(config) {
+    ctxs_.resize(num_threads_);
     StartThreads(num_threads_);
   }
   ~CallbackUnaryClient() {}
 
+ protected:
   bool ThreadFuncImpl(Thread* t, size_t thread_idx) override {
+    if (!closed_loop_) {
+      gpr_timespec next_issue_time = NextIssueTime(thread_idx);
+      // Start an alarm callback to run the internal callback after
+      // next_issue_time
+      ctxs_[thread_idx]->alarm_.experimental().Set(
+          next_issue_time, [this, t, thread_idx](bool ok) {
+            IssueUnaryCallbackRpc(t, thread_idx);
+          });
+    } else {
+      IssueUnaryCallbackRpc(t, thread_idx);
+    }
+    return true;
+  }
+
+  /**
+   * Setup context data before running RPC
+   */
+  void InitThreadFuncImpl(size_t thread_idx) override {
+    ctxs_[thread_idx].reset(new CallbackClientRpcContext);
+  }
+
+ private:
+  void IssueUnaryCallbackRpc(Thread* t, size_t thread_idx) {
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
@@ -180,11 +176,10 @@ class CallbackUnaryClient final : public CallbackClient {
             // Notify thread of completion
             NotifyMainThreadOfThreadCompletion(thread_idx);
           } else {
-            // Issue a new RPC
-            IssueCallbackRpc(thread_idx, t);
+            // Schedule a new RPC
+            ThreadFunc(thread_idx, t);
           }
         });
-    return true;
   }
 };
 
