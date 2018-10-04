@@ -64,7 +64,7 @@ static void alts_server_destroy(grpc_security_connector* sc) {
 }
 
 static void alts_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   auto c = reinterpret_cast<grpc_alts_channel_security_connector*>(sc);
@@ -72,13 +72,13 @@ static void alts_channel_add_handshakers(
       reinterpret_cast<grpc_alts_credentials*>(c->base.channel_creds);
   GPR_ASSERT(alts_tsi_handshaker_create(
                  creds->options, c->target_name, creds->handshaker_service_url,
-                 true, sc->base.interested_parties, &handshaker) == TSI_OK);
+                 true, interested_parties, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }
 
 static void alts_server_add_handshakers(
-    grpc_server_security_connector* sc,
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   auto c = reinterpret_cast<grpc_alts_server_security_connector*>(sc);
@@ -86,7 +86,7 @@ static void alts_server_add_handshakers(
       reinterpret_cast<grpc_alts_server_credentials*>(c->base.server_creds);
   GPR_ASSERT(alts_tsi_handshaker_create(
                  creds->options, nullptr, creds->handshaker_service_url, false,
-                 sc->base.interested_parties, &handshaker) == TSI_OK);
+                 interested_parties, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }

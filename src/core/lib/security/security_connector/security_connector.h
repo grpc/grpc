@@ -27,6 +27,7 @@
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -63,7 +64,6 @@ struct grpc_security_connector {
   const grpc_security_connector_vtable* vtable;
   gpr_refcount refcount;
   const char* url_scheme;
-  grpc_pollset_set* interested_parties;
 };
 
 /* Refcounting. */
@@ -126,6 +126,7 @@ struct grpc_channel_security_connector {
                                  grpc_closure* on_call_host_checked,
                                  grpc_error* error);
   void (*add_handshakers)(grpc_channel_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 
@@ -166,6 +167,7 @@ struct grpc_server_security_connector {
   grpc_security_connector base;
   grpc_server_credentials* server_creds;
   void (*add_handshakers)(grpc_server_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 

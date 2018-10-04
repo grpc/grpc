@@ -123,8 +123,7 @@ void grpc_channel_security_connector_add_handshakers(
     grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
-    connector->base.interested_parties = interested_parties;
-    connector->add_handshakers(connector, handshake_mgr);
+    connector->add_handshakers(connector, interested_parties, handshake_mgr);
   }
 }
 
@@ -133,8 +132,7 @@ void grpc_server_security_connector_add_handshakers(
     grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
-    connector->base.interested_parties = interested_parties;
-    connector->add_handshakers(connector, handshake_mgr);
+    connector->add_handshakers(connector, interested_parties, handshake_mgr);
   }
 }
 
@@ -523,7 +521,7 @@ static void fake_channel_cancel_check_call_host(
 }
 
 static void fake_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,
@@ -532,6 +530,7 @@ static void fake_channel_add_handshakers(
 }
 
 static void fake_server_add_handshakers(grpc_server_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,
@@ -673,6 +672,7 @@ static void ssl_server_destroy(grpc_security_connector* sc) {
 }
 
 static void ssl_channel_add_handshakers(grpc_channel_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_ssl_channel_security_connector*>(sc);
@@ -783,6 +783,7 @@ static bool try_fetch_ssl_server_credentials(
 }
 
 static void ssl_server_add_handshakers(grpc_server_security_connector* sc,
+                                       grpc_pollset_set* interested_parties,
                                        grpc_handshake_manager* handshake_mgr) {
   grpc_ssl_server_security_connector* c =
       reinterpret_cast<grpc_ssl_server_security_connector*>(sc);

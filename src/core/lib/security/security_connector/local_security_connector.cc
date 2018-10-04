@@ -30,6 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
@@ -68,7 +69,7 @@ static void local_server_destroy(grpc_security_connector* sc) {
 }
 
 static void local_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
@@ -78,7 +79,7 @@ static void local_channel_add_handshakers(
 }
 
 static void local_server_add_handshakers(
-    grpc_server_security_connector* sc,
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */, &handshaker) ==
