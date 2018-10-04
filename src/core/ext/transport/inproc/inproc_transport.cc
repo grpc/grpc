@@ -1256,7 +1256,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   inproc_transports_create(&server_transport, server_args, &client_transport,
                            client_args);
 
-  grpc_server_setup_transport(server, server_transport, nullptr, server_args);
+  grpc_server_setup_transport(server, server_transport, nullptr, server_args,
+                              0);
   grpc_channel* channel = grpc_channel_create(
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 

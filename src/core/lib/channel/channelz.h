@@ -51,12 +51,12 @@
 
 namespace grpc_core {
 
+namespace channelz {
+
 // TODO(ncteisen), this only contains the uuids of the children for now,
 // since that is all that is strictly needed. In a future enhancement we will
 // add human readable names as in the channelz.proto
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
-namespace channelz {
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -194,7 +194,7 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  explicit ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;

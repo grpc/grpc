@@ -45,15 +45,11 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
    server */
 void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args);
-
-void grpc_server_setup_transport_with_socket_uuid(
-    grpc_server* server, grpc_transport* transport,
-    grpc_pollset* accepting_pollset, const grpc_channel_args* args,
-    intptr_t socket_uuid);
+                                 const grpc_channel_args* args,
+                                 intptr_t socket_uuid);
 
 void grpc_server_populate_server_sockets(
-    grpc_server* server, grpc_core::ChildRefsList* server_sockets,
+    grpc_server* server, grpc_core::channelz::ChildRefsList* server_sockets,
     intptr_t start_idx);
 
 grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(

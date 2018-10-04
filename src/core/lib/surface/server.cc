@@ -1117,9 +1117,10 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
   *pollsets = server->pollsets;
 }
 
-void grpc_server_setup_transport_with_socket_uuid(
-    grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
-    const grpc_channel_args* args, intptr_t socket_uuid) {
+void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
+                                 grpc_pollset* accepting_pollset,
+                                 const grpc_channel_args* args,
+                                 intptr_t socket_uuid) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1214,15 +1215,8 @@ void grpc_server_setup_transport_with_socket_uuid(
   grpc_transport_perform_op(transport, op);
 }
 
-void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args) {
-  grpc_server_setup_transport_with_socket_uuid(s, transport, accepting_pollset,
-                                               args, 0);
-}
-
 void grpc_server_populate_server_sockets(
-    grpc_server* s, grpc_core::ChildRefsList* server_sockets,
+    grpc_server* s, grpc_core::channelz::ChildRefsList* server_sockets,
     intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
