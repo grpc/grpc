@@ -1523,6 +1523,19 @@ references:
   commentId: T:Grpc.Core.ChannelCredentials
   fullName: Grpc.Core.ChannelCredentials
   nameWithType: ChannelCredentials
+- uid: Grpc.Core.ChannelCredentials.#ctor
+  name: ChannelCredentials()
+  href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials__ctor
+  commentId: M:Grpc.Core.ChannelCredentials.#ctor
+  fullName: Grpc.Core.ChannelCredentials.ChannelCredentials()
+  nameWithType: ChannelCredentials.ChannelCredentials()
+- uid: Grpc.Core.ChannelCredentials.#ctor*
+  name: ChannelCredentials
+  href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials__ctor_
+  commentId: Overload:Grpc.Core.ChannelCredentials.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelCredentials.ChannelCredentials
+  nameWithType: ChannelCredentials.ChannelCredentials
 - uid: Grpc.Core.ChannelCredentials.Create(Grpc.Core.ChannelCredentials,Grpc.Core.CallCredentials)
   name: Create(ChannelCredentials, CallCredentials)
   href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials_Create_Grpc_Core_ChannelCredentials_Grpc_Core_CallCredentials_
@@ -2319,25 +2332,6 @@ references:
   fullName.vb: Grpc.Core.IClientStreamWriter(Of T).CompleteAsync
   nameWithType: IClientStreamWriter<T>.CompleteAsync
   nameWithType.vb: IClientStreamWriter(Of T).CompleteAsync
-- uid: Grpc.Core.IHasWriteOptions
-  name: IHasWriteOptions
-  href: api/Grpc.Core.IHasWriteOptions.html
-  commentId: T:Grpc.Core.IHasWriteOptions
-  fullName: Grpc.Core.IHasWriteOptions
-  nameWithType: IHasWriteOptions
-- uid: Grpc.Core.IHasWriteOptions.WriteOptions
-  name: WriteOptions
-  href: api/Grpc.Core.IHasWriteOptions.html#Grpc_Core_IHasWriteOptions_WriteOptions
-  commentId: P:Grpc.Core.IHasWriteOptions.WriteOptions
-  fullName: Grpc.Core.IHasWriteOptions.WriteOptions
-  nameWithType: IHasWriteOptions.WriteOptions
-- uid: Grpc.Core.IHasWriteOptions.WriteOptions*
-  name: WriteOptions
-  href: api/Grpc.Core.IHasWriteOptions.html#Grpc_Core_IHasWriteOptions_WriteOptions_
-  commentId: Overload:Grpc.Core.IHasWriteOptions.WriteOptions
-  isSpec: "True"
-  fullName: Grpc.Core.IHasWriteOptions.WriteOptions
-  nameWithType: IHasWriteOptions.WriteOptions
 - uid: Grpc.Core.IMethod
   name: IMethod
   href: api/Grpc.Core.IMethod.html
@@ -5026,15 +5020,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall
   nameWithType: TestCalls.AsyncDuplexStreamingCall
-- uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``1},Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
-  name: AsyncDuplexStreamingCall<TResponse, TRequest>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___1__Grpc_Core_IAsyncStreamReader___0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
-  commentId: M:Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``1},Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
-  name.vb: AsyncDuplexStreamingCall(Of TResponse, TRequest)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
-  fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall<TResponse, TRequest>(Grpc.Core.IClientStreamWriter<TRequest>, Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
-  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall(Of TResponse, TRequest)(Grpc.Core.IClientStreamWriter(Of TRequest), Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
-  nameWithType: TestCalls.AsyncDuplexStreamingCall<TResponse, TRequest>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
-  nameWithType.vb: TestCalls.AsyncDuplexStreamingCall(Of TResponse, TRequest)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},Grpc.Core.IAsyncStreamReader{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name: AsyncDuplexStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall__2_Grpc_Core_IClientStreamWriter___0__Grpc_Core_IAsyncStreamReader___1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
+  commentId: M:Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},Grpc.Core.IAsyncStreamReader{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+  fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.IClientStreamWriter<TRequest>, Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
+  fullName.vb: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.IClientStreamWriter(Of TRequest), Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  nameWithType: TestCalls.AsyncDuplexStreamingCall<TRequest, TResponse>(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  nameWithType.vb: TestCalls.AsyncDuplexStreamingCall(Of TRequest, TResponse)(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
 - uid: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall*
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall_
@@ -5067,6 +5061,28 @@ references:
   fullName.vb: Grpc.Core.Testing.TestCalls.AsyncUnaryCall(Of TResponse)(System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
   nameWithType: TestCalls.AsyncUnaryCall<TResponse>(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
   nameWithType.vb: TestCalls.AsyncUnaryCall(Of TResponse)(Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.Testing.TestServerCallContext
+  name: TestServerCallContext
+  href: api/Grpc.Core.Testing.TestServerCallContext.html
+  commentId: T:Grpc.Core.Testing.TestServerCallContext
+  fullName: Grpc.Core.Testing.TestServerCallContext
+  nameWithType: TestServerCallContext
+- uid: Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Grpc.Core.Metadata,System.Threading.CancellationToken,System.String,Grpc.Core.AuthContext,Grpc.Core.ContextPropagationToken,System.Func{Grpc.Core.Metadata,System.Threading.Tasks.Task},System.Func{Grpc.Core.WriteOptions},System.Action{Grpc.Core.WriteOptions})
+  name: Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func<Metadata, Task>, Func<WriteOptions>, Action<WriteOptions>)
+  href: api/Grpc.Core.Testing.TestServerCallContext.html#Grpc_Core_Testing_TestServerCallContext_Create_System_String_System_String_System_DateTime_Grpc_Core_Metadata_System_Threading_CancellationToken_System_String_Grpc_Core_AuthContext_Grpc_Core_ContextPropagationToken_System_Func_Grpc_Core_Metadata_System_Threading_Tasks_Task__System_Func_Grpc_Core_WriteOptions__System_Action_Grpc_Core_WriteOptions__
+  commentId: M:Grpc.Core.Testing.TestServerCallContext.Create(System.String,System.String,System.DateTime,Grpc.Core.Metadata,System.Threading.CancellationToken,System.String,Grpc.Core.AuthContext,Grpc.Core.ContextPropagationToken,System.Func{Grpc.Core.Metadata,System.Threading.Tasks.Task},System.Func{Grpc.Core.WriteOptions},System.Action{Grpc.Core.WriteOptions})
+  name.vb: Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func(Of Metadata, Task), Func(Of WriteOptions), Action(Of WriteOptions))
+  fullName: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Grpc.Core.Metadata, System.Threading.CancellationToken, System.String, Grpc.Core.AuthContext, Grpc.Core.ContextPropagationToken, System.Func<Grpc.Core.Metadata, System.Threading.Tasks.Task>, System.Func<Grpc.Core.WriteOptions>, System.Action<Grpc.Core.WriteOptions>)
+  fullName.vb: Grpc.Core.Testing.TestServerCallContext.Create(System.String, System.String, System.DateTime, Grpc.Core.Metadata, System.Threading.CancellationToken, System.String, Grpc.Core.AuthContext, Grpc.Core.ContextPropagationToken, System.Func(Of Grpc.Core.Metadata, System.Threading.Tasks.Task), System.Func(Of Grpc.Core.WriteOptions), System.Action(Of Grpc.Core.WriteOptions))
+  nameWithType: TestServerCallContext.Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func<Metadata, Task>, Func<WriteOptions>, Action<WriteOptions>)
+  nameWithType.vb: TestServerCallContext.Create(String, String, DateTime, Metadata, CancellationToken, String, AuthContext, ContextPropagationToken, Func(Of Metadata, Task), Func(Of WriteOptions), Action(Of WriteOptions))
+- uid: Grpc.Core.Testing.TestServerCallContext.Create*
+  name: Create
+  href: api/Grpc.Core.Testing.TestServerCallContext.html#Grpc_Core_Testing_TestServerCallContext_Create_
+  commentId: Overload:Grpc.Core.Testing.TestServerCallContext.Create
+  isSpec: "True"
+  fullName: Grpc.Core.Testing.TestServerCallContext.Create
+  nameWithType: TestServerCallContext.Create
 - uid: Grpc.Core.UnaryServerMethod`2
   name: UnaryServerMethod<TRequest, TResponse>
   href: api/Grpc.Core.UnaryServerMethod-2.html
