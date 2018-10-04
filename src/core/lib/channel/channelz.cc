@@ -57,8 +57,8 @@ char* BaseNode::RenderJsonString() {
 
 CallCountingHelper::CallCountingHelper() {
   num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
-  per_cpu_counter_data_storage_ =
-      static_cast<CounterData*>(gpr_zalloc(sizeof(CounterData) * num_cores_));
+  per_cpu_counter_data_storage_ = static_cast<AtomicCounterData*>(
+      gpr_zalloc(sizeof(AtomicCounterData) * num_cores_));
 }
 
 CallCountingHelper::~CallCountingHelper() {
@@ -90,28 +90,27 @@ void CallCountingHelper::RecordCallSucceeded() {
       static_cast<gpr_atm>(1));
 }
 
-CallCountingHelper::CounterData CallCountingHelper::Collect() {
-  CounterData out;
-  memset(&out, 0, sizeof(out));
+void CallCountingHelper::CollectData(CounterData* out) {
+  memset(out, 0, sizeof(*out));
   for (size_t core = 0; core < num_cores_; ++core) {
-    out.calls_started_ += gpr_atm_no_barrier_load(
+    out->calls_started_ += gpr_atm_no_barrier_load(
         &per_cpu_counter_data_storage_[core].calls_started_);
-    out.calls_succeeded_ += gpr_atm_no_barrier_load(
+    out->calls_succeeded_ += gpr_atm_no_barrier_load(
         &per_cpu_counter_data_storage_[core].calls_succeeded_);
-    out.calls_failed_ += gpr_atm_no_barrier_load(
+    out->calls_failed_ += gpr_atm_no_barrier_load(
         &per_cpu_counter_data_storage_[core].calls_failed_);
     gpr_atm last_call = gpr_atm_no_barrier_load(
         &per_cpu_counter_data_storage_[core].last_call_started_millis_);
-    if (last_call > out.last_call_started_millis_) {
-      out.last_call_started_millis_ = last_call;
+    if (last_call > out->last_call_started_millis_) {
+      out->last_call_started_millis_ = last_call;
     }
   }
-  return out;
 }
 
 void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
-  CounterData data = Collect();
+  CounterData data;
+  CollectData(&data);
   if (data.calls_started_ != 0) {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "callsStarted", data.calls_started_);
