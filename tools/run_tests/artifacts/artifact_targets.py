@@ -262,8 +262,9 @@ class CSharpExtArtifact:
                     self.name,
                     'tools/dockerfile/grpc_artifact_linux_%s' % self.arch,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option}
-                    )
+                    environ={
+                        'CMAKE_ARCH_OPTION': cmake_arch_option
+                    })
             else:
                 cmake_arch_option = ''  # x64 is the default architecture
                 if self.arch == 'x86':
