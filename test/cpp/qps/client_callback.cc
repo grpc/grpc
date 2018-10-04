@@ -36,7 +36,6 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
 
-
 namespace grpc {
 namespace testing {
 
@@ -44,8 +43,7 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  CallbackClientRpcContext()
-      : response_(), context_(), alarm_() {}
+  CallbackClientRpcContext() : response_(), context_(), alarm_() {}
 
   ~CallbackClientRpcContext() {}
 
@@ -106,9 +104,7 @@ class CallbackClient
       // next_issue_time
       ctxs_[thread_idx]->alarm_.experimental().Set(
           next_issue_time,
-          [this, t, thread_idx](bool ok) {
-            ThreadFuncImpl(t, thread_idx);
-          });
+          [this, t, thread_idx](bool ok) { ThreadFuncImpl(t, thread_idx); });
     } else {
       ThreadFuncImpl(t, thread_idx);
     }
