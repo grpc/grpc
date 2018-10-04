@@ -120,16 +120,20 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
 
 void grpc_channel_security_connector_add_handshakers(
     grpc_channel_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
+    connector->base.interested_parties = interested_parties;
     connector->add_handshakers(connector, handshake_mgr);
   }
 }
 
 void grpc_server_security_connector_add_handshakers(
     grpc_server_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
+    connector->base.interested_parties = interested_parties;
     connector->add_handshakers(connector, handshake_mgr);
   }
 }
@@ -154,13 +158,6 @@ int grpc_security_connector_cmp(grpc_security_connector* sc,
   int c = GPR_ICMP(sc->vtable, other->vtable);
   if (c != 0) return c;
   return sc->vtable->cmp(sc, other);
-}
-
-void grpc_security_connector_set_interested_parties(
-    grpc_security_connector* sc, grpc_pollset_set* interested_parties) {
-  if (sc != nullptr) {
-    sc->interested_parties = interested_parties;
-  }
 }
 
 int grpc_channel_security_connector_cmp(grpc_channel_security_connector* sc1,

@@ -107,10 +107,6 @@ grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* args);
 
-/* Util to set the interested_parties whose ownership is not transferred. */
-void grpc_security_connector_set_interested_parties(
-    grpc_security_connector* sc, grpc_pollset_set* interested_parties);
-
 /* --- channel_security_connector object. ---
 
     A channel security connector object represents a way to configure the
@@ -156,6 +152,7 @@ void grpc_channel_security_connector_cancel_check_call_host(
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(
     grpc_channel_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr);
 
 /* --- server_security_connector object. ---
@@ -177,7 +174,8 @@ int grpc_server_security_connector_cmp(grpc_server_security_connector* sc1,
                                        grpc_server_security_connector* sc2);
 
 void grpc_server_security_connector_add_handshakers(
-    grpc_server_security_connector* sc, grpc_handshake_manager* handshake_mgr);
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
+    grpc_handshake_manager* handshake_mgr);
 
 /* --- Creation security connectors. --- */
 
