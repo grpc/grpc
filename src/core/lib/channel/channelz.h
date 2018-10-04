@@ -39,6 +39,15 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
   "grpc.channelz_channel_is_internal_channel"
 
+/** This is the default value for whether or not to enable channelz. If
+ * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+#define GRPC_ENABLE_CHANNELZ_DEFAULT false
+
+/** This is the default value for TODO. If
+ * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+ * this default value. */
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0
+
 namespace grpc_core {
 namespace channelz {
 

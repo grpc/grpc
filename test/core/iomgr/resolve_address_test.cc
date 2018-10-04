@@ -251,7 +251,10 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl = gpr_cmdline_create("resolve address test");
   gpr_cmdline_add_string(cl, "resolver", "Resolver type (ares or native)",
                          &resolver_type);
-  gpr_cmdline_parse(cl, argc, argv);
+  // In case that there are more than one argument on the command line,
+  // --resolver will always be the first one, so only parse the first argument
+  // (other arguments may be unknown to cl)
+  gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
   const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",

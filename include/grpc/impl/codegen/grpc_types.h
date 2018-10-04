@@ -290,7 +290,7 @@ typedef struct {
  * oldest events from the buffer. The unit for this knob is bytes. Setting
  * it to zero causes channel tracing to be disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE \
-  "grpc.max_channel_trace_events_per_node"
+  "grpc.max_channel_trace_event_memory_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
  * level. Disabling channelz naturally disables channel tracing. The default
  * is for channelz to be disabled. */
