@@ -258,6 +258,20 @@ grpc_json* ServerNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  ChildRefsList listen_sockets;
+  grpc_server_populate_listen_sockets(server_, &listen_sockets);
+  if (!listen_sockets.empty()) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "listenSocket", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < listen_sockets.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                        listen_sockets[i]);
+    }
+  }
   return top_level_json;
 }
 
@@ -355,6 +369,23 @@ grpc_json* SocketNode::RenderJson() {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "keepAlivesSent", keepalives_sent_);
   }
+  return top_level_json;
+}
+
+ListenSocketNode::ListenSocketNode() : BaseNode(EntityType::kSocket) {}
+
+grpc_json* ListenSocketNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "socketId", uuid());
   return top_level_json;
 }
 

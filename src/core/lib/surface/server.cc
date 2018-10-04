@@ -54,6 +54,7 @@ struct listener {
                 size_t pollset_count);
   void (*destroy)(grpc_server* server, void* arg, grpc_closure* closure);
   struct listener* next;
+  intptr_t socket_uuid;
   grpc_closure destroy_done;
 };
 
@@ -1230,6 +1231,15 @@ void grpc_server_populate_server_sockets(
   gpr_mu_unlock(&s->mu_global);
 }
 
+void grpc_server_populate_listen_sockets(
+    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
+  gpr_mu_lock(&server->mu_global);
+  for (listener* l = server->listeners; l != nullptr; l = l->next) {
+    listen_sockets->push_back(l->socket_uuid);
+  }
+  gpr_mu_unlock(&server->mu_global);
+}
+
 void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {
   (void)done_arg;
   gpr_free(storage);
@@ -1363,11 +1373,13 @@ void grpc_server_add_listener(grpc_server* server, void* arg,
                                             grpc_pollset** pollsets,
                                             size_t pollset_count),
                               void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done)) {
+                                              grpc_closure* on_done),
+                              intptr_t socket_uuid) {
   listener* l = static_cast<listener*>(gpr_malloc(sizeof(listener)));
   l->arg = arg;
   l->start = start;
   l->destroy = destroy;
+  l->socket_uuid = socket_uuid;
   l->next = server->listeners;
   server->listeners = l;
 }
