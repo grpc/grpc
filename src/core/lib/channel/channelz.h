@@ -250,6 +250,15 @@ class SocketNode : public BaseNode {
   UniquePtr<char> peer_string_;
 };
 
+// Handles channelz bookkeeping for listen sockets
+class ListenSocketNode : public BaseNode {
+ public:
+  ListenSocketNode();
+  ~ListenSocketNode() override {}
+
+  grpc_json* RenderJson() override;
+};
+
 // Creation functions
 
 typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
