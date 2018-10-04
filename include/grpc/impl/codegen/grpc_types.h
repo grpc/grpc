@@ -289,18 +289,10 @@ typedef struct {
  * subchannel. The default is 0. If set to 0, channel tracing is disabled. */
 #define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE \
   "grpc.max_channel_trace_events_per_node"
-/** Note this is not a "channel arg" key. This is the default value for number
- * of trace events per node. If the above arg is set, it will override this
- * default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT 0
 /** If non-zero, gRPC library will track stats and information at at per channel
  * level. Disabling channelz naturally disables channel tracing. The default
  * is for channelz to be disabled. */
 #define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
-/** Note this is not a "channel arg" key. This is the default value for whether
- * or not to enable channelz. If the above arg is set, it will override this
- * default value. */
-#define GRPC_ENABLE_CHANNELZ_DEFAULT false
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
