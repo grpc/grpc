@@ -56,23 +56,71 @@ ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
   MutexLock lock(&mu_);
   entities_.push_back(node);
-  intptr_t uuid = entities_.size();
-  return uuid;
+  return ++uuid_generator_;
+}
+
+void ChannelzRegistry::MaybePerformCompaction() {
+  constexpr double kEmptinessTheshold = 1 / 3;
+  double emptiness_ratio =
+      double(num_empty_slots_) / double(entities_.capacity());
+  if (emptiness_ratio > kEmptinessTheshold) {
+    int front = 0;
+    for (size_t i = 0; i < entities_.size(); ++i) {
+      if (entities_[i] != nullptr) {
+        entities_[front++] = entities_[i];
+      }
+    }
+    for (int i = 0; i < num_empty_slots_; ++i) {
+      entities_.pop_back();
+    }
+    num_empty_slots_ = 0;
+  }
+}
+
+int ChannelzRegistry::FindByUuid(intptr_t target_uuid) {
+  int left = 0;
+  int right = entities_.size() - 1;
+  while (left <= right) {
+    int true_middle = left + (right - left) / 2;
+    int first_non_null = true_middle;
+    while (first_non_null < right && entities_[first_non_null] == nullptr) {
+      first_non_null++;
+    }
+    if (entities_[first_non_null] == nullptr) {
+      right = true_middle - 1;
+      continue;
+    }
+    intptr_t uuid = entities_[first_non_null]->uuid();
+    if (uuid == target_uuid) {
+      return first_non_null;
+    }
+    if (uuid < target_uuid) {
+      left = first_non_null + 1;
+    } else {
+      right = true_middle - 1;
+    }
+  }
+  return -1;
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
-  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  entities_[uuid - 1] = nullptr;
+  GPR_ASSERT(uuid <= uuid_generator_);
+  int idx = FindByUuid(uuid);
+  GPR_ASSERT(idx >= 0);
+  entities_[idx] = nullptr;
+  num_empty_slots_++;
+  MaybePerformCompaction();
 }
 
 BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
   MutexLock lock(&mu_);
-  if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+  if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  return entities_[uuid - 1];
+  int idx = FindByUuid(uuid);
+  return idx < 0 ? nullptr : entities_[idx];
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {

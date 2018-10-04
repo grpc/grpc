@@ -30,6 +30,10 @@
 namespace grpc_core {
 namespace channelz {
 
+namespace testing {
+class ChannelzRegistryPeer;
+}
+
 // singleton registry object to track all objects that are needed to support
 // channelz bookkeeping. All objects share globally distributed uuids.
 class ChannelzRegistry {
@@ -61,6 +65,7 @@ class ChannelzRegistry {
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  friend class testing::ChannelzRegistryPeer;
 
   ChannelzRegistry();
   ~ChannelzRegistry();
@@ -82,9 +87,18 @@ class ChannelzRegistry {
   char* InternalGetTopChannels(intptr_t start_channel_id);
   char* InternalGetServers(intptr_t start_server_id);
 
-  // protects entities_ and uuid_
+  // If entities_ has a over a certain threshold of empty slots, it will
+  // compact the vector and move all used slots to the front.
+  void MaybePerformCompaction();
+
+  // Performs binary search on entities_ to find the index with that uuid.
+  int FindByUuid(intptr_t uuid);
+
+  // protects members
   gpr_mu mu_;
   InlinedVector<BaseNode*, 20> entities_;
+  intptr_t uuid_generator_ = 0;
+  int num_empty_slots_ = 0;
 };
 
 }  // namespace channelz
