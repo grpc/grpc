@@ -287,8 +287,6 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
 
 TEST(ChannelTracerTest, TestEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelEvent). If that struct has been updated,
-  // this will too.
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -306,8 +304,6 @@ TEST(ChannelTracerTest, TestEviction) {
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelEvent). If that struct has been updated,
-  // this will too.
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -327,8 +323,6 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
 
 TEST(ChannelTracerTest, TestTotalEviction) {
   grpc_core::ExecCtx exec_ctx;
-  // This depends on sizeof(ChannelEvent). If that struct has been updated,
-  // this will too.
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
