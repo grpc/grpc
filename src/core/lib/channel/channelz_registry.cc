@@ -162,13 +162,16 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
 
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id) {
-  grpc_core::channelz::BaseNode* server_node =
+  grpc_core::channelz::BaseNode* base_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
-  if (server_node == nullptr ||
-      server_node->type() !=
-          grpc_core::channelz::BaseNode::EntityType::kServer) {
+  if (base_node == nullptr ||
+      base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer) {
     return nullptr;
   }
+  // This cast is ok since we have just checked to make sure base_node is
+  // actually a server node
+  grpc_core::channelz::ServerNode* server_node =
+      static_cast<grpc_core::channelz::ServerNode*>(base_node);
   return server_node->RenderServerSockets(start_socket_id);
 }
 

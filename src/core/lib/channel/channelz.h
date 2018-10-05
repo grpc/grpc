@@ -44,10 +44,11 @@
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
 #define GRPC_ENABLE_CHANNELZ_DEFAULT false
 
-/** This is the default value for number of trace events per node. If
- * GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE is set, it will override this
- * default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT 0
+/** This is the default value for the maximum amount of memory used by trace
+ * events per channel trace node. If
+ * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+ * this default value. */
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0
 
 namespace grpc_core {
 
@@ -83,12 +84,6 @@ class BaseNode : public RefCounted<BaseNode> {
   // All children must implement this function.
   virtual grpc_json* RenderJson() GRPC_ABSTRACT;
 
-  // Fat interface for functionality that will only ever be called on Servers.
-  // All other channelz entities will assert false.
-  virtual char* RenderServerSockets(intptr_t start_socket_id) {
-    GPR_ASSERT(false);
-  }
-
   // Renders the json and returns allocated string that must be freed by the
   // caller.
   char* RenderJsonString();
@@ -113,12 +108,8 @@ class CallCountingHelper {
   ~CallCountingHelper();
 
   void RecordCallStarted();
-  void RecordCallFailed() {
-    gpr_atm_no_barrier_fetch_add(&calls_failed_, static_cast<gpr_atm>(1));
-  }
-  void RecordCallSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, static_cast<gpr_atm>(1));
-  }
+  void RecordCallFailed();
+  void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
   void PopulateCallCounts(grpc_json* json);
@@ -127,10 +118,25 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
-  gpr_atm calls_started_ = 0;
-  gpr_atm calls_succeeded_ = 0;
-  gpr_atm calls_failed_ = 0;
-  gpr_atm last_call_started_millis_ = 0;
+  struct AtomicCounterData {
+    gpr_atm calls_started = 0;
+    gpr_atm calls_succeeded = 0;
+    gpr_atm calls_failed = 0;
+    gpr_atm last_call_started_millis = 0;
+  };
+
+  struct CounterData {
+    intptr_t calls_started = 0;
+    intptr_t calls_succeeded = 0;
+    intptr_t calls_failed = 0;
+    intptr_t last_call_started_millis = 0;
+  };
+
+  // collects the sharded data into one CounterData struct.
+  void CollectData(CounterData* out);
+
+  AtomicCounterData* per_cpu_counter_data_storage_ = nullptr;
+  size_t num_cores_ = 0;
 };
 
 // Handles channelz bookkeeping for channels
@@ -199,9 +205,7 @@ class ServerNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  // Server overrides this functionality to populate the JSON with
-  // the sockets it owns.
-  char* RenderServerSockets(intptr_t start_socket_id) override;
+  char* RenderServerSockets(intptr_t start_socket_id);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {

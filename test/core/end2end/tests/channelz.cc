@@ -199,10 +199,8 @@ static void run_one_request(grpc_end2end_test_config config,
 static void test_channelz(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-  arg.value.integer = true;
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
   grpc_channel_args args = {1, &arg};
 
   f = begin_test(config, "test_channelz", &args, &args);
@@ -270,12 +268,11 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
   grpc_arg arg[2];
-  arg[0].type = GRPC_ARG_INTEGER;
-  arg[0].key = const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-  arg[0].value.integer = 5;
-  arg[1].type = GRPC_ARG_INTEGER;
-  arg[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-  arg[1].value.integer = true;
+  arg[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+      1024 * 1024);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
   f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
