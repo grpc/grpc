@@ -68,6 +68,13 @@ RUN apt-get update && apt-get install -y \
     php5 php5-dev php-pear phpunit && apt-get clean
 
 
+##################
+# C# dependencies (needed to build grpc_csharp_ext)
+
+# Use cmake 3.6 from jessie-backports
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
