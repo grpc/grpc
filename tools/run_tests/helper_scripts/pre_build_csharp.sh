@@ -15,7 +15,7 @@
 
 set -ex
 
-# cd to gRPC csharp directory
+# cd to repository root
 cd "$(dirname "$0")/../../.."
 
 mkdir -p cmake/build

@@ -1021,6 +1021,8 @@ class CSharpLanguage(object):
         if self.platform == 'windows':
             return 'cmake/build/%s/Makefile' % self._cmake_arch_option
         else:
+            # no need to set x86 specific flags as run_tests.py
+            # currently forbids x86 C# builds on both Linux and MacOS.
             return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
