@@ -200,9 +200,8 @@ class EndpointPairFixture : public BaseFixture {
       }
 
       grpc_server_setup_transport(server_->c_server(), server_transport_,
-                                  nullptr, server_args);
-      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
-                                          0);
+                                  nullptr, server_args, 0);
+      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
     }
 
     /* create channel */
