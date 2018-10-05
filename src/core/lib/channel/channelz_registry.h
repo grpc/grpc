@@ -87,12 +87,12 @@ class ChannelzRegistry {
   char* InternalGetTopChannels(intptr_t start_channel_id);
   char* InternalGetServers(intptr_t start_server_id);
 
-  // If entities_ has a over a certain threshold of empty slots, it will
+  // If entities_ has over a certain threshold of empty slots, it will
   // compact the vector and move all used slots to the front.
-  void MaybePerformCompaction();
+  void MaybePerformCompactionLocked();
 
   // Performs binary search on entities_ to find the index with that uuid.
-  int FindByUuid(intptr_t uuid);
+  int FindByUuidLocked(intptr_t uuid);
 
   // protects members
   gpr_mu mu_;

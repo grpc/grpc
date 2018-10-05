@@ -59,7 +59,7 @@ intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
   return ++uuid_generator_;
 }
 
-void ChannelzRegistry::MaybePerformCompaction() {
+void ChannelzRegistry::MaybePerformCompactionLocked() {
   constexpr double kEmptinessTheshold = 1 / 3;
   double emptiness_ratio =
       double(num_empty_slots_) / double(entities_.capacity());
@@ -77,7 +77,7 @@ void ChannelzRegistry::MaybePerformCompaction() {
   }
 }
 
-int ChannelzRegistry::FindByUuid(intptr_t target_uuid) {
+int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid) {
   size_t left = 0;
   size_t right = entities_.size() - 1;
   while (left <= right) {
@@ -107,11 +107,11 @@ void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
   GPR_ASSERT(uuid <= uuid_generator_);
-  int idx = FindByUuid(uuid);
+  int idx = FindByUuidLocked(uuid);
   GPR_ASSERT(idx >= 0);
   entities_[idx] = nullptr;
   num_empty_slots_++;
-  MaybePerformCompaction();
+  MaybePerformCompactionLocked();
 }
 
 BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
@@ -119,7 +119,7 @@ BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
   if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  int idx = FindByUuid(uuid);
+  int idx = FindByUuidLocked(uuid);
   return idx < 0 ? nullptr : entities_[idx];
 }
 

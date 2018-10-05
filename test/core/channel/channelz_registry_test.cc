@@ -62,8 +62,8 @@ class ChannelzRegistryTest : public ::testing::Test {
 };
 
 TEST_F(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
-  UniquePtr<BaseNode> channelz_channel(
-      new BaseNode(BaseNode::EntityType::kTopLevelChannel));
+  UniquePtr<BaseNode> channelz_channel =
+      MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel);
   intptr_t uuid = channelz_channel->uuid();
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
@@ -75,8 +75,8 @@ TEST_F(ChannelzRegistryTest, UuidsAreIncreasing) {
   std::vector<UniquePtr<BaseNode>> channelz_channels;
   channelz_channels.reserve(10);
   for (int i = 0; i < 10; ++i) {
-    channelz_channels.push_back(UniquePtr<BaseNode>(
-        New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+    channelz_channels.push_back(
+        MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
   }
   for (size_t i = 1; i < channelz_channels.size(); ++i) {
     EXPECT_LT(channelz_channels[i - 1]->uuid(), channelz_channels[i]->uuid())
@@ -85,8 +85,8 @@ TEST_F(ChannelzRegistryTest, UuidsAreIncreasing) {
 }
 
 TEST_F(ChannelzRegistryTest, RegisterGetTest) {
-  UniquePtr<BaseNode> channelz_channel(
-      New<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
+  UniquePtr<BaseNode> channelz_channel =
+      MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel);
   BaseNode* retrieved = ChannelzRegistry::Get(channelz_channel->uuid());
   EXPECT_EQ(channelz_channel.get(), retrieved);
 }
@@ -94,16 +94,16 @@ TEST_F(ChannelzRegistryTest, RegisterGetTest) {
 TEST_F(ChannelzRegistryTest, RegisterManyItems) {
   std::vector<UniquePtr<BaseNode>> channelz_channels;
   for (int i = 0; i < 100; i++) {
-    channelz_channels.push_back(UniquePtr<BaseNode>(
-        New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+    channelz_channels.push_back(
+        MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
     BaseNode* retrieved = ChannelzRegistry::Get(channelz_channels[i]->uuid());
     EXPECT_EQ(channelz_channels[i].get(), retrieved);
   }
 }
 
 TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
-  UniquePtr<BaseNode> channelz_channel(
-      New<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
+  UniquePtr<BaseNode> channelz_channel =
+      MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel);
   // try to pull out a uuid that does not exist.
   BaseNode* nonexistant = ChannelzRegistry::Get(channelz_channel->uuid() + 1);
   EXPECT_EQ(nonexistant, nullptr);
@@ -121,10 +121,10 @@ TEST_F(ChannelzRegistryTest, TestCompaction) {
     std::vector<UniquePtr<BaseNode>> odd_channels;
     odd_channels.reserve(kLoopIterations);
     for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
-      odd_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+      even_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
+      odd_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
     }
   }
   // without compaction, there would be exactly kLoopIterations empty slots at
@@ -146,10 +146,10 @@ TEST_F(ChannelzRegistryTest, TestGetAfterCompaction) {
     std::vector<UniquePtr<BaseNode>> odd_channels;
     odd_channels.reserve(kLoopIterations);
     for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
-      odd_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+      even_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
+      odd_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
       odd_uuids.push_back(odd_channels[i]->uuid());
     }
   }
@@ -173,18 +173,18 @@ TEST_F(ChannelzRegistryTest, TestAddAfterCompaction) {
     std::vector<UniquePtr<BaseNode>> odd_channels;
     odd_channels.reserve(kLoopIterations);
     for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
-      odd_channels.push_back(UniquePtr<BaseNode>(
-          New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+      even_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
+      odd_channels.push_back(
+          MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
       odd_uuids.push_back(odd_channels[i]->uuid());
     }
   }
   std::vector<UniquePtr<BaseNode>> more_channels;
   more_channels.reserve(kLoopIterations);
   for (int i = 0; i < kLoopIterations; i++) {
-    more_channels.push_back(UniquePtr<BaseNode>(
-        New<BaseNode>(BaseNode::EntityType::kTopLevelChannel)));
+    more_channels.push_back(
+        MakeUnique<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
     BaseNode* retrieved = ChannelzRegistry::Get(more_channels[i]->uuid());
     EXPECT_EQ(more_channels[i].get(), retrieved);
   }
