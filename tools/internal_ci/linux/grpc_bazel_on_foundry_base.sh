@@ -38,28 +38,8 @@ export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instan
 
 # TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
-  --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="200" \
-  --test_output=errors  \
-  --verbose_failures=true  \
-  --keep_going  \
-  --remote_accept_cached=true  \
-  --spawn_strategy=remote  \
-  --remote_local_fallback=false  \
-  --remote_timeout=3600  \
-  --strategy=Javac=remote  \
-  --strategy=Closure=remote  \
-  --genrule_strategy=remote  \
-  --experimental_strict_action_env=true \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain \
-  --define GRPC_PORT_ISOLATED_RUNTIME=1 \
-  --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
-  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default \
-  --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
-  --platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --test_env=GRPC_VERBOSITY=debug \
-  --remote_instance_name=projects/grpc-testing/instances/default_instance \
+  --bazelrc=tools/remote_build/kokoro.bazelrc \
+  test \
   $@ \
   -- //test/... || FAILED="true"
 
