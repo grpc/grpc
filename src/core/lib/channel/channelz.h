@@ -100,12 +100,8 @@ class CallCountingHelper {
   ~CallCountingHelper();
 
   void RecordCallStarted();
-  void RecordCallFailed() {
-    gpr_atm_no_barrier_fetch_add(&calls_failed_, static_cast<gpr_atm>(1));
-  }
-  void RecordCallSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, static_cast<gpr_atm>(1));
-  }
+  void RecordCallFailed();
+  void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
   void PopulateCallCounts(grpc_json* json);
@@ -114,10 +110,25 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
-  gpr_atm calls_started_ = 0;
-  gpr_atm calls_succeeded_ = 0;
-  gpr_atm calls_failed_ = 0;
-  gpr_atm last_call_started_millis_ = 0;
+  struct AtomicCounterData {
+    gpr_atm calls_started = 0;
+    gpr_atm calls_succeeded = 0;
+    gpr_atm calls_failed = 0;
+    gpr_atm last_call_started_millis = 0;
+  };
+
+  struct CounterData {
+    intptr_t calls_started = 0;
+    intptr_t calls_succeeded = 0;
+    intptr_t calls_failed = 0;
+    intptr_t last_call_started_millis = 0;
+  };
+
+  // collects the sharded data into one CounterData struct.
+  void CollectData(CounterData* out);
+
+  AtomicCounterData* per_cpu_counter_data_storage_ = nullptr;
+  size_t num_cores_ = 0;
 };
 
 // Handles channelz bookkeeping for channels
