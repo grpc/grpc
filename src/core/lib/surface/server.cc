@@ -1009,13 +1009,14 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
 
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    arg = grpc_channel_args_find(args,
-                                 GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    size_t trace_events_per_node = grpc_channel_arg_get_integer(
-        arg, {GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT, 0, INT_MAX});
+    arg = grpc_channel_args_find(
+        args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
+    size_t channel_tracer_max_memory = grpc_channel_arg_get_integer(
+        arg,
+        {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
     server->channelz_server =
         grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
-            trace_events_per_node);
+            channel_tracer_max_memory);
     server->channelz_server->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
