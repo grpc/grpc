@@ -96,7 +96,6 @@ Status ChannelzService::GetSocket(ServerContext* unused,
                                   const channelz::v1::GetSocketRequest* request,
                                   channelz::v1::GetSocketResponse* response) {
   char* json_str = grpc_channelz_get_socket(request->socket_id());
-  gpr_log(GPR_ERROR, "%s", json_str);
   if (json_str == nullptr) {
     return Status(NOT_FOUND, "No object found for that SocketId");
   }

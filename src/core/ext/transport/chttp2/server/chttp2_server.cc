@@ -234,6 +234,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   GPR_ASSERT(state->shutdown);
   grpc_handshake_manager_pending_list_shutdown_all(
       state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
+  state->channelz_listen_socket.reset();
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
