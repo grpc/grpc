@@ -104,7 +104,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
-  uint32_t socket_uuid;
+  intptr_t socket_uuid;
 };
 
 typedef struct shutdown_tag {
