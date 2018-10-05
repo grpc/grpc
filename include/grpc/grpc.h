@@ -209,23 +209,6 @@ GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
 GRPCAPI void grpc_resolver_factory_register(const char* scheme,
                                             grpc_resolver_factory factory);
 
-/**
- * Destroy \a observer.
- * This function should be called on resolver destruction.
- * No \a observer methods must be used after object is destroyed.
- */
-GRPCAPI void grpc_resolver_observer_destroy(grpc_resolver_observer* observer);
-
-/**
- * Set new list of \a addresses to \a observer.
- */
-GRPCAPI void grpc_resolver_observer_set_result(
-    grpc_resolver_observer* observer, const grpc_resolver_result* result);
-
-GRPCAPI void grpc_resolver_observer_set_error(grpc_resolver_observer* observer,
-                                              const char* file, int line,
-                                              grpc_slice desc);
-
 /** Create a call given a grpc_channel, in order to call 'method'. All
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.

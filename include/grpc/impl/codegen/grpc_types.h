@@ -58,17 +58,10 @@ typedef struct grpc_completion_queue grpc_completion_queue;
 /** An alarm associated with a completion queue. */
 typedef struct grpc_alarm grpc_alarm;
 
-/** The Resolver Observer interface allows providing gRPC updates list of
- * resolved addresses. */
-typedef struct grpc_resolver_observer grpc_resolver_observer;
-
 /** Arguments for the resolve operation. */
 typedef struct grpc_resolver_args {
   /** The URI of a target used for the resolving. */
   const char* target_uri;
-  /** The Observer is used for providing new resolving results to the caller.
-      It's safe to destroy observer at any moment of time. */
-  grpc_resolver_observer* observer;
 } grpc_resolver_args;
 
 /** A resolved address alongside any LB related information associated with it.
@@ -93,29 +86,57 @@ typedef struct grpc_resolver_result {
   const char* json_service_config;
 } grpc_resolver_result;
 
+typedef void (*grpc_resolver_next_cb)(void* user_data,
+                                      const grpc_resolver_result* result,
+                                      grpc_status_code status,
+                                      const char* error_details);
+
 /** The Resolver interfaces.
-    THREAD SAFETY: All callbacks for the single resolver object will be called
-    from a single thread. */
+    THREAD SAFETY: All callbacks for the single resolver object will be
+   called from a single thread. */
 typedef struct grpc_resolver {
   /** User data which will be set as first parameter of the methods below. */
-  void* user_data;
+  void* resolver_state;
+  /** Requests a callback when a new result becomes available. */
+  void (*next)(void* resolver_state, grpc_resolver_next_cb cb, void* user_data);
   /** Request re-resolution of the addresses. */
-  void (*request_reresolution)(void* user_data);
+  void (*request_reresolution)(void* resolver_state);
+  /** Request shutdown of the resolver. */
+  void (*shutdown)(void* resolver_state);
   /** Destroy the user data. */
-  void (*destroy)(void* user_data);
+  void (*destroy)(void* resolver_state);
 } grpc_resolver;
+
+typedef void (*grpc_resolver_creation_cb)(void* user_data,
+                                          grpc_resolver resolver,
+                                          grpc_status_code status,
+                                          const char* error_details);
 
 /** The Resolver Factory interface creates Resolver objects. */
 typedef struct grpc_resolver_factory {
   /** User data which will be set as first parameter of the methods below. */
-  void* user_data;
-  /** Create new resolver with \a args. The implementations populates fields of
-      \a resolver.
-      THREAD SAFETY: create_resolver method can be called concurrently from
-      multiple threads. */
-  grpc_resolver (*create_resolver)(void* user_data, grpc_resolver_args* args);
+  void* factory_state;
+  /** The implementation of this method has to be non-blocking, but can
+     be performed synchronously or asynchronously.
+
+     If processing occurs synchronously, returns non-zero and populates
+     \a resolver, \a status, and \a error_details.  In this case,
+     the caller takes ownership of error_details.
+
+     If processing occurs asynchronously, returns zero and invokes \a cb
+     when processing is completed.  \a user_data will be passed as the
+     first parameter of the callback.  NOTE: \a cb MUST be invoked in a
+     different thread, not from the thread in which \a create_resolver() is
+     invoked.
+
+     THREAD SAFETY: create_resolver method can be called concurrently from
+     multiple threads. */
+  int (*create_resolver)(void* factory_state, grpc_resolver_args* args,
+                         grpc_resolver_creation_cb cb, void* user_data,
+                         grpc_resolver* resolver, grpc_status_code* status,
+                         const char** error_details);
   /** Destroy the user data. */
-  void (*destroy)(void* user_data);
+  void (*destroy)(void* factory_state);
 } grpc_resolver_factory;
 
 /** The Channel interface allows creation of Call objects. */
