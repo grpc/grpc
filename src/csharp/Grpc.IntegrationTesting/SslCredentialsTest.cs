@@ -91,7 +91,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: false,
-                clientCertRequestType: SslClientCertificateRequestType.DontRequestClientCertificate);
+                clientCertRequestType: SslClientCertificateRequestType.DontRequest);
 
             await CheckAccepted(expectPeerAuthenticated: false);
         }
@@ -101,7 +101,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: true,
-                clientCertRequestType: SslClientCertificateRequestType.DontRequestClientCertificate);
+                clientCertRequestType: SslClientCertificateRequestType.DontRequest);
 
             await CheckAccepted(expectPeerAuthenticated: false);
         }
@@ -111,7 +111,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: false,
-                clientCertRequestType: SslClientCertificateRequestType.RequestClientCertificateButDontVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestButDontVerify);
 
             await CheckAccepted(expectPeerAuthenticated: false);
         }
@@ -121,7 +121,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: false,
-                clientCertRequestType: SslClientCertificateRequestType.RequestClientCertificateAndVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndVerify);
 
             await CheckAccepted(expectPeerAuthenticated: false);
         }
@@ -131,7 +131,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: true,
-                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireButDontVerify);
 
             await CheckAccepted(expectPeerAuthenticated: true);
             await CheckAuthContextIsPopulated();
@@ -142,7 +142,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: true,
-                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireAndVerify);
 
             await CheckAccepted(expectPeerAuthenticated: true);
             await CheckAuthContextIsPopulated();
@@ -153,7 +153,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: false,
-                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireButDontVerify);
 
             CheckRejected();
         }
@@ -163,7 +163,7 @@ namespace Grpc.IntegrationTesting
         {
             InitClientAndServer(
                 clientAddKeyCertPair: false,
-                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify);
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireAndVerify);
 
             CheckRejected();
         }
@@ -172,20 +172,20 @@ namespace Grpc.IntegrationTesting
         public void Constructor_LegacyForceClientAuth()
         {
             var creds = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
-            Assert.AreEqual(SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify, creds.ClientCertificateRequest);
+            Assert.AreEqual(SslClientCertificateRequestType.RequestAndRequireAndVerify, creds.ClientCertificateRequest);
 
             var creds2 = new SslServerCredentials(new[] { keyCertPair }, rootCert, false);
-            Assert.AreEqual(SslClientCertificateRequestType.DontRequestClientCertificate, creds2.ClientCertificateRequest);
+            Assert.AreEqual(SslClientCertificateRequestType.DontRequest, creds2.ClientCertificateRequest);
         }
 
         [Test]
         public void Constructor_NullRootCerts()
         {
             var keyCertPairs = new[] { keyCertPair };
-            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.DontRequestClientCertificate));
-            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestClientCertificateAndVerify));
-            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify));
-            Assert.Throws(typeof(ArgumentNullException), () => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify));
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.DontRequest));
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndVerify));
+            Assert.DoesNotThrow(() => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireButDontVerify));
+            Assert.Throws(typeof(ArgumentNullException), () => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireAndVerify));
         }
 
         private async Task CheckAccepted(bool expectPeerAuthenticated)

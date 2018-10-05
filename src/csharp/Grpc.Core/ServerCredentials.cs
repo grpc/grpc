@@ -68,7 +68,7 @@ namespace Grpc.Core
         /// all. (A client may present a self signed or signed certificate or not
         /// present a certificate at all and any of those option would be accepted)
         /// </summary>
-        DontRequestClientCertificate = 0,
+        DontRequest = 0,
         /// <summary>
         /// Server requests client certificate but does not enforce that the client
         /// presents a certificate.
@@ -78,7 +78,7 @@ namespace Grpc.Core
         /// The client's key certificate pair must be valid for the SSL connection to
         /// be established.
         ///</summary>
-        RequestClientCertificateButDontVerify,
+        RequestButDontVerify,
         /// <summary>
         /// Server requests client certificate but does not enforce that the client
         /// presents a certificate.
@@ -89,7 +89,7 @@ namespace Grpc.Core
         /// The client's key certificate pair must be valid for the SSL connection to
         /// be established.
         /// </summary>
-        RequestClientCertificateAndVerify,
+        RequestAndVerify,
         /// <summary>
         /// Server requests client certificate and enforces that the client presents a
         /// certificate.
@@ -99,7 +99,7 @@ namespace Grpc.Core
         /// The client's key certificate pair must be valid for the SSL connection to
         /// be established.
         ///</summary>
-        RequestAndRequireClientCertificateButDontVerify,
+        RequestAndRequireButDontVerify,
         /// <summary>
         /// Server requests client certificate and enforces that the client presents a
         /// certificate.
@@ -109,7 +109,7 @@ namespace Grpc.Core
         /// The client's key certificate pair must be valid for the SSL connection to
         /// be established.
         /// </summary>
-        RequestAndRequireClientCertificateAndVerify,
+        RequestAndRequireAndVerify,
     }
     /// <summary>
     /// Server-side SSL credentials.
@@ -127,7 +127,7 @@ namespace Grpc.Core
         /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
         /// <param name="forceClientAuth">Deprecated, use clientCertificateRequest overload instead.</param>
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
-            : this(keyCertificatePairs, rootCertificates, forceClientAuth ? SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify : SslClientCertificateRequestType.DontRequestClientCertificate)
+            : this(keyCertificatePairs, rootCertificates, forceClientAuth ? SslClientCertificateRequestType.RequestAndRequireAndVerify : SslClientCertificateRequestType.DontRequest)
         {
         }
 
@@ -142,7 +142,7 @@ namespace Grpc.Core
             this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
             GrpcPreconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
                 "At least one KeyCertificatePair needs to be provided.");
-            if (clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify)
+            if (clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireAndVerify)
             {
                 GrpcPreconditions.CheckNotNull(rootCertificates,
                     "Cannot require and verify client certificate unless you provide rootCertificates.");
@@ -157,7 +157,7 @@ namespace Grpc.Core
         /// (client certificate won't be requested and checked by the server at all).
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
-        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, SslClientCertificateRequestType.DontRequestClientCertificate)
+        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, SslClientCertificateRequestType.DontRequest)
         {
         }
 
@@ -190,7 +190,7 @@ namespace Grpc.Core
         {
             get
             {
-                return this.clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify;
+                return this.clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireAndVerify;
             }
         }
 
