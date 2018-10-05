@@ -1231,7 +1231,7 @@ void grpc_server_populate_server_sockets(
 }
 
 void grpc_server_populate_listen_sockets(
-    grpc_server* server, grpc_core::ChildRefsList* listen_sockets) {
+    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
   gpr_mu_lock(&server->mu_global);
   for (listener* l = server->listeners; l != nullptr; l = l->next) {
     listen_sockets->push_back(l->socket_uuid);
