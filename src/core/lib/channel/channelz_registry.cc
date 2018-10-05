@@ -78,11 +78,11 @@ void ChannelzRegistry::MaybePerformCompaction() {
 }
 
 int ChannelzRegistry::FindByUuid(intptr_t target_uuid) {
-  int left = 0;
-  int right = entities_.size() - 1;
+  size_t left = 0;
+  size_t right = entities_.size() - 1;
   while (left <= right) {
-    int true_middle = left + (right - left) / 2;
-    int first_non_null = true_middle;
+    size_t true_middle = left + (right - left) / 2;
+    size_t first_non_null = true_middle;
     while (first_non_null < right && entities_[first_non_null] == nullptr) {
       first_non_null++;
     }
