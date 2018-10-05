@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -51,6 +52,7 @@ static void httpcli_ssl_destroy(grpc_security_connector* sc) {
 }
 
 static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc);
