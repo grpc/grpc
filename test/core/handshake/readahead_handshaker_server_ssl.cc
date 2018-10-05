@@ -75,7 +75,6 @@ static grpc_handshaker* readahead_handshaker_create() {
 
 static void readahead_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* hf, const grpc_channel_args* args,
-    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(handshake_mgr, readahead_handshaker_create());
 }

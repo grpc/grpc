@@ -347,8 +347,7 @@ static void init_shared_resources(const char* handshaker_service_url) {
 
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
-    const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self) {
+    const char* handshaker_service_url, bool is_client, tsi_handshaker** self) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
