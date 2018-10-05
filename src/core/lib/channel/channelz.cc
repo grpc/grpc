@@ -68,41 +68,40 @@ CallCountingHelper::~CallCountingHelper() {
 void CallCountingHelper::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(
       &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_started_,
+           .calls_started,
       static_cast<gpr_atm>(1));
   gpr_atm_no_barrier_store(
       &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .last_call_started_millis_,
+           .last_call_started_millis,
       (gpr_atm)ExecCtx::Get()->Now());
 }
 
 void CallCountingHelper::RecordCallFailed() {
   gpr_atm_no_barrier_fetch_add(
       &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_failed_,
+           .calls_failed,
       static_cast<gpr_atm>(1));
 }
 
 void CallCountingHelper::RecordCallSucceeded() {
   gpr_atm_no_barrier_fetch_add(
       &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
-           .calls_succeeded_,
+           .calls_succeeded,
       static_cast<gpr_atm>(1));
 }
 
 void CallCountingHelper::CollectData(CounterData* out) {
-  memset(out, 0, sizeof(*out));
   for (size_t core = 0; core < num_cores_; ++core) {
-    out->calls_started_ += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_started_);
-    out->calls_succeeded_ += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_succeeded_);
-    out->calls_failed_ += gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].calls_failed_);
+    out->calls_started += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_started);
+    out->calls_succeeded += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_succeeded);
+    out->calls_failed += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_failed);
     gpr_atm last_call = gpr_atm_no_barrier_load(
-        &per_cpu_counter_data_storage_[core].last_call_started_millis_);
-    if (last_call > out->last_call_started_millis_) {
-      out->last_call_started_millis_ = last_call;
+        &per_cpu_counter_data_storage_[core].last_call_started_millis);
+    if (last_call > out->last_call_started_millis) {
+      out->last_call_started_millis = last_call;
     }
   }
 }
@@ -111,20 +110,20 @@ void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
   CounterData data;
   CollectData(&data);
-  if (data.calls_started_ != 0) {
+  if (data.calls_started != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsStarted", data.calls_started_);
+        json, json_iterator, "callsStarted", data.calls_started);
   }
-  if (data.calls_succeeded_ != 0) {
+  if (data.calls_succeeded != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsSucceeded", data.calls_succeeded_);
+        json, json_iterator, "callsSucceeded", data.calls_succeeded);
   }
-  if (data.calls_failed_) {
+  if (data.calls_failed) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsFailed", data.calls_failed_);
+        json, json_iterator, "callsFailed", data.calls_failed);
   }
-  if (data.calls_started_ != 0) {
-    gpr_timespec ts = grpc_millis_to_timespec(data.last_call_started_millis_,
+  if (data.calls_started != 0) {
+    gpr_timespec ts = grpc_millis_to_timespec(data.last_call_started_millis,
                                               GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",

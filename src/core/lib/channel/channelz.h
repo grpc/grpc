@@ -102,17 +102,17 @@ class CallCountingHelper {
   friend class testing::CallCountingHelperPeer;
 
   struct AtomicCounterData {
-    gpr_atm calls_started_ = 0;
-    gpr_atm calls_succeeded_ = 0;
-    gpr_atm calls_failed_ = 0;
-    gpr_atm last_call_started_millis_ = 0;
+    gpr_atm calls_started = 0;
+    gpr_atm calls_succeeded = 0;
+    gpr_atm calls_failed = 0;
+    gpr_atm last_call_started_millis = 0;
   };
 
   struct CounterData {
-    intptr_t calls_started_ = 0;
-    intptr_t calls_succeeded_ = 0;
-    intptr_t calls_failed_ = 0;
-    intptr_t last_call_started_millis_ = 0;
+    intptr_t calls_started = 0;
+    intptr_t calls_succeeded = 0;
+    intptr_t calls_failed = 0;
+    intptr_t last_call_started_millis = 0;
   };
 
   // collects the sharded data into one CounterData struct.
