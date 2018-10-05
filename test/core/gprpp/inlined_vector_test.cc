@@ -264,6 +264,32 @@ TEST(InlinedVectorTest, MoveAssignmentAllocatedAllocated) {
   EXPECT_EQ(move_assigned.data(), old_data);
 }
 
+TEST(InlinedVectorTest, PopBackInlined) {
+  InlinedVector<UniquePtr<int>, 2> v;
+  // Add two elements, pop one out
+  v.push_back(MakeUnique<int>(3));
+  EXPECT_EQ(1UL, v.size());
+  EXPECT_EQ(3, *v[0]);
+  v.push_back(MakeUnique<int>(5));
+  EXPECT_EQ(2UL, v.size());
+  EXPECT_EQ(5, *v[1]);
+  v.pop_back();
+  EXPECT_EQ(1UL, v.size());
+}
+
+TEST(InlinedVectorTest, PopBackAllocated) {
+  const int kInlinedSize = 2;
+  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  // Add elements to ensure allocated backing.
+  for (size_t i = 0; i < kInlinedSize + 1; ++i) {
+    v.push_back(MakeUnique<int>(3));
+    EXPECT_EQ(i + 1, v.size());
+  }
+  size_t sz = v.size();
+  v.pop_back();
+  EXPECT_EQ(sz - 1, v.size());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

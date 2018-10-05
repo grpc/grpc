@@ -92,7 +92,7 @@ int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid) {
     }
     intptr_t uuid = entities_[first_non_null]->uuid();
     if (uuid == target_uuid) {
-      return first_non_null;
+      return int(first_non_null);
     }
     if (uuid < target_uuid) {
       left = first_non_null + 1;
