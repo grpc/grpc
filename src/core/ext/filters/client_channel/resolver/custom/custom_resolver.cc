@@ -52,44 +52,34 @@ namespace {
 
 class PluginResolverFactory;
 
-grpc_error* grpc_error_from_status(grpc_status_code status,
-                                   const char* error_details) {
-  if (status == GRPC_STATUS_OK) {
-    return GRPC_ERROR_NONE;
-  }
-  return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-                            GRPC_ERROR_INT_GRPC_STATUS, status);
-}
-
 struct OnCreationArg {
-  OnCreationArg(RefCountedPtr<Resolver> resolver, grpc_resolver resolver_plugin,
-                grpc_error* error, grpc_closure_scheduler* scheduler);
+  OnCreationArg(RefCountedPtr<Resolver> resolver,
+                grpc_resolver* resolver_plugin, grpc_error* error,
+                grpc_closure_scheduler* scheduler);
 
   RefCountedPtr<Resolver> resolver;
-  grpc_resolver resolver_plugin;
+  grpc_resolver* resolver_plugin;
   grpc_error* error;
   grpc_closure closure;
 };
 
 class PluginResolver : public Resolver {
  public:
-  PluginResolver(const grpc_resolver_factory& factory,
-                 const ResolverArgs& args);
+  PluginResolver(grpc_resolver_factory* factory, const ResolverArgs& args);
 
   void NextLocked(grpc_channel_args** result,
                   grpc_closure* on_complete) override;
   void RequestReresolutionLocked() override;
+  static void OnCreationLocked(void* user_data, grpc_error* error);
 
  private:
-  friend struct OnCreationArg;
   virtual ~PluginResolver();
 
-  void InitLocked(const grpc_resolver& resolver, grpc_error* error);
-  static void OnCreation(void* user_data, grpc_resolver resolver,
-                         grpc_status_code status, const char* error_details);
-  static void OnCreationLocked(void* user_data, grpc_error* error);
+  void InitLocked(grpc_resolver* resolver, grpc_error* error);
+  static void OnCreation(void* user_data, grpc_resolver* resolver,
+                         const char* error_details);
   static void OnNextResult(void* user_data, const grpc_resolver_result* result,
-                           grpc_status_code status, const char* error_details);
+                           const char* error_details);
   void StartNextLocked();
   void ShutdownLocked() override;
 
@@ -97,7 +87,7 @@ class PluginResolver : public Resolver {
   bool resolver_initialized_ = false;
   bool next_requested_ = false;
   bool shutdown_requested_ = false;
-  grpc_resolver resolver_;
+  grpc_resolver* resolver_ = nullptr;
   grpc_error* resolver_error_ = nullptr;
 
   // Base channel arguments.
@@ -108,39 +98,43 @@ class PluginResolver : public Resolver {
   grpc_channel_args** target_result_ = nullptr;
 };
 
-PluginResolver::PluginResolver(const grpc_resolver_factory& factory,
+PluginResolver::PluginResolver(grpc_resolver_factory* factory,
                                const ResolverArgs& args)
     : Resolver(args.combiner),
       channel_args_(grpc_channel_args_copy(args.args)) {
   memset(&resolver_, 0, sizeof(resolver_));
   grpc_resolver_args api_args = {args.target};
-  grpc_resolver resolver;
-  memset(&resolver, 0, sizeof(resolver));
-  grpc_status_code status = GRPC_STATUS_OK;
+  grpc_resolver* resolver = nullptr;
   const char* error_details = nullptr;
-  if (!factory.create_resolver(factory.factory_state, &api_args, OnCreation,
-                               this, &resolver, &status, &error_details)) {
+  if (!factory->create_resolver(factory, &api_args, OnCreation, this, &resolver,
+                                &error_details)) {
     Ref(DEBUG_LOCATION, "grpc_resolver_plugin_create_resolver").release();
     return;
   }
-  InitLocked(resolver, grpc_error_from_status(status, error_details));
+  grpc_error* error = nullptr;
+  if (resolver == nullptr) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details);
+  }
+  InitLocked(resolver, error);
   gpr_free(const_cast<char*>(error_details));
 }
 
 PluginResolver::~PluginResolver() {
   grpc_channel_args_destroy(channel_args_);
   if (resolver_error_ == GRPC_ERROR_NONE) {
-    resolver_.destroy(resolver_.resolver_state);
+    resolver_->destroy(resolver_);
   }
   GRPC_ERROR_UNREF(resolver_error_);
 }
 
-void PluginResolver::OnCreation(void* user_data, grpc_resolver resolver,
-                                grpc_status_code status,
+void PluginResolver::OnCreation(void* user_data, grpc_resolver* resolver,
                                 const char* error_details) {
   auto* plugin_resolver = static_cast<PluginResolver*>(user_data);
-  New<OnCreationArg>(plugin_resolver->Ref(), resolver,
-                     grpc_error_from_status(status, error_details),
+  grpc_error* error = nullptr;
+  if (resolver == nullptr) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details);
+  }
+  New<OnCreationArg>(plugin_resolver->Ref(), resolver, error,
                      grpc_combiner_scheduler(plugin_resolver->combiner()));
   plugin_resolver->Unref(DEBUG_LOCATION, "grpc_resolver_creation_cb");
 }
@@ -152,14 +146,17 @@ void PluginResolver::OnCreationLocked(void* user_data, grpc_error* error) {
   Delete(arg);
 }
 
-void PluginResolver::InitLocked(const grpc_resolver& resolver,
-                                grpc_error* error) {
+void PluginResolver::InitLocked(grpc_resolver* resolver, grpc_error* error) {
   resolver_initialized_ = true;
   resolver_ = resolver;
   resolver_error_ = error;
-  if (next_requested_) StartNextLocked();
   if (shutdown_requested_ && resolver_error_ == GRPC_ERROR_NONE) {
-    resolver_.shutdown(resolver_.resolver_state);
+    resolver_->shutdown(resolver_);
+    if (next_requested_) {
+      GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CANCELLED);
+    }
+  } else if (next_requested_) {
+    StartNextLocked();
   }
 }
 
@@ -175,7 +172,7 @@ void PluginResolver::NextLocked(grpc_channel_args** target_result,
 void PluginResolver::StartNextLocked() {
   if (resolver_error_ == GRPC_ERROR_NONE) {
     auto* user_data = Ref(DEBUG_LOCATION, "grpc_resolver_next").release();
-    resolver_.next(resolver_.resolver_state, OnNextResult, user_data);
+    resolver_->next(resolver_, OnNextResult, user_data);
   } else {
     auto* next_completion = next_completion_;
     next_completion_ = nullptr;
@@ -185,19 +182,14 @@ void PluginResolver::StartNextLocked() {
 
 void PluginResolver::OnNextResult(void* user_data,
                                   const grpc_resolver_result* result,
-                                  grpc_status_code status,
                                   const char* error_details) {
   auto* resolver = static_cast<PluginResolver*>(user_data);
   grpc_error* error = GRPC_ERROR_NONE;
-  if (status == GRPC_STATUS_OK) {
+  if (result != nullptr) {
     *resolver->target_result_ =
-        add_resolver_result_to_channel_args(resolver->channel_args_, result);
-  } else if (resolver->shutdown_requested_ && status == GRPC_STATUS_CANCELLED) {
-    error = GRPC_ERROR_CANCELLED;
+        AddResolverResultToChannelArgs(resolver->channel_args_, result);
   } else {
-    error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details),
-                           GRPC_ERROR_INT_GRPC_STATUS, status);
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_details);
   }
   auto* next_completion = resolver->next_completion_;
   resolver->next_completion_ = nullptr;
@@ -207,19 +199,19 @@ void PluginResolver::OnNextResult(void* user_data,
 
 void PluginResolver::RequestReresolutionLocked() {
   if (resolver_initialized_ && resolver_error_ == GRPC_ERROR_NONE) {
-    resolver_.request_reresolution(resolver_.resolver_state);
+    resolver_->request_reresolution(resolver_);
   }
 }
 
 void PluginResolver::ShutdownLocked() {
   shutdown_requested_ = true;
   if (resolver_initialized_ && resolver_error_ == GRPC_ERROR_NONE) {
-    resolver_.shutdown(resolver_.resolver_state);
+    resolver_->shutdown(resolver_);
   }
 }
 
 OnCreationArg::OnCreationArg(RefCountedPtr<Resolver> resolver,
-                             grpc_resolver resolver_plugin, grpc_error* error,
+                             grpc_resolver* resolver_plugin, grpc_error* error,
                              grpc_closure_scheduler* scheduler)
     : resolver(std::move(resolver)),
       resolver_plugin(resolver_plugin),
@@ -236,11 +228,10 @@ OnCreationArg::OnCreationArg(RefCountedPtr<Resolver> resolver,
 class PluginResolverFactory : public ResolverFactory,
                               public grpc_resolver_factory {
  public:
-  PluginResolverFactory(const char* scheme,
-                        const grpc_resolver_factory& factory)
+  PluginResolverFactory(const char* scheme, grpc_resolver_factory* factory)
       : scheme_(gpr_strdup(scheme)), factory_(factory) {}
 
-  ~PluginResolverFactory() { factory_.destroy(factory_.factory_state); }
+  ~PluginResolverFactory() { factory_->destroy(factory_); }
 
   OrphanablePtr<Resolver> CreateResolver(
       const ResolverArgs& args) const override {
@@ -250,12 +241,8 @@ class PluginResolverFactory : public ResolverFactory,
   const char* scheme() const override { return scheme_.get(); }
 
  private:
-  static void OnResolverCreation(void* user_data, const grpc_resolver* resolver,
-                                 grpc_status_code status,
-                                 const char* error_details) {}
-
   UniquePtr<char> scheme_;
-  grpc_resolver_factory factory_;
+  grpc_resolver_factory* factory_;
 };
 
 grpc_lb_addresses* grpc_lb_addresses_create_from_resolver_result(
@@ -280,7 +267,7 @@ grpc_lb_addresses* grpc_lb_addresses_create_from_resolver_result(
 }  // namespace
 
 // TODO(elessar): Cover by tests.
-grpc_channel_args* add_resolver_result_to_channel_args(
+grpc_channel_args* AddResolverResultToChannelArgs(
     grpc_channel_args* base_args, const grpc_resolver_result* result) {
   InlinedVector<const char*, 2> args_to_remove;
   InlinedVector<grpc_arg, 3> new_args;
@@ -315,7 +302,7 @@ grpc_channel_args* add_resolver_result_to_channel_args(
 }  // namespace grpc_core
 
 void grpc_resolver_factory_register(const char* scheme,
-                                    grpc_resolver_factory factory) {
+                                    grpc_resolver_factory* factory) {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
       grpc_core::UniquePtr<grpc_core::ResolverFactory>(
           grpc_core::New<grpc_core::PluginResolverFactory>(scheme, factory)));
