@@ -51,9 +51,11 @@ static void grpc_handshaker_factory_list_register(
 
 static void grpc_handshaker_factory_list_add_handshakers(
     grpc_handshaker_factory_list* list, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   for (size_t i = 0; i < list->num_factories; ++i) {
-    grpc_handshaker_factory_add_handshakers(list->list[i], args, handshake_mgr);
+    grpc_handshaker_factory_add_handshakers(list->list[i], args,
+                                            interested_parties, handshake_mgr);
   }
 }
 
@@ -91,7 +93,9 @@ void grpc_handshaker_factory_register(bool at_start,
 
 void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
                           const grpc_channel_args* args,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr) {
   grpc_handshaker_factory_list_add_handshakers(
-      &g_handshaker_factory_lists[handshaker_type], args, handshake_mgr);
+      &g_handshaker_factory_lists[handshaker_type], args, interested_parties,
+      handshake_mgr);
 }

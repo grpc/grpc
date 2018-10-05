@@ -239,6 +239,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
                               const grpc_channel_args* channel_args,
                               bool is_client) {
   bool enable_bdp = true;
+  bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
   size_t i;
   int j;
 
@@ -341,8 +342,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
       }
     } else if (0 ==
                strcmp(channel_args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
-      t->channelz_socket =
-          grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+      channelz_enabled = grpc_channel_arg_get_bool(
+          &channel_args->args[i], GRPC_ENABLE_CHANNELZ_DEFAULT);
     } else {
       static const struct {
         const char* channel_arg_name;
@@ -392,6 +393,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
         }
       }
     }
+  }
+  if (channelz_enabled) {
+    t->channelz_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
   }
   return enable_bdp;
 }
