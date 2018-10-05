@@ -83,12 +83,6 @@ class BaseNode : public RefCounted<BaseNode> {
   // All children must implement this function.
   virtual grpc_json* RenderJson() GRPC_ABSTRACT;
 
-  // Fat interface for functionality that will only ever be called on Servers.
-  // All other channelz entities will assert false.
-  virtual char* RenderServerSockets(intptr_t start_socket_id) {
-    GPR_ASSERT(false);
-  }
-
   // Renders the json and returns allocated string that must be freed by the
   // caller.
   char* RenderJsonString();
@@ -199,9 +193,7 @@ class ServerNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  // Server overrides this functionality to populate the JSON with
-  // the sockets it owns.
-  char* RenderServerSockets(intptr_t start_socket_id) override;
+  char* RenderServerSockets(intptr_t start_socket_id);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
