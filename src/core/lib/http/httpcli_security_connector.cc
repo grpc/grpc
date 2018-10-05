@@ -189,8 +189,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_handshake_manager_create();
-  grpc_handshakers_add(HANDSHAKER_CLIENT, &args,
-                       nullptr /* interested_parties */, c->handshake_mgr);
+  grpc_handshakers_add(HANDSHAKER_CLIENT, &args, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
       c->handshake_mgr, nullptr /* interested_parties */, tcp,
       nullptr /* channel_args */, deadline, nullptr /* acceptor */,

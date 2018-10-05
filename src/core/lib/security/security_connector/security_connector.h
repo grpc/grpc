@@ -63,7 +63,6 @@ struct grpc_security_connector {
   const grpc_security_connector_vtable* vtable;
   gpr_refcount refcount;
   const char* url_scheme;
-  grpc_pollset_set* interested_parties;
 };
 
 /* Refcounting. */
@@ -106,10 +105,6 @@ grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
 /* Util to find the connector from channel args. */
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* args);
-
-/* Util to set the interested_parties whose ownership is not transferred. */
-void grpc_security_connector_set_interested_parties(
-    grpc_security_connector* sc, grpc_pollset_set* interested_parties);
 
 /* --- channel_security_connector object. ---
 

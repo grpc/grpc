@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -52,7 +51,6 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
  *   "host:port".
  * - is_client: boolean value indicating if the handshaker is used at the client
  *   (is_client = true) or server (is_client = false) side.
- * - interested_parties: set of pollsets interested in this connection.
  * - self: address of ALTS TSI handshaker instance to be returned from the
  *   method.
  *
@@ -60,8 +58,7 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
  */
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
-    const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self);
+    const char* handshaker_service_url, bool is_client, tsi_handshaker** self);
 
 /**
  * This method handles handshaker response returned from ALTS handshaker

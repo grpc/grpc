@@ -102,8 +102,8 @@ grpc_channel* grpc_channel_create_with_builder(
 
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
-  size_t channel_tracer_max_nodes = 0;  // default to off
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
+  size_t channel_tracer_max_memory = 0;  // default to off
   bool internal_channel = false;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
@@ -141,12 +141,11 @@ grpc_channel* grpc_channel_create_with_builder(
           static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key,
-                           GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
-      GPR_ASSERT(channel_tracer_max_nodes == 0);
-      // max_nodes defaults to 0 (which is off), clamped between 0 and INT_MAX
+                           GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)) {
+      GPR_ASSERT(channel_tracer_max_memory == 0);
       const grpc_integer_options options = {
-          GRPC_MAX_CHANNEL_TRACE_EVENTS_PER_NODE_DEFAULT, 0, INT_MAX};
-      channel_tracer_max_nodes =
+          GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
+      channel_tracer_max_memory =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
       // channelz will not be enabled by default until all concerns in
@@ -171,7 +170,7 @@ grpc_channel* grpc_channel_create_with_builder(
   // bookkeeping for server channels occurs in src/core/lib/surface/server.cc
   if (channelz_enabled && channel->is_client) {
     channel->channelz_channel = channel_node_create_func(
-        channel, channel_tracer_max_nodes, !internal_channel);
+        channel, channel_tracer_max_memory, !internal_channel);
     channel->channelz_channel->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));

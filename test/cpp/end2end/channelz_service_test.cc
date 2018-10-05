@@ -115,8 +115,8 @@ class ChannelzServerTest : public ::testing::Test {
                                    InsecureServerCredentials());
     // forces channelz and channel tracing to be enabled.
     proxy_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 1);
-    proxy_builder.AddChannelArgument(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE,
-                                     10);
+    proxy_builder.AddChannelArgument(
+        GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
     proxy_builder.RegisterService(&proxy_service_);
     proxy_server_ = proxy_builder.BuildAndStart();
   }
@@ -142,7 +142,7 @@ class ChannelzServerTest : public ::testing::Test {
       // are the ones that our test will actually be validating.
       ChannelArguments args;
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
-      args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE, 10);
+      args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
       std::shared_ptr<Channel> channel_to_backend = CreateCustomChannel(
           backend_server_address, InsecureChannelCredentials(), args);
       proxy_service_.AddChannelToBackend(channel_to_backend);

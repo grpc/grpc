@@ -421,7 +421,7 @@ static tsi_handshaker* create_test_handshaker(bool used_for_success_test,
       alts_mock_handshaker_client_create(used_for_success_test);
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
-  alts_tsi_handshaker_create(options, "target_name", "lame", is_client, nullptr,
+  alts_tsi_handshaker_create(options, "target_name", "lame", is_client,
                              &handshaker);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
