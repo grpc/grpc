@@ -60,6 +60,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
       return config.payload_config().has_bytebuf_params()
                  ? CreateGenericAsyncStreamingClient(config)
                  : CreateAsyncClient(config);
+    case ClientType::CALLBACK_CLIENT:
+      return CreateCallbackClient(config);
     default:
       abort();
   }

@@ -253,6 +253,19 @@ class CXXLanguage:
             categories=[SMOKETEST] + [INPROC] + [SCALABLE])
 
         yield _ping_pong_scenario(
+            'cpp_protobuf_callback_unary_1channel_100rpcs_1MB',
+            rpc_type='UNARY',
+            client_type='CALLBACK_CLIENT',
+            server_type='ASYNC_SERVER',
+            req_size=1024 * 1024,
+            resp_size=1024 * 1024,
+            outstanding=100,
+            channels=1,
+            num_clients=1,
+            secure=False,
+            categories=[INPROC])
+
+        yield _ping_pong_scenario(
             'cpp_protobuf_async_streaming_from_client_1channel_1MB',
             rpc_type='STREAMING_FROM_CLIENT',
             client_type='ASYNC_CLIENT',

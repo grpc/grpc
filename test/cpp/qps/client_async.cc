@@ -949,6 +949,7 @@ std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& config) {
       return nullptr;
   }
 }
+
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args) {
   return std::unique_ptr<Client>(new GenericAsyncStreamingClient(args));
