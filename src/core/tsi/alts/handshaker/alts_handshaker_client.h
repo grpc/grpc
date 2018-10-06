@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
 
 #define ALTS_SERVICE_METHOD "/grpc.gcp.HandshakerService/DoHandshake"
@@ -120,16 +121,15 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * This method creates a ALTS handshaker client.
  *
  * - channel: grpc channel to ALTS handshaker service.
- * - queue: grpc completion queue.
  * - handshaker_service_url: address of ALTS handshaker service in the format of
  *   "host:port".
- *
+ * - interested_parties: set of pollsets interested in this connection.
  * It returns the created ALTS handshaker client on success, and NULL on
  * failure.
  */
 alts_handshaker_client* alts_grpc_handshaker_client_create(
-    grpc_channel* channel, grpc_completion_queue* queue,
-    const char* handshaker_service_url);
+    grpc_channel* channel, const char* handshaker_service_url,
+    grpc_pollset_set* interested_parties);
 
 namespace grpc_core {
 namespace internal {

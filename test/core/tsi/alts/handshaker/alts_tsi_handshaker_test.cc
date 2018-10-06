@@ -24,6 +24,7 @@
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
@@ -421,7 +422,7 @@ static tsi_handshaker* create_test_handshaker(bool used_for_success_test,
       alts_mock_handshaker_client_create(used_for_success_test);
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
-  alts_tsi_handshaker_create(options, "target_name", "lame", is_client,
+  alts_tsi_handshaker_create(options, "target_name", "lame", is_client, nullptr,
                              &handshaker);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
@@ -752,6 +753,8 @@ void check_handshaker_success() {
 int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
+  grpc_alts_shared_resource_dedicated_init();
+
   /* Tests. */
   check_handshaker_success();
   check_handshaker_next_invalid_input();
@@ -762,7 +765,9 @@ int main(int argc, char** argv) {
   check_handle_response_invalid_resp();
   check_handle_response_failure();
   check_handle_response_after_shutdown();
+
   /* Cleanup. */
+  grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();
   return 0;
 }

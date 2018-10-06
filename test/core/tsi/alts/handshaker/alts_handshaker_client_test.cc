@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
@@ -274,8 +275,8 @@ static alts_handshaker_client_test_config* create_config() {
       ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL, nullptr, nullptr);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   config->client = alts_grpc_handshaker_client_create(
-      config->channel, config->cq,
-      ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL);
+      config->channel, ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL,
+      nullptr, true);
   GPR_ASSERT(config->client != nullptr);
   config->out_frame =
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME);
@@ -401,6 +402,7 @@ static void schedule_request_grpc_call_failure_test() {
 int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
+  grpc_alts_shared_resource_dedicated_init();
 
   /* Tests. */
   schedule_request_invalid_arg_test();
@@ -408,6 +410,7 @@ int main(int argc, char** argv) {
   schedule_request_grpc_call_failure_test();
 
   /* Cleanup. */
+  grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();
   return 0;
 }
