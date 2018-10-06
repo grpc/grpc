@@ -40,6 +40,7 @@ typedef struct alts_grpc_handshaker_client {
   alts_grpc_caller grpc_caller;
   bool use_dedicated_cq;
   grpc_closure on_handshaker_service_response_received_locked;
+  alts_tsi_event* event;
 } alts_grpc_handshaker_client;
 
 static grpc_call_error grpc_start_batch(grpc_call* call, const grpc_op* ops,
@@ -49,7 +50,8 @@ static grpc_call_error grpc_start_batch(grpc_call* call, const grpc_op* ops,
 
 static void on_handshaker_service_response_received_locked(void* arg,
                                                            grpc_error* error) {
-  alts_tsi_event* event = static_cast<alts_tsi_event*>(arg);
+  alts_tsi_event* event =
+      (static_cast<alts_grpc_handshaker_client*>(arg))->event;
   if (event == nullptr) {
     gpr_log(GPR_ERROR,
             "ALTS TSI event is nullptr `in "
@@ -94,6 +96,7 @@ static tsi_result make_grpc_call(alts_handshaker_client* client,
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
   GPR_ASSERT(grpc_client->grpc_caller != nullptr);
+  grpc_client->event = event;
   if (grpc_client->use_dedicated_cq) {
     if (grpc_client->grpc_caller(grpc_client->call, ops,
                                  static_cast<size_t>(op - ops),
@@ -102,10 +105,11 @@ static tsi_result make_grpc_call(alts_handshaker_client* client,
       return TSI_INTERNAL_ERROR;
     }
   } else {
-    GRPC_CLOSURE_INIT(
+    /*GRPC_CLOSURE_INIT(
         &grpc_client->on_handshaker_service_response_received_locked,
         on_handshaker_service_response_received_locked, event,
         grpc_schedule_on_exec_ctx);
+    */
     grpc_call_start_batch_and_execute(
         grpc_client->call, ops, static_cast<size_t>(op - ops),
         &grpc_client->on_handshaker_service_response_received_locked);
@@ -298,6 +302,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
                 GRPC_MILLIS_INF_FUTURE, nullptr);
   client->base.vtable = &vtable;
+  GRPC_CLOSURE_INIT(&client->on_handshaker_service_response_received_locked,
+                    on_handshaker_service_response_received_locked, client,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);
   return &client->base;
 }
