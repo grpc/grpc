@@ -16,15 +16,13 @@
 
 #endregion
 
-using System;
 using System.IO;
-using Grpc.Tools;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  public class DepFileUtilTests {
+  public class DepFileUtilTest {
 
     [Test]
     public void HashString64Hex_IsSane() {
@@ -130,5 +128,5 @@ obj\Release x64\net45\/FooGrpc.cs: C:/usr/include/google/protobuf/wrappers.proto
         } catch { }
       }
     }
-  }
+  };
 }

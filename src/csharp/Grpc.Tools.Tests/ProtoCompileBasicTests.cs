@@ -16,13 +16,13 @@
 
 #endregion
 
-using System.Reflection;
+using System.Reflection;  // UWYU: Object.GetType() extension.
 using Microsoft.Build.Framework;
 using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  public class ProtoCompileBasicTests {
+  public class ProtoCompileBasicTest {
     // Mock task class that stops right before invoking protoc.
     public class ProtoCompileTestable : ProtoCompile {
       public string LastPathToTool { get; private set; }
@@ -66,5 +66,5 @@ namespace Grpc.Tools.Tests {
       Assert.NotNull(pinfo);
       Assert.That(pinfo, Has.Attribute<RequiredAttribute>());
     }
-  }
+  };
 }

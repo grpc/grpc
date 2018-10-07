@@ -19,7 +19,7 @@
 using System.Reflection;
 using NUnitLite;
 
-namespace Grps.Tools.Tests {
+namespace Grpc.Tools.Tests {
   static class NUnitMain {
     public static int Main(string[] args) =>
 #if NETCOREAPP1_0

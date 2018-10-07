@@ -66,13 +66,13 @@
     "Grpc.Reflection.Tests.SymbolRegistryTest"
   ],
   "Grpc.Tools.Tests": [
-    "Grpc.Tools.Tests.CppGeneratorTests",
-    "Grpc.Tools.Tests.CSharpGeneratorTests",
-    "Grpc.Tools.Tests.DepFileUtilTests",
-    "Grpc.Tools.Tests.GeneratorTests",
-    "Grpc.Tools.Tests.ProtoCompileBasicTests",
-    "Grpc.Tools.Tests.ProtoCompileCommandLineGeneratorTests",
-    "Grpc.Tools.Tests.ProtoCompileCommandLinePrinterTests",
-    "Grpc.Tools.Tests.ProtoToolsPlatformTaskTests"
+    "Grpc.Tools.Tests.CppGeneratorTest",
+    "Grpc.Tools.Tests.CSharpGeneratorTest",
+    "Grpc.Tools.Tests.DepFileUtilTest",
+    "Grpc.Tools.Tests.GeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileBasicTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLineGeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLinePrinterTest",
+    "Grpc.Tools.Tests.ProtoToolsPlatformTaskTest"
   ]
 }

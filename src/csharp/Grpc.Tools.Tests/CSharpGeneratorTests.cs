@@ -16,15 +16,10 @@
 
 #endregion
 
-using System.IO;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-
-  public class CSharpGeneratorTests : GeneratorTests {
+  public class CSharpGeneratorTest : GeneratorTest {
     GeneratorServices _generator;
 
     [SetUp]

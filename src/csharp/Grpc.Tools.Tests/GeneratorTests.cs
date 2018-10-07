@@ -16,14 +16,13 @@
 
 #endregion
 
-using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  public class GeneratorTests {
+  public class GeneratorTest {
     protected Mock<IBuildEngine> _mockEngine;
     protected TaskLoggingHelper _log;
 
@@ -47,5 +46,5 @@ namespace Grpc.Tools.Tests {
       Assert.IsNull(GeneratorServices.GetForLanguage(lang, _log));
       _mockEngine.Verify(me => me.LogErrorEvent(It.IsAny<BuildErrorEventArgs>()), Times.Once);
     }
-  }
+  };
 }

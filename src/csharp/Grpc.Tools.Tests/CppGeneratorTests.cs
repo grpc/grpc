@@ -17,13 +17,10 @@
 #endregion
 
 using System.IO;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
-using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  public class CppGeneratorTests : GeneratorTests {
+  public class CppGeneratorTest : GeneratorTest {
     GeneratorServices _generator;
 
     [SetUp]
@@ -79,5 +76,5 @@ namespace Grpc.Tools.Tests {
       Assert.AreEqual(2, poss.Length);
       Assert.That(Path.GetDirectoryName(poss[0]), Is.EqualTo("out"));
     }
-  }
+  };
 }

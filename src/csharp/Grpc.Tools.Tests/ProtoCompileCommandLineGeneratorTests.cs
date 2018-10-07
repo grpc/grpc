@@ -16,13 +16,12 @@
 
 #endregion
 
-using System.Reflection;
 using Microsoft.Build.Framework;
 using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  internal class ProtoCompileCommandLineGeneratorTests : ProtoCompileBasicTests {
+  public class ProtoCompileCommandLineGeneratorTest : ProtoCompileBasicTest {
     [SetUp]
     public new void SetUp() {
       _task.Generator = "csharp";
@@ -158,5 +157,5 @@ namespace Grpc.Tools.Tests {
       Assert.That(_task.LastResponseFile,
                   Does.Contain("--csharp_out=" + expect));
     }
-  }
+  };
 }

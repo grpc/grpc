@@ -22,11 +22,11 @@ using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  // This test requires that environment variables be set to the exected
+  // This test requires that environment variables be set to the expected
   // output of the task in its external test harness:
   //   PROTOTOOLS_TEST_CPU = { x64 | x86 }
   //   PROTOTOOLS_TEST_OS = { linux | macosx | windows }
-  public class ProtoToolsPlatformTaskTests {
+  public class ProtoToolsPlatformTaskTest {
     static string s_expectOs;
     static string s_expectCpu;
 

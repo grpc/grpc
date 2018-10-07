@@ -16,13 +16,12 @@
 
 #endregion
 
-using System.Reflection;
 using Microsoft.Build.Framework;
 using Moq;
 using NUnit.Framework;
 
 namespace Grpc.Tools.Tests {
-  internal class ProtoCompileCommandLinePrinterTests : ProtoCompileBasicTests {
+  public class ProtoCompileCommandLinePrinterTest : ProtoCompileBasicTest {
     [SetUp]
     public new void SetUp() {
       _task.Generator = "csharp";
@@ -44,5 +43,5 @@ namespace Grpc.Tools.Tests {
       bool result = _task.Execute();
       Assert.IsTrue(result);
     }
-  }
+  };
 }
