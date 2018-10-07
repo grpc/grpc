@@ -14,6 +14,7 @@
 
 import logging
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 # This function will ascii encode unicode string inputs if neccesary.

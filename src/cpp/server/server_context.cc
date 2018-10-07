@@ -61,6 +61,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
+  /// TODO(vjpai): Allow override of cq_tag if appropriate for callback API
+  void* cq_tag() override { return this; }
+
   void Unref();
 
  private:
@@ -134,7 +137,6 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       compression_level_set_(false),
       has_pending_ops_(false) {
   std::swap(*client_metadata_.arr(), *arr);
-  client_metadata_.FillMap();
 }
 
 ServerContext::~ServerContext() {

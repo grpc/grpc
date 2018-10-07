@@ -125,9 +125,6 @@ grpc_mdelem grpc_mdelem_create(
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
 
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata);
-
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
 void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*if_destroy_func)(void*));

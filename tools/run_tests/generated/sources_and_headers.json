@@ -173,6 +173,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "buffer_list_test", 
+    "src": [
+      "test/core/iomgr/buffer_list_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "channel_create_test", 
     "src": [
       "test/core/surface/channel_create_test.cc"
@@ -462,23 +479,6 @@
     "name": "ev_epollex_linux_test", 
     "src": [
       "test/core/iomgr/ev_epollex_linux_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "ev_epollsig_linux_test", 
-    "src": [
-      "test/core/iomgr/ev_epollsig_linux_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -1417,6 +1417,26 @@
       "grpc", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "inproc_callback_test", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/inproc_callback_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
@@ -1826,23 +1846,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "pollset_set_test", 
-    "src": [
-      "test/core/iomgr/pollset_set_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "resolve_address_posix_test", 
     "src": [
       "test/core/iomgr/resolve_address_posix_test.cc"
@@ -1860,7 +1863,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "resolve_address_test", 
+    "name": "resolve_address_using_ares_resolver_test", 
+    "src": [
+      "test/core/iomgr/resolve_address_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "resolve_address_using_native_resolver_test", 
     "src": [
       "test/core/iomgr/resolve_address_test.cc"
     ], 
@@ -3281,6 +3301,25 @@
     "name": "cli_call_test", 
     "src": [
       "test/cpp/util/cli_call_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_callback_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_callback_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7053,19 +7092,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
@@ -9068,6 +9094,7 @@
       "alts_util", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_client_insecure", 
       "tsi", 
       "tsi_interface"
@@ -9187,7 +9214,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/cpp/ext/filters/census/grpc_context.cc"
+      "src/core/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9306,6 +9333,7 @@
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/mutex_lock.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -9353,6 +9381,7 @@
       "src/core/lib/gprpp/fork.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/mutex_lock.h", 
       "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
@@ -9465,6 +9494,7 @@
       "src/core/lib/http/format_request.cc", 
       "src/core/lib/http/httpcli.cc", 
       "src/core/lib/http/parser.cc", 
+      "src/core/lib/iomgr/buffer_list.cc", 
       "src/core/lib/iomgr/call_combiner.cc", 
       "src/core/lib/iomgr/combiner.cc", 
       "src/core/lib/iomgr/endpoint.cc", 
@@ -9474,7 +9504,6 @@
       "src/core/lib/iomgr/error.cc", 
       "src/core/lib/iomgr/ev_epoll1_linux.cc", 
       "src/core/lib/iomgr/ev_epollex_linux.cc", 
-      "src/core/lib/iomgr/ev_epollsig_linux.cc", 
       "src/core/lib/iomgr/ev_poll_posix.cc", 
       "src/core/lib/iomgr/ev_posix.cc", 
       "src/core/lib/iomgr/ev_windows.cc", 
@@ -9485,6 +9514,7 @@
       "src/core/lib/iomgr/gethostname_fallback.cc", 
       "src/core/lib/iomgr/gethostname_host_name_max.cc", 
       "src/core/lib/iomgr/gethostname_sysconf.cc", 
+      "src/core/lib/iomgr/internal_errqueue.cc", 
       "src/core/lib/iomgr/iocp_windows.cc", 
       "src/core/lib/iomgr/iomgr.cc", 
       "src/core/lib/iomgr/iomgr_custom.cc", 
@@ -9644,6 +9674,7 @@
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/block_annotate.h", 
+      "src/core/lib/iomgr/buffer_list.h", 
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
@@ -9653,12 +9684,12 @@
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/gethostname.h", 
+      "src/core/lib/iomgr/internal_errqueue.h", 
       "src/core/lib/iomgr/iocp_windows.h", 
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_custom.h", 
@@ -9794,6 +9825,7 @@
       "src/core/lib/http/httpcli.h", 
       "src/core/lib/http/parser.h", 
       "src/core/lib/iomgr/block_annotate.h", 
+      "src/core/lib/iomgr/buffer_list.h", 
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
@@ -9803,12 +9835,12 @@
       "src/core/lib/iomgr/error_internal.h", 
       "src/core/lib/iomgr/ev_epoll1_linux.h", 
       "src/core/lib/iomgr/ev_epollex_linux.h", 
-      "src/core/lib/iomgr/ev_epollsig_linux.h", 
       "src/core/lib/iomgr/ev_poll_posix.h", 
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/gethostname.h", 
+      "src/core/lib/iomgr/internal_errqueue.h", 
       "src/core/lib/iomgr/iocp_windows.h", 
       "src/core/lib/iomgr/iomgr.h", 
       "src/core/lib/iomgr/iomgr_custom.h", 
@@ -9921,6 +9953,7 @@
       "src/core/lib/iomgr/endpoint_cfstream.h", 
       "src/core/lib/iomgr/error_cfstream.cc", 
       "src/core/lib/iomgr/error_cfstream.h", 
+      "src/core/lib/iomgr/iomgr_posix_cfstream.cc", 
       "src/core/lib/iomgr/tcp_client_cfstream.cc"
     ], 
     "third_party": false, 
@@ -10354,6 +10387,7 @@
       "alts_tsi", 
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_transport_chttp2_alpn", 
       "tsi"
     ], 
@@ -10465,6 +10499,20 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.cc", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/tsi/grpc_shadow_boringssl.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_shadow_boringssl", 
+    "src": [
+      "src/core/tsi/grpc_shadow_boringssl.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10920,6 +10968,7 @@
     "deps": [
       "gpr", 
       "grpc_base", 
+      "grpc_shadow_boringssl", 
       "grpc_trace", 
       "tsi_interface"
     ], 
@@ -11018,8 +11067,11 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -11027,6 +11079,7 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
@@ -11084,8 +11137,11 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
+      "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -11093,6 +11149,7 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
@@ -11242,6 +11299,7 @@
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/client_callback.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
@@ -11346,6 +11404,7 @@
       "include/grpcpp/support/async_unary_call.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
+      "include/grpcpp/support/client_callback.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 

@@ -69,4 +69,6 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval);
 
 void grpc_ruby_once_init();
 
+void grpc_ruby_fork_guard();
+
 #endif /* GRPC_RB_H_ */

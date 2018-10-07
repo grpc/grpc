@@ -323,8 +323,7 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
 
 void RegisterFilter() {
   grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-      "test-filter", GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_LOW, true,
-      nullptr);
+      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
 }
 
 }  // namespace

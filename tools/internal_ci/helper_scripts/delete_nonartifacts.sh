@@ -24,4 +24,4 @@ cd "$(dirname "$0")/../../.."
 # after finishing each build. We only leave files we want to keep:
 # - reports and artifacts
 # - directory containing the kokoro scripts to prevent deleting a script while being executed.
-time find . -type f -not -iname "*sponge_log.xml" -not -path "./reports/*" -not -path "./artifacts/*" -not -path "./tools/internal_ci/*" -exec rm -f {} +
+time find . -type f -not -iname "*sponge_log.*" -not -path "./reports/*" -not -path "./artifacts/*" -not -path "./tools/internal_ci/*" -exec rm -f {} +

@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glider
-  version: 1.15.0-dev
+  g_stands_for: gao
+  version: 1.16.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -69,6 +69,7 @@ filegroups:
   - grpc_transport_chttp2_client_insecure
   - tsi_interface
   - tsi
+  - grpc_shadow_boringssl
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
@@ -100,7 +101,7 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   src:
-  - src/cpp/ext/filters/census/grpc_context.cc
+  - src/core/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
 - name: cmdline
@@ -196,6 +197,7 @@ filegroups:
   - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mutex_lock.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
@@ -254,6 +256,7 @@ filegroups:
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
+  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/endpoint.cc
@@ -263,7 +266,6 @@ filegroups:
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
-  - src/core/lib/iomgr/ev_epollsig_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/ev_windows.cc
@@ -274,6 +276,7 @@ filegroups:
   - src/core/lib/iomgr/gethostname_fallback.cc
   - src/core/lib/iomgr/gethostname_host_name_max.cc
   - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/lib/iomgr/internal_errqueue.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
   - src/core/lib/iomgr/iomgr_custom.cc
@@ -432,6 +435,7 @@ filegroups:
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
+  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
@@ -441,12 +445,12 @@ filegroups:
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
-  - src/core/lib/iomgr/ev_epollsig_linux.h
   - src/core/lib/iomgr/ev_poll_posix.h
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
+  - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
   - src/core/lib/iomgr/iomgr_custom.h
@@ -548,6 +552,7 @@ filegroups:
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   uses:
   - grpc_base_headers
@@ -839,6 +844,7 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - tsi
+  - grpc_shadow_boringssl
 - name: grpc_server_backward_compatibility
   headers:
   - src/core/ext/filters/workarounds/workaround_utils.h
@@ -846,6 +852,9 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.cc
   uses:
   - grpc_base
+- name: grpc_shadow_boringssl
+  headers:
+  - src/core/tsi/grpc_shadow_boringssl.h
 - name: grpc_test_util_base
   build: test
   headers:
@@ -1107,6 +1116,7 @@ filegroups:
   - tsi_interface
   - grpc_base
   - grpc_trace
+  - grpc_shadow_boringssl
 - name: tsi_interface
   headers:
   - src/core/tsi/transport_security.h
@@ -1157,8 +1167,11 @@ filegroups:
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
+  - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
+  - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_context.h
+  - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -1166,6 +1179,7 @@ filegroups:
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/grpc_library.h
+  - include/grpcpp/impl/codegen/interceptor.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
@@ -1285,6 +1299,7 @@ filegroups:
   - include/grpcpp/support/async_unary_call.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
+  - include/grpcpp/support/client_callback.h
   - include/grpcpp/support/config.h
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
@@ -1422,7 +1437,6 @@ libs:
   filegroups:
   - gpr_base
   secure: false
-  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
 - name: gpr_test_util
   build: private
   language: c
@@ -1433,7 +1447,6 @@ libs:
   deps:
   - gpr
   secure: false
-  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
 - name: grpc
   build: all
   language: c
@@ -1466,10 +1479,6 @@ libs:
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: true
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
 - name: grpc_cronet
   build: all
   language: c
@@ -1486,27 +1495,6 @@ libs:
   platforms:
   - linux
   secure: true
-- name: grpc_dll
-  build: private
-  language: c
-  src: []
-  deps:
-  - gpr
-  - grpc
-  build_system:
-  - visual_studio
-  deps_linkage: static
-  dll_def: grpc.def
-  vs_config_type: DynamicLibrary
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
-  vs_props:
-  - zlib
-  - openssl
-  - winsock
-  - global
 - name: grpc_test_util
   build: private
   language: c
@@ -1525,7 +1513,6 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
-  vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1536,7 +1523,6 @@ libs:
   filegroups:
   - grpc_test_util_base
   secure: false
-  vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
 - name: grpc_unsecure
   build: all
   language: c
@@ -1567,7 +1553,6 @@ libs:
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: false
-  vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: reconnect_server
   build: private
   language: c
@@ -1621,7 +1606,6 @@ libs:
   - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
-  vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -1667,7 +1651,6 @@ libs:
   deps:
   - grpc++
   baselib: true
-  vs_project_guid: '{9F58AD72-49E1-4D10-B826-9E190AB0AAC0}'
 - name: grpc++_proto_reflection_desc_db
   build: private
   language: c++
@@ -1780,7 +1763,6 @@ libs:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
   secure: false
-  vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_benchmark
   build: test
   language: c++
@@ -1855,9 +1837,6 @@ libs:
   filegroups:
   - grpc++_config_proto
   secure: false
-  vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
-  vs_props:
-  - protoc
 - name: grpcpp_channelz
   build: all
   language: c++
@@ -2012,16 +1991,6 @@ libs:
   LDFLAGS: $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy)
   deps_linkage: static
   dll: only
-  vs_config_type: DynamicLibrary
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{D64C6D63-4458-4A88-AB38-35678384A7E4}'
-  vs_props:
-  - zlib
-  - openssl
-  - winsock
-  - global
 targets:
 - name: algorithm_test
   build: test
@@ -2131,6 +2100,20 @@ targets:
   - grpc_test_util
   - grpc
   uses_polling: false
+- name: buffer_list_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/buffer_list_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
 - name: channel_create_test
   build: test
   language: c
@@ -2332,21 +2315,6 @@ targets:
   language: c
   src:
   - test/core/iomgr/ev_epollex_linux_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
-- name: ev_epollsig_linux_test
-  cpu_cost: 3
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/ev_epollsig_linux_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -3014,6 +2982,19 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: inproc_callback_test
+  build: test
+  language: c
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/inproc_callback_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: invalid_call_argument_test
   cpu_cost: 0.1
   build: test
@@ -3294,20 +3275,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: pollset_set_test
-  build: test
-  language: c
-  src:
-  - test/core/iomgr/pollset_set_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  exclude_iomgrs:
-  - uv
-  platforms:
-  - linux
 - name: resolve_address_posix_test
   build: test
   language: c
@@ -3324,7 +3291,7 @@ targets:
   - mac
   - linux
   - posix
-- name: resolve_address_test
+- name: resolve_address_using_ares_resolver_test
   build: test
   language: c
   src:
@@ -3334,6 +3301,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  args:
+  - --resolver=ares
+- name: resolve_address_using_native_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  args:
+  - --resolver=native
 - name: resource_quota_test
   cpu_cost: 30
   build: test
@@ -4110,6 +4091,7 @@ targets:
   - mac
   - linux
   - posix
+  uses_polling: false
 - name: bm_error
   build: test
   language: c++
@@ -4425,6 +4407,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_callback_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/client_callback_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: client_channel_stress_test
   gtest: false
   build: test
@@ -4690,8 +4686,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -4700,8 +4694,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
 - name: grpc_linux_system_roots_test
   gtest: true
   build: test
@@ -4721,7 +4713,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
@@ -4730,8 +4721,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
 - name: grpc_php_plugin
   build: protoc
   language: c++
@@ -4740,7 +4729,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
 - name: grpc_python_plugin
   build: protoc
   language: c++
@@ -4749,8 +4737,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -4759,8 +4745,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -5787,6 +5771,7 @@ defaults:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+    CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

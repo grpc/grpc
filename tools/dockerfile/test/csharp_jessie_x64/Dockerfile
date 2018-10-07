@@ -86,6 +86,13 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
 
 RUN nuget update -self
 
+#=================
+# Use cmake 3.6 from jessie-backports
+# needed to build grpc_csharp_ext with cmake
+
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
 # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
 RUN apt-get update && apt-get install -y curl libunwind8 gettext
 # dotnet-dev-1.0.0-preview2-003131

@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.15.0-dev'
+  version = '1.16.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -181,8 +181,9 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL', '~> 10.0'
+    ss.dependency 'BoringSSL-GRPC', '0.0.2'
     ss.dependency 'nanopb', '~> 0.3'
+    ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
@@ -208,6 +209,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/memory.h',
+                      'src/core/lib/gprpp/mutex_lock.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -358,6 +360,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
+                      'src/core/tsi/grpc_shadow_boringssl.h',
                       'src/core/ext/transport/chttp2/server/chttp2_server.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/lib/avl/avl.h',
@@ -391,6 +394,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
                       'src/core/lib/iomgr/block_annotate.h',
+                      'src/core/lib/iomgr/buffer_list.h',
                       'src/core/lib/iomgr/call_combiner.h',
                       'src/core/lib/iomgr/closure.h',
                       'src/core/lib/iomgr/combiner.h',
@@ -400,12 +404,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error_internal.h',
                       'src/core/lib/iomgr/ev_epoll1_linux.h',
                       'src/core/lib/iomgr/ev_epollex_linux.h',
-                      'src/core/lib/iomgr/ev_epollsig_linux.h',
                       'src/core/lib/iomgr/ev_poll_posix.h',
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/gethostname.h',
+                      'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_custom.h',
@@ -535,6 +539,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/http/format_request.cc',
                       'src/core/lib/http/httpcli.cc',
                       'src/core/lib/http/parser.cc',
+                      'src/core/lib/iomgr/buffer_list.cc',
                       'src/core/lib/iomgr/call_combiner.cc',
                       'src/core/lib/iomgr/combiner.cc',
                       'src/core/lib/iomgr/endpoint.cc',
@@ -544,7 +549,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/error.cc',
                       'src/core/lib/iomgr/ev_epoll1_linux.cc',
                       'src/core/lib/iomgr/ev_epollex_linux.cc',
-                      'src/core/lib/iomgr/ev_epollsig_linux.cc',
                       'src/core/lib/iomgr/ev_poll_posix.cc',
                       'src/core/lib/iomgr/ev_posix.cc',
                       'src/core/lib/iomgr/ev_windows.cc',
@@ -555,6 +559,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/gethostname_fallback.cc',
                       'src/core/lib/iomgr/gethostname_host_name_max.cc',
                       'src/core/lib/iomgr/gethostname_sysconf.cc',
+                      'src/core/lib/iomgr/internal_errqueue.cc',
                       'src/core/lib/iomgr/iocp_windows.cc',
                       'src/core/lib/iomgr/iomgr.cc',
                       'src/core/lib/iomgr/iomgr_custom.cc',
@@ -813,7 +818,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
-                      'src/cpp/ext/filters/census/grpc_context.cc',
+                      'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -844,6 +849,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/memory.h',
+                              'src/core/lib/gprpp/mutex_lock.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/ext/transport/chttp2/transport/bin_decoder.h',
@@ -955,6 +961,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security_grpc.h',
+                              'src/core/tsi/grpc_shadow_boringssl.h',
                               'src/core/ext/transport/chttp2/server/chttp2_server.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/lib/avl/avl.h',
@@ -988,6 +995,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
                               'src/core/lib/iomgr/block_annotate.h',
+                              'src/core/lib/iomgr/buffer_list.h',
                               'src/core/lib/iomgr/call_combiner.h',
                               'src/core/lib/iomgr/closure.h',
                               'src/core/lib/iomgr/combiner.h',
@@ -997,12 +1005,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/error_internal.h',
                               'src/core/lib/iomgr/ev_epoll1_linux.h',
                               'src/core/lib/iomgr/ev_epollex_linux.h',
-                              'src/core/lib/iomgr/ev_epollsig_linux.h',
                               'src/core/lib/iomgr/ev_poll_posix.h',
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/gethostname.h',
+                              'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_custom.h',
@@ -1118,6 +1126,7 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
                       'src/core/lib/iomgr/endpoint_cfstream.cc',
                       'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
                       'src/core/lib/iomgr/tcp_client_cfstream.cc',
                       'src/core/lib/iomgr/cfstream_handle.h',
                       'src/core/lib/iomgr/endpoint_cfstream.h',
@@ -1295,5 +1304,6 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
     find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
   END_OF_COMMAND
 end

@@ -285,10 +285,12 @@ typedef struct {
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
-/** The maximum number of trace events to keep in the tracer for each channel or
- * subchannel. The default is 10. If set to 0, channel tracing is disabled. */
-#define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE \
-  "grpc.max_channel_trace_events_per_node"
+/** The maximum amount of memory used by trace events per channel trace node.
+ * Once the maximum is reached, subsequent events will evict the oldest events
+ * from the buffer. The unit for this knob is bytes. Setting it to zero causes
+ * channel tracing to be disabled. */
+#define GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE \
+  "grpc.max_channel_trace_event_memory_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
  * level. Disabling channelz naturally disables channel tracing. The default
  * is for channelz to be disabled. */
@@ -342,6 +344,9 @@ typedef struct {
   "grpc.disable_client_authority_filter"
 /** If set to zero, disables use of http proxies. Enabled by default. */
 #define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
+/** If set to non zero, surfaces the user agent string to the server. User
+    agent is surfaced by default. */
+#define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -651,10 +656,29 @@ typedef enum {
   GRPC_CQ_NEXT,
 
   /** Events are popped out by calling grpc_completion_queue_pluck() API ONLY*/
-  GRPC_CQ_PLUCK
+  GRPC_CQ_PLUCK,
+
+  /** EXPERIMENTAL: Events trigger a callback specified as the tag */
+  GRPC_CQ_CALLBACK
 } grpc_cq_completion_type;
 
-#define GRPC_CQ_CURRENT_VERSION 1
+/** EXPERIMENTAL: Specifies an interface class to be used as a tag
+    for callback-based completion queues. This can be used directly,
+    as the first element of a struct in C, or as a base class in C++.
+    Its "run" value should be assigned to some non-member function, such as
+    a static method. */
+typedef struct grpc_experimental_completion_queue_functor {
+  /** The run member specifies a function that will be called when this
+      tag is extracted from the completion queue. Its arguments will be a
+      pointer to this functor and a boolean that indicates whether the
+      operation succeeded (non-zero) or failed (zero) */
+  void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+} grpc_experimental_completion_queue_functor;
+
+/* The upgrade to version 2 is currently experimental. */
+
+#define GRPC_CQ_CURRENT_VERSION 2
+#define GRPC_CQ_VERSION_MINIMUM_FOR_CALLBACKABLE 2
 typedef struct grpc_completion_queue_attributes {
   /** The version number of this structure. More fields might be added to this
      structure in future. */
@@ -663,6 +687,15 @@ typedef struct grpc_completion_queue_attributes {
   grpc_cq_completion_type cq_completion_type;
 
   grpc_cq_polling_type cq_polling_type;
+
+  /* END OF VERSION 1 CQ ATTRIBUTES */
+
+  /* EXPERIMENTAL: START OF VERSION 2 CQ ATTRIBUTES */
+  /** When creating a callbackable CQ, pass in a functor to get invoked when
+   * shutdown is complete */
+  grpc_experimental_completion_queue_functor* cq_shutdown_cb;
+
+  /* END OF VERSION 2 CQ ATTRIBUTES */
 } grpc_completion_queue_attributes;
 
 /** The completion queue factory structure is opaque to the callers of grpc */

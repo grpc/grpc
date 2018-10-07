@@ -77,11 +77,13 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_register_plugin);
   printf("%lx", (unsigned long) grpc_init);
   printf("%lx", (unsigned long) grpc_shutdown);
+  printf("%lx", (unsigned long) grpc_is_initialized);
   printf("%lx", (unsigned long) grpc_version_string);
   printf("%lx", (unsigned long) grpc_g_stands_for);
   printf("%lx", (unsigned long) grpc_completion_queue_factory_lookup);
   printf("%lx", (unsigned long) grpc_completion_queue_create_for_next);
   printf("%lx", (unsigned long) grpc_completion_queue_create_for_pluck);
+  printf("%lx", (unsigned long) grpc_completion_queue_create_for_callback);
   printf("%lx", (unsigned long) grpc_completion_queue_create);
   printf("%lx", (unsigned long) grpc_completion_queue_next);
   printf("%lx", (unsigned long) grpc_completion_queue_pluck);
@@ -131,9 +133,13 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_resource_quota_ref);
   printf("%lx", (unsigned long) grpc_resource_quota_unref);
   printf("%lx", (unsigned long) grpc_resource_quota_resize);
+  printf("%lx", (unsigned long) grpc_resource_quota_set_max_threads);
   printf("%lx", (unsigned long) grpc_resource_quota_arg_vtable);
   printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
+  printf("%lx", (unsigned long) grpc_channelz_get_servers);
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
+  printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
+  printf("%lx", (unsigned long) grpc_channelz_get_socket);
   printf("%lx", (unsigned long) grpc_auth_property_iterator_next);
   printf("%lx", (unsigned long) grpc_auth_context_property_iterator);
   printf("%lx", (unsigned long) grpc_auth_context_peer_identity);

@@ -34,15 +34,15 @@ struct grpc_pollset {
   gpr_mu mu;
 };
 
+static gpr_mu g_mu;
+static gpr_cv g_cv;
+static int g_threads_active;
+static bool g_active;
+
 namespace grpc {
 namespace testing {
-
-auto& force_library_initialization = Library::get();
-
-static void* g_tag = (void*)static_cast<intptr_t>(10);  // Some random number
 static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
-static const grpc_event_engine_vtable* g_old_vtable;
 
 static void pollset_shutdown(grpc_pollset* ps, grpc_closure* closure) {
   GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
@@ -74,16 +74,18 @@ static grpc_error* pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker,
   }
 
   gpr_mu_unlock(&ps->mu);
-  GPR_ASSERT(grpc_cq_begin_op(g_cq, g_tag));
+
+  void* tag = (void*)static_cast<intptr_t>(10);  // Some random number
+  GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
-      g_cq, g_tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+      g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&ps->mu);
   return GRPC_ERROR_NONE;
 }
 
-static void init_engine_vtable() {
+static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   memset(&g_vtable, 0, sizeof(g_vtable));
 
   g_vtable.pollset_size = sizeof(grpc_pollset);
@@ -92,17 +94,23 @@ static void init_engine_vtable() {
   g_vtable.pollset_destroy = pollset_destroy;
   g_vtable.pollset_work = pollset_work;
   g_vtable.pollset_kick = pollset_kick;
+  g_vtable.shutdown_engine = [] {};
+
+  return &g_vtable;
 }
 
 static void setup() {
-  grpc_init();
+  // This test should only ever be run with a non or any polling engine
+  // Override the polling engine for the non-polling engine
+  // and add a custom polling engine
+  grpc_register_event_engine_factory("none", init_engine_vtable, false);
+  grpc_register_event_engine_factory("bm_cq_multiple_threads",
+                                     init_engine_vtable, true);
 
-  /* Override the event engine with our test event engine (g_vtable); but before
-   * that, save the current event engine in g_old_vtable. We will have to set
-   * g_old_vtable back before calling grpc_shutdown() */
-  init_engine_vtable();
-  g_old_vtable = grpc_get_event_engine_test_only();
-  grpc_set_event_engine_test_only(&g_vtable);
+  grpc_init();
+  GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
+             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
+                 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
@@ -118,9 +126,6 @@ static void teardown() {
   }
 
   grpc_completion_queue_destroy(g_cq);
-
-  /* Restore the old event engine before calling grpc_shutdown */
-  grpc_set_event_engine_test_only(g_old_vtable);
   grpc_shutdown();
 }
 
@@ -137,14 +142,33 @@ static void teardown() {
   code (i.e the code between two successive calls of state.KeepRunning()) if
   state.KeepRunning() returns false. So it is safe to do the teardown in one
   of the threads after state.keepRunning() returns false.
+
+ However, our use requires synchronization because we do additional work at
+ each thread that requires specific ordering (TrackCounters must be constructed
+ after grpc_init because it needs the number of cores, initialized by grpc,
+ and its Finish call must take place before grpc_shutdown so that it can use
+ grpc_stats).
 */
 static void BM_Cq_Throughput(benchmark::State& state) {
-  TrackCounters track_counters;
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  auto thd_idx = state.thread_index;
 
-  if (state.thread_index == 0) {
+  gpr_mu_lock(&g_mu);
+  g_threads_active++;
+  if (thd_idx == 0) {
     setup();
+    g_active = true;
+    gpr_cv_broadcast(&g_cv);
+  } else {
+    while (!g_active) {
+      gpr_cv_wait(&g_cv, &g_mu, deadline);
+    }
   }
+  gpr_mu_unlock(&g_mu);
+
+  // Use a TrackCounters object to monitor the gRPC performance statistics
+  // (optionally including low-level counters) before and after the test
+  TrackCounters track_counters;
 
   while (state.KeepRunning()) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
@@ -152,12 +176,23 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   }
 
   state.SetItemsProcessed(state.iterations());
-
-  if (state.thread_index == 0) {
-    teardown();
-  }
-
   track_counters.Finish(state);
+
+  gpr_mu_lock(&g_mu);
+  g_threads_active--;
+  if (g_threads_active == 0) {
+    gpr_cv_broadcast(&g_cv);
+  } else {
+    while (g_threads_active > 0) {
+      gpr_cv_wait(&g_cv, &g_mu, deadline);
+    }
+  }
+  gpr_mu_unlock(&g_mu);
+
+  if (thd_idx == 0) {
+    teardown();
+    g_active = false;
+  }
 }
 
 BENCHMARK(BM_Cq_Throughput)->ThreadRange(1, 16)->UseRealTime();
@@ -172,6 +207,8 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_cv);
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

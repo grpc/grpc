@@ -776,13 +776,15 @@ def cloud_to_prod_jobspec(language,
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
-        transport_security_options += ['--use_tls=true']
-    elif transport_security == 'google_default_credentials' and language == 'c++':
-        transport_security_options += [
+        transport_security_options = ['--use_tls=true']
+    elif transport_security == 'google_default_credentials' and str(
+            language) in ['c++', 'go']:
+        transport_security_options = [
             '--custom_credentials_type=google_default_credentials'
         ]
     else:
-        print('Invalid transport security option.')
+        print('Invalid transport security option %s in cloud_to_prod_jobspec.' %
+              transport_security)
         sys.exit(1)
     cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
@@ -817,8 +819,9 @@ def cloud_to_prod_jobspec(language,
         cmdline=cmdline,
         cwd=cwd,
         environ=environ,
-        shortname='%s:%s:%s:%s' % (suite_name, language, server_host_nickname,
-                                   test_case),
+        shortname='%s:%s:%s:%s:%s' %
+        (suite_name, language, server_host_nickname, test_case,
+         transport_security),
         timeout_seconds=_TEST_TIMEOUT,
         flake_retries=4 if args.allow_flakes else 0,
         timeout_retries=2 if args.allow_flakes else 0,
@@ -848,7 +851,8 @@ def cloud_to_cloud_jobspec(language,
     elif transport_security == 'insecure':
         interop_only_options += ['--use_tls=false']
     else:
-        print('Invalid transport security option.')
+        print('Invalid transport security option %s in cloud_to_cloud_jobspec.'
+              % transport_security)
         sys.exit(1)
 
     client_test_case = test_case
@@ -903,8 +907,8 @@ def cloud_to_cloud_jobspec(language,
         cmdline=cmdline,
         cwd=cwd,
         environ=environ,
-        shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
-                                                      test_case),
+        shortname='cloud_to_cloud:%s:%s_server:%s:%s' %
+        (language, server_name, test_case, transport_security),
         timeout_seconds=_TEST_TIMEOUT,
         flake_retries=4 if args.allow_flakes else 0,
         timeout_retries=2 if args.allow_flakes else 0,
@@ -929,7 +933,8 @@ def server_jobspec(language,
     elif transport_security == 'insecure':
         server_cmd += ['--use_tls=false']
     else:
-        print('Invalid transport security option.')
+        print('Invalid transport security option %s in server_jobspec.' %
+              transport_security)
         sys.exit(1)
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
@@ -1318,7 +1323,7 @@ try:
                                 service_account_key_file,
                                 transport_security='tls')
                             jobs.append(tls_test_job)
-                            if language == 'c++':
+                            if str(language) in ['c++', 'go']:
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,
@@ -1370,7 +1375,9 @@ try:
                                 service_account_key_file,
                                 transport_security='tls')
                             jobs.append(tls_test_job)
-                            if language == 'c++':
+                            if str(language) in [
+                                    'go'
+                            ]:  # Add more languages to the list to turn on tests.
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,
@@ -1378,6 +1385,7 @@ try:
                                     prod_servers[server_host_nickname],
                                     docker_image=docker_images.get(
                                         str(language)),
+                                    auth=True,
                                     manual_cmd_log=client_manual_cmd_log,
                                     service_account_key_file=args.
                                     service_account_key_file,
@@ -1494,7 +1502,7 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run)
     if args.bq_result_table and resultset:
-        upload_interop_results_to_bq(resultset, args.bq_result_table, args)
+        upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
         jobset.message('FAILED', 'Some tests failed', do_newline=True)
     else:
@@ -1519,9 +1527,6 @@ try:
         sys.exit(1)
     else:
         sys.exit(0)
-except Exception as e:
-    print('exception occurred:')
-    traceback.print_exc(file=sys.stdout)
 finally:
     # Check if servers are still running.
     for server, job in server_jobs.items():

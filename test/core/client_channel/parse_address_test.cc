@@ -91,6 +91,15 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   grpc_uri_destroy(uri);
 }
 
+/* Test parsing invalid ipv6 addresses (valid uri_text but invalid ipv6 addr) */
+static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_uri* uri = grpc_uri_parse(uri_text, 0);
+  grpc_resolved_address addr;
+  GPR_ASSERT(!grpc_parse_ipv6(uri, &addr));
+  grpc_uri_destroy(uri);
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -99,6 +108,11 @@ int main(int argc, char** argv) {
   test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1]:12345", "2001:db8::1", 12345, 0);
   test_grpc_parse_ipv6("ipv6:[2001:db8::1%252]:12345", "2001:db8::1", 12345, 2);
+
+  /* Address length greater than GRPC_INET6_ADDRSTRLEN */
+  test_grpc_parse_ipv6_invalid(
+      "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
+      "v6:45%x$1*");
 
   grpc_shutdown();
 }

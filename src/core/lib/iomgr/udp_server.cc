@@ -152,7 +152,7 @@ GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
   grpc_sockaddr_to_string(&addr_str, addr, 1);
   gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
   gpr_free(addr_str);
-  emfd_ = grpc_fd_create(fd, name, false);
+  emfd_ = grpc_fd_create(fd, name, true);
   memcpy(&addr_, addr, sizeof(grpc_resolved_address));
   GPR_ASSERT(emfd_);
   gpr_free(name);

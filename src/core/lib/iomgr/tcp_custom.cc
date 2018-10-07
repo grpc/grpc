@@ -221,7 +221,7 @@ static void custom_write_callback(grpc_custom_socket* socket,
 }
 
 static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
-                           grpc_closure* cb) {
+                           grpc_closure* cb, void* arg) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 

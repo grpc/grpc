@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -45,6 +46,9 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
 void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args);
+
+grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
+    grpc_server* server);
 
 const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server);
 

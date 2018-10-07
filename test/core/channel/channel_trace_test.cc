@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/surface/channel.h"
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
@@ -40,6 +41,19 @@
 namespace grpc_core {
 namespace channelz {
 namespace testing {
+
+// testing peer to access channel internals
+class ChannelNodePeer {
+ public:
+  explicit ChannelNodePeer(ChannelNode* node) : node_(node) {}
+  ChannelTrace* trace() const { return &node_->trace_; }
+
+ private:
+  ChannelNode* node_;
+};
+
+size_t GetSizeofTraceEvent() { return sizeof(ChannelTrace::TraceEvent); }
+
 namespace {
 
 grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
@@ -54,6 +68,11 @@ grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
 void ValidateJsonArraySize(grpc_json* json, const char* key,
                            size_t expected_size) {
   grpc_json* arr = GetJsonChild(json, key);
+  // the events array should not be present if there are no events.
+  if (expected_size == 0) {
+    EXPECT_EQ(arr, nullptr);
+    return;
+  }
   ASSERT_NE(arr, nullptr);
   ASSERT_EQ(arr->type, GRPC_JSON_ARRAY);
   size_t count = 0;
@@ -83,29 +102,29 @@ void AddSimpleTrace(ChannelTrace* tracer) {
 }
 
 // checks for the existence of all the required members of the tracer.
-void ValidateChannelTrace(ChannelTrace* tracer,
-                          size_t expected_num_event_logged, size_t max_nodes) {
-  if (!max_nodes) return;
+void ValidateChannelTraceCustom(ChannelTrace* tracer, size_t num_events_logged,
+                                size_t num_events_expected) {
   grpc_json* json = tracer->RenderJson();
   EXPECT_NE(json, nullptr);
   char* json_str = grpc_json_dump_to_string(json, 0);
   grpc_json_destroy(json);
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
   grpc_json* parsed_json = grpc_json_parse_string(json_str);
-  ValidateChannelTraceData(parsed_json, expected_num_event_logged,
-                           GPR_MIN(expected_num_event_logged, max_nodes));
+  ValidateChannelTraceData(parsed_json, num_events_logged, num_events_expected);
   grpc_json_destroy(parsed_json);
   gpr_free(json_str);
 }
 
+void ValidateChannelTrace(ChannelTrace* tracer, size_t num_events_logged) {
+  ValidateChannelTraceCustom(tracer, num_events_logged, num_events_logged);
+}
+
 class ChannelFixture {
  public:
-  ChannelFixture(int max_trace_nodes) {
-    grpc_arg client_a;
-    client_a.type = GRPC_ARG_INTEGER;
-    client_a.key =
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    client_a.value.integer = max_trace_nodes;
+  ChannelFixture(int max_tracer_event_memory) {
+    grpc_arg client_a = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+        max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -121,66 +140,67 @@ class ChannelFixture {
 
 }  // anonymous namespace
 
-class ChannelTracerTest : public ::testing::TestWithParam<size_t> {};
+const int kEventListMemoryLimit = 1024 * 1024;
 
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
-TEST_P(ChannelTracerTest, BasicTest) {
+TEST(ChannelTracerTest, BasicTest) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelTrace tracer(GetParam());
+  ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   tracer.AddTraceEvent(ChannelTrace::Severity::Info,
                        grpc_slice_from_static_string("trace three"));
   tracer.AddTraceEvent(ChannelTrace::Severity::Error,
                        grpc_slice_from_static_string("trace four error"));
-  ValidateChannelTrace(&tracer, 4, GetParam());
+  ValidateChannelTrace(&tracer, 4);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 6, GetParam());
+  ValidateChannelTrace(&tracer, 6);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 10, GetParam());
+  ValidateChannelTrace(&tracer, 10);
 }
 
 // Tests more complex functionality, like a parent channel tracking
 // subchannles. This exercises the ref/unref patterns since the parent tracer
 // and this function will both hold refs to the subchannel.
-TEST_P(ChannelTracerTest, ComplexTest) {
+TEST(ChannelTracerTest, ComplexTest) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelTrace tracer(GetParam());
+  ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ChannelFixture channel1(GetParam());
-  RefCountedPtr<ChannelNode> sc1 =
-      MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingSubchannel(
+  ChannelFixture channel1(kEventListMemoryLimit);
+  RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
+      channel1.channel(), kEventListMemoryLimit, true);
+  ChannelNodePeer sc1_peer(sc1.get());
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
-  ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  AddSimpleTrace(sc1->trace());
-  ValidateChannelTrace(sc1->trace(), 6, GetParam());
+  ValidateChannelTrace(&tracer, 3);
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  ValidateChannelTrace(sc1_peer.trace(), 3);
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  AddSimpleTrace(sc1_peer.trace());
+  ValidateChannelTrace(sc1_peer.trace(), 6);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 5, GetParam());
-  ChannelFixture channel2(GetParam());
-  RefCountedPtr<ChannelNode> sc2 =
-      MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  ValidateChannelTrace(&tracer, 5);
+  ChannelFixture channel2(kEventListMemoryLimit);
+  RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
+      channel2.channel(), kEventListMemoryLimit, true);
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("LB channel two created"), sc2);
-  tracer.AddTraceEventReferencingSubchannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
-  ValidateChannelTrace(&tracer, 7, GetParam());
+  ValidateChannelTrace(&tracer, 7);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -194,53 +214,128 @@ TEST_P(ChannelTracerTest, ComplexTest) {
 // Test a case in which the parent channel has subchannels and the subchannels
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
-TEST_P(ChannelTracerTest, TestNesting) {
+TEST(ChannelTracerTest, TestNesting) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelTrace tracer(GetParam());
+  ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 2, GetParam());
-  ChannelFixture channel1(GetParam());
-  RefCountedPtr<ChannelNode> sc1 =
-      MakeRefCounted<ChannelNode>(channel1.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingChannel(
+  ValidateChannelTrace(&tracer, 2);
+  ChannelFixture channel1(kEventListMemoryLimit);
+  RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
+      channel1.channel(), kEventListMemoryLimit, true);
+  ChannelNodePeer sc1_peer(sc1.get());
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel one created"), sc1);
-  ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(sc1->trace());
-  ChannelFixture channel2(GetParam());
-  RefCountedPtr<ChannelNode> conn1 =
-      MakeRefCounted<ChannelNode>(channel2.channel(), GetParam(), true);
+  ValidateChannelTrace(&tracer, 3);
+  AddSimpleTrace(sc1_peer.trace());
+  ChannelFixture channel2(kEventListMemoryLimit);
+  RefCountedPtr<ChannelNode> conn1 = MakeRefCounted<ChannelNode>(
+      channel2.channel(), kEventListMemoryLimit, true);
+  ChannelNodePeer conn1_peer(conn1.get());
   // nesting one level deeper.
-  sc1->trace()->AddTraceEventReferencingSubchannel(
+  sc1_peer.trace()->AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("connection one created"), conn1);
-  ValidateChannelTrace(&tracer, 3, GetParam());
-  AddSimpleTrace(conn1->trace());
+  ValidateChannelTrace(&tracer, 3);
+  AddSimpleTrace(conn1_peer.trace());
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 5, GetParam());
-  ValidateChannelTrace(conn1->trace(), 1, GetParam());
-  ChannelFixture channel3(GetParam());
-  RefCountedPtr<ChannelNode> sc2 =
-      MakeRefCounted<ChannelNode>(channel3.channel(), GetParam(), true);
-  tracer.AddTraceEventReferencingSubchannel(
+  ValidateChannelTrace(&tracer, 5);
+  ValidateChannelTrace(conn1_peer.trace(), 1);
+  ChannelFixture channel3(kEventListMemoryLimit);
+  RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
+      channel3.channel(), kEventListMemoryLimit, true);
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel two created"), sc2);
   // this trace should not get added to the parents children since it is already
   // present in the tracer.
-  tracer.AddTraceEventReferencingChannel(
+  tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Warning,
       grpc_slice_from_static_string("subchannel one inactive"), sc1);
   AddSimpleTrace(&tracer);
-  ValidateChannelTrace(&tracer, 8, GetParam());
+  ValidateChannelTrace(&tracer, 8);
   sc1.reset();
   sc2.reset();
   conn1.reset();
 }
 
-INSTANTIATE_TEST_CASE_P(ChannelTracerTestSweep, ChannelTracerTest,
-                        ::testing::Values(0, 1, 2, 6, 10, 15));
+TEST(ChannelTracerTest, TestSmallMemoryLimit) {
+  grpc_core::ExecCtx exec_ctx;
+  // doesn't make sense, but serves a testing purpose for the channel tracing
+  // bookkeeping. All tracing events added should will get immediately garbage
+  // collected.
+  const int kSmallMemoryLimit = 1;
+  ChannelTrace tracer(kSmallMemoryLimit);
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
+                       grpc_slice_from_static_string("trace three"));
+  tracer.AddTraceEvent(ChannelTrace::Severity::Error,
+                       grpc_slice_from_static_string("trace four error"));
+  ValidateChannelTraceCustom(&tracer, 4, 0);
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  ValidateChannelTraceCustom(&tracer, 6, 0);
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  AddSimpleTrace(&tracer);
+  ValidateChannelTraceCustom(&tracer, 10, 0);
+}
+
+TEST(ChannelTracerTest, TestEviction) {
+  grpc_core::ExecCtx exec_ctx;
+  const int kTraceEventSize = GetSizeofTraceEvent();
+  const int kNumEvents = 5;
+  ChannelTrace tracer(kTraceEventSize * kNumEvents);
+  for (int i = 1; i <= kNumEvents; ++i) {
+    AddSimpleTrace(&tracer);
+    ValidateChannelTrace(&tracer, i);
+  }
+  // at this point the list is full, and each subsequent enntry will cause an
+  // eviction.
+  for (int i = 1; i <= kNumEvents; ++i) {
+    AddSimpleTrace(&tracer);
+    ValidateChannelTraceCustom(&tracer, kNumEvents + i, kNumEvents);
+  }
+}
+
+TEST(ChannelTracerTest, TestMultipleEviction) {
+  grpc_core::ExecCtx exec_ctx;
+  const int kTraceEventSize = GetSizeofTraceEvent();
+  const int kNumEvents = 5;
+  ChannelTrace tracer(kTraceEventSize * kNumEvents);
+  for (int i = 1; i <= kNumEvents; ++i) {
+    AddSimpleTrace(&tracer);
+    ValidateChannelTrace(&tracer, i);
+  }
+  // at this point the list is full, and each subsequent enntry will cause an
+  // eviction. We will now add in a trace event that has a copied string. This
+  // uses more memory, so it will cause a double eviciction
+  tracer.AddTraceEvent(
+      ChannelTrace::Severity::Info,
+      grpc_slice_from_copied_string(
+          "long enough string to trigger a multiple eviction"));
+  ValidateChannelTraceCustom(&tracer, kNumEvents + 1, kNumEvents - 1);
+}
+
+TEST(ChannelTracerTest, TestTotalEviction) {
+  grpc_core::ExecCtx exec_ctx;
+  const int kTraceEventSize = GetSizeofTraceEvent();
+  const int kNumEvents = 5;
+  ChannelTrace tracer(kTraceEventSize * kNumEvents);
+  for (int i = 1; i <= kNumEvents; ++i) {
+    AddSimpleTrace(&tracer);
+    ValidateChannelTrace(&tracer, i);
+  }
+  // at this point the list is full. Now we add such a big slice that
+  // everything gets evicted.
+  grpc_slice huge_slice = grpc_slice_malloc(kTraceEventSize * (kNumEvents + 1));
+  tracer.AddTraceEvent(ChannelTrace::Severity::Info, huge_slice);
+  ValidateChannelTraceCustom(&tracer, kNumEvents + 1, 0);
+}
 
 }  // namespace testing
 }  // namespace channelz

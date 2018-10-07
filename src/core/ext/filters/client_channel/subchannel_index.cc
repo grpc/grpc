@@ -73,7 +73,8 @@ static grpc_subchannel_key* subchannel_key_copy(grpc_subchannel_key* k) {
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b) {
-  if (g_force_creation) return false;
+  // To pretend the keys are different, return a non-zero value.
+  if (GPR_UNLIKELY(g_force_creation)) return 1;
   int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
   if (c != 0) return c;
   if (a->args.filter_count > 0) {

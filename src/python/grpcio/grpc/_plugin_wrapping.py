@@ -20,6 +20,7 @@ import grpc
 from grpc import _common
 from grpc._cython import cygrpc
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 

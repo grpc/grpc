@@ -52,6 +52,16 @@
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
+  grpc_end2end_http_proxy()
+      : proxy_name(nullptr),
+        server(nullptr),
+        channel_args(nullptr),
+        mu(nullptr),
+        pollset(nullptr),
+        combiner(nullptr) {
+    gpr_ref_init(&users, 1);
+    combiner = grpc_combiner_create();
+  }
   char* proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
@@ -201,7 +211,7 @@ static void on_client_write_done(void* arg, grpc_error* error) {
                                 &conn->client_write_buffer);
     conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done);
+                        &conn->on_client_write_done, nullptr);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "write_done");
@@ -226,7 +236,7 @@ static void on_server_write_done(void* arg, grpc_error* error) {
                                 &conn->server_write_buffer);
     conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done);
+                        &conn->on_server_write_done, nullptr);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "server_write");
@@ -257,7 +267,7 @@ static void on_client_read_done(void* arg, grpc_error* error) {
     proxy_connection_ref(conn, "client_read");
     conn->server_is_writing = true;
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done);
+                        &conn->on_server_write_done, nullptr);
   }
   // Read more data.
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
@@ -288,7 +298,7 @@ static void on_server_read_done(void* arg, grpc_error* error) {
     proxy_connection_ref(conn, "server_read");
     conn->client_is_writing = true;
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done);
+                        &conn->on_client_write_done, nullptr);
   }
   // Read more data.
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
@@ -340,7 +350,7 @@ static void on_server_connect_done(void* arg, grpc_error* error) {
   grpc_slice_buffer_add(&conn->client_write_buffer, slice);
   conn->client_is_writing = true;
   grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                      &conn->on_write_response_done);
+                      &conn->on_write_response_done, nullptr);
 }
 
 /**
@@ -519,11 +529,7 @@ static void thread_main(void* arg) {
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_end2end_http_proxy* proxy =
-      static_cast<grpc_end2end_http_proxy*>(gpr_malloc(sizeof(*proxy)));
-  memset(proxy, 0, sizeof(*proxy));
-  proxy->combiner = grpc_combiner_create();
-  gpr_ref_init(&proxy->users, 1);
+  grpc_end2end_http_proxy* proxy = grpc_core::New<grpc_end2end_http_proxy>();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&proxy->proxy_name, "localhost", proxy_port);
@@ -573,7 +579,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
-  gpr_free(proxy);
+  grpc_core::Delete(proxy);
 }
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
