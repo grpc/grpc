@@ -2211,7 +2211,7 @@ static void add_retriable_send_initial_metadata_op(
                                    .grpc_previous_rpc_attempts);
   }
   if (GPR_UNLIKELY(calld->num_attempts_completed > 0)) {
-    grpc_mdelem retry_md = grpc_mdelem_from_slices(
+    grpc_mdelem retry_md = grpc_mdelem_from_slices_no_unref(
         GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
         *retry_count_strings[calld->num_attempts_completed - 1]);
     grpc_error* error = grpc_metadata_batch_add_tail(

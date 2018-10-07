@@ -2127,9 +2127,8 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
       GRPC_LOG_IF_ERROR(
           "add_status_message",
           grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-              &s->metadata_buffer[1],
-              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_MESSAGE,
-                                      grpc_slice_ref_internal(slice))));
+              &s->metadata_buffer[1], grpc_mdelem_from_slices_no_unref(
+                                          GRPC_MDSTR_GRPC_MESSAGE, slice)));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);

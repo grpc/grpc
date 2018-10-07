@@ -237,7 +237,7 @@ static void rehash_mdtab(mdtab_shard* shard) {
 }
 
 grpc_mdelem grpc_mdelem_create(
-    grpc_slice key, grpc_slice value,
+    const grpc_slice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store) {
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
     if (compatible_external_backing_store != nullptr) {
@@ -324,11 +324,17 @@ grpc_mdelem grpc_mdelem_create(
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
+grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
+                                    const grpc_slice& value) {
   grpc_mdelem out = grpc_mdelem_create(key, value, nullptr);
   grpc_slice_unref_internal(key);
   grpc_slice_unref_internal(value);
   return out;
+}
+
+grpc_mdelem grpc_mdelem_from_slices_no_unref(const grpc_slice& key,
+                                             const grpc_slice& value) {
+  return grpc_mdelem_create(key, value, nullptr);
 }
 
 grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
