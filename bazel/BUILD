@@ -28,4 +28,5 @@ cc_grpc_library(
     srcs = "well_known_protos_list",
     proto_only = True,
     deps = [],
+    well_known_protos = False,
 )
