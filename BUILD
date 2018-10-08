@@ -847,8 +847,8 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
-        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/block_annotate.h",
+        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
@@ -1550,9 +1550,9 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
+        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_alpn",
         "tsi",
-        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1812,8 +1812,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
-        "tsi_interface",
         "grpc_shadow_boringssl",
+        "tsi_interface",
     ],
 )
 
@@ -1908,9 +1908,9 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
+        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
-        "grpc_shadow_boringssl",
     ],
 )
 
@@ -2137,10 +2137,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
