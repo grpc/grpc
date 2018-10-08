@@ -48,22 +48,22 @@ grpc_core::TraceFlag grpc_timer_trace(false, "timer");
 grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
 
 /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
- * deadlines earlier than 'queue_deadline" cap are maintained in the heap and
+ * deadlines earlier than 'queue_deadline_cap' are maintained in the heap and
  * others are maintained in the list (unordered). This helps to keep the number
  * of elements in the heap low.
  *
  * The 'queue_deadline_cap' gets recomputed periodically based on the timer
  * stats maintained in 'stats' and the relevant timers are then moved from the
- * 'list' to 'heap'
+ * 'list' to 'heap'.
  */
 typedef struct {
   gpr_mu mu;
   grpc_time_averaged_stats stats;
-  /* All and only timers with deadlines <= this will be in the heap. */
+  /* All and only timers with deadlines < this will be in the heap. */
   grpc_millis queue_deadline_cap;
-  /* The deadline of the next timer due in this shard */
+  /* The deadline of the next timer due in this shard. */
   grpc_millis min_deadline;
-  /* Index of this timer_shard in the g_shard_queue */
+  /* Index of this timer_shard in the g_shard_queue. */
   uint32_t shard_queue_index;
   /* This holds all timers with deadlines < queue_deadline_cap. Timers in this
      list have the top bit of their deadline set to 0. */
@@ -85,7 +85,7 @@ static timer_shard** g_shard_queue;
 
 #ifndef NDEBUG
 
-/* == Hash table for duplicate timer detection == */
+/* == DEBUG ONLY: hash table for duplicate timer detection == */
 
 #define NUM_HASH_BUCKETS 1009 /* Prime number close to 1000 */
 
@@ -177,7 +177,7 @@ static void remove_from_ht(grpc_timer* t) {
   t->hash_table_next = nullptr;
 }
 
-/* If a timer is added to a timer shard (either heap or a list), it cannot
+/* If a timer is added to a timer shard (either heap or a list), it must
  * be pending. A timer is added to hash table only-if it is added to the
  * timer shard.
  * Therefore, if timer->pending is false, it cannot be in hash table */
@@ -489,7 +489,7 @@ static void timer_cancel(grpc_timer* timer) {
    'queue_deadline_cap') into into shard->heap.
    Returns 'true' if shard->heap has atleast ONE element
    REQUIRES: shard->mu locked */
-static int refill_heap(timer_shard* shard, grpc_millis now) {
+static bool refill_heap(timer_shard* shard, grpc_millis now) {
   /* Compute the new queue window width and bound by the limits: */
   double computed_deadline_delta =
       grpc_time_averaged_stats_update_average(&shard->stats) *
