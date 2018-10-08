@@ -772,19 +772,19 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_resolver_sockaddr
-  src:
-  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  plugin: grpc_resolver_sockaddr
-  uses:
-  - grpc_base
-  - grpc_client_channel
 - name: grpc_resolver_plugin
   headers:
   - src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.h
   src:
   - src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc
   plugin: grpc_resolver_plugin
+  uses:
+  - grpc_base
+  - grpc_client_channel
+- name: grpc_resolver_sockaddr
+  src:
+  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  plugin: grpc_resolver_sockaddr
   uses:
   - grpc_base
   - grpc_client_channel
@@ -3343,16 +3343,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: plugin_resolver_test
-  build: test
-  language: c++
-  src:
-  - test/core/client_channel/resolvers/plugin_resolver_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: pollset_set_test
   build: test
   language: c
@@ -5127,6 +5117,16 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: plugin_resolver_test
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/resolvers/plugin_resolver_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: proto_server_reflection_test
   gtest: true
   build: test

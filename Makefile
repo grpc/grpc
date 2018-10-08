@@ -1207,6 +1207,7 @@ mock_test: $(BINDIR)/$(CONFIG)/mock_test
 nonblocking_test: $(BINDIR)/$(CONFIG)/nonblocking_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
 orphanable_test: $(BINDIR)/$(CONFIG)/orphanable_test
+plugin_resolver_test: $(BINDIR)/$(CONFIG)/plugin_resolver_test
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
 proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
@@ -1705,6 +1706,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/orphanable_test \
+  $(BINDIR)/$(CONFIG)/plugin_resolver_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -1885,6 +1887,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/orphanable_test \
+  $(BINDIR)/$(CONFIG)/plugin_resolver_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -2366,6 +2369,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
 	$(E) "[RUN]     Testing orphanable_test"
 	$(Q) $(BINDIR)/$(CONFIG)/orphanable_test || ( echo test orphanable_test failed ; exit 1 )
+	$(E) "[RUN]     Testing plugin_resolver_test"
+	$(Q) $(BINDIR)/$(CONFIG)/plugin_resolver_test || ( echo test plugin_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_utils_test"
@@ -3747,6 +3752,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
@@ -19057,6 +19063,49 @@ endif
 endif
 
 
+PLUGIN_RESOLVER_TEST_SRC = \
+    test/core/client_channel/resolvers/plugin_resolver_test.cc \
+
+PLUGIN_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PLUGIN_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/plugin_resolver_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/plugin_resolver_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/plugin_resolver_test: $(PROTOBUF_DEP) $(PLUGIN_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(PLUGIN_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/plugin_resolver_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/plugin_resolver_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_plugin_resolver_test: $(PLUGIN_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(PLUGIN_RESOLVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 PROTO_SERVER_REFLECTION_TEST_SRC = \
     test/cpp/end2end/proto_server_reflection_test.cc \
 
@@ -24772,6 +24821,7 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc: $(OPENSSL_DEP)

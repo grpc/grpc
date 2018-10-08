@@ -936,6 +936,8 @@ src/core/ext/filters/client_channel/resolver/dns/native/README.md \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
+src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc \
+src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver_factory.h \

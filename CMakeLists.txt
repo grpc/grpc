@@ -618,6 +618,7 @@ add_dependencies(buildtests_cxx mock_test)
 add_dependencies(buildtests_cxx nonblocking_test)
 add_dependencies(buildtests_cxx noop-benchmark)
 add_dependencies(buildtests_cxx orphanable_test)
+add_dependencies(buildtests_cxx plugin_resolver_test)
 add_dependencies(buildtests_cxx proto_server_reflection_test)
 add_dependencies(buildtests_cxx proto_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1245,6 +1246,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
@@ -13291,6 +13293,44 @@ target_link_libraries(orphanable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(plugin_resolver_test
+  test/core/client_channel/resolvers/plugin_resolver_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(plugin_resolver_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(plugin_resolver_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr_test_util
   gpr

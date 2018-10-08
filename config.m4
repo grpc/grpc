@@ -391,6 +391,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/plugin/plugin_resolver.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
@@ -672,6 +673,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/c_ares)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/dns/native)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)

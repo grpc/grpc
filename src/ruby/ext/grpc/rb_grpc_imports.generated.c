@@ -56,6 +56,11 @@ grpc_channel_check_connectivity_state_type grpc_channel_check_connectivity_state
 grpc_channel_num_external_connectivity_watchers_type grpc_channel_num_external_connectivity_watchers_import;
 grpc_channel_watch_connectivity_state_type grpc_channel_watch_connectivity_state_import;
 grpc_channel_support_connectivity_watcher_type grpc_channel_support_connectivity_watcher_import;
+grpc_resolver_factory_register_type grpc_resolver_factory_register_import;
+grpc_resolver_observer_ref_type grpc_resolver_observer_ref_import;
+grpc_resolver_observer_unref_type grpc_resolver_observer_unref_import;
+grpc_resolver_observer_set_result_type grpc_resolver_observer_set_result_import;
+grpc_resolver_observer_set_error_type grpc_resolver_observer_set_error_import;
 grpc_channel_create_call_type grpc_channel_create_call_import;
 grpc_channel_ping_type grpc_channel_ping_import;
 grpc_channel_register_call_type grpc_channel_register_call_import;
@@ -312,6 +317,11 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_num_external_connectivity_watchers_import = (grpc_channel_num_external_connectivity_watchers_type) GetProcAddress(library, "grpc_channel_num_external_connectivity_watchers");
   grpc_channel_watch_connectivity_state_import = (grpc_channel_watch_connectivity_state_type) GetProcAddress(library, "grpc_channel_watch_connectivity_state");
   grpc_channel_support_connectivity_watcher_import = (grpc_channel_support_connectivity_watcher_type) GetProcAddress(library, "grpc_channel_support_connectivity_watcher");
+  grpc_resolver_factory_register_import = (grpc_resolver_factory_register_type) GetProcAddress(library, "grpc_resolver_factory_register");
+  grpc_resolver_observer_ref_import = (grpc_resolver_observer_ref_type) GetProcAddress(library, "grpc_resolver_observer_ref");
+  grpc_resolver_observer_unref_import = (grpc_resolver_observer_unref_type) GetProcAddress(library, "grpc_resolver_observer_unref");
+  grpc_resolver_observer_set_result_import = (grpc_resolver_observer_set_result_type) GetProcAddress(library, "grpc_resolver_observer_set_result");
+  grpc_resolver_observer_set_error_import = (grpc_resolver_observer_set_error_type) GetProcAddress(library, "grpc_resolver_observer_set_error");
   grpc_channel_create_call_import = (grpc_channel_create_call_type) GetProcAddress(library, "grpc_channel_create_call");
   grpc_channel_ping_import = (grpc_channel_ping_type) GetProcAddress(library, "grpc_channel_ping");
   grpc_channel_register_call_import = (grpc_channel_register_call_type) GetProcAddress(library, "grpc_channel_register_call");
