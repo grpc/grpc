@@ -21,6 +21,8 @@
 #include <grpc/grpc.h>
 
 @class GRPCCompletionQueue;
+@class GRPCCallOptions;
+@class GRPCChannelConfiguration;
 struct grpc_channel_credentials;
 
 /**
@@ -28,41 +30,30 @@ struct grpc_channel_credentials;
  */
 @interface GRPCChannel : NSObject
 
-@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
-
 - (nullable instancetype)init NS_UNAVAILABLE;
 
 /**
- * Creates a secure channel to the specified @c host using default credentials and channel
- * arguments. If certificates could not be found to create a secure channel, then @c nil is
- * returned.
+ * Returns a channel connecting to \a host with options as \a callOptions. The channel may be new
+ * or a cached channel that is already connected.
  */
-+ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
++ (nullable instancetype)channelWithHost:(nonnull NSString *)host
+                             callOptions:(nullable GRPCCallOptions *)callOptions;
 
 /**
- * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
+ * Get a grpc core call object from this channel.
  */
-#ifdef GRPC_COMPILE_WITH_CRONET
-+ (nullable GRPCChannel *)secureCronetChannelWithHost:(nonnull NSString *)host
-                                          channelArgs:(nonnull NSDictionary *)channelArgs;
-#endif
-/**
- * Creates a secure channel to the specified @c host using the specified @c credentials and
- * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
- */
-+ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-                                   credentials:
-                                       (nonnull struct grpc_channel_credentials *)credentials
-                                   channelArgs:(nullable NSDictionary *)channelArgs;
-
-/**
- * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
- */
-+ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
-                                     channelArgs:(nullable NSDictionary *)channelArgs;
-
 - (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
-                                   serverName:(nonnull NSString *)serverName
-                                      timeout:(NSTimeInterval)timeout
-                              completionQueue:(nonnull GRPCCompletionQueue *)queue;
+                              completionQueue:(nonnull GRPCCompletionQueue *)queue
+                                  callOptions:(nonnull GRPCCallOptions *)callOptions;
+
+- (void)unmanagedCallUnref;
+
+/**
+ * Create a channel object with the signature \a config. This function is used for testing only. Use
+ * channelWithHost:callOptions: in production.
+ */
++ (nullable instancetype)createChannelWithConfiguration:(nonnull GRPCChannelConfiguration *)config;
+
+// TODO (mxyan): deprecate with GRPCCall:closeOpenConnections
++ (void)closeOpenConnections;
 @end

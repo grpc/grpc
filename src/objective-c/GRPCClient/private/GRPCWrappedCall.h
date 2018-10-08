@@ -74,9 +74,8 @@
 @interface GRPCWrappedCall : NSObject
 
 - (instancetype)initWithHost:(NSString *)host
-                  serverName:(NSString *)serverName
                         path:(NSString *)path
-                     timeout:(NSTimeInterval)timeout NS_DESIGNATED_INITIALIZER;
+                 callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 
 - (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void (^)(void))errorHandler;
 

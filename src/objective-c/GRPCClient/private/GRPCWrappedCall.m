@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCHost.h"
 #import "NSData+GRPC.h"
@@ -235,31 +236,28 @@
 
 @implementation GRPCWrappedCall {
   GRPCCompletionQueue *_queue;
+  GRPCChannel *_channel;
   grpc_call *_call;
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil serverName:nil path:nil timeout:0];
+  return [self initWithHost:nil path:nil callOptions:[[GRPCCallOptions alloc] init]];
 }
 
 - (instancetype)initWithHost:(NSString *)host
-                  serverName:(NSString *)serverName
                         path:(NSString *)path
-                     timeout:(NSTimeInterval)timeout {
+                 callOptions:(GRPCCallOptions *)callOptions {
   if (!path || !host) {
     [NSException raise:NSInvalidArgumentException format:@"path and host cannot be nil."];
   }
 
-  if (self = [super init]) {
+  if ((self = [super init])) {
     // Each completion queue consumes one thread. There's a trade to be made between creating and
     // consuming too many threads and having contention of multiple calls in a single completion
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
-
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path
-                                                        serverName:serverName
-                                                           timeout:timeout
-                                                   completionQueue:_queue];
+    _channel = [GRPCChannel channelWithHost:host callOptions:callOptions];
+    _call = [_channel unmanagedCallWithPath:path completionQueue:_queue callOptions:callOptions];
     if (_call == NULL) {
       return nil;
     }
@@ -313,6 +311,8 @@
 
 - (void)dealloc {
   grpc_call_unref(_call);
+  [_channel unmanagedCallUnref];
+  _channel = nil;
 }
 
 @end
