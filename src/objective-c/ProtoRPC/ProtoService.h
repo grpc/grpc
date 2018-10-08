@@ -21,16 +21,40 @@
 @class GRPCProtoCall;
 @protocol GRXWriteable;
 @class GRXWriter;
+@class GRPCCallOptions;
+@class GRPCProtoCall;
+@class GRPCUnaryProtoCall;
+@class GRPCStreamingProtoCall;
+@protocol GRPCProtoResponseCallbacks;
 
 __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService
-    : NSObject -
+    : NSObject
+
+      -
       (instancetype)initWithHost : (NSString *)host packageName
-    : (NSString *)packageName serviceName : (NSString *)serviceName NS_DESIGNATED_INITIALIZER;
+    : (NSString *)packageName serviceName : (NSString *)serviceName callOptions
+    : (GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
+
+- (instancetype)initWithHost:(NSString *)host
+                 packageName:(NSString *)packageName
+                 serviceName:(NSString *)serviceName;
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
                  responseClass:(Class)responseClass
             responsesWriteable:(id<GRXWriteable>)responsesWriteable;
+
+- (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
+                            message:(id)message
+                    responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+                        callOptions:(GRPCCallOptions *)callOptions
+                      responseClass:(Class)responseClass;
+
+- (GRPCStreamingProtoCall *)RPCToMethod:(NSString *)method
+                        responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+                            callOptions:(GRPCCallOptions *)callOptions
+                          responseClass:(Class)responseClass;
+
 @end
 
 /**

@@ -23,8 +23,165 @@
 #else
 #import <GPBProtocolBuffers.h>
 #endif
+#import <GRPCClient/GRPCCall.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
+
+@implementation GRPCUnaryProtoCall {
+  GRPCStreamingProtoCall *_call;
+}
+
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                               message:(GPBMessage *)message
+                       responseHandler:(id<GRPCResponseHandler>)handler
+                           callOptions:(GRPCCallOptions *)callOptions
+                         responseClass:(Class)responseClass {
+  if ((self = [super init])) {
+    _call = [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
+                                                   responseHandler:handler
+                                                       callOptions:callOptions
+                                                     responseClass:responseClass];
+    [_call writeWithMessage:message];
+    [_call finish];
+  }
+  return self;
+}
+
+- (void)cancel {
+  [_call cancel];
+  _call = nil;
+}
+
+@end
+
+@interface GRPCStreamingProtoCall ()<GRPCResponseHandler>
+
+@end
+
+@implementation GRPCStreamingProtoCall {
+  GRPCRequestOptions *_requestOptions;
+  id<GRPCResponseHandler> _handler;
+  GRPCCallOptions *_callOptions;
+  Class _responseClass;
+
+  GRPCCall2 *_call;
+  dispatch_queue_t _dispatchQueue;
+}
+
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                       responseHandler:(id<GRPCResponseHandler>)handler
+                           callOptions:(GRPCCallOptions *)callOptions
+                         responseClass:(Class)responseClass {
+  if ((self = [super init])) {
+    _requestOptions = [requestOptions copy];
+    _handler = handler;
+    _callOptions = [callOptions copy];
+    _responseClass = responseClass;
+    _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
+
+    [self start];
+  }
+  return self;
+}
+
+- (void)start {
+  _call = [[GRPCCall2 alloc] initWithRequestOptions:_requestOptions
+                                            handler:self
+                                        callOptions:_callOptions];
+  [_call start];
+}
+
+- (void)cancel {
+  dispatch_async(_dispatchQueue, ^{
+    if (_call) {
+      [_call cancel];
+      _call = nil;
+    }
+    if (_handler) {
+      id<GRPCResponseHandler> handler = _handler;
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler closedWithTrailingMetadata:nil
+                                      error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                code:GRPCErrorCodeCancelled
+                                                            userInfo:@{
+                                                              NSLocalizedDescriptionKey :
+                                                                  @"Canceled by app"
+                                                            }]];
+      });
+      _handler = nil;
+    }
+  });
+}
+
+- (void)writeWithMessage:(GPBMessage *)message {
+  if (![message isKindOfClass:[GPBMessage class]]) {
+    [NSException raise:NSInvalidArgumentException format:@"Data must be a valid protobuf type."];
+  }
+
+  dispatch_async(_dispatchQueue, ^{
+    if (_call) {
+      [_call writeWithData:[message data]];
+    }
+  });
+}
+
+- (void)finish {
+  dispatch_async(_dispatchQueue, ^{
+    if (_call) {
+      [_call finish];
+      _call = nil;
+    }
+  });
+}
+
+- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
+  if (_handler) {
+    id<GRPCResponseHandler> handler = _handler;
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler receivedInitialMetadata:initialMetadata];
+    });
+  }
+}
+
+- (void)receivedMessage:(NSData *)message {
+  if (_handler) {
+    id<GRPCResponseHandler> handler = _handler;
+    NSError *error = nil;
+    id parsed = [_responseClass parseFromData:message error:&error];
+    if (parsed) {
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler receivedMessage:parsed];
+      });
+    } else {
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler closedWithTrailingMetadata:nil error:error];
+      });
+      handler = nil;
+      [_call cancel];
+      _call = nil;
+    }
+  }
+}
+
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (_handler) {
+    id<GRPCResponseHandler> handler = _handler;
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler closedWithTrailingMetadata:trailingMetadata error:error];
+    });
+    _handler = nil;
+  }
+  if (_call) {
+    [_call cancel];
+    _call = nil;
+  }
+}
+
+- (dispatch_queue_t)dispatchQueue {
+  return _dispatchQueue;
+}
+
+@end
 
 static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
   NSDictionary *info = @{
