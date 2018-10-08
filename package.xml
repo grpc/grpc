@@ -246,7 +246,6 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_shared_resource.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h" role="src" />
@@ -677,7 +676,6 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_shared_resource.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc" role="src" />

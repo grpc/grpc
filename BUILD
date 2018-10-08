@@ -1873,7 +1873,6 @@ grpc_cc_library(
     srcs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
         "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
         "src/core/tsi/alts_transport_security.cc",
@@ -1888,7 +1887,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
         "src/core/tsi/alts/handshaker/alts_shared_resource.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",

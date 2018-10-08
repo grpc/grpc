@@ -20,7 +20,6 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -44,30 +43,9 @@ typedef struct alts_handshaker_client_test_config {
   grpc_channel* channel;
   grpc_completion_queue* cq;
   alts_handshaker_client* client;
+  alts_handshaker_client* server;
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
-
-static alts_tsi_event* alts_tsi_event_create_for_testing(bool is_client) {
-  alts_tsi_event* e = static_cast<alts_tsi_event*>(gpr_zalloc(sizeof(*e)));
-  grpc_metadata_array_init(&e->initial_metadata);
-  grpc_metadata_array_init(&e->trailing_metadata);
-  e->options = is_client ? grpc_alts_credentials_client_options_create()
-                         : grpc_alts_credentials_server_options_create();
-  if (is_client) {
-    grpc_alts_credentials_client_options_add_target_service_account(
-        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
-    grpc_alts_credentials_client_options_add_target_service_account(
-        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
-  }
-  grpc_gcp_rpc_protocol_versions* versions = &e->options->rpc_versions;
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
-      versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
-      versions, kMinRpcVersionMajor, kMinRpcVersionMinor));
-  e->target_name =
-      grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME);
-  return e;
-}
 
 static void validate_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* versions) {
@@ -102,11 +80,11 @@ static void validate_target_identities(
 
 /**
  * Validate if grpc operation data is correctly populated with the fields of
- * ALTS TSI event.
+ * ALTS handshaker client.
  */
-static bool validate_op(alts_tsi_event* event, const grpc_op* op, size_t nops,
-                        bool is_start) {
-  GPR_ASSERT(event != nullptr && op != nullptr && nops != 0);
+static bool validate_op(alts_handshaker_client* client, const grpc_op* op,
+                        size_t nops, bool is_start) {
+  GPR_ASSERT(client != nullptr && op != nullptr && nops != 0);
   bool ok = true;
   grpc_op* start_op = const_cast<grpc_op*>(op);
   if (is_start) {
@@ -117,17 +95,17 @@ static bool validate_op(alts_tsi_event* event, const grpc_op* op, size_t nops,
 
     ok &= (op->op == GRPC_OP_RECV_INITIAL_METADATA);
     ok &= (op->data.recv_initial_metadata.recv_initial_metadata ==
-           &event->initial_metadata);
+           &client->initial_metadata);
     op++;
     GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
   }
   ok &= (op->op == GRPC_OP_SEND_MESSAGE);
-  ok &= (op->data.send_message.send_message == event->send_buffer);
+  ok &= (op->data.send_message.send_message == client->send_buffer);
   op++;
   GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
 
   ok &= (op->op == GRPC_OP_RECV_MESSAGE);
-  ok &= (op->data.recv_message.recv_message == &event->recv_buffer);
+  ok &= (op->data.recv_message.recv_message == &client->recv_buffer);
   op++;
   GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
 
@@ -166,9 +144,9 @@ static grpc_call_error check_must_not_be_called(grpc_call* call,
 static grpc_call_error check_client_start_success(grpc_call* call,
                                                   const grpc_op* op,
                                                   size_t nops, void* tag) {
-  alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
+  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(tag);
   grpc_gcp_handshaker_req* req =
-      deserialize_handshaker_req(CLIENT_START_REQ, event->send_buffer);
+      deserialize_handshaker_req(CLIENT_START_REQ, client->send_buffer);
   GPR_ASSERT(req->client_start.handshake_security_protocol ==
              grpc_gcp_HandshakeProtocol_ALTS);
   const void* data = (static_cast<repeated_field*>(
@@ -195,7 +173,7 @@ static grpc_call_error check_client_start_success(grpc_call* call,
                     GRPC_SLICE_LENGTH(*target_name)) == 0);
   GPR_ASSERT(GRPC_SLICE_LENGTH(*target_name) ==
              strlen(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME));
-  GPR_ASSERT(validate_op(event, op, nops, true /* is_start */));
+  GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -209,9 +187,9 @@ static grpc_call_error check_client_start_success(grpc_call* call,
 static grpc_call_error check_server_start_success(grpc_call* call,
                                                   const grpc_op* op,
                                                   size_t nops, void* tag) {
-  alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
+  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(tag);
   grpc_gcp_handshaker_req* req =
-      deserialize_handshaker_req(SERVER_START_REQ, event->send_buffer);
+      deserialize_handshaker_req(SERVER_START_REQ, client->send_buffer);
   const void* data = (static_cast<repeated_field*>(
                           req->server_start.application_protocols.arg))
                          ->data;
@@ -232,7 +210,7 @@ static grpc_call_error check_server_start_success(grpc_call* call,
                     ALTS_RECORD_PROTOCOL,
                     GRPC_SLICE_LENGTH(*record_protocol)) == 0);
   validate_rpc_protocol_versions(&req->server_start.rpc_versions);
-  GPR_ASSERT(validate_op(event, op, nops, true /* is_start */));
+  GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -244,15 +222,15 @@ static grpc_call_error check_server_start_success(grpc_call* call,
  */
 static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
                                           size_t nops, void* tag) {
-  alts_tsi_event* event = static_cast<alts_tsi_event*>(tag);
+  alts_handshaker_client* client = static_cast<alts_handshaker_client*>(tag);
   grpc_gcp_handshaker_req* req =
-      deserialize_handshaker_req(NEXT_REQ, event->send_buffer);
+      deserialize_handshaker_req(NEXT_REQ, client->send_buffer);
   grpc_slice* in_bytes = static_cast<grpc_slice*>(req->next.in_bytes.arg);
   GPR_ASSERT(in_bytes != nullptr);
   GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*in_bytes),
                     ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME,
                     GRPC_SLICE_LENGTH(*in_bytes)) == 0);
-  GPR_ASSERT(validate_op(event, op, nops, false /* is_start */));
+  GPR_ASSERT(validate_op(client, op, nops, false /* is_start */));
   grpc_gcp_handshaker_req_destroy(req);
   return GRPC_CALL_OK;
 }
@@ -267,6 +245,25 @@ static grpc_call_error check_grpc_call_failure(grpc_call* call,
   return GRPC_CALL_ERROR;
 }
 
+static grpc_alts_credentials_options* create_credentials_options(
+    bool is_client) {
+  grpc_alts_credentials_options* options =
+      is_client ? grpc_alts_credentials_client_options_create()
+                : grpc_alts_credentials_server_options_create();
+  if (is_client) {
+    grpc_alts_credentials_client_options_add_target_service_account(
+        options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
+    grpc_alts_credentials_client_options_add_target_service_account(
+        options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
+  }
+  grpc_gcp_rpc_protocol_versions* versions = &options->rpc_versions;
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
+      versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
+  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_min(
+      versions, kMinRpcVersionMajor, kMinRpcVersionMinor));
+  return options;
+}
+
 static alts_handshaker_client_test_config* create_config() {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
@@ -276,8 +273,22 @@ static alts_handshaker_client_test_config* create_config() {
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   config->client = alts_grpc_handshaker_client_create(
       config->channel, ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL,
-      nullptr, true);
+      nullptr);
+  config->server = alts_grpc_handshaker_client_create(
+      config->channel, ALTS_HANDSHAKER_CLIENT_TEST_HANDSHAKER_SERVICE_URL,
+      nullptr);
   GPR_ASSERT(config->client != nullptr);
+  GPR_ASSERT(config->server != nullptr);
+  grpc_alts_credentials_options* client_options =
+      create_credentials_options(true /* is_client */);
+  grpc_alts_credentials_options* server_options =
+      create_credentials_options(false /*  is_client */);
+  alts_handshaker_client_init(config->client, nullptr, nullptr, client_options,
+                              grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME);
+  alts_handshaker_client_init(config->server, nullptr, nullptr, server_options,
+                              grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME);
+  grpc_alts_credentials_options_destroy(client_options);
+  grpc_alts_credentials_options_destroy(server_options);
   config->out_frame =
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME);
   return config;
@@ -290,6 +301,7 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
   grpc_completion_queue_destroy(config->cq);
   grpc_channel_destroy(config->channel);
   alts_handshaker_client_destroy(config->client);
+  alts_handshaker_client_destroy(config->server);
   grpc_slice_unref(config->out_frame);
   gpr_free(config);
 }
@@ -297,73 +309,59 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
 static void schedule_request_invalid_arg_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-  alts_tsi_event* event = nullptr;
 
   /* Tests. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_must_not_be_called);
-  event = alts_tsi_event_create_for_testing(true /* is_client */);
   /* Check client_start. */
-  GPR_ASSERT(alts_handshaker_client_start_client(nullptr, event) ==
-             TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(alts_handshaker_client_start_client(config->client, nullptr) ==
+  GPR_ASSERT(alts_handshaker_client_start_client(nullptr) ==
              TSI_INVALID_ARGUMENT);
 
   /* Check server_start. */
-  GPR_ASSERT(alts_handshaker_client_start_server(
-                 config->client, event, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(alts_handshaker_client_start_server(config->client, nullptr,
-                                                 &config->out_frame) ==
+  GPR_ASSERT(alts_handshaker_client_start_server(config->server, nullptr) ==
              TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(alts_handshaker_client_start_server(
-                 nullptr, event, &config->out_frame) == TSI_INVALID_ARGUMENT);
+  GPR_ASSERT(alts_handshaker_client_start_server(nullptr, &config->out_frame) ==
+             TSI_INVALID_ARGUMENT);
 
   /* Check next. */
-  GPR_ASSERT(alts_handshaker_client_next(config->client, event, nullptr) ==
+  GPR_ASSERT(alts_handshaker_client_next(config->client, nullptr) ==
              TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(alts_handshaker_client_next(config->client, nullptr,
-                                         &config->out_frame) ==
-             TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(alts_handshaker_client_next(nullptr, event, &config->out_frame) ==
+  GPR_ASSERT(alts_handshaker_client_next(nullptr, &config->out_frame) ==
              TSI_INVALID_ARGUMENT);
 
   /* Check shutdown. */
   alts_handshaker_client_shutdown(nullptr);
 
   /* Cleanup. */
-  alts_tsi_event_destroy(event);
   destroy_config(config);
 }
 
 static void schedule_request_success_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-  alts_tsi_event* event = nullptr;
 
   /* Check client_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, check_client_start_success);
-  event = alts_tsi_event_create_for_testing(true /* is_client. */);
-  GPR_ASSERT(alts_handshaker_client_start_client(config->client, event) ==
-             TSI_OK);
-  alts_tsi_event_destroy(event);
+  GPR_ASSERT(alts_handshaker_client_start_client(config->client) == TSI_OK);
 
   /* Check server_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
-      config->client, check_server_start_success);
-  event = alts_tsi_event_create_for_testing(false /* is_client. */);
-  GPR_ASSERT(alts_handshaker_client_start_server(config->client, event,
+      config->server, check_server_start_success);
+  GPR_ASSERT(alts_handshaker_client_start_server(config->server,
                                                  &config->out_frame) == TSI_OK);
-  alts_tsi_event_destroy(event);
 
-  /* Check next success. */
+  /* Check client next success. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_next_success);
-  event = alts_tsi_event_create_for_testing(true /* is_client. */);
-  GPR_ASSERT(alts_handshaker_client_next(config->client, event,
-                                         &config->out_frame) == TSI_OK);
-  alts_tsi_event_destroy(event);
+  GPR_ASSERT(alts_handshaker_client_next(config->client, &config->out_frame) ==
+             TSI_OK);
 
+  /* Check server next success. */
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     check_next_success);
+  GPR_ASSERT(alts_handshaker_client_next(config->server, &config->out_frame) ==
+             TSI_OK);
   /* Cleanup. */
   destroy_config(config);
 }
@@ -371,29 +369,26 @@ static void schedule_request_success_test() {
 static void schedule_request_grpc_call_failure_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-  alts_tsi_event* event = nullptr;
 
   /* Check client_start failure. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_grpc_call_failure);
-  event = alts_tsi_event_create_for_testing(true /* is_client. */);
-  GPR_ASSERT(alts_handshaker_client_start_client(config->client, event) ==
+  GPR_ASSERT(alts_handshaker_client_start_client(config->client) ==
              TSI_INTERNAL_ERROR);
-  alts_tsi_event_destroy(event);
 
   /* Check server_start failure. */
-  event = alts_tsi_event_create_for_testing(false /* is_client. */);
-  GPR_ASSERT(alts_handshaker_client_start_server(config->client, event,
-                                                 &config->out_frame) ==
-             TSI_INTERNAL_ERROR);
-  alts_tsi_event_destroy(event);
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     check_grpc_call_failure);
+  GPR_ASSERT(alts_handshaker_client_start_server(
+                 config->server, &config->out_frame) == TSI_INTERNAL_ERROR);
 
-  /* Check next failure. */
-  event = alts_tsi_event_create_for_testing(true /* is_cleint. */);
-  GPR_ASSERT(
-      alts_handshaker_client_next(config->client, event, &config->out_frame) ==
-      TSI_INTERNAL_ERROR);
-  alts_tsi_event_destroy(event);
+  /* Check client next failure. */
+  GPR_ASSERT(alts_handshaker_client_next(config->client, &config->out_frame) ==
+             TSI_INTERNAL_ERROR);
+
+  /* Check server next failure. */
+  GPR_ASSERT(alts_handshaker_client_next(config->server, &config->out_frame) ==
+             TSI_INTERNAL_ERROR);
 
   /* Cleanup. */
   destroy_config(config);

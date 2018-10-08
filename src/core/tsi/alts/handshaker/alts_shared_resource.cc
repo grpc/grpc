@@ -22,7 +22,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/tsi/alts/handshaker/alts_tsi_event.h"
+#include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;
 static alts_shared_resource* kSharedResource = alts_get_shared_resource();
@@ -58,9 +58,10 @@ static void thread_worker(void* arg) {
       break;
     }
     /* event.type == GRPC_OP_COMPLETE. */
-    alts_tsi_event* alts_event = static_cast<alts_tsi_event*>(event.tag);
-    alts_tsi_event_dispatch_to_handshaker(alts_event, event.success);
-    alts_tsi_event_destroy(alts_event);
+    alts_handshaker_client* client =
+        static_cast<alts_handshaker_client*>(event.tag);
+    alts_tsi_handshaker_handle_response(client, event.success);
+    alts_handshaker_client_buffer_destroy(client);
   }
 }
 
