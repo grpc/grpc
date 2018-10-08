@@ -41,8 +41,26 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteSSLHost;
 }
 
++ (NSString *)pemRootCert {
+  return nil;
+}
+
++ (NSString *)hostNameOverride {
+  return nil;
+}
+
 - (int32_t)encodingOverhead {
   return kRemoteInteropServerOverhead;  // bytes
 }
+
+#ifdef GRPC_COMPILE_WITH_CRONET
++ (GRPCTransportType)transportType {
+  return GRPCTransportTypeCronet;
+}
+#else
++ (GRPCTransportType)transportType {
+  return GRPCTransportTypeDefault;
+}
+#endif
 
 @end

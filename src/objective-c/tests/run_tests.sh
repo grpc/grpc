@@ -173,4 +173,14 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme ChannelTests \
+    -destination name="iPhone 8" \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
 exit 0

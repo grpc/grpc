@@ -18,6 +18,8 @@
 
 #import <XCTest/XCTest.h>
 
+#import <GRPCClient/GRPCCallOptions.h>
+
 /**
  * Implements tests as described here:
  * https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
@@ -38,4 +40,23 @@
  * remote servers enconde responses with different overhead (?), so this is defined per-subclass.
  */
 - (int32_t)encodingOverhead;
+
+/**
+ * The type of transport to be used. The base implementation returns default. Subclasses should
+ * override to appropriate settings.
+ */
++ (GRPCTransportType)transportType;
+
+/**
+ * The root certificates to be used. The base implementation returns nil. Subclasses should override
+ * to appropriate settings.
+ */
++ (NSString *)pemRootCert;
+
+/**
+ * The root certificates to be used. The base implementation returns nil. Subclasses should override
+ * to appropriate settings.
+ */
++ (NSString *)hostNameOverride;
+
 @end

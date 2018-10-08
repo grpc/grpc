@@ -14,6 +14,8 @@ GRPC_LOCAL_SRC = '../../..'
   InteropTestsLocalSSL
   InteropTestsLocalCleartext
   InteropTestsRemoteWithCronet
+  InteropTestsMultipleChannels
+  InteropTestsCallOptions
   UnitTests
 ).each do |target_name|
   target target_name do
@@ -30,7 +32,7 @@ GRPC_LOCAL_SRC = '../../..'
     pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
     pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
 
-    if target_name == 'InteropTestsRemoteWithCronet'
+    if target_name == 'InteropTestsRemoteWithCronet' or target_name == 'InteropTestsMultipleChannels'
       pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
       pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
     end
@@ -70,6 +72,12 @@ end
     pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
   end
+end
+
+target 'ChannelTests' do
+  pod 'gRPC', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 end
 
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
