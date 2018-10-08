@@ -326,10 +326,12 @@ static grpc_call* grpc_channel_create_call_internal(
   return call;
 }
 
-grpc_call* grpc_channel_create_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, const grpc_slice& method, const grpc_slice* host,
-    gpr_timespec deadline, void* reserved) {
+grpc_call* grpc_channel_create_call(grpc_channel* channel,
+                                    grpc_call* parent_call,
+                                    uint32_t propagation_mask,
+                                    grpc_completion_queue* cq,
+                                    grpc_slice method, const grpc_slice* host,
+                                    gpr_timespec deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(

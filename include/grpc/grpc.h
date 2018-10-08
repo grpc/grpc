@@ -211,7 +211,7 @@ GRPCAPI int grpc_channel_support_connectivity_watcher(grpc_channel* channel);
     possible values). */
 GRPCAPI grpc_call* grpc_channel_create_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* completion_queue, const grpc_slice& method,
+    grpc_completion_queue* completion_queue, grpc_slice method,
     const grpc_slice* host, gpr_timespec deadline, void* reserved);
 
 /** Ping the channels peer (load balanced channels will select one sub-channel
