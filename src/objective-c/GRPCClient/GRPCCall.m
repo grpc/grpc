@@ -20,13 +20,16 @@
 
 #import "GRPCCall+OAuth2.h"
 
+#import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXConcurrentWriteable.h>
 #import <RxLibrary/GRXImmediateSingleWriter.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#import "private/GRPCConnectivityMonitor.h"
+#import "GRPCCallOptions.h"
 #import "private/GRPCHost.h"
+#import "private/GRPCConnectivityMonitor.h"
 #import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
@@ -52,6 +55,165 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @property(atomic, strong) NSDictionary *responseHeaders;
 @property(atomic, strong) NSDictionary *responseTrailers;
 @property(atomic) BOOL isWaitingForToken;
+
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions;
+
+@end
+
+@implementation GRPCRequestOptions
+
+- (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
+  if ((self = [super init])) {
+    _host = host;
+    _path = path;
+    _safety = safety;
+  }
+  return self;
+}
+
+- (id)copyWithZone:(NSZone *)zone {
+  GRPCRequestOptions *request =
+      [[GRPCRequestOptions alloc] initWithHost:[_host copy] path:[_path copy] safety:_safety];
+
+  return request;
+}
+
+@end
+
+@implementation GRPCCall2 {
+  GRPCCallOptions *_callOptions;
+  id<GRPCResponseHandler> _handler;
+
+  GRPCCall *_call;
+  BOOL _initialMetadataPublished;
+  GRXBufferedPipe *_pipe;
+  dispatch_queue_t _dispatchQueue;
+}
+
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                               handler:(id<GRPCResponseHandler>)handler
+                           callOptions:(GRPCCallOptions *)callOptions {
+  if (!requestOptions || !requestOptions.host || !requestOptions.path) {
+    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
+  }
+
+  if ((self = [super init])) {
+    _requestOptions = [requestOptions copy];
+    _callOptions = [callOptions copy];
+    _handler = handler;
+    _initialMetadataPublished = NO;
+    _pipe = [GRXBufferedPipe pipe];
+    _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+  }
+
+  return self;
+}
+
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                               handler:(id<GRPCResponseHandler>)handler {
+  return [self initWithRequestOptions:requestOptions handler:handler callOptions:nil];
+}
+
+- (void)start {
+  dispatch_async(_dispatchQueue, ^{
+    if (!self->_callOptions) {
+      self->_callOptions = [[GRPCCallOptions alloc] init];
+    }
+
+    self->_call = [[GRPCCall alloc] initWithHost:self->_requestOptions.host
+                                            path:self->_requestOptions.path
+                                      callSafety:self->_requestOptions.safety
+                                  requestsWriter:self->_pipe
+                                     callOptions:self->_callOptions];
+    if (self->_callOptions.initialMetadata) {
+      [self->_call.requestHeaders addEntriesFromDictionary:self->_callOptions.initialMetadata];
+    }
+    id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
+      dispatch_async(self->_dispatchQueue, ^{
+        if (self->_handler) {
+          id<GRPCResponseHandler> handler = self->_handler;
+          NSDictionary *headers = nil;
+          if (!self->_initialMetadataPublished) {
+            headers = self->_call.responseHeaders;
+            self->_initialMetadataPublished = YES;
+          }
+          if (headers) {
+            dispatch_async(handler.dispatchQueue, ^{
+              [handler receivedInitialMetadata:headers];
+            });
+          }
+          if (value) {
+            dispatch_async(handler.dispatchQueue, ^{
+              [handler receivedMessage:value];
+            });
+          }
+        }
+      });
+    }
+        completionHandler:^(NSError *errorOrNil) {
+          dispatch_async(self->_dispatchQueue, ^{
+            if (self->_handler) {
+              id<GRPCResponseHandler> handler = self->_handler;
+              NSDictionary *headers = nil;
+              if (!self->_initialMetadataPublished) {
+                headers = self->_call.responseHeaders;
+                self->_initialMetadataPublished = YES;
+              }
+              if (headers) {
+                dispatch_async(handler.dispatchQueue, ^{
+                  [handler receivedInitialMetadata:headers];
+                });
+              }
+              dispatch_async(handler.dispatchQueue, ^{
+                [handler closedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+              });
+            }
+          });
+        }];
+    [self->_call startWithWriteable:responseWriteable];
+  });
+}
+
+- (void)cancel {
+  dispatch_async(_dispatchQueue, ^{
+    if (self->_call) {
+      [self->_call cancel];
+      self->_call = nil;
+    }
+    if (self->_handler) {
+      id<GRPCResponseHandler> handler = self->_handler;
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler closedWithTrailingMetadata:nil
+                                      error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                code:GRPCErrorCodeCancelled
+                                                            userInfo:@{
+                                                              NSLocalizedDescriptionKey :
+                                                                  @"Canceled by app"
+                                                            }]];
+      });
+      self->_handler = nil;
+    }
+  });
+}
+
+- (void)writeWithData:(NSData *)data {
+  dispatch_async(_dispatchQueue, ^{
+    [self->_pipe writeValue:data];
+  });
+}
+
+- (void)finish {
+  dispatch_async(_dispatchQueue, ^{
+    if (self->_call) {
+      [self->_pipe writesFinishedWithError:nil];
+    }
+  });
+}
+
 @end
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
@@ -75,6 +237,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   NSString *_host;
   NSString *_path;
+  GRPCCallSafety _callSafety;
+  GRPCCallOptions *_callOptions;
   GRPCWrappedCall *_wrappedCall;
   GRPCConnectivityMonitor *_connectivityMonitor;
 
@@ -113,6 +277,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   // Whether the call is finished. If it is, should not call finishWithError again.
   BOOL _finished;
+
+  // The OAuth2 token fetched from a token provider.
+  NSString *_fetchedOauth2AccessToken;
 }
 
 @synthesize state = _state;
@@ -156,6 +323,18 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
               requestsWriter:(GRXWriter *)requestWriter {
+  return [self initWithHost:host
+                       path:path
+                 callSafety:GRPCCallSafetyDefault
+             requestsWriter:requestWriter
+                callOptions:nil];
+}
+
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestWriter
+                 callOptions:(GRPCCallOptions *)callOptions {
   if (!host || !path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
@@ -166,6 +345,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
+    _callSafety = safety;
+    _callOptions = [callOptions copy];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("io.grpc.call", NULL);
@@ -317,11 +498,36 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 #pragma mark Send headers
 
-- (void)sendHeaders:(NSDictionary *)headers {
+- (void)sendHeaders {
+  // TODO (mxyan): Remove after deprecated methods are removed
+  uint32_t callSafetyFlags;
+  switch (_callSafety) {
+    case GRPCCallSafetyDefault:
+      callSafetyFlags = 0;
+      break;
+    case GRPCCallSafetyIdempotentRequest:
+      callSafetyFlags = GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+      break;
+    case GRPCCallSafetyCacheableRequest:
+      callSafetyFlags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+      break;
+    default:
+      [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
+  }
+  uint32_t callFlag = callSafetyFlags;
+
+  NSMutableDictionary *headers = _requestHeaders;
+  if (_fetchedOauth2AccessToken != nil) {
+    headers[@"authorization"] = [kBearerPrefix stringByAppendingString:_fetchedOauth2AccessToken];
+  } else if (_callOptions.oauth2AccessToken != nil) {
+    headers[@"authorization"] =
+        [kBearerPrefix stringByAppendingString:_callOptions.oauth2AccessToken];
+  }
+
   // TODO(jcanizales): Add error handlers for async failures
   GRPCOpSendMetadata *op = [[GRPCOpSendMetadata alloc]
       initWithMetadata:headers
-                 flags:[GRPCCall callFlagsForHost:_host path:_path]
+                 flags:callFlag
                handler:nil];  // No clean-up needed after SEND_INITIAL_METADATA
   if (!_unaryCall) {
     [_wrappedCall startBatchWithOperations:@[ op ]];
@@ -458,13 +664,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
   _responseWriteable =
       [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
-  _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host
-                                            serverName:_serverName
-                                                  path:_path
-                                               timeout:_timeout];
+  _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host path:_path callOptions:_callOptions];
   NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
 
-  [self sendHeaders:_requestHeaders];
+  [self sendHeaders];
   [self invokeCall];
 
   // Connectivity monitor is not required for CFStream
@@ -486,15 +689,43 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // that the life of the instance is determined by this retain cycle.
   _retainSelf = self;
 
-  if (self.tokenProvider != nil) {
+  if (_callOptions == nil) {
+    GRPCMutableCallOptions *callOptions;
+    if ([GRPCHost isHostConfigured:_host]) {
+      GRPCHost *hostConfig = [GRPCHost hostWithAddress:_host];
+      callOptions = hostConfig.callOptions;
+    } else {
+      callOptions = [[GRPCMutableCallOptions alloc] init];
+    }
+    if (_serverName != nil) {
+      callOptions.serverAuthority = _serverName;
+    }
+    if (_timeout != 0) {
+      callOptions.timeout = _timeout;
+    }
+    uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
+    if (callFlags != 0) {
+      if (callFlags == GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
+        _callSafety = GRPCCallSafetyIdempotentRequest;
+      } else if (callFlags == GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
+        _callSafety = GRPCCallSafetyCacheableRequest;
+      }
+    }
+
+    id<GRPCAuthorizationProtocol> tokenProvider = self.tokenProvider;
+    if (tokenProvider != nil) {
+      callOptions.authTokenProvider = tokenProvider;
+    }
+    _callOptions = callOptions;
+  }
+  if (_callOptions.authTokenProvider != nil) {
     self.isWaitingForToken = YES;
     __weak typeof(self) weakSelf = self;
     [self.tokenProvider getTokenWithHandler:^(NSString *token) {
       typeof(self) strongSelf = weakSelf;
       if (strongSelf && strongSelf.isWaitingForToken) {
         if (token) {
-          NSString *t = [kBearerPrefix stringByAppendingString:token];
-          strongSelf.requestHeaders[kAuthorizationHeader] = t;
+          strongSelf->_fetchedOauth2AccessToken = token;
         }
         [strongSelf startCallWithWriteable:writeable];
         strongSelf.isWaitingForToken = NO;
