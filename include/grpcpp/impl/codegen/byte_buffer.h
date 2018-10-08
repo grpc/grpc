@@ -45,6 +45,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class CallbackUnaryHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 template <class R>
@@ -154,6 +156,8 @@ class ByteBuffer final {
   friend class internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class internal::CallbackUnaryHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>

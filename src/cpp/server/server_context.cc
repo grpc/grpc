@@ -209,31 +209,35 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
 // ServerContext body
 
-ServerContext::ServerContext()
-    : completion_op_(nullptr),
-      has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
-      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
-      call_(nullptr),
-      cq_(nullptr),
-      sent_initial_metadata_(false),
-      compression_level_set_(false),
-      has_pending_ops_(false) {}
+ServerContext::ServerContext() { Setup(gpr_inf_future(GPR_CLOCK_REALTIME)); }
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
-    : completion_op_(nullptr),
-      has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
-      deadline_(deadline),
-      call_(nullptr),
-      cq_(nullptr),
-      sent_initial_metadata_(false),
-      compression_level_set_(false),
-      has_pending_ops_(false) {
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr) {
+  Setup(deadline);
   std::swap(*client_metadata_.arr(), *arr);
 }
 
-ServerContext::~ServerContext() {
+void ServerContext::Setup(gpr_timespec deadline) {
+  completion_op_ = nullptr;
+  has_notify_when_done_tag_ = false;
+  async_notify_when_done_tag_ = nullptr;
+  deadline_ = deadline;
+  call_ = nullptr;
+  cq_ = nullptr;
+  sent_initial_metadata_ = false;
+  compression_level_set_ = false;
+  has_pending_ops_ = false;
+  rpc_info_ = nullptr;
+}
+
+void ServerContext::BindDeadlineAndMetadata(gpr_timespec deadline,
+                                            grpc_metadata_array* arr) {
+  deadline_ = deadline;
+  std::swap(*client_metadata_.arr(), *arr);
+}
+
+ServerContext::~ServerContext() { Clear(); }
+
+void ServerContext::Clear() {
   if (call_) {
     grpc_call_unref(call_);
   }
@@ -243,6 +247,8 @@ ServerContext::~ServerContext() {
   if (rpc_info_) {
     rpc_info_->Unref();
   }
+  // Don't need to clear out call_, completion_op_, or rpc_info_ because this is
+  // either called from destructor or just before Setup
 }
 
 void ServerContext::BeginCompletionOp(internal::Call* call) {

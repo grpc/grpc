@@ -101,10 +101,11 @@ class CallbackWithStatusTag
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_ or status_, so ok to move them out
-    CatchingCallback(std::move(func_), std::move(status_));
-
+    auto func = std::move(func_);
+    auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
+    CatchingCallback(std::move(func), std::move(status));
     g_core_codegen_interface->grpc_call_unref(call_);
   }
 };
@@ -123,6 +124,8 @@ class CallbackWithSuccessTag
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
+
+  CallbackWithSuccessTag() : call_(nullptr), ops_(nullptr) {}
 
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
                          CompletionQueueTag* ops)
@@ -154,9 +157,9 @@ class CallbackWithSuccessTag
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_, so ok to move it out for rvalue call above
-    CatchingCallback(std::move(func_), ok);
-
+    auto func = std::move(func_);
     func_ = nullptr;  // reset to clear this out for sure
+    CatchingCallback(std::move(func), ok);
     g_core_codegen_interface->grpc_call_unref(call_);
   }
 };

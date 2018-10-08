@@ -65,6 +65,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class CallbackUnaryHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
@@ -267,6 +269,8 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackUnaryHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
@@ -284,6 +288,11 @@ class ServerContext {
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 
   void set_call(grpc_call* call) { call_ = call; }
+
+  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
+
+  void Clear();
+  void Setup(gpr_timespec deadline);
 
   uint32_t initial_metadata_flags() const { return 0; }
 
@@ -321,7 +330,7 @@ class ServerContext {
       pending_ops_;
   bool has_pending_ops_;
 
-  experimental::ServerRpcInfo* rpc_info_ = nullptr;
+  experimental::ServerRpcInfo* rpc_info_;
 };
 
 }  // namespace grpc
