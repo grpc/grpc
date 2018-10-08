@@ -20,22 +20,11 @@
 
 #import "GRPCCall.h"
 
-/**
- * Methods for using cronet transport.
- */
+// Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (Cronet)
 
-/**
- * This method should be called before issuing the first RPC. It should be
- * called only once. Create an instance of Cronet engine in your app elsewhere
- * and pass the instance pointer in the stream_engine parameter. Once set,
- * all subsequent RPCs will use Cronet transport. The method is not thread
- * safe.
- */
 + (void)useCronetWithEngine:(stream_engine*)engine;
-
 + (stream_engine*)cronetEngine;
-
 + (BOOL)isUsingCronet;
 
 @end
