@@ -44,17 +44,23 @@ namespace Grpc.IntegrationTesting
 
         string rootCert;
         KeyCertificatePair keyCertPair;
+        string certChain;
+        List<ChannelOption> options;
+        bool isHostEqual;
+        bool isPemEqual;
 
         public void InitClientAndServer(bool clientAddKeyCertPair,
                 SslClientCertificateRequestType clientCertRequestType)
         {
             rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
+            certChain = File.ReadAllText(TestCredentials.ServerCertChainPath);
+            certChain = certChain.Replace("\r", string.Empty);
             keyCertPair = new KeyCertificatePair(
-                File.ReadAllText(TestCredentials.ServerCertChainPath),
+                certChain,
                 File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
 
             var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, clientCertRequestType);
-            var clientCredentials = clientAddKeyCertPair ? new SslCredentials(rootCert, keyCertPair) : new SslCredentials(rootCert);
+            var clientCredentials = clientAddKeyCertPair ? new SslCredentials(rootCert, keyCertPair, context => this.VerifyPeerCallback(context, true)) : new SslCredentials(rootCert);
 
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
             server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
@@ -64,7 +70,7 @@ namespace Grpc.IntegrationTesting
             };
             server.Start();
 
-            var options = new List<ChannelOption>
+            options = new List<ChannelOption>
             {
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
@@ -208,6 +214,37 @@ namespace Grpc.IntegrationTesting
             await call.RequestStream.CompleteAsync();
             var response = await call.ResponseAsync;
             Assert.AreEqual(12345, response.AggregatedPayloadSize);
+        }
+
+        [Test]
+        public void VerifyPeerCallbackTest()
+        {
+            InitClientAndServer(true, SslClientCertificateRequestType.RequestAndRequireAndVerify);
+
+            // Force GC collection to verify that the VerifyPeerCallback is not collected. If
+            // it gets collected, this test will hang.
+            GC.Collect();
+
+            client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
+            Assert.IsTrue(isHostEqual);
+            Assert.IsTrue(isPemEqual);
+        }
+
+        [Test]
+        public void VerifyPeerCallbackFailTest()
+        {
+            InitClientAndServer(true, SslClientCertificateRequestType.RequestAndRequireAndVerify);
+            var clientCredentials = new SslCredentials(rootCert, keyCertPair, context => this.VerifyPeerCallback(context, false));
+            var failingChannel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
+            var failingClient = new TestService.TestServiceClient(failingChannel);
+            Assert.Throws<RpcException>(() => failingClient.UnaryCall(new SimpleRequest { ResponseSize = 10 }));
+        }
+
+        private bool VerifyPeerCallback(VerifyPeerContext context, bool returnValue)
+        {
+            isHostEqual = TestCredentials.DefaultHostOverride == context.TargetHost;
+            isPemEqual = certChain == context.TargetPem;
+            return returnValue;
         }
 
         private class SslCredentialsTestServiceImpl : TestService.TestServiceBase

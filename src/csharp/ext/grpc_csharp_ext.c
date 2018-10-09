@@ -927,20 +927,53 @@ grpcsharp_override_default_ssl_roots(const char* pem_root_certs) {
   grpc_set_ssl_roots_override_callback(override_ssl_roots_handler);
 }
 
+typedef int(GPR_CALLTYPE* grpcsharp_verify_peer_func)(const char* target_host,
+                                                      const char* target_pem,
+                                                      void* userdata,
+                                                      int32_t isDestroy);
+
+static void grpcsharp_verify_peer_destroy_handler(void* userdata) {
+  grpcsharp_verify_peer_func callback =
+      (grpcsharp_verify_peer_func)(intptr_t)userdata;
+  callback(NULL, NULL, NULL, 1);
+}
+
+static int grpcsharp_verify_peer_handler(const char* target_host,
+                                         const char* target_pem,
+                                         void* userdata) {
+  grpcsharp_verify_peer_func callback =
+      (grpcsharp_verify_peer_func)(intptr_t)userdata;
+  return callback(target_host, target_pem, NULL, 0);
+}
+
+
 GPR_EXPORT grpc_channel_credentials* GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char* pem_root_certs,
                                  const char* key_cert_pair_cert_chain,
-                                 const char* key_cert_pair_private_key) {
+                                 const char* key_cert_pair_private_key,
+                                 grpcsharp_verify_peer_func verify_peer_func) {
   grpc_ssl_pem_key_cert_pair key_cert_pair;
+  verify_peer_options verify_options;
+  verify_peer_options* p_verify_options = NULL;
+  if (verify_peer_func != NULL) {
+    verify_options.verify_peer_callback_userdata =
+            (void*)(intptr_t)verify_peer_func;
+    verify_options.verify_peer_destruct =
+            grpcsharp_verify_peer_destroy_handler;
+    verify_options.verify_peer_callback = grpcsharp_verify_peer_handler;
+    p_verify_options = &verify_options;
+  }
+
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
     key_cert_pair.cert_chain = key_cert_pair_cert_chain;
     key_cert_pair.private_key = key_cert_pair_private_key;
-    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair, NULL,
-                                       NULL);
+    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair,
+                                       p_verify_options, NULL);
   } else {
     GPR_ASSERT(!key_cert_pair_cert_chain);
     GPR_ASSERT(!key_cert_pair_private_key);
-    return grpc_ssl_credentials_create(pem_root_certs, NULL, NULL, NULL);
+    return grpc_ssl_credentials_create(pem_root_certs, NULL, p_verify_options,
+                                       NULL);
   }
 }
 
