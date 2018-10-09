@@ -139,6 +139,7 @@ static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   GPR_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = nullptr;
   storage->next = list->head;
+  storage->reserved = nullptr;
   if (list->head != nullptr) {
     list->head->prev = storage;
   } else {
