@@ -137,6 +137,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_resource_quota_arg_vtable);
   printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
   printf("%lx", (unsigned long) grpc_channelz_get_servers);
+  printf("%lx", (unsigned long) grpc_channelz_get_server_sockets);
   printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channelz_get_subchannel);
   printf("%lx", (unsigned long) grpc_channelz_get_socket);

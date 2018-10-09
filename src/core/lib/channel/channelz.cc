@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -190,10 +191,44 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
+ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer),
+      server_(server),
+      trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
+
+char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  ChildRefsList socket_refs;
+  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
+  // reserved). However, we want to support requests coming in with
+  // start_server_id=0, which signifies "give me everything."
+  size_t start_idx = start_socket_id == 0 ? 0 : start_socket_id - 1;
+  grpc_server_populate_server_sockets(server_, &socket_refs, start_idx);
+  if (!socket_refs.empty()) {
+    // create list of socket refs
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < socket_refs.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                        socket_refs[i]);
+    }
+  }
+  // For now we do not have any pagination rules. In the future we could
+  // pick a constant for max_channels_sent for a GetServers request.
+  // Tracking: https://github.com/grpc/grpc/issues/16019.
+  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
+                                         GRPC_JSON_TRUE, false);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
 
 grpc_json* ServerNode::RenderJson() {
   // We need to track these three json objects to build our object
