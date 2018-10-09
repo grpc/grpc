@@ -148,18 +148,15 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
 
-  experimental::ClientRpcInfo info(context, method.name(), this);
-  return internal::Call(c_call, this, cq, info, interceptor_creators_);
+  auto* info = context->set_client_rpc_info(experimental::ClientRpcInfo(
+      context, method.name(), this, interceptor_creators_));
+  return std::move(internal::Call(c_call, this, cq, info));
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                internal::Call* call) {
-  static const size_t MAX_OPS = 8;
-  size_t nops = 0;
-  grpc_op cops[MAX_OPS];
-  ops->FillOps(call, cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), cops, nops,
-                                                   ops->cq_tag(), nullptr));
+  ops->FillOps(
+      call);  // Make a copy of call. It's fine since Call just has pointers
 }
 
 void* Channel::RegisterMethod(const char* method) {

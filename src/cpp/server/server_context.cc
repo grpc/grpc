@@ -47,7 +47,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
         finalized_(false),
         cancelled_(0) {}
 
-  void FillOps(internal::Call* call, grpc_op* ops, size_t* nops) override;
+  void FillOps(internal::Call* call) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -65,6 +65,17 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   void* cq_tag() override { return this; }
 
   void Unref();
+
+  // This will be called while interceptors are run if the RPC is a hijacked
+  // RPC. This should set hijacking state for each of the ops.
+  void SetHijackingState() override {}
+
+  /* Should be called after interceptors are done running */
+  void ContinueFillOpsAfterInterception() override {}
+
+  /* Should be called after interceptors are done running on the finalize result
+   * path */
+  void ContinueFinalizeResultAfterInterception() override {}
 
  private:
   bool CheckCancelledNoPluck() {
@@ -88,13 +99,14 @@ void ServerContext::CompletionOp::Unref() {
   }
 }
 
-void ServerContext::CompletionOp::FillOps(internal::Call* call, grpc_op* ops,
-                                          size_t* nops) {
-  ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  ops->data.recv_close_on_server.cancelled = &cancelled_;
-  ops->flags = 0;
-  ops->reserved = nullptr;
-  *nops = 1;
+void ServerContext::CompletionOp::FillOps(internal::Call* call) {
+  grpc_op ops;
+  ops.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  ops.data.recv_close_on_server.cancelled = &cancelled_;
+  ops.flags = 0;
+  ops.reserved = nullptr;
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call->call(), &ops, 1, cq_tag(), nullptr));
 }
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {

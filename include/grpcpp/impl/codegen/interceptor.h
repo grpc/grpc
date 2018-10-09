@@ -19,7 +19,17 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/impl/codegen/config.h>
+
+// struct grpc_byte_buffer;
+// struct grpc_status_code;
+// struct grpc_metadata;
+
 namespace grpc {
+
+class Status;
+
 namespace experimental {
 class InterceptedMessage {
  public:
@@ -35,6 +45,7 @@ enum class InterceptionHookPoints {
   PRE_SEND_INITIAL_METADATA,
   PRE_SEND_MESSAGE,
   PRE_SEND_STATUS /* server only */,
+  PRE_SEND_CLOSE /* client only */,
   /* The following three are for hijacked clients only and can only be
      registered by the global interceptor */
   PRE_RECV_INITIAL_METADATA,
@@ -60,6 +71,48 @@ class InterceptorBatchMethods {
   // Calling this indicates that the interceptor has hijacked the RPC (only
   // valid if the batch contains send_initial_metadata on the client side)
   virtual void Hijack() = 0;
+
+  virtual void AddInterceptionHookPoint(InterceptionHookPoints type) = 0;
+
+  virtual void GetSendMessage(grpc_byte_buffer** buf) = 0;
+
+  virtual void GetSendInitialMetadata(grpc_metadata** metadata,
+                                      size_t** count) = 0;
+
+  virtual void GetSendStatus(grpc_status_code** code,
+                             grpc::string** error_details,
+                             grpc::string** error_message) = 0;
+
+  virtual void GetSendTrailingMetadata(grpc_metadata** metadata,
+                                       size_t** count) = 0;
+
+  virtual void GetRecvMessage(void** message) = 0;
+
+  virtual void GetRecvInitialMetadata(grpc_metadata_array** array) = 0;
+
+  virtual void GetRecvStatus(Status** status) = 0;
+
+  virtual void GetRecvTrailingMetadata(grpc_metadata_array** map) = 0;
+
+  virtual void SetSendMessage(grpc_byte_buffer* buf) = 0;
+
+  virtual void SetSendInitialMetadata(grpc_metadata* metadata,
+                                      size_t* count) = 0;
+
+  virtual void SetSendStatus(grpc_status_code* code,
+                             grpc::string* error_details,
+                             grpc::string* error_message) = 0;
+
+  virtual void SetSendTrailingMetadata(grpc_metadata* metadata,
+                                       size_t* count) = 0;
+
+  virtual void SetRecvMessage(void* message) = 0;
+
+  virtual void SetRecvInitialMetadata(grpc_metadata_array* array) = 0;
+
+  virtual void SetRecvStatus(Status* status) = 0;
+
+  virtual void SetRecvTrailingMetadata(grpc_metadata_array* map) = 0;
 };
 }  // namespace experimental
 }  // namespace grpc

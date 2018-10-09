@@ -667,18 +667,7 @@ void Server::Wait() {
 
 void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
                               internal::Call* call) {
-  static const size_t MAX_OPS = 8;
-  size_t nops = 0;
-  grpc_op cops[MAX_OPS];
-  ops->FillOps(call, cops, &nops);
-  // TODO(vjpai): Use ops->cq_tag once this case supports callbacks
-  auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
-  if (result != GRPC_CALL_OK) {
-    gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
-    grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
-                        call->call(), cops, nops, ops);
-    abort();
-  }
+  ops->FillOps(call);
 }
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
@@ -705,11 +694,13 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   context_->cq_ = call_cq_;
   internal::Call call(call_, server_, call_cq_,
                       server_->max_receive_message_size());
-  if (*status && call_) {
-    context_->BeginCompletionOp(&call);
-  }
+
   // just the pointers inside call are copied here
-  stream_->BindCall(&call);
+  auto* new_call = stream_->BindCall(std::move(call));
+  if (*status && call_) {
+    context_->BeginCompletionOp(new_call);
+  }
+
   *tag = tag_;
   if (delete_on_finalize_) {
     delete this;

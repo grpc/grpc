@@ -41,6 +41,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
+#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
@@ -402,6 +403,12 @@ class ClientContext {
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
+  experimental::ClientRpcInfo* set_client_rpc_info(
+      experimental::ClientRpcInfo client_rpc_info) {
+    rpc_info_ = std::move(client_rpc_info);
+    return &rpc_info_;
+  }
+
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
            (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
@@ -439,6 +446,8 @@ class ClientContext {
   bool initial_metadata_corked_;
 
   grpc::string debug_error_string_;
+
+  experimental::ClientRpcInfo rpc_info_;
 };
 
 }  // namespace grpc

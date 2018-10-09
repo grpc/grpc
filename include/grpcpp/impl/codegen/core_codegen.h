@@ -63,6 +63,9 @@ class CoreCodegen final : public CoreCodegenInterface {
   void gpr_cv_signal(gpr_cv* cv) override;
   void gpr_cv_broadcast(gpr_cv* cv) override;
 
+  grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
+                                        size_t nops, void* tag,
+                                        void* reserved) override;
   grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                grpc_status_code status,
                                                const char* description,

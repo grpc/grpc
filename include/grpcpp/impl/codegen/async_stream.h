@@ -188,7 +188,7 @@ class ClientAsyncReaderFactory {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReader<R>)))
-        ClientAsyncReader<R>(call, context, request, start, tag);
+        ClientAsyncReader<R>(std::move(call), context, request, start, tag);
   }
 };
 }  // namespace internal
@@ -264,7 +264,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
   template <class W>
   ClientAsyncReader(::grpc::internal::Call call, ClientContext* context,
                     const W& request, bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+      : context_(context), call_(std::move(call)), started_(start) {
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(init_ops_.SendMessage(request).ok());
     init_ops_.ClientSendClose();
@@ -336,7 +336,7 @@ class ClientAsyncWriterFactory {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncWriter<W>)))
-        ClientAsyncWriter<W>(call, context, response, start, tag);
+        ClientAsyncWriter<W>(std::move(call), context, response, start, tag);
   }
 };
 }  // namespace internal
@@ -430,7 +430,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
   template <class R>
   ClientAsyncWriter(::grpc::internal::Call call, ClientContext* context,
                     R* response, bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+      : context_(context), call_(std::move(call)), started_(start) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
     if (start) {
@@ -501,7 +501,7 @@ class ClientAsyncReaderWriterFactory {
 
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReaderWriter<W, R>)))
-        ClientAsyncReaderWriter<W, R>(call, context, start, tag);
+        ClientAsyncReaderWriter<W, R>(std::move(call), context, start, tag);
   }
 };
 }  // namespace internal
@@ -603,7 +603,7 @@ class ClientAsyncReaderWriter final
   friend class internal::ClientAsyncReaderWriterFactory<W, R>;
   ClientAsyncReaderWriter(::grpc::internal::Call call, ClientContext* context,
                           bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+      : context_(context), call_(std::move(call)), started_(start) {
     if (start) {
       StartCallInternal(tag);
     } else {
@@ -781,7 +781,10 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  ::grpc::internal::Call* BindCall(::grpc::internal::Call call) override {
+    call_ = std::move(call);
+    return &call_;
+  }
 
   ::grpc::internal::Call call_;
   ServerContext* ctx_;
@@ -927,7 +930,10 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  ::grpc::internal::Call* BindCall(::grpc::internal::Call call) override {
+    call_ = std::move(call);
+    return &call_;
+  }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
@@ -1101,7 +1107,10 @@ class ServerAsyncReaderWriter final
  private:
   friend class ::grpc::Server;
 
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  ::grpc::internal::Call* BindCall(::grpc::internal::Call call) override {
+    call_ = std::move(call);
+    return &call_;
+  }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
