@@ -184,6 +184,9 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("libdl.so")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("libdl.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
 
@@ -191,6 +194,9 @@ namespace Grpc.Core.Internal
         {
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libSystem.dylib")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
@@ -209,6 +215,9 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("__Internal")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("__Internal")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
 
@@ -221,6 +230,9 @@ namespace Grpc.Core.Internal
         {
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libcoreclr.so")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
