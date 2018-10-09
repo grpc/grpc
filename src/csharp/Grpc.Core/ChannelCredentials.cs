@@ -18,9 +18,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -105,19 +108,35 @@ namespace Grpc.Core
     }
 
     /// <summary>
+    /// Callback invoked with the expected targetHost and the peer's certificate.
+    /// If false is returned by this callback then it is treated as a
+    /// verification failure. Invocation of the callback is blocking, so any
+    /// implementation should be light-weight.
+    /// </summary>
+    /// <param name="context">The <see cref="T:Grpc.Core.VerifyPeerContext"/> associated with the callback</param>
+    /// <returns>true if verification succeeded, false otherwise.</returns>
+    /// Note: experimental API that can change or be removed without any prior notice.
+    public delegate bool VerifyPeerCallback(VerifyPeerContext context);
+
+    /// <summary>
     /// Client-side SSL credentials.
     /// </summary>
     public sealed class SslCredentials : ChannelCredentials
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<SslCredentials>();
+
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
+        readonly VerifyPeerCallback verifyPeerCallback;
+        readonly VerifyPeerCallbackInternal verifyPeerCallbackInternal;
+        readonly NativeCallbackRegistration callbackRegistration;
 
         /// <summary>
         /// Creates client-side SSL credentials loaded from
         /// disk file pointed to by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable.
         /// If that fails, gets the roots certificates from a well known place on disk.
         /// </summary>
-        public SslCredentials() : this(null, null)
+        public SslCredentials() : this(null, null, null)
         {
         }
 
@@ -125,19 +144,37 @@ namespace Grpc.Core
         /// Creates client-side SSL credentials from
         /// a string containing PEM encoded root certificates.
         /// </summary>
-        public SslCredentials(string rootCertificates) : this(rootCertificates, null)
+        public SslCredentials(string rootCertificates) : this(rootCertificates, null, null)
         {
         }
-            
+
         /// <summary>
         /// Creates client-side SSL credentials.
         /// </summary>
         /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
         /// <param name="keyCertificatePair">a key certificate pair.</param>
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair)
+        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair) :
+            this(rootCertificates, keyCertificatePair, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates client-side SSL credentials.
+        /// </summary>
+        /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
+        /// <param name="keyCertificatePair">a key certificate pair.</param>
+        /// <param name="verifyPeerCallback">a callback to verify peer's target name and certificate.</param>
+        /// Note: experimental API that can change or be removed without any prior notice.
+        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
         {
             this.rootCertificates = rootCertificates;
             this.keyCertificatePair = keyCertificatePair;
+            if (verifyPeerCallback != null)
+            {
+                this.verifyPeerCallback = verifyPeerCallback;
+                this.verifyPeerCallbackInternal = this.VerifyPeerCallbackHandler;
+                this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
+            }
         }
 
         /// <summary>
@@ -171,7 +208,36 @@ namespace Grpc.Core
 
         internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
         {
-            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
+            var tag = this.callbackRegistration?.Tag ?? IntPtr.Zero;
+            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, tag);
+        }
+
+        private int HandleUniversalCallback( IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        {
+            return verifyPeerCallbackInternal(arg0, arg1, arg2, arg4 != IntPtr.Zero);
+        }
+
+        private int VerifyPeerCallbackHandler(IntPtr host, IntPtr pem, IntPtr userData, bool isDestroy)
+        {
+            if (isDestroy)
+            {
+                this.callbackRegistration.Dispose();
+                return 0;
+            }
+
+            try
+            {
+                var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(host), Marshal.PtrToStringAnsi(pem));
+
+                return this.verifyPeerCallback(context) ? 0 : 1;
+            }
+            catch (Exception e)
+            {
+                // eat the exception, we must not throw when inside callback from native code.
+                Logger.Error(e, "Exception occurred while invoking verify peer callback handler.");
+                // Return validation failure in case of exception.
+                return 1;
+            }
         }
     }
 

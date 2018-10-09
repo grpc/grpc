@@ -20,6 +20,12 @@ using System.Threading.Tasks;
 
 namespace Grpc.Core.Internal
 {
+    internal delegate int VerifyPeerCallbackInternal(
+        IntPtr targetHost,
+        IntPtr targetPem,
+        IntPtr userData,
+        bool isDestroy);
+
     /// <summary>
     /// grpc_channel_credentials from <c>grpc/grpc_security.h</c>
     /// </summary>
@@ -38,15 +44,15 @@ namespace Grpc.Core.Internal
             return creds;
         }
 
-        public static ChannelCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
+        public static ChannelCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair, IntPtr nativeCallbackTag)
         {
             if (keyCertPair != null)
             {
-                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey, nativeCallbackTag);
             }
             else
             {
-                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, null, null, nativeCallbackTag);
             }
         }
 
