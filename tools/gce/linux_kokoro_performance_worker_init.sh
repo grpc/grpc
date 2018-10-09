@@ -77,6 +77,7 @@ sudo pip install tabulate
 sudo pip install google-api-python-client
 sudo pip install virtualenv
 
+# TODO(jtattermusch): revisit python installation
 # Building gRPC Python depends on python3.4 being installed, but python3.4
 # is not available on Ubuntu 16.10, so install from source
 curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
@@ -104,31 +105,22 @@ nvm install 4 && npm config set cache /tmp/npm-cache
 nvm install 5 && npm config set cache /tmp/npm-cache
 nvm alias default 4
 
+# C# dependencies
+sudo apt-get install -y cmake
+
 # C# mono dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
+echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
 sudo apt-get update
-sudo apt-get install -y mono-devel nuget
+sudo apt-get install -y mono-devel
 
-# C# .NET Core dependencies (https://www.microsoft.com/net/core#ubuntu)
-sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ yakkety main" > /etc/apt/sources.list.d/dotnetdev.list'
-sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+# C# .NET Core dependencies (https://www.microsoft.com/net/download)
+wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+
+sudo apt-get install -y apt-transport-https
 sudo apt-get update
-sudo apt-get install -y dotnet-dev-1.0.0-preview2.1-003155
-sudo apt-get install -y dotnet-dev-1.0.1
-
-# C# 1.0.4 SDK
-curl -O https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
-sudo mkdir -p /opt/dotnet
-sudo tar zxf dotnet-ubuntu.16.04-x64.1.0.5.tar.gz -C /opt/dotnet
-sudo ln -s /opt/dotnet/dotnet /usr/local/bin
-
-# C# .NET dependencies
-wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu52_52.1-8ubuntu0.2_amd64.deb
-sudo dpkg -i libicu52_52.1-8ubuntu0.2_amd64.deb
-wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.3_amd64.deb
-sudo dpkg -i libicu55_55.1-7ubuntu0.3_amd64.deb
-sudo apt-get update && sudo apt-get install -y libicu55
+sudo apt-get install -y dotnet-sdk-2.1
 
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
@@ -163,7 +155,7 @@ sudo mv composer.phar /usr/local/bin/composer
 # Significant performance improvements with grpc-go have been observed after
 # upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
-GO_VERSION=1.8
+GO_VERSION=1.10
 OS=linux
 ARCH=amd64
 curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz

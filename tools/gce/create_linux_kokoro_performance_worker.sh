@@ -30,7 +30,7 @@ gcloud compute instances create "$INSTANCE_NAME" \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1710 \
+    --image-family ubuntu-1804-lts \
     --boot-disk-size 300 \
     --scopes https://www.googleapis.com/auth/bigquery \
     --tags=allow-ssh
