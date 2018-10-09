@@ -17,11 +17,13 @@ import threading
 
 import grpc
 
-from grpc_health.v1 import health_pb2
-from grpc_health.v1 import health_pb2_grpc
+from grpc_health.v1 import health_pb2 as _health_pb2
+from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
+
+SERVICE_NAME = _health_pb2.DESCRIPTOR.services_by_name['Health'].full_name
 
 
-class HealthServicer(health_pb2_grpc.HealthServicer):
+class HealthServicer(_health_pb2_grpc.HealthServicer):
     """Servicer handling RPCs for service statuses."""
 
     def __init__(self):
@@ -33,9 +35,9 @@ class HealthServicer(health_pb2_grpc.HealthServicer):
             status = self._server_status.get(request.service)
             if status is None:
                 context.set_code(grpc.StatusCode.NOT_FOUND)
-                return health_pb2.HealthCheckResponse()
+                return _health_pb2.HealthCheckResponse()
             else:
-                return health_pb2.HealthCheckResponse(status=status)
+                return _health_pb2.HealthCheckResponse(status=status)
 
     def set(self, service, status):
         """Sets the status of a service.

@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_census_call_get_context);
   printf("%lx", (unsigned long) grpc_channel_get_target);
   printf("%lx", (unsigned long) grpc_channel_get_info);
+  printf("%lx", (unsigned long) grpc_channel_reset_connect_backoff);
   printf("%lx", (unsigned long) grpc_insecure_channel_create);
   printf("%lx", (unsigned long) grpc_lame_client_channel_create);
   printf("%lx", (unsigned long) grpc_channel_destroy);
@@ -131,6 +132,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_resource_quota_unref);
   printf("%lx", (unsigned long) grpc_resource_quota_resize);
   printf("%lx", (unsigned long) grpc_resource_quota_arg_vtable);
+  printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
+  printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_auth_property_iterator_next);
   printf("%lx", (unsigned long) grpc_auth_context_property_iterator);
   printf("%lx", (unsigned long) grpc_auth_context_peer_identity);

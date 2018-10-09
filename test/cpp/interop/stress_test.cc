@@ -283,15 +283,20 @@ int main(int argc, char** argv) {
          channel_idx++) {
       gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
               channel_idx);
-      std::shared_ptr<grpc::Channel> channel = grpc::CreateTestChannel(
+      grpc::testing::ChannelCreationFunc channel_creation_func = std::bind(
+          static_cast<std::shared_ptr<grpc::Channel> (*)(
+              const grpc::string&, const grpc::string&,
+              grpc::testing::transport_security, bool)>(
+              grpc::CreateTestChannel),
           *it, FLAGS_server_host_override, security_type, !FLAGS_use_test_ca);
 
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
            stub_idx++) {
         clients.emplace_back(new StressTestInteropClient(
-            ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
-            FLAGS_sleep_duration_ms, FLAGS_do_not_abort_on_transient_failures));
+            ++thread_idx, *it, channel_creation_func, test_selector,
+            FLAGS_test_duration_secs, FLAGS_sleep_duration_ms,
+            FLAGS_do_not_abort_on_transient_failures));
 
         bool is_already_created = false;
         // QpsGauge name

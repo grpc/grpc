@@ -14,7 +14,7 @@
 
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python 2.7
-set PATH=C:\tools\msys64\usr\bin;C:\Python27;C:\Python37;%PATH%
+set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
@@ -33,9 +33,6 @@ netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client
-
-@rem Install Python 3.7
-chocolatey install -y -r python3 --version 3.7
 
 @rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip

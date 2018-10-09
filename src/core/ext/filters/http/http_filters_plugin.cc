@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <string.h>
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
@@ -51,15 +52,15 @@ static bool maybe_add_optional_filter(grpc_channel_stack_builder* builder,
   bool enable = grpc_channel_arg_get_bool(
       grpc_channel_args_find(channel_args, filtarg->control_channel_arg),
       !grpc_channel_args_want_minimal_stack(channel_args));
-  return enable ? grpc_channel_stack_builder_prepend_filter(
+  return enable ? grpc_channel_stack_builder_append_filter(
                       builder, filtarg->filter, nullptr, nullptr)
                 : true;
 }
 
-static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
-                                      void* arg) {
+static bool maybe_append_required_filter(grpc_channel_stack_builder* builder,
+                                         void* arg) {
   return is_building_http_like_transport(builder)
-             ? grpc_channel_stack_builder_prepend_filter(
+             ? grpc_channel_stack_builder_append_filter(
                    builder, static_cast<const grpc_channel_filter*>(arg),
                    nullptr, nullptr)
              : true;
@@ -67,23 +68,23 @@ static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
 
 void grpc_http_filters_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_HIGH,
                                    maybe_add_optional_filter, &compress_filter);
   grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_HIGH,
                                    maybe_add_optional_filter, &compress_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   GRPC_CHANNEL_INIT_PRIORITY_HIGH,
                                    maybe_add_optional_filter, &compress_filter);
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_client_filter);
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+      maybe_append_required_filter, (void*)&grpc_http_client_filter);
   grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_client_filter);
+      GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+      maybe_append_required_filter, (void*)&grpc_http_client_filter);
   grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_required_filter, (void*)&grpc_http_server_filter);
+      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_PRIORITY_HIGH,
+      maybe_append_required_filter, (void*)&grpc_http_server_filter);
 }
 
 void grpc_http_filters_shutdown(void) {}

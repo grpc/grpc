@@ -21,9 +21,6 @@ mkdir -p artifacts/
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-# Jenkins flow (deprecated)
-cp -r "${EXTERNAL_GIT_ROOT}"/platform={windows,linux,macos}/artifacts/python_*/* artifacts/ || true
-# Kokoro flow
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
 
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz

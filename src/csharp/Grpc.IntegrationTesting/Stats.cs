@@ -86,7 +86,7 @@ namespace Grpc.Testing {
       totalCpuTime_ = other.totalCpuTime_;
       idleCpuTime_ = other.idleCpuTime_;
       cqPollCount_ = other.cqPollCount_;
-      CoreStats = other.coreStats_ != null ? other.CoreStats.Clone() : null;
+      coreStats_ = other.coreStats_ != null ? other.coreStats_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -993,13 +993,13 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public ClientStats(ClientStats other) : this() {
-      Latencies = other.latencies_ != null ? other.Latencies.Clone() : null;
+      latencies_ = other.latencies_ != null ? other.latencies_.Clone() : null;
       timeElapsed_ = other.timeElapsed_;
       timeUser_ = other.timeUser_;
       timeSystem_ = other.timeSystem_;
       requestResults_ = other.requestResults_.Clone();
       cqPollCount_ = other.cqPollCount_;
-      CoreStats = other.coreStats_ != null ? other.CoreStats.Clone() : null;
+      coreStats_ = other.coreStats_ != null ? other.coreStats_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 

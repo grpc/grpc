@@ -110,7 +110,7 @@ def main():
               'gtest': True,
               'run': True,
               'src': ['test/cpp/naming/address_sorting_test.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
+              'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,

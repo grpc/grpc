@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
@@ -115,6 +116,9 @@ grpc_subchannel_call* grpc_subchannel_call_ref(
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel);
+
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size
     field of the args passed to \a grpc_connected_subchannel_create_call(). */
@@ -140,6 +144,13 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
 /** return the subchannel index key for \a subchannel */
 const grpc_subchannel_key* grpc_subchannel_get_key(
     const grpc_subchannel* subchannel);
+
+// Resets the connection backoff of the subchannel.
+// TODO(roth): Move connection backoff out of subchannels and up into LB
+// policy code (probably by adding a SubchannelGroup between
+// SubchannelList and SubchannelData), at which point this method can
+// go away.
+void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call* subchannel_call,

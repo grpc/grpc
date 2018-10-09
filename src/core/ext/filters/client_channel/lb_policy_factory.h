@@ -101,6 +101,10 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args* channel_args);
 
+// Returns true if addresses contains at least one balancer address.
+bool grpc_lb_addresses_contains_balancer_address(
+    const grpc_lb_addresses& addresses);
+
 //
 // LB policy factory
 //

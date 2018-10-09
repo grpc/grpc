@@ -282,6 +282,8 @@ typedef struct grpc_transport_op {
     /** Called when the ping ack is received */
     grpc_closure* on_ack;
   } send_ping;
+  // If true, will reset the channel's connection backoff.
+  bool reset_connect_backoff;
 
   /***************************************************************************
    * remaining fields are initialized and used at the discretion of the

@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -38,6 +39,10 @@ extern grpc_core::TraceFlag grpc_client_channel_trace;
    established. */
 
 extern const grpc_channel_filter grpc_client_channel_filter;
+
+void grpc_client_channel_populate_child_refs(
+    grpc_channel_element* elem, grpc_core::ChildRefsList* child_subchannels,
+    grpc_core::ChildRefsList* child_channels);
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect);

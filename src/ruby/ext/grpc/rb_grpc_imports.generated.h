@@ -170,6 +170,9 @@ extern grpc_channel_get_target_type grpc_channel_get_target_import;
 typedef void(*grpc_channel_get_info_type)(grpc_channel* channel, const grpc_channel_info* channel_info);
 extern grpc_channel_get_info_type grpc_channel_get_info_import;
 #define grpc_channel_get_info grpc_channel_get_info_import
+typedef void(*grpc_channel_reset_connect_backoff_type)(grpc_channel* channel);
+extern grpc_channel_reset_connect_backoff_type grpc_channel_reset_connect_backoff_import;
+#define grpc_channel_reset_connect_backoff grpc_channel_reset_connect_backoff_import
 typedef grpc_channel*(*grpc_insecure_channel_create_type)(const char* target, const grpc_channel_args* args, void* reserved);
 extern grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
 #define grpc_insecure_channel_create grpc_insecure_channel_create_import
@@ -251,6 +254,12 @@ extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 typedef const grpc_arg_pointer_vtable*(*grpc_resource_quota_arg_vtable_type)(void);
 extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 #define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import
+typedef char*(*grpc_channelz_get_top_channels_type)(intptr_t start_channel_id);
+extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
+#define grpc_channelz_get_top_channels grpc_channelz_get_top_channels_import
+typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
+extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
+#define grpc_channelz_get_channel grpc_channelz_get_channel_import
 typedef grpc_channel*(*grpc_insecure_channel_create_from_fd_type)(const char* target, int fd, const grpc_channel_args* args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
