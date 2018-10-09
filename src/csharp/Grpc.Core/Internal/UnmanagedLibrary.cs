@@ -51,11 +51,12 @@ namespace Grpc.Core.Internal
 
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
-            this.handle = PlatformSpecificLoadLibrary(this.libraryPath);
+            this.handle = PlatformSpecificLoadLibrary(this.libraryPath, out string loadLibraryErrorDetail);
 
             if (this.handle == IntPtr.Zero)
             {
-                throw new IOException(string.Format("Error loading native library \"{0}\"", this.libraryPath));
+                throw new IOException(string.Format("Error loading native library \"{0}\". {1}",
+                                                    this.libraryPath, loadLibraryErrorDetail));
             }
         }
 
@@ -129,29 +130,42 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Loads library in a platform specific way.
         /// </summary>
-        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath)
+        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath, out string errorMsg)
         {
             if (PlatformApis.IsWindows)
             {
+                // TODO(jtattermusch): populate the error on Windows
+                errorMsg = null;
                 return Windows.LoadLibrary(libraryPath);
             }
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
                 {
-                    return Mono.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                    return LoadLibraryPosix(Mono.dlopen, Mono.dlerror, libraryPath, out errorMsg);
                 }
                 if (PlatformApis.IsNetCore)
                 {
-                    return CoreCLR.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                    return LoadLibraryPosix(CoreCLR.dlopen, CoreCLR.dlerror, libraryPath, out errorMsg);
                 }
-                return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                return LoadLibraryPosix(Linux.dlopen, Linux.dlerror, libraryPath, out errorMsg);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return MacOSX.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                return LoadLibraryPosix(MacOSX.dlopen, MacOSX.dlerror, libraryPath, out errorMsg);
             }
             throw new InvalidOperationException("Unsupported platform.");
+        }
+
+        private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
+        {
+            errorMsg = null;
+            IntPtr ret = dlopenFunc(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+            if (ret == IntPtr.Zero)
+            {
+                errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());
+            }
+            return ret;
         }
 
         private static string FirstValidLibraryPath(string[] libraryPathAlternatives)
