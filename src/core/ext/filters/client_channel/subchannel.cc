@@ -183,7 +183,13 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
-  c->channelz_subchannel.reset();
+  if (c->channelz_subchannel != nullptr) {
+    c->channelz_subchannel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Subchannel destroyed"));
+    c->channelz_subchannel->MarkSubchannelDestroyed();
+    c->channelz_subchannel.reset();
+  }
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -382,10 +388,21 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
-  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  bool channelz_enabled =
+      grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
+  arg = grpc_channel_args_find(
+      c->args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
+  const grpc_integer_options options = {
+      GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
+  size_t channel_tracer_max_memory =
+      (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     c->channelz_subchannel =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
+            c, channel_tracer_max_memory);
+    c->channelz_subchannel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Subchannel created"));
   }
 
   return grpc_subchannel_index_register(key, c);
@@ -396,6 +413,14 @@ grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
   return subchannel->channelz_subchannel.get();
 }
 
+intptr_t grpc_subchannel_get_child_socket_uuid(grpc_subchannel* subchannel) {
+  if (subchannel->connected_subchannel != nullptr) {
+    return subchannel->connected_subchannel->socket_uuid();
+  } else {
+    return 0;
+  }
+}
+
 static void continue_connect_locked(grpc_subchannel* c) {
   grpc_connect_in_args args;
   args.interested_parties = c->pollset_set;
@@ -404,6 +429,8 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
+  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
+                              GRPC_ERROR_NONE, "connecting");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -478,8 +505,6 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
   if (!c->backoff_begun) {
     c->backoff_begun = true;
-    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                                GRPC_ERROR_NONE, "connecting");
     continue_connect_locked(c);
   } else {
     GPR_ASSERT(!c->have_alarm);
@@ -494,11 +519,6 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&c->alarm, c->next_attempt_deadline, &c->on_alarm);
-    // During backoff, we prefer the connectivity state of CONNECTING instead of
-    // TRANSIENT_FAILURE in order to prevent triggering re-resolution
-    // continuously in pick_first.
-    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                                GRPC_ERROR_NONE, "backoff");
   }
 }
 
@@ -611,6 +631,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
+  intptr_t socket_uuid = c->connecting_result.socket_uuid;
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
@@ -630,8 +651,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   }
 
   /* publish */
-  c->connected_subchannel.reset(
-      grpc_core::New<grpc_core::ConnectedSubchannel>(stk));
+  c->connected_subchannel.reset(grpc_core::New<grpc_core::ConnectedSubchannel>(
+      stk, c->channelz_subchannel.get(), socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 
@@ -775,6 +796,14 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
   }
 }
 
+const char* grpc_subchannel_get_target(grpc_subchannel* subchannel) {
+  const grpc_arg* addr_arg =
+      grpc_channel_args_find(subchannel->args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
+  GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
+  return addr_str;
+}
+
 const char* grpc_get_subchannel_address_uri_arg(const grpc_channel_args* args) {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
@@ -791,9 +820,13 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 
 namespace grpc_core {
 
-ConnectedSubchannel::ConnectedSubchannel(grpc_channel_stack* channel_stack)
+ConnectedSubchannel::ConnectedSubchannel(
+    grpc_channel_stack* channel_stack,
+    channelz::SubchannelNode* channelz_subchannel, intptr_t socket_uuid)
     : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
-      channel_stack_(channel_stack) {}
+      channel_stack_(channel_stack),
+      channelz_subchannel_(channelz_subchannel),
+      socket_uuid_(socket_uuid) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");

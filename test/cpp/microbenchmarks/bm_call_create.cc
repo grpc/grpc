@@ -133,8 +133,10 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
   TrackCounters track_counters;
   auto stub =
       grpc::testing::EchoTestService::NewStub(grpc::CreateChannelInternal(
-          "", grpc_lame_client_channel_create(
-                  "localhost:1234", GRPC_STATUS_UNAUTHENTICATED, "blah")));
+          "",
+          grpc_lame_client_channel_create("localhost:1234",
+                                          GRPC_STATUS_UNAUTHENTICATED, "blah"),
+          nullptr));
   grpc::CompletionQueue cq;
   grpc::testing::EchoRequest send_request;
   grpc::testing::EchoResponse recv_response;

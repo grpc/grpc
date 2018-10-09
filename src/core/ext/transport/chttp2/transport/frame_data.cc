@@ -62,6 +62,7 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
 
   if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     s->received_last_frame = true;
+    s->eos_received = true;
   } else {
     s->received_last_frame = false;
   }
@@ -191,6 +192,9 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         GPR_ASSERT(stream_out != nullptr);
         GPR_ASSERT(p->parsing_frame == nullptr);
         p->frame_size |= (static_cast<uint32_t>(*cur));
+        if (t->channelz_socket != nullptr) {
+          t->channelz_socket->RecordMessageReceived();
+        }
         p->state = GRPC_CHTTP2_DATA_FRAME;
         ++cur;
         message_flags = 0;

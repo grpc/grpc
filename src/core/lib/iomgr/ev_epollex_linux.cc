@@ -46,6 +46,7 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -402,6 +403,10 @@ static void unref_by(grpc_fd* fd, int n) {
 static void fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 
 static void fd_global_shutdown(void) {
+  // TODO(guantaol): We don't have a reasonable explanation about this
+  // lock()/unlock() pattern. It can be a valid barrier if there is at most one
+  // pending lock() at this point. Otherwise, there is still a possibility of
+  // use-after-free race. Need to reason about the code and/or clean it up.
   gpr_mu_lock(&fd_freelist_mu);
   gpr_mu_unlock(&fd_freelist_mu);
   while (fd_freelist != nullptr) {
@@ -735,7 +740,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("kick_one_worker", 0);
   pollable* p = specific_worker->pollable_obj;
-  grpc_core::mu_guard lock(&p->mu);
+  grpc_core::MutexLock lock(&p->mu);
   GPR_ASSERT(specific_worker != nullptr);
   if (specific_worker->kicked) {
     if (grpc_polling_trace.enabled()) {

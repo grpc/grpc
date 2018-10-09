@@ -454,7 +454,7 @@ typedef struct {
   grpc_status_code code;
   const char* msg;
 } special_error_status_map;
-static special_error_status_map error_status_map[] = {
+static const special_error_status_map error_status_map[] = {
     {GRPC_ERROR_NONE, GRPC_STATUS_OK, ""},
     {GRPC_ERROR_CANCELLED, GRPC_STATUS_CANCELLED, "Cancelled"},
     {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
@@ -463,15 +463,13 @@ static special_error_status_map error_status_map[] = {
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
   GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
-    if (which == GRPC_ERROR_INT_GRPC_STATUS) {
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-        if (error_status_map[i].error == err) {
-          if (p != nullptr) *p = error_status_map[i].code;
-          return true;
-        }
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
+      if (error_status_map[i].error == err) {
+        if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
+        if (p != nullptr) *p = error_status_map[i].code;
+        return true;
       }
     }
-    return false;
   }
   uint8_t slot = err->ints[which];
   if (slot != UINT8_MAX) {
@@ -492,15 +490,13 @@ grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
 bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
                         grpc_slice* str) {
   if (grpc_error_is_special(err)) {
-    if (which == GRPC_ERROR_STR_GRPC_MESSAGE) {
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-        if (error_status_map[i].error == err) {
-          *str = grpc_slice_from_static_string(error_status_map[i].msg);
-          return true;
-        }
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
+      if (error_status_map[i].error == err) {
+        if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
+        *str = grpc_slice_from_static_string(error_status_map[i].msg);
+        return true;
       }
     }
-    return false;
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {
@@ -513,9 +509,24 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
 
 grpc_error* grpc_error_add_child(grpc_error* src, grpc_error* child) {
   GPR_TIMER_SCOPE("grpc_error_add_child", 0);
-  grpc_error* new_err = copy_error_and_unref(src);
-  internal_add_error(&new_err, child);
-  return new_err;
+  if (src != GRPC_ERROR_NONE) {
+    if (child == GRPC_ERROR_NONE) {
+      /* \a child is empty. Simply return the ref to \a src */
+      return src;
+    } else if (child != src) {
+      grpc_error* new_err = copy_error_and_unref(src);
+      internal_add_error(&new_err, child);
+      return new_err;
+    } else {
+      /* \a src and \a child are the same. Drop one of the references and return
+       * the other */
+      GRPC_ERROR_UNREF(child);
+      return src;
+    }
+  } else {
+    /* \a src is empty. Simply return the ref to \a child */
+    return child;
+  }
 }
 
 static const char* no_error_string = "\"No Error\"";

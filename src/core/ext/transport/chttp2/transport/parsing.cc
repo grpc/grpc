@@ -409,67 +409,81 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
-    /* TODO(ctiller): check for a status like " 0" */
-    s->seen_error = true;
+  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    // We don't use grpc_mdelem_eq here to avoid executing additional
+    // instructions. The reasoning is if the payload is not equal, we already
+    // know that the metadata elements are not equal because the md is
+    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
+    // payloads are not equal, grpc_mdelem_eq executes more instructions to
+    // determine if they're equal or not.
+    if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
+        md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
+      s->seen_error = true;
+    }
+  } else {
+    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+        !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+      /* TODO(ctiller): check for a status like " 0" */
+      s->seen_error = true;
+    }
+
+    if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
+      grpc_millis* cached_timeout = static_cast<grpc_millis*>(
+          grpc_mdelem_get_user_data(md, free_timeout));
+      grpc_millis timeout;
+      if (cached_timeout != nullptr) {
+        timeout = *cached_timeout;
+      } else {
+        if (GPR_UNLIKELY(
+                !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
+          char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+          gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+          gpr_free(val);
+          timeout = GRPC_MILLIS_INF_FUTURE;
+        }
+        if (GRPC_MDELEM_IS_INTERNED(md)) {
+          /* store the result */
+          cached_timeout =
+              static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+          *cached_timeout = timeout;
+          grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+        }
+      }
+      if (timeout != GRPC_MILLIS_INF_FUTURE) {
+        grpc_chttp2_incoming_metadata_buffer_set_deadline(
+            &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
+      }
+      GRPC_MDELEM_UNREF(md);
+      return;
+    }
   }
 
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (GPR_UNLIKELY(
-              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* store the result */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    if (timeout != GRPC_MILLIS_INF_FUTURE) {
-      grpc_chttp2_incoming_metadata_buffer_set_deadline(
-          &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
-    }
+  const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
+  const size_t metadata_size_limit =
+      t->settings[GRPC_ACKED_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+  if (new_size > metadata_size_limit) {
+    gpr_log(GPR_DEBUG,
+            "received initial metadata size exceeds limit (%" PRIuPTR
+            " vs. %" PRIuPTR ")",
+            new_size, metadata_size_limit);
+    grpc_chttp2_cancel_stream(
+        t, s,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "received initial metadata size exceeds limit"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_RESOURCE_EXHAUSTED));
+    grpc_chttp2_parsing_become_skip_parser(t);
+    s->seen_error = true;
     GRPC_MDELEM_UNREF(md);
   } else {
-    const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
-    const size_t metadata_size_limit =
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
-    if (new_size > metadata_size_limit) {
-      gpr_log(GPR_DEBUG,
-              "received initial metadata size exceeds limit (%" PRIuPTR
-              " vs. %" PRIuPTR ")",
-              new_size, metadata_size_limit);
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "received initial metadata size exceeds limit"),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+    grpc_error* error =
+        grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_chttp2_cancel_stream(t, s, error);
       grpc_chttp2_parsing_become_skip_parser(t);
       s->seen_error = true;
       GRPC_MDELEM_UNREF(md);
-    } else {
-      grpc_error* error =
-          grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
-      if (error != GRPC_ERROR_NONE) {
-        grpc_chttp2_cancel_stream(t, s, error);
-        grpc_chttp2_parsing_become_skip_parser(t);
-        s->seen_error = true;
-        GRPC_MDELEM_UNREF(md);
-      }
     }
   }
 }
@@ -491,8 +505,19 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
     gpr_free(value);
   }
 
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
-      !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
+  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    // We don't use grpc_mdelem_eq here to avoid executing additional
+    // instructions. The reasoning is if the payload is not equal, we already
+    // know that the metadata elements are not equal because the md is
+    // confirmed to be static. If we had used grpc_mdelem_eq here, then if the
+    // payloads are not equal, grpc_mdelem_eq executes more instructions to
+    // determine if they're equal or not.
+    if (md.payload == GRPC_MDELEM_GRPC_STATUS_1.payload ||
+        md.payload == GRPC_MDELEM_GRPC_STATUS_2.payload) {
+      s->seen_error = true;
+    }
+  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS) &&
+             !grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
     /* TODO(ctiller): check for a status like " 0" */
     s->seen_error = true;
   }
@@ -598,6 +623,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_skip_frame_parser(t, 1);
     }
+    if (t->channelz_socket != nullptr) {
+      t->channelz_socket->RecordStreamStartedFromRemote();
+    }
   } else {
     t->incoming_stream = s;
   }
@@ -611,6 +639,9 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   }
   t->parser = grpc_chttp2_header_parser_parse;
   t->parser_data = &t->hpack_parser;
+  if (t->header_eof) {
+    s->eos_received = true;
+  }
   switch (s->header_frames_received) {
     case 0:
       if (t->is_client && t->header_eof) {

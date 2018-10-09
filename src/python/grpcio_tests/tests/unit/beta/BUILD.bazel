@@ -34,18 +34,19 @@ py_test(
     ],
 )
 
-py_test(
-    name = "_implementations_test",
-    srcs = ["_implementations_test.py"],
-    main = "_implementations_test.py",
-    size = "small",
-    deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/unit:resources",
-        requirement('oauth2client'),
-    ],
-    imports=["../../../",],
-)
+# TODO(ghostwriternr): To be added later.
+#py_test(
+#    name = "_implementations_test",
+#    srcs = ["_implementations_test.py"],
+#    main = "_implementations_test.py",
+#    size = "small",
+#    deps = [
+#        "//src/python/grpcio/grpc:grpcio",
+#        "//src/python/grpcio_tests/tests/unit:resources",
+#        requirement('oauth2client'),
+#    ],
+#    imports=["../../../",],
+#)
 
 py_test(
     name = "_not_found_test",

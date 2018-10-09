@@ -48,6 +48,7 @@ namespace testing {
 
 class FixtureConfiguration {
  public:
+  virtual ~FixtureConfiguration() {}
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
@@ -217,7 +218,7 @@ class EndpointPairFixture : public BaseFixture {
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
 
-      channel_ = CreateChannelInternal("", channel);
+      channel_ = CreateChannelInternal("", channel, nullptr);
     }
   }
 

@@ -4,24 +4,27 @@ py_library(
     name = "testing",
     srcs = ["__init__.py",],
     deps = [
-        ":_application_common",
+        # ":_application_common",
         ":_server_application",
     ],
 )
 
-py_library(
-    name = "_application_common",
-    srcs = ["_application_common.py",],
-    deps = [
-        "//src/python/grpcio_tests/tests/testing/proto:requests",
-        "//src/python/grpcio_tests/tests/testing/proto:services",
-    ],
-    imports = ["../../",],
-)
+# TODO(ghostwriternr): To be added later.
+# py_library(
+#     name = "_application_common",
+#     srcs = ["_application_common.py",],
+#     deps = [
+#         "//src/python/grpcio_tests/tests/testing/proto:requests",
+#         "//src/python/grpcio_tests/tests/testing/proto:services",
+#     ],
+#     imports = ["../../",],
+# )
 
 py_library(
     name = "_server_application",
     srcs = ["_server_application.py",],
     imports = ["../../",],
 )
+
+
 

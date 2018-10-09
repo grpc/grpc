@@ -21,6 +21,7 @@ import time as _time
 import grpc
 import grpc_testing
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 

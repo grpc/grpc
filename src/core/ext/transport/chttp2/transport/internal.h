@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -54,8 +55,6 @@ typedef enum {
   /** streams that are waiting to start because there are too many concurrent
       streams on the connection */
   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY,
-  /** streams with closures waiting to be run on a write **/
-  GRPC_CHTTP2_LIST_WAITING_FOR_WRITE,
   STREAM_LIST_COUNT /* must be last */
 } grpc_chttp2_stream_list_id;
 
@@ -248,6 +247,8 @@ class Chttp2IncomingByteStream : public ByteStream {
   static void NextLocked(void* arg, grpc_error* error_ignored);
   static void OrphanLocked(void* arg, grpc_error* error_ignored);
 
+  void MaybeCreateStreamDecompressionCtx();
+
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 
@@ -433,6 +434,9 @@ struct grpc_chttp2_transport {
    */
   grpc_error* close_transport_on_writes_finished;
 
+  /* a list of closures to run after writes are finished */
+  grpc_closure_list run_after_write;
+
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
   bool benign_reclaimer_registered;
@@ -468,6 +472,9 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
+  uint32_t num_messages_in_next_write;
 };
 
 typedef enum {
@@ -531,6 +538,10 @@ struct grpc_chttp2_stream {
   /** Has trailing metadata been received. */
   bool received_trailing_metadata;
 
+  /* have we sent or received the EOS bit? */
+  bool eos_received;
+  bool eos_sent;
+
   /** the error that resulted in this stream being read-closed */
   grpc_error* read_closed_error;
   /** the error that resulted in this stream being write-closed */
@@ -583,7 +594,6 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer flow_controlled_buffer;
 
-  grpc_closure_list run_after_write;
   grpc_chttp2_write_cb* on_flow_controlled_cbs;
   grpc_chttp2_write_cb* on_write_finished_cbs;
   grpc_chttp2_write_cb* finish_after_write;
@@ -685,13 +695,6 @@ bool grpc_chttp2_list_pop_stalled_by_stream(grpc_chttp2_transport* t,
                                             grpc_chttp2_stream** s);
 bool grpc_chttp2_list_remove_stalled_by_stream(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s);
-
-bool grpc_chttp2_list_add_waiting_for_write_stream(grpc_chttp2_transport* t,
-                                                   grpc_chttp2_stream* s);
-bool grpc_chttp2_list_pop_waiting_for_write_stream(grpc_chttp2_transport* t,
-                                                   grpc_chttp2_stream** s);
-bool grpc_chttp2_list_remove_waiting_for_write_stream(grpc_chttp2_transport* t,
-                                                      grpc_chttp2_stream* s);
 
 /********* Flow Control ***************/
 

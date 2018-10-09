@@ -429,8 +429,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                    ? GRPC_MILLIS_INF_FUTURE
                                    : DEFAULT_MAX_CONNECTION_IDLE_MS;
   chand->idle_state = MAX_IDLE_STATE_INIT;
-  gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
-                           GRPC_MILLIS_INF_PAST);
+  gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis, GPR_ATM_MIN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
     if (0 == strcmp(args->channel_args->args[i].key,
                     GRPC_ARG_MAX_CONNECTION_AGE_MS)) {
@@ -536,7 +535,7 @@ static bool maybe_add_max_age_filter(grpc_channel_stack_builder* builder,
 
 void grpc_max_age_filter_init(void) {
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_max_age_filter, nullptr);
 }
 

@@ -1,25 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <_GrpcCoreNugetNativePath Condition="'$(_GrpcCoreNugetNativePath)' == ''">$(MSBuildThisFileDirectory)..\..\</_GrpcCoreNugetNativePath>
-  </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == 'MonoAndroid'">
-    <AndroidNativeLibrary Include="$(_GrpcCoreNugetNativePath)runtimes\monoandroid\arm64-v8a\libgrpc_csharp_ext.so">
+    <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)..\..\native\android\arm64-v8a\libgrpc_csharp_ext.so">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Abi>arm64-v8a</Abi>
     </AndroidNativeLibrary>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == 'MonoAndroid'">
-    <AndroidNativeLibrary Include="$(_GrpcCoreNugetNativePath)runtimes\monoandroid\armeabi-v7a\libgrpc_csharp_ext.so">
+    <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)..\..\native\android\armeabi-v7a\libgrpc_csharp_ext.so">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Abi>armeabi-v7a</Abi>
     </AndroidNativeLibrary>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == 'MonoAndroid'">
-    <AndroidNativeLibrary Include="$(_GrpcCoreNugetNativePath)runtimes\monoandroid\x86\libgrpc_csharp_ext.so">
+    <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)..\..\native\android\x86\libgrpc_csharp_ext.so">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <Abi>x86</Abi>
     </AndroidNativeLibrary>

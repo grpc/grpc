@@ -32,10 +32,22 @@ class ChannelzService final : public channelz::v1::Channelz::Service {
   Status GetTopChannels(
       ServerContext* unused, const channelz::v1::GetTopChannelsRequest* request,
       channelz::v1::GetTopChannelsResponse* response) override;
+  // implementation of GetServers rpc
+  Status GetServers(ServerContext* unused,
+                    const channelz::v1::GetServersRequest* request,
+                    channelz::v1::GetServersResponse* response) override;
   // implementation of GetChannel rpc
   Status GetChannel(ServerContext* unused,
                     const channelz::v1::GetChannelRequest* request,
                     channelz::v1::GetChannelResponse* response) override;
+  // implementation of GetSubchannel rpc
+  Status GetSubchannel(ServerContext* unused,
+                       const channelz::v1::GetSubchannelRequest* request,
+                       channelz::v1::GetSubchannelResponse* response) override;
+  // implementation of GetSocket rpc
+  Status GetSocket(ServerContext* unused,
+                   const channelz::v1::GetSocketRequest* request,
+                   channelz::v1::GetSocketResponse* response) override;
 };
 
 }  // namespace grpc

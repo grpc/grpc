@@ -16,10 +16,8 @@
 
 FROM debian:jessie
 
-RUN apt-get update && apt-get install debian-keyring && apt-key update
-
 # Install Git and basic packages.
-RUN apt-get update && apt-key update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
   build-essential \
@@ -46,11 +44,6 @@ RUN apt-get update && apt-key update && apt-get install -y \
   wget \
   zip && apt-get clean
 
-# Install Node dependencies
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 8 && npm install -g node-pre-gyp"
-
 
 ##################
 # Ruby dependencies
@@ -72,15 +65,15 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 # PHP dependencies
 
 RUN apt-get update && apt-get install -y \
-    php5 php5-dev php-pear phpunit
+    php5 php5-dev php-pear phpunit && apt-get clean
+
 
 ##################
-# Install cross compiler for ARM
+# C# dependencies (needed to build grpc_csharp_ext)
 
-RUN echo 'deb http://emdebian.org/tools/debian/ jessie main' | tee -a /etc/apt/sources.list.d/crosstools.list && \
-  curl http://emdebian.org/tools/debian/emdebian-toolchain-archive.key | apt-key add -
-
-RUN dpkg --add-architecture armhf && apt-get update && apt-get install -y crossbuild-essential-armhf
+# Use cmake 3.6 from jessie-backports
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 RUN mkdir /var/local/jenkins
 

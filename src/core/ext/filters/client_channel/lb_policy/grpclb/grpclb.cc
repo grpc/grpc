@@ -92,6 +92,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -851,10 +852,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     }
   } else {
     // No valid initial response or serverlist found.
+    char* response_slice_str =
+        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
             "[grpclb %p] Invalid LB response received: '%s'. Ignoring.",
-            grpclb_policy,
-            grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
+            grpclb_policy, response_slice_str);
+    gpr_free(response_slice_str);
   }
   grpc_slice_unref_internal(response_slice);
   if (!grpclb_policy->shutting_down_) {
@@ -1259,12 +1262,12 @@ void GrpcLb::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
                                       ChildRefsList* child_channels) {
   // delegate to the RoundRobin to fill the children subchannels.
   rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  mu_guard guard(&lb_channel_mu_);
+  MutexLock lock(&lb_channel_mu_);
   if (lb_channel_ != nullptr) {
     grpc_core::channelz::ChannelNode* channel_node =
         grpc_channel_get_channelz_node(lb_channel_);
     if (channel_node != nullptr) {
-      child_channels->push_back(channel_node->channel_uuid());
+      child_channels->push_back(channel_node->uuid());
     }
   }
 }
@@ -1890,7 +1893,7 @@ void grpc_lb_policy_grpclb_init() {
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::GrpcLbFactory>()));
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_PRIORITY_LOW,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_client_load_reporting_filter,
                                    (void*)&grpc_client_load_reporting_filter);
 }

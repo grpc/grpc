@@ -14,33 +14,47 @@ be plugged in.
 ### Name Syntax
 
 A fully qualified, self contained name used for gRPC channel construction
-uses the syntax:
+uses URI syntax as defined in [RFC 3986](https://tools.ietf.org/html/rfc3986).
 
-```
-scheme://authority/endpoint_name
-```
+The URI scheme indicates what resolver plugin to use.  If no scheme
+prefix is specified or the scheme is unknown, the `dns` scheme is used
+by default.
 
-Here, `scheme` indicates the name-system to be used. Currently, we
-support the following schemes:
+The URI path indicates the name to be resolved.
 
-- `dns`
+Most gRPC implementations support the following URI schemes:
 
-- `ipv4` (IPv4 address)
+- `dns:[//authority/]host[:port]` -- DNS (default)
+  - `host` is the host to resolve via DNS.
+  - `port` is the port to return for each address.  If not specified,
+    443 is used (but some implementations default to 80 for insecure
+    channels).
+  - `authority` indicates the DNS server to use, although this is only
+    supported by some implementations.  (In C-core, the default DNS
+    resolver does not support this, but the c-ares based resolver
+    supports specifying this in the form "IP:port".)
 
-- `ipv6` (IPv6 address)
+- `unix:path` or `unix://absolute_path` -- Unix domain sockets (Unix systems only)
+  - `path` indicates the location of the desired socket.
+  - In the first form, the path may be relative or absolute; in the
+    second form, the path must be absolute (i.e., there will actually be
+    three slashes, two prior to the path and another to begin the
+    absolute path).
 
-- `unix` (path to unix domain socket -- unix systems only)
+The following schemes are supported by the gRPC C-core implementation,
+but may not be supported in other languages:
+
+- `ipv4:address[:port][,address[:port],...]` -- IPv4 addresses
+  - Can specify multiple comma-delimited addresses of the form `address[:port]`:
+    - `address` is the IPv4 address to use.
+    - `port` is the port to use.  If not specified, 443 is used.
+
+- `ipv6:address[:port][,address[:port],...]` -- IPv6 addresses
+  - Can specify multiple comma-delimited addresses of the form `address[:port]`:
+    - `address` is the IPv6 address to use.
+    - `port` is the port to use.  If not specified, 443 is used.
 
 In the future, additional schemes such as `etcd` could be added.
-
-The `authority` indicates some scheme-specific bootstrap information, e.g.,
-for DNS, the authority may include the IP[:port] of the DNS server to
-use. Often, a DNS name may be used as the authority, since the ability to
-resolve DNS names is already built into all gRPC client libraries.
-
-Finally, the `endpoint_name` indicates a concrete name to be looked up
-in a given name-system identified by the scheme and the authority. The
-syntax of the endpoint name is dictated by the scheme in use.
 
 ### Resolver Plugins
 

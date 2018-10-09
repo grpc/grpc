@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 
@@ -62,8 +63,14 @@ class Channel final : public ChannelInterface,
   friend class internal::BlockingUnaryCallImpl;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> CreateChannelInternal(
-      const grpc::string& host, grpc_channel* c_channel);
-  Channel(const grpc::string& host, grpc_channel* c_channel);
+      const grpc::string& host, grpc_channel* c_channel,
+      std::unique_ptr<std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+          interceptor_creators);
+  Channel(const grpc::string& host, grpc_channel* c_channel,
+          std::unique_ptr<std::vector<
+              std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+              interceptor_creators);
 
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
@@ -78,8 +85,22 @@ class Channel final : public ChannelInterface,
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 
+  CompletionQueue* CallbackCQ() override;
+
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned
+
+  // mu_ protects callback_cq_ (the per-channel callbackable completion queue)
+  std::mutex mu_;
+
+  // callback_cq_ references the callbackable completion queue associated
+  // with this channel (if any). It is set on the first call to CallbackCQ().
+  // It is _not owned_ by the channel; ownership belongs with its internal
+  // shutdown callback tag (invoked when the CQ is fully shutdown).
+  CompletionQueue* callback_cq_ = nullptr;
+
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      interceptor_creators_;
 };
 
 }  // namespace grpc

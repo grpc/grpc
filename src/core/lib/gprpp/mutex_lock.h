@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,27 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H
-#define GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H
+#ifndef GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
+#define GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/port.h"
+#include <grpc/support/sync.h>
 
-const grpc_event_engine_vtable* grpc_init_epollsig_linux(bool explicit_request);
+namespace grpc_core {
 
-#ifdef GRPC_LINUX_EPOLL_CREATE1
-void* grpc_fd_get_polling_island(grpc_fd* fd);
-void* grpc_pollset_get_polling_island(grpc_pollset* ps);
-bool grpc_are_polling_islands_equal(void* p, void* q);
-#endif /* defined(GRPC_LINUX_EPOLL_CREATE1) */
+class MutexLock {
+ public:
+  explicit MutexLock(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu); }
+  ~MutexLock() { gpr_mu_unlock(mu_); }
 
-#endif /* GRPC_CORE_LIB_IOMGR_EV_EPOLLSIG_LINUX_H */
+  MutexLock(const MutexLock&) = delete;
+  MutexLock& operator=(const MutexLock&) = delete;
+
+ private:
+  gpr_mu* const mu_;
+};
+
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_LIB_GPRPP_MUTEX_LOCK_H */

@@ -19,10 +19,12 @@ GRPCIO_TESTS_UNIT = [
     "_invocation_defects_test.py",
     "_metadata_code_details_test.py",
     "_metadata_test.py",
-    "_reconnect_test.py",
+    # TODO: Issue 16336
+    # "_reconnect_test.py",
     "_resource_exhausted_test.py",
     "_rpc_test.py",
-    "_server_ssl_cert_config_test.py",
+    # TODO(ghostwriternr): To be added later.
+    # "_server_ssl_cert_config_test.py",
     "_server_test.py",
     "_session_cache_test.py",
 ]
@@ -59,7 +61,6 @@ py_library(
     py_test(
         name=test_file_name[:-3],
         size="small",
-        timeout="moderate",
         srcs=[test_file_name],
         main=test_file_name,
         deps=[
@@ -79,5 +80,4 @@ py_library(
         ],
     ) for test_file_name in GRPCIO_TESTS_UNIT
 ]
-
 

@@ -61,7 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv'],
+    'linux': ['epollex', 'epoll1', 'poll', 'poll-cv'],
     'mac': ['poll'],
 }
 
@@ -922,19 +922,12 @@ class CSharpLanguage(object):
         self.config = config
         self.args = args
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, ['coreclr', 'default'])
+            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
-            self._make_options = []
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
             self._docker_distro = 'jessie'
-
-            if self.platform == 'mac':
-                # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
-                self._make_options = ['EMBED_OPENSSL=true']
-            else:
-                self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -1010,7 +1003,7 @@ class CSharpLanguage(object):
         return ['grpc_csharp_ext']
 
     def make_options(self):
-        return self._make_options
+        return []
 
     def build_steps(self):
         if self.platform == 'windows':
@@ -1028,7 +1021,9 @@ class CSharpLanguage(object):
         if self.platform == 'windows':
             return 'cmake/build/%s/Makefile' % self._cmake_arch_option
         else:
-            return 'Makefile'
+            # no need to set x86 specific flags as run_tests.py
+            # currently forbids x86 C# builds on both Linux and MacOS.
+            return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (
@@ -1430,7 +1425,7 @@ argp.add_argument(
     default=None,
     type=str,
     help='Only use the specified comma-delimited list of polling engines. '
-    'Example: --force_use_pollers epollsig,poll '
+    'Example: --force_use_pollers epoll1,poll '
     ' (This flag has no effect if --force_default_poller flag is also used)')
 argp.add_argument(
     '--max_time', default=-1, type=int, help='Maximum test runtime in seconds')
@@ -1821,8 +1816,16 @@ def _build_and_run(check_cancelled,
         for antagonist in antagonists:
             antagonist.kill()
         if args.bq_result_table and resultset:
-            upload_results_to_bq(resultset, args.bq_result_table, args,
-                                 platform_string())
+            upload_extra_fields = {
+                'compiler': args.compiler,
+                'config': args.config,
+                'iomgr_platform': args.iomgr_platform,
+                'language': args.language[
+                    0],  # args.language is a list but will always have one element when uploading to BQ is enabled.
+                'platform': platform_string()
+            }
+            upload_results_to_bq(resultset, args.bq_result_table,
+                                 upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)

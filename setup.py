@@ -276,11 +276,11 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "six>=1.5.2",
-    "futures>=2.2.0 ; python_version<'3.2'",
-    "enum34>=1.0.4 ; python_version<'3.4'"
+    'six>=1.5.2',
 )
 
+if not PY3:
+  INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
     'sphinx>=1.3',

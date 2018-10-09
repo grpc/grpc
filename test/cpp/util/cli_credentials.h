@@ -36,6 +36,9 @@ class CliCredentials {
   // Returns the appropriate channel_creds_type value for the set of legacy
   // flag arguments.
   virtual grpc::string GetDefaultChannelCredsType() const;
+  // Returns the appropriate call_creds value for the set of legacy flag
+  // arguments.
+  virtual grpc::string GetDefaultCallCreds() const;
   // Returns the base transport channel credentials. Child classes can override
   // to support additional channel_creds_types unknown to this base class.
   virtual std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials()
