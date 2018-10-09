@@ -53,6 +53,8 @@ typedef struct {
   grpc_closure tcp_server_shutdown_complete;
   grpc_closure* server_destroy_listener_done;
   grpc_handshake_manager* pending_handshake_mgrs;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode>
+      channelz_listen_socket;
 } server_state;
 
 typedef struct {
@@ -224,6 +226,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   GPR_ASSERT(state->shutdown);
   grpc_handshake_manager_pending_list_shutdown_all(
       state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
+  state->channelz_listen_socket.reset();
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
@@ -263,6 +266,8 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   server_state* state = nullptr;
   grpc_error** errors = nullptr;
   size_t naddrs = 0;
+  const grpc_arg* arg = nullptr;
+  intptr_t socket_uuid = 0;
 
   *port_num = -1;
 
@@ -324,9 +329,16 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
+  arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    state->channelz_listen_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>();
+    socket_uuid = state->channelz_listen_socket->uuid();
+  }
+
   /* Register with the server only upon success */
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener);
+                           server_destroy_listener, socket_uuid);
   goto done;
 
 /* Error path: cleanup and return */
