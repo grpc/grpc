@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-import "src/python/grpcio_tests/tests/testing/proto/requests.proto";
+import "tests/testing/proto/requests.proto";
 
 package tests_of_grpc_testing;
 
