@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.16.0-dev")
+set(PACKAGE_VERSION   "1.17.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -40,6 +40,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
+option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -113,6 +114,14 @@ if (gRPC_USE_PROTO_LITE)
   add_definitions("-DGRPC_USE_PROTO_LITE")
 else()
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
+if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
+  add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
+  if (_gRPC_PLATFORM_MAC)
+    # some C++11 constructs not supported before OS X 10.9
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
+  endif()
 endif()
 
 if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
