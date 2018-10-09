@@ -18,18 +18,10 @@
 
 #import "GRPCChannel.h"
 
-#include <grpc/grpc_security.h>
-#ifdef GRPC_COMPILE_WITH_CRONET
-#include <grpc/grpc_cronet.h>
-#endif
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-#import <Cronet/Cronet.h>
-#import <GRPCClient/GRPCCall+Cronet.h>
-#endif
 #import "GRPCCompletionQueue.h"
 
 static void *copy_pointer_arg(void *p) {
@@ -63,11 +55,11 @@ static void FreeChannelArgs(grpc_channel_args *channel_args) {
 /**
  * Allocates a @c grpc_channel_args and populates it with the options specified in the
  * @c dictionary. Keys must be @c NSString. If the value responds to @c @selector(UTF8String) then
- * it will be mapped to @c GRPC_ARG_STRING. If not, it will be mapped to @c GRPC_ARG_INTEGER if the
- * value responds to @c @selector(intValue). Otherwise, an exception will be raised. The caller of
- * this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
+ * it will be mapped to @c GRPC_ARG_STRING. If the value responds to @c @selector(intValue), it will
+ * be mapped to @c GRPC_ARG_INTEGER. Otherwise, the value is passed to core as pointer. The caller
+ * of this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
  */
-static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
+grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (!dictionary) {
     return NULL;
   }
@@ -108,89 +100,17 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 @implementation GRPCChannel {
   // Retain arguments to channel_create because they may not be used on the thread that invoked
   // the channel_create function.
-  NSString *_host;
   grpc_channel_args *_channelArgs;
+  grpc_channel *_unmanagedChannel;
 }
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-- (instancetype)initWithHost:(NSString *)host
-                cronetEngine:(stream_engine *)cronetEngine
-                 channelArgs:(NSDictionary *)channelArgs {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
+- (nullable instancetype)initWithUnmanagedChannel:(nullable grpc_channel *)unmanagedChannel
+                                      channelArgs:(nullable grpc_channel_args *)channelArgs {
+  if ((self = [super init])) {
+    _unmanagedChannel = unmanagedChannel;
+    _channelArgs = channelArgs;
   }
-
-  if (self = [super init]) {
-    _channelArgs = BuildChannelArgs(channelArgs);
-    _host = [host copy];
-    _unmanagedChannel =
-        grpc_cronet_secure_channel_create(cronetEngine, _host.UTF8String, _channelArgs, NULL);
-  }
-
   return self;
-}
-#endif
-
-- (instancetype)initWithHost:(NSString *)host
-                      secure:(BOOL)secure
-                 credentials:(struct grpc_channel_credentials *)credentials
-                 channelArgs:(NSDictionary *)channelArgs {
-  if (!host) {
-    [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
-  }
-
-  if (secure && !credentials) {
-    return nil;
-  }
-
-  if (self = [super init]) {
-    _channelArgs = BuildChannelArgs(channelArgs);
-    _host = [host copy];
-    if (secure) {
-      _unmanagedChannel =
-          grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs, NULL);
-    } else {
-      _unmanagedChannel = grpc_insecure_channel_create(_host.UTF8String, _channelArgs, NULL);
-    }
-  }
-
-  return self;
-}
-
-- (void)dealloc {
-  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
-  // as in the past that made this call to crash.
-  grpc_channel_destroy(_unmanagedChannel);
-  FreeChannelArgs(_channelArgs);
-}
-
-#ifdef GRPC_COMPILE_WITH_CRONET
-+ (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
-                                 channelArgs:(NSDictionary *)channelArgs {
-  stream_engine *engine = [GRPCCall cronetEngine];
-  if (!engine) {
-    [NSException raise:NSInvalidArgumentException format:@"cronet_engine is NULL. Set it first."];
-    return nil;
-  }
-  return [[GRPCChannel alloc] initWithHost:host cronetEngine:engine channelArgs:channelArgs];
-}
-#endif
-
-+ (GRPCChannel *)secureChannelWithHost:(NSString *)host {
-  return [[GRPCChannel alloc] initWithHost:host secure:YES credentials:NULL channelArgs:NULL];
-}
-
-+ (GRPCChannel *)secureChannelWithHost:(NSString *)host
-                           credentials:(struct grpc_channel_credentials *)credentials
-                           channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:YES
-                               credentials:credentials
-                               channelArgs:channelArgs];
-}
-
-+ (GRPCChannel *)insecureChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host secure:NO credentials:NULL channelArgs:channelArgs];
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
@@ -218,6 +138,13 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   }
   grpc_slice_unref(path_slice);
   return call;
+}
+
+- (void)dealloc {
+  // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
+  // as in the past that made this call to crash.
+  grpc_channel_destroy(_unmanagedChannel);
+  FreeChannelArgs(_channelArgs);
 }
 
 @end

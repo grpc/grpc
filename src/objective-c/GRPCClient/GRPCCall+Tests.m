@@ -19,6 +19,7 @@
 #import "GRPCCall+Tests.h"
 
 #import "private/GRPCHost.h"
+#import "private/GRPCInsecureChannelFactory.h"
 
 @implementation GRPCCall (Tests)
 
@@ -42,7 +43,7 @@
 
 + (void)useInsecureConnectionsForHost:(NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.secure = NO;
+  hostConfig.channelFactory = [GRPCInsecureChannelFactory sharedInstance];
 }
 
 + (void)resetHostSettings {

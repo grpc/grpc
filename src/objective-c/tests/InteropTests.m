@@ -97,7 +97,6 @@ BOOL isRemoteInteropTest(NSString *host) {
   // Cronet setup
   [Cronet setHttp2Enabled:YES];
   [Cronet start];
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
 #endif
 #ifdef GRPC_CFSTREAM
   setenv(kCFStreamVarName, "1", 1);
@@ -108,6 +107,10 @@ BOOL isRemoteInteropTest(NSString *host) {
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
+
+#ifdef GRPC_COMPILE_WITH_CRONET
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine] forHost:self.class.host];
+#endif
 
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
 }
@@ -556,6 +559,46 @@ BOOL isRemoteInteropTest(NSString *host) {
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
+#endif
+
+#ifdef GRPC_COMPILE_WITH_CRONET
+- (void)testConcurrentCronetAndChttp2 {
+  // Test Cronet channel can work together with chttp2 channel
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Cronet RPC done"];
+  __weak XCTestExpectation *expectation2 = [self expectationWithDescription:@"Chttp2 RPC Done"];
+
+  GPBEmpty *request = [GPBEmpty message];
+
+  [_service
+      emptyCallWithRequest:request
+                   handler:^(GPBEmpty *response, NSError *error) {
+                     XCTAssertNil(error, @"Cronet call finished with unexpected error: %@", error);
+
+                     id expectedResponse = [GPBEmpty message];
+                     XCTAssertEqualObjects(response, expectedResponse);
+
+                     [expectation fulfill];
+                   }];
+
+  // Service to alternative host whose channel type is default (i.e. secure channel w/ chttp2).
+  NSString *kAlternativeHostAddress = @"grpc-test2.sandbox.googleapis.com";
+  RMTTestService *serviceChttp2 = [RMTTestService serviceWithHost:kAlternativeHostAddress];
+
+  [serviceChttp2
+      emptyCallWithRequest:request
+                   handler:^(GPBEmpty *response, NSError *error) {
+                     XCTAssertNil(error, @"Chttp2 call finished with unexpected error: %@", error);
+
+                     id expectedResponse = [GPBEmpty message];
+                     XCTAssertEqualObjects(response, expectedResponse);
+
+                     [expectation2 fulfill];
+                   }];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 #endif
 
 @end
