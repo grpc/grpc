@@ -137,10 +137,7 @@ static NSMutableDictionary *kHostCache;
                         completionQueue:queue];
 }
 
-- (NSData *)nullTerminatedDataWithString:(NSString *_Nullable)string {
-  if (string == nil) {
-    return nil;
-  }
+- (NSData *)nullTerminatedDataWithString:(NSString *)string {
   // dataUsingEncoding: does not return a null-terminated string.
   NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
   NSMutableData *nullTerminated = [NSMutableData dataWithData:data];
@@ -196,6 +193,7 @@ static NSMutableDictionary *kHostCache;
   if (pemPrivateKey == nil && pemCertChain == nil) {
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
   } else {
+    assert(pemPrivateKey != nil && pemCertChain != nil);
     grpc_ssl_pem_key_cert_pair key_cert_pair;
     NSData *privateKeyASCII = [self nullTerminatedDataWithString:pemPrivateKey];
     NSData *certChainASCII = [self nullTerminatedDataWithString:pemCertChain];
