@@ -238,8 +238,15 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   grpc_core::ExecCtx exec_ctx;
+  // explicitly disable channelz
+  grpc_arg arg[2];
+  arg[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE), 0);
+  arg[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false);
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
   grpc_channel* channel =
-      grpc_insecure_channel_create("fake_target", nullptr, nullptr);
+      grpc_insecure_channel_create("fake_target", &args, nullptr);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
