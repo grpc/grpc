@@ -39,8 +39,6 @@
 
 #include "GRPCCallOptions.h"
 
-@class GRPCCallOptions;
-
 #pragma mark gRPC errors
 
 /** Domain of NSError objects produced by gRPC. */
