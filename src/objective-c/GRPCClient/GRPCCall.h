@@ -228,7 +228,8 @@ extern id const kGRPCTrailersKey;
                                handler:(id<GRPCResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 /**
- * Convevience initializer for a call that uses default call options.
+ * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
+ * the default options).
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                handler:(id<GRPCResponseHandler>)handler;

@@ -18,6 +18,7 @@
 
 #import "GRPCCallOptions.h"
 
+// The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static NSDictionary *const kDefaultInitialMetadata = nil;
