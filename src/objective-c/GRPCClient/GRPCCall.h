@@ -249,7 +249,7 @@ extern id const kGRPCTrailersKey;
 /**
  * Send a message to the server. Data are sent as raw bytes in gRPC message frames.
  */
-- (void)writeWithData:(NSData *)data;
+- (void)writeData:(NSData *)data;
 
 /**
  * Finish the RPC request and half-close the call. The server may still send messages and/or

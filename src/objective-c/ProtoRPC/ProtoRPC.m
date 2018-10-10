@@ -120,7 +120,7 @@
 
   dispatch_async(_dispatchQueue, ^{
     if (_call) {
-      [_call writeWithData:[message data]];
+      [_call writeData:[message data]];
     }
   });
 }

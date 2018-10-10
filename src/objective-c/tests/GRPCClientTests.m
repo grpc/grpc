@@ -332,7 +332,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                  callOptions:options];
 
   [call start];
-  [call writeWithData:[request data]];
+  [call writeData:[request data]];
   [call finish];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -495,7 +495,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                    }
                                  }]
                  callOptions:options];
-  [call writeWithData:[NSData data]];
+  [call writeData:[NSData data]];
   [call start];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -632,7 +632,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                  callOptions:options];
 
   [call start];
-  [call writeWithData:[request data]];
+  [call writeData:[request data]];
   [call finish];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
