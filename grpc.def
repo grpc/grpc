@@ -81,7 +81,6 @@ EXPORTS
     grpc_channelz_get_socket
     grpc_insecure_channel_create_from_fd
     grpc_server_add_insecure_channel_from_fd
-    grpc_use_signal
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
