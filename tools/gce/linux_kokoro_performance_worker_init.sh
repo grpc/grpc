@@ -187,6 +187,12 @@ sudo apt-get install -y python-scipy python-numpy
 # shellcheck disable=SC2024
 sudo tee --append ~kbuilder/.ssh/authorized_keys < kokoro_performance.pub
 
+# Kokoro requires /tmpfs/READY file to exist the directory and file itself should
+# be owned by kbuilder.
+sudo mkdir /tmpfs
+sudo chown kbuilder /tmpfs
+touch /tmpfs/READY
+
 # Restart for VM to pick up kernel update
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
 sleep 10
