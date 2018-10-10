@@ -135,8 +135,8 @@ class CallbackClient
 class CallbackUnaryClient final : public CallbackClient {
  public:
   CallbackUnaryClient(const ClientConfig& config) : CallbackClient(config) {
-    for (size_t ch = 0; ch < config.client_channels(); ch++) {
-      for (size_t i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
+    for (int ch = 0; ch < config.client_channels(); ch++) {
+      for (int i = 0; i < config.outstanding_rpcs_per_channel(); i++) {
         ctx_.emplace_back(
             new CallbackClientRpcContext(channels_[ch].get_stub()));
       }
@@ -147,7 +147,7 @@ class CallbackUnaryClient final : public CallbackClient {
 
  protected:
   bool ThreadFuncImpl(Thread* t, size_t thread_idx) override {
-    for (int vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
+    for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
          vector_idx += num_threads_) {
       ScheduleRpc(t, thread_idx, vector_idx);
     }
