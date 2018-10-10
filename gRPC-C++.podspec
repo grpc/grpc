@@ -328,6 +328,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
+                      'src/core/ext/filters/client_channel/grpc_if_nametoindex.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',

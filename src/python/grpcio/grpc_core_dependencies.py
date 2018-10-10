@@ -313,6 +313,8 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/client_channel_factory.cc',
     'src/core/ext/filters/client_channel/client_channel_plugin.cc',
     'src/core/ext/filters/client_channel/connector.cc',
+    'src/core/ext/filters/client_channel/grpc_if_nametoindex_posix.cc',
+    'src/core/ext/filters/client_channel/grpc_if_nametoindex_unsupported.cc',
     'src/core/ext/filters/client_channel/http_connect_handshaker.cc',
     'src/core/ext/filters/client_channel/http_proxy.cc',
     'src/core/ext/filters/client_channel/lb_policy.cc',

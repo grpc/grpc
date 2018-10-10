@@ -232,9 +232,7 @@ int main(int argc, char** argv) {
   if (gpr_stricmp(resolver_type, "native") == 0) {
     gpr_setenv("GRPC_DNS_RESOLVER", "native");
   } else if (gpr_stricmp(resolver_type, "ares") == 0) {
-#ifndef GRPC_UV
     gpr_setenv("GRPC_DNS_RESOLVER", "ares");
-#endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();

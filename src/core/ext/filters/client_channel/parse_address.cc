@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/grpc_if_nametoindex.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -67,29 +68,6 @@ bool grpc_parse_unix(const grpc_uri* uri,
 }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
-
-#ifdef GRPC_POSIX_SOCKET
-
-uint32_t grpc_if_nametoindex(char* name) {
-  uint32_t out = if_nametoindex(name);
-  if (out == 0) {
-    gpr_log(GPR_DEBUG, "if_nametoindex failed for name %s. errno %d", name,
-            errno);
-  }
-  return out;
-}
-
-#else
-
-uint32_t grpc_if_nametoindex(char* name) {
-  gpr_log(GPR_DEBUG,
-          "Not attempting to convert interface name %s to index for current "
-          "platform.",
-          name);
-  return 0;
-}
-
-#endif /* GRPC_POSIX_SOCKET */
 
 bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
