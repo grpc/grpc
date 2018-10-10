@@ -68,6 +68,9 @@ sudo apt-get install -y google-perftools libgoogle-perftools-dev
 # netperf
 sudo apt-get install -y netperf
 
+# required to run kokoro_log_reader.py
+sudo pip install psutil
+
 # C++ dependencies
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
