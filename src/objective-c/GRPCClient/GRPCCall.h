@@ -150,14 +150,18 @@ extern id const kGRPCTrailersKey;
 
 /** An object can implement this protocol to receive responses from server from a call. */
 @protocol GRPCResponseHandler
+
 @optional
+
 /** Issued when initial metadata is received from the server. */
 - (void)receivedInitialMetadata:(NSDictionary *)initialMetadata;
+
 /**
  * Issued when a message is received from the server. The message may be raw data from the server
  * (when using \a GRPCCall2 directly) or deserialized proto object (when using \a ProtoRPC).
  */
 - (void)receivedMessage:(id)message;
+
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
  * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
@@ -166,9 +170,13 @@ extern id const kGRPCTrailersKey;
  */
 - (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error;
 
+@required
+
 /**
  * All the responses must be issued to a user-provided dispatch queue. This property specifies the
- * dispatch queue to be used for issuing the notifications.
+ * dispatch queue to be used for issuing the notifications. A serial queue should be provided if
+ * the order of responses (initial metadata, message, message, ..., message, trailing metadata)
+ * needs to be maintained.
  */
 @property(atomic, readonly) dispatch_queue_t dispatchQueue;
 
