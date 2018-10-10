@@ -15,6 +15,13 @@
 
 # Creates a performance worker on GCE to be used on Kokoro.
 
+# IMPORTANT: Instructions for updating
+# If the VM configuration / installed software is updated,
+# - all existing performance worker VMs need to be updated to reflect the changes
+# - a new GCE image named "grpc-performance-kokoro-v1" needs to be created,
+#   incrementing the version number.
+# - kokoro jobs need to be reconfigured to use the new image version
+
 set -ex
 
 cd "$(dirname "$0")"
