@@ -56,23 +56,71 @@ ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
   MutexLock lock(&mu_);
   entities_.push_back(node);
-  intptr_t uuid = entities_.size();
-  return uuid;
+  return ++uuid_generator_;
+}
+
+void ChannelzRegistry::MaybePerformCompactionLocked() {
+  constexpr double kEmptinessTheshold = 1 / 3;
+  double emptiness_ratio =
+      double(num_empty_slots_) / double(entities_.capacity());
+  if (emptiness_ratio > kEmptinessTheshold) {
+    int front = 0;
+    for (size_t i = 0; i < entities_.size(); ++i) {
+      if (entities_[i] != nullptr) {
+        entities_[front++] = entities_[i];
+      }
+    }
+    for (int i = 0; i < num_empty_slots_; ++i) {
+      entities_.pop_back();
+    }
+    num_empty_slots_ = 0;
+  }
+}
+
+int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid) {
+  size_t left = 0;
+  size_t right = entities_.size() - 1;
+  while (left <= right) {
+    size_t true_middle = left + (right - left) / 2;
+    size_t first_non_null = true_middle;
+    while (first_non_null < right && entities_[first_non_null] == nullptr) {
+      first_non_null++;
+    }
+    if (entities_[first_non_null] == nullptr) {
+      right = true_middle - 1;
+      continue;
+    }
+    intptr_t uuid = entities_[first_non_null]->uuid();
+    if (uuid == target_uuid) {
+      return int(first_non_null);
+    }
+    if (uuid < target_uuid) {
+      left = first_non_null + 1;
+    } else {
+      right = true_middle - 1;
+    }
+  }
+  return -1;
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
-  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  entities_[uuid - 1] = nullptr;
+  GPR_ASSERT(uuid <= uuid_generator_);
+  int idx = FindByUuidLocked(uuid);
+  GPR_ASSERT(idx >= 0);
+  entities_[idx] = nullptr;
+  num_empty_slots_++;
+  MaybePerformCompactionLocked();
 }
 
 BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
   MutexLock lock(&mu_);
-  if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+  if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  return entities_[uuid - 1];
+  int idx = FindByUuidLocked(uuid);
+  return idx < 0 ? nullptr : entities_[idx];
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
@@ -160,6 +208,21 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
   return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
 }
 
+char* grpc_channelz_get_server_sockets(intptr_t server_id,
+                                       intptr_t start_socket_id) {
+  grpc_core::channelz::BaseNode* base_node =
+      grpc_core::channelz::ChannelzRegistry::Get(server_id);
+  if (base_node == nullptr ||
+      base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer) {
+    return nullptr;
+  }
+  // This cast is ok since we have just checked to make sure base_node is
+  // actually a server node
+  grpc_core::channelz::ServerNode* server_node =
+      static_cast<grpc_core::channelz::ServerNode*>(base_node);
+  return server_node->RenderServerSockets(start_socket_id);
+}
+
 char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::channelz::BaseNode* channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
@@ -193,6 +256,24 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_json* subchannel_json = subchannel_node->RenderJson();
   subchannel_json->key = "subchannel";
   grpc_json_link_child(json, subchannel_json, nullptr);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
+
+char* grpc_channelz_get_socket(intptr_t socket_id) {
+  grpc_core::channelz::BaseNode* socket_node =
+      grpc_core::channelz::ChannelzRegistry::Get(socket_id);
+  if (socket_node == nullptr ||
+      socket_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kSocket) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* socket_json = socket_node->RenderJson();
+  socket_json->key = "socket";
+  grpc_json_link_child(json, socket_json, nullptr);
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;

@@ -61,6 +61,14 @@ static uint64_t g_timed_waiter_generation;
 
 static void timer_thread(void* completed_thread_ptr);
 
+// For debug of the timer manager crash only.
+// TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+extern int64_t g_timer_manager_init_count;
+extern int64_t g_timer_manager_shutdown_count;
+extern int64_t g_fork_count;
+#endif  // GRPC_DEBUG_TIMER_MANAGER
+
 static void gc_completed_threads(void) {
   if (g_completed_threads != nullptr) {
     completed_thread* to_gc = g_completed_threads;
@@ -92,8 +100,7 @@ static void start_timer_thread_and_unlock(void) {
 
 void grpc_timer_manager_tick() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis next = GRPC_MILLIS_INF_FUTURE;
-  grpc_timer_check(&next);
+  grpc_timer_check(nullptr);
 }
 
 static void run_some_timers() {
@@ -102,9 +109,12 @@ static void run_some_timers() {
   // remove a waiter from the pool, and start another thread if necessary
   --g_waiter_count;
   if (g_waiter_count == 0 && g_threaded) {
+    // The number of timer threads is always increasing until all the threads
+    // are stopped. In rare cases, if a large number of timers fire
+    // simultaneously, we may end up using a large number of threads.
     start_timer_thread_and_unlock();
   } else {
-    // if there's no thread waiting with a timeout, kick an existing
+    // if there's no thread waiting with a timeout, kick an existing untimed
     // waiter so that the next deadline is not missed
     if (!g_has_timed_waiter) {
       if (grpc_timer_check_trace.enabled()) {
@@ -284,6 +294,11 @@ static void start_threads(void) {
 void grpc_timer_manager_init(void) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv_wait);
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
+  g_timer_manager_init_count++;
+#endif
   gpr_cv_init(&g_cv_shutdown);
   g_threaded = false;
   g_thread_count = 0;
@@ -319,6 +334,11 @@ static void stop_threads(void) {
 }
 
 void grpc_timer_manager_shutdown(void) {
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
+  g_timer_manager_shutdown_count++;
+#endif
   stop_threads();
 
   gpr_mu_destroy(&g_mu);
@@ -327,6 +347,11 @@ void grpc_timer_manager_shutdown(void) {
 }
 
 void grpc_timer_manager_set_threading(bool threaded) {
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
+  g_fork_count++;
+#endif
   if (threaded) {
     start_threads();
   } else {

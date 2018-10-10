@@ -95,7 +95,7 @@ end
 
 # creates a test stub that accesses host:port securely.
 def create_stub(opts)
-  address = "#{opts.host}:#{opts.port}"
+  address = "#{opts.server_host}:#{opts.server_port}"
 
   # Provide channel args that request compression by default
   # for compression interop tests
@@ -112,7 +112,7 @@ def create_stub(opts)
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
       channel_args: {
-        GRPC::Core::Channel::SSL_TARGET => opts.host_override
+        GRPC::Core::Channel::SSL_TARGET => opts.server_host_override
       }
     }
 
@@ -703,19 +703,19 @@ class NamedTests
 end
 
 # Args is used to hold the command line info.
-Args = Struct.new(:default_service_account, :host, :host_override,
-                  :oauth_scope, :port, :secure, :test_case,
+Args = Struct.new(:default_service_account, :server_host, :server_host_override,
+                  :oauth_scope, :server_port, :secure, :test_case,
                   :use_test_ca)
 
 # validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
-  args.host_override = 'foo.test.google.fr'
+  args.server_host_override = 'foo.test.google.fr'
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
-      args['host'] = v
+      args['server_host'] = v
     end
     opts.on('--default_service_account email_address',
             'email address of the default service account') do |v|
@@ -723,9 +723,11 @@ def parse_args
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
-      args['host_override'] = v
+      args['server_host_override'] = v
     end
-    opts.on('--server_port SERVER_PORT', 'server port') { |v| args['port'] = v }
+    opts.on('--server_port SERVER_PORT', 'server port') do |v|
+      args['server_port'] = v
+    end
     # instance_methods(false) gives only the methods defined in that class
     test_cases = NamedTests.instance_methods(false).map(&:to_s)
     test_case_list = test_cases.join(',')
@@ -744,7 +746,7 @@ def parse_args
 end
 
 def _check_args(args)
-  %w(host port test_case).each do |a|
+  %w(server_host server_port test_case).each do |a|
     if args[a].nil?
       fail(OptionParser::MissingArgument, "please specify --#{a}")
     end

@@ -201,7 +201,7 @@ class SubchannelList
   bool shutting_down() const { return shutting_down_; }
 
   // Populates refs_list with the uuids of this SubchannelLists's subchannels.
-  void PopulateChildRefsList(ChildRefsList* refs_list) {
+  void PopulateChildRefsList(channelz::ChildRefsList* refs_list) {
     for (size_t i = 0; i < subchannels_.size(); ++i) {
       if (subchannels_[i].subchannel() != nullptr) {
         grpc_core::channelz::SubchannelNode* subchannel_node =

@@ -98,11 +98,12 @@ grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_imp
 grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
 grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
+grpc_channelz_get_server_sockets_type grpc_channelz_get_server_sockets_import;
 grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
+grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
 grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
-grpc_use_signal_type grpc_use_signal_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 grpc_auth_context_property_iterator_type grpc_auth_context_property_iterator_import;
 grpc_auth_context_peer_identity_type grpc_auth_context_peer_identity_import;
@@ -354,11 +355,12 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_resource_quota_arg_vtable_import = (grpc_resource_quota_arg_vtable_type) GetProcAddress(library, "grpc_resource_quota_arg_vtable");
   grpc_channelz_get_top_channels_import = (grpc_channelz_get_top_channels_type) GetProcAddress(library, "grpc_channelz_get_top_channels");
   grpc_channelz_get_servers_import = (grpc_channelz_get_servers_type) GetProcAddress(library, "grpc_channelz_get_servers");
+  grpc_channelz_get_server_sockets_import = (grpc_channelz_get_server_sockets_type) GetProcAddress(library, "grpc_channelz_get_server_sockets");
   grpc_channelz_get_channel_import = (grpc_channelz_get_channel_type) GetProcAddress(library, "grpc_channelz_get_channel");
   grpc_channelz_get_subchannel_import = (grpc_channelz_get_subchannel_type) GetProcAddress(library, "grpc_channelz_get_subchannel");
+  grpc_channelz_get_socket_import = (grpc_channelz_get_socket_type) GetProcAddress(library, "grpc_channelz_get_socket");
   grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");
   grpc_server_add_insecure_channel_from_fd_import = (grpc_server_add_insecure_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_insecure_channel_from_fd");
-  grpc_use_signal_import = (grpc_use_signal_type) GetProcAddress(library, "grpc_use_signal");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");
   grpc_auth_context_property_iterator_import = (grpc_auth_context_property_iterator_type) GetProcAddress(library, "grpc_auth_context_property_iterator");
   grpc_auth_context_peer_identity_import = (grpc_auth_context_peer_identity_type) GetProcAddress(library, "grpc_auth_context_peer_identity");

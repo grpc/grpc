@@ -437,9 +437,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 6.0.0-dev
-CPP_VERSION = 1.16.0-dev
-CSHARP_VERSION = 1.16.0-dev
+CORE_VERSION = 7.0.0-dev
+CPP_VERSION = 1.17.0-dev
+CSHARP_VERSION = 1.17.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -487,7 +487,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -6
+SHARED_VERSION_CORE = -7
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -1
 else ifeq ($(SYSTEM),Darwin)
@@ -792,7 +792,7 @@ PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
-PC_LIB = -lgrpc
+PC_LIB = -lgrpc_unsecure
 GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
 PROTOBUF_PKG_CONFIG = false
@@ -863,7 +863,7 @@ PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
 PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-PC_LIB = -lgrpc++
+PC_LIB = -lgrpc++_unsecure
 GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
 ifeq ($(MAKECMDGOALS),clean)
@@ -3003,7 +3003,7 @@ install-shared_c: shared_c strip-shared_c install-pkg-config_c
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libaddress_sorting.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libaddress_sorting.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -3012,7 +3012,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgpr.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -3021,7 +3021,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -3030,7 +3030,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -3039,7 +3039,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -3056,7 +3056,7 @@ install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-con
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3065,7 +3065,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3074,7 +3074,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_error_details.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3083,7 +3083,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_reflection.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3092,7 +3092,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -3101,7 +3101,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpcpp_channelz$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpcpp_channelz.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpcpp_channelz$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpcpp_channelz.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -3118,7 +3118,7 @@ install-shared_csharp: shared_csharp strip-shared_csharp
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a $(prefix)/lib/libgrpc_csharp_ext.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so.6
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -3209,8 +3209,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.6 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.6
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.7 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.7
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3404,8 +3404,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.6 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.6
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.7 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.7
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3606,7 +3606,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -3832,8 +3831,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.6
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.7 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4016,7 +4015,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -4198,8 +4196,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(L
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.6
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.7 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4427,7 +4425,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -4728,7 +4725,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -4974,7 +4970,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -5115,8 +5110,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.6
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.7 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.7
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -5433,6 +5428,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -5440,6 +5436,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -5632,7 +5629,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
-    src/core/ext/transport/chttp2/transport/hpack_mapping.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
@@ -6012,6 +6008,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6019,6 +6016,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6404,6 +6402,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6411,6 +6410,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6560,6 +6560,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6567,6 +6568,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6885,6 +6887,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
     include/grpcpp/impl/codegen/completion_queue_tag.h \
@@ -6892,6 +6895,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/interceptor.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \

@@ -88,6 +88,7 @@
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
   option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
+  option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
   set(gRPC_INSTALL_default ON)
   if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -162,6 +163,25 @@
     add_definitions("-DGRPC_USE_PROTO_LITE")
   else()
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+  endif()
+
+  if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
+    add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
+    if (_gRPC_PLATFORM_MAC)
+      # some C++11 constructs not supported before OS X 10.9
+      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
+    endif()
+  endif()
+
+  if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
+    # C core has C++ source code, but should not depend on libstc++ (for better portability).
+    # We need to use a few tricks to convince cmake to do that.
+    # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
+    set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
+    # Exceptions and RTTI must be off to avoid dependency on libstdc++
+    set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
+  else()
+    set(_gRPC_CORE_NOSTDCXX_FLAGS "")
   endif()
 
   include(cmake/zlib.cmake)
@@ -403,7 +423,14 @@
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
-
+  % if lib.language in ['c', 'csharp']:
+    # avoid dependency on libstdc++
+    if (_gRPC_CORE_NOSTDCXX_FLAGS)
+      set_target_properties(${lib.name} PROPERTIES LINKER_LANGUAGE C)
+      # only use the flags for C++ source files
+      target_compile_options(${lib.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
+    endif()
+  % endif
   % if len(get_deps(lib)) > 0:
   target_link_libraries(${lib.name}
   % for dep in get_deps(lib):
@@ -492,6 +519,14 @@
     ${dep}
   % endfor
   )
+
+  % if tgt.language in ['c', 'csharp']:
+    # avoid dependency on libstdc++
+    if (_gRPC_CORE_NOSTDCXX_FLAGS)
+      set_target_properties(${tgt.name} PROPERTIES LINKER_LANGUAGE C)
+      target_compile_options(${tgt.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
+    endif()
+  % endif
   % endif
   </%def>
 

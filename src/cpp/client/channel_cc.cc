@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <cstring>
 #include <memory>
 #include <mutex>
 
@@ -50,8 +51,16 @@
 namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-Channel::Channel(const grpc::string& host, grpc_channel* channel)
+Channel::Channel(
+    const grpc::string& host, grpc_channel* channel,
+    std::unique_ptr<std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+        interceptor_creators)
     : host_(host), c_channel_(channel) {
+  auto* vector = interceptor_creators.release();
+  if (vector != nullptr) {
+    interceptor_creators_ = std::move(*vector);
+  }
   g_gli_initializer.summon();
 }
 
@@ -63,6 +72,10 @@ Channel::~Channel() {
 }
 
 namespace {
+
+inline grpc_slice SliceFromArray(const char* arr, size_t len) {
+  return g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+}
 
 grpc::string GetChannelInfoField(grpc_channel* channel,
                                  grpc_channel_info* channel_info,
@@ -110,16 +123,17 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
         context->propagation_options_.c_bitmask(), cq->cq(),
         method.channel_tag(), context->raw_deadline(), nullptr);
   } else {
-    const char* host_str = nullptr;
-    if (!context->authority().empty()) {
-      host_str = context->authority_.c_str();
+    const string* host_str = nullptr;
+    if (!context->authority_.empty()) {
+      host_str = &context->authority_;
     } else if (!host_.empty()) {
-      host_str = host_.c_str();
+      host_str = &host_;
     }
-    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice method_slice =
+        SliceFromArray(method.name(), strlen(method.name()));
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = SliceFromCopiedString(host_str);
+      host_slice = SliceFromCopiedString(*host_str);
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,

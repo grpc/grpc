@@ -204,6 +204,13 @@ static void drop_uncovered(grpc_tcp* tcp) {
   GPR_ASSERT(old_count != 1);
 }
 
+// gRPC API considers a Write operation to be done the moment it clears ‘flow
+// control’ i.e., not necessarily sent on the wire. This means that the
+// application MIGHT not call `grpc_completion_queue_next/pluck` in a timely
+// manner when its `Write()` API is acked.
+//
+// We need to ensure that the fd is 'covered' (i.e being monitored by some
+// polling thread and progress is made) and hence add it to a backup poller here
 static void cover_self(grpc_tcp* tcp) {
   backup_poller* p;
   gpr_atm old_count =

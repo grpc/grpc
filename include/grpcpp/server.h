@@ -28,6 +28,7 @@
 #include <grpc/compression.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -98,6 +99,30 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+
+  /// NOTE: class experimental_type is not part of the public API of this class.
+  /// TODO(yashykt): Integrate into public API when this is no longer
+  /// experimental.
+  class experimental_type {
+   public:
+    explicit experimental_type(Server* server) : server_(server) {}
+
+    /// Establish a channel for in-process communication with client
+    /// interceptors
+    std::shared_ptr<Channel> InProcessChannelWithInterceptors(
+        const ChannelArguments& args,
+        std::unique_ptr<std::vector<
+            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+            interceptor_creators);
+
+   private:
+    Server* server_;
+  };
+
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
 
  protected:
   /// Register a service. This call does not take ownership of the service.
