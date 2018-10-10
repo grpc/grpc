@@ -440,7 +440,6 @@
         'src/core/ext/transport/chttp2/transport/frame_settings.cc',
         'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
         'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
-        'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
         'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
         'src/core/ext/transport/chttp2/transport/hpack_table.cc',
         'src/core/ext/transport/chttp2/transport/http2_settings.cc',
@@ -590,16 +589,6 @@
         'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
         'src/core/ext/filters/workarounds/workaround_utils.cc',
         'src/core/plugin_registry/grpc_plugin_registry.cc',
-      ],
-    },
-    {
-      'target_name': 'grpc_dll',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-        'grpc',
-      ],
-      'sources': [
       ],
     },
     {
@@ -824,7 +813,6 @@
         'src/core/ext/transport/chttp2/transport/frame_settings.cc',
         'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
         'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
-        'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
         'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
         'src/core/ext/transport/chttp2/transport/hpack_table.cc',
         'src/core/ext/transport/chttp2/transport/http2_settings.cc',
@@ -1059,7 +1047,6 @@
         'src/core/ext/transport/chttp2/transport/frame_settings.cc',
         'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
         'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
-        'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
         'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
         'src/core/ext/transport/chttp2/transport/hpack_table.cc',
         'src/core/ext/transport/chttp2/transport/http2_settings.cc',
@@ -1251,7 +1238,6 @@
         'src/core/ext/transport/chttp2/transport/frame_settings.cc',
         'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
         'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
-        'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
         'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
         'src/core/ext/transport/chttp2/transport/hpack_table.cc',
         'src/core/ext/transport/chttp2/transport/http2_settings.cc',

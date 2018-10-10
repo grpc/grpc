@@ -23,14 +23,14 @@ import subprocess
 import re
 import perfection
 
-# Configuration: a list of either strings or 2-tuples of strings or 3-tuples of
-# strings.
+# Configuration: a list of either strings or 2-tuples of strings.
 # A single string represents a static grpc_mdstr.
 # A 2-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
 # also be created).
-# A 3-tuple represents a static grpc_mdelem (and appropriate grpc_mdstrs will
-# also be created), with the last value equivalent to the mdelem's static hpack
-# table index as defined by RFC 7541
+# The list of 2-tuples must begin with the static hpack table elements as
+# defined by RFC 7541 and be in the same order because of an hpack encoding
+# performance optimization that relies on this. If you want to change this, then
+# you must change the implementation of the encoding optimization as well.
 
 CONFIG = [
     # metadata strings
@@ -68,6 +68,69 @@ CONFIG = [
     'gzip',
     'stream/gzip',
     # metadata elements
+    # begin hpack static elements
+    (':authority', ''),
+    (':method', 'GET'),
+    (':method', 'POST'),
+    (':path', '/'),
+    (':path', '/index.html'),
+    (':scheme', 'http'),
+    (':scheme', 'https'),
+    (':status', '200'),
+    (':status', '204'),
+    (':status', '206'),
+    (':status', '304'),
+    (':status', '400'),
+    (':status', '404'),
+    (':status', '500'),
+    ('accept-charset', ''),
+    ('accept-encoding', 'gzip, deflate'),
+    ('accept-language', ''),
+    ('accept-ranges', ''),
+    ('accept', ''),
+    ('access-control-allow-origin', ''),
+    ('age', ''),
+    ('allow', ''),
+    ('authorization', ''),
+    ('cache-control', ''),
+    ('content-disposition', ''),
+    ('content-encoding', ''),
+    ('content-language', ''),
+    ('content-length', ''),
+    ('content-location', ''),
+    ('content-range', ''),
+    ('content-type', ''),
+    ('cookie', ''),
+    ('date', ''),
+    ('etag', ''),
+    ('expect', ''),
+    ('expires', ''),
+    ('from', ''),
+    ('host', ''),
+    ('if-match', ''),
+    ('if-modified-since', ''),
+    ('if-none-match', ''),
+    ('if-range', ''),
+    ('if-unmodified-since', ''),
+    ('last-modified', ''),
+    ('link', ''),
+    ('location', ''),
+    ('max-forwards', ''),
+    ('proxy-authenticate', ''),
+    ('proxy-authorization', ''),
+    ('range', ''),
+    ('referer', ''),
+    ('refresh', ''),
+    ('retry-after', ''),
+    ('server', ''),
+    ('set-cookie', ''),
+    ('strict-transport-security', ''),
+    ('transfer-encoding', ''),
+    ('user-agent', ''),
+    ('vary', ''),
+    ('via', ''),
+    ('www-authenticate', ''),
+    # end hpack static elements
     ('grpc-status', '0'),
     ('grpc-status', '1'),
     ('grpc-status', '2'),
@@ -76,74 +139,13 @@ CONFIG = [
     ('grpc-encoding', 'deflate'),
     ('te', 'trailers'),
     ('content-type', 'application/grpc'),
-    (':method', 'POST', 3),
-    (':status', '200', 8),
-    (':status', '404', 13),
-    (':scheme', 'http', 6),
-    (':scheme', 'https', 7),
-    (':scheme', 'grpc', 0),
-    (':authority', '', 1),
-    (':method', 'GET', 2),
+    (':scheme', 'grpc'),
     (':method', 'PUT'),
-    (':path', '/', 4),
-    (':path', '/index.html', 5),
-    (':status', '204', 9),
-    (':status', '206', 10),
-    (':status', '304', 11),
-    (':status', '400', 12),
-    (':status', '500', 14),
-    ('accept-charset', '', 15),
     ('accept-encoding', ''),
-    ('accept-encoding', 'gzip, deflate', 16),
-    ('accept-language', '', 17),
-    ('accept-ranges', '', 18),
-    ('accept', '', 19),
-    ('access-control-allow-origin', '', 20),
-    ('age', '', 21),
-    ('allow', '', 22),
-    ('authorization', '', 23),
-    ('cache-control', '', 24),
-    ('content-disposition', '', 25),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
-    ('content-encoding', '', 26),
-    ('content-language', '', 27),
-    ('content-length', '', 28),
-    ('content-location', '', 29),
-    ('content-range', '', 30),
-    ('content-type', '', 31),
-    ('cookie', '', 32),
-    ('date', '', 33),
-    ('etag', '', 34),
-    ('expect', '', 35),
-    ('expires', '', 36),
-    ('from', '', 37),
-    ('host', '', 38),
-    ('if-match', '', 39),
-    ('if-modified-since', '', 40),
-    ('if-none-match', '', 41),
-    ('if-range', '', 42),
-    ('if-unmodified-since', '', 43),
-    ('last-modified', '', 44),
     ('lb-token', ''),
     ('lb-cost-bin', ''),
-    ('link', '', 45),
-    ('location', '', 46),
-    ('max-forwards', '', 47),
-    ('proxy-authenticate', '', 48),
-    ('proxy-authorization', '', 49),
-    ('range', '', 50),
-    ('referer', '', 51),
-    ('refresh', '', 52),
-    ('retry-after', '', 53),
-    ('server', '', 54),
-    ('set-cookie', '', 55),
-    ('strict-transport-security', '', 56),
-    ('transfer-encoding', '', 57),
-    ('user-agent', '', 58),
-    ('vary', '', 59),
-    ('via', '', 60),
-    ('www-authenticate', '', 61),
 ]
 
 # All entries here are ignored when counting non-default initial metadata that
@@ -326,17 +328,6 @@ else:
             os.path.dirname(sys.argv[0]),
             '../../../test/core/end2end/fuzzers/hpack.dictionary'), 'w')
 
-HPACK_H = open(
-    os.path.join(
-        os.path.dirname(sys.argv[0]),
-        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.h'),
-    'w')
-HPACK_C = open(
-    os.path.join(
-        os.path.dirname(sys.argv[0]),
-        '../../../src/core/ext/transport/chttp2/transport/hpack_mapping.cc'),
-    'w')
-
 # copy-paste copyright notice from this file
 with open(sys.argv[0]) as my_source:
     copyright = []
@@ -351,8 +342,7 @@ with open(sys.argv[0]) as my_source:
         if line[0] != '#':
             break
         copyright.append(line)
-    put_banner([H, C, HPACK_H, HPACK_C],
-               [line[2:].rstrip() for line in copyright])
+    put_banner([H, C], [line[2:].rstrip() for line in copyright])
 
 hex_bytes = [ord(c) for c in 'abcdefABCDEF0123456789']
 
@@ -379,17 +369,6 @@ See metadata.h for an explanation of the interface here, and metadata.cc for
 an explanation of what's going on.
 """.splitlines())
 
-put_banner([HPACK_H, HPACK_C], """WARNING: Auto-generated code.
-
-To make changes to this file, change
-tools/codegen/core/gen_static_metadata.py, and then re-run it.
-
-This file contains the mapping from the index of each metadata element in the 
-grpc static metadata table to the index of that element in the hpack static 
-metadata table. If the element is not contained in the static hpack table, then
-the returned index is 0.
-""".splitlines())
-
 print >> H, '#ifndef GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H, '#define GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H'
 print >> H
@@ -403,20 +382,6 @@ print >> C, '#include "src/core/lib/transport/static_metadata.h"'
 print >> C
 print >> C, '#include "src/core/lib/slice/slice_internal.h"'
 print >> C
-print >> HPACK_H, ('#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
-                   'MAPPING_H')
-print >> HPACK_H, ('#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
-                   'MAPPING_H')
-print >> HPACK_H
-print >> HPACK_H, '#include <grpc/support/port_platform.h>'
-print >> HPACK_H
-print >> HPACK_H, '#include "src/core/lib/transport/static_metadata.h"'
-print >> HPACK_H
-print >> HPACK_C, '#include <grpc/support/port_platform.h>'
-print >> HPACK_C
-print >> HPACK_C, ('#include '
-                   '"src/core/ext/transport/chttp2/transport/hpack_mapping.h"')
-print >> HPACK_C
 
 str_ofs = 0
 id2strofs = {}
@@ -493,27 +458,10 @@ print >> H, ('extern grpc_mdelem_data '
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
 for i, elem in enumerate(all_elems):
-    print >> H, '/* "%s": "%s" */' % (elem[0], elem[1])
+    print >> H, '/* "%s": "%s" */' % elem
     print >> H, ('#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d], '
                  'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
 print >> H
-
-# Print out the chttp2 mapping between static mdelem index and the hpack static
-# table index
-print >> HPACK_H, ('extern const uint8_t grpc_hpack_static_mdelem_indices['
-                   'GRPC_STATIC_MDELEM_COUNT];')
-print >> HPACK_H
-print >> HPACK_C, ('const uint8_t grpc_hpack_static_mdelem_indices['
-                   'GRPC_STATIC_MDELEM_COUNT] = {')
-indices = ''
-for elem in all_elems:
-    index = 0
-    if len(elem) == 3:
-        index = elem[2]
-    indices += '%d,' % index
-print >> HPACK_C, '  %s' % indices
-print >> HPACK_C, '};'
-print >> HPACK_C
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
              '= {')
@@ -607,9 +555,8 @@ print >> C, '}'
 print >> C
 
 print >> C, 'grpc_mdelem_data grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for elem in all_elems:
-    print >> C, '{%s,%s},' % (slice_def(str_idx(elem[0])),
-                              slice_def(str_idx(elem[1])))
+for a, b in all_elems:
+    print >> C, '{%s,%s},' % (slice_def(str_idx(a)), slice_def(str_idx(b)))
 print >> C, '};'
 
 print >> H, 'typedef enum {'
@@ -652,9 +599,6 @@ print >> C, '};'
 print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]], GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
-
-print >> HPACK_H, ('#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_'
-                   'MAPPING_H */')
 
 H.close()
 C.close()

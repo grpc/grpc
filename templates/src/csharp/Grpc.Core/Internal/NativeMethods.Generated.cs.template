@@ -73,7 +73,7 @@
       'void grpcsharp_redirect_log(GprLogDelegate callback)',
       'CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor)',
       'void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails)',
-      'ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, int forceClientAuth)',
+      'ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest)',
       'void grpcsharp_server_credentials_release(IntPtr credentials)',
       'ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args)',
       'void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq)',

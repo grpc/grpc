@@ -68,7 +68,6 @@ module GRPC
       codes[OUT_OF_RANGE] = OutOfRange
       codes[UNIMPLEMENTED] = Unimplemented
       codes[INTERNAL] = Internal
-      codes[UNIMPLEMENTED] = Unimplemented
       codes[UNAVAILABLE] = Unavailable
       codes[DATA_LOSS] = DataLoss
 

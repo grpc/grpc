@@ -117,6 +117,8 @@ static void on_handshake_done(void* arg, grpc_error* error) {
                                           c->args.interested_parties);
     c->result->transport =
         grpc_create_chttp2_transport(args->args, args->endpoint, true);
+    c->result->socket_uuid =
+        grpc_chttp2_transport_get_socket_uuid(c->result->transport);
     GPR_ASSERT(c->result->transport);
     // TODO(roth): We ideally want to wait until we receive HTTP/2
     // settings from the server before we consider the connection

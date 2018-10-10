@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,8 +40,24 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
   "grpc.channelz_channel_is_internal_channel"
 
+/** This is the default value for whether or not to enable channelz. If
+ * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
+#define GRPC_ENABLE_CHANNELZ_DEFAULT false
+
+/** This is the default value for the maximum amount of memory used by trace
+ * events per channel trace node. If
+ * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
+ * this default value. */
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0
+
 namespace grpc_core {
+
 namespace channelz {
+
+// TODO(ncteisen), this only contains the uuids of the children for now,
+// since that is all that is strictly needed. In a future enhancement we will
+// add human readable names as in the channelz.proto
+typedef InlinedVector<intptr_t, 10> ChildRefsList;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -91,12 +108,8 @@ class CallCountingHelper {
   ~CallCountingHelper();
 
   void RecordCallStarted();
-  void RecordCallFailed() {
-    gpr_atm_no_barrier_fetch_add(&calls_failed_, static_cast<gpr_atm>(1));
-  }
-  void RecordCallSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, static_cast<gpr_atm>(1));
-  }
+  void RecordCallFailed();
+  void RecordCallSucceeded();
 
   // Common rendering of the call count data and last_call_started_timestamp.
   void PopulateCallCounts(grpc_json* json);
@@ -105,10 +118,25 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
-  gpr_atm calls_started_ = 0;
-  gpr_atm calls_succeeded_ = 0;
-  gpr_atm calls_failed_ = 0;
-  gpr_atm last_call_started_millis_ = 0;
+  struct AtomicCounterData {
+    gpr_atm calls_started = 0;
+    gpr_atm calls_succeeded = 0;
+    gpr_atm calls_failed = 0;
+    gpr_atm last_call_started_millis = 0;
+  };
+
+  struct CounterData {
+    intptr_t calls_started = 0;
+    intptr_t calls_succeeded = 0;
+    intptr_t calls_failed = 0;
+    intptr_t last_call_started_millis = 0;
+  };
+
+  // collects the sharded data into one CounterData struct.
+  void CollectData(CounterData* out);
+
+  AtomicCounterData* per_cpu_counter_data_storage_ = nullptr;
+  size_t num_cores_ = 0;
 };
 
 // Handles channelz bookkeeping for channels
@@ -172,10 +200,12 @@ class ChannelNode : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode : public BaseNode {
  public:
-  explicit ServerNode(size_t channel_tracer_max_nodes);
+  ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
+
+  char* RenderServerSockets(intptr_t start_socket_id);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
@@ -192,6 +222,7 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
+  grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
 };
@@ -230,6 +261,15 @@ class SocketNode : public BaseNode {
   gpr_atm last_message_sent_millis_ = 0;
   gpr_atm last_message_received_millis_ = 0;
   UniquePtr<char> peer_string_;
+};
+
+// Handles channelz bookkeeping for listen sockets
+class ListenSocketNode : public BaseNode {
+ public:
+  ListenSocketNode();
+  ~ListenSocketNode() override {}
+
+  grpc_json* RenderJson() override;
 };
 
 // Creation functions

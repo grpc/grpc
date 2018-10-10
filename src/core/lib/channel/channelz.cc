@@ -34,8 +34,10 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -55,35 +57,75 @@ char* BaseNode::RenderJsonString() {
 }
 
 CallCountingHelper::CallCountingHelper() {
-  gpr_atm_no_barrier_store(&last_call_started_millis_,
-                           (gpr_atm)ExecCtx::Get()->Now());
+  num_cores_ = GPR_MAX(1, gpr_cpu_num_cores());
+  per_cpu_counter_data_storage_ = static_cast<AtomicCounterData*>(
+      gpr_zalloc(sizeof(AtomicCounterData) * num_cores_));
 }
 
-CallCountingHelper::~CallCountingHelper() {}
+CallCountingHelper::~CallCountingHelper() {
+  gpr_free(per_cpu_counter_data_storage_);
+}
 
 void CallCountingHelper::RecordCallStarted() {
-  gpr_atm_no_barrier_fetch_add(&calls_started_, static_cast<gpr_atm>(1));
-  gpr_atm_no_barrier_store(&last_call_started_millis_,
-                           (gpr_atm)ExecCtx::Get()->Now());
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_started,
+      static_cast<gpr_atm>(1));
+  gpr_atm_no_barrier_store(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .last_call_started_millis,
+      (gpr_atm)ExecCtx::Get()->Now());
+}
+
+void CallCountingHelper::RecordCallFailed() {
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_failed,
+      static_cast<gpr_atm>(1));
+}
+
+void CallCountingHelper::RecordCallSucceeded() {
+  gpr_atm_no_barrier_fetch_add(
+      &per_cpu_counter_data_storage_[grpc_core::ExecCtx::Get()->starting_cpu()]
+           .calls_succeeded,
+      static_cast<gpr_atm>(1));
+}
+
+void CallCountingHelper::CollectData(CounterData* out) {
+  for (size_t core = 0; core < num_cores_; ++core) {
+    out->calls_started += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_started);
+    out->calls_succeeded += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_succeeded);
+    out->calls_failed += gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].calls_failed);
+    gpr_atm last_call = gpr_atm_no_barrier_load(
+        &per_cpu_counter_data_storage_[core].last_call_started_millis);
+    if (last_call > out->last_call_started_millis) {
+      out->last_call_started_millis = last_call;
+    }
+  }
 }
 
 void CallCountingHelper::PopulateCallCounts(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
-  if (calls_started_ != 0) {
+  CounterData data;
+  CollectData(&data);
+  if (data.calls_started != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsStarted", calls_started_);
+        json, json_iterator, "callsStarted", data.calls_started);
   }
-  if (calls_succeeded_ != 0) {
+  if (data.calls_succeeded != 0) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsSucceeded", calls_succeeded_);
+        json, json_iterator, "callsSucceeded", data.calls_succeeded);
   }
-  if (calls_failed_) {
+  if (data.calls_failed) {
     json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsFailed", calls_failed_);
+        json, json_iterator, "callsFailed", data.calls_failed);
   }
-  if (calls_started_ != 0) {
-    gpr_timespec ts =
-        grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
+  if (data.calls_started != 0) {
+    gpr_timespec ts = grpc_millis_to_timespec(data.last_call_started_millis,
+                                              GPR_CLOCK_REALTIME);
     json_iterator =
         grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
                                gpr_format_timespec(ts), GRPC_JSON_STRING, true);
@@ -149,10 +191,44 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
+ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
+    : BaseNode(EntityType::kServer),
+      server_(server),
+      trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
+
+char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  ChildRefsList socket_refs;
+  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
+  // reserved). However, we want to support requests coming in with
+  // start_server_id=0, which signifies "give me everything."
+  size_t start_idx = start_socket_id == 0 ? 0 : start_socket_id - 1;
+  grpc_server_populate_server_sockets(server_, &socket_refs, start_idx);
+  if (!socket_refs.empty()) {
+    // create list of socket refs
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < socket_refs.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                        socket_refs[i]);
+    }
+  }
+  // For now we do not have any pagination rules. In the future we could
+  // pick a constant for max_channels_sent for a GetServers request.
+  // Tracking: https://github.com/grpc/grpc/issues/16019.
+  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
+                                         GRPC_JSON_TRUE, false);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
 
 grpc_json* ServerNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -182,6 +258,20 @@ grpc_json* ServerNode::RenderJson() {
   }
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
+  json = top_level_json;
+  ChildRefsList listen_sockets;
+  grpc_server_populate_listen_sockets(server_, &listen_sockets);
+  if (!listen_sockets.empty()) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "listenSocket", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < listen_sockets.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
+                                        listen_sockets[i]);
+    }
+  }
   return top_level_json;
 }
 
@@ -279,6 +369,23 @@ grpc_json* SocketNode::RenderJson() {
     json_iterator = grpc_json_add_number_string_child(
         json, json_iterator, "keepAlivesSent", keepalives_sent_);
   }
+  return top_level_json;
+}
+
+ListenSocketNode::ListenSocketNode() : BaseNode(EntityType::kSocket) {}
+
+grpc_json* ListenSocketNode::RenderJson() {
+  // We need to track these three json objects to build our object
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  // create and fill the ref child
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "socketId", uuid());
   return top_level_json;
 }
 
