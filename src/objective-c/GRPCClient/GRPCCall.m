@@ -92,6 +92,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   BOOL _initialMetadataPublished;
   GRXBufferedPipe *_pipe;
   dispatch_queue_t _dispatchQueue;
+  bool _started;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -108,6 +109,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _initialMetadataPublished = NO;
     _pipe = [GRXBufferedPipe pipe];
     _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    _started = NO;
   }
 
   return self;
@@ -120,6 +122,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)start {
   dispatch_async(_dispatchQueue, ^{
+    if (self->_started) {
+      return;
+    }
+    self->_started = YES;
     if (!self->_callOptions) {
       self->_callOptions = [[GRPCCallOptions alloc] init];
     }

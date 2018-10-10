@@ -235,7 +235,7 @@ extern id const kGRPCTrailersKey;
                        responseHandler:(id<GRPCResponseHandler>)responseHandler;
 
 /**
- * Starts the call. Can only be called once.
+ * Starts the call. This function should only be called once; additional calls will be discarded.
  */
 - (void)start;
 
