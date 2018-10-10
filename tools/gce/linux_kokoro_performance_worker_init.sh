@@ -69,7 +69,7 @@ sudo apt-get install -y google-perftools libgoogle-perftools-dev
 sudo apt-get install -y netperf
 
 # required to run kokoro_log_reader.py
-sudo pip install psutil
+sudo apt-get install -y python-psutil python3-psutil
 
 # C++ dependencies
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
@@ -95,6 +95,7 @@ rm Python-3.4.6.tgz
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
+# TODO(jtattermusch): make it clear this already uses pypy's pip
 sudo pip install google-api-python-client
 
 # Node dependencies (nvm has to be installed under user kbuilder)
