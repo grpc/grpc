@@ -2617,7 +2617,8 @@ static void recv_trailing_metadata_ready_channelz(void* arg,
     channelz_subchannel->RecordCallFailed();
   }
   calld->recv_trailing_metadata = nullptr;
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata, error);
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata,
+                   GRPC_ERROR_REF(error));
 }
 
 // If channelz is enabled, intercept recv_trailing so that we may check the
