@@ -182,6 +182,11 @@ git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 # Install scipy and numpy for benchmarking scripts
 sudo apt-get install -y python-scipy python-numpy
 
+# Install docker
+curl -sSL https://get.docker.com/ | sh
+# Enable kbuilder to use docker without sudo:
+sudo usermod -aG docker kbuilder
+
 # Add pubkey of Kokoro driver VM to allow SSH
 # silence false-positive shellcheck warning ("< redirect does not affect sudo")
 # shellcheck disable=SC2024
