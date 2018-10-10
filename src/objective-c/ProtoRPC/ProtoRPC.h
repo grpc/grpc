@@ -26,6 +26,10 @@
 /** A unary-request RPC call with Protobuf. */
 @interface GRPCUnaryProtoCall : NSObject
 
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
+
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
  * returned to users by methods of the generated service.
@@ -34,7 +38,7 @@
                                message:(GPBMessage *)message
                        responseHandler:(id<GRPCResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
-                         responseClass:(Class)responseClass;
+                         responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /** Cancel the call at best effort. */
 - (void)cancel;
@@ -44,6 +48,10 @@
 /** A client-streaming RPC call with Protobuf. */
 @interface GRPCStreamingProtoCall : NSObject
 
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
+
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
  * returned to users by methods of the generated service.
@@ -51,7 +59,7 @@
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
-                         responseClass:(Class)responseClass;
+                         responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /** Cancel the call at best effort. */
 - (void)cancel;

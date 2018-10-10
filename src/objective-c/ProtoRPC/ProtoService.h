@@ -30,6 +30,10 @@
 __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService
     : NSObject
 
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
+
       -
       (instancetype)initWithHost : (NSString *)host packageName
     : (NSString *)packageName serviceName : (NSString *)serviceName callOptions

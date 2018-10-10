@@ -190,8 +190,10 @@ extern id const kGRPCTrailersKey;
 
 - (instancetype)init NS_UNAVAILABLE;
 
++ (instancetype)new NS_UNAVAILABLE;
+
 /** Initialize with all properties. */
-- (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety;
+- (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety NS_DESIGNATED_INITIALIZER;
 
 /** The host serving the RPC service. */
 @property(copy, readonly) NSString *host;
@@ -213,6 +215,8 @@ extern id const kGRPCTrailersKey;
 @interface GRPCCall2 : NSObject
 
 - (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Designated initializer for a call.
