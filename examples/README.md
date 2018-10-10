@@ -15,13 +15,13 @@ For more comprehensive documentation, including an [overview](https://grpc.io/do
 
 Each example directory has quick start instructions for the appropriate language, including installation instructions and how to run our simplest Hello World example:
 
-* [C++](cpp)
-* [Ruby](ruby)
-* [Node.js](node)
-* [Python](python/helloworld)
-* [C#](csharp)
-* [Objective-C](objective-c/helloworld)
-* [PHP](php)
+ 1 [C++](cpp)
+ 2 [Ruby](ruby)
+ 3 [Node.js](node)
+ 4 [Python](python/helloworld)
+ 5 [C#](csharp)
+ 6 [Objective-C](objective-c/helloworld)
+ 7 [PHP](php)
 
 
 
