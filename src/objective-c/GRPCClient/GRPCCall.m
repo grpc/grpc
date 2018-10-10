@@ -95,7 +95,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                               handler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler
                            callOptions:(GRPCCallOptions *)callOptions {
   if (!requestOptions || !requestOptions.host || !requestOptions.path) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
@@ -104,7 +104,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
     _callOptions = [callOptions copy];
-    _handler = handler;
+    _handler = responseHandler;
     _initialMetadataPublished = NO;
     _pipe = [GRXBufferedPipe pipe];
     _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
@@ -114,8 +114,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                               handler:(id<GRPCResponseHandler>)handler {
-  return [self initWithRequestOptions:requestOptions handler:handler callOptions:nil];
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler {
+  return [self initWithRequestOptions:requestOptions responseHandler:responseHandler callOptions:nil];
 }
 
 - (void)start {

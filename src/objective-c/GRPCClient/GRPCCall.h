@@ -221,18 +221,18 @@ extern id const kGRPCTrailersKey;
 /**
  * Designated initializer for a call.
  * \param requestOptions Protobuf generated parameters for the call.
- * \param handler The object to which responses should be issed.
+ * \param responseHandler The object to which responses should be issed.
  * \param callOptions Options for the call.
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                               handler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler
                            callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 /**
  * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
  * the default options).
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                               handler:(id<GRPCResponseHandler>)handler;
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler;
 
 /**
  * Starts the call. Can only be called once.

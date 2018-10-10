@@ -86,7 +86,7 @@
 
 - (void)start {
   _call = [[GRPCCall2 alloc] initWithRequestOptions:_requestOptions
-                                            handler:self
+                                    responseHandler:self
                                         callOptions:_callOptions];
   [_call start];
 }
