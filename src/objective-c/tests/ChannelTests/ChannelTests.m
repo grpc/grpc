@@ -72,7 +72,7 @@
 - (void)testDifferentChannelParameters {
   NSString *host = @"grpc-test.sandbox.googleapis.com";
   GRPCMutableCallOptions *options1 = [[GRPCMutableCallOptions alloc] init];
-  options1.transportType = GRPCTransportTypeDefault;
+  options1.transportType = GRPCTransportTypeChttp2BoringSSL;
   NSMutableDictionary *args = [NSMutableDictionary new];
   args[@"abc"] = @"xyz";
   options1.additionalChannelArgs = [args copy];
@@ -80,7 +80,7 @@
   options2.transportType = GRPCTransportTypeInsecure;
   options2.additionalChannelArgs = [args copy];
   GRPCMutableCallOptions *options3 = [[GRPCMutableCallOptions alloc] init];
-  options3.transportType = GRPCTransportTypeDefault;
+  options3.transportType = GRPCTransportTypeChttp2BoringSSL;
   args[@"def"] = @"uvw";
   options3.additionalChannelArgs = [args copy];
   GRPCChannel *channel1 = [GRPCChannel channelWithHost:host callOptions:options1];

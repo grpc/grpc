@@ -144,7 +144,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 }
 
 + (GRPCTransportType)transportType {
-  return GRPCTransportTypeDefault;
+  return GRPCTransportTypeChttp2BoringSSL;
 }
 
 + (NSString *)pemRootCert {

@@ -42,7 +42,7 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
 // The transport to be used by a gRPC call
 typedef NS_ENUM(NSInteger, GRPCTransportType) {
   // gRPC internal HTTP/2 stack with BoringSSL
-  GRPCTransportTypeDefault = 0,
+  GRPCTransportTypeChttp2BoringSSL = 0,
   // Cronet stack
   GRPCTransportTypeCronet,
   // Insecure channel. FOR TEST ONLY!

@@ -57,7 +57,7 @@ static int32_t kLocalInteropServerOverhead = 10;
 }
 
 + (GRPCTransportType)transportType {
-  return GRPCTransportTypeDefault;
+  return GRPCTransportTypeChttp2BoringSSL;
 }
 
 - (void)setUp {

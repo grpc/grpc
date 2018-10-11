@@ -59,7 +59,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 }
 #else
 + (GRPCTransportType)transportType {
-  return GRPCTransportTypeDefault;
+  return GRPCTransportTypeChttp2BoringSSL;
 }
 #endif
 

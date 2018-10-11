@@ -49,7 +49,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   id<GRPCChannelFactory> factory;
   GRPCTransportType type = _callOptions.transportType;
   switch (type) {
-    case GRPCTransportTypeDefault:
+    case GRPCTransportTypeChttp2BoringSSL:
       // TODO (mxyan): Remove when the API is deprecated
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {

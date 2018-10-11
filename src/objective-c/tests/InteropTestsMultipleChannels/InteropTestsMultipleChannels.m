@@ -114,7 +114,7 @@ dispatch_once_t initCronet;
   XCTAssertNil(error);
 
   options = [[GRPCCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeDefault;
+  options.transportType = GRPCTransportTypeChttp2BoringSSL;
   options.pemRootCert = certs;
   options.hostNameOverride = @"foo.test.google.fr";
   _localSSLService.options = options;

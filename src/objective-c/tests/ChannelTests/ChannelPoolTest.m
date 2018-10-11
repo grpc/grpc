@@ -127,7 +127,7 @@ NSString *kDummyHost = @"dummy.host";
   GRPCMutableCallOptions *options1 = [[GRPCMutableCallOptions alloc] init];
   options1.transportType = GRPCTransportTypeInsecure;
   GRPCMutableCallOptions *options2 = [[GRPCMutableCallOptions alloc] init];
-  options2.transportType = GRPCTransportTypeDefault;
+  options2.transportType = GRPCTransportTypeChttp2BoringSSL;
   GRPCChannelConfiguration *config1 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelConfiguration *config2 =
