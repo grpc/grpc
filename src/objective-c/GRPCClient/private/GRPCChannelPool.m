@@ -131,7 +131,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
     args[@GRPC_ARG_MOBILE_LOG_CONTEXT] = _callOptions.logContext;
   }
 
-  if (_callOptions.channelPoolDomain != nil) {
+  if (_callOptions.channelPoolDomain.length != 0) {
     args[@GRPC_ARG_CHANNEL_POOL_DOMAIN] = _callOptions.channelPoolDomain;
   }
 
