@@ -25,16 +25,20 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/surface/completion_queue.h"
 
 /**
- * Main struct containing ALTS shared resources needed when
- * employing dedicated completion queue and thread.
+ * Main struct containing ALTS shared resources used when
+ * employing the dedicated completion queue and thread.
  */
 typedef struct alts_shared_resource_dedicated {
   grpc_core::Thread thread;
   grpc_completion_queue* cq;
   gpr_cv cv;
   bool is_cq_drained;
+  grpc_pollset_set* interested_parties;
+  grpc_cq_completion storage;
 } alts_shared_resource_dedicated;
 
 /* This method returns the address of alts_shared_resource_dedicated
@@ -58,11 +62,11 @@ void grpc_alts_shared_resource_dedicated_init();
 
 /**
  * This method populates various fields of the alts_shared_resource_dedicated
- * object shared by all TSI handshakes. The API will be invoked by the caller in
- * a lazy manner. That is, the fields will be populated when ALTS TSI handshake
- * occurs for the first time.
+ * object shared by all TSI handshakes and start the dedicated thread.
+ * The API will be invoked by the caller in a lazy manner. That is,
+ * it will get invoked when ALTS TSI handshake occurs for the first time.
  */
-void grpc_alts_shared_resource_dedicated_populate();
+void grpc_alts_shared_resource_dedicated_start();
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H \
         */

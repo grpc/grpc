@@ -71,8 +71,8 @@ static void alts_channel_add_handshakers(
   grpc_alts_credentials* creds =
       reinterpret_cast<grpc_alts_credentials*>(c->base.channel_creds);
   GPR_ASSERT(alts_tsi_handshaker_create(creds->options, c->target_name,
-                                        creds->handshaker_service_url, true,
-                                        &handshaker) == TSI_OK);
+                                        creds->handshaker_service_url, nullptr,
+                                        true, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }
@@ -85,8 +85,8 @@ static void alts_server_add_handshakers(
   grpc_alts_server_credentials* creds =
       reinterpret_cast<grpc_alts_server_credentials*>(c->base.server_creds);
   GPR_ASSERT(alts_tsi_handshaker_create(creds->options, nullptr,
-                                        creds->handshaker_service_url, false,
-                                        &handshaker) == TSI_OK);
+                                        creds->handshaker_service_url, nullptr,
+                                        false, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }
