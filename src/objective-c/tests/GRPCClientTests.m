@@ -306,7 +306,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   options.oauth2AccessToken = @"bogusToken";
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
-                     handler:[[ClientTestsBlockCallbacks alloc]
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
                                  initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
                                    init_md = initialMetadata;
                                  }
@@ -446,7 +446,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   options.initialMetadata = headers;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:request
-                     handler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:^(
+                     responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:^(
                                                                     NSDictionary *initialMetadata) {
                        NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
                        // Test the regex is correct
@@ -609,7 +609,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   options.transportType = GRPCTransportTypeInsecure;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-                     handler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                     responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                                  messageCallback:^(id message) {
                                    NSData *data = (NSData *)message;
                                    XCTAssertNotNil(data, @"nil value received as response.");
@@ -739,7 +739,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-                     handler:
+                     responseHandler:
                          [[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                              messageCallback:^(id data) {
                                XCTFail(
@@ -835,9 +835,9 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   const double kMargin = 0.1;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
+  NSString *const kDummyAddress = [NSString stringWithFormat:@"127.0.0.1:10000"];
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kDummyAddress path:@"" safety:GRPCCallSafetyDefault];
+      [[GRPCRequestOptions alloc] initWithHost:kDummyAddress path:@"/dummy/path" safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.connectMinTimeout = timeout;
   options.connectInitialBackoff = backoff;
@@ -846,7 +846,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   NSDate *startTime = [NSDate date];
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-                     handler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                     responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                                  messageCallback:^(id data) {
                                    XCTFail(@"Received message. Should not reach here.");
                                  }
