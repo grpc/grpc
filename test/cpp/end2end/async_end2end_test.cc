@@ -980,6 +980,13 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
   srv_stream.SendInitialMetadata(tag(10));
   Verifier().Expect(10, true).Expect(11, true).Verify(cq_.get());
+  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  EXPECT_EQ(meta1.second,
+            ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+
   srv_stream.Write(send_response, tag(3));
 
   cli_stream->Read(&recv_response, tag(4));
@@ -988,13 +995,6 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   srv_stream.Write(send_response, tag(5));
   cli_stream->Read(&recv_response, tag(6));
   Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
-
-  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   srv_stream.Finish(Status::OK, tag(7));
   cli_stream->Read(&recv_response, tag(8));
