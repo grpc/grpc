@@ -269,6 +269,9 @@ extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import
 typedef char*(*grpc_channelz_get_servers_type)(intptr_t start_server_id);
 extern grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
 #define grpc_channelz_get_servers grpc_channelz_get_servers_import
+typedef char*(*grpc_channelz_get_server_sockets_type)(intptr_t server_id, intptr_t start_socket_id);
+extern grpc_channelz_get_server_sockets_type grpc_channelz_get_server_sockets_import;
+#define grpc_channelz_get_server_sockets grpc_channelz_get_server_sockets_import
 typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
 extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 #define grpc_channelz_get_channel grpc_channelz_get_channel_import
@@ -284,9 +287,6 @@ extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_fr
 typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server* server, void* reserved, int fd);
 extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 #define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
-typedef void(*grpc_use_signal_type)(int signum);
-extern grpc_use_signal_type grpc_use_signal_import;
-#define grpc_use_signal grpc_use_signal_import
 typedef const grpc_auth_property*(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator* it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
