@@ -80,7 +80,7 @@ sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 # Python dependencies
 sudo pip install --upgrade pip==10.0.1
 sudo pip install tabulate
-sudo pip install google-api-python-client
+sudo pip install google-api-python-client oauth2client
 sudo pip install virtualenv
 
 # TODO(jtattermusch): revisit python installation
@@ -98,7 +98,7 @@ rm Python-3.4.6.tgz
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
-sudo pypy -m pip install google-api-python-client
+sudo pypy -m pip install google-api-python-client oauth2client
 
 # TODO(jtattermusch): for some reason, we need psutil installed
 # in pypy for kokoro_log_reader.py (strange, because the comand is
