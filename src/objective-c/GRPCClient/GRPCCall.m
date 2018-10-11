@@ -170,6 +170,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
               // Clean up _handler so that no more responses are reported to the handler.
               self->_handler = nil;
+
+              // If server terminated the call we should close the send path too.
+              if (self->_call) {
+                [self->_pipe writesFinishedWithError:nil];
+                self->_call = nil;
+                self->_pipe = nil;
+              }
             }
           });
         }];
@@ -182,6 +189,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (self->_call) {
       [self->_call cancel];
       self->_call = nil;
+      self->_pipe = nil;
     }
     if (self->_handler) {
       id<GRPCResponseHandler> handler = self->_handler;
@@ -214,6 +222,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (self->_call) {
       [self->_pipe writesFinishedWithError:nil];
     }
+    self->_call = nil;
+    self->_pipe = nil;
   });
 }
 
