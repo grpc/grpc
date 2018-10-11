@@ -144,12 +144,12 @@ static NSUInteger kDefaultChannelID = 0;
                       channelPoolDomain:(NSString *)channelPoolDomain
                               channelID:(NSUInteger)channelID {
   if ((self = [super init])) {
-    _serverAuthority = serverAuthority;
+    _serverAuthority = [serverAuthority copy];
     _timeout = timeout;
-    _oauth2AccessToken = oauth2AccessToken;
+    _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
-    _initialMetadata = initialMetadata;
-    _userAgentPrefix = userAgentPrefix;
+    _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+    _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressAlgorithm = compressAlgorithm;
     _enableRetry = enableRetry;
@@ -158,14 +158,14 @@ static NSUInteger kDefaultChannelID = 0;
     _connectMinTimeout = connectMinTimeout;
     _connectInitialBackoff = connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff;
-    _additionalChannelArgs = additionalChannelArgs;
-    _PEMRootCertificates = PEMRootCertificates;
-    _PEMPrivateKey = PEMPrivateKey;
-    _PEMCertChain = PEMCertChain;
+    _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+    _PEMRootCertificates = [PEMRootCertificates copy];
+    _PEMPrivateKey = [PEMPrivateKey copy];
+    _PEMCertChain = [PEMCertChain copy];
     _transportType = transportType;
-    _hostNameOverride = hostNameOverride;
+    _hostNameOverride = [hostNameOverride copy];
     _logContext = logContext;
-    _channelPoolDomain = channelPoolDomain;
+    _channelPoolDomain = [channelPoolDomain copy];
     _channelID = channelID;
   }
   return self;
