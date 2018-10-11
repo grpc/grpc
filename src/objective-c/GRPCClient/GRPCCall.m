@@ -141,25 +141,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
     id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
       dispatch_async(self->_dispatchQueue, ^{
         if (self->_handler) {
-          id<GRPCResponseHandler> handler = self->_handler;
           NSDictionary *headers = nil;
           if (!self->_initialMetadataPublished) {
             headers = self->_call.responseHeaders;
             self->_initialMetadataPublished = YES;
           }
           if (headers) {
-            dispatch_async(handler.dispatchQueue, ^{
-              if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
-                [handler receivedInitialMetadata:headers];
-              }
-            });
+            [self issueInitialMetadata:headers];
           }
           if (value) {
-            dispatch_async(handler.dispatchQueue, ^{
-              if ([handler respondsToSelector:@selector(receivedMessage:)]) {
-                [handler receivedMessage:value];
-              }
-            });
+            [self issueMessage:value];
           }
         }
       });
@@ -167,24 +158,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
         completionHandler:^(NSError *errorOrNil) {
           dispatch_async(self->_dispatchQueue, ^{
             if (self->_handler) {
-              id<GRPCResponseHandler> handler = self->_handler;
               NSDictionary *headers = nil;
               if (!self->_initialMetadataPublished) {
                 headers = self->_call.responseHeaders;
                 self->_initialMetadataPublished = YES;
               }
               if (headers) {
-                dispatch_async(handler.dispatchQueue, ^{
-                  if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
-                    [handler receivedInitialMetadata:headers];
-                  }
-                });
+                [self issueInitialMetadata:headers];
               }
-              dispatch_async(handler.dispatchQueue, ^{
-                if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-                  [handler closedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
-                }
-              });
+              [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
             }
           });
         }];
@@ -228,6 +210,34 @@ const char *kCFStreamVarName = "grpc_cfstream";
       [self->_pipe writesFinishedWithError:nil];
     }
   });
+}
+
+- (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
+  id<GRPCResponseHandler> handler = self->_handler;
+  if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler receivedInitialMetadata:initialMetadata];
+    });
+  }
+}
+
+- (void)issueMessage:(id)message {
+  id<GRPCResponseHandler> handler = self->_handler;
+  if ([handler respondsToSelector:@selector(receivedMessage:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler receivedMessage:message];
+    });
+  }
+}
+
+- (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata
+                                  error:(NSError *)error {
+  id<GRPCResponseHandler> handler = self->_handler;
+  if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+    [handler closedWithTrailingMetadata:self->_call.responseTrailers error:error];
+    });
+  }
 }
 
 @end
