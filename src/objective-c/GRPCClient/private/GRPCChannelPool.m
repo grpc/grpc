@@ -186,7 +186,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   if (!(obj.callOptions.channelPoolDomain == _callOptions.channelPoolDomain ||
         [obj.callOptions.channelPoolDomain isEqualToString:_callOptions.channelPoolDomain]))
     return NO;
-  if (!(obj.callOptions.channelId == _callOptions.channelId)) return NO;
+  if (!(obj.callOptions.channelID == _callOptions.channelID)) return NO;
 
   return YES;
 }
@@ -211,7 +211,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   result ^= _callOptions.transportType;
   result ^= [_callOptions.logContext hash];
   result ^= _callOptions.channelPoolDomain.hash;
-  result ^= _callOptions.channelId;
+  result ^= _callOptions.channelID;
 
   return result;
 }

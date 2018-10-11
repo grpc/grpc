@@ -181,9 +181,9 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 
 /**
  * Channel id allows a call to force creating a new channel (connection) rather than using a cached
- * channel. Calls using distinct channelId will not get cached to the same connection.
+ * channel. Calls using distinct channelID will not get cached to the same connection.
  */
-@property(readonly) NSUInteger channelId;
+@property(readonly) NSUInteger channelID;
 
 @end
 
@@ -307,16 +307,16 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
- * will not get cached to the same connection. For example, a gRPC example app may use the channel
- * pool domain 'io.grpc.example' so that its calls do not reuse the channel created by other modules
- * in the same process.
+ * will not get cached to the same channel. For example, a gRPC example app may use the channel pool
+ * domain 'io.grpc.example' so that its calls do not reuse the channel created by other modules in
+ * the same process.
  */
 @property(copy, readwrite) NSString *channelPoolDomain;
 
 /**
  * Channel id allows a call to force creating a new channel (connection) rather than using a cached
- * channel. Calls using distinct channelId will not get cached to the same connection.
+ * channel. Calls using distinct channelID's will not get cached to the same channel.
  */
-@property(readwrite) NSUInteger channelId;
+@property(readwrite) NSUInteger channelID;
 
 @end

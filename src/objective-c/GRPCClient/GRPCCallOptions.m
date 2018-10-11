@@ -41,7 +41,7 @@ static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2Bo
 static NSString *const kDefaultHostNameOverride = nil;
 static const id kDefaultLogContext = nil;
 static NSString *kDefaultChannelPoolDomain = nil;
-static NSUInteger kDefaultChannelId = 0;
+static NSUInteger kDefaultChannelID = 0;
 
 @implementation GRPCCallOptions {
  @protected
@@ -67,7 +67,7 @@ static NSUInteger kDefaultChannelId = 0;
   NSString *_hostNameOverride;
   id _logContext;
   NSString *_channelPoolDomain;
-  NSUInteger _channelId;
+  NSUInteger _channelID;
 }
 
 @synthesize serverAuthority = _serverAuthority;
@@ -92,7 +92,7 @@ static NSUInteger kDefaultChannelId = 0;
 @synthesize hostNameOverride = _hostNameOverride;
 @synthesize logContext = _logContext;
 @synthesize channelPoolDomain = _channelPoolDomain;
-@synthesize channelId = _channelId;
+@synthesize channelID = _channelID;
 
 - (instancetype)init {
   return [self initWithServerAuthority:kDefaultServerAuthority
@@ -117,7 +117,7 @@ static NSUInteger kDefaultChannelId = 0;
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
-                             channelId:kDefaultChannelId];
+                             channelID:kDefaultChannelID];
 }
 
 - (instancetype)initWithServerAuthority:(NSString *)serverAuthority
@@ -142,7 +142,7 @@ static NSUInteger kDefaultChannelId = 0;
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
                       channelPoolDomain:(NSString *)channelPoolDomain
-                              channelId:(NSUInteger)channelId {
+                              channelID:(NSUInteger)channelID {
   if ((self = [super init])) {
     _serverAuthority = serverAuthority;
     _timeout = timeout;
@@ -166,7 +166,7 @@ static NSUInteger kDefaultChannelId = 0;
     _hostNameOverride = hostNameOverride;
     _logContext = logContext;
     _channelPoolDomain = channelPoolDomain;
-    _channelId = channelId;
+    _channelID = channelID;
   }
   return self;
 }
@@ -195,7 +195,7 @@ static NSUInteger kDefaultChannelId = 0;
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
-                                                          channelId:_channelId];
+                                                          channelID:_channelID];
   return newOptions;
 }
 
@@ -223,7 +223,7 @@ static NSUInteger kDefaultChannelId = 0;
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
             channelPoolDomain:_channelPoolDomain
-                    channelId:_channelId];
+                    channelID:_channelID];
   return newOptions;
 }
 
@@ -253,7 +253,7 @@ static NSUInteger kDefaultChannelId = 0;
 @dynamic hostNameOverride;
 @dynamic logContext;
 @dynamic channelPoolDomain;
-@dynamic channelId;
+@dynamic channelID;
 
 - (instancetype)init {
   return [self initWithServerAuthority:kDefaultServerAuthority
@@ -278,7 +278,7 @@ static NSUInteger kDefaultChannelId = 0;
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
-                             channelId:kDefaultChannelId];
+                             channelID:kDefaultChannelID];
 }
 
 - (nonnull id)copyWithZone:(NSZone *)zone {
@@ -305,7 +305,7 @@ static NSUInteger kDefaultChannelId = 0;
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
-                                                          channelId:_channelId];
+                                                          channelID:_channelID];
   return newOptions;
 }
 
@@ -333,7 +333,7 @@ static NSUInteger kDefaultChannelId = 0;
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
             channelPoolDomain:_channelPoolDomain
-                    channelId:_channelId];
+                    channelID:_channelID];
   return newOptions;
 }
 
@@ -449,8 +449,8 @@ static NSUInteger kDefaultChannelId = 0;
   _channelPoolDomain = channelPoolDomain;
 }
 
-- (void)setChannelId:(NSUInteger)channelId {
-  _channelId = channelId;
+- (void)setChannelID:(NSUInteger)channelID {
+  _channelID = channelID;
 }
 
 @end
