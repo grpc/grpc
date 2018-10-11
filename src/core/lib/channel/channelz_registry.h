@@ -44,7 +44,7 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  static intptr_t Register(BaseNode* node) {
+  static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
   static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
@@ -74,7 +74,7 @@ class ChannelzRegistry {
   static ChannelzRegistry* Default();
 
   // globally registers an Entry. Returns its unique uuid
-  intptr_t InternalRegister(BaseNode* node);
+  void InternalRegister(BaseNode* node);
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.

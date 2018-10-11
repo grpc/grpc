@@ -53,10 +53,10 @@ ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
 ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
-intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
+void ChannelzRegistry::InternalRegister(BaseNode* node) {
   MutexLock lock(&mu_);
   entities_.push_back(node);
-  return ++uuid_generator_;
+  node->uuid_ = ++uuid_generator_;
 }
 
 void ChannelzRegistry::MaybePerformCompactionLocked() {
