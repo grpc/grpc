@@ -84,7 +84,7 @@ grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
       if ([value compare:[NSNumber numberWithInteger:INT_MAX]] == NSOrderedDescending ||
           [value compare:[NSNumber numberWithInteger:INT_MIN]] == NSOrderedAscending) {
         [NSException raise:NSInvalidArgumentException
-                    format:@"Range exceeded for a value typed channel argument: %@", value];
+                    format:@"Out of range for a value-typed channel argument: %@", value];
       }
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
@@ -94,7 +94,7 @@ grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
       arg->value.pointer.vtable = &objc_arg_vtable;
     } else {
       [NSException raise:NSInvalidArgumentException
-                  format:@"Invalid value type: %@", [value class]];
+                  format:@"Invalid channel argument type: %@", [value class]];
     }
   }
 
