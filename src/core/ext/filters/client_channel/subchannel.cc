@@ -147,7 +147,7 @@ struct grpc_subchannel_call {
   grpc_core::ConnectedSubchannel* connection;
   grpc_closure* schedule_closure_after_destroy;
   // state needed to support channelz interception of recv trailing metadata.
-  grpc_closure recv_trailing_metadata_ready_channelz;
+  grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata;
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_millis deadline;
@@ -752,8 +752,7 @@ void grpc_subchannel_call_unref(
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
-// Sets *status and *server_pushback_md based on md_batch and error.
-// Only sets *server_pushback_md if server_pushback_md != nullptr.
+// Sets *status based on md_batch and error.
 static void get_call_status(grpc_subchannel_call* call,
                             grpc_metadata_batch* md_batch, grpc_error* error,
                             grpc_status_code* status) {
@@ -768,8 +767,7 @@ static void get_call_status(grpc_subchannel_call* call,
   GRPC_ERROR_UNREF(error);
 }
 
-static void recv_trailing_metadata_ready_channelz(void* arg,
-                                                  grpc_error* error) {
+static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   grpc_subchannel_call* call = static_cast<grpc_subchannel_call*>(arg);
   GPR_ASSERT(call->recv_trailing_metadata != nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
@@ -783,14 +781,13 @@ static void recv_trailing_metadata_ready_channelz(void* arg,
   } else {
     channelz_subchannel->RecordCallFailed();
   }
-  call->recv_trailing_metadata = nullptr;
   GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata,
                    GRPC_ERROR_REF(error));
 }
 
 // If channelz is enabled, intercept recv_trailing so that we may check the
 // status and associate it to a subchannel.
-static void maybe_intercept_recv_trailing_metadata_for_channelz(
+static void maybe_intercept_recv_trailing_metadata(
     grpc_subchannel_call* call, grpc_transport_stream_op_batch* batch) {
   // only intercept payloads with recv trailing.
   if (!batch->recv_trailing_metadata) {
@@ -800,8 +797,8 @@ static void maybe_intercept_recv_trailing_metadata_for_channelz(
   if (call->connection->channelz_subchannel() == nullptr) {
     return;
   }
-  GRPC_CLOSURE_INIT(&call->recv_trailing_metadata_ready_channelz,
-                    recv_trailing_metadata_ready_channelz, call,
+  GRPC_CLOSURE_INIT(&call->recv_trailing_metadata_ready,
+                    recv_trailing_metadata_ready, call,
                     grpc_schedule_on_exec_ctx);
   // save some state needed for the interception callback.
   GPR_ASSERT(call->recv_trailing_metadata == nullptr);
@@ -810,16 +807,16 @@ static void maybe_intercept_recv_trailing_metadata_for_channelz(
   call->original_recv_trailing_metadata =
       batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
   batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &call->recv_trailing_metadata_ready_channelz;
+      &call->recv_trailing_metadata_ready;
 }
 
 void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
                                      grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("grpc_subchannel_call_process_op", 0);
+  maybe_intercept_recv_trailing_metadata(call, batch);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
-  maybe_intercept_recv_trailing_metadata_for_channelz(call, batch);
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
 }
 
