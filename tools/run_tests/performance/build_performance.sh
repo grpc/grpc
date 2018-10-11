@@ -61,9 +61,12 @@ do
   "node"|"node_purejs")
     tools/run_tests/performance/build_performance_node.sh
     ;;
-  *)
+  "python")
     # python workers are only run with python2.7 and building with multiple python versions is costly
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
+    ;;
+  *)
+    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
     ;;
   esac
 done
