@@ -171,7 +171,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
               // Clean up _handler so that no more responses are reported to the handler.
               self->_handler = nil;
 
-              // If server terminated the call we should close the send path too.
               if (self->_call) {
                 [self->_pipe writesFinishedWithError:nil];
                 self->_call = nil;
@@ -222,7 +221,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (self->_call) {
       [self->_pipe writesFinishedWithError:nil];
     }
-    self->_call = nil;
     self->_pipe = nil;
   });
 }
@@ -247,10 +245,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata
                                   error:(NSError *)error {
-  id<GRPCResponseHandler> handler = self->_handler;
+  id<GRPCResponseHandler> handler = _handler;
+  NSDictionary *trailers = _call.responseTrailers;
   if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
     dispatch_async(handler.dispatchQueue, ^{
-    [handler closedWithTrailingMetadata:self->_call.responseTrailers error:error];
+    [handler closedWithTrailingMetadata:trailers error:error];
     });
   }
 }
