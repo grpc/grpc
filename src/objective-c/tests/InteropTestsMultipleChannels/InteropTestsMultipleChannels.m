@@ -115,7 +115,7 @@ dispatch_once_t initCronet;
 
   options = [[GRPCCallOptions alloc] init];
   options.transportType = GRPCTransportTypeChttp2BoringSSL;
-  options.pemRootCert = certs;
+  options.PEMRootCertificates = certs;
   options.hostNameOverride = @"foo.test.google.fr";
   _localSSLService.options = options;
 }

@@ -54,9 +54,9 @@ const NSTimeInterval kChannelDestroyDelay = 30;
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {
 #endif
-        factory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:_callOptions.pemRootCert
-                                                         privateKey:_callOptions.pemPrivateKey
-                                                          certChain:_callOptions.pemCertChain
+        factory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:_callOptions.PEMRootCertificates
+                                                         privateKey:_callOptions.PEMPrivateKey
+                                                          certChain:_callOptions.PEMCertChain
                                                               error:&error];
         if (error) {
           NSLog(@"Error creating secure channel factory: %@", error);
@@ -167,14 +167,14 @@ const NSTimeInterval kChannelDestroyDelay = 30;
         [obj.callOptions.additionalChannelArgs
             isEqualToDictionary:_callOptions.additionalChannelArgs]))
     return NO;
-  if (!(obj.callOptions.pemRootCert == _callOptions.pemRootCert ||
-        [obj.callOptions.pemRootCert isEqualToString:_callOptions.pemRootCert]))
+  if (!(obj.callOptions.PEMRootCertificates == _callOptions.PEMRootCertificates ||
+        [obj.callOptions.PEMRootCertificates isEqualToString:_callOptions.PEMRootCertificates]))
     return NO;
-  if (!(obj.callOptions.pemPrivateKey == _callOptions.pemPrivateKey ||
-        [obj.callOptions.pemPrivateKey isEqualToString:_callOptions.pemPrivateKey]))
+  if (!(obj.callOptions.PEMPrivateKey == _callOptions.PEMPrivateKey ||
+        [obj.callOptions.PEMPrivateKey isEqualToString:_callOptions.PEMPrivateKey]))
     return NO;
-  if (!(obj.callOptions.pemCertChain == _callOptions.pemCertChain ||
-        [obj.callOptions.pemCertChain isEqualToString:_callOptions.pemCertChain]))
+  if (!(obj.callOptions.PEMCertChain == _callOptions.PEMCertChain ||
+        [obj.callOptions.PEMCertChain isEqualToString:_callOptions.PEMCertChain]))
     return NO;
   if (!(obj.callOptions.hostNameOverride == _callOptions.hostNameOverride ||
         [obj.callOptions.hostNameOverride isEqualToString:_callOptions.hostNameOverride]))
@@ -204,9 +204,9 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   result ^= (unsigned int)(_callOptions.connectInitialBackoff * 1000);
   result ^= (unsigned int)(_callOptions.connectMaxBackoff * 1000);
   result ^= _callOptions.additionalChannelArgs.hash;
-  result ^= _callOptions.pemRootCert.hash;
-  result ^= _callOptions.pemPrivateKey.hash;
-  result ^= _callOptions.pemCertChain.hash;
+  result ^= _callOptions.PEMRootCertificates.hash;
+  result ^= _callOptions.PEMPrivateKey.hash;
+  result ^= _callOptions.PEMCertChain.hash;
   result ^= _callOptions.hostNameOverride.hash;
   result ^= _callOptions.transportType;
   result ^= [_callOptions.logContext hash];

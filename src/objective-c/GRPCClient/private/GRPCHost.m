@@ -38,8 +38,8 @@ NS_ASSUME_NONNULL_BEGIN
 static NSMutableDictionary *kHostCache;
 
 @implementation GRPCHost {
-  NSString *_pemRootCerts;
-  NSString *_pemPrivateKey;
+  NSString *_PEMRootCertificates;
+  NSString *_PEMPrivateKey;
   NSString *_pemCertChain;
 }
 
@@ -92,8 +92,8 @@ static NSMutableDictionary *kHostCache;
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
                      error:(NSError **)errorPtr {
-  _pemRootCerts = pemRootCerts;
-  _pemPrivateKey = pemPrivateKey;
+  _PEMRootCertificates = pemRootCerts;
+  _PEMPrivateKey = pemPrivateKey;
   _pemCertChain = pemCertChain;
   return YES;
 }
@@ -109,9 +109,9 @@ static NSMutableDictionary *kHostCache;
   options.connectMinTimeout = (NSTimeInterval)_minConnectTimeout / 1000;
   options.connectInitialBackoff = (NSTimeInterval)_initialConnectBackoff / 1000;
   options.connectMaxBackoff = (NSTimeInterval)_maxConnectBackoff / 1000;
-  options.pemRootCert = _pemRootCerts;
-  options.pemPrivateKey = _pemPrivateKey;
-  options.pemCertChain = _pemCertChain;
+  options.PEMRootCertificates = _PEMRootCertificates;
+  options.PEMPrivateKey = _PEMPrivateKey;
+  options.PEMCertChain = _pemCertChain;
   options.hostNameOverride = _hostNameOverride;
   options.transportType = _transportType;
   options.logContext = _logContext;

@@ -41,7 +41,7 @@ static int32_t kLocalInteropServerOverhead = 10;
   return kLocalCleartextHost;
 }
 
-+ (NSString *)pemRootCert {
++ (NSString *)PEMRootCertificates {
   return nil;
 }
 

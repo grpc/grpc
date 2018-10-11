@@ -147,7 +147,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   return GRPCTransportTypeChttp2BoringSSL;
 }
 
-+ (NSString *)pemRootCert {
++ (NSString *)PEMRootCertificates {
   return nil;
 }
 
@@ -202,7 +202,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = self.class.transportType;
-  options.pemRootCert = self.class.pemRootCert;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = self.class.hostNameOverride;
 
   [_service
@@ -484,7 +484,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = self.class.transportType;
-  options.pemRootCert = self.class.pemRootCert;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = self.class.hostNameOverride;
 
   __block GRPCStreamingProtoCall *call = [_service
@@ -629,7 +629,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = self.class.transportType;
-  options.pemRootCert = self.class.pemRootCert;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = self.class.hostNameOverride;
 
   id request =

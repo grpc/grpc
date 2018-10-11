@@ -51,7 +51,7 @@
  * The root certificates to be used. The base implementation returns nil. Subclasses should override
  * to appropriate settings.
  */
-+ (NSString *)pemRootCert;
++ (NSString *)PEMRootCertificates;
 
 /**
  * The root certificates to be used. The base implementation returns nil. Subclasses should override

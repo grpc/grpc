@@ -146,17 +146,17 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readonly) NSString *pemRootCert;
+@property(copy, readonly) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readonly) NSString *pemPrivateKey;
+@property(copy, readonly) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readonly) NSString *pemCertChain;
+@property(copy, readonly) NSString *PEMCertChain;
 
 /**
  * Select the transport type to be used for this call.
@@ -278,17 +278,17 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readwrite) NSString *pemRootCert;
+@property(copy, readwrite) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readwrite) NSString *pemPrivateKey;
+@property(copy, readwrite) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readwrite) NSString *pemCertChain;
+@property(copy, readwrite) NSString *PEMCertChain;
 
 /**
  * Select the transport type to be used for this call.

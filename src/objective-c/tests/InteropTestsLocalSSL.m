@@ -40,7 +40,7 @@ static int32_t kLocalInteropServerOverhead = 10;
   return kLocalSSLHost;
 }
 
-+ (NSString *)pemRootCert {
++ (NSString *)PEMRootCertificates {
   NSBundle *bundle = [NSBundle bundleForClass:self.class];
   NSString *certsPath =
       [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];

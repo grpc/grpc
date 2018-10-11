@@ -41,7 +41,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteSSLHost;
 }
 
-+ (NSString *)pemRootCert {
++ (NSString *)PEMRootCertificates {
   return nil;
 }
 

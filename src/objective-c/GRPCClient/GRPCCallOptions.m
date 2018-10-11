@@ -32,9 +32,9 @@ static const NSTimeInterval kDefaultConnectMinTimeout = 0;
 static const NSTimeInterval kDefaultConnectInitialBackoff = 0;
 static const NSTimeInterval kDefaultConnectMaxBackoff = 0;
 static NSDictionary *const kDefaultAdditionalChannelArgs = nil;
-static NSString *const kDefaultPemRootCert = nil;
-static NSString *const kDefaultPemPrivateKey = nil;
-static NSString *const kDefaultPemCertChain = nil;
+static NSString *const kDefaultPEMRootCertificates = nil;
+static NSString *const kDefaultPEMPrivateKey = nil;
+static NSString *const kDefaultPEMCertChain = nil;
 static NSString *const kDefaultOauth2AccessToken = nil;
 static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
@@ -60,9 +60,9 @@ static NSUInteger kDefaultChannelId = 0;
   NSTimeInterval _connectInitialBackoff;
   NSTimeInterval _connectMaxBackoff;
   NSDictionary *_additionalChannelArgs;
-  NSString *_pemRootCert;
-  NSString *_pemPrivateKey;
-  NSString *_pemCertChain;
+  NSString *_PEMRootCertificates;
+  NSString *_PEMPrivateKey;
+  NSString *_PEMCertChain;
   GRPCTransportType _transportType;
   NSString *_hostNameOverride;
   id _logContext;
@@ -85,9 +85,9 @@ static NSUInteger kDefaultChannelId = 0;
 @synthesize connectInitialBackoff = _connectInitialBackoff;
 @synthesize connectMaxBackoff = _connectMaxBackoff;
 @synthesize additionalChannelArgs = _additionalChannelArgs;
-@synthesize pemRootCert = _pemRootCert;
-@synthesize pemPrivateKey = _pemPrivateKey;
-@synthesize pemCertChain = _pemCertChain;
+@synthesize PEMRootCertificates = _PEMRootCertificates;
+@synthesize PEMPrivateKey = _PEMPrivateKey;
+@synthesize PEMCertChain = _PEMCertChain;
 @synthesize transportType = _transportType;
 @synthesize hostNameOverride = _hostNameOverride;
 @synthesize logContext = _logContext;
@@ -110,9 +110,9 @@ static NSUInteger kDefaultChannelId = 0;
                  connectInitialBackoff:kDefaultConnectInitialBackoff
                      connectMaxBackoff:kDefaultConnectMaxBackoff
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
-                           pemRootCert:kDefaultPemRootCert
-                         pemPrivateKey:kDefaultPemPrivateKey
-                          pemCertChain:kDefaultPemCertChain
+                    PEMRootCertificates:kDefaultPEMRootCertificates
+                         PEMPrivateKey:kDefaultPEMPrivateKey
+                          PEMCertChain:kDefaultPEMCertChain
                          transportType:kDefaultTransportType
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
@@ -135,9 +135,9 @@ static NSUInteger kDefaultChannelId = 0;
                   connectInitialBackoff:(NSTimeInterval)connectInitialBackoff
                       connectMaxBackoff:(NSTimeInterval)connectMaxBackoff
                   additionalChannelArgs:(NSDictionary *)additionalChannelArgs
-                            pemRootCert:(NSString *)pemRootCert
-                          pemPrivateKey:(NSString *)pemPrivateKey
-                           pemCertChain:(NSString *)pemCertChain
+                     PEMRootCertificates:(NSString *)PEMRootCertificates
+                          PEMPrivateKey:(NSString *)PEMPrivateKey
+                           PEMCertChain:(NSString *)PEMCertChain
                           transportType:(GRPCTransportType)transportType
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
@@ -159,9 +159,9 @@ static NSUInteger kDefaultChannelId = 0;
     _connectInitialBackoff = connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff;
     _additionalChannelArgs = additionalChannelArgs;
-    _pemRootCert = pemRootCert;
-    _pemPrivateKey = pemPrivateKey;
-    _pemCertChain = pemCertChain;
+    _PEMRootCertificates = PEMRootCertificates;
+    _PEMPrivateKey = PEMPrivateKey;
+    _PEMCertChain = PEMCertChain;
     _transportType = transportType;
     _hostNameOverride = hostNameOverride;
     _logContext = logContext;
@@ -188,9 +188,9 @@ static NSUInteger kDefaultChannelId = 0;
                                               connectInitialBackoff:_connectInitialBackoff
                                                   connectMaxBackoff:_connectMaxBackoff
                                               additionalChannelArgs:[_additionalChannelArgs copy]
-                                                        pemRootCert:_pemRootCert
-                                                      pemPrivateKey:_pemPrivateKey
-                                                       pemCertChain:_pemCertChain
+                                                 PEMRootCertificates:_PEMRootCertificates
+                                                      PEMPrivateKey:_PEMPrivateKey
+                                                       PEMCertChain:_PEMCertChain
                                                       transportType:_transportType
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
@@ -216,9 +216,9 @@ static NSUInteger kDefaultChannelId = 0;
         connectInitialBackoff:_connectInitialBackoff
             connectMaxBackoff:_connectMaxBackoff
         additionalChannelArgs:[_additionalChannelArgs copy]
-                  pemRootCert:_pemRootCert
-                pemPrivateKey:_pemPrivateKey
-                 pemCertChain:_pemCertChain
+           PEMRootCertificates:_PEMRootCertificates
+                PEMPrivateKey:_PEMPrivateKey
+                 PEMCertChain:_PEMCertChain
                 transportType:_transportType
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
@@ -246,9 +246,9 @@ static NSUInteger kDefaultChannelId = 0;
 @dynamic connectInitialBackoff;
 @dynamic connectMaxBackoff;
 @dynamic additionalChannelArgs;
-@dynamic pemRootCert;
-@dynamic pemPrivateKey;
-@dynamic pemCertChain;
+@dynamic PEMRootCertificates;
+@dynamic PEMPrivateKey;
+@dynamic PEMCertChain;
 @dynamic transportType;
 @dynamic hostNameOverride;
 @dynamic logContext;
@@ -271,9 +271,9 @@ static NSUInteger kDefaultChannelId = 0;
                  connectInitialBackoff:kDefaultConnectInitialBackoff
                      connectMaxBackoff:kDefaultConnectMaxBackoff
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
-                           pemRootCert:kDefaultPemRootCert
-                         pemPrivateKey:kDefaultPemPrivateKey
-                          pemCertChain:kDefaultPemCertChain
+                    PEMRootCertificates:kDefaultPEMRootCertificates
+                         PEMPrivateKey:kDefaultPEMPrivateKey
+                          PEMCertChain:kDefaultPEMCertChain
                          transportType:kDefaultTransportType
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
@@ -298,9 +298,9 @@ static NSUInteger kDefaultChannelId = 0;
                                               connectInitialBackoff:_connectInitialBackoff
                                                   connectMaxBackoff:_connectMaxBackoff
                                               additionalChannelArgs:[_additionalChannelArgs copy]
-                                                        pemRootCert:_pemRootCert
-                                                      pemPrivateKey:_pemPrivateKey
-                                                       pemCertChain:_pemCertChain
+                                                 PEMRootCertificates:_PEMRootCertificates
+                                                      PEMPrivateKey:_PEMPrivateKey
+                                                       PEMCertChain:_PEMCertChain
                                                       transportType:_transportType
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
@@ -326,9 +326,9 @@ static NSUInteger kDefaultChannelId = 0;
         connectInitialBackoff:_connectInitialBackoff
             connectMaxBackoff:_connectMaxBackoff
         additionalChannelArgs:[_additionalChannelArgs copy]
-                  pemRootCert:_pemRootCert
-                pemPrivateKey:_pemPrivateKey
-                 pemCertChain:_pemCertChain
+           PEMRootCertificates:_PEMRootCertificates
+                PEMPrivateKey:_PEMPrivateKey
+                 PEMCertChain:_PEMCertChain
                 transportType:_transportType
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
@@ -421,16 +421,16 @@ static NSUInteger kDefaultChannelId = 0;
   _additionalChannelArgs = additionalChannelArgs;
 }
 
-- (void)setPemRootCert:(NSString *)pemRootCert {
-  _pemRootCert = pemRootCert;
+- (void)setPEMRootCertificates:(NSString *)PEMRootCertificates {
+  _PEMRootCertificates = PEMRootCertificates;
 }
 
-- (void)setPemPrivateKey:(NSString *)pemPrivateKey {
-  _pemPrivateKey = pemPrivateKey;
+- (void)setPEMPrivateKey:(NSString *)PEMPrivateKey {
+  _PEMPrivateKey = PEMPrivateKey;
 }
 
-- (void)setPemCertChain:(NSString *)pemCertChain {
-  _pemCertChain = pemCertChain;
+- (void)setPEMCertChain:(NSString *)PEMCertChain {
+  _PEMCertChain = PEMCertChain;
 }
 
 - (void)setTransportType:(GRPCTransportType)transportType {
