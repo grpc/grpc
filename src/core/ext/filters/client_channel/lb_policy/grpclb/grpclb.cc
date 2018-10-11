@@ -1491,7 +1491,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
         grpclb_policy->lb_call_backoff_.Reset();
         grpclb_policy->StartBalancerCallLocked();
       }
-      // Fall through.
+      // fallthrough
     case GRPC_CHANNEL_SHUTDOWN:
     done:
       grpclb_policy->watching_lb_channel_ = false;
