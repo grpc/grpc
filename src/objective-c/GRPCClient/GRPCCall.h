@@ -149,7 +149,7 @@ extern id const kGRPCHeadersKey;
 extern id const kGRPCTrailersKey;
 
 /** An object can implement this protocol to receive responses from server from a call. */
-@protocol GRPCResponseHandler
+@protocol GRPCResponseHandler <NSObject>
 
 @optional
 

@@ -149,12 +149,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
           }
           if (headers) {
             dispatch_async(handler.dispatchQueue, ^{
-              [handler receivedInitialMetadata:headers];
+              if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+                [handler receivedInitialMetadata:headers];
+              }
             });
           }
           if (value) {
             dispatch_async(handler.dispatchQueue, ^{
-              [handler receivedMessage:value];
+              if ([handler respondsToSelector:@selector(receivedMessage:)]) {
+                [handler receivedMessage:value];
+              }
             });
           }
         }
@@ -171,11 +175,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
               }
               if (headers) {
                 dispatch_async(handler.dispatchQueue, ^{
-                  [handler receivedInitialMetadata:headers];
+                  if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+                    [handler receivedInitialMetadata:headers];
+                  }
                 });
               }
               dispatch_async(handler.dispatchQueue, ^{
-                [handler closedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+                if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+                  [handler closedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+                }
               });
             }
           });
@@ -193,13 +201,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (self->_handler) {
       id<GRPCResponseHandler> handler = self->_handler;
       dispatch_async(handler.dispatchQueue, ^{
-        [handler closedWithTrailingMetadata:nil
-                                      error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                code:GRPCErrorCodeCancelled
-                                                            userInfo:@{
-                                                              NSLocalizedDescriptionKey :
-                                                                  @"Canceled by app"
-                                                            }]];
+        if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+          [handler closedWithTrailingMetadata:nil
+                                        error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                  code:GRPCErrorCodeCancelled
+                                                              userInfo:@{
+                                                                         NSLocalizedDescriptionKey :
+                                                                           @"Canceled by app"
+                                                                         }]];
+        }
       });
       self->_handler = nil;
     }
