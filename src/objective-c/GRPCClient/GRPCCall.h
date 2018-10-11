@@ -240,9 +240,9 @@ extern id const kGRPCTrailersKey;
 - (void)start;
 
 /**
- * Cancel the request of this call at best effort; notifies the server that the RPC should be
- * cancelled, and issue callback to the user with an error code CANCELED if the call is not
- * finished.
+ * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
+ * should be cancelled, and issue closedWithTrailingMetadata:error: callback with error code
+ * CANCELED if no other error code has already been issued.
  */
 - (void)cancel;
 
