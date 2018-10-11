@@ -761,15 +761,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
   if (_callOptions.authTokenProvider != nil) {
     self.isWaitingForToken = YES;
-    __weak typeof(self) weakSelf = self;
     [self.tokenProvider getTokenWithHandler:^(NSString *token) {
-      typeof(self) strongSelf = weakSelf;
-      if (strongSelf && strongSelf.isWaitingForToken) {
+      if (self.isWaitingForToken) {
         if (token) {
-          strongSelf->_fetchedOauth2AccessToken = token;
+          self->_fetchedOauth2AccessToken = [token copy];
         }
-        [strongSelf startCallWithWriteable:writeable];
-        strongSelf.isWaitingForToken = NO;
+        [self startCallWithWriteable:writeable];
+        self.isWaitingForToken = NO;
       }
     }];
   } else {
