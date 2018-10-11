@@ -468,7 +468,9 @@ static void tcp_do_read(grpc_tcp* tcp) {
     GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
-    if (static_cast<size_t>(read_bytes) < tcp->incoming_buffer->length) {
+    if (static_cast<size_t>(read_bytes) == tcp->incoming_buffer->length) {
+      finish_estimate(tcp);
+    } else if (static_cast<size_t>(read_bytes) < tcp->incoming_buffer->length) {
       grpc_slice_buffer_trim_end(
           tcp->incoming_buffer,
           tcp->incoming_buffer->length - static_cast<size_t>(read_bytes),
