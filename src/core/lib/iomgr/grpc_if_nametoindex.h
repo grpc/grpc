@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_IF_NAMETOINDEX_H
-#define GRPC_IF_NAMETOINDEX_H
+#ifndef GRPC_CORE_LIB_IOMGR_GRPC_IF_NAMETOINDEX_H
+#define GRPC_CORE_LIB_IOMGR_GRPC_IF_NAMETOINDEX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,4 +27,4 @@
  * Returns non-zero upon success, and zero upon failure. */
 uint32_t grpc_if_nametoindex(char* name);
 
-#endif /* GRPC_IF_NAMETOINDEX_H */
+#endif /* GRPC_CORE_LIB_IOMGR_GRPC_IF_NAMETOINDEX_H */
