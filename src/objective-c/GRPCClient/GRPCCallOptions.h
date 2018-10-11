@@ -64,7 +64,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(readonly) NSString *serverAuthority;
+@property(copy, readonly) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
@@ -91,7 +91,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 /**
  * Initial metadata key-value pairs that should be included in the request.
  */
-@property(copy, readwrite) NSDictionary *initialMetadata;
+@property(copy, readonly) NSDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -198,7 +198,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(readwrite) NSString *serverAuthority;
+@property(copy, readwrite) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
