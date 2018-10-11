@@ -22,7 +22,7 @@
 
 #ifndef GRPC_POSIX_SOCKET
 
-#include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 
 #include <grpc/support/log.h>
 

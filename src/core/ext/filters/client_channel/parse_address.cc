@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/grpc_if_nametoindex.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
+#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
