@@ -92,8 +92,7 @@ def create_qpsworker_job(language,
         cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
         ssh_cmd.extend([
             str(user_at_host),
-            'cd ~/performance_workspace/grpc/ && python tools/run_tests/start_port_server.py && %s'
-            % ' '.join(cmdline)
+            'cd ~/performance_workspace/grpc/ && %s' % ' '.join(cmdline)
         ])
         cmdline = ssh_cmd
 
@@ -270,6 +269,12 @@ def build_on_remote_hosts(hosts,
                          'CONFIG': 'opt'},
                 timeout_seconds=build_timeout))
     if build_local:
+        # start port server locally
+        build_jobs.append(
+            jobset.JobSpec(
+                cmdline=['python', 'tools/run_tests/start_port_server.py'],
+                shortname='local_start_port_server',
+                timeout_seconds=2 * 60))
         # Build locally as well
         build_jobs.append(
             jobset.JobSpec(

@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gao"
+g_stands_for = "gizmo"
 
 core_version = "6.0.0-dev"
 
-version = "1.16.0-dev"
+version = "1.17.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -847,8 +847,8 @@ grpc_cc_library(
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
-        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/block_annotate.h",
+        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
@@ -1550,9 +1550,9 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "grpc_base",
+        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_alpn",
         "tsi",
-        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1812,8 +1812,8 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_base",
-        "tsi_interface",
         "grpc_shadow_boringssl",
+        "tsi_interface",
     ],
 )
 
@@ -1910,9 +1910,9 @@ grpc_cc_library(
         "alts_util",
         "gpr",
         "grpc_base",
+        "grpc_shadow_boringssl",
         "grpc_transport_chttp2_client_insecure",
         "tsi_interface",
-        "grpc_shadow_boringssl",
     ],
 )
 
@@ -1984,6 +1984,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/channel_interface.h",
         "include/grpcpp/impl/codegen/client_callback.h",
         "include/grpcpp/impl/codegen/client_context.h",
+        "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
@@ -1991,6 +1992,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
+        "include/grpcpp/impl/codegen/interceptor.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
@@ -2137,10 +2139,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
-        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",

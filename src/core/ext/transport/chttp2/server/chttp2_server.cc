@@ -53,6 +53,8 @@ typedef struct {
   grpc_closure tcp_server_shutdown_complete;
   grpc_closure* server_destroy_listener_done;
   grpc_handshake_manager* pending_handshake_mgrs;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode>
+      channelz_listen_socket;
 } server_state;
 
 typedef struct {
@@ -67,7 +69,6 @@ typedef struct {
   grpc_timer timer;
   grpc_closure on_timeout;
   grpc_closure on_receive_settings;
-  grpc_pollset_set* interested_parties;
 } server_connection_state;
 
 static void server_connection_state_unref(
@@ -77,9 +78,6 @@ static void server_connection_state_unref(
       GRPC_CHTTP2_UNREF_TRANSPORT(connection_state->transport,
                                   "receive settings timeout");
     }
-    grpc_pollset_set_del_pollset(connection_state->interested_parties,
-                                 connection_state->accepting_pollset);
-    grpc_pollset_set_destroy(connection_state->interested_parties);
     gpr_free(connection_state);
   }
 }
@@ -137,7 +135,8 @@ static void on_handshake_done(void* arg, grpc_error* error) {
           grpc_create_chttp2_transport(args->args, args->endpoint, false);
       grpc_server_setup_transport(
           connection_state->svr_state->server, transport,
-          connection_state->accepting_pollset, args->args);
+          connection_state->accepting_pollset, args->args,
+          grpc_chttp2_transport_get_socket_uuid(transport));
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
       connection_state->transport =
@@ -193,11 +192,7 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;
   connection_state->handshake_mgr = handshake_mgr;
-  connection_state->interested_parties = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(connection_state->interested_parties,
-                               connection_state->accepting_pollset);
   grpc_handshakers_add(HANDSHAKER_SERVER, state->args,
-                       connection_state->interested_parties,
                        connection_state->handshake_mgr);
   const grpc_arg* timeout_arg =
       grpc_channel_args_find(state->args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS);
@@ -231,6 +226,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   GPR_ASSERT(state->shutdown);
   grpc_handshake_manager_pending_list_shutdown_all(
       state->pending_handshake_mgrs, GRPC_ERROR_REF(error));
+  state->channelz_listen_socket.reset();
   gpr_mu_unlock(&state->mu);
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
@@ -270,6 +266,8 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   server_state* state = nullptr;
   grpc_error** errors = nullptr;
   size_t naddrs = 0;
+  const grpc_arg* arg = nullptr;
+  intptr_t socket_uuid = 0;
 
   *port_num = -1;
 
@@ -331,9 +329,16 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   }
   grpc_resolved_addresses_destroy(resolved);
 
+  arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    state->channelz_listen_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>();
+    socket_uuid = state->channelz_listen_socket->uuid();
+  }
+
   /* Register with the server only upon success */
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener);
+                           server_destroy_listener, socket_uuid);
   goto done;
 
 /* Error path: cleanup and return */

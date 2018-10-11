@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 6.0.0-dev
-  g_stands_for: gao
-  version: 1.16.0-dev
+  core_version: 7.0.0-dev
+  g_stands_for: gizmo
+  version: 1.17.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -1173,6 +1173,7 @@ filegroups:
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_context.h
+  - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -1180,6 +1181,7 @@ filegroups:
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/grpc_library.h
+  - include/grpcpp/impl/codegen/interceptor.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h

@@ -156,13 +156,6 @@ int grpc_security_connector_cmp(grpc_security_connector* sc,
   return sc->vtable->cmp(sc, other);
 }
 
-void grpc_security_connector_set_interested_parties(
-    grpc_security_connector* sc, grpc_pollset_set* interested_parties) {
-  if (sc != nullptr) {
-    sc->interested_parties = interested_parties;
-  }
-}
-
 int grpc_channel_security_connector_cmp(grpc_channel_security_connector* sc1,
                                         grpc_channel_security_connector* sc2) {
   GPR_ASSERT(sc1->channel_creds != nullptr);

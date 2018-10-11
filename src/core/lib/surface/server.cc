@@ -54,6 +54,7 @@ struct listener {
                 size_t pollset_count);
   void (*destroy)(grpc_server* server, void* arg, grpc_closure* closure);
   struct listener* next;
+  intptr_t socket_uuid;
   grpc_closure destroy_done;
 };
 
@@ -104,6 +105,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
+  intptr_t socket_uuid;
 };
 
 typedef struct shutdown_tag {
@@ -1008,14 +1010,15 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   server->channel_args = grpc_channel_args_copy(args);
 
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
-  if (grpc_channel_arg_get_bool(arg, false)) {
-    arg = grpc_channel_args_find(args,
-                                 GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    size_t trace_events_per_node =
-        grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
+  if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    arg = grpc_channel_args_find(
+        args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
+    size_t channel_tracer_max_memory = grpc_channel_arg_get_integer(
+        arg,
+        {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
     server->channelz_server =
         grpc_core::MakeRefCounted<grpc_core::channelz::ServerNode>(
-            trace_events_per_node);
+            server, channel_tracer_max_memory);
     server->channelz_server->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
@@ -1118,7 +1121,8 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
 
 void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args) {
+                                 const grpc_channel_args* args,
+                                 intptr_t socket_uuid) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1138,6 +1142,7 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
+  chand->socket_uuid = socket_uuid;
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
@@ -1210,6 +1215,29 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
   }
   grpc_transport_perform_op(transport, op);
+}
+
+void grpc_server_populate_server_sockets(
+    grpc_server* s, grpc_core::channelz::ChildRefsList* server_sockets,
+    intptr_t start_idx) {
+  gpr_mu_lock(&s->mu_global);
+  channel_data* c = nullptr;
+  for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
+    intptr_t socket_uuid = c->socket_uuid;
+    if (socket_uuid >= start_idx) {
+      server_sockets->push_back(socket_uuid);
+    }
+  }
+  gpr_mu_unlock(&s->mu_global);
+}
+
+void grpc_server_populate_listen_sockets(
+    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
+  gpr_mu_lock(&server->mu_global);
+  for (listener* l = server->listeners; l != nullptr; l = l->next) {
+    listen_sockets->push_back(l->socket_uuid);
+  }
+  gpr_mu_unlock(&server->mu_global);
 }
 
 void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {
@@ -1345,11 +1373,13 @@ void grpc_server_add_listener(grpc_server* server, void* arg,
                                             grpc_pollset** pollsets,
                                             size_t pollset_count),
                               void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done)) {
+                                              grpc_closure* on_done),
+                              intptr_t socket_uuid) {
   listener* l = static_cast<listener*>(gpr_malloc(sizeof(listener)));
   l->arg = arg;
   l->start = start;
   l->destroy = destroy;
+  l->socket_uuid = socket_uuid;
   l->next = server->listeners;
   server->listeners = l;
 }
