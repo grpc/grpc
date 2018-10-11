@@ -27,6 +27,7 @@
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -125,6 +126,7 @@ struct grpc_channel_security_connector {
                                  grpc_closure* on_call_host_checked,
                                  grpc_error* error);
   void (*add_handshakers)(grpc_channel_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 
@@ -151,6 +153,7 @@ void grpc_channel_security_connector_cancel_check_call_host(
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(
     grpc_channel_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr);
 
 /* --- server_security_connector object. ---
@@ -164,6 +167,7 @@ struct grpc_server_security_connector {
   grpc_security_connector base;
   grpc_server_credentials* server_creds;
   void (*add_handshakers)(grpc_server_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 
@@ -172,7 +176,8 @@ int grpc_server_security_connector_cmp(grpc_server_security_connector* sc1,
                                        grpc_server_security_connector* sc2);
 
 void grpc_server_security_connector_add_handshakers(
-    grpc_server_security_connector* sc, grpc_handshake_manager* handshake_mgr);
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
+    grpc_handshake_manager* handshake_mgr);
 
 /* --- Creation security connectors. --- */
 

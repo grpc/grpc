@@ -24,11 +24,12 @@
 
 void grpc_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (handshaker_factory != nullptr) {
     GPR_ASSERT(handshaker_factory->vtable != nullptr);
-    handshaker_factory->vtable->add_handshakers(handshaker_factory, args,
-                                                handshake_mgr);
+    handshaker_factory->vtable->add_handshakers(
+        handshaker_factory, args, interested_parties, handshake_mgr);
   }
 }
 
