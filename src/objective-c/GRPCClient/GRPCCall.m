@@ -167,6 +167,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
                 [self issueInitialMetadata:headers];
               }
               [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+
+              // Clean up _handler so that no more responses are reported to the handler.
+              self->_handler = nil;
             }
           });
         }];
@@ -193,6 +196,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                                                          }]];
         }
       });
+
+      // Clean up _handler so that no more responses are reported to the handler.
       self->_handler = nil;
     }
   });
