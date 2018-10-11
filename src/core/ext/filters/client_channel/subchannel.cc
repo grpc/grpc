@@ -897,7 +897,6 @@ ConnectedSubchannel::ConnectedSubchannel(
       socket_uuid_(socket_uuid) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
-  channelz_subchannel_.reset();
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
 }
 
