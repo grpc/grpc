@@ -47,7 +47,6 @@ sudo apt-get install -y \
   libtool \
   make \
   strace \
-  pypy \
   python-dev \
   python-pip \
   python-setuptools \
@@ -83,27 +82,18 @@ sudo pip install tabulate
 sudo pip install google-api-python-client oauth2client
 sudo pip install virtualenv
 
-# TODO(jtattermusch): revisit python installation
-# Building gRPC Python depends on python3.4 being installed, but python3.4
-# is not available on Ubuntu 16.10, so install from source
-curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
-tar xzvf Python-3.4.6.tgz
-(
-cd Python-3.4.6 || exit
-./configure --enable-shared --prefix=/usr/local LDFLAGS="-Wl,--rpath=/usr/local/lib"
-sudo make altinstall
-)
-rm Python-3.4.6.tgz
-
+# pypy is used instead of python for postprocessing benchmark outputs
+# because some reports are huge and pypy is much faster.
+# TODO(jtattermusch): get rid of pypy once possible, it's hard to
+# keep track of all the installed variants of python.
+sudo apt-get install -y pypy pypy-dev
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 sudo pypy -m pip install google-api-python-client oauth2client
-
 # TODO(jtattermusch): for some reason, we need psutil installed
 # in pypy for kokoro_log_reader.py (strange, because the comand is
 # "python kokoro_log_reader.py" and pypy is not the system default)
-sudo apt-get install -y pypy-dev
 sudo pypy -m pip install psutil
 
 # Node dependencies (nvm has to be installed under user kbuilder)
