@@ -307,7 +307,9 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
- * will not get cached to the same connection.
+ * will not get cached to the same connection. For example, a gRPC example app may use the channel
+ * pool domain 'io.grpc.example' so that its calls do not reuse the channel created by other modules
+ * in the same process.
  */
 @property(copy, readwrite) NSString *channelPoolDomain;
 
