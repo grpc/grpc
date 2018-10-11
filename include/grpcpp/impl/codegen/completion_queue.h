@@ -299,14 +299,17 @@ class CompletionQueue : private GrpcLibraryCodegen {
   bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
         g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
-    bool ok = ev.success != 0;
-    void* ignored = tag;
-    GPR_CODEGEN_ASSERT(tag->FinalizeResult(&ignored, &ok));
-    GPR_CODEGEN_ASSERT(ignored == tag);
-    // Ignore mutations by FinalizeResult: Pluck returns the C API status
-    return ev.success != 0;
+    while (true) {
+      auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+          cq_, tag, deadline, nullptr);
+      bool ok = ev.success != 0;
+      void* ignored = tag;
+      if (tag->FinalizeResult(&ignored, &ok)) {
+        GPR_CODEGEN_ASSERT(ignored == tag);
+        // Ignore mutations by FinalizeResult: Pluck returns the C API status
+        return ev.success != 0;
+      }
+    }
   }
 
   /// Performs a single polling pluck on \a tag.

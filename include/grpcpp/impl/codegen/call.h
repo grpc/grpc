@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_H
 #define GRPCPP_IMPL_CODEGEN_CALL_H
 
+#include <array>
 #include <assert.h>
 #include <cstring>
 #include <functional>
@@ -412,7 +413,7 @@ class CallOpRecvMessage {
 
   void SetFinishInterceptionHookPoint(
       experimental::InterceptorBatchMethods* interceptor_methods) {
-    if (message_ == nullptr || !got_message) return;
+    if (!got_message) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
   }
@@ -507,7 +508,7 @@ class CallOpGenericRecvMessage {
 
   void SetFinishInterceptionHookPoint(
       experimental::InterceptorBatchMethods* interceptor_methods) {
-    if (!deserialize_ || !got_message) return;
+    if (!got_message) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
   }
@@ -651,7 +652,6 @@ class CallOpRecvInitialMetadata {
 
   void FinishOp(bool* status) {
     if (metadata_map_ == nullptr || hijacked_) return;
-    metadata_map_ = nullptr;
   }
 
   void SetInterceptionHookPoint(
@@ -662,6 +662,7 @@ class CallOpRecvInitialMetadata {
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
+    metadata_map_ = nullptr;
   }
 
   void SetHijackingState(
@@ -719,7 +720,6 @@ class CallOpClientRecvStatus {
     if (debug_error_string_ != nullptr) {
       g_core_codegen_interface->gpr_free((void*)debug_error_string_);
     }
-    recv_status_ = nullptr;
   }
 
   void SetInterceptionHookPoint(
@@ -732,6 +732,7 @@ class CallOpClientRecvStatus {
         experimental::InterceptionHookPoints::POST_RECV_STATUS);
     interceptor_methods->SetRecvStatus(recv_status_);
     interceptor_methods->SetRecvTrailingMetadata(metadata_map_->arr());
+    recv_status_ = nullptr;
   }
 
   void SetHijackingState(
@@ -912,7 +913,7 @@ class InterceptorBatchMethodsImpl
 
   virtual void AddInterceptionHookPoint(
       experimental::InterceptionHookPoints type) override {
-    hooks_[static_cast<int>(type)];
+    hooks_[static_cast<int>(type)] = true;
   }
 
   virtual void GetSendMessage(grpc_byte_buffer** buf) override {
@@ -1187,13 +1188,13 @@ class CallOpSet : public CallOpSetInterface,
   }
   /* Returns true if no interceptors need to be run */
   bool RunInterceptorsPostRecv() {
+    interceptor_methods_.SetReverse();
     this->Op1::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op2::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op3::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op4::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetFinishInterceptionHookPoint(&interceptor_methods_);
-    interceptor_methods_.SetReverse();
     return interceptor_methods_.RunInterceptors();
   }
 

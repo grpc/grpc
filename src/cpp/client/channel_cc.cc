@@ -150,7 +150,7 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
 
   auto* info = context->set_client_rpc_info(experimental::ClientRpcInfo(
       context, method.name(), this, interceptor_creators_));
-  return std::move(internal::Call(c_call, this, cq, info));
+  return internal::Call(c_call, this, cq, info);
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
