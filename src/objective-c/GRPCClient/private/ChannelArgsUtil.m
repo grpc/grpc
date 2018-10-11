@@ -21,6 +21,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <limits.h>
+
 static void *copy_pointer_arg(void *p) {
   // Add ref count to the object when making copy
   id obj = (__bridge id)p;
@@ -79,6 +81,11 @@ grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
       arg->type = GRPC_ARG_STRING;
       arg->value.string = gpr_strdup([value UTF8String]);
     } else if ([value respondsToSelector:@selector(intValue)]) {
+      if ([value compare:[NSNumber numberWithInteger:INT_MAX]] == NSOrderedDescending ||
+          [value compare:[NSNumber numberWithInteger:INT_MIN]] == NSOrderedAscending) {
+        [NSException raise:NSInvalidArgumentException
+                    format:@"Range exceeded for a value typed channel argument: %@", value];
+      }
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
     } else if (value != nil) {
