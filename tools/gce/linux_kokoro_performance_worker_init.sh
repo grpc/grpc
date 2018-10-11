@@ -71,6 +71,9 @@ sudo apt-get install -y netperf
 # required to run kokoro_log_reader.py
 sudo apt-get install -y python-psutil python3-psutil
 
+# gcloud tools, including gsutil
+sudo apt-get install -y google-cloud-sdk
+
 # C++ dependencies
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
@@ -95,8 +98,13 @@ rm Python-3.4.6.tgz
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
-# TODO(jtattermusch): make it clear this already uses pypy's pip
-sudo pip install google-api-python-client
+sudo pypy -m pip install google-api-python-client
+
+# TODO(jtattermusch): for some reason, we need psutil installed
+# in pypy for kokoro_log_reader.py (strange, because the comand is
+# "python kokoro_log_reader.py" and pypy is not the system default)
+sudo apt-get install -y pypy-dev
+sudo pypy -m pip install psutil
 
 # Node dependencies (nvm has to be installed under user kbuilder)
 touch .profile
