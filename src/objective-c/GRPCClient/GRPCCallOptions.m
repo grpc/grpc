@@ -338,7 +338,7 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setServerAuthority:(NSString *)serverAuthority {
-  _serverAuthority = serverAuthority;
+  _serverAuthority = [serverAuthority copy];
 }
 
 - (void)setTimeout:(NSTimeInterval)timeout {
@@ -350,7 +350,7 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setOauth2AccessToken:(NSString *)oauth2AccessToken {
-  _oauth2AccessToken = oauth2AccessToken;
+  _oauth2AccessToken = [oauth2AccessToken copy];
 }
 
 - (void)setAuthTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider {
@@ -358,11 +358,11 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setInitialMetadata:(NSDictionary *)initialMetadata {
-  _initialMetadata = initialMetadata;
+  _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
 }
 
 - (void)setUserAgentPrefix:(NSString *)userAgentPrefix {
-  _userAgentPrefix = userAgentPrefix;
+  _userAgentPrefix = [userAgentPrefix copy];
 }
 
 - (void)setResponseSizeLimit:(NSUInteger)responseSizeLimit {
@@ -418,19 +418,19 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {
-  _additionalChannelArgs = additionalChannelArgs;
+  _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
 }
 
 - (void)setPEMRootCertificates:(NSString *)PEMRootCertificates {
-  _PEMRootCertificates = PEMRootCertificates;
+  _PEMRootCertificates = [PEMRootCertificates copy];
 }
 
 - (void)setPEMPrivateKey:(NSString *)PEMPrivateKey {
-  _PEMPrivateKey = PEMPrivateKey;
+  _PEMPrivateKey = [PEMPrivateKey copy];
 }
 
 - (void)setPEMCertChain:(NSString *)PEMCertChain {
-  _PEMCertChain = PEMCertChain;
+  _PEMCertChain = [PEMCertChain copy];
 }
 
 - (void)setTransportType:(GRPCTransportType)transportType {
@@ -438,7 +438,7 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setHostNameOverride:(NSString *)hostNameOverride {
-  _hostNameOverride = hostNameOverride;
+  _hostNameOverride = [hostNameOverride copy];
 }
 
 - (void)setLogContext:(id)logContext {
@@ -446,7 +446,7 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setChannelPoolDomain:(NSString *)channelPoolDomain {
-  _channelPoolDomain = channelPoolDomain;
+  _channelPoolDomain = [channelPoolDomain copy];
 }
 
 - (void)setChannelID:(NSUInteger)channelID {
