@@ -75,6 +75,15 @@ grpc_proto_library(
     has_services = False,
 )
 
+py_proto_library(
+    name = "py_messages_proto",
+    protos = ["messages.proto",],
+    with_grpc = True,
+    deps = [
+        requirement('protobuf'),
+    ],
+)
+
 grpc_proto_library(
     name = "metrics_proto",
     srcs = ["metrics.proto"],
@@ -127,3 +136,17 @@ grpc_proto_library(
         "messages_proto",
     ],
 )
+
+py_proto_library(
+    name = "py_test_proto",
+    protos = ["test.proto",],
+    with_grpc = True,
+    deps = [
+        requirement('protobuf'),
+    ],
+    proto_deps = [
+        ":py_empty_proto",
+        ":py_messages_proto",
+    ]
+)
+
