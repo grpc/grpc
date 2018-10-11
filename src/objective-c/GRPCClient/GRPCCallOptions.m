@@ -342,7 +342,11 @@ static NSUInteger kDefaultChannelId = 0;
 }
 
 - (void)setTimeout:(NSTimeInterval)timeout {
-  _timeout = timeout;
+  if (timeout < 0) {
+    _timeout = 0;
+  } else {
+    _timeout = timeout;
+  }
 }
 
 - (void)setOauth2AccessToken:(NSString *)oauth2AccessToken {
@@ -374,23 +378,43 @@ static NSUInteger kDefaultChannelId = 0;
 }
 
 - (void)setKeepaliveInterval:(NSTimeInterval)keepaliveInterval {
-  _keepaliveInterval = keepaliveInterval;
+  if (keepaliveInterval < 0) {
+    _keepaliveInterval = 0;
+  } else {
+    _keepaliveInterval = keepaliveInterval;
+  }
 }
 
 - (void)setKeepaliveTimeout:(NSTimeInterval)keepaliveTimeout {
-  _keepaliveTimeout = keepaliveTimeout;
+  if (keepaliveTimeout < 0) {
+    _keepaliveTimeout = 0;
+  } else {
+    _keepaliveTimeout = keepaliveTimeout;
+  }
 }
 
 - (void)setConnectMinTimeout:(NSTimeInterval)connectMinTimeout {
-  _connectMinTimeout = connectMinTimeout;
+  if (connectMinTimeout < 0) {
+    connectMinTimeout = 0;
+  } else {
+    _connectMinTimeout = connectMinTimeout;
+  }
 }
 
 - (void)setConnectInitialBackoff:(NSTimeInterval)connectInitialBackoff {
-  _connectInitialBackoff = connectInitialBackoff;
+  if (connectInitialBackoff < 0) {
+    _connectInitialBackoff = 0;
+  } else {
+    _connectInitialBackoff = connectInitialBackoff;
+  }
 }
 
 - (void)setConnectMaxBackoff:(NSTimeInterval)connectMaxBackoff {
-  _connectMaxBackoff = connectMaxBackoff;
+  if (connectMaxBackoff < 0) {
+    _connectMaxBackoff = 0;
+  } else {
+    _connectMaxBackoff = connectMaxBackoff;
+  }
 }
 
 - (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {

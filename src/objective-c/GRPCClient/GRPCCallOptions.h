@@ -120,15 +120,15 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  */
 @property(readonly) BOOL enableRetry;
 
-/**
- * HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
- * PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
- * call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
- */
+// HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
+// PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
+// call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
+// Negative values are not allowed.
 @property(readonly) NSTimeInterval keepaliveInterval;
 @property(readonly) NSTimeInterval keepaliveTimeout;
 
-// Parameters for connection backoff. For details of gRPC's backoff behavior, refer to
+// Parameters for connection backoff. Negative values are not allowed.
+// For details of gRPC's backoff behavior, refer to
 // https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md
 @property(readonly) NSTimeInterval connectMinTimeout;
 @property(readonly) NSTimeInterval connectInitialBackoff;
@@ -203,7 +203,8 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
  * positive, the gRPC call returns with status GRPCErrorCodeDeadlineExceeded if it is not completed
- * within \a timeout seconds. A negative value is not allowed.
+ * within \a timeout seconds. Negative value is invalid; setting the parameter to negative value
+ * will reset the parameter to 0.
  */
 @property(readwrite) NSTimeInterval timeout;
 
@@ -249,15 +250,17 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  */
 @property(readwrite) BOOL enableRetry;
 
-/**
- * HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
- * PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
- * call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
- */
+// HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
+// PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
+// call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
+// Negative values are invalid; setting these parameters to negative value will reset the
+// corresponding parameter to 0.
 @property(readwrite) NSTimeInterval keepaliveInterval;
 @property(readwrite) NSTimeInterval keepaliveTimeout;
 
-// Parameters for connection backoff. For details of gRPC's backoff behavior, refer to
+// Parameters for connection backoff. Negative value is invalid; setting the parameters to negative
+// value will reset corresponding parameter to 0.
+// For details of gRPC's backoff behavior, refer to
 // https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md
 @property(readwrite) NSTimeInterval connectMinTimeout;
 @property(readwrite) NSTimeInterval connectInitialBackoff;
