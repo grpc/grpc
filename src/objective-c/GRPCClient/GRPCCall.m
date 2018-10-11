@@ -541,7 +541,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)sendHeaders {
   // TODO (mxyan): Remove after deprecated methods are removed
-  uint32_t callSafetyFlags;
+  uint32_t callSafetyFlags = 0;
   switch (_callSafety) {
     case GRPCCallSafetyDefault:
       callSafetyFlags = 0;
