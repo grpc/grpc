@@ -68,8 +68,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
   if ((self = [super init])) {
-    _host = host;
-    _path = path;
+    _host = [host copy];
+    _path = [path copy];
     _safety = safety;
   }
   return self;
@@ -77,7 +77,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (id)copyWithZone:(NSZone *)zone {
   GRPCRequestOptions *request =
-      [[GRPCRequestOptions alloc] initWithHost:[_host copy] path:[_path copy] safety:_safety];
+      [[GRPCRequestOptions alloc] initWithHost:_host path:_path safety:_safety];
 
   return request;
 }
