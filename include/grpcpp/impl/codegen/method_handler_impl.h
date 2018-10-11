@@ -58,7 +58,7 @@ class RpcMethodHandler : public MethodHandler {
                    ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) final {
+  void RunHandler(const HandlerParameter& param) final override {
     RequestType req;
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request.bbuf_ptr(), &req);
@@ -106,7 +106,7 @@ class ClientStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) final {
+  void RunHandler(const HandlerParameter& param) final override {
     ServerReader<RequestType> reader(param.call, param.server_context);
     ResponseType rsp;
     Status status = CatchingFunctionHandler([this, &param, &reader, &rsp] {
@@ -149,7 +149,7 @@ class ServerStreamingHandler : public MethodHandler {
       ServiceType* service)
       : func_(func), service_(service) {}
 
-  void RunHandler(const HandlerParameter& param) final {
+  void RunHandler(const HandlerParameter& param) final override {
     RequestType req;
     Status status = SerializationTraits<RequestType>::Deserialize(
         param.request.bbuf_ptr(), &req);
@@ -198,7 +198,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
       std::function<Status(ServerContext*, Streamer*)> func)
       : func_(func), write_needed_(WriteNeeded) {}
 
-  void RunHandler(const HandlerParameter& param) final {
+  void RunHandler(const HandlerParameter& param) final override {
     Streamer stream(param.call, param.server_context);
     Status status = CatchingFunctionHandler([this, &param, &stream] {
       return func_(param.server_context, &stream);
@@ -291,7 +291,7 @@ class ErrorMethodHandler : public MethodHandler {
     ops->ServerSendStatus(context->trailing_metadata_, status);
   }
 
-  void RunHandler(const HandlerParameter& param) final {
+  void RunHandler(const HandlerParameter& param) final override {
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
