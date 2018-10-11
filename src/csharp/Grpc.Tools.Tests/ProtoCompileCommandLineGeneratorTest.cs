@@ -16,6 +16,7 @@
 
 #endregion
 
+using System.IO;
 using Microsoft.Build.Framework;
 using Moq;
 using NUnit.Framework;
@@ -152,6 +153,8 @@ namespace Grpc.Tools.Tests {
     [TestCase("C:\\"   , "C:\\")]
     [TestCase("C:\\\\" , "C:\\")]
     public void DirectorySlashTrimmingCases(string given, string expect) {
+      if (Path.DirectorySeparatorChar == '/')
+        expect = expect.Replace('\\', '/');
       _task.OutputDir = given;
       ExecuteExpectSuccess();
       Assert.That(_task.LastResponseFile,

@@ -14,8 +14,8 @@
        and may not compile Grpc.Core/Version.cs, as that file references constants
        in Grpc.Core.dll.
        TODO(kkm): Refactor imports. -->
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <!-- Workaround for https://github.com/dotnet/sdk/issues/335 -->
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' and '$(MSBuildRuntimeType)' == 'Core' ">
+    <!-- Use Mono reference assemblies in SDK build: https://github.com/dotnet/sdk/issues/335 -->
     <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
@@ -27,20 +27,16 @@
     <!-- GPB:  ../src/google/protobuf/ -->
     <Assets_ProtoInclude>../../../third_party/protobuf/src/google/protobuf/</Assets_ProtoInclude>
 
-    <!-- GPB:  protoc\ -->
-    <!-- GRPC: protoc_plugins\protoc_ -->
+    <!-- GPB:  ../protoc/ -->
+    <!-- GRPC: ../protoc_plugins/protoc_ -->
     <Assets_ProtoCompiler>../protoc_plugins/protoc_</Assets_ProtoCompiler>
 
-    <!-- GRPC: protoc_plugins\ -->
+    <!-- GRPC: ../protoc_plugins/ -->
     <Assets_GrpcPlugins>../protoc_plugins/</Assets_GrpcPlugins>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <_NetStandard>False</_NetStandard>
-    <_NetStandard Condition=" $(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcore')) ">True</_NetStandard>
-
-    <!-- So we do not hardcode an exact version into #if's. -->
-    <DefineConstants Condition="$(_NetStandard)">$(DefineConstants);NETSTANDARD</DefineConstants>
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package definition" Condition=" '$(Configuration)' == 'Release' ">
@@ -71,29 +67,28 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
 
     <!-- TODO(kkm): GPB builds assets into "macosx", GRPC into "macos". -->
-    <_Asset PackagePath="build/native/bin/windows/protoc.exe" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
-    <_Asset PackagePath="build/native/bin/linux_x86/protoc" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
-    <_Asset PackagePath="build/native/bin/linux_x64/protoc" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
-    <_Asset PackagePath="build/native/bin/macosx_x86/protoc" Include="$(Assets_ProtoCompiler)macos_x86/protoc" /> <!-- GPB: macosx-->
-    <_Asset PackagePath="build/native/bin/macosx_x64/protoc" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
+    <_Asset PackagePath="build/native/bin/windows/" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
+    <_Asset PackagePath="build/native/bin/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
+    <_Asset PackagePath="build/native/bin/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
+    <_Asset PackagePath="build/native/bin/macosx_x86/" Include="$(Assets_ProtoCompiler)macos_x86/protoc" /> <!-- GPB: macosx-->
+    <_Asset PackagePath="build/native/bin/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
 
     <!-- gRPC assets (for Grpc.Tools) -->
-    <_Asset PackagePath="build/native/bin/windows/grpc_csharp_plugin.exe" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
-    <_Asset PackagePath="build/native/bin/linux_x86/grpc_csharp_plugin" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/linux_x64/grpc_csharp_plugin" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/macosx_x86/grpc_csharp_plugin" Include="$(Assets_GrpcPlugins)protoc_macos_x86/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/macosx_x64/grpc_csharp_plugin" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="build/native/bin/windows/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
+    <_Asset PackagePath="build/native/bin/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
+    <_Asset PackagePath="build/native/bin/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="build/native/bin/macosx_x86/" Include="$(Assets_GrpcPlugins)protoc_macos_x86/grpc_csharp_plugin" />
+    <_Asset PackagePath="build/native/bin/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
 
     <None Include="@(_Asset)" Pack="true" Visible="false" />
   </ItemGroup>
 
-  <ItemGroup Condition="!$(_NetStandard)">
-    <Reference Include="Microsoft.Build.Framework" Pack="false" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" Pack="false" />
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.v4.0" Pack="false" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(_NetStandard)">
-    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.85" />
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.*" />
     <!--  Set PrivateAssets="All" on all items, even those implicitly added,
           so that they do not become dependencies of this package. -->
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />

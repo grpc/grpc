@@ -50,7 +50,7 @@ namespace Grpc.Tools {
     public static bool IsWindows => Os == OsKind.Windows;
 
     static Platform() {
-#if NETSTANDARD
+#if NETCORE
       Os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OsKind.Windows
          : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? OsKind.Linux
          : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsKind.MacOsX
