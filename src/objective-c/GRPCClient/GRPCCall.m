@@ -738,7 +738,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     } else {
       callOptions = [[GRPCMutableCallOptions alloc] init];
     }
-    if (_serverName != nil) {
+    if (_serverName.length != 0) {
       callOptions.serverAuthority = _serverName;
     }
     if (_timeout != 0) {
