@@ -1,0 +1,9 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name="credentials",
+    srcs=glob([
+        "**",
+    ]),
+)
+
