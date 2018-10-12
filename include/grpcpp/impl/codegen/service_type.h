@@ -58,6 +58,8 @@ class ServerAsyncStreamingInterface {
 class Service {
  public:
   Service() : server_(nullptr) {}
+  Service(const Service &) = delete;
+  Service & operator =(const Service &) = delete;
   virtual ~Service() {}
 
   bool has_async_methods() const {
