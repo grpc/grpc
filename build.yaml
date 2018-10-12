@@ -2785,7 +2785,7 @@ targets:
   filegroups:
   - cmdline
   uses_polling: false
-- name: handshake_client
+- name: handshake_client_ssl
   build: test
   language: c
   src:
@@ -2800,7 +2800,7 @@ targets:
   platforms:
   - linux
   secure: true
-- name: handshake_server
+- name: handshake_server_ssl
   build: test
   language: c
   headers:
