@@ -27,6 +27,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -163,8 +165,15 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    test_unix_socket();
-    test_unix_socket_path_name_too_long();
+    char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
+    // c-ares resolver doesn't support UDS (ability for native DNS resolver
+    // to handle this is only expected to be used by servers, which
+    // unconditionally use the native DNS resolver).
+    if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
+      test_unix_socket();
+      test_unix_socket_path_name_too_long();
+    }
+    gpr_free(resolver_env);
   }
 
   grpc_shutdown();

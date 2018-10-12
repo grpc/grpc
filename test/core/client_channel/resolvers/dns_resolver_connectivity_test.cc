@@ -76,7 +76,10 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   } else {
     gpr_mu_unlock(&g_mu);
     *addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
-    (*addresses)->emplace_back(nullptr, 0, nullptr);
+    grpc_resolved_address dummy_resolved_address;
+    memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
+    dummy_resolved_address.len = 123;
+    (*addresses)->emplace_back(dummy_resolved_address, nullptr);
   }
   GRPC_CLOSURE_SCHED(on_done, error);
   return nullptr;

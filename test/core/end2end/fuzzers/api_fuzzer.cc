@@ -342,7 +342,10 @@ static void finish_resolve(void* arg, grpc_error* error) {
       *r->addrs = addrs;
     } else if (r->addresses != nullptr) {
       *r->addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
-      (*r->addresses)->emplace_back(nullptr, 0, nullptr);
+      grpc_resolved_address dummy_resolved_address;
+      memset(&dummy_resolved_address, 0, sizeof(dummy_resolved_address));
+      dummy_resolved_address.len = 123;
+      (*r->addresses)->emplace_back(dummy_resolved_address, nullptr);
     }
     GRPC_CLOSURE_SCHED(r->on_done, GRPC_ERROR_NONE);
   } else {

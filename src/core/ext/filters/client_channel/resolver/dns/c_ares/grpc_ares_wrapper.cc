@@ -510,6 +510,28 @@ static bool resolve_as_ip_literal_locked(
   return out;
 }
 
+static bool target_matches_localhost_inner(const char* name, char** host,
+                                           char** port) {
+  if (!gpr_split_host_port(name, host, port)) {
+    gpr_log(GPR_INFO, "Unable to split host and port for name: %s", name);
+    return false;
+  }
+  if (gpr_stricmp(*host, "localhost") == 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+static bool target_matches_localhost(const char* name) {
+  char* host = nullptr;
+  char* port = nullptr;
+  bool out = target_matches_localhost_inner(name, &host, &port);
+  gpr_free(host);
+  gpr_free(port);
+  return out;
+}
+
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -535,6 +557,13 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                                                         addrs)) {
     GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
     return r;
+  }
+  // Don't query for SRV and TXT records if the target is "localhost", so
+  // as to cut down on lookups over the network, especially in tests:
+  // https://github.com/grpc/proposal/pull/79
+  if (target_matches_localhost(name)) {
+    check_grpclb = false;
+    r->service_config_json_out = nullptr;
   }
   // Look up name using c-ares lib.
   grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
