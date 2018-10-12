@@ -15,8 +15,6 @@
 licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
 grpc_package(name = "testing", visibility = "public")
 
@@ -58,15 +56,6 @@ grpc_proto_library(
     name = "empty_proto",
     srcs = ["empty.proto"],
     has_services = False,
-)
-
-py_proto_library(
-    name = "py_empty_proto",
-    protos = ["empty.proto",],
-    with_grpc = True,
-    deps = [
-        requirement('protobuf'),
-    ],
 )
 
 grpc_proto_library(
