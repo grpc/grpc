@@ -38,6 +38,8 @@ namespace {
 // singleton instance of the registry.
 ChannelzRegistry* g_channelz_registry = nullptr;
 
+const int kPaginationLimit = 100;
+
 }  // anonymous namespace
 
 void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
@@ -124,6 +126,7 @@ BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
+  MutexLock lock(&mu_);
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
@@ -133,10 +136,18 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   // start_channel_id=0, which signifies "give me everything." Hence this
   // funky looking line below.
   size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
+  bool more_to_come = false;
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
             grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel) {
+      // check if we are over pagination limit to determine if we need to set
+      // the "end" element. If we don't go through this block, we know that
+      // when the loop terminates, we have <= to kPaginationLimit.
+      if (top_level_channels.size() == kPaginationLimit) {
+        more_to_come = true;
+        break;
+      }
       top_level_channels.push_back(entities_[i]);
     }
   }
@@ -150,17 +161,17 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
           grpc_json_link_child(array_parent, channel_json, json_iterator);
     }
   }
-  // For now we do not have any pagination rules. In the future we could
-  // pick a constant for max_channels_sent for a GetTopChannels request.
-  // Tracking: https://github.com/grpc/grpc/issues/16019.
-  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                         GRPC_JSON_TRUE, false);
+  if (!more_to_come) {
+    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
+                           false);
+  }
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
 }
 
 char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
+  MutexLock lock(&mu_);
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
@@ -169,10 +180,18 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   // reserved). However, we want to support requests coming in with
   // start_server_id=0, which signifies "give me everything."
   size_t start_idx = start_server_id == 0 ? 0 : start_server_id - 1;
+  bool more_to_come = false;
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
             grpc_core::channelz::BaseNode::EntityType::kServer) {
+      // check if we are over pagination limit to determine if we need to set
+      // the "end" element. If we don't go through this block, we know that
+      // when the loop terminates, we have <= to kPaginationLimit.
+      if (servers.size() == kPaginationLimit) {
+        more_to_come = true;
+        break;
+      }
       servers.push_back(entities_[i]);
     }
   }
@@ -186,11 +205,10 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
           grpc_json_link_child(array_parent, server_json, json_iterator);
     }
   }
-  // For now we do not have any pagination rules. In the future we could
-  // pick a constant for max_channels_sent for a GetServers request.
-  // Tracking: https://github.com/grpc/grpc/issues/16019.
-  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                         GRPC_JSON_TRUE, false);
+  if (!more_to_come) {
+    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
+                           false);
+  }
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
