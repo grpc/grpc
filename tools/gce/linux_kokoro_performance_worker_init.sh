@@ -124,6 +124,15 @@ sudo apt-get install -y apt-transport-https
 sudo apt-get update
 sudo apt-get install -y dotnet-sdk-2.1
 
+# Install .NET Core 1.0.5 Runtime (required to run netcoreapp1.0)
+wget -q https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
+mkdir -p dotnet105_download
+tar zxf dotnet-ubuntu.16.04-x64.1.0.5.tar.gz -C dotnet105_download
+sudo cp -r dotnet105_download/shared/Microsoft.NETCore.App/1.0.5/ /usr/share/dotnet/shared/Microsoft.NETCore.App/
+# To prevent "Failed to initialize CoreCLR, HRESULT: 0x80131500" with .NET Core 1.0.5 runtime
+wget -q http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.4_amd64.deb
+sudo dpkg -i libicu55_55.1-7ubuntu0.4_amd64.deb
+
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
