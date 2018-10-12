@@ -1,18 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyTitle>Greeter</AssemblyTitle>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <DebugType>portable</DebugType>
-    <AssemblyName>Greeter</AssemblyName>
-    <PackageId>Greeter</PackageId>
+    <TargetFramework>netstandard1.5</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
-    <PackageReference Include="Google.Protobuf.Tools" Version="3.6.1" />
-    <PackageReference Include="Grpc" Version="1.14.1" />
-    <PackageReference Include="Grpc.Tools" Version="1.14.1" />
+    <PackageReference Include="Grpc" Version="1.17.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.17.0" PrivateAssets="All" />
+
+    <Protobuf Include="../../../protos/helloworld.proto" Link="helloworld.proto" />
   </ItemGroup>
 
 </Project>

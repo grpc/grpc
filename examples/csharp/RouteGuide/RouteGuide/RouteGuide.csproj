@@ -1,25 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyTitle>RouteGuide</AssemblyTitle>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
-    <DebugType>portable</DebugType>
-    <AssemblyName>RouteGuide</AssemblyName>
-    <PackageId>RouteGuide</PackageId>
+    <TargetFramework>netstandard1.5</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
-    <PackageReference Include="Google.Protobuf.Tools" Version="3.6.1" />
-    <PackageReference Include="Grpc" Version="1.14.1" />
-    <PackageReference Include="Grpc.Tools" Version="1.14.1" />
+    <PackageReference Include="Grpc" Version="1.17.0" />
+    <PackageReference Include="Grpc.Tools" Version="1.17.0" PrivateAssets="All" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="route_guide_db.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <ProtoBuf Include="..\..\..\protos\route_guide.proto" Link="protos\route_guide.proto" />
+    <None Include="route_guide_db.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
