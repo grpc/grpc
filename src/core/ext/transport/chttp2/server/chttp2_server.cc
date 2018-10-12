@@ -208,10 +208,10 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
       grpc_core::ExecCtx::Get()->Now() +
       grpc_channel_arg_get_integer(timeout_arg,
                                    {120 * GPR_MS_PER_SEC, 1, INT_MAX});
-  grpc_handshake_manager_do_handshake(
-      connection_state->handshake_mgr, nullptr /* interested_parties */, tcp,
-      state->args, connection_state->deadline, acceptor, on_handshake_done,
-      connection_state);
+  grpc_handshake_manager_do_handshake(connection_state->handshake_mgr, tcp,
+                                      state->args, connection_state->deadline,
+                                      acceptor, on_handshake_done,
+                                      connection_state);
 }
 
 /* Server callback: start listening on our ports */
