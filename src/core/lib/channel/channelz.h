@@ -92,8 +92,10 @@ class BaseNode : public RefCounted<BaseNode> {
   intptr_t uuid() const { return uuid_; }
 
  private:
+  // to allow the ChannelzRegistry to set uuid_ under its lock.
+  friend class ChannelzRegistry;
   const EntityType type_;
-  const intptr_t uuid_;
+  intptr_t uuid_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
