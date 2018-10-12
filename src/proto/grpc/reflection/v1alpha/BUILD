@@ -22,11 +22,3 @@ grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
 )
-
-filegroup(
-    name = "reflection_proto_file",
-    srcs = [
-        "reflection.proto",
-    ],
-)
-
