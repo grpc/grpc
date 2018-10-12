@@ -21,6 +21,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 // struct grpc_byte_buffer;
 // struct grpc_status_code;

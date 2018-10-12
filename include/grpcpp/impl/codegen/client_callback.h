@@ -57,7 +57,7 @@ class CallbackUnaryCallImpl {
                         std::function<void(Status)> on_completion) {
     CompletionQueue* cq = channel->CallbackCQ();
     GPR_CODEGEN_ASSERT(cq != nullptr);
-    Call call = channel->CreateCall(method, context, cq);
+    Call call(channel->CreateCall(method, context, cq));
 
     using FullCallOpSet =
         CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,

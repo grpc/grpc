@@ -57,9 +57,8 @@ Channel::Channel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
         interceptor_creators)
     : host_(host), c_channel_(channel) {
-  auto* vector = interceptor_creators.release();
-  if (vector != nullptr) {
-    interceptor_creators_ = std::move(*vector);
+  if (interceptor_creators != nullptr) {
+    interceptor_creators_ = std::move(*interceptor_creators);
   }
   g_gli_initializer.summon();
 }

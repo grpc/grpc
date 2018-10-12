@@ -19,8 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_H
 #define GRPCPP_IMPL_CODEGEN_CALL_H
 
-#include <array>
 #include <assert.h>
+#include <array>
 #include <cstring>
 #include <functional>
 #include <map>
@@ -900,7 +900,7 @@ class InterceptorBatchMethodsImpl
   }
 
   virtual void Hijack() override { /* fill this */
-    GPR_ASSERT(!reverse_);
+    GPR_CODEGEN_ASSERT(!reverse_);
     auto* rpc_info = call_->rpc_info();
     rpc_info->hijacked_ = true;
     rpc_info->hijacked_interceptor_ = curr_iteration_;
@@ -1158,17 +1158,18 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::AddOp(ops, &nops);
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
-    GPR_ASSERT(GRPC_CALL_OK == g_core_codegen_interface->grpc_call_start_batch(
-                                   call_.call(), ops, nops, cq_tag(), nullptr));
+    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
+                       g_core_codegen_interface->grpc_call_start_batch(
+                           call_.call(), ops, nops, cq_tag(), nullptr));
   }
 
   /* Should be called after interceptors are done running on the finalize result
    * path */
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
-    GPR_ASSERT(GRPC_CALL_OK ==
-               g_core_codegen_interface->grpc_call_start_batch(
-                   call_.call(), nullptr, 0, cq_tag(), nullptr));
+    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
+                       g_core_codegen_interface->grpc_call_start_batch(
+                           call_.call(), nullptr, 0, cq_tag(), nullptr));
   }
 
  private:

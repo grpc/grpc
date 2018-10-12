@@ -695,11 +695,11 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   internal::Call call(call_, server_, call_cq_,
                       server_->max_receive_message_size());
 
-  // just the pointers inside call are copied here
-  auto* new_call = stream_->BindCall(std::move(call));
   if (*status && call_) {
-    context_->BeginCompletionOp(new_call);
+    context_->BeginCompletionOp(&call);
   }
+  // just the pointers inside call are copied here
+  stream_->BindCall(&call);
 
   *tag = tag_;
   if (delete_on_finalize_) {

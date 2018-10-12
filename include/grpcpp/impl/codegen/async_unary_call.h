@@ -87,7 +87,7 @@ class ClientAsyncResponseReaderFactory {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
-        ClientAsyncResponseReader<R>(std::move(call), context, request, start);
+        ClientAsyncResponseReader<R>(call, context, request, start);
   }
 };
 }  // namespace internal
@@ -165,7 +165,7 @@ class ClientAsyncResponseReader final
   template <class W>
   ClientAsyncResponseReader(::grpc::internal::Call call, ClientContext* context,
                             const W& request, bool start)
-      : context_(context), call_(std::move(call)), started_(start) {
+      : context_(context), call_(call), started_(start) {
     // Bind the metadata at time of StartCallInternal but set up the rest here
     // TODO(ctiller): don't assert
     GPR_CODEGEN_ASSERT(single_buf.SendMessage(request).ok());
@@ -286,10 +286,7 @@ class ServerAsyncResponseWriter final
   }
 
  private:
-  ::grpc::internal::Call* BindCall(::grpc::internal::Call call) override {
-    call_ = std::move(call);
-    return &call_;
-  }
+  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 
   ::grpc::internal::Call call_;
   ServerContext* ctx_;

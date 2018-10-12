@@ -20,7 +20,7 @@
 
 namespace grpc {
 namespace experimental {
-const ClientRpcInfo::grpc::InterceptedMessage& outgoing_message() {}
+/*const ClientRpcInfo::grpc::InterceptedMessage& outgoing_message() {}
 grpc::InterceptedMessage* ClientRpcInfo::mutable_outgoing_message() {}
 const grpc::InterceptedMessage& ClientRpcInfo::received_message() {}
 grpc::InterceptedMessage* ClientRpcInfo::mutable_received_message() {}
@@ -41,6 +41,6 @@ void ClientRpcInfo::set_server_initial_metadata(
     const std::multimap<grpc::string, grpc::string>& overwrite) {}
 void ClientRpcInfo::set_server_trailing_metadata(
     const std::multimap<grpc::string, grpc::string>& overwrite) {}
-void ClientRpcInfo::set_status(Status status) {}
+void ClientRpcInfo::set_status(Status status) {}*/
 }  // namespace experimental
 }  // namespace grpc

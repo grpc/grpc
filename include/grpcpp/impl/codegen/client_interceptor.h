@@ -105,7 +105,7 @@ class ClientRpcInfo {
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods,
       unsigned int pos) {
-    GPR_ASSERT(pos < interceptors_.size());
+    GPR_CODEGEN_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 

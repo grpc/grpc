@@ -50,7 +50,7 @@ class ServerAsyncStreamingInterface {
 
  private:
   friend class ::grpc::ServerInterface;
-  virtual Call* BindCall(Call call) = 0;
+  virtual void BindCall(Call* call) = 0;
 };
 }  // namespace internal
 
