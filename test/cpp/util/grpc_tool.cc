@@ -193,8 +193,9 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
     fprintf(stderr, "got response.\n");
     if (!FLAGS_binary_output) {
       gpr_mu_lock(parser_mu);
-      serialized_response_proto = parser->GetTextFormatFromMethod(
-          method_name, serialized_response_proto, false /* is_request */);
+      serialized_response_proto = parser->GetFormattedStringFromMethod(
+          method_name, serialized_response_proto, false /* is_request */,
+          FLAGS_json_output);
       if (parser->HasError() && print_mode) {
         fprintf(stderr, "Failed to parse response.\n");
       }
@@ -555,12 +556,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
           request_text.clear();
         } else {
           gpr_mu_lock(&parser_mu);
-          serialized_request_proto =
-              FLAGS_json_input ?
-                  parser->GetSerializedProtoFromMethodJsonFormat(
-                      method_name, request_text, true /* is_request */) :
-                  parser->GetSerializedProtoFromMethodTextFormat(
-                      method_name, request_text, true /* is_request */);
+          serialized_request_proto = parser->GetSerializedProtoFromMethod(
+              method_name, request_text, true /* is_request */,
+              FLAGS_json_input);
           request_text.clear();
           if (parser->HasError()) {
             if (print_mode) {
@@ -643,12 +641,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             serialized_request_proto = request_text;
             request_text.clear();
           } else {
-            serialized_request_proto =
-                FLAGS_json_input ?
-                    parser->GetSerializedProtoFromMethodJsonFormat(
-                        method_name, request_text, true /* is_request */) :
-                    parser->GetSerializedProtoFromMethodTextFormat(
-                        method_name, request_text, true /* is_request */);
+            serialized_request_proto = parser->GetSerializedProtoFromMethod(
+                method_name, request_text, true /* is_request */,
+                FLAGS_json_input);
             request_text.clear();
             if (parser->HasError()) {
               if (print_mode) {
@@ -684,14 +679,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
                 break;
               }
             } else {
-              grpc::string response_text =
-                  FLAGS_json_output ?
-                      parser->GetJsonFormatFromMethod(method_name,
+              grpc::string response_text = parser->GetFormattedStringFromMethod(method_name,
                                                       serialized_response_proto,
-                                                      false /* is_request */) :
-                      parser->GetTextFormatFromMethod(method_name,
-                                                      serialized_response_proto,
-                                                      false /* is_request */);
+                                                      false /* is_request */,
+                                                      FLAGS_json_output);
 
               if (parser->HasError() && print_mode) {
                 fprintf(stderr, "Failed to parse response.\n");
@@ -748,12 +739,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     if (FLAGS_binary_input) {
       serialized_request_proto = request_text;
     } else {
-      serialized_request_proto =
-          FLAGS_json_input ?
-              parser->GetSerializedProtoFromMethodJsonFormat(
-                  method_name, request_text, true /* is_request */) :
-              parser->GetSerializedProtoFromMethodTextFormat(
-                  method_name, request_text, true /* is_request */);
+      serialized_request_proto = parser->GetSerializedProtoFromMethod(
+          method_name, request_text, true /* is_request */, FLAGS_json_input);
       if (parser->HasError()) {
         fprintf(stderr, "Failed to parse request.\n");
         return false;
@@ -776,18 +763,14 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
              &serialized_response_proto,
              receive_initial_metadata ? &server_initial_metadata : nullptr);
          receive_initial_metadata = false) {
-      if (FLAGS_json_output) {
-        serialized_response_proto = parser->GetJsonFormatFromMethod(
-            method_name, serialized_response_proto, false /* is_request */);
-      } else if (!FLAGS_binary_output) {
-        serialized_response_proto = parser->GetTextFormatFromMethod(
-            method_name, serialized_response_proto, false /* is_request */);
-      }
-      if (FLAGS_json_output || !FLAGS_binary_output) {
-          if (parser->HasError()) {
-            fprintf(stderr, "Failed to parse response.\n");
-            return false;
-          }
+      if (!FLAGS_binary_output) {
+        serialized_response_proto = parser->GetFormattedStringFromMethod(
+            method_name, serialized_response_proto, false /* is_request */,
+            FLAGS_json_output);
+        if (parser->HasError()) {
+          fprintf(stderr, "Failed to parse response.\n");
+          return false;
+        }
       }
 
       if (receive_initial_metadata) {
@@ -878,12 +861,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (FLAGS_binary_input) {
     serialized_request_proto = message_text;
   } else {
-    serialized_request_proto =
-        FLAGS_json_input ?
-            parser->GetSerializedProtoFromMessageTypeJsonFormat(type_name,
-                                                                message_text) :
-            parser->GetSerializedProtoFromMessageTypeTextFormat(type_name,
-                                                                message_text);
+    serialized_request_proto = parser->GetSerializedProtoFromMessageType(
+        type_name, message_text, FLAGS_json_input);
     if (parser->HasError()) {
       fprintf(stderr, "Failed to serialize the message.\n");
       return false;
@@ -894,14 +873,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
     output_ss << serialized_request_proto;
   } else {
     grpc::string output_text;
-    if (FLAGS_json_output) {
-      output_text = parser->GetJsonFormatFromMessageType(
-          type_name, serialized_request_proto);
-    } else {
-      output_text = parser->GetTextFormatFromMessageType(
-          type_name, serialized_request_proto);
-    }
-
+    output_text = parser->GetFormattedStringFromMessageType(
+        type_name, serialized_request_proto, FLAGS_json_output);
     if (parser->HasError()) {
       fprintf(stderr, "Failed to deserialize the message.\n");
       return false;

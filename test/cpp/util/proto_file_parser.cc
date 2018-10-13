@@ -216,55 +216,33 @@ bool ProtoFileParser::IsStreaming(const grpc::string& method, bool is_request) {
                     : method_desc->server_streaming();
 }
 
-grpc::string ProtoFileParser::GetSerializedProtoFromMethodTextFormat(
-    const grpc::string& method, const grpc::string& text_format_proto,
-    bool is_request) {
+grpc::string ProtoFileParser::GetSerializedProtoFromMethod(
+    const grpc::string& method, const grpc::string& formatted_proto,
+    bool is_request, bool is_json_format) {
   has_error_ = false;
   grpc::string message_type_name = GetMessageTypeFromMethod(method, is_request);
   if (has_error_) {
     return "";
   }
-  return GetSerializedProtoFromMessageTypeTextFormat(message_type_name,
-                                           text_format_proto);
+  return GetSerializedProtoFromMessageType(message_type_name, formatted_proto,
+                                           is_json_format);
 }
 
-grpc::string ProtoFileParser::GetSerializedProtoFromMethodJsonFormat(
-    const grpc::string& method, const grpc::string& json_format_proto,
-    bool is_request) {
-  has_error_ = false;
-  grpc::string message_type_name = GetMessageTypeFromMethod(method, is_request);
-  if (has_error_) {
-    return "";
-  }
-  return GetSerializedProtoFromMessageTypeJsonFormat(message_type_name,
-                                           json_format_proto);
-}
-
-grpc::string ProtoFileParser::GetTextFormatFromMethod(
+grpc::string ProtoFileParser::GetFormattedStringFromMethod(
     const grpc::string& method, const grpc::string& serialized_proto,
-    bool is_request) {
+    bool is_request, bool is_json_format) {
   has_error_ = false;
   grpc::string message_type_name = GetMessageTypeFromMethod(method, is_request);
   if (has_error_) {
     return "";
   }
-  return GetTextFormatFromMessageType(message_type_name, serialized_proto);
+  return GetFormattedStringFromMessageType(message_type_name, serialized_proto, is_json_format);
 }
 
-grpc::string ProtoFileParser::GetJsonFormatFromMethod(
-    const grpc::string& method, const grpc::string& serialized_proto,
-    bool is_request) {
-  has_error_ = false;
-  grpc::string message_type_name = GetMessageTypeFromMethod(method, is_request);
-  if (has_error_) {
-    return "";
-  }
-  return GetJsonFormatFromMessageType(message_type_name, serialized_proto);
-}
-
-grpc::string ProtoFileParser::GetSerializedProtoFromMessageTypeTextFormat(
+grpc::string ProtoFileParser::GetSerializedProtoFromMessageType(
     const grpc::string& message_type_name,
-    const grpc::string& text_format_proto) {
+    const grpc::string& formatted_proto,
+    bool is_json_format) {
   has_error_ = false;
   grpc::string serialized;
   const protobuf::Descriptor* desc =
@@ -275,11 +253,23 @@ grpc::string ProtoFileParser::GetSerializedProtoFromMessageTypeTextFormat(
   }
   std::unique_ptr<grpc::protobuf::Message> msg(
       dynamic_factory_->GetPrototype(desc)->New());
-  bool ok = protobuf::TextFormat::ParseFromString(text_format_proto, msg.get());
-  if (!ok) {
-    LogError("Failed to parse text format to proto.");
-    return "";
+
+  bool ok;
+  if (is_json_format) {
+    ok = grpc::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
+        .ok();
+    if (!ok) {
+      LogError("Failed to convert json format to proto.");
+      return "";
+    }
+  } else {
+    ok = protobuf::TextFormat::ParseFromString(formatted_proto, msg.get());
+    if (!ok) {
+      LogError("Failed to convert text format to proto.");
+      return "";
+    }
   }
+
   ok = msg->SerializeToString(&serialized);
   if (!ok) {
     LogError("Failed to serialize proto.");
@@ -288,35 +278,10 @@ grpc::string ProtoFileParser::GetSerializedProtoFromMessageTypeTextFormat(
   return serialized;
 }
 
-grpc::string ProtoFileParser::GetSerializedProtoFromMessageTypeJsonFormat(
+grpc::string ProtoFileParser::GetFormattedStringFromMessageType(
     const grpc::string& message_type_name,
-    const grpc::string& json_format_proto) {
-  has_error_ = false;
-  grpc::string serialized;
-  const protobuf::Descriptor* desc =
-      desc_pool_->FindMessageTypeByName(message_type_name);
-  if (!desc) {
-    LogError("Message type not found");
-    return "";
-  }
-  std::unique_ptr<grpc::protobuf::Message> msg(
-      dynamic_factory_->GetPrototype(desc)->New());
-
-  if (!grpc::protobuf::json::JsonStringToMessage(json_format_proto, msg.get()).ok()) {
-    LogError("Failed to parse json format to proto.");
-    return "";
-  }
-  bool ok = msg->SerializeToString(&serialized);
-  if (!ok) {
-    LogError("Failed to serialize proto.");
-    return "";
-  }
-  return serialized;
-}
-
-grpc::string ProtoFileParser::GetTextFormatFromMessageType(
-    const grpc::string& message_type_name,
-    const grpc::string& serialized_proto) {
+    const grpc::string& serialized_proto,
+    bool is_json_format) {
   has_error_ = false;
   const protobuf::Descriptor* desc =
       desc_pool_->FindMessageTypeByName(message_type_name);
@@ -330,38 +295,24 @@ grpc::string ProtoFileParser::GetTextFormatFromMessageType(
     LogError("Failed to deserialize proto.");
     return "";
   }
-  grpc::string text_format;
-  if (!protobuf::TextFormat::PrintToString(*msg.get(), &text_format)) {
-    LogError("Failed to print proto message to text format");
-    return "";
-  }
-  return text_format;
-}
+  grpc::string formatted_string;
 
-grpc::string ProtoFileParser::GetJsonFormatFromMessageType(
-    const grpc::string& message_type_name,
-    const grpc::string& serialized_proto) {
-  has_error_ = false;
-  const protobuf::Descriptor* desc =
-      desc_pool_->FindMessageTypeByName(message_type_name);
-  if (!desc) {
-    LogError("Message type not found");
-    return "";
+  if (is_json_format) {
+    grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
+    jsonPrintOptions.add_whitespace = true;
+    if (!grpc::protobuf::json::MessageToJsonString(*msg.get(),
+                                                   &formatted_string,
+                                                   jsonPrintOptions).ok()) {
+      LogError("Failed to print proto message to json format");
+      return "";
+    }
+  } else {
+    if (!protobuf::TextFormat::PrintToString(*msg.get(), &formatted_string)) {
+      LogError("Failed to print proto message to text format");
+      return "";
+    }
   }
-  std::unique_ptr<grpc::protobuf::Message> msg(
-      dynamic_factory_->GetPrototype(desc)->New());
-  if (!msg->ParseFromString(serialized_proto)) {
-    LogError("Failed to deserialize proto.");
-    return "";
-  }
-  grpc::string json_format;
-  grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
-  jsonPrintOptions.add_whitespace = true;
-  if (!grpc::protobuf::json::MessageToJsonString(*msg.get(), &json_format, jsonPrintOptions).ok()) {
-    LogError("Failed to print proto message to json format");
-    return "";
-  }
-  return json_format;
+  return formatted_string;
 }
 
 void ProtoFileParser::LogError(const grpc::string& error_msg) {
