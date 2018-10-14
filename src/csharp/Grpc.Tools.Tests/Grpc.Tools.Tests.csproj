@@ -28,7 +28,12 @@
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.8.3" />
     <PackageReference Include="NUnit; NUnitLite" Version="3.10.1" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
   </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.v4.0" />
@@ -62,12 +67,12 @@
          and does not define any types at all). Exclude them from assembly resolution. See
          https://github.com/Microsoft/msbuild/blob/50639058f/documentation/wiki/ResolveAssemblyReference.md -->
     <AssemblySearchPaths>{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</AssemblySearchPaths>
-    <!-- Locate Mono's copy of MSBuild assemblies for cross-build. -->
-    <_MSBuildAssemblyPath Condition=" '$(MSBuildRuntimeType)' == 'Core' "
-                          >$(FrameworkPathOverride)/../msbuild/$(MSBuildToolsVersion)/bin</_MSBuildAssemblyPath>
-    <!-- Use Mono-provided patch for Mono build. -->
+    <!-- Mono knows better where its MSBuild is. -->
     <_MSBuildAssemblyPath Condition=" '$(MSBuildRuntimeType)' != 'Core' "
                           >$(MSBuildToolsPath)</_MSBuildAssemblyPath>
+    <!-- Under dotnet, make the best guess we can. -->
+    <_MSBuildAssemblyPath Condition=" '$(MSBuildRuntimeType)' == 'Core' "
+                          >$(FrameworkPathOverride)/../msbuild/$(MSBuildToolsVersion)/bin</_MSBuildAssemblyPath>
   </PropertyGroup>
 
 </Project>
