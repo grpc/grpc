@@ -151,9 +151,9 @@ class LoadBalancingPolicy
   /// LB policy's referenced children. This is not invoked from the
   /// client_channel's combiner. The implementation is responsible for
   /// providing its own synchronization.
-  virtual void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                        ChildRefsList* child_channels)
-      GRPC_ABSTRACT;
+  virtual void FillChildRefsForChannelz(
+      channelz::ChildRefsList* child_subchannels,
+      channelz::ChildRefsList* child_channels) GRPC_ABSTRACT;
 
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
@@ -212,8 +212,8 @@ class LoadBalancingPolicy
   // Dummy classes needed for alignment issues.
   // See https://github.com/grpc/grpc/issues/16032 for context.
   // TODO(ncteisen): remove this as soon as the issue is resolved.
-  ChildRefsList dummy_list_foo;
-  ChildRefsList dummy_list_bar;
+  channelz::ChildRefsList dummy_list_foo;
+  channelz::ChildRefsList dummy_list_bar;
 };
 
 }  // namespace grpc_core
