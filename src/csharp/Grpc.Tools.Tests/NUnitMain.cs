@@ -19,13 +19,15 @@
 using System.Reflection;
 using NUnitLite;
 
-namespace Grpc.Tools.Tests {
-  static class NUnitMain {
-    public static int Main(string[] args) =>
+namespace Grpc.Tools.Tests
+{
+    static class NUnitMain
+    {
+        public static int Main(string[] args) =>
 #if NETCOREAPP1_0 || NETCOREAPP1_1
-      new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
+            new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
 #else
-      new AutoRun().Execute(args);
+            new AutoRun().Execute(args);
 #endif
-  };
+    };
 }

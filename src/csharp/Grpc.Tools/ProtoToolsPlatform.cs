@@ -19,40 +19,45 @@
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace Grpc.Tools {
-  /// <summary>
-  /// A helper task to resolve actual OS type and bitness.
-  /// </summary>
-  public class ProtoToolsPlatform : Task {
+namespace Grpc.Tools
+{
     /// <summary>
-    /// Return one of 'linux', 'macosx' or 'windows'.
-    /// If the OS is unknown, the property is not set.
+    /// A helper task to resolve actual OS type and bitness.
     /// </summary>
-    [Output]
-    public string Os { get; set; }
+    public class ProtoToolsPlatform : Task
+    {
+        /// <summary>
+        /// Return one of 'linux', 'macosx' or 'windows'.
+        /// If the OS is unknown, the property is not set.
+        /// </summary>
+        [Output]
+        public string Os { get; set; }
 
-    /// <summary>
-    /// Return one of 'x64' or 'x86'.
-    /// If the CPU is unknown, the property is not set.
-    /// </summary>
-    [Output]
-    public string Cpu { get; set; }
+        /// <summary>
+        /// Return one of 'x64' or 'x86'.
+        /// If the CPU is unknown, the property is not set.
+        /// </summary>
+        [Output]
+        public string Cpu { get; set; }
 
 
-    public override bool Execute() {
-      switch (Platform.Os) {
-        case Platform.OsKind.Linux: Os = "linux"; break;
-        case Platform.OsKind.MacOsX: Os = "macosx"; break;
-        case Platform.OsKind.Windows: Os = "windows"; break;
-        default: Os = ""; break;
-      }
+        public override bool Execute()
+        {
+            switch (Platform.Os)
+            {
+                case Platform.OsKind.Linux: Os = "linux"; break;
+                case Platform.OsKind.MacOsX: Os = "macosx"; break;
+                case Platform.OsKind.Windows: Os = "windows"; break;
+                default: Os = ""; break;
+            }
 
-      switch (Platform.Cpu) {
-        case Platform.CpuKind.X86: Cpu = "x86"; break;
-        case Platform.CpuKind.X64: Cpu = "x64"; break;
-        default: Cpu = ""; break;
-      }
-      return true;
-    }
-  };
+            switch (Platform.Cpu)
+            {
+                case Platform.CpuKind.X86: Cpu = "x86"; break;
+                case Platform.CpuKind.X64: Cpu = "x64"; break;
+                default: Cpu = ""; break;
+            }
+            return true;
+        }
+    };
 }

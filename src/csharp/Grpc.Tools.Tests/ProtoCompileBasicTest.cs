@@ -21,50 +21,56 @@ using Microsoft.Build.Framework;
 using Moq;
 using NUnit.Framework;
 
-namespace Grpc.Tools.Tests {
-  public class ProtoCompileBasicTest {
-    // Mock task class that stops right before invoking protoc.
-    public class ProtoCompileTestable : ProtoCompile {
-      public string LastPathToTool { get; private set; }
-      public string[] LastResponseFile { get; private set; }
+namespace Grpc.Tools.Tests
+{
+    public class ProtoCompileBasicTest
+    {
+        // Mock task class that stops right before invoking protoc.
+        public class ProtoCompileTestable : ProtoCompile
+        {
+            public string LastPathToTool { get; private set; }
+            public string[] LastResponseFile { get; private set; }
 
-      protected override int ExecuteTool(string pathToTool,
-                                         string response,
-                                         string commandLine) {
-        // We should never be using command line commands.
-        Assert.That(commandLine, Is.Null | Is.Empty);
+            protected override int ExecuteTool(string pathToTool,
+                                               string response,
+                                               string commandLine)
+            {
+                // We should never be using command line commands.
+                Assert.That(commandLine, Is.Null | Is.Empty);
 
-        // Must receive a path to tool
-        Assert.That(pathToTool, Is.Not.Null & Is.Not.Empty);
-        Assert.That(response, Is.Not.Null & Does.EndWith("\n"));
+                // Must receive a path to tool
+                Assert.That(pathToTool, Is.Not.Null & Is.Not.Empty);
+                Assert.That(response, Is.Not.Null & Does.EndWith("\n"));
 
-        LastPathToTool = pathToTool;
-        LastResponseFile = response.Remove(response.Length - 1).Split('\n');
+                LastPathToTool = pathToTool;
+                LastResponseFile = response.Remove(response.Length - 1).Split('\n');
 
-        // Do not run the tool, but pretend it ran successfully.
-        return 0;
-      }
+                // Do not run the tool, but pretend it ran successfully.
+                return 0;
+            }
+        };
+
+        protected Mock<IBuildEngine> _mockEngine;
+        protected ProtoCompileTestable _task;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _mockEngine = new Mock<IBuildEngine>();
+            _task = new ProtoCompileTestable {
+                BuildEngine = _mockEngine.Object
+            };
+        }
+
+        [TestCase("ProtoBuf")]
+        [TestCase("Generator")]
+        [TestCase("OutputDir")]
+        [Description("We trust MSBuild to initialize these properties.")]
+        public void RequiredAttributePresentOnProperty(string prop)
+        {
+            var pinfo = _task.GetType()?.GetProperty(prop);
+            Assert.NotNull(pinfo);
+            Assert.That(pinfo, Has.Attribute<RequiredAttribute>());
+        }
     };
-
-    protected Mock<IBuildEngine> _mockEngine;
-    protected ProtoCompileTestable _task;
-
-    [SetUp]
-    public void SetUp() {
-      _mockEngine = new Mock<IBuildEngine>();
-      _task = new ProtoCompileTestable {
-        BuildEngine = _mockEngine.Object
-      };
-    }
-
-    [TestCase("ProtoBuf")]
-    [TestCase("Generator")]
-    [TestCase("OutputDir")]
-    [Description("We trust MSBuild to initialize these properties.")]
-    public void RequiredAttributePresentOnProperty(string prop) {
-      var pinfo = _task.GetType()?.GetProperty(prop);
-      Assert.NotNull(pinfo);
-      Assert.That(pinfo, Has.Attribute<RequiredAttribute>());
-    }
-  };
 }
