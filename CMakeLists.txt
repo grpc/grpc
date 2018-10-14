@@ -5249,6 +5249,7 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
+  test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
   test/cpp/qps/parse_json.cc
