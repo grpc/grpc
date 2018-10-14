@@ -7,9 +7,11 @@
     <Protobuf_ToolingRevision>1</Protobuf_ToolingRevision>
 
     <!-- For a Visual Studio C++ native project we currently only resolve tools and import paths. -->
-    <Protobuf_ProtocFullPath>$(MSBuildThisFileDirectory)bin\windows\protoc.exe</Protobuf_ProtocFullPath>
-    <Protobuf_StandardImportsPath>$(MSBuildThisFileDirectory)bin\include\</Protobuf_StandardImportsPath>
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
+    <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
+    <Protobuf_ProtocFullPath>$(MSBuildThisFileDirectory)..\..\tools\windows_x86\protoc.exe</Protobuf_ProtocFullPath>
+    <Protobuf_StandardImportsPath>$(MSBuildThisFileDirectory)include\</Protobuf_StandardImportsPath>
     <gRPC_PluginFileName>grpc_cpp_plugin</gRPC_PluginFileName>
-    <gRPC_PluginFullPath>$(MSBuildThisFileDirectory)bin\windows\grpc_cpp_plugin.exe</gRPC_PluginFullPath>
+    <gRPC_PluginFullPath>$(MSBuildThisFileDirectory)..\..\tools\windows_x86\grpc_cpp_plugin.exe</gRPC_PluginFullPath>
   </PropertyGroup>
 </Project>

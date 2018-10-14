@@ -6,9 +6,10 @@
     <!-- Revision number of this package conventions (as if "API" version). -->
     <Protobuf_ToolingRevision>1</Protobuf_ToolingRevision>
 
-    <!-- TODO(kkm): Remove "../" when separating packages. -->
-    <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/) )</Protobuf_PackagedToolsPath>
-    <Protobuf_StandardImportsPath>$(Protobuf_PackagedToolsPath)include</Protobuf_StandardImportsPath>
+    <!-- TODO(kkm): Remove one "../" when separating packages. -->
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
+    <Protobuf_PackagedToolsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../../tools) )</Protobuf_PackagedToolsPath>
+    <Protobuf_StandardImportsPath>$( [System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)../native/include) )</Protobuf_StandardImportsPath>
   </PropertyGroup>
 
   <!-- NET SDK projects only: include proto files by default. Other project

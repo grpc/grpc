@@ -74,10 +74,11 @@
       <!-- Next try OS and CPU resolved by ProtoToolsPlatform. -->
       <Protobuf_ToolsOs Condition=" '$(Protobuf_ToolsOs)' == '' ">$(_Protobuf_ToolsOs)</Protobuf_ToolsOs>
       <Protobuf_ToolsCpu Condition=" '$(Protobuf_ToolsCpu)' == '' ">$(_Protobuf_ToolsCpu)</Protobuf_ToolsCpu>
+      <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
-           >$(Protobuf_PackagedToolsPath)bin\$(Protobuf_ToolsOs)\protoc.exe</Protobuf_ProtocFullPath>
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_x86\protoc.exe</Protobuf_ProtocFullPath>
       <Protobuf_ProtocFullPath Condition=" '$(Protobuf_ProtocFullPath)' == '' "
-           >$(Protobuf_PackagedToolsPath)bin/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/protoc</Protobuf_ProtocFullPath>
+           >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/protoc</Protobuf_ProtocFullPath>
     </PropertyGroup>
 
     <Error Condition=" '$(DesignTimeBuild)' != 'true' and '$(PROTOBUF_PROTOC)' == ''

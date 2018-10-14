@@ -67,18 +67,22 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
 
     <!-- TODO(kkm): GPB builds assets into "macosx", GRPC into "macos". -->
-    <_Asset PackagePath="build/native/bin/windows/" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
-    <_Asset PackagePath="build/native/bin/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
-    <_Asset PackagePath="build/native/bin/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
-    <_Asset PackagePath="build/native/bin/macosx_x86/" Include="$(Assets_ProtoCompiler)macos_x86/protoc" /> <!-- GPB: macosx-->
-    <_Asset PackagePath="build/native/bin/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
+    <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
+    <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
+    <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_ProtoCompiler)windows_x64/protoc.exe" />
+    <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
+    <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
+    <_Asset PackagePath="tools/macosx_x86/" Include="$(Assets_ProtoCompiler)macos_x86/protoc" /> <!-- GPB: macosx-->
+    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
 
     <!-- gRPC assets (for Grpc.Tools) -->
-    <_Asset PackagePath="build/native/bin/windows/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
-    <_Asset PackagePath="build/native/bin/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/macosx_x86/" Include="$(Assets_GrpcPlugins)protoc_macos_x86/grpc_csharp_plugin" />
-    <_Asset PackagePath="build/native/bin/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
+    <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_GrpcPlugins)protoc_windows_x64/grpc_csharp_plugin.exe" />
+    <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/macosx_x86/" Include="$(Assets_GrpcPlugins)protoc_macos_x86/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
 
     <None Include="@(_Asset)" Pack="true" Visible="false" />
   </ItemGroup>
