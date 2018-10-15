@@ -32,7 +32,7 @@ cdef class _ArgumentProcessor:
 
   cdef grpc_arg c_argument
 
-  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references)
+  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *
 
 
 cdef class _ArgumentsProcessor:
@@ -42,5 +42,5 @@ cdef class _ArgumentsProcessor:
   cdef readonly list _references
   cdef grpc_channel_args _c_arguments
 
-  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable)
+  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *
   cdef un_c(self)

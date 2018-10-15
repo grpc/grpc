@@ -7092,19 +7092,6 @@
   {
     "deps": [
       "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "grpc_dll", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
@@ -7849,6 +7836,7 @@
       "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/client_async.cc", 
+      "test/cpp/qps/client_callback.cc", 
       "test/cpp/qps/client_sync.cc", 
       "test/cpp/qps/driver.cc", 
       "test/cpp/qps/driver.h", 
@@ -10664,7 +10652,6 @@
       "src/core/ext/transport/chttp2/transport/frame_settings.h", 
       "src/core/ext/transport/chttp2/transport/frame_window_update.h", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.h", 
       "src/core/ext/transport/chttp2/transport/http2_settings.h", 
@@ -10702,8 +10689,6 @@
       "src/core/ext/transport/chttp2/transport/frame_window_update.h", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.cc", 
       "src/core/ext/transport/chttp2/transport/hpack_encoder.h", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.cc", 
-      "src/core/ext/transport/chttp2/transport/hpack_mapping.h", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.cc", 
       "src/core/ext/transport/chttp2/transport/hpack_parser.h", 
       "src/core/ext/transport/chttp2/transport/hpack_table.cc", 
@@ -11106,6 +11091,7 @@
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -11113,6 +11099,7 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
@@ -11174,6 +11161,7 @@
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
+      "include/grpcpp/impl/codegen/client_interceptor.h", 
       "include/grpcpp/impl/codegen/client_unary_call.h", 
       "include/grpcpp/impl/codegen/completion_queue.h", 
       "include/grpcpp/impl/codegen/completion_queue_tag.h", 
@@ -11181,6 +11169,7 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/interceptor.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 

@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/transport/chttp2/transport/hpack_mapping.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -389,9 +388,10 @@ size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
 
 uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
   if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    return grpc_hpack_static_mdelem_indices[GRPC_MDELEM_DATA(md) -
-                                            grpc_static_mdelem_table];
-  } else {
-    return 0;
+    uint8_t index = GRPC_MDELEM_DATA(md) - grpc_static_mdelem_table;
+    if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      return index + 1;  // Hpack static metadata element indices start at 1
+    }
   }
+  return 0;
 }

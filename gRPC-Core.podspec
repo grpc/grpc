@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.16.0-dev'
+  version = '1.17.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -263,7 +263,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
@@ -682,7 +681,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.cc',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
-                      'src/core/ext/transport/chttp2/transport/hpack_mapping.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.cc',
                       'src/core/ext/transport/chttp2/transport/hpack_table.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
@@ -870,7 +868,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                              'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',

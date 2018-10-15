@@ -505,7 +505,7 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_redirect_log_delegate(GprLogDelegate callback);
             public delegate CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin_delegate(NativeMetadataInterceptor interceptor);
             public delegate void grpcsharp_metadata_credentials_notify_from_plugin_delegate(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
-            public delegate ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_delegate(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, int forceClientAuth);
+            public delegate ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create_delegate(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
             public delegate void grpcsharp_server_credentials_release_delegate(IntPtr credentials);
             public delegate ServerSafeHandle grpcsharp_server_create_delegate(ChannelArgsSafeHandle args);
             public delegate void grpcsharp_server_register_completion_queue_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq);
@@ -752,7 +752,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
             
             [DllImport(ImportName)]
-            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, int forceClientAuth);
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_server_credentials_release(IntPtr credentials);
@@ -1045,7 +1045,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
             
             [DllImport(ImportName)]
-            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, int forceClientAuth);
+            public static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, SslClientCertificateRequestType clientCertificateRequest);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_server_credentials_release(IntPtr credentials);

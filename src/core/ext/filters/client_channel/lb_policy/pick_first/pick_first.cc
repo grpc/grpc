@@ -59,8 +59,8 @@ class PickFirst : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                ChildRefsList* ignored) override;
+  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
+                                channelz::ChildRefsList* ignored) override;
 
  private:
   ~PickFirst();
@@ -147,8 +147,8 @@ class PickFirst : public LoadBalancingPolicy {
   /// Lock and data used to capture snapshots of this channels child
   /// channels and subchannels. This data is consumed by channelz.
   gpr_mu child_refs_mu_;
-  ChildRefsList child_subchannels_;
-  ChildRefsList child_channels_;
+  channelz::ChildRefsList child_subchannels_;
+  channelz::ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
@@ -300,7 +300,8 @@ void PickFirst::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 }
 
 void PickFirst::FillChildRefsForChannelz(
-    ChildRefsList* child_subchannels_to_fill, ChildRefsList* ignored) {
+    channelz::ChildRefsList* child_subchannels_to_fill,
+    channelz::ChildRefsList* ignored) {
   MutexLock lock(&child_refs_mu_);
   for (size_t i = 0; i < child_subchannels_.size(); ++i) {
     // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
@@ -320,7 +321,7 @@ void PickFirst::FillChildRefsForChannelz(
 }
 
 void PickFirst::UpdateChildRefsLocked() {
-  ChildRefsList cs;
+  channelz::ChildRefsList cs;
   if (subchannel_list_ != nullptr) {
     subchannel_list_->PopulateChildRefsList(&cs);
   }

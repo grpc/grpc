@@ -13,8 +13,6 @@
 # limitations under the License.
 """Interceptor that adds headers to outgoing requests."""
 
-import collections
-
 import grpc
 
 

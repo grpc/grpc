@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.16.0-dev'
+  # version = '1.17.0-dev'
   version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.16.0-dev'
+  grpc_version = '1.17.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -132,6 +132,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/channel_interface.h',
                       'include/grpcpp/impl/codegen/client_callback.h',
                       'include/grpcpp/impl/codegen/client_context.h',
+                      'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
                       'include/grpcpp/impl/codegen/completion_queue_tag.h',
@@ -139,6 +140,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/grpc_library.h',
+                      'include/grpcpp/impl/codegen/interceptor.h',
                       'include/grpcpp/impl/codegen/metadata_map.h',
                       'include/grpcpp/impl/codegen/method_handler_impl.h',
                       'include/grpcpp/impl/codegen/rpc_method.h',
@@ -252,7 +254,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_mapping.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',

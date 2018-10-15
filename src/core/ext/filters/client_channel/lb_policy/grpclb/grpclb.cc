@@ -136,8 +136,9 @@ class GrpcLb : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                ChildRefsList* child_channels) override;
+  void FillChildRefsForChannelz(
+      channelz::ChildRefsList* child_subchannels,
+      channelz::ChildRefsList* child_channels) override;
 
  private:
   /// Linked list of pending pick requests. It stores all information needed to
@@ -1258,8 +1259,9 @@ bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
   return pick_done;
 }
 
-void GrpcLb::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                      ChildRefsList* child_channels) {
+void GrpcLb::FillChildRefsForChannelz(
+    channelz::ChildRefsList* child_subchannels,
+    channelz::ChildRefsList* child_channels) {
   // delegate to the RoundRobin to fill the children subchannels.
   rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
   MutexLock lock(&lb_channel_mu_);
@@ -1489,7 +1491,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
         grpclb_policy->lb_call_backoff_.Reset();
         grpclb_policy->StartBalancerCallLocked();
       }
-      // Fall through.
+      // fallthrough
     case GRPC_CHANNEL_SHUTDOWN:
     done:
       grpclb_policy->watching_lb_channel_ = false;
