@@ -108,7 +108,9 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_stats_data* after =
       static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
 
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc_stats_collect(before);
+#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
