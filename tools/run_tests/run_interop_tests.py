@@ -1378,8 +1378,7 @@ try:
                                 transport_security='tls')
                             jobs.append(tls_test_job)
                             if str(language) in [
-                                    'c++',
-                                    'go',
+                                    'go'
                             ]:  # Add more languages to the list to turn on tests.
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,

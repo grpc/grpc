@@ -981,4 +981,7 @@ class Channel(grpc.Channel):
         # then deletion of this grpc._channel.Channel instance can be made to
         # effect closure of the underlying cygrpc.Channel instance.
         cygrpc.fork_unregister_channel(self)
-        _moot(self._connectivity_state)
+        # This prevent the failed-at-initializing object removal from failing.
+        # Though the __init__ failed, the removal will still trigger __del__.
+        if hasattr(self, "_connectivity_state"):
+            _moot(self._connectivity_state)
