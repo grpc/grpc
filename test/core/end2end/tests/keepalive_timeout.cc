@@ -195,7 +195,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
 
   char* details_str = grpc_slice_to_c_string(details);
   char* method_str = grpc_slice_to_c_string(call_details.method);
-  GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
+  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
 

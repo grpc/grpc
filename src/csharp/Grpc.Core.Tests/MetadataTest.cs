@@ -73,6 +73,23 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void KeysAreNormalized_UppercaseKey()
+        {
+            var uppercaseKey = "ABC";
+            var entry = new Metadata.Entry(uppercaseKey, "XYZ");
+            Assert.AreEqual("abc", entry.Key);
+        }
+
+        [Test]
+        public void KeysAreNormalized_LowercaseKey()
+        {
+            var lowercaseKey = "abc";
+            var entry = new Metadata.Entry(lowercaseKey, "XYZ");
+            // no allocation if key already lowercase
+            Assert.AreSame(lowercaseKey, entry.Key);
+        }
+
+        [Test]
         public void Entry_ConstructionPreconditions()
         {
             Assert.Throws(typeof(ArgumentNullException), () => new Metadata.Entry(null, "xyz"));

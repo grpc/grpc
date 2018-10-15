@@ -49,6 +49,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/status_metadata.h"
 
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
@@ -144,6 +146,11 @@ struct grpc_subchannel {
 struct grpc_subchannel_call {
   grpc_core::ConnectedSubchannel* connection;
   grpc_closure* schedule_closure_after_destroy;
+  // state needed to support channelz interception of recv trailing metadata.
+  grpc_closure recv_trailing_metadata_ready;
+  grpc_closure* original_recv_trailing_metadata;
+  grpc_metadata_batch* recv_trailing_metadata;
+  grpc_millis deadline;
 };
 
 #define SUBCHANNEL_CALL_TO_CALL_STACK(call)                          \
@@ -388,16 +395,18 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
-  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
-  arg = grpc_channel_args_find(c->args,
-                               GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-  const grpc_integer_options options = {0, 0, INT_MAX};
-  size_t channel_tracer_max_nodes =
+  bool channelz_enabled =
+      grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT);
+  arg = grpc_channel_args_find(
+      c->args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE);
+  const grpc_integer_options options = {
+      GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
+  size_t channel_tracer_max_memory =
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     c->channelz_subchannel =
         grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
-            c, channel_tracer_max_nodes);
+            c, channel_tracer_max_memory);
     c->channelz_subchannel->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
@@ -409,6 +418,14 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
     grpc_subchannel* subchannel) {
   return subchannel->channelz_subchannel.get();
+}
+
+intptr_t grpc_subchannel_get_child_socket_uuid(grpc_subchannel* subchannel) {
+  if (subchannel->connected_subchannel != nullptr) {
+    return subchannel->connected_subchannel->socket_uuid();
+  } else {
+    return 0;
+  }
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
@@ -621,6 +638,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
     GRPC_ERROR_UNREF(error);
     return false;
   }
+  intptr_t socket_uuid = c->connecting_result.socket_uuid;
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
@@ -641,7 +659,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
 
   /* publish */
   c->connected_subchannel.reset(grpc_core::New<grpc_core::ConnectedSubchannel>(
-      stk, c->channelz_subchannel.get()));
+      stk, c->channelz_subchannel, socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 
@@ -734,9 +752,68 @@ void grpc_subchannel_call_unref(
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
 }
 
+// Sets *status based on md_batch and error.
+static void get_call_status(grpc_subchannel_call* call,
+                            grpc_metadata_batch* md_batch, grpc_error* error,
+                            grpc_status_code* status) {
+  if (error != GRPC_ERROR_NONE) {
+    grpc_error_get_status(error, call->deadline, status, nullptr, nullptr,
+                          nullptr);
+  } else {
+    GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
+    *status =
+        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
+static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
+  grpc_subchannel_call* call = static_cast<grpc_subchannel_call*>(arg);
+  GPR_ASSERT(call->recv_trailing_metadata != nullptr);
+  grpc_status_code status = GRPC_STATUS_OK;
+  grpc_metadata_batch* md_batch = call->recv_trailing_metadata;
+  get_call_status(call, md_batch, GRPC_ERROR_REF(error), &status);
+  grpc_core::channelz::SubchannelNode* channelz_subchannel =
+      call->connection->channelz_subchannel();
+  GPR_ASSERT(channelz_subchannel != nullptr);
+  if (status == GRPC_STATUS_OK) {
+    channelz_subchannel->RecordCallSucceeded();
+  } else {
+    channelz_subchannel->RecordCallFailed();
+  }
+  GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata,
+                   GRPC_ERROR_REF(error));
+}
+
+// If channelz is enabled, intercept recv_trailing so that we may check the
+// status and associate it to a subchannel.
+static void maybe_intercept_recv_trailing_metadata(
+    grpc_subchannel_call* call, grpc_transport_stream_op_batch* batch) {
+  // only intercept payloads with recv trailing.
+  if (!batch->recv_trailing_metadata) {
+    return;
+  }
+  // only add interceptor is channelz is enabled.
+  if (call->connection->channelz_subchannel() == nullptr) {
+    return;
+  }
+  GRPC_CLOSURE_INIT(&call->recv_trailing_metadata_ready,
+                    recv_trailing_metadata_ready, call,
+                    grpc_schedule_on_exec_ctx);
+  // save some state needed for the interception callback.
+  GPR_ASSERT(call->recv_trailing_metadata == nullptr);
+  call->recv_trailing_metadata =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+  call->original_recv_trailing_metadata =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+      &call->recv_trailing_metadata_ready;
+}
+
 void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
                                      grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("grpc_subchannel_call_process_op", 0);
+  maybe_intercept_recv_trailing_metadata(call, batch);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
@@ -811,10 +888,13 @@ namespace grpc_core {
 
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack,
-    channelz::SubchannelNode* channelz_subchannel)
+    grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+        channelz_subchannel,
+    intptr_t socket_uuid)
     : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack),
-      channelz_subchannel_(channelz_subchannel) {}
+      channelz_subchannel_(std::move(channelz_subchannel)),
+      socket_uuid_(socket_uuid) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
@@ -860,6 +940,7 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       Ref(DEBUG_LOCATION, "subchannel_call");
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
+  (*call)->deadline = args.deadline;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */

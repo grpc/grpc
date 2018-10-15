@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 6.0.0-dev
-  g_stands_for: gao
-  version: 1.16.0-dev
+  core_version: 7.0.0-dev
+  g_stands_for: gizmo
+  version: 1.17.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -934,7 +934,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_mapping.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -956,7 +955,6 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
-  - src/core/ext/transport/chttp2/transport/hpack_mapping.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -1173,6 +1171,7 @@ filegroups:
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
   - include/grpcpp/impl/codegen/client_context.h
+  - include/grpcpp/impl/codegen/client_interceptor.h
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -1180,6 +1179,7 @@ filegroups:
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/grpc_library.h
+  - include/grpcpp/impl/codegen/interceptor.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
@@ -1437,7 +1437,6 @@ libs:
   filegroups:
   - gpr_base
   secure: false
-  vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
 - name: gpr_test_util
   build: private
   language: c
@@ -1448,7 +1447,6 @@ libs:
   deps:
   - gpr
   secure: false
-  vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
 - name: grpc
   build: all
   language: c
@@ -1481,10 +1479,6 @@ libs:
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: true
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
 - name: grpc_cronet
   build: all
   language: c
@@ -1501,27 +1495,6 @@ libs:
   platforms:
   - linux
   secure: true
-- name: grpc_dll
-  build: private
-  language: c
-  src: []
-  deps:
-  - gpr
-  - grpc
-  build_system:
-  - visual_studio
-  deps_linkage: static
-  dll_def: grpc.def
-  vs_config_type: DynamicLibrary
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{A2F6CBBA-A553-41B3-A7DE-F26DECCC27F0}'
-  vs_props:
-  - zlib
-  - openssl
-  - winsock
-  - global
 - name: grpc_test_util
   build: private
   language: c
@@ -1540,7 +1513,6 @@ libs:
   - grpc
   filegroups:
   - grpc_test_util_base
-  vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1551,7 +1523,6 @@ libs:
   filegroups:
   - grpc_test_util_base
   secure: false
-  vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
 - name: grpc_unsecure
   build: all
   language: c
@@ -1582,7 +1553,6 @@ libs:
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
   secure: false
-  vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: reconnect_server
   build: private
   language: c
@@ -1636,7 +1606,6 @@ libs:
   - grpc++_codegen_proto
   - grpc++_codegen_base_src
   secure: check
-  vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -1682,7 +1651,6 @@ libs:
   deps:
   - grpc++
   baselib: true
-  vs_project_guid: '{9F58AD72-49E1-4D10-B826-9E190AB0AAC0}'
 - name: grpc++_proto_reflection_desc_db
   build: private
   language: c++
@@ -1795,7 +1763,6 @@ libs:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
   secure: false
-  vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_benchmark
   build: test
   language: c++
@@ -1870,9 +1837,6 @@ libs:
   filegroups:
   - grpc++_config_proto
   secure: false
-  vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
-  vs_props:
-  - protoc
 - name: grpcpp_channelz
   build: all
   language: c++
@@ -2001,6 +1965,7 @@ libs:
   - src/proto/grpc/testing/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
+  - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/parse_json.cc
@@ -2027,16 +1992,6 @@ libs:
   LDFLAGS: $(if $(subst Linux,,$(SYSTEM)),,-Wl$(comma)-wrap$(comma)memcpy)
   deps_linkage: static
   dll: only
-  vs_config_type: DynamicLibrary
-  vs_packages:
-  - grpc.dependencies.openssl
-  - grpc.dependencies.zlib
-  vs_project_guid: '{D64C6D63-4458-4A88-AB38-35678384A7E4}'
-  vs_props:
-  - zlib
-  - openssl
-  - winsock
-  - global
 targets:
 - name: algorithm_test
   build: test
@@ -4732,8 +4687,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -4742,8 +4695,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
 - name: grpc_linux_system_roots_test
   gtest: true
   build: test
@@ -4763,7 +4714,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
@@ -4772,8 +4722,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
 - name: grpc_php_plugin
   build: protoc
   language: c++
@@ -4782,7 +4730,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
 - name: grpc_python_plugin
   build: protoc
   language: c++
@@ -4791,8 +4738,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -4801,8 +4746,6 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
-  vs_config_type: Application
-  vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
 - name: grpc_tool_test
   gtest: true
   build: test
