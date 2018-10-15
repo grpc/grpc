@@ -332,11 +332,6 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_slices_no_unref(const grpc_slice& key,
-                                             const grpc_slice& value) {
-  return grpc_mdelem_create(key, value, nullptr);
-}
-
 grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
   bool changed = false;
   grpc_slice key_slice =

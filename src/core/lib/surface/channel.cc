@@ -336,9 +336,9 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_core::ExecCtx exec_ctx;
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, nullptr,
-      grpc_mdelem_from_slices_no_unref(GRPC_MDSTR_PATH, method),
+      grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
       host != nullptr
-          ? grpc_mdelem_from_slices_no_unref(GRPC_MDSTR_AUTHORITY, *host)
+          ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
           : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
 
@@ -352,9 +352,9 @@ grpc_call* grpc_channel_create_pollset_set_call(
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
-      grpc_mdelem_from_slices_no_unref(GRPC_MDSTR_PATH, method),
+      grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
       host != nullptr
-          ? grpc_mdelem_from_slices_no_unref(GRPC_MDSTR_AUTHORITY, *host)
+          ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
           : GRPC_MDNULL,
       deadline);
 }

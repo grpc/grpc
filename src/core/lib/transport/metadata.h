@@ -111,9 +111,6 @@ struct grpc_mdelem {
 /* Unrefs the slices. */
 grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
                                     const grpc_slice& value);
-/* Does not unref the slices. */
-grpc_mdelem grpc_mdelem_from_slices_no_unref(const grpc_slice& key,
-                                             const grpc_slice& value);
 
 /* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
    object as backing storage (so lifetimes should align) */
