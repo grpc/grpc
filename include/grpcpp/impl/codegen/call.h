@@ -624,6 +624,19 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : cq_tag_(this), return_tag_(this), call_(nullptr) {}
+
+  // The copy constructor and assignment operator reset the value of
+  // cq_tag_ and return_tag_ since those are only meaningful on a specific
+  // object, not across objects.
+  CallOpSet(const CallOpSet& other)
+      : cq_tag_(this), return_tag_(this), call_(other.call_) {}
+  CallOpSet& operator=(const CallOpSet& other) {
+    cq_tag_ = this;
+    return_tag_ = this;
+    call_ = other.call_;
+    return *this;
+  }
+
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
