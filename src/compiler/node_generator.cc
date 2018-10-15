@@ -252,6 +252,7 @@ grpc::string GenerateFile(const FileDescriptor* file,
     Printer out(&output_stream, '$');
 
     if (file->service_count() == 0) {
+      output = "// GENERATED CODE -- NO SERVICES IN PROTO";
       return output;
     }
     out.Print("// GENERATED CODE -- DO NOT EDIT!\n\n");
