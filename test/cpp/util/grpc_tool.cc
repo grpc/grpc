@@ -679,10 +679,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
                 break;
               }
             } else {
-              grpc::string response_text = parser->GetFormattedStringFromMethod(method_name,
-                                                      serialized_response_proto,
-                                                      false /* is_request */,
-                                                      FLAGS_json_output);
+              grpc::string response_text = parser->GetFormattedStringFromMethod(
+                  method_name, serialized_response_proto,
+                  false /* is_request */, FLAGS_json_output);
 
               if (parser->HasError() && print_mode) {
                 fprintf(stderr, "Failed to parse response.\n");

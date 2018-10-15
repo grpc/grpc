@@ -236,12 +236,12 @@ grpc::string ProtoFileParser::GetFormattedStringFromMethod(
   if (has_error_) {
     return "";
   }
-  return GetFormattedStringFromMessageType(message_type_name, serialized_proto, is_json_format);
+  return GetFormattedStringFromMessageType(message_type_name, serialized_proto,
+                                           is_json_format);
 }
 
 grpc::string ProtoFileParser::GetSerializedProtoFromMessageType(
-    const grpc::string& message_type_name,
-    const grpc::string& formatted_proto,
+    const grpc::string& message_type_name, const grpc::string& formatted_proto,
     bool is_json_format) {
   has_error_ = false;
   grpc::string serialized;
@@ -257,7 +257,7 @@ grpc::string ProtoFileParser::GetSerializedProtoFromMessageType(
   bool ok;
   if (is_json_format) {
     ok = grpc::protobuf::json::JsonStringToMessage(formatted_proto, msg.get())
-        .ok();
+             .ok();
     if (!ok) {
       LogError("Failed to convert json format to proto.");
       return "";
@@ -279,8 +279,7 @@ grpc::string ProtoFileParser::GetSerializedProtoFromMessageType(
 }
 
 grpc::string ProtoFileParser::GetFormattedStringFromMessageType(
-    const grpc::string& message_type_name,
-    const grpc::string& serialized_proto,
+    const grpc::string& message_type_name, const grpc::string& serialized_proto,
     bool is_json_format) {
   has_error_ = false;
   const protobuf::Descriptor* desc =
@@ -300,9 +299,9 @@ grpc::string ProtoFileParser::GetFormattedStringFromMessageType(
   if (is_json_format) {
     grpc::protobuf::json::JsonPrintOptions jsonPrintOptions;
     jsonPrintOptions.add_whitespace = true;
-    if (!grpc::protobuf::json::MessageToJsonString(*msg.get(),
-                                                   &formatted_string,
-                                                   jsonPrintOptions).ok()) {
+    if (!grpc::protobuf::json::MessageToJsonString(
+             *msg.get(), &formatted_string, jsonPrintOptions)
+             .ok()) {
       LogError("Failed to print proto message to json format");
       return "";
     }
