@@ -337,9 +337,8 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
   grpc_call* call = grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq, nullptr,
       grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
-      host != nullptr
-          ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
-          : GRPC_MDNULL,
+      host != nullptr ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
+                      : GRPC_MDNULL,
       grpc_timespec_to_millis_round_up(deadline));
 
   return call;
@@ -353,9 +352,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
       grpc_mdelem_create(GRPC_MDSTR_PATH, method, nullptr),
-      host != nullptr
-          ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
-          : GRPC_MDNULL,
+      host != nullptr ? grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, *host, nullptr)
+                      : GRPC_MDNULL,
       deadline);
 }
 
