@@ -73,7 +73,7 @@ class RpcMethodHandler : public MethodHandler {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus>
         ops;
-    ops.SendInitialMetadata(param.server_context->initial_metadata_,
+    ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                             param.server_context->initial_metadata_flags());
     if (param.server_context->compression_level_set()) {
       ops.set_compression_level(param.server_context->compression_level());
@@ -81,7 +81,7 @@ class RpcMethodHandler : public MethodHandler {
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -117,7 +117,7 @@ class ClientStreamingHandler : public MethodHandler {
               CallOpServerSendStatus>
         ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
@@ -126,7 +126,7 @@ class ClientStreamingHandler : public MethodHandler {
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -163,13 +163,13 @@ class ServerStreamingHandler : public MethodHandler {
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
       }
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
@@ -206,7 +206,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
@@ -218,7 +218,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
                         "Service did not provide response message");
       }
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
@@ -281,14 +281,14 @@ class ErrorMethodHandler : public MethodHandler {
   static void FillOps(ServerContext* context, T* ops) {
     Status status(code, "");
     if (!context->sent_initial_metadata_) {
-      ops->SendInitialMetadata(context->initial_metadata_,
+      ops->SendInitialMetadata(&context->initial_metadata_,
                                context->initial_metadata_flags());
       if (context->compression_level_set()) {
         ops->set_compression_level(context->compression_level());
       }
       context->sent_initial_metadata_ = true;
     }
-    ops->ServerSendStatus(context->trailing_metadata_, status);
+    ops->ServerSendStatus(&context->trailing_metadata_, status);
   }
 
   void RunHandler(const HandlerParameter& param) final {

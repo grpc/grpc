@@ -45,7 +45,6 @@
 
 namespace grpc {
 
-class ByteBuffer;
 class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
@@ -226,14 +225,12 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(
-      const std::multimap<grpc::string, grpc::string>& metadata,
-      uint32_t flags) {
+  void SendInitialMetadata(std::multimap<grpc::string, grpc::string>* metadata,
+                           uint32_t flags) {
     maybe_compression_level_.is_set = false;
     send_ = true;
     flags_ = flags;
-    initial_metadata_ =
-        FillMetadataArray(metadata, &initial_metadata_count_, "");
+    metadata_map_ = metadata;
   }
 
   void set_compression_level(grpc_compression_level level) {
@@ -248,6 +245,8 @@ class CallOpSendInitialMetadata {
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->flags = flags_;
     op->reserved = NULL;
+    initial_metadata_ =
+        FillMetadataArray(*metadata_map_, &initial_metadata_count_, "");
     op->data.send_initial_metadata.count = initial_metadata_count_;
     op->data.send_initial_metadata.metadata = initial_metadata_;
     op->data.send_initial_metadata.maybe_compression_level.is_set =
@@ -268,8 +267,7 @@ class CallOpSendInitialMetadata {
     if (!send_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA);
-    interceptor_methods->SetSendInitialMetadata(initial_metadata_,
-                                                &initial_metadata_count_);
+    interceptor_methods->SetSendInitialMetadata(metadata_map_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -284,6 +282,7 @@ class CallOpSendInitialMetadata {
   bool send_;
   uint32_t flags_;
   size_t initial_metadata_count_;
+  std::multimap<grpc::string, grpc::string>* metadata_map_;
   grpc_metadata* initial_metadata_;
   struct {
     bool is_set;
@@ -322,7 +321,7 @@ class CallOpSendMessage {
     if (!send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(send_buf_.c_buffer());
+    interceptor_methods->SetSendMessage(&send_buf_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -569,11 +568,10 @@ class CallOpServerSendStatus {
   CallOpServerSendStatus() : send_status_available_(false) {}
 
   void ServerSendStatus(
-      const std::multimap<grpc::string, grpc::string>& trailing_metadata,
+      std::multimap<grpc::string, grpc::string>* trailing_metadata,
       const Status& status) {
     send_error_details_ = status.error_details();
-    trailing_metadata_ = FillMetadataArray(
-        trailing_metadata, &trailing_metadata_count_, send_error_details_);
+    metadata_map_ = trailing_metadata;
     send_status_available_ = true;
     send_status_code_ = static_cast<grpc_status_code>(status.error_code());
     send_error_message_ = status.error_message();
@@ -582,6 +580,8 @@ class CallOpServerSendStatus {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_status_available_ || hijacked_) return;
+    trailing_metadata_ = FillMetadataArray(
+        *metadata_map_, &trailing_metadata_count_, send_error_details_);
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
     op->data.send_status_from_server.trailing_metadata_count =
@@ -606,8 +606,7 @@ class CallOpServerSendStatus {
     if (!send_status_available_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_STATUS);
-    interceptor_methods->SetSendTrailingMetadata(trailing_metadata_,
-                                                 &trailing_metadata_count_);
+    interceptor_methods->SetSendTrailingMetadata(metadata_map_);
     interceptor_methods->SetSendStatus(&send_status_code_, &send_error_details_,
                                        &send_error_message_);
   }
@@ -627,6 +626,7 @@ class CallOpServerSendStatus {
   grpc::string send_error_details_;
   grpc::string send_error_message_;
   size_t trailing_metadata_count_;
+  std::multimap<grpc::string, grpc::string>* metadata_map_;
   grpc_metadata* trailing_metadata_;
   grpc_slice error_message_slice_;
 };
@@ -655,7 +655,9 @@ class CallOpRecvInitialMetadata {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      experimental::InterceptorBatchMethods* interceptor_methods) {
+    interceptor_methods->SetRecvInitialMetadata(metadata_map_);
+  }
 
   void SetFinishInterceptionHookPoint(
       experimental::InterceptorBatchMethods* interceptor_methods) {
@@ -671,7 +673,6 @@ class CallOpRecvInitialMetadata {
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA);
-    interceptor_methods->SetRecvInitialMetadata(metadata_map_->arr());
   }
 
  private:
@@ -723,15 +724,16 @@ class CallOpClientRecvStatus {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      experimental::InterceptorBatchMethods* interceptor_methods) {
+    interceptor_methods->SetRecvStatus(recv_status_);
+    interceptor_methods->SetRecvTrailingMetadata(metadata_map_);
+  }
 
   void SetFinishInterceptionHookPoint(
       experimental::InterceptorBatchMethods* interceptor_methods) {
     if (recv_status_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_STATUS);
-    interceptor_methods->SetRecvStatus(recv_status_);
-    interceptor_methods->SetRecvTrailingMetadata(metadata_map_->arr());
     recv_status_ = nullptr;
   }
 
@@ -916,54 +918,54 @@ class InterceptorBatchMethodsImpl
     hooks_[static_cast<int>(type)] = true;
   }
 
-  virtual void GetSendMessage(grpc_byte_buffer** buf) override {
+  virtual void GetSendMessage(ByteBuffer** buf) override {
     *buf = send_message_;
   }
 
-  virtual void GetSendInitialMetadata(grpc_metadata** metadata,
-                                      size_t** count) override {
+  virtual void GetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>** metadata) override {
     *metadata = send_initial_metadata_;
-    *count = send_initial_metadata_count_;
   }
 
-  virtual void GetSendStatus(grpc_status_code** code,
-                             grpc::string** error_details,
-                             grpc::string** error_message) override {
-    *code = code_;
-    *error_details = error_details_;
-    *error_message = error_message_;
+  virtual void GetSendStatus(Status* status) override {
+    *status = Status(static_cast<StatusCode>(*code_), *error_message_,
+                     *error_details_);
   }
 
-  virtual void GetSendTrailingMetadata(grpc_metadata** metadata,
-                                       size_t** count) override {
+  virtual void ModifySendStatus(const Status& status) override {
+    *code_ = static_cast<grpc_status_code>(status.error_code());
+    *error_details_ = status.error_details();
+    *error_message_ = status.error_message();
+  }
+
+  virtual void GetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>** metadata) override {
     *metadata = send_trailing_metadata_;
-    *count = send_trailing_metadata_count_;
   }
 
   virtual void GetRecvMessage(void** message) override {
     *message = recv_message_;
   }
 
-  virtual void GetRecvInitialMetadata(grpc_metadata_array** array) override {
-    *array = recv_initial_metadata_;
+  virtual void GetRecvInitialMetadata(
+      std::multimap<grpc::string_ref, grpc::string_ref>** map) override {
+    *map = recv_initial_metadata_->map();
   }
 
   virtual void GetRecvStatus(Status** status) override {
     *status = recv_status_;
   }
 
-  virtual void GetRecvTrailingMetadata(grpc_metadata_array** map) override {
-    *map = recv_trailing_metadata_;
+  virtual void GetRecvTrailingMetadata(
+      std::multimap<grpc::string_ref, grpc::string_ref>** map) override {
+    *map = recv_trailing_metadata_->map();
   }
 
-  virtual void SetSendMessage(grpc_byte_buffer* buf) override {
-    send_message_ = buf;
-  }
+  virtual void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
 
-  virtual void SetSendInitialMetadata(grpc_metadata* metadata,
-                                      size_t* count) override {
+  virtual void SetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_initial_metadata_ = metadata;
-    send_initial_metadata_count_ = count;
   }
 
   virtual void SetSendStatus(grpc_status_code* code,
@@ -974,23 +976,22 @@ class InterceptorBatchMethodsImpl
     error_message_ = error_message;
   }
 
-  virtual void SetSendTrailingMetadata(grpc_metadata* metadata,
-                                       size_t* count) override {
+  virtual void SetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_trailing_metadata_ = metadata;
-    send_trailing_metadata_count_ = count;
   }
 
   virtual void SetRecvMessage(void* message) override {
     recv_message_ = message;
   }
 
-  virtual void SetRecvInitialMetadata(grpc_metadata_array* array) override {
-    recv_initial_metadata_ = array;
+  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) override {
+    recv_initial_metadata_ = map;
   }
 
   virtual void SetRecvStatus(Status* status) override { recv_status_ = status; }
 
-  virtual void SetRecvTrailingMetadata(grpc_metadata_array* map) override {
+  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) override {
     recv_trailing_metadata_ = map;
   }
 
@@ -1045,25 +1046,25 @@ class InterceptorBatchMethodsImpl
       nullptr;  // The Call object is present along with CallOpSet object
   CallOpSetInterface* ops_ = nullptr;
 
-  grpc_byte_buffer* send_message_ = nullptr;
+  ByteBuffer* send_message_ = nullptr;
 
-  grpc_metadata* send_initial_metadata_ = nullptr;
-  size_t* send_initial_metadata_count_ = nullptr;
+  std::multimap<grpc::string, grpc::string>* send_initial_metadata_;
 
   grpc_status_code* code_ = nullptr;
   grpc::string* error_details_ = nullptr;
   grpc::string* error_message_ = nullptr;
+  Status send_status_;
 
-  grpc_metadata* send_trailing_metadata_ = nullptr;
+  std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
   size_t* send_trailing_metadata_count_ = nullptr;
 
   void* recv_message_ = nullptr;
 
-  grpc_metadata_array* recv_initial_metadata_ = nullptr;
+  internal::MetadataMap* recv_initial_metadata_ = nullptr;
 
   Status* recv_status_ = nullptr;
 
-  grpc_metadata_array* recv_trailing_metadata_ = nullptr;
+  internal::MetadataMap* recv_trailing_metadata_ = nullptr;
 
   // void (*hijacking_state_setter_)();
   // void (*continue_after_interception_)();
@@ -1104,6 +1105,7 @@ class CallOpSet : public CallOpSetInterface,
       /* We have already finished intercepting and filling in the results. This
        * round trip from the core needed to be made because interceptors were
        * run  */
+      *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
     }
@@ -1114,9 +1116,9 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::FinishOp(status);
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
-    *tag = return_tag_;
 
     if (RunInterceptorsPostRecv()) {
+      *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
     }

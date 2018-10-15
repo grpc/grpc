@@ -20,8 +20,10 @@
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/metadata_map.h>
 
 // struct grpc_byte_buffer;
 // struct grpc_status_code;
@@ -75,45 +77,47 @@ class InterceptorBatchMethods {
 
   virtual void AddInterceptionHookPoint(InterceptionHookPoints type) = 0;
 
-  virtual void GetSendMessage(grpc_byte_buffer** buf) = 0;
+  virtual void GetSendMessage(ByteBuffer** buf) = 0;
 
-  virtual void GetSendInitialMetadata(grpc_metadata** metadata,
-                                      size_t** count) = 0;
+  virtual void GetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>** metadata) = 0;
 
-  virtual void GetSendStatus(grpc_status_code** code,
-                             grpc::string** error_details,
-                             grpc::string** error_message) = 0;
+  virtual void GetSendStatus(Status* status) = 0;
 
-  virtual void GetSendTrailingMetadata(grpc_metadata** metadata,
-                                       size_t** count) = 0;
+  virtual void ModifySendStatus(const Status& status) = 0;
+
+  virtual void GetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>** metadata) = 0;
 
   virtual void GetRecvMessage(void** message) = 0;
 
-  virtual void GetRecvInitialMetadata(grpc_metadata_array** array) = 0;
+  virtual void GetRecvInitialMetadata(
+      std::multimap<grpc::string_ref, grpc::string_ref>** map) = 0;
 
   virtual void GetRecvStatus(Status** status) = 0;
 
-  virtual void GetRecvTrailingMetadata(grpc_metadata_array** map) = 0;
+  virtual void GetRecvTrailingMetadata(
+      std::multimap<grpc::string_ref, grpc::string_ref>** map) = 0;
 
-  virtual void SetSendMessage(grpc_byte_buffer* buf) = 0;
+  virtual void SetSendMessage(ByteBuffer* buf) = 0;
 
-  virtual void SetSendInitialMetadata(grpc_metadata* metadata,
-                                      size_t* count) = 0;
+  virtual void SetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
 
   virtual void SetSendStatus(grpc_status_code* code,
                              grpc::string* error_details,
                              grpc::string* error_message) = 0;
 
-  virtual void SetSendTrailingMetadata(grpc_metadata* metadata,
-                                       size_t* count) = 0;
+  virtual void SetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
 
   virtual void SetRecvMessage(void* message) = 0;
 
-  virtual void SetRecvInitialMetadata(grpc_metadata_array* array) = 0;
+  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) = 0;
 
   virtual void SetRecvStatus(Status* status) = 0;
 
-  virtual void SetRecvTrailingMetadata(grpc_metadata_array* map) = 0;
+  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
 };
 }  // namespace experimental
 }  // namespace grpc

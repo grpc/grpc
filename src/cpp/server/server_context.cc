@@ -106,7 +106,7 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   ops.flags = 0;
   ops.reserved = nullptr;
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), &ops, 1, cq_tag(), nullptr));
+             grpc_call_start_batch(call->call(), &ops, 1, this, nullptr));
 }
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
