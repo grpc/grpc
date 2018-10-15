@@ -3753,8 +3753,6 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-endif (gRPC_BUILD_CODEGEN)
-
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
@@ -3763,6 +3761,7 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+endif (gRPC_BUILD_CODEGEN)
 
 if (gRPC_BUILD_TESTS)
 
@@ -3883,8 +3882,6 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-endif (gRPC_BUILD_CODEGEN)
-
 
 if (gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
@@ -3893,6 +3890,7 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+endif (gRPC_BUILD_CODEGEN)
 
 if (gRPC_BUILD_TESTS)
 
@@ -4841,8 +4839,6 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
-endif (gRPC_BUILD_CODEGEN)
-
 
 if (gRPC_INSTALL)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
@@ -4851,6 +4847,7 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+endif (gRPC_BUILD_CODEGEN)
 
 if (gRPC_BUILD_TESTS)
 
