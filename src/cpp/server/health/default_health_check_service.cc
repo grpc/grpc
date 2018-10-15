@@ -153,16 +153,18 @@ DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::StartServingThread() {
+  // Request the calls we're interested in.
+  // We do this before starting the serving thread, so that we know it's
+  // done before server startup is complete.
+  CheckCallHandler::CreateAndStart(cq_.get(), database_, this);
+  WatchCallHandler::CreateAndStart(cq_.get(), database_, this);
+  // Start serving thread.
   thread_->Start();
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::Serve(void* arg) {
   HealthCheckServiceImpl* service =
       reinterpret_cast<HealthCheckServiceImpl*>(arg);
-  CheckCallHandler::CreateAndStart(service->cq_.get(), service->database_,
-                                   service);
-  WatchCallHandler::CreateAndStart(service->cq_.get(), service->database_,
-                                   service);
   void* tag;
   bool ok;
   while (true) {
