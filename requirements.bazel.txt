@@ -8,4 +8,3 @@ wheel>=0.29
 futures>=2.2.0
 google-auth>=1.0.0
 oauth2client==4.1.0
-requests>=2.14.2

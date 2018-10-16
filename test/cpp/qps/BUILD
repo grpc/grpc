@@ -31,6 +31,7 @@ grpc_cc_library(
     name = "qps_worker_impl",
     srcs = [
         "client_async.cc",
+        "client_callback.cc",
         "client_sync.cc",
         "qps_server_builder.cc",
         "qps_worker.cc",

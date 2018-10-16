@@ -42,13 +42,13 @@
 
 /** This is the default value for whether or not to enable channelz. If
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
-#define GRPC_ENABLE_CHANNELZ_DEFAULT false
+#define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
 /** This is the default value for the maximum amount of memory used by trace
  * events per channel trace node. If
  * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
  * this default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 1024 * 4
 
 namespace grpc_core {
 
