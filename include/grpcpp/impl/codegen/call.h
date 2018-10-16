@@ -419,9 +419,10 @@ class CallOpRecvMessage {
   void SetHijackingState(
       experimental::InterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
-    if (message_ == nullptr || !got_message) return;
+    if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE);
+    got_message = true;
   }
 
  private:
@@ -514,7 +515,7 @@ class CallOpGenericRecvMessage {
   void SetHijackingState(
       experimental::InterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
-    if (!deserialize_ || !got_message) return;
+    if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE);
   }
@@ -886,14 +887,8 @@ class InterceptorBatchMethodsImpl
     } else {
       /* We are going up the stack of interceptors */
       if (curr_iteration_ >= 0) {
-        if (rpc_info->hijacked_ &&
-            curr_iteration_ < rpc_info->hijacked_interceptor_) {
-          /* This is a hijacked RPC and we are done running the hijacking
-           * interceptor. */
-          ops_->ContinueFinalizeResultAfterInterception();
-        } else {
-          rpc_info->RunInterceptor(this, curr_iteration_);
-        }
+        /* Continue running interceptors */
+        rpc_info->RunInterceptor(this, curr_iteration_);
       } else {
         /* we are done running all the interceptors without any hijacking */
         ops_->ContinueFinalizeResultAfterInterception();
@@ -918,18 +913,16 @@ class InterceptorBatchMethodsImpl
     hooks_[static_cast<int>(type)] = true;
   }
 
-  virtual void GetSendMessage(ByteBuffer** buf) override {
-    *buf = send_message_;
+  virtual ByteBuffer* GetSendMessage() override { return send_message_; }
+
+  virtual std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata()
+      override {
+    return send_initial_metadata_;
   }
 
-  virtual void GetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>** metadata) override {
-    *metadata = send_initial_metadata_;
-  }
-
-  virtual void GetSendStatus(Status* status) override {
-    *status = Status(static_cast<StatusCode>(*code_), *error_message_,
-                     *error_details_);
+  virtual Status GetSendStatus() override {
+    return Status(static_cast<StatusCode>(*code_), *error_message_,
+                  *error_details_);
   }
 
   virtual void ModifySendStatus(const Status& status) override {
@@ -938,27 +931,23 @@ class InterceptorBatchMethodsImpl
     *error_message_ = status.error_message();
   }
 
-  virtual void GetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>** metadata) override {
-    *metadata = send_trailing_metadata_;
+  virtual std::multimap<grpc::string, grpc::string>* GetSendTrailingMetadata()
+      override {
+    return send_trailing_metadata_;
   }
 
-  virtual void GetRecvMessage(void** message) override {
-    *message = recv_message_;
+  virtual void* GetRecvMessage() override { return recv_message_; }
+
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvInitialMetadata() override {
+    return recv_initial_metadata_->map();
   }
 
-  virtual void GetRecvInitialMetadata(
-      std::multimap<grpc::string_ref, grpc::string_ref>** map) override {
-    *map = recv_initial_metadata_->map();
-  }
+  virtual Status* GetRecvStatus() override { return recv_status_; }
 
-  virtual void GetRecvStatus(Status** status) override {
-    *status = recv_status_;
-  }
-
-  virtual void GetRecvTrailingMetadata(
-      std::multimap<grpc::string_ref, grpc::string_ref>** map) override {
-    *map = recv_trailing_metadata_->map();
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvTrailingMetadata() override {
+    return recv_trailing_metadata_->map();
   }
 
   virtual void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
@@ -999,7 +988,6 @@ class InterceptorBatchMethodsImpl
   void SetReverse() {
     reverse_ = true;
     ClearHookPoints();
-    curr_iteration_ = 0;
   }
 
   /* This needs to be set before interceptors are run */
@@ -1014,14 +1002,17 @@ class InterceptorBatchMethodsImpl
       return true;
     }
     if (!reverse_) {
-      rpc_info->RunInterceptor(this, 0);
+      curr_iteration_ = 0;
     } else {
       if (rpc_info->hijacked_) {
-        rpc_info->RunInterceptor(this, rpc_info->hijacked_interceptor_);
+        curr_iteration_ = rpc_info->hijacked_interceptor_;
+        gpr_log(GPR_ERROR, "running from the hijacked %d",
+                rpc_info->hijacked_interceptor_);
       } else {
-        rpc_info->RunInterceptor(this, rpc_info->interceptors_.size() - 1);
+        curr_iteration_ = rpc_info->interceptors_.size() - 1;
       }
     }
+    rpc_info->RunInterceptor(this, curr_iteration_);
     return false;
   }
 

@@ -73,6 +73,7 @@ class ClientRpcInfo {
   // Getter methods
   const char* method() { return method_; }
   const Channel* channel() { return channel_; }
+  grpc::ClientContext* client_context() { return ctx_; }
   // const grpc::InterceptedMessage& outgoing_message();
   // grpc::InterceptedMessage *mutable_outgoing_message();
   // const grpc::InterceptedMessage& received_message();

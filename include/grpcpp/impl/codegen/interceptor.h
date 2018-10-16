@@ -77,27 +77,27 @@ class InterceptorBatchMethods {
 
   virtual void AddInterceptionHookPoint(InterceptionHookPoints type) = 0;
 
-  virtual void GetSendMessage(ByteBuffer** buf) = 0;
+  virtual ByteBuffer* GetSendMessage() = 0;
 
-  virtual void GetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>** metadata) = 0;
+  virtual std::multimap<grpc::string, grpc::string>*
+  GetSendInitialMetadata() = 0;
 
-  virtual void GetSendStatus(Status* status) = 0;
+  virtual Status GetSendStatus() = 0;
 
   virtual void ModifySendStatus(const Status& status) = 0;
 
-  virtual void GetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>** metadata) = 0;
+  virtual std::multimap<grpc::string, grpc::string>*
+  GetSendTrailingMetadata() = 0;
 
-  virtual void GetRecvMessage(void** message) = 0;
+  virtual void* GetRecvMessage() = 0;
 
-  virtual void GetRecvInitialMetadata(
-      std::multimap<grpc::string_ref, grpc::string_ref>** map) = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvInitialMetadata() = 0;
 
-  virtual void GetRecvStatus(Status** status) = 0;
+  virtual Status* GetRecvStatus() = 0;
 
-  virtual void GetRecvTrailingMetadata(
-      std::multimap<grpc::string_ref, grpc::string_ref>** map) = 0;
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvTrailingMetadata() = 0;
 
   virtual void SetSendMessage(ByteBuffer* buf) = 0;
 
