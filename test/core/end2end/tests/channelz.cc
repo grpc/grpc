@@ -199,9 +199,13 @@ static void run_one_request(grpc_end2end_test_config config,
 static void test_channelz(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
-  grpc_channel_args args = {1, &arg};
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
   f = begin_test(config, "test_channelz", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
@@ -267,12 +271,12 @@ static void test_channelz(grpc_end2end_test_config config) {
 static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  grpc_arg arg[2];
-  arg[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
-      1024 * 1024);
-  arg[1] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          1024 * 1024),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
 
   f = begin_test(config, "test_channelz_with_channel_trace", &args, &args);
@@ -307,7 +311,15 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
 static void test_channelz_disabled(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_channelz_disabled", nullptr, nullptr);
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
+
+  f = begin_test(config, "test_channelz_disabled", &args, &args);
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
   GPR_ASSERT(channelz_channel == nullptr);

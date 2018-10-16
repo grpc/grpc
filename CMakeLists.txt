@@ -328,10 +328,10 @@ add_dependencies(buildtests_c grpc_jwt_verifier_test)
 add_dependencies(buildtests_c grpc_security_connector_test)
 add_dependencies(buildtests_c grpc_ssl_credentials_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_client)
+add_dependencies(buildtests_c handshake_client_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_server)
+add_dependencies(buildtests_c handshake_server_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
@@ -362,7 +362,7 @@ add_dependencies(buildtests_c load_file_test)
 add_dependencies(buildtests_c memory_profile_client)
 add_dependencies(buildtests_c memory_profile_server)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_c memory_profile_test)
+add_dependencies(buildtests_c memory_usage_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
@@ -8052,12 +8052,12 @@ target_link_libraries(grpc_verify_jwt
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_client
+add_executable(handshake_client_ssl
   test/core/handshake/client_ssl.cc
 )
 
 
-target_include_directories(handshake_client
+target_include_directories(handshake_client_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8070,7 +8070,7 @@ target_include_directories(handshake_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_client
+target_link_libraries(handshake_client_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8081,8 +8081,8 @@ target_link_libraries(handshake_client
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(handshake_client_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_client_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()
@@ -8090,13 +8090,13 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_server
+add_executable(handshake_server_ssl
   test/core/handshake/server_ssl.cc
   test/core/handshake/server_ssl_common.cc
 )
 
 
-target_include_directories(handshake_server
+target_include_directories(handshake_server_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8109,7 +8109,7 @@ target_include_directories(handshake_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_server
+target_link_libraries(handshake_server_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8120,8 +8120,8 @@ target_link_libraries(handshake_server
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(handshake_server_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_server_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()
@@ -8838,12 +8838,12 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(memory_profile_test
+add_executable(memory_usage_test
   test/core/memory_usage/memory_usage_test.cc
 )
 
 
-target_include_directories(memory_profile_test
+target_include_directories(memory_usage_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8856,7 +8856,7 @@ target_include_directories(memory_profile_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_test
+target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8866,8 +8866,8 @@ target_link_libraries(memory_profile_test
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()

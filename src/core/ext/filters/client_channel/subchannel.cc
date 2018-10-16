@@ -174,6 +174,35 @@ struct grpc_subchannel_call {
 
 static void maybe_start_connecting_locked(grpc_subchannel* c);
 
+static const char* subchannel_connectivity_state_change_string(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Subchannel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Subchannel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Subchannel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Subchannel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Subchannel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
+static void set_subchannel_connectivity_state_locked(
+    grpc_subchannel* c, grpc_connectivity_state state, grpc_error* error,
+    const char* reason) {
+  if (c->channelz_subchannel != nullptr) {
+    c->channelz_subchannel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            subchannel_connectivity_state_change_string(state)));
+  }
+  grpc_connectivity_state_set(&c->state_tracker, state, error, reason);
+}
+
 namespace grpc_core {
 
 class ConnectedSubchannelStateWatcher
@@ -206,8 +235,8 @@ class ConnectedSubchannelStateWatcher
       health_state = GRPC_CHANNEL_CONNECTING;
     }
     // Report initial state.
-    grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_READY,
-                                GRPC_ERROR_NONE, "connected");
+    set_subchannel_connectivity_state_locked(c, GRPC_CHANNEL_READY,
+                                             GRPC_ERROR_NONE, "connected");
     grpc_connectivity_state_set(&c->state_and_health_tracker, health_state,
                                 GRPC_ERROR_NONE, "connected");
   }
@@ -239,9 +268,9 @@ class ConnectedSubchannelStateWatcher
             c->connected_subchannel.reset();
             c->connected_subchannel_watcher.reset();
             self->last_connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
-            grpc_connectivity_state_set(&c->state_tracker,
-                                        GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                        GRPC_ERROR_REF(error), "reflect_child");
+            set_subchannel_connectivity_state_locked(
+                c, GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+                "reflect_child");
             grpc_connectivity_state_set(&c->state_and_health_tracker,
                                         GRPC_CHANNEL_TRANSIENT_FAILURE,
                                         GRPC_ERROR_REF(error), "reflect_child");
@@ -260,9 +289,9 @@ class ConnectedSubchannelStateWatcher
           // this watch from.  And a connected subchannel should never go
           // from READY to CONNECTING or IDLE.
           self->last_connectivity_state_ = self->pending_connectivity_state_;
-          grpc_connectivity_state_set(&c->state_tracker,
-                                      self->pending_connectivity_state_,
-                                      GRPC_ERROR_REF(error), "reflect_child");
+          set_subchannel_connectivity_state_locked(
+              c, self->pending_connectivity_state_, GRPC_ERROR_REF(error),
+              "reflect_child");
           if (self->pending_connectivity_state_ != GRPC_CHANNEL_READY) {
             grpc_connectivity_state_set(&c->state_and_health_tracker,
                                         self->pending_connectivity_state_,
@@ -635,8 +664,8 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
-  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "connecting");
+  set_subchannel_connectivity_state_locked(c, GRPC_CHANNEL_CONNECTING,
+                                           GRPC_ERROR_NONE, "connecting");
   grpc_connectivity_state_set(&c->state_and_health_tracker,
                               GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE,
                               "connecting");
@@ -830,8 +859,8 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   } else {
-    grpc_connectivity_state_set(
-        &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+    set_subchannel_connectivity_state_locked(
+        c, GRPC_CHANNEL_TRANSIENT_FAILURE,
         grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Connect Failed", &error, 1),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
@@ -906,9 +935,12 @@ static void get_call_status(grpc_subchannel_call* call,
     grpc_error_get_status(error, call->deadline, status, nullptr, nullptr,
                           nullptr);
   } else {
-    GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
-    *status =
-        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
+    if (md_batch->idx.named.grpc_status != nullptr) {
+      *status = grpc_get_status_code_from_metadata(
+          md_batch->idx.named.grpc_status->md);
+    } else {
+      *status = GRPC_STATUS_UNKNOWN;
+    }
   }
   GRPC_ERROR_UNREF(error);
 }

@@ -1447,7 +1447,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "handshake_client", 
+    "name": "handshake_client_ssl", 
     "platforms": [
       "linux"
     ], 
@@ -1467,7 +1467,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "handshake_server", 
+    "name": "handshake_server_ssl", 
     "platforms": [
       "linux"
     ], 
@@ -1879,7 +1879,7 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "memory_profile_test", 
+    "name": "memory_usage_test", 
     "platforms": [
       "linux", 
       "mac", 
