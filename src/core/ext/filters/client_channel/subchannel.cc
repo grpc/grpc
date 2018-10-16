@@ -428,6 +428,35 @@ intptr_t grpc_subchannel_get_child_socket_uuid(grpc_subchannel* subchannel) {
   }
 }
 
+static const char* subchannel_connectivity_state_change_string(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Subchannel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Subchannel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Subchannel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Subchannel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Subchannel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
+static void set_subchannel_connectivity_state_locked(
+    grpc_subchannel* c, grpc_connectivity_state state, grpc_error* error,
+    const char* reason) {
+  if (c->channelz_subchannel != nullptr) {
+    c->channelz_subchannel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            subchannel_connectivity_state_change_string(state)));
+  }
+  grpc_connectivity_state_set(&c->state_tracker, state, error, reason);
+}
+
 static void continue_connect_locked(grpc_subchannel* c) {
   grpc_connect_in_args args;
   args.interested_parties = c->pollset_set;
@@ -436,8 +465,8 @@ static void continue_connect_locked(grpc_subchannel* c) {
   c->next_attempt_deadline = c->backoff->NextAttemptTime();
   args.deadline = std::max(c->next_attempt_deadline, min_deadline);
   args.channel_args = c->args;
-  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_CONNECTING,
-                              GRPC_ERROR_NONE, "connecting");
+  set_subchannel_connectivity_state_locked(c, GRPC_CHANNEL_CONNECTING,
+                                           GRPC_ERROR_NONE, "connecting");
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->on_connected);
 }
@@ -587,9 +616,9 @@ static void on_connected_subchannel_connectivity_changed(void* p,
                       connected_subchannel_watcher->connectivity_state));
         }
         c->connected_subchannel.reset();
-        grpc_connectivity_state_set(&c->state_tracker,
-                                    GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    GRPC_ERROR_REF(error), "reflect_child");
+        set_subchannel_connectivity_state_locked(
+            c, GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
+            "reflect_child");
         c->backoff_begun = false;
         c->backoff->Reset();
         maybe_start_connecting_locked(c);
@@ -600,8 +629,8 @@ static void on_connected_subchannel_connectivity_changed(void* p,
       break;
     }
     default: {
-      grpc_connectivity_state_set(
-          &c->state_tracker, connected_subchannel_watcher->connectivity_state,
+      set_subchannel_connectivity_state_locked(
+          c, connected_subchannel_watcher->connectivity_state,
           GRPC_ERROR_REF(error), "reflect_child");
       GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
       c->connected_subchannel->NotifyOnStateChange(
@@ -672,8 +701,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
       &connected_subchannel_watcher->closure);
 
   /* signal completion */
-  grpc_connectivity_state_set(&c->state_tracker, GRPC_CHANNEL_READY,
-                              GRPC_ERROR_NONE, "connected");
+  set_subchannel_connectivity_state_locked(c, GRPC_CHANNEL_READY,
+                                           GRPC_ERROR_NONE, "connected");
   return true;
 }
 
@@ -690,8 +719,8 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
   } else if (c->disconnected) {
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   } else {
-    grpc_connectivity_state_set(
-        &c->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
+    set_subchannel_connectivity_state_locked(
+        c, GRPC_CHANNEL_TRANSIENT_FAILURE,
         grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Connect Failed", &error, 1),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),

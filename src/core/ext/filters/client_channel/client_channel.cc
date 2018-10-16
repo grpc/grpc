@@ -129,6 +129,8 @@ typedef struct client_channel_channel_data {
   grpc_core::UniquePtr<char> info_lb_policy_name;
   /** service config in JSON form */
   grpc_core::UniquePtr<char> info_service_config_json;
+  /* backpointer to grpc_channel's channelz node */
+  grpc_core::channelz::ClientChannelNode* channelz_channel;
 } channel_data;
 
 typedef struct {
@@ -153,6 +155,23 @@ static void watch_lb_policy_locked(channel_data* chand,
                                    grpc_core::LoadBalancingPolicy* lb_policy,
                                    grpc_connectivity_state current_state);
 
+static const char* channel_connectivity_state_change_string(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Channel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Channel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Channel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Channel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Channel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 static void set_channel_connectivity_state_locked(channel_data* chand,
                                                   grpc_connectivity_state state,
                                                   grpc_error* error,
@@ -176,6 +195,12 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: setting connectivity state to %s", chand,
             grpc_connectivity_state_name(state));
+  }
+  if (chand->channelz_channel != nullptr) {
+    chand->channelz_channel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            channel_connectivity_state_change_string(state)));
   }
   grpc_connectivity_state_set(&chand->state_tracker, state, error, reason);
 }
@@ -699,6 +724,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   // Record enable_retries.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
+  chand->channelz_channel = nullptr;
   // Record client channel factory.
   arg = grpc_channel_args_find(args->channel_args,
                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -3206,6 +3232,12 @@ static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "try_to_connect");
+}
+
+void grpc_client_channel_set_channelz_node(
+    grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  chand->channelz_channel = node;
 }
 
 void grpc_client_channel_populate_child_refs(
