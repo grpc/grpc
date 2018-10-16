@@ -162,8 +162,9 @@ grpc_cc_test(
     uses_polling = False,
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "bm_opencensus_plugin",
+    testonly = 1,
     srcs = ["bm_opencensus_plugin.cc"],
     language = "C++",
     deps = [
@@ -171,5 +172,4 @@ grpc_cc_test(
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
     ],
-    uses_polling = False,
 )
