@@ -131,16 +131,12 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   InlinedVector<BaseNode*, 10> top_level_channels;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_channel_id=0, which signifies "give me everything." Hence this
-  // funky looking line below.
-  size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
   bool reached_pagination_limit = false;
-  for (size_t i = start_idx; i < entities_.size(); ++i) {
+  for (size_t i = 0; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
-            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel) {
+            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
+        entities_[i]->uuid() >= start_channel_id) {
       // check if we are over pagination limit to determine if we need to set
       // the "end" element. If we don't go through this block, we know that
       // when the loop terminates, we have <= to kPaginationLimit.
@@ -176,15 +172,12 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   InlinedVector<BaseNode*, 10> servers;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_server_id=0, which signifies "give me everything."
-  size_t start_idx = start_server_id == 0 ? 0 : start_server_id - 1;
   bool reached_pagination_limit = false;
-  for (size_t i = start_idx; i < entities_.size(); ++i) {
+  for (size_t i = 0; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
-            grpc_core::channelz::BaseNode::EntityType::kServer) {
+            grpc_core::channelz::BaseNode::EntityType::kServer &&
+        entities_[i]->uuid() >= start_server_id) {
       // check if we are over pagination limit to determine if we need to set
       // the "end" element. If we don't go through this block, we know that
       // when the loop terminates, we have <= to kPaginationLimit.
