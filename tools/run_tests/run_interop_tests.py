@@ -618,6 +618,10 @@ _AUTH_TEST_CASES = [
     'per_rpc_creds'
 ]
 
+_GOOGLE_DEFAULT_CREDS_AUTH_TEST_CASES = [
+    'compute_engine_creds', 'jwt_token_creds'
+]
+
 _HTTP2_TEST_CASES = ['tls', 'framing']
 
 _HTTP2_SERVER_TEST_CASES = [
@@ -733,11 +737,13 @@ def auth_options(language,
                 'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
-        elif language == 'c++' and transport_security == 'google_default_credentials':
-            env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
-            cmdargs += [key_file_arg]
         else:
             cmdargs += [key_file_arg]
+            if test_case == 'jwt_token_creds' and transport_security == 'google_default_credentials':
+                if language == 'c++':
+                    # GoogleDefaultCredentials don't have an API to set the JSON key
+                    # outside of this env var.
+                    env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
 
     if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
         cmdargs += [oauth_scope_arg]
@@ -1399,9 +1405,10 @@ try:
                                 service_account_key_file,
                                 transport_security='tls')
                             jobs.append(tls_test_job)
+                            # TODO: Add more languages to the list to turn on tests.
                             if str(language) in [
                                     'c++', 'go'
-                            ]:  # Add more languages to the list to turn on tests.
+                            ] and test_case in _GOOGLE_DEFAULT_CREDS_AUTH_TEST_CASES:
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,
