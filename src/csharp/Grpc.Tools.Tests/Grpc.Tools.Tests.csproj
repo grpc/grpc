@@ -3,7 +3,7 @@
   <Import Project="..\Grpc.Core\Version.csproj.include" />
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
