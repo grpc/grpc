@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
-#define GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
+#ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
+#define GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 
 #include <vector>
 
@@ -27,8 +27,7 @@
 
 namespace grpc {
 
-class ClientContext;
-class Channel;
+class ServerContext;
 
 namespace internal {
 template <int I>
@@ -36,37 +35,35 @@ class CallNoOp;
 }
 
 namespace experimental {
-class ClientRpcInfo;
+class ServerRpcInfo;
 
-class ClientInterceptorFactoryInterface {
+class ServerInterceptorFactoryInterface {
  public:
-  virtual ~ClientInterceptorFactoryInterface() {}
-  virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+  virtual ~ServerInterceptorFactoryInterface() {}
+  virtual Interceptor* CreateServerInterceptor(ServerRpcInfo* info) = 0;
 };
 
-class ClientRpcInfo {
+class ServerRpcInfo {
  public:
-  ClientRpcInfo() {}
-  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                const grpc::Channel* channel,
+  ServerRpcInfo() {}
+  ServerRpcInfo(grpc::ServerContext* ctx, const char* method,
                 const std::vector<std::unique_ptr<
-                    experimental::ClientInterceptorFactoryInterface>>& creators)
-      : ctx_(ctx), method_(method), channel_(channel) {
+                    experimental::ServerInterceptorFactoryInterface>>& creators)
+      : ctx_(ctx), method_(method) {
     for (const auto& creator : creators) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          creator->CreateClientInterceptor(this)));
+          creator->CreateServerInterceptor(this)));
     }
   }
-  ~ClientRpcInfo(){};
+  ~ServerRpcInfo(){};
 
-  ClientRpcInfo(const ClientRpcInfo&) = delete;
-  ClientRpcInfo(ClientRpcInfo&&) = default;
-  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
+  ServerRpcInfo(const ServerRpcInfo&) = delete;
+  ServerRpcInfo(ServerRpcInfo&&) = default;
+  ServerRpcInfo& operator=(ServerRpcInfo&&) = default;
 
   // Getter methods
   const char* method() { return method_; }
-  const Channel* channel() { return channel_; }
-  grpc::ClientContext* client_context() { return ctx_; }
+  grpc::ServerContext* server_context() { return ctx_; }
 
  public:
   /* Runs interceptor at pos \a pos. If \a reverse is set, the interceptor order
@@ -79,17 +76,14 @@ class ClientRpcInfo {
   }
 
  private:
-  grpc::ClientContext* ctx_ = nullptr;
+  grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
-  const grpc::Channel* channel_ = nullptr;
 
  public:
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
-  bool hijacked_ = false;
-  int hijacked_interceptor_ = false;
 };
 
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
+#endif  // GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H

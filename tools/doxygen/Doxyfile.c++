@@ -970,6 +970,7 @@ include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
 include/grpcpp/impl/codegen/server_context.h \
+include/grpcpp/impl/codegen/server_interceptor.h \
 include/grpcpp/impl/codegen/server_interface.h \
 include/grpcpp/impl/codegen/service_type.h \
 include/grpcpp/impl/codegen/slice.h \

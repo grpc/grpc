@@ -119,6 +119,14 @@ class InterceptorBatchMethods {
 
   virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
 };
+
+class Interceptor {
+ public:
+  virtual ~Interceptor() {}
+
+  virtual void Intercept(InterceptorBatchMethods* methods) = 0;
+};
+
 }  // namespace experimental
 }  // namespace grpc
 

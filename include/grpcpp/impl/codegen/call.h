@@ -35,6 +35,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
@@ -764,14 +765,14 @@ class Call final {
         cq_(nullptr),
         call_(nullptr),
         max_receive_message_size_(-1),
-        rpc_info_(nullptr) {}
+        client_rpc_info_(nullptr) {}
   /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
         max_receive_message_size_(-1),
-        rpc_info_(nullptr) {}
+        client_rpc_info_(nullptr) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
        experimental::ClientRpcInfo* rpc_info)
@@ -779,7 +780,7 @@ class Call final {
         cq_(cq),
         call_(call),
         max_receive_message_size_(-1),
-        rpc_info_(rpc_info) {}
+        client_rpc_info_(rpc_info) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
        int max_receive_message_size)
@@ -787,7 +788,7 @@ class Call final {
         cq_(cq),
         call_(call),
         max_receive_message_size_(max_receive_message_size),
-        rpc_info_(nullptr) {}
+        client_rpc_info_(nullptr) {}
 
   void PerformOps(CallOpSetInterface* ops) {
     call_hook_->PerformOpsOnCall(ops, this);
@@ -797,14 +798,17 @@ class Call final {
   CompletionQueue* cq() const { return cq_; }
 
   int max_receive_message_size() const { return max_receive_message_size_; }
-  experimental::ClientRpcInfo* rpc_info() const { return rpc_info_; }
+  experimental::ClientRpcInfo* client_rpc_info() const {
+    return client_rpc_info_;
+  }
 
  private:
   CallHook* call_hook_;
   CompletionQueue* cq_;
   grpc_call* call_;
   int max_receive_message_size_;
-  experimental::ClientRpcInfo* rpc_info_;
+  experimental::ClientRpcInfo* client_rpc_info_;
+  experimental::ServerRpcInfo* server_rpc_info_;
 };
 
 /// An abstract collection of call ops, used to generate the
@@ -861,7 +865,7 @@ class InterceptorBatchMethodsImpl
 
   virtual void Proceed() override { /* fill this */
     curr_iteration_ = reverse_ ? curr_iteration_ - 1 : curr_iteration_ + 1;
-    auto* rpc_info = call_->rpc_info();
+    auto* rpc_info = call_->client_rpc_info();
     if (rpc_info->hijacked_ &&
         (!reverse_ && curr_iteration_ == rpc_info->hijacked_interceptor_ + 1)) {
       /* We now need to provide hijacked recv ops to this interceptor */
@@ -898,7 +902,7 @@ class InterceptorBatchMethodsImpl
 
   virtual void Hijack() override { /* fill this */
     GPR_CODEGEN_ASSERT(!reverse_);
-    auto* rpc_info = call_->rpc_info();
+    auto* rpc_info = call_->client_rpc_info();
     rpc_info->hijacked_ = true;
     rpc_info->hijacked_interceptor_ = curr_iteration_;
     ClearHookPoints();
@@ -993,11 +997,11 @@ class InterceptorBatchMethodsImpl
   /* This needs to be set before interceptors are run */
   void SetCall(Call* call) { call_ = call; }
 
-  void SetCallOpSet(CallOpSetInterface* ops) { ops_ = ops; }
+  void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
 
   /* Returns true if no interceptors are run */
   bool RunInterceptors() {
-    auto* rpc_info = call_->rpc_info();
+    auto* rpc_info = call_->client_rpc_info();
     if (rpc_info == nullptr || rpc_info->interceptors_.size() == 0) {
       return true;
     }
@@ -1174,7 +1178,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetInterceptionHookPoint(&interceptor_methods_);
-    interceptor_methods_.SetCallOpSet(this);
+    interceptor_methods_.SetCallOpSetInterface(this);
     interceptor_methods_.SetCall(&call_);
     // interceptor_methods_.SetFunctions(ContinueFillOpsAfterInterception,
     // SetHijackingState, ContinueFinalizeResultAfterInterception);

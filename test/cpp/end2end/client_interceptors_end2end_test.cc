@@ -60,7 +60,7 @@ class ClientInterceptorsEnd2endTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
 };
 
-class DummyInterceptor : public experimental::ClientInterceptor {
+class DummyInterceptor : public experimental::Interceptor {
  public:
   DummyInterceptor(experimental::ClientRpcInfo* info) {}
 
@@ -85,13 +85,13 @@ std::atomic<int> DummyInterceptor::num_times_run_;
 class DummyInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::ClientInterceptor* CreateClientInterceptor(
+  virtual experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new DummyInterceptor(info);
   }
 };
 
-class HijackingInterceptor : public experimental::ClientInterceptor {
+class HijackingInterceptor : public experimental::Interceptor {
  public:
   HijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
@@ -189,13 +189,13 @@ class HijackingInterceptor : public experimental::ClientInterceptor {
 class HijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::ClientInterceptor* CreateClientInterceptor(
+  virtual experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new HijackingInterceptor(info);
   }
 };
 
-class LoggingInterceptor : public experimental::ClientInterceptor {
+class LoggingInterceptor : public experimental::Interceptor {
  public:
   LoggingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
@@ -262,7 +262,7 @@ class LoggingInterceptor : public experimental::ClientInterceptor {
 class LoggingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
-  virtual experimental::ClientInterceptor* CreateClientInterceptor(
+  virtual experimental::Interceptor* CreateClientInterceptor(
       experimental::ClientRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
