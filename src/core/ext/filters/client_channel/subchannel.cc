@@ -151,6 +151,12 @@ struct grpc_subchannel_call {
   grpc_closure* original_recv_trailing_metadata;
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_millis deadline;
+
+  // state needed to support lb interception of recv trailing metadata.
+  // This points into grpc_core::LoadBalancingPolicy::PickState to avoid
+  // creating a circular dependency.
+  grpc_closure** lb_recv_trailing_metadata_ready;
+  grpc_metadata_batch*** lb_recv_trailing_metadata;
 };
 
 #define SUBCHANNEL_CALL_TO_CALL_STACK(call)                          \
@@ -775,11 +781,20 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   get_call_status(call, md_batch, GRPC_ERROR_REF(error), &status);
   grpc_core::channelz::SubchannelNode* channelz_subchannel =
       call->connection->channelz_subchannel();
-  GPR_ASSERT(channelz_subchannel != nullptr);
-  if (status == GRPC_STATUS_OK) {
-    channelz_subchannel->RecordCallSucceeded();
-  } else {
-    channelz_subchannel->RecordCallFailed();
+  if (channelz_subchannel != nullptr) {
+    if (status == GRPC_STATUS_OK) {
+      channelz_subchannel->RecordCallSucceeded();
+    } else {
+      channelz_subchannel->RecordCallFailed();
+    }
+  }
+  if (*call->lb_recv_trailing_metadata_ready != nullptr) {
+    GPR_ASSERT(*call->lb_recv_trailing_metadata != nullptr);
+    **call->lb_recv_trailing_metadata = md_batch;
+    GRPC_CLOSURE_SCHED(*call->lb_recv_trailing_metadata_ready,
+        GRPC_ERROR_REF(error));
+    *call->lb_recv_trailing_metadata = nullptr;
+    *call->lb_recv_trailing_metadata_ready = nullptr;
   }
   GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata,
                    GRPC_ERROR_REF(error));
@@ -793,8 +808,9 @@ static void maybe_intercept_recv_trailing_metadata(
   if (!batch->recv_trailing_metadata) {
     return;
   }
-  // only add interceptor is channelz is enabled.
-  if (call->connection->channelz_subchannel() == nullptr) {
+  // only add interceptor if channelz is enabled or lb policy wants the trailers
+  if (call->connection->channelz_subchannel() == nullptr &&
+      *call->lb_recv_trailing_metadata_ready == nullptr) {
     return;
   }
   GRPC_CLOSURE_INIT(&call->recv_trailing_metadata_ready,
@@ -922,8 +938,11 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
-                                            grpc_subchannel_call** call) {
+grpc_error* ConnectedSubchannel::CreateCall(
+    grpc_subchannel_call** call,
+    const CallArgs& args,
+    grpc_closure** lb_recv_trailing_metadata_ready,
+    grpc_metadata_batch*** lb_recv_trailing_metadata) {
   size_t allocation_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_subchannel_call));
   if (args.parent_data_size > 0) {
@@ -959,6 +978,8 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     return error;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
+  *(*call)->lb_recv_trailing_metadata_ready = *lb_recv_trailing_metadata_ready;
+  *(*call)->lb_recv_trailing_metadata = *lb_recv_trailing_metadata;
   return GRPC_ERROR_NONE;
 }
 

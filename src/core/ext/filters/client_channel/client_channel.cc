@@ -1990,6 +1990,16 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   }
   // Not retrying, so commit the call.
   retry_commit(elem, retry_state);
+  // Now that the try is committed, give the trailer to the lb policy as needed
+  if (calld->pick.recv_trailing_metadata_ready != nullptr) {
+    GPR_ASSERT(calld->pick.recv_trailing_metadata != nullptr);
+    *calld->pick.recv_trailing_metadata = md_batch;
+    GRPC_CLOSURE_SCHED(
+        calld->pick.recv_trailing_metadata_ready,
+        GRPC_ERROR_REF(error));
+    calld->pick.recv_trailing_metadata = nullptr;
+    calld->pick.recv_trailing_metadata_ready = nullptr;
+  }
   // Run any necessary closures.
   run_closures_for_completed_call(batch_data, GRPC_ERROR_REF(error));
 }
@@ -2592,7 +2602,10 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       parent_data_size                      // parent_data_size
   };
   grpc_error* new_error = calld->pick.connected_subchannel->CreateCall(
-      call_args, &calld->subchannel_call);
+      &calld->subchannel_call,
+      call_args,
+      &calld->pick.recv_trailing_metadata_ready,
+      &calld->pick.recv_trailing_metadata);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call, grpc_error_string(new_error));

@@ -97,7 +97,11 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
+  grpc_error* CreateCall(
+      grpc_subchannel_call** call,
+      const CallArgs& args,
+      grpc_closure** lb_recv_trailing_metadata_ready,
+      grpc_metadata_batch*** lb_recv_trailing_metadata);
   channelz::SubchannelNode* channelz_subchannel() {
     return channelz_subchannel_.get();
   }

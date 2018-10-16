@@ -73,6 +73,13 @@ class LoadBalancingPolicy
     /// Closure to run when pick is complete, if not completed synchronously.
     /// If null, pick will fail if a result is not available synchronously.
     grpc_closure* on_complete;
+
+    // Callback set by lb policy if the trailing metadata should be intercepted.
+    grpc_closure* recv_trailing_metadata_ready;
+    // If \a recv_trailing_metadata_ready \a is set, the client_channel sets
+    // this pointer to the metadata batch and schedules the closure.
+    grpc_metadata_batch** recv_trailing_metadata;
+
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
