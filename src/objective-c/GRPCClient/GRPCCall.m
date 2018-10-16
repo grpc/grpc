@@ -108,7 +108,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _handler = responseHandler;
     _initialMetadataPublished = NO;
     _pipe = [GRXBufferedPipe pipe];
-    _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    if (@available(iOS 8.0, *)) {
+      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+    } else {
+      // Fallback on earlier versions
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    }
     _started = NO;
   }
 
@@ -226,7 +231,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  id<GRPCResponseHandler> handler = self->_handler;
+  id<GRPCResponseHandler> handler = _handler;
   if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
     dispatch_async(handler.dispatchQueue, ^{
       [handler receivedInitialMetadata:initialMetadata];
@@ -235,7 +240,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueMessage:(id)message {
-  id<GRPCResponseHandler> handler = self->_handler;
+  id<GRPCResponseHandler> handler = _handler;
   if ([handler respondsToSelector:@selector(receivedRawMessage:)]) {
     dispatch_async(handler.dispatchQueue, ^{
       [handler receivedRawMessage:message];
