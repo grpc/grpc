@@ -760,9 +760,12 @@ static void get_call_status(grpc_subchannel_call* call,
     grpc_error_get_status(error, call->deadline, status, nullptr, nullptr,
                           nullptr);
   } else {
-    GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
-    *status =
-        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
+    if (md_batch->idx.named.grpc_status != nullptr) {
+      *status = grpc_get_status_code_from_metadata(
+          md_batch->idx.named.grpc_status->md);
+    } else {
+      *status = GRPC_STATUS_UNKNOWN;
+    }
   }
   GRPC_ERROR_UNREF(error);
 }
