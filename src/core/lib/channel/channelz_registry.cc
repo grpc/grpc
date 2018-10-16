@@ -136,7 +136,7 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   // start_channel_id=0, which signifies "give me everything." Hence this
   // funky looking line below.
   size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
-  bool more_to_come = false;
+  bool reached_pagination_limit = false;
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
@@ -145,7 +145,7 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
       // the "end" element. If we don't go through this block, we know that
       // when the loop terminates, we have <= to kPaginationLimit.
       if (top_level_channels.size() == kPaginationLimit) {
-        more_to_come = true;
+        reached_pagination_limit = true;
         break;
       }
       top_level_channels.push_back(entities_[i]);
@@ -161,7 +161,7 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
           grpc_json_link_child(array_parent, channel_json, json_iterator);
     }
   }
-  if (!more_to_come) {
+  if (!reached_pagination_limit) {
     grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
                            false);
   }
@@ -180,7 +180,7 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   // reserved). However, we want to support requests coming in with
   // start_server_id=0, which signifies "give me everything."
   size_t start_idx = start_server_id == 0 ? 0 : start_server_id - 1;
-  bool more_to_come = false;
+  bool reached_pagination_limit = false;
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
@@ -189,7 +189,7 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
       // the "end" element. If we don't go through this block, we know that
       // when the loop terminates, we have <= to kPaginationLimit.
       if (servers.size() == kPaginationLimit) {
-        more_to_come = true;
+        reached_pagination_limit = true;
         break;
       }
       servers.push_back(entities_[i]);
@@ -205,7 +205,7 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
           grpc_json_link_child(array_parent, server_json, json_iterator);
     }
   }
-  if (!more_to_come) {
+  if (!reached_pagination_limit) {
     grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
                            false);
   }
