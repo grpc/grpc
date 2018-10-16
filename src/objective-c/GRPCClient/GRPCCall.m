@@ -383,6 +383,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if (host.length == 0 || path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil or empty."];
   }
+  if (safety > GRPCCallSafetyCacheableRequest) {
+    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
+  }
   if (requestWriter.state != GRXWriterStateNotStarted) {
     [NSException raise:NSInvalidArgumentException
                 format:@"The requests writer can't be already started."];
@@ -556,8 +559,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     case GRPCCallSafetyCacheableRequest:
       callSafetyFlags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       break;
-    default:
-      [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
   }
   uint32_t callFlag = callSafetyFlags;
 
