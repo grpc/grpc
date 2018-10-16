@@ -50,18 +50,21 @@ grpc_cc_test(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "bm_arena",
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -74,18 +77,21 @@ grpc_cc_test(
     name = "bm_cq",
     srcs = ["bm_cq.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "bm_cq_multiple_threads",
     srcs = ["bm_cq_multiple_threads.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "bm_error",
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_library(
@@ -146,12 +152,14 @@ grpc_cc_test(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -163,4 +171,5 @@ grpc_cc_test(
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
     ],
+    uses_polling = False,
 )
