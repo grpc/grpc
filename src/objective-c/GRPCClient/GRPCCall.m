@@ -236,9 +236,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueMessage:(id)message {
   id<GRPCResponseHandler> handler = self->_handler;
-  if ([handler respondsToSelector:@selector(receivedMessage:)]) {
+  if ([handler respondsToSelector:@selector(receivedRawMessage:)]) {
     dispatch_async(handler.dispatchQueue, ^{
-      [handler receivedMessage:message];
+      [handler receivedRawMessage:message];
     });
   }
 }

@@ -75,7 +75,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 }
 
 // Convenience class to use blocks as callbacks
-@interface InteropTestsBlockCallbacks : NSObject<GRPCResponseHandler>
+@interface InteropTestsBlockCallbacks : NSObject<GRPCProtoResponseHandler>
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
@@ -108,7 +108,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   }
 }
 
-- (void)receivedMessage:(id)message {
+- (void)receivedProtoMessage:(id)message {
   if (_messageCallback) {
     _messageCallback(message);
   }

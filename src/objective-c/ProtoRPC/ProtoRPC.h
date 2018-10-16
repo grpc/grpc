@@ -23,6 +23,39 @@
 
 @class GPBMessage;
 
+/** An object can implement this protocol to receive responses from server from a call. */
+@protocol GRPCProtoResponseHandler <NSObject>
+
+@optional
+
+/** Issued when initial metadata is received from the server. */
+- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata;
+
+/**
+ * Issued when a message is received from the server. The message is the deserialized proto object.
+ */
+- (void)receivedProtoMessage:(id)message;
+
+/**
+ * Issued when a call finished. If the call finished successfully, \a error is nil and \a
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * is non-nil and contains the corresponding error information, including gRPC error codes and
+ * error descriptions.
+ */
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error;
+
+@required
+
+/**
+ * All the responses must be issued to a user-provided dispatch queue. This property specifies the
+ * dispatch queue to be used for issuing the notifications. A serial queue should be provided if
+ * the order of responses (initial metadata, message, message, ..., message, trailing metadata)
+ * needs to be maintained.
+ */
+@property(atomic, readonly) dispatch_queue_t dispatchQueue;
+
+@end
+
 /** A unary-request RPC call with Protobuf. */
 @interface GRPCUnaryProtoCall : NSObject
 
@@ -36,7 +69,7 @@
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
-                       responseHandler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
@@ -57,7 +90,7 @@
  * returned to users by methods of the generated service.
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                       responseHandler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 

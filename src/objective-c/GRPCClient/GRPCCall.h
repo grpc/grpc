@@ -157,10 +157,10 @@ extern id const kGRPCTrailersKey;
 - (void)receivedInitialMetadata:(NSDictionary *)initialMetadata;
 
 /**
- * Issued when a message is received from the server. The message may be raw data from the server
- * (when using \a GRPCCall2 directly) or deserialized proto object (when using \a ProtoRPC).
+ * Issued when a message is received from the server. The message is the raw data received from the
+ * server, with decompression and without proto deserialization.
  */
-- (void)receivedMessage:(id)message;
+- (void)receivedRawMessage:(id)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a

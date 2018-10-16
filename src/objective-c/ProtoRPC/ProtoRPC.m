@@ -33,7 +33,7 @@
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
-                       responseHandler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
   if ((self = [super init])) {
@@ -60,7 +60,7 @@
 
 @implementation GRPCStreamingProtoCall {
   GRPCRequestOptions *_requestOptions;
-  id<GRPCResponseHandler> _handler;
+  id<GRPCProtoResponseHandler> _handler;
   GRPCCallOptions *_callOptions;
   Class _responseClass;
 
@@ -69,7 +69,7 @@
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                       responseHandler:(id<GRPCResponseHandler>)handler
+                       responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
   if ((self = [super init])) {
@@ -98,16 +98,18 @@
       _call = nil;
     }
     if (_handler) {
-      id<GRPCResponseHandler> handler = _handler;
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler closedWithTrailingMetadata:nil
-                                      error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                code:GRPCErrorCodeCancelled
-                                                            userInfo:@{
-                                                              NSLocalizedDescriptionKey :
-                                                                  @"Canceled by app"
-                                                            }]];
-      });
+      id<GRPCProtoResponseHandler> handler = _handler;
+      if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+        dispatch_async(handler.dispatchQueue, ^{
+          [handler closedWithTrailingMetadata:nil
+                                        error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                  code:GRPCErrorCodeCancelled
+                                                              userInfo:@{
+                                                                         NSLocalizedDescriptionKey :
+                                                                           @"Canceled by app"
+                                                                         }]];
+        });
+      }
       _handler = nil;
     }
   });
@@ -136,27 +138,33 @@
 
 - (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
   if (_handler) {
-    id<GRPCResponseHandler> handler = _handler;
-    dispatch_async(handler.dispatchQueue, ^{
-      [handler receivedInitialMetadata:initialMetadata];
-    });
+    id<GRPCProtoResponseHandler> handler = _handler;
+    if ([handler respondsToSelector:@selector(initialMetadata:)]) {
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler receivedInitialMetadata:initialMetadata];
+      });
+    }
   }
 }
 
-- (void)receivedMessage:(NSData *)message {
+- (void)receivedRawMessage:(NSData *)message {
   if (_handler) {
-    id<GRPCResponseHandler> handler = _handler;
+    id<GRPCProtoResponseHandler> handler = _handler;
     NSError *error = nil;
     id parsed = [_responseClass parseFromData:message error:&error];
     if (parsed) {
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler receivedMessage:parsed];
-      });
+      if ([handler respondsToSelector:@selector(receivedProtoMessage:)]) {
+        dispatch_async(handler.dispatchQueue, ^{
+          [handler receivedProtoMessage:parsed];
+        });
+      }
     } else {
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler closedWithTrailingMetadata:nil error:error];
-      });
-      handler = nil;
+      if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+        dispatch_async(handler.dispatchQueue, ^{
+          [handler closedWithTrailingMetadata:nil error:error];
+        });
+      }
+      _handler = nil;
       [_call cancel];
       _call = nil;
     }
@@ -165,16 +173,16 @@
 
 - (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (_handler) {
-    id<GRPCResponseHandler> handler = _handler;
-    dispatch_async(handler.dispatchQueue, ^{
-      [handler closedWithTrailingMetadata:trailingMetadata error:error];
-    });
+    id<GRPCProtoResponseHandler> handler = _handler;
+    if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+      dispatch_async(handler.dispatchQueue, ^{
+        [handler closedWithTrailingMetadata:trailingMetadata error:error];
+      });
+    }
     _handler = nil;
   }
-  if (_call) {
-    [_call cancel];
-    _call = nil;
-  }
+  [_call cancel];
+  _call = nil;
 }
 
 - (dispatch_queue_t)dispatchQueue {

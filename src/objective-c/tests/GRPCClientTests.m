@@ -120,7 +120,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   }
 }
 
-- (void)receivedMessage:(id)message {
+- (void)receivedProtoMessage:(id)message {
   if (_messageCallback) {
     _messageCallback(message);
   }
