@@ -1039,8 +1039,8 @@ grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_def
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
 grpc_ssl_credentials_test: $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
-handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
-handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
+handshake_client_ssl: $(BINDIR)/$(CONFIG)/handshake_client_ssl
+handshake_server_ssl: $(BINDIR)/$(CONFIG)/handshake_server_ssl
 handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
 handshake_verify_peer_options: $(BINDIR)/$(CONFIG)/handshake_verify_peer_options
 histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
@@ -1066,7 +1066,7 @@ load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
 memory_profile_server: $(BINDIR)/$(CONFIG)/memory_profile_server
-memory_profile_test: $(BINDIR)/$(CONFIG)/memory_profile_test
+memory_usage_test: $(BINDIR)/$(CONFIG)/memory_usage_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
@@ -1491,8 +1491,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
   $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test \
-  $(BINDIR)/$(CONFIG)/handshake_client \
-  $(BINDIR)/$(CONFIG)/handshake_server \
+  $(BINDIR)/$(CONFIG)/handshake_client_ssl \
+  $(BINDIR)/$(CONFIG)/handshake_server_ssl \
   $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
   $(BINDIR)/$(CONFIG)/handshake_verify_peer_options \
   $(BINDIR)/$(CONFIG)/histogram_test \
@@ -1513,7 +1513,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/load_file_test \
   $(BINDIR)/$(CONFIG)/memory_profile_client \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
-  $(BINDIR)/$(CONFIG)/memory_profile_test \
+  $(BINDIR)/$(CONFIG)/memory_usage_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
@@ -2058,10 +2058,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_ssl_credentials_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test || ( echo test grpc_ssl_credentials_test failed ; exit 1 )
-	$(E) "[RUN]     Testing handshake_client"
-	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
-	$(E) "[RUN]     Testing handshake_server"
-	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_client_ssl"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_client_ssl || ( echo test handshake_client_ssl failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server_ssl"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_ssl || ( echo test handshake_server_ssl failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_verify_peer_options"
@@ -2096,8 +2096,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing load_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/load_file_test || ( echo test load_file_test failed ; exit 1 )
-	$(E) "[RUN]     Testing memory_profile_test"
-	$(Q) $(BINDIR)/$(CONFIG)/memory_profile_test || ( echo test memory_profile_test failed ; exit 1 )
+	$(E) "[RUN]     Testing memory_usage_test"
+	$(Q) $(BINDIR)/$(CONFIG)/memory_usage_test || ( echo test memory_usage_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing minimal_stack_is_minimal_test"
@@ -12670,57 +12670,57 @@ endif
 endif
 
 
-HANDSHAKE_CLIENT_SRC = \
+HANDSHAKE_CLIENT_SSL_SRC = \
     test/core/handshake/client_ssl.cc \
 
-HANDSHAKE_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_CLIENT_SRC))))
+HANDSHAKE_CLIENT_SSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_CLIENT_SSL_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/handshake_client: openssl_dep_error
+$(BINDIR)/$(CONFIG)/handshake_client_ssl: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/handshake_client: $(HANDSHAKE_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/handshake_client_ssl: $(HANDSHAKE_CLIENT_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_client
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_CLIENT_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_client_ssl
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/client_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_handshake_client: $(HANDSHAKE_CLIENT_OBJS:.o=.dep)
+deps_handshake_client_ssl: $(HANDSHAKE_CLIENT_SSL_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HANDSHAKE_CLIENT_OBJS:.o=.dep)
+-include $(HANDSHAKE_CLIENT_SSL_OBJS:.o=.dep)
 endif
 endif
 
 
-HANDSHAKE_SERVER_SRC = \
+HANDSHAKE_SERVER_SSL_SRC = \
     test/core/handshake/server_ssl.cc \
     test/core/handshake/server_ssl_common.cc \
 
-HANDSHAKE_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_SRC))))
+HANDSHAKE_SERVER_SSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_SSL_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/handshake_server: openssl_dep_error
+$(BINDIR)/$(CONFIG)/handshake_server_ssl: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/handshake_server: $(HANDSHAKE_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/handshake_server_ssl: $(HANDSHAKE_SERVER_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_SERVER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_SERVER_SSL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server_ssl
 
 endif
 
@@ -12728,11 +12728,11 @@ $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgr
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_handshake_server: $(HANDSHAKE_SERVER_OBJS:.o=.dep)
+deps_handshake_server_ssl: $(HANDSHAKE_SERVER_SSL_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(HANDSHAKE_SERVER_OBJS:.o=.dep)
+-include $(HANDSHAKE_SERVER_SSL_OBJS:.o=.dep)
 endif
 endif
 
@@ -13540,34 +13540,34 @@ endif
 endif
 
 
-MEMORY_PROFILE_TEST_SRC = \
+MEMORY_USAGE_TEST_SRC = \
     test/core/memory_usage/memory_usage_test.cc \
 
-MEMORY_PROFILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_PROFILE_TEST_SRC))))
+MEMORY_USAGE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_USAGE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/memory_profile_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/memory_usage_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/memory_profile_test: $(MEMORY_PROFILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/memory_usage_test: $(MEMORY_USAGE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(MEMORY_PROFILE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/memory_profile_test
+	$(Q) $(LD) $(LDFLAGS) $(MEMORY_USAGE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/memory_usage_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/memory_usage/memory_usage_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_memory_profile_test: $(MEMORY_PROFILE_TEST_OBJS:.o=.dep)
+deps_memory_usage_test: $(MEMORY_USAGE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(MEMORY_PROFILE_TEST_OBJS:.o=.dep)
+-include $(MEMORY_USAGE_TEST_OBJS:.o=.dep)
 endif
 endif
 
