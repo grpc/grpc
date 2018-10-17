@@ -3151,7 +3151,7 @@ targets:
   - mac
   - linux
   - posix
-- name: memory_profile_client
+- name: memory_usage_client
   build: test
   run: false
   language: c
@@ -3163,7 +3163,7 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: memory_profile_server
+- name: memory_usage_server
   build: test
   run: false
   language: c
