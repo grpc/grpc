@@ -72,7 +72,8 @@ void DefaultHealthCheckService::RegisterCallHandler(
   std::unique_lock<std::mutex> lock(mu_);
   ServiceData& service_data = services_map_[service_name];
   service_data.AddCallHandler(handler /* copies ref */);
-  handler->SendHealth(std::move(handler), service_data.GetServingStatus());
+  HealthCheckServiceImpl::CallHandler* h = handler.get();
+  h->SendHealth(std::move(handler), service_data.GetServingStatus());
 }
 
 void DefaultHealthCheckService::UnregisterCallHandler(
@@ -115,7 +116,7 @@ void DefaultHealthCheckService::ServiceData::AddCallHandler(
 
 void DefaultHealthCheckService::ServiceData::RemoveCallHandler(
     std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
-  call_handlers_.erase(std::move(handler));
+  call_handlers_.erase(handler);
 }
 
 //
