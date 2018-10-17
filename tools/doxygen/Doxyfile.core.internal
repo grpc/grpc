@@ -885,10 +885,10 @@ src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
 src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
-src/core/ext/filters/client_channel/health.pb.c \
-src/core/ext/filters/client_channel/health.pb.h \
-src/core/ext/filters/client_channel/health_check_client.cc \
-src/core/ext/filters/client_channel/health_check_client.h \
+src/core/ext/filters/client_channel/health/health.pb.c \
+src/core/ext/filters/client_channel/health/health.pb.h \
+src/core/ext/filters/client_channel/health/health_check_client.cc \
+src/core/ext/filters/client_channel/health/health_check_client.h \
 src/core/ext/filters/client_channel/http_connect_handshaker.cc \
 src/core/ext/filters/client_channel/http_connect_handshaker.h \
 src/core/ext/filters/client_channel/http_proxy.cc \

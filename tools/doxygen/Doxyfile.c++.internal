@@ -1014,8 +1014,8 @@ include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
-src/core/ext/filters/client_channel/health.pb.c \
-src/core/ext/filters/client_channel/health.pb.h \
+src/core/ext/filters/client_channel/health/health.pb.c \
+src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \

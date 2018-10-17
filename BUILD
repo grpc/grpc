@@ -1036,7 +1036,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/connector.cc",
-        "src/core/ext/filters/client_channel/health_check_client.cc",
+        "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
@@ -1059,7 +1059,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
-        "src/core/ext/filters/client_channel/health_check_client.h",
+        "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
@@ -1202,10 +1202,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "health_proto",
     srcs = [
-        "src/core/ext/filters/client_channel/health.pb.c",
+        "src/core/ext/filters/client_channel/health/health.pb.c",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/health.pb.h",
+        "src/core/ext/filters/client_channel/health/health.pb.h",
     ],
     external_deps = [
         "nanopb",
