@@ -82,7 +82,7 @@
 
 + (nullable instancetype)createChannelWithConfiguration:(GRPCChannelConfiguration *)config {
   NSString *host = config.host;
-  if (host == nil || [host length] == 0) {
+  if (host.length == 0) {
     return nil;
   }
 
