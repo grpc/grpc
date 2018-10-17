@@ -30,7 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/health/health_check_client.h"
+#include "src/core/ext/filters/client_channel/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"

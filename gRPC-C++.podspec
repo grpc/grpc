@@ -326,7 +326,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
-                      'src/core/ext/filters/client_channel/health/health_check_client.h',
+                      'src/core/ext/filters/client_channel/health_check_client.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',
@@ -344,7 +344,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/client_channel/uri_parser.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
-                      'src/core/ext/filters/client_channel/health/health.pb.h',
+                      'src/core/ext/filters/client_channel/health.pb.h',
                       'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
@@ -680,7 +680,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
-                              'src/core/ext/filters/client_channel/health/health.pb.h'
+                              'src/core/ext/filters/client_channel/health.pb.h'
   end
 
   s.subspec 'Protobuf' do |ss|

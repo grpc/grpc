@@ -156,7 +156,7 @@ argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
 
 KNOWN_BAD = set([
-    'src/core/ext/filters/client_channel/health/health.pb.h',
+    'src/core/ext/filters/client_channel/health.pb.h',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',

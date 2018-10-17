@@ -20,11 +20,11 @@
 
 #include <stdint.h>
 
-#include "src/core/ext/filters/client_channel/health/health_check_client.h"
+#include "src/core/ext/filters/client_channel/health_check_client.h"
 
 #include "pb_decode.h"
 #include "pb_encode.h"
-#include "src/core/ext/filters/client_channel/health/health.pb.h"
+#include "src/core/ext/filters/client_channel/health.pb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/slice/slice_internal.h"
