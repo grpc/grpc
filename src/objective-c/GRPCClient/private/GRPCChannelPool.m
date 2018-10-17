@@ -363,7 +363,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   return channel;
 }
 
-- (void)unrefChannelWithConfiguration:configuration {
+- (void)unrefChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
   dispatch_sync(_dispatchQueue, ^{
     if ([self->_channelPool objectForKey:configuration]) {
       [self->_callRefs[configuration] unrefChannel];
