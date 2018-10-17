@@ -123,7 +123,7 @@ class GrpcLb : public LoadBalancingPolicy {
  public:
   GrpcLb(const grpc_lb_addresses* addresses, const Args& args);
 
-  void UpdateLocked(const grpc_channel_args& args) override;
+  bool UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -1331,7 +1331,7 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
+bool GrpcLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
   // If fallback is configured and the RR policy already exists, update
   // it with the new fallback addresses.
@@ -1358,6 +1358,7 @@ void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
         &lb_channel_connectivity_, &lb_channel_on_connectivity_changed_,
         nullptr);
   }
+  return false;  // TODO
 }
 
 //
