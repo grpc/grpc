@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSMutableDictionary *)args {
+                                     channelArgs:(nullable NSDictionary *)args {
   // Remove client authority filter since that is not supported
   args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
 
@@ -81,7 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSMutableArray *)args {
+                                     channelArgs:(nullable NSDictionary *)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return nil;

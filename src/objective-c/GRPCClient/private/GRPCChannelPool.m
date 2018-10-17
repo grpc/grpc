@@ -76,7 +76,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   }
 }
 
-- (NSMutableDictionary *)channelArgs {
+- (NSDictionary *)channelArgs {
   NSMutableDictionary *args = [NSMutableDictionary new];
 
   NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;

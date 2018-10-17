@@ -86,8 +86,14 @@
     return nil;
   }
 
-  NSMutableDictionary *channelArgs = config.channelArgs;
-  [channelArgs addEntriesFromDictionary:config.callOptions.additionalChannelArgs];
+  NSDictionary *channelArgs;
+  if (config.callOptions.additionalChannelArgs.count != 0) {
+    NSMutableDictionary *args = [config.channelArgs copy];
+    [args addEntriesFromDictionary:config.callOptions.additionalChannelArgs];
+    channelArgs = args;
+  } else {
+    channelArgs = config.channelArgs;
+  }
   id<GRPCChannelFactory> factory = config.channelFactory;
   grpc_channel *unmanaged_channel = [factory createChannelWithHost:host channelArgs:channelArgs];
   return [[GRPCChannel alloc] initWithUnmanagedChannel:unmanaged_channel configuration:config];

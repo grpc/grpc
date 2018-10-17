@@ -26,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype)sharedInstance;
 
 - (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSMutableDictionary *)args;
+                                     channelArgs:(nullable NSDictionary *)args;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
