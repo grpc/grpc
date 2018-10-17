@@ -1593,7 +1593,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_client", 
+    "name": "memory_usage_client", 
     "src": [
       "test/core/memory_usage/client.cc"
     ], 
@@ -1610,7 +1610,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_server", 
+    "name": "memory_usage_server", 
     "src": [
       "test/core/memory_usage/server.cc"
     ], 

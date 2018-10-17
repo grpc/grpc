@@ -359,8 +359,8 @@ add_dependencies(buildtests_c json_stream_error_test)
 add_dependencies(buildtests_c json_test)
 add_dependencies(buildtests_c lame_client_test)
 add_dependencies(buildtests_c load_file_test)
-add_dependencies(buildtests_c memory_profile_client)
-add_dependencies(buildtests_c memory_profile_server)
+add_dependencies(buildtests_c memory_usage_client)
+add_dependencies(buildtests_c memory_usage_server)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c memory_usage_test)
 endif()
@@ -8756,12 +8756,12 @@ target_link_libraries(load_file_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_client
+add_executable(memory_usage_client
   test/core/memory_usage/client.cc
 )
 
 
-target_include_directories(memory_profile_client
+target_include_directories(memory_usage_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8774,7 +8774,7 @@ target_include_directories(memory_profile_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_client
+target_link_libraries(memory_usage_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8784,19 +8784,19 @@ target_link_libraries(memory_profile_client
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_client PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_server
+add_executable(memory_usage_server
   test/core/memory_usage/server.cc
 )
 
 
-target_include_directories(memory_profile_server
+target_include_directories(memory_usage_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8809,7 +8809,7 @@ target_include_directories(memory_profile_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_server
+target_link_libraries(memory_usage_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8819,8 +8819,8 @@ target_link_libraries(memory_profile_server
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_server PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
