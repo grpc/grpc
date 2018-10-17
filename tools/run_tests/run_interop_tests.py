@@ -618,6 +618,10 @@ _AUTH_TEST_CASES = [
     'per_rpc_creds'
 ]
 
+_GOOGLE_DEFAULT_CREDS_AUTH_TEST_CASES = [
+    'compute_engine_creds', 'jwt_token_creds'
+]
+
 _HTTP2_TEST_CASES = ['tls', 'framing']
 
 _HTTP2_SERVER_TEST_CASES = [
@@ -710,7 +714,10 @@ def compute_engine_creds_required(language, test_case):
     return False
 
 
-def auth_options(language, test_case, service_account_key_file=None):
+def auth_options(language,
+                 test_case,
+                 transport_security,
+                 service_account_key_file=None):
     """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
     language = str(language)
@@ -724,9 +731,6 @@ def auth_options(language, test_case, service_account_key_file=None):
     key_file_arg = '--service_account_key_file=%s' % service_account_key_file
     default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
-    # TODO: When using google_default_credentials outside of cloud-to-prod, the environment variable
-    # 'GOOGLE_APPLICATION_CREDENTIALS' needs to be set for the test case
-    # 'jwt_token_creds' to work.
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
                 'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
@@ -735,6 +739,11 @@ def auth_options(language, test_case, service_account_key_file=None):
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         else:
             cmdargs += [key_file_arg]
+            if test_case == 'jwt_token_creds' and transport_security == 'google_default_credentials':
+                if language == 'c++':
+                    # GoogleDefaultCredentials don't have an API to set the JSON key
+                    # outside of this env var.
+                    env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
 
     if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
         cmdargs += [oauth_scope_arg]
@@ -767,6 +776,7 @@ def cloud_to_prod_jobspec(language,
                           auth=False,
                           manual_cmd_log=None,
                           service_account_key_file=None,
+                          key_file_for_non_auth_google_default_creds_tests=None,
                           transport_security='tls'):
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
@@ -789,10 +799,19 @@ def cloud_to_prod_jobspec(language,
     cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
-        auth_cmdargs, auth_env = auth_options(language, test_case,
-                                              service_account_key_file)
+        auth_cmdargs, auth_env = auth_options(
+            language, test_case, transport_security, service_account_key_file)
         cmdargs += auth_cmdargs
         environ.update(auth_env)
+    elif transport_security == 'google_default_credentials':
+        # Channels with GoogleDefaultCredentials need to be able to find an OAuth
+        # token in order to function at all (this env variable allows doing that
+        # even when running outside of compute engine).
+        if key_file_for_non_auth_google_default_creds_tests:
+            environ.update({
+                'GOOGLE_APPLICATION_CREDENTIALS':
+                key_file_for_non_auth_google_default_creds_tests,
+            })
     cmdline = bash_cmdline(language.client_cmd(cmdargs))
     cwd = language.client_cwd
 
@@ -1153,6 +1172,12 @@ argp.add_argument(
     const=True,
     help='Skip auth tests requiring access to compute engine credentials.')
 argp.add_argument(
+    '--key_file_for_non_auth_google_default_creds_tests',
+    type=str,
+    help='GOOGLE_APPLICATION_CREDENTIALS service account key file to use for '
+    'non-auth tests that are running with GoogleDefaultCredentials.',
+    default=None)
+argp.add_argument(
     '--internal_ci',
     default=False,
     action='store_const',
@@ -1336,6 +1361,9 @@ try:
                                     manual_cmd_log=client_manual_cmd_log,
                                     service_account_key_file=args.
                                     service_account_key_file,
+                                    key_file_for_non_auth_google_default_creds_tests
+                                    =args.
+                                    key_file_for_non_auth_google_default_creds_tests,
                                     transport_security=
                                     'google_default_credentials')
                                 jobs.append(google_default_creds_test_job)
@@ -1377,9 +1405,10 @@ try:
                                 service_account_key_file,
                                 transport_security='tls')
                             jobs.append(tls_test_job)
+                            # TODO: Add more languages to the list to turn on tests.
                             if str(language) in [
-                                    'go'
-                            ]:  # Add more languages to the list to turn on tests.
+                                    'c++', 'go'
+                            ] and test_case in _GOOGLE_DEFAULT_CREDS_AUTH_TEST_CASES:
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,

@@ -32,6 +32,7 @@ export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/etc/roots.pem"
 tools/run_tests/run_interop_tests.py -l c++ \
     --cloud_to_prod --cloud_to_prod_auth --prod_servers default gateway_v4 \
     --service_account_key_file="${KOKORO_GFILE_DIR}/GrpcTesting-726eb1347f15.json" \
+    --key_file_for_non_auth_google_default_creds_tests="${KOKORO_GFILE_DIR}/GrpcTesting-726eb1347f15.json" \
     --skip_compute_engine_creds --internal_ci -t -j 4 || FAILED="true"
 
 tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
