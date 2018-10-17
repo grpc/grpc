@@ -141,9 +141,7 @@ const NSTimeInterval kChannelDestroyDelay = 30;
 }
 
 - (nonnull id)copyWithZone:(nullable NSZone *)zone {
-  GRPCChannelConfiguration *newConfig = [[GRPCChannelConfiguration alloc] init];
-  newConfig.host = _host;
-  newConfig.callOptions = _callOptions;
+  GRPCChannelConfiguration *newConfig = [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
 
   return newConfig;
 }
