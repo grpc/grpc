@@ -271,6 +271,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
   grpc_metadata_array request_metadata_;
   grpc_byte_buffer* request_payload_;
   grpc_completion_queue* cq_;
+  bool done_intercepting_ = false;
 };
 
 // Implementation of ThreadManager. Each instance of SyncRequestThreadManager
@@ -319,7 +320,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     }
 
     if (ok) {
-      // Calldata takes ownership of the completion queue inside sync_req
+      // Calldata takes ownership of the completion queue and interceptors
+      // inside sync_req
       SyncRequest::CallData cd(server_, sync_req);
       // Prepare for the next request
       if (!IsShutdown()) {

@@ -1081,6 +1081,7 @@ class CallOpSet : public CallOpSetInterface,
  public:
   CallOpSet() : cq_tag_(this), return_tag_(this) {}
   void FillOps(Call* call) override {
+    done_intercepting_ = false;
     g_core_codegen_interface->grpc_call_ref(call->call());
     call_ =
         *call;  // It's fine to create a copy of call since it's just pointers
