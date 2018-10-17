@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init;
 
-- (instancetype)initWithChannelDestroyDelay:(NSTimeInterval)channelDestroyDelay;
+- (instancetype)initWithChannelDestroyDelay:(NSTimeInterval)channelDestroyDelay NS_DESIGNATED_INITIALIZER;
 
 /**
  * Return a channel with a particular configuration. If the channel does not exist, execute \a
