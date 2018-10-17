@@ -764,15 +764,13 @@ class Call final {
       : call_hook_(nullptr),
         cq_(nullptr),
         call_(nullptr),
-        max_receive_message_size_(-1),
-        client_rpc_info_(nullptr) {}
+        max_receive_message_size_(-1) {}
   /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
-        max_receive_message_size_(-1),
-        client_rpc_info_(nullptr) {}
+        max_receive_message_size_(-1) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
        experimental::ClientRpcInfo* rpc_info)
@@ -783,12 +781,12 @@ class Call final {
         client_rpc_info_(rpc_info) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
-       int max_receive_message_size)
+       int max_receive_message_size, experimental::ServerRpcInfo* rpc_info)
       : call_hook_(call_hook),
         cq_(cq),
         call_(call),
         max_receive_message_size_(max_receive_message_size),
-        client_rpc_info_(nullptr) {}
+        server_rpc_info_(rpc_info) {}
 
   void PerformOps(CallOpSetInterface* ops) {
     call_hook_->PerformOpsOnCall(ops, this);
@@ -807,8 +805,8 @@ class Call final {
   CompletionQueue* cq_;
   grpc_call* call_;
   int max_receive_message_size_;
-  experimental::ClientRpcInfo* client_rpc_info_;
-  experimental::ServerRpcInfo* server_rpc_info_;
+  experimental::ClientRpcInfo* client_rpc_info_ = nullptr;
+  experimental::ServerRpcInfo* server_rpc_info_ = nullptr;
 };
 
 /// An abstract collection of call ops, used to generate the
