@@ -18,6 +18,7 @@ GRPCIO_TESTS_UNIT = [
     "_invalid_metadata_test.py",
     "_invocation_defects_test.py",
     "_metadata_code_details_test.py",
+    "_metadata_flags_test.py",
     "_metadata_test.py",
     # TODO: Issue 16336
     # "_reconnect_test.py",

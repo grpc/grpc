@@ -52,7 +52,7 @@ cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg):
 
 cdef class _ArgumentProcessor:
 
-  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *:
+  cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references):
     key, value = argument
     cdef bytes encoded_key = _encode(key)
     if encoded_key is not key:
@@ -89,7 +89,7 @@ cdef class _ArgumentsProcessor:
     self._argument_processors = []
     self._references = []
 
-  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *:
+  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable):
     self._c_arguments.arguments_length = len(self._arguments)
     if self._c_arguments.arguments_length == 0:
       return NULL
