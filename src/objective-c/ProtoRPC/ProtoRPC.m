@@ -72,6 +72,16 @@
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
+  if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
+    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
+  }
+  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
+  }
+  if (handler == nil) {
+    [NSException raise:NSInvalidArgumentException format:@"Response handler required."];
+  }
+
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
     _handler = handler;
@@ -82,6 +92,7 @@
     } else {
       _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
     }
+    dispatch_set_target_queue(handler.dispatchQueue, _dispatchQueue);
 
     [self start];
   }

@@ -48,9 +48,7 @@
 
 /**
  * All the responses must be issued to a user-provided dispatch queue. This property specifies the
- * dispatch queue to be used for issuing the notifications. A serial queue should be provided if
- * the order of responses (initial metadata, message, message, ..., message, trailing metadata)
- * needs to be maintained.
+ * dispatch queue to be used for issuing the notifications.
  */
 @property(atomic, readonly) dispatch_queue_t dispatchQueue;
 

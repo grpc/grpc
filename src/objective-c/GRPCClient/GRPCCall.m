@@ -101,6 +101,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
+  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
+  }
+  if (responseHandler == nil) {
+    [NSException raise:NSInvalidArgumentException format:@"Response handler required."];
+  }
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
@@ -114,6 +120,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
       // Fallback on earlier versions
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
+    dispatch_set_target_queue(responseHandler.dispatchQueue, _dispatchQueue);
     _started = NO;
   }
 
