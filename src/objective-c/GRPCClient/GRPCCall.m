@@ -753,7 +753,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_serverName.length != 0) {
       callOptions.serverAuthority = _serverName;
     }
-    if (_timeout != 0) {
+    if (_timeout > 0) {
       callOptions.timeout = _timeout;
     }
     uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
