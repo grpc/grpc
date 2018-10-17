@@ -95,6 +95,11 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_num_external_connectivity_watchers);
   printf("%lx", (unsigned long) grpc_channel_watch_connectivity_state);
   printf("%lx", (unsigned long) grpc_channel_support_connectivity_watcher);
+  printf("%lx", (unsigned long) grpc_resolver_factory_register);
+  printf("%lx", (unsigned long) grpc_resolver_observer_ref);
+  printf("%lx", (unsigned long) grpc_resolver_observer_unref);
+  printf("%lx", (unsigned long) grpc_resolver_observer_set_result);
+  printf("%lx", (unsigned long) grpc_resolver_observer_set_error);
   printf("%lx", (unsigned long) grpc_channel_create_call);
   printf("%lx", (unsigned long) grpc_channel_ping);
   printf("%lx", (unsigned long) grpc_channel_register_call);

@@ -33,6 +33,11 @@ EXPORTS
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
     grpc_channel_support_connectivity_watcher
+    grpc_resolver_factory_register
+    grpc_resolver_observer_ref
+    grpc_resolver_observer_unref
+    grpc_resolver_observer_set_result
+    grpc_resolver_observer_set_error
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call
