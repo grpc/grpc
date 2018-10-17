@@ -95,9 +95,7 @@ class LoadBalancingPolicy
   /// Updates the policy with a new set of \a args from the resolver.
   /// Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_LB_ADDRESSES channel arg.
-  /// Returns true if the update caused the number of backends to go from
-  ///  zero to non-zero, or non-zero to zero.
-  virtual bool UpdateLocked(const grpc_channel_args& args) GRPC_ABSTRACT;
+  virtual void UpdateLocked(const grpc_channel_args& args) GRPC_ABSTRACT;
 
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.

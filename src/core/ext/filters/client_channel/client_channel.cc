@@ -525,7 +525,9 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   // (c) Address resolution that causes number of backends to go from
   //     non-zero to zero.
   // (d) Address resolution that causes a new LB policy to be created.
-  bool trace_this_address_resolution = false;
+  //
+  // we track a list of strings to eventually be concatenated and traced.
+  grpc_core::InlinedVector<char*, 3> trace_strings;
   grpc_connectivity_state connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   grpc_error* connectivity_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
@@ -553,44 +555,51 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         gpr_log(GPR_INFO, "chand=%p: updating existing LB policy \"%s\" (%p)",
                 chand, lb_policy_name.get(), chand->lb_policy.get());
       }
-      // case (b) or (c)
-      trace_this_address_resolution =
-          chand->lb_policy->UpdateLocked(*chand->resolver_result);
+      chand->lb_policy->UpdateLocked(*chand->resolver_result);
       // No need to set the channel's connectivity state; the existing
       // watch on the LB policy will take care of that.
       set_connectivity_state = false;
     } else {
-      trace_this_address_resolution = true;  // case (d)
       // Instantiate new LB policy.
       create_new_lb_policy_locked(chand, lb_policy_name.get(),
                                   &connectivity_state, &connectivity_error);
-      // we also log the name of the new LB policy in addition to logging this
-      // resolution event.
       if (chand->channelz_channel != nullptr) {
         char* str;
         gpr_asprintf(&str, "Switched LB policy to %s", lb_policy_name.get());
-        chand->channelz_channel->AddTraceEvent(
-            grpc_core::channelz::ChannelTrace::Severity::Info,
-            grpc_slice_from_copied_string(str));
-        gpr_free(str);
+        trace_strings.push_back(str);
       }
     }
     // Find service config.
     grpc_core::UniquePtr<char> service_config_json =
         get_service_config_from_resolver_result_locked(chand);
-    if ((service_config_json == nullptr &&
-         chand->info_service_config_json != nullptr) ||
-        (service_config_json != nullptr &&
-         chand->info_service_config_json == nullptr) ||
-        (service_config_json != nullptr &&
-         chand->info_service_config_json != nullptr &&
-         gpr_stricmp(service_config_json.get(),
-                     chand->info_service_config_json.get()) != 0)) {
-      trace_this_address_resolution = true;  // case (a)
-      if (chand->channelz_channel != nullptr) {
+    // Note: It's safe to use chand->info_lb_policy_name here without
+    // taking a lock on chand->info_mu, because this function is the
+    // only thing that modifies its value, and it can only be invoked
+    // once at any given time.
+    if (chand->channelz_channel != nullptr) {
+      if ((service_config_json == nullptr &&
+           chand->info_service_config_json != nullptr) ||
+          (service_config_json != nullptr &&
+           chand->info_service_config_json == nullptr) ||
+          (service_config_json != nullptr &&
+           chand->info_service_config_json != nullptr &&
+           strcmp(service_config_json.get(),
+                  chand->info_service_config_json.get()) != 0)) {
+        trace_strings.push_back(gpr_strdup("Service config reloaded"));
+      }
+      //TODO
+      // const grpc_arg* channel_arg =
+      //     grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+      // if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+      //   grpc_lb_addresses* addresses =
+      //       static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+      // } else {
+      // }
+      if (!trace_strings.empty()) {
+        // TODO, concatenate the strings from trace_strings.
         chand->channelz_channel->AddTraceEvent(
             grpc_core::channelz::ChannelTrace::Severity::Info,
-            grpc_slice_from_static_string("Service config reloaded"));
+            grpc_slice_from_static_string("New addresses resolved"));
       }
     }
     // Swap out the data used by cc_get_channel_info().
@@ -598,11 +607,6 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     chand->info_lb_policy_name = std::move(lb_policy_name);
     chand->info_service_config_json = std::move(service_config_json);
     gpr_mu_unlock(&chand->info_mu);
-    if (trace_this_address_resolution && chand->channelz_channel != nullptr) {
-      chand->channelz_channel->AddTraceEvent(
-          grpc_core::channelz::ChannelTrace::Severity::Info,
-          grpc_slice_from_static_string("New addresses resolved"));
-    }
     // Clean up.
     grpc_channel_args_destroy(chand->resolver_result);
     chand->resolver_result = nullptr;

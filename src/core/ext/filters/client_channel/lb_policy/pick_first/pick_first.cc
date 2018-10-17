@@ -46,7 +46,7 @@ class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(const Args& args);
 
-  bool UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -333,7 +333,7 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
-bool PickFirst::UpdateLocked(const grpc_channel_args& args) {
+void PickFirst::UpdateLocked(const grpc_channel_args& args) {
   AutoChildRefsUpdater guard(this);
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
@@ -350,12 +350,10 @@ bool PickFirst::UpdateLocked(const grpc_channel_args& args) {
               "ignoring.",
               this);
     }
-    return false;
+    return;
   }
   const grpc_lb_addresses* addresses =
       static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
-  size_t old_size =
-      subchannel_list_ == nullptr ? 0 : subchannel_list_->num_subchannels();
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
@@ -373,7 +371,7 @@ bool PickFirst::UpdateLocked(const grpc_channel_args& args) {
         "pf_update_empty");
     subchannel_list_ = std::move(subchannel_list);  // Empty list.
     selected_ = nullptr;
-    return old_size != 0;
+    return;
   }
   if (selected_ == nullptr) {
     // We don't yet have a selected subchannel, so replace the current
@@ -413,7 +411,7 @@ bool PickFirst::UpdateLocked(const grpc_channel_args& args) {
           // not have contained the currently selected subchannel), drop
           // it, so that it doesn't override what we've done here.
           latest_pending_subchannel_list_.reset();
-          return false;
+          return;
         }
         GRPC_ERROR_UNREF(error);
       }
@@ -439,7 +437,6 @@ bool PickFirst::UpdateLocked(const grpc_channel_args& args) {
           ->CheckConnectivityStateAndStartWatchingLocked();
     }
   }
-  return old_size == 0;
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(

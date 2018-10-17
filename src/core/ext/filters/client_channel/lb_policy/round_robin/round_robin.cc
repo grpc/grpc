@@ -57,7 +57,7 @@ class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
 
-  bool UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -664,7 +664,7 @@ void RoundRobin::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
                                                  notify);
 }
 
-bool RoundRobin::UpdateLocked(const grpc_channel_args& args) {
+void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   AutoChildRefsUpdater guard(this);
   if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
@@ -677,7 +677,7 @@ bool RoundRobin::UpdateLocked(const grpc_channel_args& args) {
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
           "rr_update_missing");
     }
-    return false;  // TODO
+    return;
   }
   grpc_lb_addresses* addresses =
       static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
@@ -711,7 +711,6 @@ bool RoundRobin::UpdateLocked(const grpc_channel_args& args) {
     // If we've started picking, start watching the new list.
     latest_pending_subchannel_list_->StartWatchingLocked();
   }
-  return false;  // todo
 }
 
 //
