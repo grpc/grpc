@@ -39,6 +39,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Reflection.Tests", "Gr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Microbenchmarks", "Grpc.Microbenchmarks\Grpc.Microbenchmarks.csproj", "{84C17746-4727-4290-8E8B-A380793DAE1E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Tools", "Grpc.Tools\Grpc.Tools.csproj", "{8A643A1B-B85C-4E3D-BFD3-719FE04D7E91}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Grpc.Tools.Tests", "Grpc.Tools.Tests\Grpc.Tools.Tests.csproj", "{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +121,14 @@ Global
 		{84C17746-4727-4290-8E8B-A380793DAE1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{84C17746-4727-4290-8E8B-A380793DAE1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{84C17746-4727-4290-8E8B-A380793DAE1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A643A1B-B85C-4E3D-BFD3-719FE04D7E91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A643A1B-B85C-4E3D-BFD3-719FE04D7E91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A643A1B-B85C-4E3D-BFD3-719FE04D7E91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A643A1B-B85C-4E3D-BFD3-719FE04D7E91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AEBE9BD8-E433-45B7-8B3D-D458EDBBCFC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
