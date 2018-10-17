@@ -116,10 +116,10 @@ static GRPCChannelPool *gChannelPool;
   GRPCChannelConfiguration *channelConfig =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
   return [gChannelPool channelWithConfiguration:channelConfig
-                                  createChannel:^{
-                                    return
-                                        [GRPCChannel createChannelWithConfiguration:channelConfig];
-                                  }];
+                          createChannelCallback:^{
+                            return
+                            [GRPCChannel createChannelWithConfiguration:channelConfig];
+                          }];
 }
 
 + (void)closeOpenConnections {

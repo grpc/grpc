@@ -338,14 +338,14 @@ const NSTimeInterval kChannelDestroyDelay = 30;
 }
 
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration
-                            createChannel:(GRPCChannel * (^)(void))createChannel {
+                    createChannelCallback:(GRPCChannel * (^)(void))createChannelCallback {
   __block GRPCChannel *channel;
   dispatch_sync(_dispatchQueue, ^{
     if ([self->_channelPool objectForKey:configuration]) {
       [self->_callRefs[configuration] refChannel];
       channel = self->_channelPool[configuration];
     } else {
-      channel = createChannel();
+      channel = createChannelCallback();
       self->_channelPool[configuration] = channel;
 
       GRPCChannelCallRef *callRef = [[GRPCChannelCallRef alloc]

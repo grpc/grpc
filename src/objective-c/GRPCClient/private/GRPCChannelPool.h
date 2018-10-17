@@ -56,7 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
  * createChannel then add it in the pool. If the channel exists, increase its reference count.
  */
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration
-                            createChannel:(GRPCChannel * (^)(void))createChannel;
+                    createChannelCallback:(GRPCChannel * (^)(void))createChannelCallback;
 
 /** Decrease a channel's refcount. */
 - (void)unrefChannelWithConfiguration:configuration;
