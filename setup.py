@@ -103,6 +103,10 @@ BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
 
+# If this environmental variable is set, GRPC will not try to be compatible with
+# libc versions old than the one it was compiled against.
+DISABLE_LIBC_COMPATIBILITY = os.environ.get('GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY', False)
+
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = os.environ.get(
@@ -198,9 +202,9 @@ if BUILD_WITH_SYSTEM_ZLIB:
 if BUILD_WITH_SYSTEM_CARES:
   EXTENSION_LIBRARIES += ('cares',)
 
-DEFINE_MACROS = (
-    ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1))
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+if not DISABLE_LIBC_COMPATIBILITY:
+  DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
   # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
