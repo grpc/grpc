@@ -41,6 +41,7 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
 
 // The transport to be used by a gRPC call
 typedef NS_ENUM(NSInteger, GRPCTransportType) {
+  GRPCTransportTypeDefault = 0,
   // gRPC internal HTTP/2 stack with BoringSSL
   GRPCTransportTypeChttp2BoringSSL = 0,
   // Cronet stack
@@ -180,8 +181,10 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 @property(copy, readonly) NSString *channelPoolDomain;
 
 /**
- * Channel id allows a call to force creating a new channel (connection) rather than using a cached
- * channel. Calls using distinct channelID will not get cached to the same connection.
+ * Channel id allows control of channel caching within a channelPoolDomain. A call with a unique
+ * channelID will create a new channel (connection) instead of reusing an existing one. Multiple
+ * calls in the same channelPoolDomain using identical channelID are allowed to share connection
+ * if other channel options are also the same.
  */
 @property(readonly) NSUInteger channelID;
 
