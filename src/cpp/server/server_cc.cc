@@ -391,7 +391,10 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-    grpc_resource_quota* server_rq)
+    grpc_resource_quota* server_rq,
+    std::vector<
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+        interceptor_creators)
     : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
@@ -400,7 +403,8 @@ Server::Server(
       has_generic_service_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false) {
+      health_check_service_disabled_(false),
+      interceptor_creators_(std::move(interceptor_creators)) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;

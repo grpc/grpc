@@ -221,12 +221,10 @@ class ServerBuilder {
     explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
 
     void SetInterceptorCreators(
-        std::unique_ptr<std::vector<
-            std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>>
+        std::vector<
+            std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
             interceptor_creators) {
-      if (interceptor_creators != nullptr) {
-        builder_->interceptor_creators_ = std::move(*interceptor_creators);
-      }
+      builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
    private:
