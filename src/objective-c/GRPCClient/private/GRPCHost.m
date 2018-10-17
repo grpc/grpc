@@ -125,7 +125,10 @@ static NSMutableDictionary *kHostCache;
   if (hostURL.host && !hostURL.port) {
     address = [hostURL.host stringByAppendingString:@":443"];
   }
-  GRPCHost *cachedHost = kHostCache[address];
+  __block GRPCHost *cachedHost;
+  @synchronized (kHostCache) {
+    cachedHost = kHostCache[address];
+  }
   return (cachedHost != nil);
 }
 
