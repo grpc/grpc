@@ -18,6 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
 #import "GRPCConnectivityMonitor.h"
@@ -30,9 +31,6 @@
 #include <grpc/support/log.h>
 
 extern const char *kCFStreamVarName;
-
-// When all calls of a channel are destroyed, destroy the channel after this much seconds.
-const NSTimeInterval kChannelDestroyDelay = 30;
 
 @implementation GRPCChannelConfiguration
 
@@ -216,109 +214,22 @@ const NSTimeInterval kChannelDestroyDelay = 30;
 
 @end
 
-/**
- * Time the channel destroy when the channel's calls are unreffed. If there's new call, reset the
- * timer.
- */
-@interface GRPCChannelCallRef : NSObject
-
-- (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)configuration
-                                destroyDelay:(NSTimeInterval)destroyDelay
-                               dispatchQueue:(dispatch_queue_t)dispatchQueue
-                              destroyChannel:(void (^)())destroyChannel;
-
-/** Add call ref count to the channel and maybe reset the timer. */
-- (void)refChannel;
-
-/** Reduce call ref count to the channel and maybe set the timer. */
-- (void)unrefChannel;
-
-@end
-
-@implementation GRPCChannelCallRef {
-  GRPCChannelConfiguration *_configuration;
-  NSTimeInterval _destroyDelay;
-  // We use dispatch queue for this purpose since timer invalidation must happen on the same
-  // thread which issued the timer.
-  dispatch_queue_t _dispatchQueue;
-  void (^_destroyChannel)();
-
-  NSUInteger _refCount;
-  NSTimer *_timer;
-}
-
-- (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)configuration
-                                destroyDelay:(NSTimeInterval)destroyDelay
-                               dispatchQueue:(dispatch_queue_t)dispatchQueue
-                              destroyChannel:(void (^)())destroyChannel {
-  if ((self = [super init])) {
-    _configuration = configuration;
-    _destroyDelay = destroyDelay;
-    _dispatchQueue = dispatchQueue;
-    _destroyChannel = destroyChannel;
-
-    _refCount = 0;
-    _timer = nil;
-  }
-  return self;
-}
-
-// This function is protected by channel pool dispatch queue.
-- (void)refChannel {
-  _refCount++;
-  if (_timer) {
-    [_timer invalidate];
-  }
-  _timer = nil;
-}
-
-// This function is protected by channel spool dispatch queue.
-- (void)unrefChannel {
-  self->_refCount--;
-  if (self->_refCount == 0) {
-    if (self->_timer) {
-      [self->_timer invalidate];
-    }
-    self->_timer = [NSTimer scheduledTimerWithTimeInterval:self->_destroyDelay
-                                                    target:self
-                                                  selector:@selector(timerFire:)
-                                                  userInfo:nil
-                                                   repeats:NO];
-  }
-}
-
-- (void)timerFire:(NSTimer *)timer {
-  dispatch_sync(_dispatchQueue, ^{
-    if (self->_timer == nil || self->_timer != timer) {
-      return;
-    }
-    self->_timer = nil;
-    self->_destroyChannel(self->_configuration);
-  });
-}
-
-@end
-
 #pragma mark GRPCChannelPool
 
 @implementation GRPCChannelPool {
-  NSTimeInterval _channelDestroyDelay;
   NSMutableDictionary<GRPCChannelConfiguration *, GRPCChannel *> *_channelPool;
-  NSMutableDictionary<GRPCChannelConfiguration *, GRPCChannelCallRef *> *_callRefs;
   // Dedicated queue for timer
   dispatch_queue_t _dispatchQueue;
 }
 
 - (instancetype)init {
-  return [self initWithChannelDestroyDelay:kChannelDestroyDelay];
-}
-
-- (instancetype)initWithChannelDestroyDelay:(NSTimeInterval)channelDestroyDelay {
   if ((self = [super init])) {
-    _channelDestroyDelay = channelDestroyDelay;
     _channelPool = [NSMutableDictionary dictionary];
-    _callRefs = [NSMutableDictionary dictionary];
-    _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    if (@available(iOS 8.0, *)) {
+      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+    } else {
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    }
 
     // Connectivity monitor is not required for CFStream
     char *enableCFStream = getenv(kCFStreamVarName);
@@ -337,49 +248,43 @@ const NSTimeInterval kChannelDestroyDelay = 30;
   }
 }
 
-- (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration
-                    createChannelCallback:(GRPCChannel * (^)(void))createChannelCallback {
+- (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration {
   __block GRPCChannel *channel;
   dispatch_sync(_dispatchQueue, ^{
     if ([self->_channelPool objectForKey:configuration]) {
-      [self->_callRefs[configuration] refChannel];
       channel = self->_channelPool[configuration];
+      [channel unmanagedCallRef];
     } else {
-      channel = createChannelCallback();
+      channel = [GRPCChannel createChannelWithConfiguration:configuration];
       self->_channelPool[configuration] = channel;
-
-      GRPCChannelCallRef *callRef = [[GRPCChannelCallRef alloc]
-          initWithChannelConfiguration:configuration
-                          destroyDelay:self->_channelDestroyDelay
-                         dispatchQueue:self->_dispatchQueue
-                        destroyChannel:^(GRPCChannelConfiguration *configuration) {
-                          [self->_channelPool removeObjectForKey:configuration];
-                          [self->_callRefs removeObjectForKey:configuration];
-                        }];
-      [callRef refChannel];
-      self->_callRefs[configuration] = callRef;
     }
   });
   return channel;
 }
 
-- (void)unrefChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
-  dispatch_sync(_dispatchQueue, ^{
-    if ([self->_channelPool objectForKey:configuration]) {
-      [self->_callRefs[configuration] unrefChannel];
-    }
+- (void)removeChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
+  dispatch_async(_dispatchQueue, ^{
+    [self->_channelPool removeObjectForKey:configuration];
   });
 }
 
-- (void)clear {
+- (void)removeAllChannels {
   dispatch_sync(_dispatchQueue, ^{
     self->_channelPool = [NSMutableDictionary dictionary];
-    self->_callRefs = [NSMutableDictionary dictionary];
+  });
+}
+
+- (void)removeAndCloseAllChannels {
+  dispatch_sync(_dispatchQueue, ^{
+    [self->_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
+      [obj disconnect];
+    }];
+    self->_channelPool = [NSMutableDictionary dictionary];
   });
 }
 
 - (void)connectivityChange:(NSNotification *)note {
-  [self clear];
+  [self removeAndCloseAllChannels];
 }
 
 @end

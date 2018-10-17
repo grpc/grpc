@@ -718,7 +718,14 @@ const char *kCFStreamVarName = "grpc_cfstream";
       [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
   _wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host path:_path callOptions:_callOptions];
-  NSAssert(_wrappedCall, @"Error allocating RPC objects. Low memory?");
+  if (_wrappedCall == nil) {
+    [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                   code:GRPCErrorCodeUnavailable
+                                               userInfo:@{
+                                                          NSLocalizedDescriptionKey : @"Failed to create call from channel."
+                                                          }]];
+    return;
+  }
 
   [self sendHeaders];
   [self invokeCall];

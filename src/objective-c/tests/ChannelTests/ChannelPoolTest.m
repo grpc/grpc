@@ -44,83 +44,68 @@ NSString *kDummyHost = @"dummy.host";
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelConfiguration *config2 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initWithChannelDestroyDelay:1];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
 
-  __weak XCTestExpectation *expectCreateChannel =
-      [self expectationWithDescription:@"Create first channel"];
-  GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         [expectCreateChannel fulfill];
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
-  GRPCChannel *channel2 = [pool channelWithConfiguration:config2
-                                           createChannel:^{
-                                             XCTFail(@"Should not create a second channel.");
-                                             return (GRPCChannel *)nil;
-                                           }];
+  GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
+  GRPCChannel *channel2 = [pool channelWithConfiguration:config2];
   XCTAssertEqual(channel1, channel2);
 }
 
-- (void)testChannelTimeout {
-  NSTimeInterval kChannelDestroyDelay = 1.0;
+- (void)testChannelRemove {
   GRPCMutableCallOptions *options1 = [[GRPCMutableCallOptions alloc] init];
   options1.transportType = GRPCTransportTypeInsecure;
   GRPCChannelConfiguration *config1 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
-  GRPCChannelPool *pool =
-      [[GRPCChannelPool alloc] initWithChannelDestroyDelay:kChannelDestroyDelay];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
-  [pool unrefChannelWithConfiguration:config1];
-  __weak XCTestExpectation *expectTimerDone = [self expectationWithDescription:@"Timer elapse."];
-  NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:kChannelDestroyDelay + 1
-                                                   repeats:NO
-                                                     block:^(NSTimer *_Nonnull timer) {
-                                                       [expectTimerDone fulfill];
-                                                     }];
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
-  timer = nil;
+      [pool channelWithConfiguration:config1];
+  [pool removeChannelWithConfiguration:config1];
   GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   XCTAssertNotEqual(channel1, channel2);
 }
 
+extern NSTimeInterval kChannelDestroyDelay;
+
 - (void)testChannelTimeoutCancel {
-  NSTimeInterval kChannelDestroyDelay = 3.0;
+  NSTimeInterval kOriginalInterval = kChannelDestroyDelay;
+  kChannelDestroyDelay = 3.0;
   GRPCMutableCallOptions *options1 = [[GRPCMutableCallOptions alloc] init];
   options1.transportType = GRPCTransportTypeInsecure;
   GRPCChannelConfiguration *config1 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelPool *pool =
-      [[GRPCChannelPool alloc] initWithChannelDestroyDelay:kChannelDestroyDelay];
+      [[GRPCChannelPool alloc] init];
   GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   [channel1 unmanagedCallUnref];
   sleep(1);
   GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   XCTAssertEqual(channel1, channel2);
   sleep((int)kChannelDestroyDelay + 2);
   GRPCChannel *channel3 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   XCTAssertEqual(channel1, channel3);
+  kChannelDestroyDelay = kOriginalInterval;
+}
+
+- (void)testChannelDisconnect {
+  NSString *kDummyHost = @"dummy.host";
+  GRPCMutableCallOptions *options1 = [[GRPCMutableCallOptions alloc] init];
+  options1.transportType = GRPCTransportTypeInsecure;
+  GRPCCallOptions *options2 = [options1 copy];
+  GRPCChannelConfiguration *config1 =
+  [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
+  GRPCChannelConfiguration *config2 =
+  [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+
+
+  GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
+  [pool removeAndCloseAllChannels];
+  GRPCChannel *channel2 = [pool channelWithConfiguration:config2];
+  XCTAssertNotEqual(channel1, channel2);
 }
 
 - (void)testClearChannels {
@@ -132,31 +117,19 @@ NSString *kDummyHost = @"dummy.host";
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelConfiguration *config2 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initWithChannelDestroyDelay:1];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
 
   GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config2
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config2];
-                       }];
+      [pool channelWithConfiguration:config2];
   XCTAssertNotEqual(channel1, channel2);
 
-  [pool clear];
+  [pool removeAndCloseAllChannels];
   GRPCChannel *channel3 =
-      [pool channelWithConfiguration:config1
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config1];
-                       }];
+      [pool channelWithConfiguration:config1];
   GRPCChannel *channel4 =
-      [pool channelWithConfiguration:config2
-                       createChannel:^{
-                         return [GRPCChannel createChannelWithConfiguration:config2];
-                       }];
+      [pool channelWithConfiguration:config2];
   XCTAssertNotEqual(channel1, channel3);
   XCTAssertNotEqual(channel2, channel4);
 }

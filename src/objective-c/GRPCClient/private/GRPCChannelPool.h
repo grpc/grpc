@@ -49,20 +49,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init;
 
-- (instancetype)initWithChannelDestroyDelay:(NSTimeInterval)channelDestroyDelay NS_DESIGNATED_INITIALIZER;
-
 /**
  * Return a channel with a particular configuration. If the channel does not exist, execute \a
  * createChannel then add it in the pool. If the channel exists, increase its reference count.
  */
-- (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration
-                    createChannelCallback:(GRPCChannel * (^)(void))createChannelCallback;
+- (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration;
 
-/** Decrease a channel's refcount. */
-- (void)unrefChannelWithConfiguration:configuration;
+/** Remove a channel with particular configuration. */
+- (void)removeChannelWithConfiguration:(GRPCChannelConfiguration *)configuration;
 
 /** Clear all channels in the pool. */
-- (void)clear;
+- (void)removeAllChannels;
+
+/** Clear all channels in the pool and destroy the channels. */
+- (void)removeAndCloseAllChannels;
 
 @end
 

@@ -40,19 +40,22 @@ struct grpc_channel_credentials;
                              callOptions:(nullable GRPCCallOptions *)callOptions;
 
 /**
+ * Create a channel object with the signature \a config.
+ */
++ (nullable instancetype)createChannelWithConfiguration:(nonnull GRPCChannelConfiguration *)config;
+
+/**
  * Get a grpc core call object from this channel.
  */
 - (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
                               completionQueue:(nonnull GRPCCompletionQueue *)queue
                                   callOptions:(nonnull GRPCCallOptions *)callOptions;
 
+- (void)unmanagedCallRef;
+
 - (void)unmanagedCallUnref;
 
-/**
- * Create a channel object with the signature \a config. This function is used for testing only. Use
- * channelWithHost:callOptions: in production.
- */
-+ (nullable instancetype)createChannelWithConfiguration:(nonnull GRPCChannelConfiguration *)config;
+- (void)disconnect;
 
 // TODO (mxyan): deprecate with GRPCCall:closeOpenConnections
 + (void)closeOpenConnections;
