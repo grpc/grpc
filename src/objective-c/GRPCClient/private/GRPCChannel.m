@@ -64,7 +64,7 @@
 }
 
 - (void)unmanagedCallUnref {
-  [kChannelPool unrefChannelWithConfiguration:_configuration];
+  [gChannelPool unrefChannelWithConfiguration:_configuration];
 }
 
 - (nullable instancetype)initWithUnmanagedChannel:(nullable grpc_channel *)unmanagedChannel
@@ -94,12 +94,12 @@
 }
 
 static dispatch_once_t initChannelPool;
-static GRPCChannelPool *kChannelPool;
+static GRPCChannelPool *gChannelPool;
 
 + (nullable instancetype)channelWithHost:(NSString *)host
                              callOptions:(GRPCCallOptions *)callOptions {
   dispatch_once(&initChannelPool, ^{
-    kChannelPool = [[GRPCChannelPool alloc] init];
+    gChannelPool = [[GRPCChannelPool alloc] init];
   });
 
   NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
@@ -109,7 +109,7 @@ static GRPCChannelPool *kChannelPool;
 
   GRPCChannelConfiguration *channelConfig =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
-  return [kChannelPool channelWithConfiguration:channelConfig
+  return [gChannelPool channelWithConfiguration:channelConfig
                                   createChannel:^{
                                     return
                                         [GRPCChannel createChannelWithConfiguration:channelConfig];
@@ -117,7 +117,7 @@ static GRPCChannelPool *kChannelPool;
 }
 
 + (void)closeOpenConnections {
-  [kChannelPool clear];
+  [gChannelPool clear];
 }
 
 @end
