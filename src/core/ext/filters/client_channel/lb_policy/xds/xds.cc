@@ -673,7 +673,7 @@ bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
              0 &&
          request->client_stats.num_calls_finished_known_received == 0 &&
-         (drop_entries == nullptr || drop_entries->size() == 0);
+         (drop_entries == nullptr || drop_entries->empty());
 }
 
 void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
@@ -1275,9 +1275,9 @@ grpc_connectivity_state XdsLb::CheckConnectivityLocked(
 }
 
 void XdsLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
-                                      grpc_closure* notify) {
+                                      grpc_closure* closure) {
   grpc_connectivity_state_notify_on_state_change(&state_tracker_, current,
-                                                 notify);
+                                                 closure);
 }
 
 void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
