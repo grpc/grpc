@@ -1280,6 +1280,73 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_xds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_resolver_fake",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
+        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_resolver_fake",
+        "grpc_secure",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_subchannel_list",
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
