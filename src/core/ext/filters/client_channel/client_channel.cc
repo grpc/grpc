@@ -131,6 +131,8 @@ typedef struct client_channel_channel_data {
   grpc_core::UniquePtr<char> info_service_config_json;
   /* backpointer to grpc_channel's channelz node */
   grpc_core::channelz::ClientChannelNode* channelz_channel;
+  /* caches if the last resolution event led to zero addresses */
+  bool previous_resolution_zero_num_addresses;
 } channel_data;
 
 typedef struct {
@@ -572,7 +574,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     // Find service config.
     grpc_core::UniquePtr<char> service_config_json =
         get_service_config_from_resolver_result_locked(chand);
-    // Note: It's safe to use chand->info_lb_policy_name here without
+    // Note: It's safe to use chand->info_service_config_json here without
     // taking a lock on chand->info_mu, because this function is the
     // only thing that modifies its value, and it can only be invoked
     // once at any given time.
@@ -585,21 +587,45 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
            chand->info_service_config_json != nullptr &&
            strcmp(service_config_json.get(),
                   chand->info_service_config_json.get()) != 0)) {
+        // TODO(ncteisen): might be worth somehow including a snippet of the
+        // config in the trace, at the risk of bloating the trace logs.
         trace_strings.push_back(gpr_strdup("Service config reloaded"));
       }
-      //TODO
-      // const grpc_arg* channel_arg =
-      //     grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-      // if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-      //   grpc_lb_addresses* addresses =
-      //       static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-      // } else {
-      // }
+      int zero_num_addresses = true;
+      const grpc_arg* channel_arg =
+          grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+      if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+        grpc_lb_addresses* addresses =
+            static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+        if (addresses->num_addresses > 0) {
+          zero_num_addresses = false;
+        }
+      }
+      if (zero_num_addresses &&
+          !chand->previous_resolution_zero_num_addresses) {
+        trace_strings.push_back(gpr_strdup("Address list became empty"));
+      } else if (!zero_num_addresses &&
+                 chand->previous_resolution_zero_num_addresses) {
+        trace_strings.push_back(gpr_strdup("Address list became non-empty"));
+      }
+      chand->previous_resolution_zero_num_addresses = zero_num_addresses;
       if (!trace_strings.empty()) {
-        // TODO, concatenate the strings from trace_strings.
+        gpr_strvec v;
+        gpr_strvec_init(&v);
+        gpr_strvec_add(&v, gpr_strdup("Resolution event: "));
+        bool is_first = 1;
+        for (size_t i = 0; i < trace_strings.size(); ++i) {
+          if (!is_first) gpr_strvec_add(&v, gpr_strdup(", "));
+          is_first = false;
+          gpr_strvec_add(&v, trace_strings[i]);
+        }
+        char* flat;
+        size_t flat_len = 0;
+        flat = gpr_strvec_flatten(&v, &flat_len);
         chand->channelz_channel->AddTraceEvent(
             grpc_core::channelz::ChannelTrace::Severity::Info,
-            grpc_slice_from_static_string("New addresses resolved"));
+            grpc_slice_new(flat, flat_len, gpr_free));
+        gpr_strvec_destroy(&v);
       }
     }
     // Swap out the data used by cc_get_channel_info().
@@ -770,6 +796,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
   chand->channelz_channel = nullptr;
+  chand->previous_resolution_zero_num_addresses = true;
   // Record client channel factory.
   arg = grpc_channel_args_find(args->channel_args,
                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
