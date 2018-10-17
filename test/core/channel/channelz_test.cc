@@ -226,7 +226,19 @@ void ChannelzSleep(int64_t sleep_us) {
 
 }  // anonymous namespace
 
-class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {};
+class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {
+ protected:
+  // ensure we always have a fresh registry for tests.
+  void SetUp() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+
+  void TearDown() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+};
 
 TEST_P(ChannelzChannelTest, BasicChannel) {
   grpc_core::ExecCtx exec_ctx;
@@ -311,6 +323,32 @@ TEST(ChannelzGetTopChannelsTest, ManyChannelsTest) {
   ChannelFixture channels[10];
   (void)channels;  // suppress unused variable error
   ValidateGetTopChannels(10);
+}
+
+TEST(ChannelzGetTopChannelsTest, GetTopChannelsPagination) {
+  grpc_core::ExecCtx exec_ctx;
+  // this is over the pagination limit.
+  ChannelFixture channels[150];
+  (void)channels;  // suppress unused variable error
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // 100 is the pagination limit.
+  ValidateJsonArraySize(parsed_json, "channel", 100);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  EXPECT_EQ(end, nullptr);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // Now we get the rest
+  json_str = ChannelzRegistry::GetTopChannels(101);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 50);
+  end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
 }
 
 TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {
