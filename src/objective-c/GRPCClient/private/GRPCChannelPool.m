@@ -153,24 +153,7 @@ extern const char *kCFStreamVarName;
 - (NSUInteger)hash {
   NSUInteger result = 0;
   result ^= _host.hash;
-  result ^= _callOptions.userAgentPrefix.hash;
-  result ^= _callOptions.responseSizeLimit;
-  result ^= _callOptions.compressAlgorithm;
-  result ^= _callOptions.enableRetry;
-  result ^= (unsigned int)(_callOptions.keepaliveInterval * 1000);
-  result ^= (unsigned int)(_callOptions.keepaliveTimeout * 1000);
-  result ^= (unsigned int)(_callOptions.connectMinTimeout * 1000);
-  result ^= (unsigned int)(_callOptions.connectInitialBackoff * 1000);
-  result ^= (unsigned int)(_callOptions.connectMaxBackoff * 1000);
-  result ^= _callOptions.additionalChannelArgs.hash;
-  result ^= _callOptions.PEMRootCertificates.hash;
-  result ^= _callOptions.PEMPrivateKey.hash;
-  result ^= _callOptions.PEMCertChain.hash;
-  result ^= _callOptions.hostNameOverride.hash;
-  result ^= _callOptions.transportType;
-  result ^= [_callOptions.logContext hash];
-  result ^= _callOptions.channelPoolDomain.hash;
-  result ^= _callOptions.channelID;
+  result ^= _callOptions.channelOptionsHash;
 
   return result;
 }

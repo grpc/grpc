@@ -267,6 +267,30 @@ static NSUInteger kDefaultChannelID = 0;
   return YES;
 }
 
+- (NSUInteger)channelOptionsHash {
+  NSUInteger result = 0;
+  result ^= _userAgentPrefix.hash;
+  result ^= _responseSizeLimit;
+  result ^= _compressAlgorithm;
+  result ^= _enableRetry;
+  result ^= (unsigned int)(_keepaliveInterval * 1000);
+  result ^= (unsigned int)(_keepaliveTimeout * 1000);
+  result ^= (unsigned int)(_connectMinTimeout * 1000);
+  result ^= (unsigned int)(_connectInitialBackoff * 1000);
+  result ^= (unsigned int)(_connectMaxBackoff * 1000);
+  result ^= _additionalChannelArgs.hash;
+  result ^= _PEMRootCertificates.hash;
+  result ^= _PEMPrivateKey.hash;
+  result ^= _PEMCertChain.hash;
+  result ^= _hostNameOverride.hash;
+  result ^= _transportType;
+  result ^= [_logContext hash];
+  result ^= _channelPoolDomain.hash;
+  result ^= _channelID;
+
+  return result;
+}
+
 @end
 
 @implementation GRPCMutableCallOptions
