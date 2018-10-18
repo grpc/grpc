@@ -83,6 +83,14 @@ argp.add_argument(
     'cloned.  Valid only with --git_checkout.')
 
 argp.add_argument(
+    '--include_git_commit_in_tag',
+    default=False,
+    action='store_true',
+    help=('If set, images will be tagged with a suffix of '
+          'at_commit_<git commit the final image was built at>. '
+          'Only applicable when building at release "master"'))
+
+argp.add_argument(
     '--keep',
     action='store_true',
     help='keep the created local images after uploading to GCR')
@@ -152,6 +160,15 @@ def build_image_jobspec(runtime, env, gcr_tag, stack_base):
   gcr_tag: the tag for the docker image (i.e. v1.3.0).
   stack_base: the local gRPC repo path.
   """
+    if args.include_git_commit_in_tag:
+        if gcr_tag != 'master':
+            print(
+                'Can only use --include_git_commit_in_image_tag for "master" releases'
+            )
+            sys.exit(1)
+        git_commit = subprocess.check_output(
+            ['git', 'log'], cwd=stack_base).split('\n')[0].split()[1]
+        gcr_tag = 'master_at_commit_{git_commit}'.format(git_commit=git_commit)
     basename = 'grpc_interop_%s' % runtime
     tag = '%s/%s:%s' % (args.gcr_path, basename, gcr_tag)
     build_env = {'INTEROP_IMAGE': tag, 'BASE_NAME': basename, 'TTY_FLAG': '-t'}
