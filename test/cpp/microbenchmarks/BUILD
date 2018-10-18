@@ -41,7 +41,6 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++_unsecure",
-        "//:lb_server_load_reporting_filter",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
