@@ -720,7 +720,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                    code:GRPCErrorCodeUnavailable
                                                userInfo:@{
-                                                          NSLocalizedDescriptionKey : @"Failed to create call from channel."
+                                                          NSLocalizedDescriptionKey : @"Failed to create call or channel."
                                                           }]];
     return;
   }
