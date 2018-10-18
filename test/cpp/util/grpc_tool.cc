@@ -506,7 +506,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
     request_text = argv[2];
   }
 
-  if (parser->IsStreaming(method_name, true /* is_request */)) {
+  if (parser != nullptr && parser->IsStreaming(method_name, true /* is_request */)) {
     std::istream* input_stream;
     std::ifstream input_file;
 
@@ -597,7 +597,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
   } else {  // parser->IsStreaming(method_name, true /* is_request */)
     if (FLAGS_batch) {
-      if (parser->IsStreaming(method_name, false /* is_request */)) {
+      if (parser != nullptr && parser->IsStreaming(method_name, false /* is_request */)) {
         fprintf(stderr, "Batch mode for streaming RPC is not supported.\n");
         return false;
       }
