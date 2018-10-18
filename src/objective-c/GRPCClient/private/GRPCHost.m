@@ -35,7 +35,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSMutableDictionary *kHostCache;
+static NSMutableDictionary *gHostCache;
 
 @implementation GRPCHost {
   NSString *_PEMRootCertificates;
@@ -65,10 +65,10 @@ static NSMutableDictionary *kHostCache;
   // Look up the GRPCHost in the cache.
   static dispatch_once_t cacheInitialization;
   dispatch_once(&cacheInitialization, ^{
-    kHostCache = [NSMutableDictionary dictionary];
+    gHostCache = [NSMutableDictionary dictionary];
   });
-  @synchronized(kHostCache) {
-    GRPCHost *cachedHost = kHostCache[address];
+  @synchronized(gHostCache) {
+    GRPCHost *cachedHost = gHostCache[address];
     if (cachedHost) {
       return cachedHost;
     }
@@ -76,15 +76,15 @@ static NSMutableDictionary *kHostCache;
     if ((self = [super init])) {
       _address = address;
       _retryEnabled = YES;
-      kHostCache[address] = self;
+      gHostCache[address] = self;
     }
   }
   return self;
 }
 
 + (void)resetAllHostSettings {
-  @synchronized(kHostCache) {
-    kHostCache = [NSMutableDictionary dictionary];
+  @synchronized(gHostCache) {
+    gHostCache = [NSMutableDictionary dictionary];
   }
 }
 
@@ -140,8 +140,8 @@ static NSMutableDictionary *kHostCache;
     address = [hostURL.host stringByAppendingString:@":443"];
   }
   __block GRPCHost *cachedHost;
-  @synchronized (kHostCache) {
-    cachedHost = kHostCache[address];
+  @synchronized (gHostCache) {
+    cachedHost = gHostCache[address];
   }
   return (cachedHost != nil);
 }
