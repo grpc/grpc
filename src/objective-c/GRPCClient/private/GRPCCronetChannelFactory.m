@@ -84,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
                                      channelArgs:(nullable NSDictionary *)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
-  return nil;
+  return NULL;
 }
 
 @end
