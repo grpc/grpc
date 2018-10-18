@@ -39,7 +39,7 @@ example will add all .proto files in a project and all its subdirectories
 
 ```xml
   <ItemGroup>
-    <Protobuf Include="**/*.proto />
+    <Protobuf Include="**/*.proto" />
   </ItemGroup>
 ```
 
