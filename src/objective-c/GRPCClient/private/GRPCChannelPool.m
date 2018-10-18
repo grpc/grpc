@@ -36,8 +36,8 @@ extern const char *kCFStreamVarName;
 
 - (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
   if ((self = [super init])) {
-    _host = host;
-    _callOptions = callOptions;
+    _host = [host copy];
+    _callOptions = [callOptions copy];
   }
   return self;
 }
@@ -56,9 +56,8 @@ extern const char *kCFStreamVarName;
                                                          privateKey:_callOptions.PEMPrivateKey
                                                           certChain:_callOptions.PEMCertChain
                                                               error:&error];
-        if (error) {
+        if (factory == nil) {
           NSLog(@"Error creating secure channel factory: %@", error);
-          return nil;
         }
         return factory;
 #ifdef GRPC_COMPILE_WITH_CRONET
