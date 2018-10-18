@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <!-- This is copied verbatim from Grpc.Core/Common.csproj.include. Other settings
+       in that file conflict with the intent of this build, as it cannot be signed,
+       and may not compile Grpc.Core/Version.cs, as that file references constants
+       in Grpc.Core.dll.
+       TODO(kkm): Refactor imports. -->
+  <PropertyGroup Condition=" '$(OS)' != 'Windows_NT' and '$(MSBuildRuntimeType)' == 'Core' ">
+    <!-- Use Mono reference assemblies in SDK build: https://github.com/dotnet/sdk/issues/335 -->
+    <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grpc.Tools\Grpc.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.8.3" />
+    <PackageReference Include="NUnit; NUnitLite" Version="3.10.1" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.v4.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.*" />
+  </ItemGroup>
+
+  <!-- Groups below is a hack to allow the test to run under Mono Framework build.
+       ========================================================================== -->
+
+  <!-- Mono unfortunately comes with broken Microsoft.Build.* assemblies installed in
+       the GAC, but fortunately searches for runtime assemblies in a different order
+       than Windows CLR host: the GAC assemblies have the lowest search priority, (see
+       https://www.mono-project.com/docs/advanced/assemblies-and-the-gac/), not the
+       highest as is in Windows (documented at
+       https://docs.microsoft.com/dotnet/framework/deployment/how-the-runtime-locates-assemblies).
+       To run the tests under Mono, we need correct assemblies in the same directory as
+       the test executable. Correct versions are in the MSBuild directory under Mono. -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' and '$(OS)' != 'Windows_NT' ">
+    <None Include="$(_MSBuildAssemblyPath)/Microsoft.Build.Framework.dll;
+                   $(_MSBuildAssemblyPath)/Microsoft.Build.Utilities.v4.0.dll;
+                   $(_MSBuildAssemblyPath)/Microsoft.Build.Utilities.Core.dll"
+          CopyToOutputDirectory="Always" Visible="false" />
+  </ItemGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net45' and '$(OS)' != 'Windows_NT' ">
+    <!-- The None items are included into assembly candidate resolution by default, and
+         we do not want that, as they are not valid as reference assemblies (the version of
+         Microsoft.Build.Utilities.v4.0 is a pure facade for Microsoft.Build.Utilities.Core,
+         and does not define any types at all). Exclude them from assembly resolution. See
+         https://github.com/Microsoft/msbuild/blob/50639058f/documentation/wiki/ResolveAssemblyReference.md -->
+    <AssemblySearchPaths>{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</AssemblySearchPaths>
+    <!-- Mono knows better where its MSBuild is. -->
+    <_MSBuildAssemblyPath Condition=" '$(MSBuildRuntimeType)' != 'Core' "
+                          >$(MSBuildToolsPath)</_MSBuildAssemblyPath>
+    <!-- Under dotnet, make the best guess we can. -->
+    <_MSBuildAssemblyPath Condition=" '$(MSBuildRuntimeType)' == 'Core' "
+                          >$(FrameworkPathOverride)/../msbuild/$(MSBuildToolsVersion)/bin</_MSBuildAssemblyPath>
+  </PropertyGroup>
+
+</Project>

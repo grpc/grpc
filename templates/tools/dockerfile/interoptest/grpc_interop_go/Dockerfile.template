@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM golang:latest
+  FROM golang:1.11
   
   <%include file="../../go_path.include"/>
   <%include file="../../python_deps.include"/>
