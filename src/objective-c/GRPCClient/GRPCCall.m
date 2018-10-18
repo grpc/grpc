@@ -445,11 +445,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     [_responseWriteable enqueueSuccessfulCompletion];
   }
 
-  // Connectivity monitor is not required for CFStream
-  char *enableCFStream = getenv(kCFStreamVarName);
-  if (enableCFStream == nil || enableCFStream[0] != '1') {
-    [GRPCConnectivityMonitor unregisterObserver:self];
-  }
+  [GRPCConnectivityMonitor unregisterObserver:self];
 
   // If the call isn't retained anywhere else, it can be deallocated now.
   _retainSelf = nil;

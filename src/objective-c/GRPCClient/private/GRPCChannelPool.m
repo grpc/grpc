@@ -187,11 +187,7 @@ extern const char *kCFStreamVarName;
 }
 
 - (void)dealloc {
-  // Connectivity monitor is not required for CFStream
-  char *enableCFStream = getenv(kCFStreamVarName);
-  if (enableCFStream == nil || enableCFStream[0] != '1') {
-    [GRPCConnectivityMonitor unregisterObserver:self];
-  }
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration {
