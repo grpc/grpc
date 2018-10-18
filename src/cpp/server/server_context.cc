@@ -45,8 +45,8 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
         tag_(nullptr),
         refs_(2),
         finalized_(false),
-        cancelled_(0),
-        done_intercepting_(false) {}
+        cancelled_(0) /*,
+        done_intercepting_(false)*/ {}
 
   void FillOps(internal::Call* call) override;
   bool FinalizeResult(void** tag, bool* status) override;
@@ -90,7 +90,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   int refs_;
   bool finalized_;
   int cancelled_;
-  bool done_intercepting_;
+  // bool done_intercepting_;
   internal::Call call_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };

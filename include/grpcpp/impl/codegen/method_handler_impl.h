@@ -60,10 +60,13 @@ class RpcMethodHandler : public MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     ResponseType rsp;
-    if (status_.ok()) {
-      status_ = CatchingFunctionHandler([this, &param, &rsp] {
-        return func_(service_, param.server_context, &this->req_, &rsp);
+    Status status = param.status;
+    if (status.ok()) {
+      status = CatchingFunctionHandler([this, &param, &rsp] {
+        return func_(service_, param.server_context,
+                     static_cast<RequestType*>(param.request), &rsp);
       });
+      delete static_cast<RequestType*>(param.request);
     }
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
@@ -75,22 +78,24 @@ class RpcMethodHandler : public MethodHandler {
     if (param.server_context->compression_level_set()) {
       ops.set_compression_level(param.server_context->compression_level());
     }
-    if (status_.ok()) {
-      status_ = ops.SendMessage(rsp);
+    if (status.ok()) {
+      status = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status_);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req) final {
+  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
     ByteBuffer buf;
     buf.set_buffer(req);
-    status_ = SerializationTraits<RequestType>::Deserialize(&buf, &req_);
+    auto* request = new RequestType();
+    *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
-    if (status_.ok()) {
-      return &req_;
+    if (status->ok()) {
+      return request;
     }
+    delete request;
     return nullptr;
   }
 
@@ -101,8 +106,6 @@ class RpcMethodHandler : public MethodHandler {
       func_;
   // The class the above handler function lives in.
   ServiceType* service_;
-  RequestType req_;
-  Status status_;
 };
 
 /// A wrapper class of an application provided client streaming handler.
@@ -160,11 +163,14 @@ class ServerStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    if (status_.ok()) {
+    Status status = param.status;
+    if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
-      status_ = CatchingFunctionHandler([this, &param, &writer] {
-        return func_(service_, param.server_context, &this->req_, &writer);
+      status = CatchingFunctionHandler([this, &param, &writer] {
+        return func_(service_, param.server_context,
+                     static_cast<RequestType*>(param.request), &writer);
       });
+      delete static_cast<RequestType*>(param.request);
     }
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
@@ -175,7 +181,7 @@ class ServerStreamingHandler : public MethodHandler {
         ops.set_compression_level(param.server_context->compression_level());
       }
     }
-    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status_);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
@@ -183,14 +189,16 @@ class ServerStreamingHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req) final {
+  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
     ByteBuffer buf;
     buf.set_buffer(req);
-    status_ = SerializationTraits<RequestType>::Deserialize(&buf, &req_);
+    auto* request = new RequestType();
+    *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
-    if (status_.ok()) {
-      return &req_;
+    if (status->ok()) {
+      return request;
     }
+    delete request;
     return nullptr;
   }
 
@@ -199,8 +207,6 @@ class ServerStreamingHandler : public MethodHandler {
                        ServerWriter<ResponseType>*)>
       func_;
   ServiceType* service_;
-  RequestType req_;
-  Status status_;
 };
 
 /// A wrapper class of an application provided bidi-streaming handler.
@@ -317,7 +323,7 @@ class ErrorMethodHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req) final {
+  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
     // We have to destroy any request payload
     if (req != nullptr) {
       g_core_codegen_interface->grpc_byte_buffer_destroy(req);

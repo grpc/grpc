@@ -997,7 +997,6 @@ class InterceptorBatchMethodsImpl
         server_rpc_info->interceptors_.size() == 0) {
       return true;
     }
-    GPR_ASSERT(false);
     RunServerInterceptors();
     return false;
   }
@@ -1128,7 +1127,6 @@ class InterceptorBatchMethodsImpl
   Status send_status_;
 
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
-  size_t* send_trailing_metadata_count_ = nullptr;
 
   void* recv_message_ = nullptr;
 
@@ -1137,10 +1135,6 @@ class InterceptorBatchMethodsImpl
   Status* recv_status_ = nullptr;
 
   internal::MetadataMap* recv_trailing_metadata_ = nullptr;
-
-  // void (*hijacking_state_setter_)();
-  // void (*continue_after_interception_)();
-  // void (*continue_after_reverse_interception_)();
 };
 
 /// Primary implementation of CallOpSetInterface.

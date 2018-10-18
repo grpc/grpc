@@ -21,6 +21,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -162,6 +163,7 @@ class ServerInterface : public internal::CallHook {
     void* const tag_;
     const bool delete_on_finalize_;
     grpc_call* call_;
+    internal::InterceptorBatchMethodsImpl interceptor_methods;
   };
 
   class RegisteredAsyncRequest : public BaseAsyncRequest {
@@ -294,6 +296,11 @@ class ServerInterface : public internal::CallHook {
                                void* tag) {
     new GenericAsyncRequest(this, context, stream, call_cq, notification_cq,
                             tag, true);
+  }
+
+private:
+  virtual const std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>* interceptor_creators() {
+    return nullptr;
   }
 };
 

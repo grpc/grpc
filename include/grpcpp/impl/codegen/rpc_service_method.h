@@ -40,17 +40,23 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(Call* c, ServerContext* context)
-        : call(c), server_context(context) {}
+    HandlerParameter(Call* c, ServerContext* context, void* req,
+                     Status req_status)
+        : call(c), server_context(context), request(req), status(req_status) {}
     ~HandlerParameter() {}
     Call* call;
     ServerContext* server_context;
+    void* request;
+    Status status;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 
-  /* Returns pointer to the deserialized request. Ownership is retained by the
-     handler. Returns nullptr if deserialization failed */
-  virtual void* Deserialize(grpc_byte_buffer* req) {
+  /* Returns a pointer to the deserialized request. \a status reflects the
+     result of deserialization. This pointer and the status should be filled in
+     a HandlerParameter and passed to RunHandler. It is illegal to access the
+     pointer after calling RunHandler. Ownership of the deserialized request is
+     retained by the handler. Returns nullptr if deserialization failed. */
+  virtual void* Deserialize(grpc_byte_buffer* req, Status* status) {
     GPR_CODEGEN_ASSERT(req == nullptr);
     return nullptr;
   }
