@@ -95,7 +95,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
     _refCount--;
     if (_refCount == 0) {
       [_timer invalidate];
-      _timer = [NSTimer scheduledTimerWithTimeInterval:self->_destroyDelay
+      _timer = [NSTimer scheduledTimerWithTimeInterval:_destroyDelay
                                                 target:self
                                               selector:@selector(timerFire:)
                                               userInfo:nil
