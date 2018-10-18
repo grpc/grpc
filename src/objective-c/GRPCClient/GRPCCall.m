@@ -461,10 +461,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)cancel {
-  if (!self.isWaitingForToken) {
-    [self cancelCall];
-  } else {
-    self.isWaitingForToken = NO;
+  @synchronized (self) {
+    if (!self.isWaitingForToken) {
+      [self cancelCall];
+    } else {
+      self.isWaitingForToken = NO;
+    }
   }
   [self
       maybeFinishWithError:[NSError
@@ -779,14 +781,18 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _callOptions = callOptions;
   }
   if (_callOptions.authTokenProvider != nil) {
-    self.isWaitingForToken = YES;
+    @synchronized (self) {
+      self.isWaitingForToken = YES;
+    }
     [self.tokenProvider getTokenWithHandler:^(NSString *token) {
-      if (self.isWaitingForToken) {
-        if (token) {
-          self->_fetchedOauth2AccessToken = [token copy];
+      @synchronized (self) {
+        if (self.isWaitingForToken) {
+          if (token) {
+            self->_fetchedOauth2AccessToken = [token copy];
+          }
+          [self startCallWithWriteable:writeable];
+          self.isWaitingForToken = NO;
         }
-        [self startCallWithWriteable:writeable];
-        self.isWaitingForToken = NO;
       }
     }];
   } else {
