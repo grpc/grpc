@@ -164,18 +164,11 @@ extern const char *kCFStreamVarName;
 
 @implementation GRPCChannelPool {
   NSMutableDictionary<GRPCChannelConfiguration *, GRPCChannel *> *_channelPool;
-  // Dedicated queue for timer
-  dispatch_queue_t _dispatchQueue;
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
     _channelPool = [NSMutableDictionary dictionary];
-    if (@available(iOS 8.0, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
-    } else {
-      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-    }
 
     // Connectivity monitor is not required for CFStream
     char *enableCFStream = getenv(kCFStreamVarName);
@@ -192,37 +185,39 @@ extern const char *kCFStreamVarName;
 
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration {
   __block GRPCChannel *channel;
-  dispatch_sync(_dispatchQueue, ^{
-    if ([self->_channelPool objectForKey:configuration]) {
-      channel = self->_channelPool[configuration];
+  @synchronized(self) {
+    if ([_channelPool objectForKey:configuration]) {
+      channel = _channelPool[configuration];
       [channel unmanagedCallRef];
     } else {
       channel = [GRPCChannel createChannelWithConfiguration:configuration];
-      self->_channelPool[configuration] = channel;
+      if (channel != nil) {
+        _channelPool[configuration] = channel;
+      }
     }
-  });
+  }
   return channel;
 }
 
 - (void)removeChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
-  dispatch_async(_dispatchQueue, ^{
+  @synchronized(self) {
     [self->_channelPool removeObjectForKey:configuration];
-  });
+  }
 }
 
 - (void)removeAllChannels {
-  dispatch_sync(_dispatchQueue, ^{
-    self->_channelPool = [NSMutableDictionary dictionary];
-  });
+  @synchronized(self) {
+    _channelPool = [NSMutableDictionary dictionary];
+  }
 }
 
 - (void)removeAndCloseAllChannels {
-  dispatch_sync(_dispatchQueue, ^{
-    [self->_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
+  @synchronized(self) {
+    [_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
       [obj disconnect];
     }];
-    self->_channelPool = [NSMutableDictionary dictionary];
-  });
+    _channelPool = [NSMutableDictionary dictionary];
+  }
 }
 
 - (void)connectivityChange:(NSNotification *)note {
