@@ -52,10 +52,10 @@ extern const char *kCFStreamVarName;
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {
 #endif
-        factory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:_callOptions.PEMRootCertificates
-                                                         privateKey:_callOptions.PEMPrivateKey
-                                                          certChain:_callOptions.PEMCertChain
-                                                              error:&error];
+        factory = [GRPCSecureChannelFactory factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                                                privateKey:_callOptions.PEMPrivateKey
+                                                                 certChain:_callOptions.PEMCertChain
+                                                                     error:&error];
         if (factory == nil) {
           NSLog(@"Error creating secure channel factory: %@", error);
         }

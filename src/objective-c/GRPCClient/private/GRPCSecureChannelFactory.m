@@ -29,10 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
   grpc_channel_credentials *_channelCreds;
 }
 
-+ (nullable instancetype)factoryWithPEMRootCerts:(nullable NSString *)rootCerts
-                                      privateKey:(nullable NSString *)privateKey
-                                       certChain:(nullable NSString *)certChain
-                                           error:(NSError **)errorPtr {
++ (nullable instancetype)factoryWithPEMRootCertificates:(nullable NSString *)rootCerts
+                                             privateKey:(nullable NSString *)privateKey
+                                              certChain:(nullable NSString *)certChain
+                                                  error:(NSError **)errorPtr {
   return [[self alloc] initWithPEMRootCerts:rootCerts
                                  privateKey:privateKey
                                   certChain:certChain
