@@ -511,7 +511,7 @@ get_service_config_from_resolver_result_locked(channel_data* chand) {
   return grpc_core::UniquePtr<char>(gpr_strdup(service_config_json));
 }
 
-static void check_for_important_resolution_change(
+static void maybe_add_trace_message_for_address_changes_locked(
     channel_data* chand, TraceStringVector* trace_strings) {
   int resolution_contains_addresses = false;
   const grpc_arg* channel_arg =
@@ -534,7 +534,7 @@ static void check_for_important_resolution_change(
       resolution_contains_addresses;
 }
 
-static void concatenate_and_add_channel_trace(
+static void concatenate_and_add_channel_trace_locked(
     channel_data* chand, TraceStringVector* trace_strings) {
   if (!trace_strings->empty()) {
     gpr_strvec v;
@@ -641,8 +641,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         // config in the trace, at the risk of bloating the trace logs.
         trace_strings.push_back(gpr_strdup("Service config changed"));
       }
-      check_for_important_resolution_change(chand, &trace_strings);
-      concatenate_and_add_channel_trace(chand, &trace_strings);
+      maybe_add_trace_message_for_address_changes_locked(chand, &trace_strings);
+      concatenate_and_add_channel_trace_locked(chand, &trace_strings);
     }
     // Swap out the data used by cc_get_channel_info().
     gpr_mu_lock(&chand->info_mu);

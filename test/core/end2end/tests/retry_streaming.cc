@@ -136,7 +136,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg arg[] = {
+  grpc_arg args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
           1024 * 8),
@@ -159,7 +159,7 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
               "    }\n"
               "  } ]\n"
               "}"))};
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(arg), arg};
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_streaming", &client_args, nullptr);
 
@@ -399,6 +399,15 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   char* json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
+  GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Channel created\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
+  GPR_ASSERT(nullptr != strstr(json, "Resolution event"));
+  GPR_ASSERT(nullptr != strstr(json, "Created new LB policy"));
+  GPR_ASSERT(nullptr != strstr(json, "Service config changed"));
+  GPR_ASSERT(nullptr != strstr(json, "Address list became non-empty"));
+  GPR_ASSERT(nullptr != strstr(json, "Channel state change to CONNECTING"));
+  gpr_free(json);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
