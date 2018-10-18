@@ -66,7 +66,7 @@ struct grpc_channel_credentials;
 
 @property(atomic, readwrite) GRPCTransportType transportType;
 
-@property(readonly) GRPCMutableCallOptions *callOptions;
+@property(readonly) GRPCCallOptions *callOptions;
 
 + (BOOL)isHostConfigured:(NSString *)address;
 

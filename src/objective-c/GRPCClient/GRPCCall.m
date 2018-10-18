@@ -751,7 +751,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     GRPCMutableCallOptions *callOptions;
     if ([GRPCHost isHostConfigured:_host]) {
       GRPCHost *hostConfig = [GRPCHost hostWithAddress:_host];
-      callOptions = hostConfig.callOptions;
+      callOptions = [hostConfig.callOptions mutableCopy];
     } else {
       callOptions = [[GRPCMutableCallOptions alloc] init];
     }
