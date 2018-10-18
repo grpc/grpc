@@ -120,6 +120,8 @@ class AresDnsResolver : public Resolver {
   grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
+  // has shutdown been request
+  bool shutdown_initiated_ = false;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -149,10 +151,7 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   min_time_between_resolutions_ =
       grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
-  interested_parties_ = grpc_pollset_set_create();
-  if (args.pollset_set != nullptr) {
-    grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
-  }
+  interested_parties_ = args.pollset_set;
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolutionLocked, this,
                     grpc_combiner_scheduler(combiner()));
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this,
@@ -164,7 +163,11 @@ AresDnsResolver::~AresDnsResolver() {
   if (resolved_result_ != nullptr) {
     grpc_channel_args_destroy(resolved_result_);
   }
-  grpc_pollset_set_destroy(interested_parties_);
+  if (next_completion_ != nullptr) {
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
+    next_completion_ = nullptr;
+  }
   gpr_free(dns_server_);
   gpr_free(name_to_resolve_);
   grpc_channel_args_destroy(channel_args_);
@@ -197,25 +200,24 @@ void AresDnsResolver::ResetBackoffLocked() {
 }
 
 void AresDnsResolver::ShutdownLocked() {
+  shutdown_initiated_ = true;
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
     grpc_cancel_ares_request_locked(pending_request_);
   }
-  if (next_completion_ != nullptr) {
-    *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
-    next_completion_ = nullptr;
-  }
 }
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  gpr_log(GPR_DEBUG,
+          "re-resolution timer fired. error: %s. shutdown_initiated_: %d",
+          grpc_error_string(error), r->shutdown_initiated_);
   r->have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE) {
+  if (error == GRPC_ERROR_NONE && !r->shutdown_initiated_) {
     if (!r->resolving_) {
+      gpr_log(GPR_DEBUG, "start resolving due to re-resolution timer");
       r->StartResolvingLocked();
     }
   }
@@ -367,7 +369,9 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   }
   r->resolved_result_ = result;
   ++r->resolved_version_;
-  r->MaybeFinishNextLocked();
+  if (!r->shutdown_initiated_) {
+    r->MaybeFinishNextLocked();
+  }
   r->Unref(DEBUG_LOCATION, "dns-resolving");
 }
 
