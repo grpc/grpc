@@ -120,8 +120,15 @@ typedef enum {
 /// polling engines) can safely use the lower bit for themselves.
 
 #define GRPC_ERROR_NONE ((grpc_error*)NULL)
+#define GRPC_ERROR_RESERVED_1 ((grpc_error*)1)
 #define GRPC_ERROR_OOM ((grpc_error*)2)
+#define GRPC_ERROR_RESERVED_2 ((grpc_error*)3)
 #define GRPC_ERROR_CANCELLED ((grpc_error*)4)
+#define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_CANCELLED
+
+inline bool grpc_error_is_special(struct grpc_error* err) {
+  return err <= GRPC_ERROR_SPECIAL_MAX;
+}
 
 // debug only toggles that allow for a sanity to check that ensures we will
 // never create any errors in the per-RPC hotpath.
@@ -158,13 +165,29 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
                     errs, count)
 
 #ifndef NDEBUG
-grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line);
-void grpc_error_unref(grpc_error* err, const char* file, int line);
+grpc_error* grpc_error_do_ref(grpc_error* err, const char* file, int line);
+void grpc_error_do_unref(grpc_error* err, const char* file, int line);
+inline grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line) {
+  if (grpc_error_is_special(err)) return err;
+  return grpc_error_do_ref(err, file, line);
+}
+inline void grpc_error_unref(grpc_error* err, const char* file, int line) {
+  if (grpc_error_is_special(err)) return;
+  grpc_error_do_unref(err, file, line);
+}
 #define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
 #define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
 #else
-grpc_error* grpc_error_ref(grpc_error* err);
-void grpc_error_unref(grpc_error* err);
+grpc_error* grpc_error_do_ref(grpc_error* err);
+void grpc_error_do_unref(grpc_error* err);
+inline grpc_error* grpc_error_ref(grpc_error* err) {
+  if (grpc_error_is_special(err)) return err;
+  return grpc_error_do_ref(err);
+}
+inline void grpc_error_unref(grpc_error* err) {
+  if (grpc_error_is_special(err)) return;
+  grpc_error_do_unref(err);
+}
 #define GRPC_ERROR_REF(err) grpc_error_ref(err)
 #define GRPC_ERROR_UNREF(err) grpc_error_unref(err)
 #endif
