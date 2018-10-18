@@ -92,9 +92,9 @@ static NSMutableDictionary *gHostCache;
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
                      error:(NSError **)errorPtr {
-  _PEMRootCertificates = pemRootCerts;
-  _PEMPrivateKey = pemPrivateKey;
-  _pemCertChain = pemCertChain;
+  _PEMRootCertificates = [pemRootCerts copy];
+  _PEMPrivateKey = [pemPrivateKey copy];
+  _pemCertChain = [pemCertChain copy];
   return YES;
 }
 
