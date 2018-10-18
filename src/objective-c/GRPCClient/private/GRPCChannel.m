@@ -57,14 +57,13 @@ NSTimeInterval kChannelDestroyDelay = 30;
 
 @implementation GRPCChannelRef {
   NSTimeInterval _destroyDelay;
-  // We use dispatch queue for this purpose since timer invalidation must happen on the same
-  // thread which issued the timer.
-  dispatch_queue_t _dispatchQueue;
   void (^_destroyChannelCallback)();
 
   NSUInteger _refCount;
-  NSTimer *_timer;
   BOOL _disconnected;
+  dispatch_queue_t _dispatchQueue;
+  dispatch_queue_t _timerQueue;
+  NSDate *_lastDispatch;
 }
 
 - (instancetype)initWithDestroyDelay:(NSTimeInterval)destroyDelay
@@ -74,57 +73,65 @@ NSTimeInterval kChannelDestroyDelay = 30;
     _destroyChannelCallback = destroyChannelCallback;
 
     _refCount = 1;
-    _timer = nil;
     _disconnected = NO;
+    if (@available(iOS 8.0, *)) {
+      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+      _timerQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, -1));
+    } else {
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+      _timerQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
+    }
+    _lastDispatch = nil;
   }
   return self;
 }
 
-// This function is protected by channel dispatch queue.
 - (void)refChannel {
-  if (!_disconnected) {
-    _refCount++;
-    [_timer invalidate];
-    _timer = nil;
-  }
-}
-
-// This function is protected by channel dispatch queue.
-- (void)unrefChannel {
-  if (!_disconnected) {
-    _refCount--;
-    if (_refCount == 0) {
-      [_timer invalidate];
-      _timer = [NSTimer scheduledTimerWithTimeInterval:_destroyDelay
-                                                target:self
-                                              selector:@selector(timerFire:)
-                                              userInfo:nil
-                                               repeats:NO];
+  dispatch_async(_dispatchQueue, ^{
+    if (!self->_disconnected) {
+      self->_refCount++;
+      self->_lastDispatch = nil;
     }
-  }
+  });
 }
 
-// This function is protected by channel dispatch queue.
+- (void)unrefChannel {
+  dispatch_async(_dispatchQueue, ^{
+    if (!self->_disconnected) {
+      self->_refCount--;
+      if (self->_refCount == 0) {
+        self->_lastDispatch = [NSDate date];
+        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)kChannelDestroyDelay * 1e9);
+        dispatch_after(delay, self->_timerQueue, ^{
+          [self timerFire];
+        });
+      }
+    }
+  });
+}
+
 - (void)disconnect {
-  if (!_disconnected) {
-    [_timer invalidate];
-    _timer = nil;
-    _disconnected = YES;
-    // Break retain loop
-    _destroyChannelCallback = nil;
-  }
+  dispatch_async(_dispatchQueue, ^{
+    if (!self->_disconnected) {
+      self->_lastDispatch = nil;
+      self->_disconnected = YES;
+      // Break retain loop
+      self->_destroyChannelCallback = nil;
+    }
+  });
 }
 
-// This function is protected by channel dispatch queue.
-- (void)timerFire:(NSTimer *)timer {
-  if (_disconnected || _timer == nil || _timer != timer) {
-    return;
-  }
-  _timer = nil;
-  _destroyChannelCallback();
-  // Break retain loop
-  _destroyChannelCallback = nil;
-  _disconnected = YES;
+- (void)timerFire {
+  dispatch_async(_dispatchQueue, ^{
+    if (self->_disconnected || self->_lastDispatch == nil || -[self->_lastDispatch timeIntervalSinceNow] < -kChannelDestroyDelay) {
+      return;
+    }
+    self->_lastDispatch = nil;
+    self->_disconnected = YES;
+    self->_destroyChannelCallback();
+    // Break retain loop
+    self->_destroyChannelCallback = nil;
+  });
 }
 
 @end
