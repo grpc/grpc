@@ -36,7 +36,7 @@ static void CheckIsNonNilASCII(NSString *name, NSString *value) {
 // Precondition: key isn't nil.
 static void CheckKeyValuePairIsValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
-    if (![value isKindOfClass:NSData.class]) {
+    if (![value isKindOfClass:[NSData class]]) {
       [NSException raise:NSInvalidArgumentException
                   format:
                       @"Expected NSData value for header %@ ending in \"-bin\", "
@@ -44,7 +44,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
                       key, value];
     }
   } else {
-    if (![value isKindOfClass:NSString.class]) {
+    if (![value isKindOfClass:[NSString class]]) {
       [NSException raise:NSInvalidArgumentException
                   format:
                       @"Expected NSString value for header %@ not ending in \"-bin\", "

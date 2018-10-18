@@ -57,7 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
   dispatch_once(&loading, ^{
     NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
-    NSBundle *bundle = [NSBundle bundleForClass:self.class];
+    NSBundle *bundle = [NSBundle bundleForClass:[self class]];
     NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
     NSError *error;
     // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the

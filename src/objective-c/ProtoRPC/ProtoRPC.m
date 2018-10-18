@@ -252,7 +252,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   }
   // A writer that serializes the proto messages to send.
   GRXWriter *bytesWriter = [requestsWriter map:^id(GPBMessage *proto) {
-    if (![proto isKindOfClass:GPBMessage.class]) {
+    if (![proto isKindOfClass:[GPBMessage class]]) {
       [NSException raise:NSInvalidArgumentException
                   format:@"Request must be a proto message: %@", proto];
     }
