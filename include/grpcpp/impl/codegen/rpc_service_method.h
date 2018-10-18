@@ -40,17 +40,20 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
-    HandlerParameter(Call* c, ServerContext* context, grpc_byte_buffer* req)
-        : call(c), server_context(context) {
-      request.set_buffer(req);
-    }
-    ~HandlerParameter() { request.Release(); }
+    HandlerParameter(Call* c, ServerContext* context)
+        : call(c), server_context(context) {}
+    ~HandlerParameter() {}
     Call* call;
     ServerContext* server_context;
-    // Handler required to destroy these contents
-    ByteBuffer request;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
+
+  /* Returns pointer to the deserialized request. Ownership is retained by the
+     handler. Returns nullptr if deserialization failed */
+  virtual void* Deserialize(grpc_byte_buffer* req) {
+    GPR_CODEGEN_ASSERT(req == nullptr);
+    return nullptr;
+  }
 };
 
 /// Server side rpc method class

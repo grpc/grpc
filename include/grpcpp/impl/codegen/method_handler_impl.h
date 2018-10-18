@@ -59,13 +59,10 @@ class RpcMethodHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request.bbuf_ptr(), &req);
     ResponseType rsp;
-    if (status.ok()) {
-      status = CatchingFunctionHandler([this, &param, &req, &rsp] {
-        return func_(service_, param.server_context, &req, &rsp);
+    if (status_.ok()) {
+      status_ = CatchingFunctionHandler([this, &param, &rsp] {
+        return func_(service_, param.server_context, &this->req_, &rsp);
       });
     }
 
@@ -78,12 +75,23 @@ class RpcMethodHandler : public MethodHandler {
     if (param.server_context->compression_level_set()) {
       ops.set_compression_level(param.server_context->compression_level());
     }
-    if (status.ok()) {
-      status = ops.SendMessage(rsp);
+    if (status_.ok()) {
+      status_ = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status_);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
+  }
+
+  void* Deserialize(grpc_byte_buffer* req) final {
+    ByteBuffer buf;
+    buf.set_buffer(req);
+    status_ = SerializationTraits<RequestType>::Deserialize(&buf, &req_);
+    buf.Release();
+    if (status_.ok()) {
+      return &req_;
+    }
+    return nullptr;
   }
 
  private:
@@ -93,6 +101,8 @@ class RpcMethodHandler : public MethodHandler {
       func_;
   // The class the above handler function lives in.
   ServiceType* service_;
+  RequestType req_;
+  Status status_;
 };
 
 /// A wrapper class of an application provided client streaming handler.
@@ -150,14 +160,10 @@ class ServerStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request.bbuf_ptr(), &req);
-
-    if (status.ok()) {
+    if (status_.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
-      status = CatchingFunctionHandler([this, &param, &req, &writer] {
-        return func_(service_, param.server_context, &req, &writer);
+      status_ = CatchingFunctionHandler([this, &param, &writer] {
+        return func_(service_, param.server_context, &this->req_, &writer);
       });
     }
 
@@ -169,7 +175,7 @@ class ServerStreamingHandler : public MethodHandler {
         ops.set_compression_level(param.server_context->compression_level());
       }
     }
-    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status_);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
@@ -177,11 +183,24 @@ class ServerStreamingHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
+  void* Deserialize(grpc_byte_buffer* req) final {
+    ByteBuffer buf;
+    buf.set_buffer(req);
+    status_ = SerializationTraits<RequestType>::Deserialize(&buf, &req_);
+    buf.Release();
+    if (status_.ok()) {
+      return &req_;
+    }
+    return nullptr;
+  }
+
  private:
   std::function<Status(ServiceType*, ServerContext*, const RequestType*,
                        ServerWriter<ResponseType>*)>
       func_;
   ServiceType* service_;
+  RequestType req_;
+  Status status_;
 };
 
 /// A wrapper class of an application provided bidi-streaming handler.
@@ -296,11 +315,14 @@ class ErrorMethodHandler : public MethodHandler {
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
-    // We also have to destroy any request payload in the handler parameter
-    ByteBuffer* payload = param.request.bbuf_ptr();
-    if (payload != nullptr) {
-      payload->Clear();
+  }
+
+  void* Deserialize(grpc_byte_buffer* req) final {
+    // We have to destroy any request payload
+    if (req != nullptr) {
+      g_core_codegen_interface->grpc_byte_buffer_destroy(req);
     }
+    return nullptr;
   }
 };
 

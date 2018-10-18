@@ -285,6 +285,12 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
+  experimental::ServerRpcInfo* set_server_rpc_info(
+      experimental::ServerRpcInfo info) {
+    rpc_info_ = std::move(info);
+    return &rpc_info_;
+  }
+
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
@@ -306,6 +312,8 @@ class ServerContext {
                       internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_;
+
+  experimental::ServerRpcInfo rpc_info_;
 };
 
 }  // namespace grpc

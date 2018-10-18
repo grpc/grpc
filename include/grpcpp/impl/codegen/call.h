@@ -796,8 +796,13 @@ class Call final {
   CompletionQueue* cq() const { return cq_; }
 
   int max_receive_message_size() const { return max_receive_message_size_; }
+
   experimental::ClientRpcInfo* client_rpc_info() const {
     return client_rpc_info_;
+  }
+
+  experimental::ServerRpcInfo* server_rpc_info() const {
+    return server_rpc_info_;
   }
 
  private:
@@ -862,44 +867,17 @@ class InterceptorBatchMethodsImpl
   }
 
   virtual void Proceed() override { /* fill this */
-    curr_iteration_ = reverse_ ? curr_iteration_ - 1 : curr_iteration_ + 1;
-    auto* rpc_info = call_->client_rpc_info();
-    if (rpc_info->hijacked_ &&
-        (!reverse_ && curr_iteration_ == rpc_info->hijacked_interceptor_ + 1)) {
-      /* We now need to provide hijacked recv ops to this interceptor */
-      ClearHookPoints();
-      ops_->SetHijackingState();
-      rpc_info->RunInterceptor(this, curr_iteration_ - 1);
-      return;
+    if (call_->client_rpc_info() != nullptr) {
+      return ProceedClient();
     }
-    if (!reverse_) {
-      /* We are going down the stack of interceptors */
-      if (curr_iteration_ < static_cast<long>(rpc_info->interceptors_.size())) {
-        if (rpc_info->hijacked_ &&
-            curr_iteration_ > rpc_info->hijacked_interceptor_) {
-          /* This is a hijacked RPC and we are done with hijacking */
-          ops_->ContinueFillOpsAfterInterception();
-        } else {
-          rpc_info->RunInterceptor(this, curr_iteration_);
-        }
-      } else {
-        /* we are done running all the interceptors without any hijacking */
-        ops_->ContinueFillOpsAfterInterception();
-      }
-    } else {
-      /* We are going up the stack of interceptors */
-      if (curr_iteration_ >= 0) {
-        /* Continue running interceptors */
-        rpc_info->RunInterceptor(this, curr_iteration_);
-      } else {
-        /* we are done running all the interceptors without any hijacking */
-        ops_->ContinueFinalizeResultAfterInterception();
-      }
-    }
+    GPR_CODEGEN_ASSERT(call_->server_rpc_info() != nullptr);
+    ProceedServer();
   }
 
   virtual void Hijack() override { /* fill this */
-    GPR_CODEGEN_ASSERT(!reverse_);
+    /* Only the client can hijack when sending down initial metadata */
+    GPR_CODEGEN_ASSERT(!reverse_ && ops_ != nullptr &&
+                       call_->client_rpc_info() != nullptr);
     auto* rpc_info = call_->client_rpc_info();
     rpc_info->hijacked_ = true;
     rpc_info->hijacked_interceptor_ = curr_iteration_;
@@ -997,12 +975,44 @@ class InterceptorBatchMethodsImpl
 
   void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
 
-  /* Returns true if no interceptors are run */
+  /* Returns true if no interceptors are run. This should be used only by
+  subclasses of CallOpSetInterface. SetCall and SetCallOpSetInterface should
+  have been called before this. After all the interceptors are done running,
+  either ContinueFillOpsAfterInterception or
+  ContinueFinalizeOpsAfterInterception will be called. Note that neither of them
+  is invoked if there were no interceptors registered.
+   */
   bool RunInterceptors() {
-    auto* rpc_info = call_->client_rpc_info();
-    if (rpc_info == nullptr || rpc_info->interceptors_.size() == 0) {
+    auto* client_rpc_info = call_->client_rpc_info();
+    if (client_rpc_info == nullptr ||
+        client_rpc_info->interceptors_.size() == 0) {
+      return true;
+    } else {
+      RunClientInterceptors();
+      return false;
+    }
+
+    auto* server_rpc_info = call_->server_rpc_info();
+    if (server_rpc_info == nullptr ||
+        server_rpc_info->interceptors_.size() == 0) {
       return true;
     }
+    GPR_ASSERT(false);
+    RunServerInterceptors();
+    return false;
+  }
+
+  /* Returns true if no interceptors are run. Returns false otherwise if there
+  are interceptors registered. After the interceptors are done running \a f will
+  be invoked. This is to be used only by BaseAsyncRequest and SyncRequest. */
+  bool RunInterceptors(std::function<void(internal::CompletionQueueTag*)> f) {
+    GPR_CODEGEN_ASSERT(reverse_ == true);
+    return true;
+  }
+
+ private:
+  void RunClientInterceptors() {
+    auto* rpc_info = call_->client_rpc_info();
     if (!reverse_) {
       curr_iteration_ = 0;
     } else {
@@ -1015,10 +1025,78 @@ class InterceptorBatchMethodsImpl
       }
     }
     rpc_info->RunInterceptor(this, curr_iteration_);
-    return false;
   }
 
- private:
+  void RunServerInterceptors() {
+    auto* rpc_info = call_->server_rpc_info();
+    if (!reverse_) {
+      curr_iteration_ = 0;
+    } else {
+      curr_iteration_ = rpc_info->interceptors_.size() - 1;
+    }
+    rpc_info->RunInterceptor(this, curr_iteration_);
+  }
+
+  void ProceedClient() {
+    curr_iteration_ = reverse_ ? curr_iteration_ - 1 : curr_iteration_ + 1;
+    auto* rpc_info = call_->client_rpc_info();
+    if (rpc_info->hijacked_ &&
+        (!reverse_ && curr_iteration_ == rpc_info->hijacked_interceptor_ + 1)) {
+      /* We now need to provide hijacked recv ops to this interceptor */
+      ClearHookPoints();
+      ops_->SetHijackingState();
+      rpc_info->RunInterceptor(this, curr_iteration_ - 1);
+      return;
+    }
+    if (!reverse_) {
+      /* We are going down the stack of interceptors */
+      if (curr_iteration_ < static_cast<long>(rpc_info->interceptors_.size())) {
+        if (rpc_info->hijacked_ &&
+            curr_iteration_ > rpc_info->hijacked_interceptor_) {
+          /* This is a hijacked RPC and we are done with hijacking */
+          ops_->ContinueFillOpsAfterInterception();
+        } else {
+          rpc_info->RunInterceptor(this, curr_iteration_);
+        }
+      } else {
+        /* we are done running all the interceptors without any hijacking */
+        ops_->ContinueFillOpsAfterInterception();
+      }
+    } else {
+      /* We are going up the stack of interceptors */
+      if (curr_iteration_ >= 0) {
+        /* Continue running interceptors */
+        rpc_info->RunInterceptor(this, curr_iteration_);
+      } else {
+        /* we are done running all the interceptors without any hijacking */
+        ops_->ContinueFinalizeResultAfterInterception();
+      }
+    }
+  }
+
+  void ProceedServer() {
+    auto* rpc_info = call_->server_rpc_info();
+    if (!reverse_) {
+      curr_iteration_++;
+      if (curr_iteration_ < static_cast<long>(rpc_info->interceptors_.size())) {
+        return rpc_info->RunInterceptor(this, curr_iteration_);
+      }
+    } else {
+      curr_iteration_--;
+      /* We are going up the stack of interceptors */
+      if (curr_iteration_ >= 0) {
+        /* Continue running interceptors */
+        return rpc_info->RunInterceptor(this, curr_iteration_);
+      }
+    }
+    /* we are done running all the interceptors */
+    if (ops_) {
+      ops_->ContinueFinalizeResultAfterInterception();
+    }
+    GPR_CODEGEN_ASSERT(callback_);
+    callback_();
+  }
+
   void ClearHookPoints() {
     for (auto i = 0;
          i < static_cast<int>(
@@ -1038,6 +1116,7 @@ class InterceptorBatchMethodsImpl
   Call* call_ =
       nullptr;  // The Call object is present along with CallOpSet object
   CallOpSetInterface* ops_ = nullptr;
+  std::function<void(void)> callback_;
 
   ByteBuffer* send_message_ = nullptr;
 
