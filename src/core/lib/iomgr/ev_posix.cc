@@ -395,6 +395,4 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 
-void grpc_use_signal(int signum) {}
-
 #endif  // GRPC_POSIX_SOCKET_EV

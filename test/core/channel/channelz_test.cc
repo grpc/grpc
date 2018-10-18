@@ -126,12 +126,12 @@ void ValidateGetServers(size_t expected_servers) {
 class ChannelFixture {
  public:
   ChannelFixture(int max_tracer_event_memory = 0) {
-    grpc_arg client_a[2];
-    client_a[0] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
-        max_tracer_event_memory);
-    client_a[1] = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
+    grpc_arg client_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            max_tracer_event_memory),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -226,7 +226,19 @@ void ChannelzSleep(int64_t sleep_us) {
 
 }  // anonymous namespace
 
-class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {};
+class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {
+ protected:
+  // ensure we always have a fresh registry for tests.
+  void SetUp() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+
+  void TearDown() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+};
 
 TEST_P(ChannelzChannelTest, BasicChannel) {
   grpc_core::ExecCtx exec_ctx;
@@ -238,8 +250,16 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   grpc_core::ExecCtx exec_ctx;
+  // explicitly disable channelz
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
   grpc_channel* channel =
-      grpc_insecure_channel_create("fake_target", nullptr, nullptr);
+      grpc_insecure_channel_create("fake_target", &args, nullptr);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
@@ -303,6 +323,32 @@ TEST(ChannelzGetTopChannelsTest, ManyChannelsTest) {
   ChannelFixture channels[10];
   (void)channels;  // suppress unused variable error
   ValidateGetTopChannels(10);
+}
+
+TEST(ChannelzGetTopChannelsTest, GetTopChannelsPagination) {
+  grpc_core::ExecCtx exec_ctx;
+  // this is over the pagination limit.
+  ChannelFixture channels[150];
+  (void)channels;  // suppress unused variable error
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // 100 is the pagination limit.
+  ValidateJsonArraySize(parsed_json, "channel", 100);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  EXPECT_EQ(end, nullptr);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // Now we get the rest
+  json_str = ChannelzRegistry::GetTopChannels(101);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 50);
+  end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
 }
 
 TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {

@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 6.0.0-dev
-  g_stands_for: gao
-  version: 1.16.0-dev
+  core_version: 7.0.0-dev
+  g_stands_for: gizmo
+  version: 1.17.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -715,6 +715,57 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_lb_subchannel_list
+- name: grpc_lb_policy_xds
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  plugin: grpc_lb_policy_xds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - nanopb
+  - grpc_resolver_fake
+- name: grpc_lb_policy_xds_secure
+  headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
+  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  plugin: grpc_lb_policy_xds
+  uses:
+  - grpc_base
+  - grpc_secure
+  - grpc_client_channel
+  - nanopb
+  - grpc_resolver_fake
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1965,6 +2016,7 @@ libs:
   - src/proto/grpc/testing/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
+  - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
   - test/cpp/qps/driver.cc
   - test/cpp/qps/parse_json.cc
@@ -2785,7 +2837,7 @@ targets:
   filegroups:
   - cmdline
   uses_polling: false
-- name: handshake_client
+- name: handshake_client_ssl
   build: test
   language: c
   src:
@@ -2800,7 +2852,7 @@ targets:
   platforms:
   - linux
   secure: true
-- name: handshake_server
+- name: handshake_server_ssl
   build: test
   language: c
   headers:
@@ -3099,7 +3151,7 @@ targets:
   - mac
   - linux
   - posix
-- name: memory_profile_client
+- name: memory_usage_client
   build: test
   run: false
   language: c
@@ -3111,7 +3163,7 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: memory_profile_server
+- name: memory_usage_server
   build: test
   run: false
   language: c
@@ -3122,7 +3174,7 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: memory_profile_test
+- name: memory_usage_test
   cpu_cost: 1.5
   build: test
   language: c

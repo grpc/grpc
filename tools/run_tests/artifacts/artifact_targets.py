@@ -240,11 +240,10 @@ class CSharpExtArtifact:
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
                 use_workspace=True)
         elif self.platform == 'windows':
-            cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
                 self.name, [
                     'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
-                    cmake_arch_option
+                    self.arch
                 ],
                 use_workspace=True)
         else:

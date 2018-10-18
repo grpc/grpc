@@ -30,6 +30,10 @@
 namespace grpc_core {
 namespace channelz {
 
+namespace testing {
+class ChannelzRegistryPeer;
+}
+
 // singleton registry object to track all objects that are needed to support
 // channelz bookkeeping. All objects share globally distributed uuids.
 class ChannelzRegistry {
@@ -40,7 +44,7 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  static intptr_t Register(BaseNode* node) {
+  static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
   static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
@@ -61,6 +65,7 @@ class ChannelzRegistry {
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  friend class testing::ChannelzRegistryPeer;
 
   ChannelzRegistry();
   ~ChannelzRegistry();
@@ -69,7 +74,7 @@ class ChannelzRegistry {
   static ChannelzRegistry* Default();
 
   // globally registers an Entry. Returns its unique uuid
-  intptr_t InternalRegister(BaseNode* node);
+  void InternalRegister(BaseNode* node);
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
@@ -82,9 +87,18 @@ class ChannelzRegistry {
   char* InternalGetTopChannels(intptr_t start_channel_id);
   char* InternalGetServers(intptr_t start_server_id);
 
-  // protects entities_ and uuid_
+  // If entities_ has over a certain threshold of empty slots, it will
+  // compact the vector and move all used slots to the front.
+  void MaybePerformCompactionLocked();
+
+  // Performs binary search on entities_ to find the index with that uuid.
+  int FindByUuidLocked(intptr_t uuid);
+
+  // protects members
   gpr_mu mu_;
   InlinedVector<BaseNode*, 20> entities_;
+  intptr_t uuid_generator_ = 0;
+  int num_empty_slots_ = 0;
 };
 
 }  // namespace channelz

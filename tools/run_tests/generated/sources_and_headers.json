@@ -1159,7 +1159,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "handshake_client", 
+    "name": "handshake_client_ssl", 
     "src": [
       "test/core/handshake/client_ssl.cc"
     ], 
@@ -1178,7 +1178,7 @@
     ], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "handshake_server", 
+    "name": "handshake_server_ssl", 
     "src": [
       "test/core/handshake/server_ssl.cc", 
       "test/core/handshake/server_ssl_common.cc", 
@@ -1593,7 +1593,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_client", 
+    "name": "memory_usage_client", 
     "src": [
       "test/core/memory_usage/client.cc"
     ], 
@@ -1610,7 +1610,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_server", 
+    "name": "memory_usage_server", 
     "src": [
       "test/core/memory_usage/server.cc"
     ], 
@@ -1627,7 +1627,7 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "memory_profile_test", 
+    "name": "memory_usage_test", 
     "src": [
       "test/core/memory_usage/memory_usage_test.cc"
     ], 
@@ -7836,6 +7836,7 @@
       "test/cpp/qps/benchmark_config.h", 
       "test/cpp/qps/client.h", 
       "test/cpp/qps/client_async.cc", 
+      "test/cpp/qps/client_callback.cc", 
       "test/cpp/qps/client_sync.cc", 
       "test/cpp/qps/driver.cc", 
       "test/cpp/qps/driver.h", 
@@ -10245,6 +10246,91 @@
     "name": "grpc_lb_policy_round_robin", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_resolver_fake", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_policy_xds", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel", 
+      "grpc_resolver_fake", 
+      "grpc_secure", 
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_policy_xds_secure", 
+    "src": [
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

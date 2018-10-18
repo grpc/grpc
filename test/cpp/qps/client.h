@@ -533,6 +533,7 @@ class ClientImpl : public Client {
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateAsyncClient(const ClientConfig& args);
+std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& args);
 std::unique_ptr<Client> CreateGenericAsyncStreamingClient(
     const ClientConfig& args);
 
