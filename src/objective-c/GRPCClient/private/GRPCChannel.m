@@ -84,10 +84,8 @@ NSTimeInterval kChannelDestroyDelay = 30;
 - (void)refChannel {
   if (!_disconnected) {
     _refCount++;
-    if (_timer) {
-      [_timer invalidate];
-      _timer = nil;
-    }
+    [_timer invalidate];
+    _timer = nil;
   }
 }
 
@@ -96,9 +94,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
   if (!_disconnected) {
     _refCount--;
     if (_refCount == 0) {
-      if (_timer) {
-        [_timer invalidate];
-      }
+      [_timer invalidate];
       _timer = [NSTimer scheduledTimerWithTimeInterval:self->_destroyDelay
                                                 target:self
                                               selector:@selector(timerFire:)
@@ -111,10 +107,8 @@ NSTimeInterval kChannelDestroyDelay = 30;
 // This function is protected by channel dispatch queue.
 - (void)disconnect {
   if (!_disconnected) {
-    if (self->_timer != nil) {
-      [self->_timer invalidate];
-      self->_timer = nil;
-    }
+    [_timer invalidate];
+    _timer = nil;
     _disconnected = YES;
     // Break retain loop
     _destroyChannelCallback = nil;
