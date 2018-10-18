@@ -133,17 +133,23 @@ static NSMutableDictionary *gHostCache;
   return options;
 }
 
-+ (BOOL)isHostConfigured:(NSString *)address {
++ (GRPCCallOptions *)callOptionsForHost:(NSString *)host {
   // TODO (mxyan): Remove when old API is deprecated
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL.host && !hostURL.port) {
-    address = [hostURL.host stringByAppendingString:@":443"];
+  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
+  if (hostURL.host && hostURL.port == nil) {
+    host = [hostURL.host stringByAppendingString:@":443"];
   }
-  __block GRPCHost *cachedHost;
-  @synchronized (gHostCache) {
-    cachedHost = gHostCache[address];
+
+  __block GRPCCallOptions *callOptions = nil;
+  @synchronized(gHostCache) {
+    if ([gHostCache objectForKey:host]) {
+      callOptions = [gHostCache[host] callOptions];
+    }
   }
-  return (cachedHost != nil);
+  if (callOptions == nil) {
+    callOptions = [[GRPCCallOptions alloc] init];
+  }
+  return callOptions;
 }
 
 @end
