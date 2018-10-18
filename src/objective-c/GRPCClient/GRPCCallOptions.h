@@ -188,6 +188,11 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  */
 @property(readonly) NSUInteger channelID;
 
+/**
+ * Return if the channel options are equal to another object.
+ */
+- (BOOL)isChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
+
 @end
 
 @interface GRPCMutableCallOptions : GRPCCallOptions<NSCopying, NSMutableCopying>

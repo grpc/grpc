@@ -227,6 +227,46 @@ static NSUInteger kDefaultChannelID = 0;
   return newOptions;
 }
 
+- (BOOL)isChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
+  if (!(callOptions.userAgentPrefix == _userAgentPrefix ||
+        [callOptions.userAgentPrefix isEqualToString:_userAgentPrefix]))
+    return NO;
+  if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
+  if (!(callOptions.compressAlgorithm == _compressAlgorithm)) return NO;
+  if (!(callOptions.enableRetry == _enableRetry)) return NO;
+  if (!(callOptions.keepaliveInterval == _keepaliveInterval)) return NO;
+  if (!(callOptions.keepaliveTimeout == _keepaliveTimeout)) return NO;
+  if (!(callOptions.connectMinTimeout == _connectMinTimeout)) return NO;
+  if (!(callOptions.connectInitialBackoff == _connectInitialBackoff)) return NO;
+  if (!(callOptions.connectMaxBackoff == _connectMaxBackoff)) return NO;
+  if (!(callOptions.additionalChannelArgs == _additionalChannelArgs ||
+        [callOptions.additionalChannelArgs
+         isEqualToDictionary:_additionalChannelArgs]))
+    return NO;
+  if (!(callOptions.PEMRootCertificates == _PEMRootCertificates ||
+        [callOptions.PEMRootCertificates isEqualToString:_PEMRootCertificates]))
+    return NO;
+  if (!(callOptions.PEMPrivateKey == _PEMPrivateKey ||
+        [callOptions.PEMPrivateKey isEqualToString:_PEMPrivateKey]))
+    return NO;
+  if (!(callOptions.PEMCertChain == _PEMCertChain ||
+        [callOptions.PEMCertChain isEqualToString:_PEMCertChain]))
+    return NO;
+  if (!(callOptions.hostNameOverride == _hostNameOverride ||
+        [callOptions.hostNameOverride isEqualToString:_hostNameOverride]))
+    return NO;
+  if (!(callOptions.transportType == _transportType)) return NO;
+  if (!(callOptions.logContext == _logContext ||
+        [callOptions.logContext isEqual:_logContext]))
+    return NO;
+  if (!(callOptions.channelPoolDomain == _channelPoolDomain ||
+        [callOptions.channelPoolDomain isEqualToString:_channelPoolDomain]))
+    return NO;
+  if (!(callOptions.channelID == _channelID)) return NO;
+
+  return YES;
+}
+
 @end
 
 @implementation GRPCMutableCallOptions
