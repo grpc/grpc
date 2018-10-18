@@ -90,7 +90,10 @@ RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev
 RUN pyenv install 3.7-dev
 RUN pyenv install pypy-5.3.1
-RUN pyenv local 3.5-dev 3.6-dev 3.7-dev pypy-5.3.1
+RUN pyenv local system 3.5-dev 3.6-dev 3.7-dev pypy-5.3.1
+RUN echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+RUN echo 'eval "$(pyenv init -)"' >> ~/.bashrc
+RUN echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.bashrc
 
 # Install pip and virtualenv for Python 3.5
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5

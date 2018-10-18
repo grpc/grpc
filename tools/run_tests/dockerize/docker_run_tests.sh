@@ -22,21 +22,13 @@ export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-# clone gRPC submodules, use data from locally cloned submodules where possible
-# TODO: figure out a way to eliminate this shellcheck suppression:
-# shellcheck disable=SC2016
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'git clone /var/local/jenkins/grpc/${name} /var/local/git/grpc/${name}')
-(cd /var/local/git/grpc/ && git submodule init)
-
 mkdir -p reports
 
 $POST_GIT_STEP
 
 exit_code=0
 
-$RUN_TESTS_COMMAND || exit_code=$?
+cd /var/local/jenkins/grpc && $RUN_TESTS_COMMAND || exit_code=$?
 
 cd reports
 echo '<html><head></head><body>' > index.html
