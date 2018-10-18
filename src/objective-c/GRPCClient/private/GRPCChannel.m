@@ -204,7 +204,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
     if (self->_unmanagedChannel) {
       grpc_channel_destroy(self->_unmanagedChannel);
       self->_unmanagedChannel = nil;
-      [gChannelPool removeChannelWithConfiguration:self->_configuration];
+      [gChannelPool removeChannel:self];
     }
   });
 }

@@ -55,8 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration;
 
-/** Remove a channel with particular configuration. */
-- (void)removeChannelWithConfiguration:(GRPCChannelConfiguration *)configuration;
+/** Remove a channel from the pool. */
+- (void)removeChannel:(GRPCChannel *)channel;
 
 /** Clear all channels in the pool. */
 - (void)removeAllChannels;

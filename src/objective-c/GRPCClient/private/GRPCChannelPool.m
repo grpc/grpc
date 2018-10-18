@@ -199,9 +199,13 @@ extern const char *kCFStreamVarName;
   return channel;
 }
 
-- (void)removeChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
+- (void)removeChannel:(GRPCChannel *)channel {
   @synchronized(self) {
-    [self->_channelPool removeObjectForKey:configuration];
+    [_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
+      if (obj == channel) {
+        [self->_channelPool removeObjectForKey:key];
+      }
+    }];
   }
 }
 

@@ -59,7 +59,7 @@ NSString *kDummyHost = @"dummy.host";
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCChannel *channel1 =
       [pool channelWithConfiguration:config1];
-  [pool removeChannelWithConfiguration:config1];
+  [pool removeChannel:channel1];
   GRPCChannel *channel2 =
       [pool channelWithConfiguration:config1];
   XCTAssertNotEqual(channel1, channel2);
