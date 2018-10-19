@@ -85,13 +85,24 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @end
 
 @implementation GRPCCall2 {
+  /** Options for the call. */
   GRPCCallOptions *_callOptions;
+  /** The handler of responses. */
   id<GRPCResponseHandler> _handler;
 
+  // Thread safety of ivars below are protected by _dispatcheQueue.
+
+  /**
+   * Make use of legacy GRPCCall to make calls. Nullified when call is finished.
+   */
   GRPCCall *_call;
+  /** Flags whether initial metadata has been published to response handler. */
   BOOL _initialMetadataPublished;
+  /** Streaming call writeable to the underlying call. */
   GRXBufferedPipe *_pipe;
+  /** Serial dispatch queue for tasks inside the call. */
   dispatch_queue_t _dispatchQueue;
+  /** Flags whether call has started. */
   bool _started;
 }
 
