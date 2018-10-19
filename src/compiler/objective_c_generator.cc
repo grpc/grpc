@@ -127,11 +127,11 @@ void PrintV2Signature(Printer* printer, const MethodDescriptor* method,
 
   printer->Print(vars, "- ($return_type$)$method_name$With");
   if (method->client_streaming()) {
-    printer->Print("ResponseHandler:(id<GRPCResponseHandler>)handler");
+    printer->Print("ResponseHandler:(id<GRPCProtoResponseHandler>)handler");
   } else {
     printer->Print(vars,
                    "Message:($request_class$ *)message "
-                   "responseHandler:(id<GRPCResponseHandler>)handler");
+                   "responseHandler:(id<GRPCProtoResponseHandler>)handler");
   }
   printer->Print(" callOptions:(GRPCCallOptions *_Nullable)callOptions");
 }

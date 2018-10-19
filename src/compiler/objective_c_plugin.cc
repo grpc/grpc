@@ -98,7 +98,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           "@class GRPCUnaryProtoCall;\n"
           "@class GRPCStreamingProtoCall;\n"
           "@class GRPCCallOptions;\n"
-          "@protocol GRPCResponseHandler;\n"
+          "@protocol GRPCProtoResponseHandler;\n"
           "\n";
 
       ::grpc::string class_declarations =
