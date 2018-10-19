@@ -251,8 +251,8 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->recv_initial_metadata_batch = nullptr;
   calld->original_recv_initial_metadata_ready = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
-  calld->recv_initial_metadata_error = nullptr;
-  calld->recv_trailing_metadata_error = nullptr;
+  calld->recv_initial_metadata_error = GRPC_ERROR_NONE;
+  calld->recv_trailing_metadata_error = GRPC_ERROR_NONE;
   calld->num_consumed_md = 0;
   calld->consumed_md = nullptr;
   calld->state = STATE_INIT;

@@ -445,7 +445,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   calld->recv_initial_metadata = nullptr;
-  calld->recv_initial_metadata_error = nullptr;
+  calld->recv_initial_metadata_error = GRPC_ERROR_NONE;
   calld->original_recv_initial_metadata_ready = nullptr;
   calld->recv_trailing_metadata = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
@@ -453,7 +453,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->send_message_bytes_read = 0;
   calld->original_send_message_on_complete = nullptr;
   calld->recv_initial_metadata = nullptr;
-  calld->recv_initial_metadata_error = nullptr;
+  calld->recv_initial_metadata_error = GRPC_ERROR_NONE;
   calld->recv_trailing_metadata = nullptr;
   calld->original_recv_initial_metadata_ready = nullptr;
   calld->send_message_batch = nullptr;

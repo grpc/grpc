@@ -1587,7 +1587,6 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
   batch_data->batch.recv_message = false;
   batch_data->batch.recv_trailing_metadata = false;
   batch_data->batch.cancel_stream = false;
-
   gpr_ref_init(&batch_data->refs, refcount);
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
@@ -3169,7 +3168,6 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
   }
-
   calld->subchannel_call = nullptr;
   memset(&calld->pick, 0, sizeof(calld->pick));
   calld->pollent = nullptr;
@@ -3184,7 +3182,7 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
   calld->send_initial_metadata_flags = 0;
   calld->peer_string = nullptr;
   calld->subchannel_call = nullptr;
-  calld->cancel_error = nullptr;
+  calld->cancel_error = GRPC_ERROR_NONE;
   calld->seen_send_trailing_metadata = false;
   calld->pending_send_initial_metadata = false;
   calld->pending_send_message = false;

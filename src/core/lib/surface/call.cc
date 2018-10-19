@@ -304,42 +304,37 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
-  void* mem =
+  call = reinterpret_cast<grpc_call*>(
       gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                                 channel_stack->call_stack_size);
-  call = reinterpret_cast<grpc_call*>(mem);
+                                 channel_stack->call_stack_size));
+  *out_call = call;
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
   call->cq = args->cq;
-  *out_call = call;
   grpc_call_combiner_init(&call->call_combiner);
   memset(&call->pollent, 0, sizeof(call->pollent));
   call->channel = args->channel;
   call->start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_atm_no_barrier_store(&call->parent_call_atm, 0);
   call->child = nullptr;
-  /* Always support no compression */
-  call->encodings_accepted_by_peer = 0;
-  GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_MESSAGE_COMPRESS_NONE);
+  call->is_client = args->server_transport_data == nullptr;
+  call->destroy_called = false;
+  call->cancellation_is_inherited = false;
   call->sent_initial_metadata = false;
   call->sending_message = false;
   call->sent_final_op = false;
   call->received_initial_metadata = false;
   call->receiving_message = false;
   call->requested_final_op = false;
-  call->destroy_called = false;
-  call->cancellation_is_inherited = false;
   gpr_atm_no_barrier_store(&call->any_ops_sent_atm, 0);
   gpr_atm_no_barrier_store(&call->received_final_op_atm, 0);
-  gpr_atm_no_barrier_store(&call->cancelled, 0);
-
+  /* Always support no compression */
+  call->encodings_accepted_by_peer = 0;
+  GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_MESSAGE_COMPRESS_NONE);
   memset(&call->receiving_stream, 0, sizeof(call->receiving_stream));
-  call->receiving_buffer = nullptr;
-  call->receiving_slice = grpc_empty_slice();
-
   memset(call->buffered_metadata, 0, sizeof(call->buffered_metadata));
   gpr_atm_no_barrier_store(&call->peer_string, 0);
-  call->is_client = args->server_transport_data == nullptr;
+
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
     call->final_op.client.status_details = nullptr;
@@ -366,10 +361,13 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     call->send_extra_metadata_count = 0;
   }
 
-  call->test_only_last_message_flags = 0;
+  call->receiving_buffer = nullptr;
+  call->receiving_slice = grpc_empty_slice();
   call->incoming_message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
   call->incoming_stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
   call->stream_encodings_accepted_by_peer = 0;
+  call->test_only_last_message_flags = 0;
+  gpr_atm_no_barrier_store(&call->cancelled, 0);
 
   memset(call->context, 0, sizeof(call->context));
   grpc_millis send_deadline = args->send_deadline;
