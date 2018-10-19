@@ -235,7 +235,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->next_recv_message_ready = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
   calld->seen_recv_trailing_metadata = false;
-  calld->recv_trailing_metadata_error = nullptr;
+  calld->recv_trailing_metadata_error = GRPC_ERROR_NONE;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,

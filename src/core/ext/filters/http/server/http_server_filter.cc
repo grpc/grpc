@@ -435,14 +435,14 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
   calld->call_combiner = args->call_combiner;
   calld->have_read_stream = false;
   calld->recv_initial_metadata_flags = nullptr;
-  calld->recv_initial_metadata_ready_error = nullptr;
+  calld->recv_initial_metadata_ready_error = GRPC_ERROR_NONE;
   calld->original_recv_initial_metadata_ready = nullptr;
   calld->seen_recv_initial_metadata_ready = false;
   calld->recv_initial_metadata = nullptr;
   calld->original_recv_message_ready = nullptr;
   calld->recv_message = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
-  calld->recv_initial_metadata_ready_error = nullptr;
+  calld->recv_initial_metadata_ready_error = GRPC_ERROR_NONE;
   calld->seen_recv_message_ready = false;
   calld->seen_recv_trailing_metadata_ready = false;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
