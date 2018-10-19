@@ -761,6 +761,8 @@ class PythonLanguage(object):
     def python_manager_name(self):
         if self.args.compiler in ['python3.5', 'python3.6']:
             return 'pyenv'
+        elif self.args.compiler == 'python3.7':
+            return 'testing'
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
