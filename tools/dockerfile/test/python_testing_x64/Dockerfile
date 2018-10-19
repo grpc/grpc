@@ -72,10 +72,12 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
 RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
 RUN apt-get update && apt-get -t testing install -y python2.7 python3.5 python3.6 python3.7 python-all-dev python3-all-dev
+# RUN apt-get -t testing install -y python3-distutils
 
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
-# RUN apt-get -t testing install -y python3-distutils
-# RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 RUN mkdir /var/local/jenkins
 
