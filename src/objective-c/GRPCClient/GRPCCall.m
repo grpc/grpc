@@ -581,8 +581,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 
   NSMutableDictionary *headers = _requestHeaders;
-  if (_fetchedOauth2AccessToken != nil) {
-    headers[@"authorization"] = [kBearerPrefix stringByAppendingString:_fetchedOauth2AccessToken];
+  __block NSString *fetchedOauth2AccessToken;
+  @synchronized(self) {
+    fetchedOauth2AccessToken = _fetchedOauth2AccessToken;
+  }
+  if (fetchedOauth2AccessToken != nil) {
+    headers[@"authorization"] = [kBearerPrefix stringByAppendingString:fetchedOauth2AccessToken];
   } else if (_callOptions.oauth2AccessToken != nil) {
     headers[@"authorization"] =
         [kBearerPrefix stringByAppendingString:_callOptions.oauth2AccessToken];
