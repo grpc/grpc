@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_LOAD_BALANCER_API_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_LOAD_BALANCER_API_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
 
 #include <grpc/support/port_platform.h>
 
@@ -85,5 +85,5 @@ grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb);
 /** Destroy \a initial_response */
 void xds_grpclb_initial_response_destroy(xds_grpclb_initial_response* response);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_LOAD_BALANCER_API_H \
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
         */
