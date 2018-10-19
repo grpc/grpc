@@ -45,8 +45,8 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
         tag_(nullptr),
         refs_(2),
         finalized_(false),
-        cancelled_(0) /*,
-        done_intercepting_(false)*/ {}
+        cancelled_(0),
+        done_intercepting_(false) {}
 
   void FillOps(internal::Call* call) override;
   bool FinalizeResult(void** tag, bool* status) override;
@@ -69,14 +69,32 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
 
   // This will be called while interceptors are run if the RPC is a hijacked
   // RPC. This should set hijacking state for each of the ops.
-  void SetHijackingState() override {}
+  void SetHijackingState() override {
+    /* Servers don't allow hijacking */
+    GPR_CODEGEN_ASSERT(false);
+  }
 
   /* Should be called after interceptors are done running */
   void ContinueFillOpsAfterInterception() override {}
 
   /* Should be called after interceptors are done running on the finalize result
    * path */
-  void ContinueFinalizeResultAfterInterception() override {}
+  void ContinueFinalizeResultAfterInterception() override {
+    done_intercepting_ = true;
+    if (!has_tag_) {
+      /* We don't have a tag to return. */
+      std::unique_lock<std::mutex> lock(mu_);
+      if (--refs_ == 0) {
+        lock.unlock();
+        delete this;
+      }
+      return;
+    }
+    /* Start a dummy op so that we can return the tag */
+    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
+                       g_core_codegen_interface->grpc_call_start_batch(
+                           call_.call(), nullptr, 0, this, nullptr));
+  }
 
  private:
   bool CheckCancelledNoPluck() {
@@ -90,7 +108,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   int refs_;
   bool finalized_;
   int cancelled_;
-  // bool done_intercepting_;
+  bool done_intercepting_;
   internal::Call call_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
@@ -111,24 +129,52 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   ops.reserved = nullptr;
   call_ = *call;
   interceptor_methods_.SetCall(&call_);
+  interceptor_methods_.SetReverse();
+  interceptor_methods_.SetCallOpSetInterface(this);
   GPR_ASSERT(GRPC_CALL_OK ==
              grpc_call_start_batch(call->call(), &ops, 1, this, nullptr));
+  /* No interceptors to run here */
 }
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  std::unique_lock<std::mutex> lock(mu_);
-  finalized_ = true;
   bool ret = false;
-  if (has_tag_) {
-    *tag = tag_;
-    ret = true;
+  std::unique_lock<std::mutex> lock(mu_);
+  if (done_intercepting_) {
+    /* We are done intercepting. */
+    if (has_tag_) {
+      *tag = tag_;
+      ret = true;
+    }
+    if (--refs_ == 0) {
+      lock.unlock();
+      delete this;
+    }
+    return ret;
   }
+  finalized_ = true;
+
   if (!*status) cancelled_ = 1;
-  if (--refs_ == 0) {
-    lock.unlock();
-    delete this;
+  /* Release the lock since we are going to be running through interceptors now
+   */
+  lock.unlock();
+  /* Add interception point and run through interceptors */
+  interceptor_methods_.AddInterceptionHookPoint(
+      experimental::InterceptionHookPoints::POST_RECV_CLOSE);
+  if (interceptor_methods_.RunInterceptors()) {
+    /* No interceptors were run */
+    if (has_tag_) {
+      *tag = tag_;
+      ret = true;
+    }
+    lock.lock();
+    if (--refs_ == 0) {
+      lock.unlock();
+      delete this;
+    }
+    return ret;
   }
-  return ret;
+  /* There are interceptors to be run. Return false for now */
+  return false;
 }
 
 // ServerContext body

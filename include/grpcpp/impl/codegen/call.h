@@ -1004,9 +1004,17 @@ class InterceptorBatchMethodsImpl
   /* Returns true if no interceptors are run. Returns false otherwise if there
   are interceptors registered. After the interceptors are done running \a f will
   be invoked. This is to be used only by BaseAsyncRequest and SyncRequest. */
-  bool RunInterceptors(std::function<void(internal::CompletionQueueTag*)> f) {
+  bool RunInterceptors(std::function<void(void)> f) {
     GPR_CODEGEN_ASSERT(reverse_ == true);
-    return true;
+    GPR_CODEGEN_ASSERT(call_->client_rpc_info() == nullptr);
+    auto* server_rpc_info = call_->server_rpc_info();
+    if (server_rpc_info == nullptr ||
+        server_rpc_info->interceptors_.size() == 0) {
+      return true;
+    }
+    callback_ = std::move(f);
+    RunServerInterceptors();
+    return false;
   }
 
  private:
