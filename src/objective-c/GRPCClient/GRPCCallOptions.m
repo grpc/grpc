@@ -24,7 +24,7 @@ static const NSTimeInterval kDefaultTimeout = 0;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
-static const GRPCCompressAlgorithm kDefaultCompressAlgorithm = GRPCCompressNone;
+static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
 static const BOOL kDefaultEnableRetry = YES;
 static const NSTimeInterval kDefaultKeepaliveInterval = 0;
 static const NSTimeInterval kDefaultKeepaliveTimeout = 0;
@@ -52,7 +52,7 @@ static NSUInteger kDefaultChannelID = 0;
   NSDictionary *_initialMetadata;
   NSString *_userAgentPrefix;
   NSUInteger _responseSizeLimit;
-  GRPCCompressAlgorithm _compressAlgorithm;
+  GRPCCompressionAlgorithm _compressionAlgorithm;
   BOOL _enableRetry;
   NSTimeInterval _keepaliveInterval;
   NSTimeInterval _keepaliveTimeout;
@@ -77,7 +77,7 @@ static NSUInteger kDefaultChannelID = 0;
 @synthesize initialMetadata = _initialMetadata;
 @synthesize userAgentPrefix = _userAgentPrefix;
 @synthesize responseSizeLimit = _responseSizeLimit;
-@synthesize compressAlgorithm = _compressAlgorithm;
+@synthesize compressionAlgorithm = _compressionAlgorithm;
 @synthesize enableRetry = _enableRetry;
 @synthesize keepaliveInterval = _keepaliveInterval;
 @synthesize keepaliveTimeout = _keepaliveTimeout;
@@ -102,7 +102,7 @@ static NSUInteger kDefaultChannelID = 0;
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
-                     compressAlgorithm:kDefaultCompressAlgorithm
+                     compressionAlgorithm:kDefaultCompressionAlgorithm
                            enableRetry:kDefaultEnableRetry
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
@@ -127,7 +127,7 @@ static NSUInteger kDefaultChannelID = 0;
                         initialMetadata:(NSDictionary *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
-                      compressAlgorithm:(GRPCCompressAlgorithm)compressAlgorithm
+                      compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
                             enableRetry:(BOOL)enableRetry
                       keepaliveInterval:(NSTimeInterval)keepaliveInterval
                        keepaliveTimeout:(NSTimeInterval)keepaliveTimeout
@@ -151,7 +151,7 @@ static NSUInteger kDefaultChannelID = 0;
     _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
     _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
-    _compressAlgorithm = compressAlgorithm;
+    _compressionAlgorithm = compressionAlgorithm;
     _enableRetry = enableRetry;
     _keepaliveInterval = keepaliveInterval;
     _keepaliveTimeout = keepaliveTimeout;
@@ -181,7 +181,7 @@ static NSUInteger kDefaultChannelID = 0;
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
-                                                  compressAlgorithm:_compressAlgorithm
+                                                  compressionAlgorithm:_compressionAlgorithm
                                                         enableRetry:_enableRetry
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
@@ -209,7 +209,7 @@ static NSUInteger kDefaultChannelID = 0;
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
-            compressAlgorithm:_compressAlgorithm
+            compressionAlgorithm:_compressionAlgorithm
                   enableRetry:_enableRetry
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
@@ -233,7 +233,7 @@ static NSUInteger kDefaultChannelID = 0;
         [callOptions.userAgentPrefix isEqualToString:_userAgentPrefix]))
     return NO;
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
-  if (!(callOptions.compressAlgorithm == _compressAlgorithm)) return NO;
+  if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
   if (!(callOptions.enableRetry == _enableRetry)) return NO;
   if (!(callOptions.keepaliveInterval == _keepaliveInterval)) return NO;
   if (!(callOptions.keepaliveTimeout == _keepaliveTimeout)) return NO;
@@ -270,7 +270,7 @@ static NSUInteger kDefaultChannelID = 0;
   NSUInteger result = 0;
   result ^= _userAgentPrefix.hash;
   result ^= _responseSizeLimit;
-  result ^= _compressAlgorithm;
+  result ^= _compressionAlgorithm;
   result ^= _enableRetry;
   result ^= (unsigned int)(_keepaliveInterval * 1000);
   result ^= (unsigned int)(_keepaliveTimeout * 1000);
@@ -301,7 +301,7 @@ static NSUInteger kDefaultChannelID = 0;
 @dynamic initialMetadata;
 @dynamic userAgentPrefix;
 @dynamic responseSizeLimit;
-@dynamic compressAlgorithm;
+@dynamic compressionAlgorithm;
 @dynamic enableRetry;
 @dynamic keepaliveInterval;
 @dynamic keepaliveTimeout;
@@ -326,7 +326,7 @@ static NSUInteger kDefaultChannelID = 0;
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
-                     compressAlgorithm:kDefaultCompressAlgorithm
+                     compressionAlgorithm:kDefaultCompressionAlgorithm
                            enableRetry:kDefaultEnableRetry
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
@@ -353,7 +353,7 @@ static NSUInteger kDefaultChannelID = 0;
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
-                                                  compressAlgorithm:_compressAlgorithm
+                                                  compressionAlgorithm:_compressionAlgorithm
                                                         enableRetry:_enableRetry
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
@@ -381,7 +381,7 @@ static NSUInteger kDefaultChannelID = 0;
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
-            compressAlgorithm:_compressAlgorithm
+            compressionAlgorithm:_compressionAlgorithm
                   enableRetry:_enableRetry
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
@@ -432,8 +432,8 @@ static NSUInteger kDefaultChannelID = 0;
   _responseSizeLimit = responseSizeLimit;
 }
 
-- (void)setCompressAlgorithm:(GRPCCompressAlgorithm)compressAlgorithm {
-  _compressAlgorithm = compressAlgorithm;
+- (void)setCompressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm {
+  _compressionAlgorithm = compressionAlgorithm;
 }
 
 - (void)setEnableRetry:(BOOL)enableRetry {

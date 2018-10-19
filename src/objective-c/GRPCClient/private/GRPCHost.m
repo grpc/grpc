@@ -102,7 +102,7 @@ static NSMutableDictionary *gHostCache;
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.userAgentPrefix = _userAgentPrefix;
   options.responseSizeLimit = _responseSizeLimitOverride;
-  options.compressAlgorithm = (GRPCCompressAlgorithm)_compressAlgorithm;
+  options.compressionAlgorithm = (GRPCCompressionAlgorithm)_compressAlgorithm;
   options.enableRetry = _retryEnabled;
   options.keepaliveInterval = (NSTimeInterval)_keepaliveInterval / 1000;
   options.keepaliveTimeout = (NSTimeInterval)_keepaliveTimeout / 1000;

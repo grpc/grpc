@@ -94,9 +94,9 @@ extern const char *kCFStreamVarName;
         [NSNumber numberWithUnsignedInteger:_callOptions.responseSizeLimit];
   }
 
-  if (_callOptions.compressAlgorithm != GRPC_COMPRESS_NONE) {
+  if (_callOptions.compressionAlgorithm != GRPC_COMPRESS_NONE) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
-        [NSNumber numberWithInt:_callOptions.compressAlgorithm];
+        [NSNumber numberWithInt:_callOptions.compressionAlgorithm];
   }
 
   if (_callOptions.keepaliveInterval != 0) {

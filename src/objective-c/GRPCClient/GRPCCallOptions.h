@@ -119,7 +119,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * The compression algorithm to be used by the gRPC call. For more details refer to
  * https://github.com/grpc/grpc/blob/master/doc/compression.md
  */
-@property(readonly) GRPCCompressAlgorithm compressAlgorithm;
+@property(readonly) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
  * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
@@ -266,7 +266,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * The compression algorithm to be used by the gRPC call. For more details refer to
  * https://github.com/grpc/grpc/blob/master/doc/compression.md
  */
-@property(readwrite) GRPCCompressAlgorithm compressAlgorithm;
+@property(readwrite) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
  * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
