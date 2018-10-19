@@ -10977,21 +10977,6 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
-    "headers": [
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "health_proto", 
-    "src": [
-      "src/core/ext/filters/client_channel/health/health.pb.c", 
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
     "deps": [
       "nanopb"
     ], 
@@ -11010,6 +10995,23 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/health/health.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "health_proto", 
+    "src": [
+      "src/core/ext/filters/client_channel/health/health.pb.c", 
+      "src/core/ext/filters/client_channel/health/health.pb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

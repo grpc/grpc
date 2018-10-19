@@ -1099,13 +1099,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
-- name: health_proto
-  headers:
-  - src/core/ext/filters/client_channel/health/health.pb.h
-  src:
-  - src/core/ext/filters/client_channel/health/health.pb.c
-  uses:
-  - nanopb
 - name: grpclb_proto
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
@@ -1115,6 +1108,13 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  uses:
+  - nanopb
+- name: health_proto
+  headers:
+  - src/core/ext/filters/client_channel/health/health.pb.h
+  src:
+  - src/core/ext/filters/client_channel/health/health.pb.c
   uses:
   - nanopb
 - name: nanopb
