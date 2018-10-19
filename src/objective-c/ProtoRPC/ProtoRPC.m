@@ -34,7 +34,7 @@
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *)callOptions
+                           callOptions:(GRPCCallOptions * _Nullable)callOptions
                          responseClass:(Class)responseClass {
   if ((self = [super init])) {
     _call = [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
@@ -70,7 +70,7 @@
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *)callOptions
+                           callOptions:(GRPCCallOptions * _Nullable)callOptions
                          responseClass:(Class)responseClass {
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
@@ -153,8 +153,8 @@
   });
 }
 
-- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
-  if (_handler) {
+- (void)receivedInitialMetadata:(NSDictionary * _Nullable)initialMetadata {
+  if (_handler && initialMetadata != nil) {
     id<GRPCProtoResponseHandler> handler = _handler;
     if ([handler respondsToSelector:@selector(initialMetadata:)]) {
       dispatch_async(handler.dispatchQueue, ^{
@@ -164,8 +164,8 @@
   }
 }
 
-- (void)receivedRawMessage:(NSData *)message {
-  if (_handler) {
+- (void)receivedRawMessage:(NSData * _Nullable)message {
+  if (_handler && message != nil) {
     id<GRPCProtoResponseHandler> handler = _handler;
     NSError *error = nil;
     GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
@@ -188,7 +188,7 @@
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+- (void)closedWithTrailingMetadata:(NSDictionary * _Nullable)trailingMetadata error:(NSError * _Nullable)error {
   if (_handler) {
     id<GRPCProtoResponseHandler> handler = _handler;
     if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {

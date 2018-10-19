@@ -21,6 +21,8 @@
 
 #import "ProtoMethod.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
@@ -29,12 +31,12 @@
 @optional
 
 /** Issued when initial metadata is received from the server. */
-- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata;
+- (void)receivedInitialMetadata:(NSDictionary * _Nullable)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the deserialized proto object.
  */
-- (void)receivedProtoMessage:(GPBMessage *)message;
+- (void)receivedProtoMessage:(GPBMessage * _Nullable)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -42,7 +44,7 @@
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error;
+- (void)closedWithTrailingMetadata:(NSDictionary * _Nullable)trailingMetadata error:(NSError * _Nullable)error;
 
 @required
 
@@ -68,7 +70,7 @@
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *)callOptions
+                           callOptions:(GRPCCallOptions * _Nullable)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
@@ -93,7 +95,7 @@
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *)callOptions
+                           callOptions:(GRPCCallOptions * _Nullable)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
@@ -116,6 +118,8 @@
 - (void)finish;
 
 @end
+
+NS_ASSUME_NONNULL_END
 
 __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
     : GRPCCall

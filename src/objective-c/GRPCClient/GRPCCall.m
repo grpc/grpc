@@ -97,7 +97,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
-                           callOptions:(GRPCCallOptions *)callOptions {
+                           callOptions:(GRPCCallOptions * _Nullable)callOptions {
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
