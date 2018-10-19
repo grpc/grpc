@@ -247,7 +247,7 @@
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                  callOptions:(GRPCCallOptions *)callOptions {
-  if (!path || !host) {
+  if (host.length == 0 || path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"path and host cannot be nil."];
   }
 
