@@ -34,7 +34,7 @@ NOTE: currently bazel is only supported for building gRPC on Linux.
 
 ## make
 
-Currently the default choice for building on UNIX based systems is `make`.
+Currently, the default choice for building on UNIX based systems is `make`.
 
 To install gRPC for C++ on your system using `make`, follow the [Building gRPC C++](../../BUILDING.md)
 instructions to build from source and then install locally using `make install`.
@@ -46,7 +46,7 @@ if you later want to remove the grpc and/or protobuf installation or upgrade to 
 
 ## cmake
 
-`cmake` is the default build option on Windows, but also works on Linux, MacOS. `cmake` has good
+`cmake` is the default build option on Windows but also works on Linux, MacOS. `cmake` has good
 support for crosscompiling and can be used for targeting Android platform.
 
 If your project is using cmake, there are several ways to add gRPC dependency.
@@ -65,7 +65,7 @@ Contributions and community-maintained packages for popular packaging systems ar
 You can find out how to build and run our simplest gRPC C++ example in our
 [C++ quick start](../../examples/cpp).
 
-For more detailed documentation on using gRPC in C++ , see our main
+For more detailed documentation on using gRPC in C++, see our main
 documentation site at [grpc.io](https://grpc.io), specifically:
 
 * [Overview](https://grpc.io/docs/): An introduction to gRPC with a simple
