@@ -79,6 +79,7 @@ typedef struct non_polling_worker {
 
 typedef struct {
   gpr_mu mu;
+  bool kicked_without_poller;
   non_polling_worker* root;
   grpc_closure* shutdown;
 } non_polling_poller;
@@ -103,6 +104,10 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
                                            grpc_millis deadline) {
   non_polling_poller* npp = reinterpret_cast<non_polling_poller*>(pollset);
   if (npp->shutdown) return GRPC_ERROR_NONE;
+  if (npp->kicked_without_poller) {
+    npp->kicked_without_poller = false;
+    return GRPC_ERROR_NONE;
+  }
   non_polling_worker w;
   gpr_cv_init(&w.cv);
   if (worker != nullptr) *worker = reinterpret_cast<grpc_pollset_worker*>(&w);
@@ -148,6 +153,8 @@ static grpc_error* non_polling_poller_kick(
       w->kicked = true;
       gpr_cv_signal(&w->cv);
     }
+  } else {
+    p->kicked_without_poller = true;
   }
   return GRPC_ERROR_NONE;
 }

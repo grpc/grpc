@@ -102,6 +102,7 @@ namespace Grpc.Core.Tests
                 "Grpc.HealthCheck.Tests",
                 "Grpc.IntegrationTesting",
                 "Grpc.Reflection.Tests",
+                "Grpc.Tools.Tests",
             };
             foreach (var assemblyName in otherAssemblies)
             {

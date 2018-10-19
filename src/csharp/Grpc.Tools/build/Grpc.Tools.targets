@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <!-- Name of this file must match package ID. -->
+  <!-- Packages will be split later. -->
+  <Import Project="_grpc/_Grpc.Tools.targets"/>
+  <Import Project="_protobuf/Google.Protobuf.Tools.targets"/>
+</Project>
