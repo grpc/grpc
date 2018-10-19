@@ -407,7 +407,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   grpc_core::ExecCtx exec_ctx;
   std::vector<UniquePtr<ChannelFixture>> even_channels;
   {
-    // these will delete and unregisterthemselves after this block.
+    // these will delete and unregister themselves after this block.
     std::vector<UniquePtr<ChannelFixture>> odd_channels;
     for (int i = 0; i < kLoopIterations; i++) {
       odd_channels.push_back(MakeUnique<ChannelFixture>());
