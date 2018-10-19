@@ -579,7 +579,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
       callSafetyFlags = GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
       break;
   }
-  uint32_t callFlag = callSafetyFlags;
 
   NSMutableDictionary *headers = _requestHeaders;
   if (_fetchedOauth2AccessToken != nil) {
@@ -592,7 +591,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // TODO(jcanizales): Add error handlers for async failures
   GRPCOpSendMetadata *op = [[GRPCOpSendMetadata alloc]
       initWithMetadata:headers
-                 flags:callFlag
+                 flags:callSafetyFlags
                handler:nil];  // No clean-up needed after SEND_INITIAL_METADATA
   if (!_unaryCall) {
     [_wrappedCall startBatchWithOperations:@[ op ]];
