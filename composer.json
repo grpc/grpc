@@ -6,7 +6,6 @@
   "homepage": "https://grpc.io",
   "license": "Apache-2.0",
   "require": {
-    "grpc/grpc": "v1.7.0",
     "php": ">=5.5.0"
   },
   "require-dev": {
