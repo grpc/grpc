@@ -126,7 +126,7 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)dealloc {
-  if (_channelCreds != nil) {
+  if (_channelCreds != NULL) {
     grpc_channel_credentials_release(_channelCreds);
   }
 }
