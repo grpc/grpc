@@ -427,6 +427,10 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   calld->cancel_error = GRPC_ERROR_NONE;
+  calld->message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
+  calld->send_initial_metadata_state = INITIAL_METADATA_UNSEEN;
+  calld->send_message_batch = nullptr;
+  calld->original_send_message_on_complete = nullptr;
   grpc_slice_buffer_init(&calld->slices);
   GRPC_CLOSURE_INIT(&calld->start_send_message_batch_in_call_combiner,
                     start_send_message_batch, elem, grpc_schedule_on_exec_ctx);

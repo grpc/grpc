@@ -248,6 +248,17 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   calld->call_combiner = args->call_combiner;
   calld->owning_call = args->call_stack;
+  calld->recv_initial_metadata_batch = nullptr;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  calld->original_recv_trailing_metadata_ready = nullptr;
+  calld->recv_initial_metadata_error = nullptr;
+  calld->recv_trailing_metadata_error = nullptr;
+  calld->num_consumed_md = 0;
+  calld->consumed_md = nullptr;
+  calld->state = STATE_INIT;
+  calld->seen_recv_trailing_metadata_ready = false;
+  memset(&calld->md, 0, sizeof(calld->md));
+  memset(&calld->cancel_closure, 0, sizeof(calld->cancel_closure));
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);

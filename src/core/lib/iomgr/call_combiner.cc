@@ -40,6 +40,8 @@ static gpr_atm encode_cancel_state_error(grpc_error* error) {
 }
 
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
+  gpr_atm_no_barrier_store(&call_combiner->cancel_state, 0);
+  gpr_atm_no_barrier_store(&call_combiner->size, 0);
   gpr_mpscq_init(&call_combiner->queue);
 }
 

@@ -74,6 +74,7 @@
 
 typedef struct batch_control {
   grpc_call* call;
+  grpc_transport_stream_op_batch op;
   /* Share memory for cq_completion and notify_tag as they are never needed
      simultaneously. Each byte used in this data structure count as six bytes
      per call, so any savings we can make are worthwhile,
@@ -97,7 +98,6 @@ typedef struct batch_control {
   grpc_closure finish_batch;
   gpr_refcount steps_to_complete;
   gpr_atm batch_error;
-  grpc_transport_stream_op_batch op;
 } batch_control;
 
 typedef struct {
@@ -271,6 +271,7 @@ static parent_call* get_or_create_parent_call(grpc_call* call) {
   if (p == nullptr) {
     p = static_cast<parent_call*>(gpr_arena_alloc(call->arena, sizeof(*p)));
     gpr_mu_init(&p->child_list_mu);
+    p->first_child = nullptr;
     if (!gpr_atm_rel_cas(&call->parent_call_atm, (gpr_atm) nullptr,
                          (gpr_atm)p)) {
       gpr_mu_destroy(&p->child_list_mu);
@@ -292,6 +293,9 @@ size_t grpc_call_get_initial_size_estimate() {
 grpc_error* grpc_call_create(const grpc_call_create_args* args,
                              grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
+
+  GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
+
   size_t i, j;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
@@ -300,23 +304,47 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
-  call = static_cast<grpc_call*>(
+  void* mem =
       gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
-                                 channel_stack->call_stack_size));
+                                 channel_stack->call_stack_size);
+  call = reinterpret_cast<grpc_call*>(mem);
   gpr_ref_init(&call->ext_ref, 1);
-  gpr_atm_no_barrier_store(&call->cancelled, 0);
   call->arena = arena;
-  grpc_call_combiner_init(&call->call_combiner);
-  *out_call = call;
-  call->channel = args->channel;
   call->cq = args->cq;
+  *out_call = call;
+  grpc_call_combiner_init(&call->call_combiner);
+  memset(&call->pollent, 0, sizeof(call->pollent));
+  call->channel = args->channel;
   call->start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_atm_no_barrier_store(&call->parent_call_atm, 0);
+  call->child = nullptr;
   /* Always support no compression */
+  call->encodings_accepted_by_peer = 0;
   GPR_BITSET(&call->encodings_accepted_by_peer, GRPC_MESSAGE_COMPRESS_NONE);
+  call->sent_initial_metadata = false;
+  call->sending_message = false;
+  call->sent_final_op = false;
+  call->received_initial_metadata = false;
+  call->receiving_message = false;
+  call->requested_final_op = false;
+  call->destroy_called = false;
+  call->cancellation_is_inherited = false;
+  gpr_atm_no_barrier_store(&call->any_ops_sent_atm, 0);
+  gpr_atm_no_barrier_store(&call->received_final_op_atm, 0);
+  gpr_atm_no_barrier_store(&call->cancelled, 0);
+
+  memset(&call->receiving_stream, 0, sizeof(call->receiving_stream));
+  call->receiving_buffer = nullptr;
+  call->receiving_slice = grpc_empty_slice();
+
+  memset(call->buffered_metadata, 0, sizeof(call->buffered_metadata));
+  gpr_atm_no_barrier_store(&call->peer_string, 0);
   call->is_client = args->server_transport_data == nullptr;
-  call->stream_op_payload.context = call->context;
   grpc_slice path = grpc_empty_slice();
   if (call->is_client) {
+    call->final_op.client.status_details = nullptr;
+    call->final_op.client.status = nullptr;
+    call->final_op.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
@@ -332,17 +360,19 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
         static_cast<int>(args->add_initial_metadata_count);
   } else {
     GRPC_STATS_INC_SERVER_CALLS_CREATED();
+    call->final_op.server.cancelled = nullptr;
     call->final_op.server.server = args->server;
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
   }
-  for (i = 0; i < 2; i++) {
-    for (j = 0; j < 2; j++) {
-      call->metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
-    }
-  }
-  grpc_millis send_deadline = args->send_deadline;
 
+  call->test_only_last_message_flags = 0;
+  call->incoming_message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
+  call->incoming_stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
+  call->stream_encodings_accepted_by_peer = 0;
+
+  memset(call->context, 0, sizeof(call->context));
+  grpc_millis send_deadline = args->send_deadline;
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
@@ -382,10 +412,9 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
       }
     }
   }
-
   call->send_deadline = send_deadline;
-
-  GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
+  gpr_atm_no_barrier_store(&call->status_error, 0);
+  gpr_atm_no_barrier_store(&call->recv_state, 0);
   /* initial refcount dropped by grpc_call_unref */
   grpc_call_element_args call_args = {CALL_STACK_FROM_CALL(call),
                                       args->server_transport_data,
@@ -413,6 +442,19 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     }
     gpr_mu_unlock(&pc->child_list_mu);
   }
+
+  memset(call->active_batches, 0, sizeof(call->active_batches));
+  memset(&call->stream_op_payload, 0, sizeof(call->stream_op_payload));
+  call->stream_op_payload.context = call->context;
+  memset(&call->final_info, 0, sizeof(call->final_info));
+
+  memset(call->metadata_batch, 0, sizeof(call->metadata_batch));
+  for (i = 0; i < 2; i++) {
+    for (j = 0; j < 2; j++) {
+      call->metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
+    }
+  }
+
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(call, GRPC_ERROR_REF(error));
   }
@@ -1100,14 +1142,24 @@ static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
     if (bctl->call != nullptr) {
       return nullptr;
     }
-    memset(bctl, 0, sizeof(*bctl));
   } else {
     bctl = static_cast<batch_control*>(
         gpr_arena_alloc(call->arena, sizeof(batch_control)));
     *pslot = bctl;
   }
+  gpr_atm_no_barrier_store(&bctl->batch_error, GRPC_ERROR_NONE);
+  gpr_ref_init(&bctl->steps_to_complete, 0);
   bctl->call = call;
+  bctl->op.on_complete = nullptr;
   bctl->op.payload = &call->stream_op_payload;
+  bctl->op.send_initial_metadata = false;
+  bctl->op.send_trailing_metadata = false;
+  bctl->op.send_message = false;
+  bctl->op.recv_initial_metadata = false;
+  bctl->op.recv_message = false;
+  bctl->op.recv_trailing_metadata = false;
+  bctl->op.cancel_stream = false;
+  bctl->op.handler_private.extra_arg = nullptr;
   return bctl;
 }
 
@@ -1663,6 +1715,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->sent_final_op = true;
         GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
+        call->send_extra_metadata[0] = {};
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             call->channel, op->data.send_status_from_server.status);
         grpc_error* status_error =
@@ -1675,6 +1728,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
+          call->send_extra_metadata[1] = {};
           call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_slice_ref_internal(

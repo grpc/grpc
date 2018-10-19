@@ -822,11 +822,16 @@ static void accept_stream(void* cd, grpc_transport* transport,
   channel_data* chand = static_cast<channel_data*>(cd);
   /* create a call */
   grpc_call_create_args args;
-  memset(&args, 0, sizeof(args));
   args.channel = chand->channel;
   args.server_transport_data = transport_server_data;
+  args.parent = nullptr;
+  args.propagation_mask = 0;
+  args.cq = nullptr;
+  args.pollset_set_alternative = nullptr;
   args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   args.server = chand->server;
+  args.add_initial_metadata = nullptr;
+  args.add_initial_metadata_count = 0;
   grpc_call* call;
   grpc_error* error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
@@ -838,8 +843,9 @@ static void accept_stream(void* cd, grpc_transport* transport,
   }
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_op op;
-  memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  op.flags = 0;
+  op.reserved = nullptr;
   op.data.recv_initial_metadata.recv_initial_metadata =
       &calld->initial_metadata;
   GRPC_CLOSURE_INIT(&calld->got_initial_metadata, got_initial_metadata, elem,
