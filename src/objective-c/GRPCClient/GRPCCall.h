@@ -254,7 +254,8 @@ extern NSString * const kGRPCTrailersKey;
 /**
  * Finish the RPC request and half-close the call. The server may still send messages and/or
  * trailers to the client.
- */ -(void)finish;
+ */
+- (void)finish;
 
 /**
  * Get a copy of the original call options.
