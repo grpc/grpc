@@ -42,6 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSData *)nullTerminatedDataWithString:(NSString *)string {
   // dataUsingEncoding: does not return a null-terminated string.
   NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+  if (data == nil) {
+    return nil;
+  }
   NSMutableData *nullTerminated = [NSMutableData dataWithData:data];
   [nullTerminated appendBytes:"\0" length:1];
   return nullTerminated;
@@ -51,7 +54,7 @@ NS_ASSUME_NONNULL_BEGIN
                                    privateKey:(nullable NSString *)privateKey
                                     certChain:(nullable NSString *)certChain
                                         error:(NSError **)errorPtr {
-  static NSData *kDefaultRootsASCII;
+  static NSData *defaultRootsASCII;
   static NSError *kDefaultRootsError;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
@@ -68,14 +71,14 @@ NS_ASSUME_NONNULL_BEGIN
       kDefaultRootsError = error;
       return;
     }
-    kDefaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
+    defaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
   });
 
   NSData *rootsASCII;
   if (rootCerts != nil) {
     rootsASCII = [self nullTerminatedDataWithString:rootCerts];
   } else {
-    if (kDefaultRootsASCII == nil) {
+    if (defaultRootsASCII == nil) {
       if (errorPtr) {
         *errorPtr = kDefaultRootsError;
       }
@@ -88,11 +91,11 @@ NS_ASSUME_NONNULL_BEGIN
           kDefaultRootsError);
       return nil;
     }
-    rootsASCII = kDefaultRootsASCII;
+    rootsASCII = defaultRootsASCII;
   }
 
-  grpc_channel_credentials *creds;
-  if (privateKey == nil && certChain == nil) {
+  grpc_channel_credentials *creds = NULL;
+  if (privateKey.length == 0 && certChain.length == 0) {
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
@@ -100,7 +103,11 @@ NS_ASSUME_NONNULL_BEGIN
     NSData *certChainASCII = [self nullTerminatedDataWithString:certChain];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
+    if (key_cert_pair.private_key == NULL || key_cert_pair.cert_chain == NULL) {
+      creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
+    } else {
+      creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
+    }
   }
 
   if ((self = [super init])) {
