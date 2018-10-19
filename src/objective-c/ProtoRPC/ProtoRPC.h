@@ -71,7 +71,11 @@
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
-/** Cancel the call at best effort. */
+/**
+ * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
+ * should be cancelled, and issue closedWithTrailingMetadata:error: callback with error code
+ * CANCELED if no other error code has already been issued.
+ */
 - (void)cancel;
 
 @end
@@ -92,7 +96,11 @@
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
-/** Cancel the call at best effort. */
+/**
+ * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
+ * should be cancelled, and issue closedWithTrailingMetadata:error: callback with error code
+ * CANCELED if no other error code has already been issued.
+ */
 - (void)cancel;
 
 /**
