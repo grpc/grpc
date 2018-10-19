@@ -1580,11 +1580,21 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
   batch_data->subchannel_call =
       GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
   batch_data->batch.payload = &retry_state->batch_payload;
+  batch_data->batch.send_initial_metadata = false;
+  batch_data->batch.send_trailing_metadata = false;
+  batch_data->batch.send_message = false;
+  batch_data->batch.recv_initial_metadata = false;
+  batch_data->batch.recv_message = false;
+  batch_data->batch.recv_trailing_metadata = false;
+  batch_data->batch.cancel_stream = false;
+
   gpr_ref_init(&batch_data->refs, refcount);
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
                       grpc_schedule_on_exec_ctx);
     batch_data->batch.on_complete = &batch_data->on_complete;
+  } else {
+    batch_data->batch.on_complete = nullptr;
   }
   GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
   return batch_data;
@@ -2637,6 +2647,8 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
           static_cast<subchannel_call_retry_state*>(
               grpc_connected_subchannel_call_get_parent_data(
                   calld->subchannel_call));
+      // TODO(soheil): we probably need to initialize retry_state partially.
+      memset(retry_state, 0, sizeof(*retry_state));
       retry_state->batch_payload.context = calld->pick.subchannel_call_context;
     }
     pending_batches_resume(elem);
@@ -3152,12 +3164,39 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
   calld->arena = args->arena;
   calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
+  memset(&calld->deadline_state, 0, sizeof(calld->deadline_state));
   if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
   }
+
+  calld->subchannel_call = nullptr;
+  memset(&calld->pick, 0, sizeof(calld->pick));
+  calld->pollent = nullptr;
+  calld->pollent_added_to_interested_parties =false;
+  calld->num_attempts_completed = 0;
+  calld->bytes_buffered_for_retry = 0;
+  calld->num_pending_retriable_subchannel_send_batches = 0;
+  calld->seen_send_initial_metadata = false;
+  calld->send_initial_metadata_storage =nullptr;
+  memset(&calld->retry_throttle_data, 0, sizeof(calld->retry_throttle_data));
+  memset(&calld->method_params, 0, sizeof(calld->method_params));
+  calld->send_initial_metadata_flags = 0;
+  calld->peer_string = nullptr;
+  calld->subchannel_call = nullptr;
+  calld->cancel_error = nullptr;
+  calld->seen_send_trailing_metadata = false;
+  calld->pending_send_initial_metadata = false;
+  calld->pending_send_message = false;
+  calld->pending_send_trailing_metadata = false;
+  calld->retry_committed = false;
+  calld->last_attempt_got_server_pushback = false;
+  memset(&calld->pending_batches, 0, sizeof(calld->pending_batches));
+  memset(&calld->retry_timer, 0, sizeof(calld->retry_timer));
+  memset(&calld->retry_backoff, 0, sizeof(calld->retry_backoff));
   calld->enable_retries = chand->enable_retries;
   calld->send_messages.Init();
+  calld->send_trailing_metadata_storage = nullptr;
   return GRPC_ERROR_NONE;
 }
 

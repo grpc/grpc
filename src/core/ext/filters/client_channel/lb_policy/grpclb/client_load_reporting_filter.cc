@@ -73,6 +73,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
+  memset(&calld->client_stats, 0, sizeof(calld->client_stats));
   if (args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
     calld->client_stats = static_cast<grpc_core::GrpcLbClientStats*>(
                               args->context[GRPC_GRPCLB_CLIENT_STATS].value)
@@ -80,6 +81,10 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
     // Record call started.
     calld->client_stats->AddCallStarted();
   }
+  calld->original_on_complete_for_send = nullptr;
+  calld->send_initial_metadata_succeeded = false;
+  calld->original_recv_initial_metadata_ready = nullptr;
+  calld->recv_initial_metadata_succeeded = false;
   return GRPC_ERROR_NONE;
 }
 

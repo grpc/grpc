@@ -63,7 +63,7 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   gpr_mu_lock(&arena->mu);
   arena->ptrs =
       (void**)gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
-  void* retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
+  void* retval = arena->ptrs[arena->num_ptrs++] = gpr_malloc(size);
   gpr_mu_unlock(&arena->mu);
   return retval;
 }
@@ -90,17 +90,17 @@ struct gpr_arena {
   gpr_mu arena_growth_mutex;
 };
 
-static void* zalloc_aligned(size_t size) {
-  void* ptr = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
-  memset(ptr, 0, size);
-  return ptr;
+static void* malloc_aligned(size_t size) {
+  return gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
 }
 
 gpr_arena* gpr_arena_create(size_t initial_size) {
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  gpr_arena* a = static_cast<gpr_arena*>(zalloc_aligned(
+  gpr_arena* a = static_cast<gpr_arena*>(malloc_aligned(
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena)) + initial_size));
+  a->total_used = 0;
   a->initial_zone_size = initial_size;
+  a->initial_zone.next = nullptr;
   a->last_zone = &a->initial_zone;
   gpr_mu_init(&a->arena_growth_mutex);
   return a;
@@ -133,7 +133,8 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
     // zone and will not need to grow the arena).
     gpr_mu_lock(&arena->arena_growth_mutex);
     zone* z = static_cast<zone*>(
-        zalloc_aligned(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + size));
+        malloc_aligned(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + size));
+    z->next = nullptr;
     arena->last_zone->next = z;
     arena->last_zone = z;
     gpr_mu_unlock(&arena->arena_growth_mutex);

@@ -310,8 +310,8 @@ static grpc_call* grpc_channel_create_call_internal(
   }
 
   grpc_call_create_args args;
-  memset(&args, 0, sizeof(args));
   args.channel = channel;
+  args.server = nullptr;
   args.parent = parent_call;
   args.propagation_mask = propagation_mask;
   args.cq = cq;

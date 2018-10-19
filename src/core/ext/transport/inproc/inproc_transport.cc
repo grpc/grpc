@@ -233,6 +233,12 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   // Ref this stream right now
   ref_stream(s, "inproc_init_stream:init");
 
+  s->send_message_op = nullptr;
+  s->send_trailing_md_op = nullptr;
+  s->recv_initial_md_op = nullptr;
+  s->recv_message_op = nullptr;
+  s->recv_trailing_md_op = nullptr;
+
   grpc_metadata_batch_init(&s->to_read_initial_md);
   s->to_read_initial_md_flags = 0;
   s->to_read_initial_md_filled = false;
@@ -250,6 +256,8 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   s->t = t;
   s->closure_at_destroy = nullptr;
   s->other_side_closed = false;
+
+  s->recv_inited = false;
 
   s->initial_md_sent = s->trailing_md_sent = s->initial_md_recvd =
       s->trailing_md_recvd = false;

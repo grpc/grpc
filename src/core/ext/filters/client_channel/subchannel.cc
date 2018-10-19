@@ -973,6 +973,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
   (*call)->deadline = args.deadline;
+  (*call)->schedule_closure_after_destroy = nullptr;
+  (*call)->original_recv_trailing_metadata = nullptr;
+  (*call)->recv_trailing_metadata = nullptr;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */

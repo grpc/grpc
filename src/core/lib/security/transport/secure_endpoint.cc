@@ -412,6 +412,8 @@ grpc_endpoint* grpc_secure_endpoint_create(
   ep->wrapped_ep = transport;
   ep->protector = protector;
   ep->zero_copy_protector = zero_copy_protector;
+  ep->read_cb = nullptr;
+  ep->write_cb = nullptr;
   grpc_slice_buffer_init(&ep->leftover_bytes);
   for (i = 0; i < leftover_nslices; i++) {
     grpc_slice_buffer_add(&ep->leftover_bytes,

@@ -84,8 +84,11 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 
 grpc_client_security_context* grpc_client_security_context_create(
     gpr_arena* arena) {
-  return static_cast<grpc_client_security_context*>(
-      gpr_arena_alloc(arena, sizeof(grpc_client_security_context)));
+  grpc_client_security_context* ctx =
+      static_cast<grpc_client_security_context*>(
+          gpr_arena_alloc(arena, sizeof(grpc_client_security_context)));
+  memset(ctx, 0, sizeof(*ctx));
+  return ctx;
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
@@ -102,8 +105,11 @@ void grpc_client_security_context_destroy(void* ctx) {
 /* --- grpc_server_security_context --- */
 grpc_server_security_context* grpc_server_security_context_create(
     gpr_arena* arena) {
-  return static_cast<grpc_server_security_context*>(
-      gpr_arena_alloc(arena, sizeof(grpc_server_security_context)));
+  grpc_server_security_context* ctx =
+      static_cast<grpc_server_security_context*>(
+          gpr_arena_alloc(arena, sizeof(grpc_server_security_context)));
+  memset(ctx, 0, sizeof(grpc_server_security_context));
+  return ctx;
 }
 
 void grpc_server_security_context_destroy(void* ctx) {

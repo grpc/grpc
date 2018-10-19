@@ -32,6 +32,7 @@ void grpc_chttp2_incoming_metadata_buffer_init(
   buffer->arena = arena;
   grpc_metadata_batch_init(&buffer->batch);
   buffer->batch.deadline = GRPC_MILLIS_INF_FUTURE;
+  buffer->size = 0;
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(

@@ -488,6 +488,8 @@ static void init_transport(grpc_chttp2_transport* t,
   gpr_ref_init(&t->refs, 1);
   t->combiner = grpc_combiner_create();
   t->peer_string = grpc_endpoint_get_peer(ep);
+  t->destroying = false;
+  t->closed_with_error = nullptr;
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
@@ -683,30 +685,13 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
+  s->id = 0;
   s->t = t;
   s->refcount = refcount;
   /* We reserve one 'active stream' that's dropped when the stream is
      read-closed. The others are for Chttp2IncomingByteStreams that are
      actively reading */
   GRPC_CHTTP2_STREAM_REF(s, "chttp2");
-
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0], arena);
-  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
-  grpc_chttp2_data_parser_init(&s->data_parser);
-  grpc_slice_buffer_init(&s->flow_controlled_buffer);
-  s->deadline = GRPC_MILLIS_INF_FUTURE;
-  GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
-                    grpc_schedule_on_exec_ctx);
-  grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
-  s->unprocessed_incoming_frames_buffer_cached_length = 0;
-  grpc_slice_buffer_init(&s->frame_storage);
-  grpc_slice_buffer_init(&s->compressed_data_buffer);
-  grpc_slice_buffer_init(&s->decompressed_data_buffer);
-  s->pending_byte_stream = false;
-  s->decompressed_header_bytes = 0;
-  GRPC_CLOSURE_INIT(&s->reset_byte_stream, reset_byte_stream, s,
-                    grpc_combiner_scheduler(t->combiner));
-
   GRPC_CHTTP2_REF_TRANSPORT(t, "stream");
 
   if (server_data) {
@@ -724,6 +709,88 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   } else {
     s->flow_control.Init<grpc_core::chttp2::StreamFlowControlDisabled>();
   }
+
+  grpc_slice_buffer_init(&s->frame_storage);
+  grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
+  grpc_slice_buffer_init(&s->flow_controlled_buffer);
+  grpc_slice_buffer_init(&s->compressed_data_buffer);
+  grpc_slice_buffer_init(&s->decompressed_data_buffer);
+
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0], arena);
+  grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
+  grpc_chttp2_data_parser_init(&s->data_parser);
+
+  GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&s->reset_byte_stream, reset_byte_stream, s,
+                    grpc_combiner_scheduler(t->combiner));
+
+  memset(s->included, 0, sizeof(s->included));
+  s->send_initial_metadata = nullptr;
+  s->send_initial_metadata_finished = nullptr;
+  s->send_trailing_metadata = nullptr;
+  s->send_trailing_metadata_finished = nullptr;
+  s->stream_compression_ctx = nullptr;
+
+  memset(&s->fetching_send_message, 0, sizeof(s->fetching_send_message));
+  s->fetched_send_message_length = 0;
+  s->fetching_slice = grpc_empty_slice();
+  s->flow_controlled_bytes_written = 0;
+  s->flow_controlled_bytes_flowed = 0;
+  s->fetching_send_message_finished = nullptr;
+
+  s->recv_initial_metadata = nullptr;
+  s->recv_initial_metadata_ready = nullptr;
+  s->trailing_metadata_available = nullptr;
+  s->recv_message = nullptr;
+  s->recv_message_ready = nullptr;
+  s->recv_trailing_metadata = nullptr;
+  s->recv_trailing_metadata_finished = nullptr;
+  s->collecting_stats = nullptr;
+  memset(&s->stats, 0, sizeof(s->stats));
+
+  s->write_closed = false;
+  s->read_closed = false;
+  s->all_incoming_byte_streams_finished = false;
+  s->seen_error = false;
+  s->write_buffering = false;
+  s->received_trailing_metadata = false;
+  s->eos_received = false;
+  s->eos_sent = false;
+
+  s->read_closed_error = GRPC_ERROR_NONE;
+  s->write_closed_error = GRPC_ERROR_NONE;
+
+  memset(s->published_metadata, 0, sizeof(s->published_metadata));
+  s->final_metadata_requested = false;
+  s->on_next = nullptr;
+  s->pending_byte_stream = false;
+  s->unprocessed_incoming_frames_buffer_cached_length = 0;
+
+  s->byte_stream_error = GRPC_ERROR_NONE;
+  s->received_last_frame = false;
+  s->deadline = GRPC_MILLIS_INF_FUTURE;
+
+  s->forced_close_error = nullptr;
+  s->header_frames_received = 0;
+
+  s->received_bytes = 0;
+  s->sent_initial_metadata = false;
+  s->sent_trailing_metadata = false;
+
+  s->on_flow_controlled_cbs = nullptr;
+  s->on_write_finished_cbs = nullptr;
+  s->finish_after_write = nullptr;
+  s->sending_bytes = 0;
+
+  s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
+  s->stream_decompression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
+  s->stream_decompression_ctx = nullptr;
+  s->stream_compression_ctx = nullptr;
+
+  s->uncompressed_data_size = 0;
+  s->unprocessed_incoming_frames_decompressed = false;
+  s->decompressed_header_bytes = 0;
 
   return 0;
 }
@@ -1701,8 +1768,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     gpr_free(str);
   }
 
-  op->handler_private.extra_arg = gs;
   GRPC_CHTTP2_STREAM_REF(s, "perform_stream_op");
+  op->handler_private.extra_arg = gs;
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_INIT(&op->handler_private.closure, perform_stream_op_locked,
                         op, grpc_combiner_scheduler(t->combiner)),

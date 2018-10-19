@@ -337,8 +337,17 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->arena = args->arena;
   calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
+  calld->creds = nullptr;
   calld->host = grpc_empty_slice();
   calld->method = grpc_empty_slice();
+  calld->pollent = nullptr;
+  memset(&calld->md_array, 0, sizeof(calld->md_array));
+  memset(&calld->auth_md_context, 0, sizeof(calld->auth_md_context));
+  memset(&calld->async_result_closure, 0, sizeof(calld->async_result_closure));
+  memset(&calld->check_call_host_cancel_closure, 0,
+         sizeof(calld->check_call_host_cancel_closure));
+  memset(&calld->get_request_metadata_cancel_closure, 0,
+         sizeof(calld->get_request_metadata_cancel_closure));
   return GRPC_ERROR_NONE;
 }
 

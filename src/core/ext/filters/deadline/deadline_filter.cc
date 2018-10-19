@@ -183,8 +183,10 @@ void grpc_deadline_state_init(grpc_call_element* elem,
                               grpc_millis deadline) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
+  deadline_state->timer_state = GRPC_DEADLINE_STATE_INITIAL;
   deadline_state->call_stack = call_stack;
   deadline_state->call_combiner = call_combiner;
+  deadline_state->original_recv_trailing_metadata_ready = nullptr;
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
@@ -197,7 +199,8 @@ void grpc_deadline_state_init(grpc_call_element* elem,
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
         static_cast<struct start_timer_after_init_state*>(
-            gpr_zalloc(sizeof(*state)));
+            gpr_malloc(sizeof(*state)));
+    state->in_call_combiner = false;
     state->elem = elem;
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,

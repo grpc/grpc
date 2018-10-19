@@ -230,9 +230,12 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
+  calld->error = GRPC_ERROR_NONE;
+  calld->recv_message = nullptr;
   calld->next_recv_message_ready = nullptr;
   calld->original_recv_trailing_metadata_ready = nullptr;
-  calld->error = GRPC_ERROR_NONE;
+  calld->seen_recv_trailing_metadata = false;
+  calld->recv_trailing_metadata_error = nullptr;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
