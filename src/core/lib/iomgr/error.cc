@@ -121,14 +121,8 @@ static const char* error_time_name(grpc_error_times key) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-bool grpc_error_is_special(grpc_error* err) {
-  return err == GRPC_ERROR_NONE || err == GRPC_ERROR_OOM ||
-         err == GRPC_ERROR_CANCELLED;
-}
-
 #ifndef NDEBUG
-grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line) {
-  if (grpc_error_is_special(err)) return err;
+grpc_error* grpc_error_do_ref(grpc_error* err, const char* file, int line) {
   if (grpc_trace_error_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
@@ -138,8 +132,7 @@ grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line) {
   return err;
 }
 #else
-grpc_error* grpc_error_ref(grpc_error* err) {
-  if (grpc_error_is_special(err)) return err;
+grpc_error* grpc_error_do_ref(grpc_error* err) {
   gpr_ref(&err->atomics.refs);
   return err;
 }
@@ -177,8 +170,7 @@ static void error_destroy(grpc_error* err) {
 }
 
 #ifndef NDEBUG
-void grpc_error_unref(grpc_error* err, const char* file, int line) {
-  if (grpc_error_is_special(err)) return;
+void grpc_error_do_unref(grpc_error* err, const char* file, int line) {
   if (grpc_trace_error_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%p: %" PRIdPTR " -> %" PRIdPTR " [%s:%d]", err,
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
@@ -189,8 +181,7 @@ void grpc_error_unref(grpc_error* err, const char* file, int line) {
   }
 }
 #else
-void grpc_error_unref(grpc_error* err) {
-  if (grpc_error_is_special(err)) return;
+void grpc_error_do_unref(grpc_error* err) {
   if (gpr_unref(&err->atomics.refs)) {
     error_destroy(err);
   }
@@ -450,26 +441,23 @@ grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
 }
 
 typedef struct {
-  grpc_error* error;
   grpc_status_code code;
   const char* msg;
 } special_error_status_map;
 static const special_error_status_map error_status_map[] = {
-    {GRPC_ERROR_NONE, GRPC_STATUS_OK, ""},
-    {GRPC_ERROR_CANCELLED, GRPC_STATUS_CANCELLED, "Cancelled"},
-    {GRPC_ERROR_OOM, GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},
+    {GRPC_STATUS_OK, ""},                               // GRPC_ERROR_NONE
+    {GRPC_STATUS_INVALID_ARGUMENT, ""},                 // GRPC_ERROR_RESERVED_1
+    {GRPC_STATUS_RESOURCE_EXHAUSTED, "Out of memory"},  // GRPC_ERROR_OOM
+    {GRPC_STATUS_INVALID_ARGUMENT, ""},                 // GRPC_ERROR_RESERVED_2
+    {GRPC_STATUS_CANCELLED, "Cancelled"},               // GRPC_ERROR_CANCELLED
 };
 
 bool grpc_error_get_int(grpc_error* err, grpc_error_ints which, intptr_t* p) {
   GPR_TIMER_SCOPE("grpc_error_get_int", 0);
   if (grpc_error_is_special(err)) {
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-      if (error_status_map[i].error == err) {
-        if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
-        if (p != nullptr) *p = error_status_map[i].code;
-        return true;
-      }
-    }
+    if (which != GRPC_ERROR_INT_GRPC_STATUS) return false;
+    *p = error_status_map[reinterpret_cast<size_t>(err)].code;
+    return true;
   }
   uint8_t slot = err->ints[which];
   if (slot != UINT8_MAX) {
@@ -490,13 +478,10 @@ grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
 bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
                         grpc_slice* str) {
   if (grpc_error_is_special(err)) {
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(error_status_map); i++) {
-      if (error_status_map[i].error == err) {
-        if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
-        *str = grpc_slice_from_static_string(error_status_map[i].msg);
-        return true;
-      }
-    }
+    if (which != GRPC_ERROR_STR_GRPC_MESSAGE) return false;
+    *str = grpc_slice_from_static_string(
+        error_status_map[reinterpret_cast<size_t>(err)].msg);
+    return true;
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {

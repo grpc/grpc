@@ -368,6 +368,7 @@ static grpc_error* init_data_frame_parser(grpc_chttp2_transport* t) {
         &s->data_parser, t->incoming_frame_flags, s->id, s);
   }
 error_handler:
+  intptr_t unused;
   if (err == GRPC_ERROR_NONE) {
     t->incoming_stream = s;
     /* t->parser = grpc_chttp2_data_parser_parse;*/
@@ -375,7 +376,7 @@ error_handler:
     t->parser_data = &s->data_parser;
     t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
     return GRPC_ERROR_NONE;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     /* handle stream errors by closing the stream */
     if (s != nullptr) {
       grpc_chttp2_mark_stream_closed(t, s, true, false, err);
@@ -756,9 +757,10 @@ static grpc_error* parse_frame_slice(grpc_chttp2_transport* t, grpc_slice slice,
                                      int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
   grpc_error* err = t->parser(t->parser_data, t, s, slice, is_last);
+  intptr_t unused;
   if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
     return err;
-  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
+  } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     if (grpc_http_trace.enabled()) {
       const char* msg = grpc_error_string(err);
       gpr_log(GPR_ERROR, "%s", msg);
