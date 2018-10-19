@@ -501,7 +501,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                [call writeWithMessage:request];
+                                                [call writeMessage:request];
                                               } else {
                                                 [call finish];
                                               }
@@ -517,7 +517,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                               [expectation fulfill];
                                             }]
                             callOptions:options];
-  [call writeWithMessage:request];
+  [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
@@ -651,7 +651,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                             }]
                             callOptions:options];
 
-  [call writeWithMessage:request];
+  [call writeMessage:request];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 

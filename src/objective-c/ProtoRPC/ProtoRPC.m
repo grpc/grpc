@@ -41,7 +41,7 @@
                                                    responseHandler:handler
                                                        callOptions:callOptions
                                                      responseClass:responseClass];
-    [_call writeWithMessage:message];
+    [_call writeMessage:message];
     [_call finish];
   }
   return self;
@@ -132,7 +132,7 @@
   });
 }
 
-- (void)writeWithMessage:(GPBMessage *)message {
+- (void)writeMessage:(GPBMessage *)message {
   if (![message isKindOfClass:[GPBMessage class]]) {
     [NSException raise:NSInvalidArgumentException format:@"Data must be a valid protobuf type."];
   }

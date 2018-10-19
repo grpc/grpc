@@ -107,7 +107,7 @@
  * Send a message to the server. The message should be a Protobuf message which will be serialized
  * internally.
  */
-- (void)writeWithMessage:(GPBMessage *)message;
+- (void)writeMessage:(GPBMessage *)message;
 
 /**
  * Finish the RPC request and half-close the call. The server may still send messages and/or
