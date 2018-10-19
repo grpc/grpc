@@ -67,7 +67,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 /**
  * The authority for the RPC. If nil, the default authority will be used.
  *
- * Note: This property must be nil when Cronet transport is enabled.
+ * Note: This property does not have effect on Cronet transport and will be ignored.
  * Note: This property cannot be used to validate a self-signed server certificate. It control the
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
@@ -85,8 +85,8 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 
 /**
  * The OAuth2 access token string. The string is prefixed with "Bearer " then used as value of the
- * request's "authorization" header field. This parameter should not be used simultaneously with
- * \a authTokenProvider.
+ * request's "authorization" header field. This parameter takes precedence over \a
+ * oauth2AccessToken.
  */
 @property(copy, readonly) NSString *oauth2AccessToken;
 
@@ -213,7 +213,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 /**
  * The authority for the RPC. If nil, the default authority will be used.
  *
- * Note: This property must be nil when Cronet transport is enabled.
+ * Note: This property does not have effect on Cronet transport and will be ignored.
  * Note: This property cannot be used to validate a self-signed server certificate. It control the
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
@@ -239,7 +239,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 
 /**
  * The interface to get the OAuth2 access token string. gRPC will attempt to acquire token when
- * initiating the call. This parameter should not be used simultaneously with \a oauth2AccessToken.
+ * initiating the call. This parameter takes precedence over \a oauth2AccessToken.
  */
 @property(readwrite) id<GRPCAuthorizationProtocol> authTokenProvider;
 
