@@ -22,28 +22,20 @@ import helloworld_pb2_grpc
 
 
 def run():
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    #
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
-    channel = grpc.insecure_channel(
-        target='localhost:50051',
-        options=[('grpc.lb_policy_name', 'pick_first'),
-                 ('grpc.enable_retries', 0),
-                 ('grpc.keepalive_timeout_ms', 10),
-                 ('grpc.max_receive_message_length', 12)])
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
-
-    try:
-        # synchronous rpc call
-        stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-    except Exception as err:
-        print('Raised by max_receive_message_length option\n' + str(err))
-
-    try:
-        # asynchronous rpc call. timeout in second
-        future = stub.SayHello.future(helloworld_pb2.HelloRequest(name='me'), timeout=1)
-        response = future.result()
-        print("Greeter client received: " + response.message)
-    finally:
-        channel.close()
+    with grpc.insecure_channel(
+            target='localhost:50051',
+            options=[('grpc.lb_policy_name', 'pick_first'),
+                     ('grpc.enable_retries', 0),
+                     ('grpc.keepalive_timeout_ms', 10)]) as channel:
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        # timeout in second
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'), timeout=1)
+    print("Greeter client received: " + response.message)
 
 
 if __name__ == '__main__':
