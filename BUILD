@@ -277,6 +277,7 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb",
+        "grpc_lb_policy_xds",
     ],
 )
 
@@ -292,6 +293,7 @@ grpc_cc_library(
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
+        "grpc_lb_policy_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -1210,6 +1212,25 @@ grpc_cc_library(
     external_deps = [
         "nanopb",
     ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "grpclb_proto",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -1220,9 +1241,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1230,9 +1248,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1242,6 +1257,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
+        "grpclb_proto",
     ],
 )
 
@@ -1253,9 +1269,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1263,9 +1276,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1276,30 +1286,23 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpclb_proto",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_lb_policy_xds",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
     ],
     external_deps = [
         "nanopb",
@@ -1309,30 +1312,23 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
+        "grpclb_proto",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_lb_policy_xds_secure",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
     ],
     external_deps = [
         "nanopb",
@@ -1343,6 +1339,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpclb_proto",
     ],
 )
 
@@ -1600,6 +1597,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",

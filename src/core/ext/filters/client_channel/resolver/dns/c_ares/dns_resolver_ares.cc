@@ -473,7 +473,9 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
       return;
     }
-    default_resolver = grpc_resolve_address_impl;
+    if (default_resolver == nullptr) {
+      default_resolver = grpc_resolve_address_impl;
+    }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
