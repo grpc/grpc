@@ -168,7 +168,7 @@
   if (_handler) {
     id<GRPCProtoResponseHandler> handler = _handler;
     NSError *error = nil;
-    id parsed = [_responseClass parseFromData:message error:&error];
+    GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
     if (parsed) {
       if ([handler respondsToSelector:@selector(receivedProtoMessage:)]) {
         dispatch_async(handler.dispatchQueue, ^{

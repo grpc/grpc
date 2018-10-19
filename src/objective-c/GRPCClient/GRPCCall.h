@@ -160,7 +160,7 @@ extern id const kGRPCTrailersKey;
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization.
  */
-- (void)receivedRawMessage:(id)message;
+- (void)receivedRawMessage:(NSData *)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a

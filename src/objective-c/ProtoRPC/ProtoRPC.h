@@ -34,7 +34,7 @@
 /**
  * Issued when a message is received from the server. The message is the deserialized proto object.
  */
-- (void)receivedProtoMessage:(id)message;
+- (void)receivedProtoMessage:(GPBMessage *)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a

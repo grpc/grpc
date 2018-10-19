@@ -108,7 +108,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   }
 }
 
-- (void)receivedProtoMessage:(id)message {
+- (void)receivedProtoMessage:(GPBMessage *)message {
   if (_messageCallback) {
     _messageCallback(message);
   }
