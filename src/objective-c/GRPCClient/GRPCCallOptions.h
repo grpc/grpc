@@ -33,13 +33,18 @@ typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
   GRPCCallSafetyCacheableRequest = 2,
 };
 
+
+
 // Compression algorithm to be used by a gRPC call
-typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
+typedef NS_ENUM(NSInteger, GRPCCompressionAlgorithm) {
   GRPCCompressNone = 0,
   GRPCCompressDeflate,
   GRPCCompressGzip,
   GRPCStreamCompressGzip,
 };
+
+// GRPCCompressAlgorithm is deprecated; use GRPCCompressionAlgorithm
+typedef GRPCCompressionAlgorithm GRPCCompressAlgorithm;
 
 /** The transport to be used by a gRPC call */
 typedef NS_ENUM(NSInteger, GRPCTransportType) {
