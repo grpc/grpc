@@ -25,4 +25,5 @@ tools/run_tests/run_performance_tests.py \
     --netperf \
     --category smoketest \
     -u kbuilder \
+    --bq_result_table performance_test.performance_experiment_singlevm \
     --xml_report reports/singlemachine/sponge_log.xml
