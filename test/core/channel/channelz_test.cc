@@ -402,6 +402,27 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   gpr_free(json_str);
 }
 
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture pre_channels[40];  // will take uuid[1, 40]
+  (void)pre_channels;               // suppress unused variable error
+  ServerFixture servers[10];        // will take uuid[41, 50]
+  (void)servers;                    // suppress unused variable error
+  ChannelFixture channels[10];      // will take uuid[51, 60]
+  (void)channels;                   // suppress unused variable error
+  // query in the middle of the server channels
+  char* json_str = ChannelzRegistry::GetTopChannels(45);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 10);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  for (size_t i = 0; i < uuids.size(); ++i) {
+    EXPECT_EQ(static_cast<intptr_t>(51 + i), uuids[i]);
+  }
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   const intptr_t kLoopIterations = 50;
   grpc_core::ExecCtx exec_ctx;

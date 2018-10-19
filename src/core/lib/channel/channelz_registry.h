@@ -92,7 +92,9 @@ class ChannelzRegistry {
   void MaybePerformCompactionLocked();
 
   // Performs binary search on entities_ to find the index with that uuid.
-  int FindByUuidLocked(intptr_t uuid);
+  // If direct_hit_needed, then will return -1 in case of absence.
+  // Else, will return idx of the first uuid higher than the target.
+  int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
 
   // protects members
   gpr_mu mu_;
