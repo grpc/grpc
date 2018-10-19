@@ -71,7 +71,7 @@ RUN pip install --upgrade google-api-python-client oauth2client
 # Install Python 3
 RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
 RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-RUN apt-get update && apt-get -t testing install python2.7 python3.7
+RUN apt-get update && apt-get -t testing install -y python2.7 python3.7
 
 RUN mkdir /var/local/jenkins
 
