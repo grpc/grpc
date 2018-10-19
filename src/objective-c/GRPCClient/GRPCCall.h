@@ -221,7 +221,7 @@ extern NSString * const kGRPCTrailersKey;
 /**
  * Designated initializer for a call.
  * \param requestOptions Protobuf generated parameters for the call.
- * \param responseHandler The object to which responses should be issed.
+ * \param responseHandler The object to which responses should be issued.
  * \param callOptions Options for the call.
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
