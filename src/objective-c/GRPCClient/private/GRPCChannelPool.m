@@ -52,10 +52,11 @@ extern const char *kCFStreamVarName;
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {
 #endif
-        factory = [GRPCSecureChannelFactory factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
-                                                                privateKey:_callOptions.PEMPrivateKey
-                                                                 certChain:_callOptions.PEMCertChain
-                                                                     error:&error];
+        factory = [GRPCSecureChannelFactory
+            factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                privateKey:_callOptions.PEMPrivateKey
+                                 certChain:_callOptions.PEMCertChain
+                                     error:&error];
         if (factory == nil) {
           NSLog(@"Error creating secure channel factory: %@", error);
         }
@@ -136,7 +137,8 @@ extern const char *kCFStreamVarName;
 }
 
 - (nonnull id)copyWithZone:(nullable NSZone *)zone {
-  GRPCChannelConfiguration *newConfig = [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
+  GRPCChannelConfiguration *newConfig =
+      [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
 
   return newConfig;
 }
@@ -145,7 +147,8 @@ extern const char *kCFStreamVarName;
   NSAssert([object isKindOfClass:[GRPCChannelConfiguration class]], @"Illegal :isEqual");
   GRPCChannelConfiguration *obj = (GRPCChannelConfiguration *)object;
   if (!(obj.host == _host || [obj.host isEqualToString:_host])) return NO;
-  if (!(obj.callOptions == _callOptions || [obj.callOptions isChannelOptionsEqualTo:_callOptions])) return NO;
+  if (!(obj.callOptions == _callOptions || [obj.callOptions isChannelOptionsEqualTo:_callOptions]))
+    return NO;
 
   return YES;
 }
@@ -201,11 +204,13 @@ extern const char *kCFStreamVarName;
 
 - (void)removeChannel:(GRPCChannel *)channel {
   @synchronized(self) {
-    [_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
-      if (obj == channel) {
-        [self->_channelPool removeObjectForKey:key];
-      }
-    }];
+    [_channelPool
+        enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration *_Nonnull key,
+                                            GRPCChannel *_Nonnull obj, BOOL *_Nonnull stop) {
+          if (obj == channel) {
+            [self->_channelPool removeObjectForKey:key];
+          }
+        }];
   }
 }
 
@@ -217,9 +222,11 @@ extern const char *kCFStreamVarName;
 
 - (void)removeAndCloseAllChannels {
   @synchronized(self) {
-    [_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannel * _Nonnull obj, BOOL * _Nonnull stop) {
-      [obj disconnect];
-    }];
+    [_channelPool
+        enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration *_Nonnull key,
+                                            GRPCChannel *_Nonnull obj, BOOL *_Nonnull stop) {
+          [obj disconnect];
+        }];
     _channelPool = [NSMutableDictionary dictionary];
   }
 }

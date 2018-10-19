@@ -28,8 +28,8 @@
 #include <grpc/support/time.h>
 
 #import "GRPCCallOptions.h"
-#import "private/GRPCHost.h"
 #import "private/GRPCConnectivityMonitor.h"
+#import "private/GRPCHost.h"
 #import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
@@ -115,7 +115,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _initialMetadataPublished = NO;
     _pipe = [GRXBufferedPipe pipe];
     if (@available(iOS 8.0, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
     } else {
       // Fallback on earlier versions
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
@@ -129,7 +131,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler {
-  return [self initWithRequestOptions:requestOptions responseHandler:responseHandler callOptions:nil];
+  return
+      [self initWithRequestOptions:requestOptions responseHandler:responseHandler callOptions:nil];
 }
 
 - (void)start {
@@ -210,9 +213,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                         error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                   code:GRPCErrorCodeCancelled
                                                               userInfo:@{
-                                                                         NSLocalizedDescriptionKey :
-                                                                           @"Canceled by app"
-                                                                         }]];
+                                                                NSLocalizedDescriptionKey :
+                                                                    @"Canceled by app"
+                                                              }]];
         }
       });
 
@@ -255,13 +258,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 }
 
-- (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata
-                                  error:(NSError *)error {
+- (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   id<GRPCResponseHandler> handler = _handler;
   NSDictionary *trailers = _call.responseTrailers;
   if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
     dispatch_async(handler.dispatchQueue, ^{
-    [handler closedWithTrailingMetadata:trailers error:error];
+      [handler closedWithTrailingMetadata:trailers error:error];
     });
   }
 }
@@ -388,7 +390,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
               requestsWriter:(GRXWriter *)requestWriter
                  callOptions:(GRPCCallOptions *)callOptions {
   if (host.length == 0 || path.length == 0) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil or empty."];
+    [NSException raise:NSInvalidArgumentException
+                format:@"Neither host nor path can be nil or empty."];
   }
   if (safety > GRPCCallSafetyCacheableRequest) {
     [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
@@ -457,7 +460,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)cancel {
-  @synchronized (self) {
+  @synchronized(self) {
     if (!self.isWaitingForToken) {
       [self cancelCall];
     } else {
@@ -720,8 +723,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
     [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                    code:GRPCErrorCodeUnavailable
                                                userInfo:@{
-                                                          NSLocalizedDescriptionKey : @"Failed to create call or channel."
-                                                          }]];
+                                                 NSLocalizedDescriptionKey :
+                                                     @"Failed to create call or channel."
+                                               }]];
     return;
   }
 
@@ -773,11 +777,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _callOptions = callOptions;
   }
   if (_callOptions.authTokenProvider != nil) {
-    @synchronized (self) {
+    @synchronized(self) {
       self.isWaitingForToken = YES;
     }
     [self.tokenProvider getTokenWithHandler:^(NSString *token) {
-      @synchronized (self) {
+      @synchronized(self) {
         if (self.isWaitingForToken) {
           if (token) {
             self->_fetchedOauth2AccessToken = [token copy];

@@ -75,8 +75,12 @@ NSTimeInterval kChannelDestroyDelay = 30;
     _refCount = 1;
     _disconnected = NO;
     if (@available(iOS 8.0, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
-      _timerQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, -1));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+      _timerQueue =
+          dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(
+                                          DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, -1));
     } else {
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
       _timerQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
@@ -101,7 +105,8 @@ NSTimeInterval kChannelDestroyDelay = 30;
       self->_refCount--;
       if (self->_refCount == 0) {
         self->_lastDispatch = [NSDate date];
-        dispatch_time_t delay = dispatch_time(DISPATCH_TIME_NOW, (int64_t)kChannelDestroyDelay * 1e9);
+        dispatch_time_t delay =
+            dispatch_time(DISPATCH_TIME_NOW, (int64_t)kChannelDestroyDelay * 1e9);
         dispatch_after(delay, self->_timerQueue, ^{
           [self timerFire];
         });
@@ -123,7 +128,8 @@ NSTimeInterval kChannelDestroyDelay = 30;
 
 - (void)timerFire {
   dispatch_async(_dispatchQueue, ^{
-    if (self->_disconnected || self->_lastDispatch == nil || -[self->_lastDispatch timeIntervalSinceNow] < -kChannelDestroyDelay) {
+    if (self->_disconnected || self->_lastDispatch == nil ||
+        -[self->_lastDispatch timeIntervalSinceNow] < -kChannelDestroyDelay) {
       return;
     }
     self->_lastDispatch = nil;
@@ -158,11 +164,12 @@ NSTimeInterval kChannelDestroyDelay = 30;
       }
       grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
       gpr_timespec deadline_ms =
-      timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
-      : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
-      call = grpc_channel_create_call(
-                                      self->_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS, queue.unmanagedQueue, path_slice,
+          timeout == 0
+              ? gpr_inf_future(GPR_CLOCK_REALTIME)
+              : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                             gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+      call = grpc_channel_create_call(self->_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                      queue.unmanagedQueue, path_slice,
                                       serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
       if (serverAuthority) {
         grpc_slice_unref(host_slice);
@@ -214,11 +221,14 @@ NSTimeInterval kChannelDestroyDelay = 30;
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
     _configuration = configuration;
-    _channelRef = [[GRPCChannelRef alloc] initWithDestroyDelay:kChannelDestroyDelay destroyChannelCallback:^{
-      [self destroyChannel];
-    }];
+    _channelRef = [[GRPCChannelRef alloc] initWithDestroyDelay:kChannelDestroyDelay
+                                        destroyChannelCallback:^{
+                                          [self destroyChannel];
+                                        }];
     if (@available(iOS 8.0, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
     } else {
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }

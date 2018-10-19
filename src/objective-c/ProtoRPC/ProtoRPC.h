@@ -24,7 +24,7 @@
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
-@protocol GRPCProtoResponseHandler <NSObject>
+@protocol GRPCProtoResponseHandler<NSObject>
 
 @optional
 
@@ -59,7 +59,7 @@
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
@@ -81,7 +81,7 @@
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and

@@ -57,11 +57,9 @@ NSString *kDummyHost = @"dummy.host";
   GRPCChannelConfiguration *config1 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
-  GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1];
+  GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
   [pool removeChannel:channel1];
-  GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config1];
+  GRPCChannel *channel2 = [pool channelWithConfiguration:config1];
   XCTAssertNotEqual(channel1, channel2);
 }
 
@@ -74,18 +72,14 @@ extern NSTimeInterval kChannelDestroyDelay;
   options1.transportType = GRPCTransportTypeInsecure;
   GRPCChannelConfiguration *config1 =
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
-  GRPCChannelPool *pool =
-      [[GRPCChannelPool alloc] init];
-  GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+  GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
   [channel1 unmanagedCallUnref];
   sleep(1);
-  GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config1];
+  GRPCChannel *channel2 = [pool channelWithConfiguration:config1];
   XCTAssertEqual(channel1, channel2);
   sleep((int)kChannelDestroyDelay + 2);
-  GRPCChannel *channel3 =
-      [pool channelWithConfiguration:config1];
+  GRPCChannel *channel3 = [pool channelWithConfiguration:config1];
   XCTAssertEqual(channel1, channel3);
   kChannelDestroyDelay = kOriginalInterval;
 }
@@ -96,11 +90,10 @@ extern NSTimeInterval kChannelDestroyDelay;
   options1.transportType = GRPCTransportTypeInsecure;
   GRPCCallOptions *options2 = [options1 copy];
   GRPCChannelConfiguration *config1 =
-  [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
+      [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelConfiguration *config2 =
-  [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
+      [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
-
 
   GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
   [pool removeAndCloseAllChannels];
@@ -119,17 +112,13 @@ extern NSTimeInterval kChannelDestroyDelay;
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options2];
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
 
-  GRPCChannel *channel1 =
-      [pool channelWithConfiguration:config1];
-  GRPCChannel *channel2 =
-      [pool channelWithConfiguration:config2];
+  GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
+  GRPCChannel *channel2 = [pool channelWithConfiguration:config2];
   XCTAssertNotEqual(channel1, channel2);
 
   [pool removeAndCloseAllChannels];
-  GRPCChannel *channel3 =
-      [pool channelWithConfiguration:config1];
-  GRPCChannel *channel4 =
-      [pool channelWithConfiguration:config2];
+  GRPCChannel *channel3 = [pool channelWithConfiguration:config1];
+  GRPCChannel *channel4 = [pool channelWithConfiguration:config2];
   XCTAssertNotEqual(channel1, channel3);
   XCTAssertNotEqual(channel2, channel4);
 }

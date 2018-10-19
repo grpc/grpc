@@ -88,7 +88,9 @@
     _callOptions = [callOptions copy];
     _responseClass = responseClass;
     if (@available(iOS 8.0, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
     } else {
       _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
     }
@@ -120,9 +122,9 @@
                                         error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                   code:GRPCErrorCodeCancelled
                                                               userInfo:@{
-                                                                         NSLocalizedDescriptionKey :
-                                                                           @"Canceled by app"
-                                                                         }]];
+                                                                NSLocalizedDescriptionKey :
+                                                                    @"Canceled by app"
+                                                              }]];
         });
       }
       _handler = nil;

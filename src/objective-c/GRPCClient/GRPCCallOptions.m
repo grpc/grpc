@@ -110,7 +110,7 @@ static NSUInteger kDefaultChannelID = 0;
                  connectInitialBackoff:kDefaultConnectInitialBackoff
                      connectMaxBackoff:kDefaultConnectMaxBackoff
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
-                    PEMRootCertificates:kDefaultPEMRootCertificates
+                   PEMRootCertificates:kDefaultPEMRootCertificates
                          PEMPrivateKey:kDefaultPEMPrivateKey
                           PEMCertChain:kDefaultPEMCertChain
                          transportType:kDefaultTransportType
@@ -135,7 +135,7 @@ static NSUInteger kDefaultChannelID = 0;
                   connectInitialBackoff:(NSTimeInterval)connectInitialBackoff
                       connectMaxBackoff:(NSTimeInterval)connectMaxBackoff
                   additionalChannelArgs:(NSDictionary *)additionalChannelArgs
-                     PEMRootCertificates:(NSString *)PEMRootCertificates
+                    PEMRootCertificates:(NSString *)PEMRootCertificates
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                            PEMCertChain:(NSString *)PEMCertChain
                           transportType:(GRPCTransportType)transportType
@@ -158,7 +158,8 @@ static NSUInteger kDefaultChannelID = 0;
     _connectMinTimeout = connectMinTimeout;
     _connectInitialBackoff = connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff;
-    _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+    _additionalChannelArgs =
+        [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
     _PEMPrivateKey = [PEMPrivateKey copy];
     _PEMCertChain = [PEMCertChain copy];
@@ -188,7 +189,7 @@ static NSUInteger kDefaultChannelID = 0;
                                               connectInitialBackoff:_connectInitialBackoff
                                                   connectMaxBackoff:_connectMaxBackoff
                                               additionalChannelArgs:_additionalChannelArgs
-                                                 PEMRootCertificates:_PEMRootCertificates
+                                                PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
                                                        PEMCertChain:_PEMCertChain
                                                       transportType:_transportType
@@ -216,7 +217,7 @@ static NSUInteger kDefaultChannelID = 0;
         connectInitialBackoff:_connectInitialBackoff
             connectMaxBackoff:_connectMaxBackoff
         additionalChannelArgs:[_additionalChannelArgs copy]
-           PEMRootCertificates:_PEMRootCertificates
+          PEMRootCertificates:_PEMRootCertificates
                 PEMPrivateKey:_PEMPrivateKey
                  PEMCertChain:_PEMCertChain
                 transportType:_transportType
@@ -240,8 +241,7 @@ static NSUInteger kDefaultChannelID = 0;
   if (!(callOptions.connectInitialBackoff == _connectInitialBackoff)) return NO;
   if (!(callOptions.connectMaxBackoff == _connectMaxBackoff)) return NO;
   if (!(callOptions.additionalChannelArgs == _additionalChannelArgs ||
-        [callOptions.additionalChannelArgs
-         isEqualToDictionary:_additionalChannelArgs]))
+        [callOptions.additionalChannelArgs isEqualToDictionary:_additionalChannelArgs]))
     return NO;
   if (!(callOptions.PEMRootCertificates == _PEMRootCertificates ||
         [callOptions.PEMRootCertificates isEqualToString:_PEMRootCertificates]))
@@ -256,8 +256,7 @@ static NSUInteger kDefaultChannelID = 0;
         [callOptions.hostNameOverride isEqualToString:_hostNameOverride]))
     return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
-  if (!(callOptions.logContext == _logContext ||
-        [callOptions.logContext isEqual:_logContext]))
+  if (!(callOptions.logContext == _logContext || [callOptions.logContext isEqual:_logContext]))
     return NO;
   if (!(callOptions.channelPoolDomain == _channelPoolDomain ||
         [callOptions.channelPoolDomain isEqualToString:_channelPoolDomain]))
@@ -335,7 +334,7 @@ static NSUInteger kDefaultChannelID = 0;
                  connectInitialBackoff:kDefaultConnectInitialBackoff
                      connectMaxBackoff:kDefaultConnectMaxBackoff
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
-                    PEMRootCertificates:kDefaultPEMRootCertificates
+                   PEMRootCertificates:kDefaultPEMRootCertificates
                          PEMPrivateKey:kDefaultPEMPrivateKey
                           PEMCertChain:kDefaultPEMCertChain
                          transportType:kDefaultTransportType
@@ -362,7 +361,7 @@ static NSUInteger kDefaultChannelID = 0;
                                               connectInitialBackoff:_connectInitialBackoff
                                                   connectMaxBackoff:_connectMaxBackoff
                                               additionalChannelArgs:[_additionalChannelArgs copy]
-                                                 PEMRootCertificates:_PEMRootCertificates
+                                                PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
                                                        PEMCertChain:_PEMCertChain
                                                       transportType:_transportType
@@ -390,7 +389,7 @@ static NSUInteger kDefaultChannelID = 0;
         connectInitialBackoff:_connectInitialBackoff
             connectMaxBackoff:_connectMaxBackoff
         additionalChannelArgs:[_additionalChannelArgs copy]
-           PEMRootCertificates:_PEMRootCertificates
+          PEMRootCertificates:_PEMRootCertificates
                 PEMPrivateKey:_PEMPrivateKey
                  PEMCertChain:_PEMCertChain
                 transportType:_transportType
@@ -482,7 +481,8 @@ static NSUInteger kDefaultChannelID = 0;
 }
 
 - (void)setAdditionalChannelArgs:(NSDictionary *)additionalChannelArgs {
-  _additionalChannelArgs = [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+  _additionalChannelArgs =
+      [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
 }
 
 - (void)setPEMRootCertificates:(NSString *)PEMRootCertificates {
