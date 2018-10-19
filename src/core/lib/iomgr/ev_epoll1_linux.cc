@@ -195,7 +195,7 @@ struct grpc_pollset_worker {
 typedef struct pollset_neighborhood {
   gpr_mu mu;
   grpc_pollset* active_root;
-  char pad[GPR_CACHELINE_SIZE];
+  char pad[GPR_CACHELINE_SIZE - sizeof(mu) - sizeof(active_root)];
 } pollset_neighborhood;
 
 struct grpc_pollset {

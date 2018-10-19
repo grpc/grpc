@@ -40,7 +40,7 @@ typedef struct gpr_mpscq_node {
 typedef struct gpr_mpscq {
   gpr_atm head;
   // make sure head & tail don't share a cacheline
-  char padding[GPR_CACHELINE_SIZE];
+  char padding[GPR_CACHELINE_SIZE - sizeof(head)];
   gpr_mpscq_node* tail;
   gpr_mpscq_node stub;
 } gpr_mpscq;
