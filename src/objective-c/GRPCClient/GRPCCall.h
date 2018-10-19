@@ -145,8 +145,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
-extern id const kGRPCHeadersKey;
-extern id const kGRPCTrailersKey;
+extern NSString * const kGRPCHeadersKey;
+extern NSString * const kGRPCTrailersKey;
 
 /** An object can implement this protocol to receive responses from server from a call. */
 @protocol GRPCResponseHandler<NSObject>
