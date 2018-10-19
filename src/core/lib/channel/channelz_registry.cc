@@ -103,7 +103,7 @@ int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid,
       right = true_middle - 1;
     }
   }
-  return direct_hit_needed ? -1 : right;
+  return direct_hit_needed ? -1 : left;
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {

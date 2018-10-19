@@ -423,6 +423,33 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
   gpr_free(json_str);
 }
 
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channel_with_uuid1;
+  { ServerFixture channel_with_uuid2; }
+  ChannelFixture channel_with_uuid3;
+  { ServerFixture server_with_uuid4; }
+  ChannelFixture channel_with_uuid5;
+  // Current state of list: [1, NULL, 3, NULL, 5]
+  char* json_str = ChannelzRegistry::GetTopChannels(2);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 2);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  EXPECT_EQ(static_cast<intptr_t>(3), uuids[0]);
+  EXPECT_EQ(static_cast<intptr_t>(5), uuids[1]);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  json_str = ChannelzRegistry::GetTopChannels(4);
+  parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 1);
+  json_channels = GetJsonChild(parsed_json, "channel");
+  uuids = GetUuidListFromArray(json_channels);
+  EXPECT_EQ(static_cast<intptr_t>(5), uuids[0]);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   const intptr_t kLoopIterations = 50;
   grpc_core::ExecCtx exec_ctx;
