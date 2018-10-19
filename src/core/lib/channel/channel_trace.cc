@@ -108,16 +108,20 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
 }
 
 void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
-  if (max_event_memory_ == 0)
+  if (max_event_memory_ == 0) {
+    grpc_slice_unref_internal(data);
     return;  // tracing is disabled if max_event_memory_ == 0
+  }
   AddTraceEventHelper(New<TraceEvent>(severity, data));
 }
 
 void ChannelTrace::AddTraceEventWithReference(
     Severity severity, grpc_slice data,
     RefCountedPtr<BaseNode> referenced_entity) {
-  if (max_event_memory_ == 0)
+  if (max_event_memory_ == 0) {
+    grpc_slice_unref_internal(data);
     return;  // tracing is disabled if max_event_memory_ == 0
+  }
   // create and fill up the new event
   AddTraceEventHelper(
       New<TraceEvent>(severity, data, std::move(referenced_entity)));
