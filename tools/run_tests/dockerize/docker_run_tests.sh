@@ -22,7 +22,7 @@ export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
-mkdir -p reports
+mkdir -p /var/local/git/grpc/reports
 
 $POST_GIT_STEP
 
@@ -30,7 +30,7 @@ exit_code=0
 
 cd /var/local/jenkins/grpc && $RUN_TESTS_COMMAND || exit_code=$?
 
-cd reports
+cd /var/local/git/grpc/reports
 echo '<html><head></head><body>' > index.html
 find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
   d=${d#*/}
