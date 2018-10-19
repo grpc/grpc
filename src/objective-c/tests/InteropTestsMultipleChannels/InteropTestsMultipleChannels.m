@@ -105,7 +105,7 @@ dispatch_once_t initCronet;
   // Local stack with SSL
   _localSSLService = [RMTTestService serviceWithHost:kLocalSSLHost];
 
-  NSBundle *bundle = [NSBundle bundleForClass:self.class];
+  NSBundle *bundle = [NSBundle bundleForClass:[self class]];
   NSString *certsPath =
       [bundle pathForResource:@"TestCertificates.bundle/test-certificates" ofType:@"pem"];
   NSError *error = nil;
