@@ -102,19 +102,20 @@ BOOL isRemoteInteropTest(NSString *host) {
   return self;
 }
 
-- (void)receivedInitialMetadata:(NSDictionary * _Nullable)initialMetadata {
+- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
   if (_initialMetadataCallback) {
     _initialMetadataCallback(initialMetadata);
   }
 }
 
-- (void)receivedProtoMessage:(GPBMessage * _Nullable)message {
+- (void)receivedProtoMessage:(GPBMessage *_Nullable)message {
   if (_messageCallback) {
     _messageCallback(message);
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary * _Nullable)trailingMetadata error:(NSError * _Nullable)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
+                             error:(NSError *_Nullable)error {
   if (_closeCallback) {
     _closeCallback(trailingMetadata, error);
   }

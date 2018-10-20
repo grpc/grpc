@@ -102,7 +102,7 @@ static const NSUInteger kDefaultChannelID = 0;
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
-                     compressionAlgorithm:kDefaultCompressionAlgorithm
+                  compressionAlgorithm:kDefaultCompressionAlgorithm
                            enableRetry:kDefaultEnableRetry
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
@@ -127,7 +127,7 @@ static const NSUInteger kDefaultChannelID = 0;
                         initialMetadata:(NSDictionary *)initialMetadata
                         userAgentPrefix:(NSString *)userAgentPrefix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
-                      compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
+                   compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
                             enableRetry:(BOOL)enableRetry
                       keepaliveInterval:(NSTimeInterval)keepaliveInterval
                        keepaliveTimeout:(NSTimeInterval)keepaliveTimeout
@@ -181,7 +181,7 @@ static const NSUInteger kDefaultChannelID = 0;
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
-                                                  compressionAlgorithm:_compressionAlgorithm
+                                               compressionAlgorithm:_compressionAlgorithm
                                                         enableRetry:_enableRetry
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
@@ -209,7 +209,7 @@ static const NSUInteger kDefaultChannelID = 0;
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
-            compressionAlgorithm:_compressionAlgorithm
+         compressionAlgorithm:_compressionAlgorithm
                   enableRetry:_enableRetry
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
@@ -326,7 +326,7 @@ static const NSUInteger kDefaultChannelID = 0;
                        initialMetadata:kDefaultInitialMetadata
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
-                     compressionAlgorithm:kDefaultCompressionAlgorithm
+                  compressionAlgorithm:kDefaultCompressionAlgorithm
                            enableRetry:kDefaultEnableRetry
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
@@ -353,7 +353,7 @@ static const NSUInteger kDefaultChannelID = 0;
                                                     initialMetadata:_initialMetadata
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
-                                                  compressionAlgorithm:_compressionAlgorithm
+                                               compressionAlgorithm:_compressionAlgorithm
                                                         enableRetry:_enableRetry
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
@@ -381,7 +381,7 @@ static const NSUInteger kDefaultChannelID = 0;
               initialMetadata:_initialMetadata
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
-            compressionAlgorithm:_compressionAlgorithm
+         compressionAlgorithm:_compressionAlgorithm
                   enableRetry:_enableRetry
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout

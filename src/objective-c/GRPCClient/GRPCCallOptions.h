@@ -27,13 +27,11 @@ typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
   /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
   GRPCCallSafetyIdempotentRequest = 1,
   /**
-    * Signal that the call is cacheable and will not affect server state. gRPC is free to use GET
-    * verb.
-    */
+   * Signal that the call is cacheable and will not affect server state. gRPC is free to use GET
+   * verb.
+   */
   GRPCCallSafetyCacheableRequest = 2,
 };
-
-
 
 // Compression algorithm to be used by a gRPC call
 typedef NS_ENUM(NSInteger, GRPCCompressionAlgorithm) {

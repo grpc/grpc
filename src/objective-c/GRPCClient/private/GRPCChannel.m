@@ -222,7 +222,7 @@ static GRPCChannelPool *gChannelPool;
   });
 }
 
-- (nullable instancetype)initWithUnmanagedChannel:(grpc_channel * _Nullable)unmanagedChannel
+- (nullable instancetype)initWithUnmanagedChannel:(grpc_channel *_Nullable)unmanagedChannel
                                     configuration:(GRPCChannelConfiguration *)configuration {
   NSAssert(configuration, @"Configuration must not be empty.");
   if (!unmanagedChannel) {

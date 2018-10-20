@@ -147,8 +147,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
-extern NSString * const kGRPCHeadersKey;
-extern NSString * const kGRPCTrailersKey;
+extern NSString *const kGRPCHeadersKey;
+extern NSString *const kGRPCTrailersKey;
 
 /** An object can implement this protocol to receive responses from server from a call. */
 @protocol GRPCResponseHandler<NSObject>
@@ -156,13 +156,13 @@ extern NSString * const kGRPCTrailersKey;
 @optional
 
 /** Issued when initial metadata is received from the server. */
-- (void)receivedInitialMetadata:(NSDictionary * _Nullable)initialMetadata;
+- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization.
  */
-- (void)receivedRawMessage:(NSData * _Nullable)message;
+- (void)receivedRawMessage:(NSData *_Nullable)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -170,7 +170,8 @@ extern NSString * const kGRPCTrailersKey;
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
-- (void)closedWithTrailingMetadata:(NSDictionary * _Nullable)trailingMetadata error:(NSError * _Nullable)error;
+- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
+                             error:(NSError *_Nullable)error;
 
 @required
 
@@ -218,7 +219,7 @@ extern NSString * const kGRPCTrailersKey;
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
 /**
  * Designated initializer for a call.
@@ -228,7 +229,8 @@ extern NSString * const kGRPCTrailersKey;
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
-                           callOptions:(GRPCCallOptions * _Nullable)callOptions NS_DESIGNATED_INITIALIZER;
+                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+    NS_DESIGNATED_INITIALIZER;
 /**
  * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
  * the default options).
