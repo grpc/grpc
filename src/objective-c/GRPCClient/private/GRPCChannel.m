@@ -32,8 +32,11 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
 
-// When all calls of a channel are destroyed, destroy the channel after this much seconds.
+/** When all calls of a channel are destroyed, destroy the channel after this much seconds. */
 NSTimeInterval kChannelDestroyDelay = 30;
+
+/** Global instance of channel pool. */
+static GRPCChannelPool *gChannelPool;
 
 /**
  * Time the channel destroy when the channel's calls are unreffed. If there's new call, reset the
@@ -268,11 +271,9 @@ NSTimeInterval kChannelDestroyDelay = 30;
   return [[GRPCChannel alloc] initWithUnmanagedChannel:unmanaged_channel configuration:config];
 }
 
-static dispatch_once_t initChannelPool;
-static GRPCChannelPool *gChannelPool;
-
 + (nullable instancetype)channelWithHost:(NSString *)host
                              callOptions:(GRPCCallOptions *)callOptions {
+  static dispatch_once_t initChannelPool;
   dispatch_once(&initChannelPool, ^{
     gChannelPool = [[GRPCChannelPool alloc] init];
   });
