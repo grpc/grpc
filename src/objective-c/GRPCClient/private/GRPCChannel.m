@@ -220,7 +220,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
                                     configuration:(GRPCChannelConfiguration *)configuration {
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
-    _configuration = configuration;
+    _configuration = [configuration copy];
     _channelRef = [[GRPCChannelRef alloc] initWithDestroyDelay:kChannelDestroyDelay
                                         destroyChannelCallback:^{
                                           [self destroyChannel];
