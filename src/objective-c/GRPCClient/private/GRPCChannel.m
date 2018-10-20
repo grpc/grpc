@@ -264,7 +264,7 @@ static GRPCChannelPool *gChannelPool;
     [args addEntriesFromDictionary:config.callOptions.additionalChannelArgs];
     channelArgs = args;
   } else {
-    channelArgs = config.channelArgs;
+    channelArgs = [config.channelArgs copy];
   }
   id<GRPCChannelFactory> factory = config.channelFactory;
   grpc_channel *unmanaged_channel = [factory createChannelWithHost:host channelArgs:channelArgs];
