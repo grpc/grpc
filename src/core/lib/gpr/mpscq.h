@@ -38,9 +38,11 @@ typedef struct gpr_mpscq_node {
 
 // Actual queue type
 typedef struct gpr_mpscq {
-  gpr_atm head;
   // make sure head & tail don't share a cacheline
-  char padding[GPR_CACHELINE_SIZE];
+  union {
+    char padding[GPR_CACHELINE_SIZE];
+    gpr_atm head;
+  };
   gpr_mpscq_node* tail;
   gpr_mpscq_node stub;
 } gpr_mpscq;
