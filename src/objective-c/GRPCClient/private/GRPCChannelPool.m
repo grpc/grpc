@@ -191,7 +191,7 @@ extern const char *kCFStreamVarName;
   @synchronized(self) {
     if ([_channelPool objectForKey:configuration]) {
       channel = _channelPool[configuration];
-      [channel unmanagedCallRef];
+      [channel ref];
     } else {
       channel = [GRPCChannel createChannelWithConfiguration:configuration];
       if (channel != nil) {

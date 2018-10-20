@@ -51,10 +51,20 @@ struct grpc_channel_credentials;
                               completionQueue:(nonnull GRPCCompletionQueue *)queue
                                   callOptions:(nonnull GRPCCallOptions *)callOptions;
 
-- (void)unmanagedCallRef;
+/**
+ * Increase the refcount of the channel. If the channel was timed to be destroyed, cancel the timer.
+ */
+- (void)ref;
 
-- (void)unmanagedCallUnref;
+/**
+ * Decrease the refcount of the channel. If the refcount of the channel decrease to 0, start a timer
+ * to destroy the channel
+ */
+- (void)unref;
 
+/**
+ * Force the channel to be disconnected and destroyed immediately.
+ */
 - (void)disconnect;
 
 // TODO (mxyan): deprecate with GRPCCall:closeOpenConnections

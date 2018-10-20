@@ -180,7 +180,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
   return call;
 }
 
-- (void)unmanagedCallRef {
+- (void)ref {
   dispatch_async(_dispatchQueue, ^{
     if (self->_unmanagedChannel) {
       [self->_channelRef refChannel];
@@ -188,7 +188,7 @@ NSTimeInterval kChannelDestroyDelay = 30;
   });
 }
 
-- (void)unmanagedCallUnref {
+- (void)unref {
   dispatch_async(_dispatchQueue, ^{
     if (self->_unmanagedChannel) {
       [self->_channelRef unrefChannel];

@@ -74,7 +74,7 @@ extern NSTimeInterval kChannelDestroyDelay;
       [[GRPCChannelConfiguration alloc] initWithHost:kDummyHost callOptions:options1];
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCChannel *channel1 = [pool channelWithConfiguration:config1];
-  [channel1 unmanagedCallUnref];
+  [channel1 unref];
   sleep(1);
   GRPCChannel *channel2 = [pool channelWithConfiguration:config1];
   XCTAssertEqual(channel1, channel2);

@@ -311,7 +311,7 @@
 
 - (void)dealloc {
   grpc_call_unref(_call);
-  [_channel unmanagedCallUnref];
+  [_channel unref];
   _channel = nil;
 }
 
