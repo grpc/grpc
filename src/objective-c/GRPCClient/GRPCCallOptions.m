@@ -40,8 +40,8 @@ static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
 static NSString *const kDefaultHostNameOverride = nil;
 static const id kDefaultLogContext = nil;
-static NSString *kDefaultChannelPoolDomain = nil;
-static NSUInteger kDefaultChannelID = 0;
+static NSString *const kDefaultChannelPoolDomain = nil;
+static const NSUInteger kDefaultChannelID = 0;
 
 @implementation GRPCCallOptions {
  @protected
