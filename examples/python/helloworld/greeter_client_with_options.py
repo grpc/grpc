@@ -31,7 +31,7 @@ def run():
             target='localhost:50051',
             options=[('grpc.lb_policy_name', 'pick_first'),
                      ('grpc.enable_retries', 0),
-                     ('grpc.keepalive_timeout_ms', 10)]) as channel:
+                     ('grpc.keepalive_timeout_ms', 10000)]) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         # timeout in second
         response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'), timeout=1)
