@@ -75,49 +75,38 @@ class InterceptorBatchMethods {
   // valid if the batch contains send_initial_metadata on the client side)
   virtual void Hijack() = 0;
 
-  virtual void AddInterceptionHookPoint(InterceptionHookPoints type) = 0;
-
+  // Returns a modifable ByteBuffer holding serialized form of the message to be
+  // sent
   virtual ByteBuffer* GetSendMessage() = 0;
 
+  // Returns a modifiable multimap of the initial metadata to be sent
   virtual std::multimap<grpc::string, grpc::string>*
   GetSendInitialMetadata() = 0;
 
+  // Returns the status to be sent
   virtual Status GetSendStatus() = 0;
 
+  // Modifies the status with \a status
   virtual void ModifySendStatus(const Status& status) = 0;
 
+  // Returns a modifiable multimap of the trailing metadata to be sent
   virtual std::multimap<grpc::string, grpc::string>*
   GetSendTrailingMetadata() = 0;
 
+  // Returns a pointer to the modifiable received message. Note that the message
+  // is already deserialized
   virtual void* GetRecvMessage() = 0;
 
+  // Returns a modifiable multimap of the received initial metadata
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvInitialMetadata() = 0;
 
+  // Returns a modifiable view of the received status
   virtual Status* GetRecvStatus() = 0;
 
+  // Returns a modifiable multimap of the received trailing metadata
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvTrailingMetadata() = 0;
-
-  virtual void SetSendMessage(ByteBuffer* buf) = 0;
-
-  virtual void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) = 0;
-
-  virtual void SetSendStatus(grpc_status_code* code,
-                             grpc::string* error_details,
-                             grpc::string* error_message) = 0;
-
-  virtual void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) = 0;
-
-  virtual void SetRecvMessage(void* message) = 0;
-
-  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) = 0;
-
-  virtual void SetRecvStatus(Status* status) = 0;
-
-  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
 };
 
 class Interceptor {

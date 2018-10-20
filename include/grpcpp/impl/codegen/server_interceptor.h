@@ -30,8 +30,7 @@ namespace grpc {
 class ServerContext;
 
 namespace internal {
-template <int I>
-class CallNoOp;
+class InterceptorBatchMethodsImpl;
 }
 
 namespace experimental {
@@ -66,8 +65,7 @@ class ServerRpcInfo {
   grpc::ServerContext* server_context() { return ctx_; }
 
  public:
-  /* Runs interceptor at pos \a pos. If \a reverse is set, the interceptor order
-   * is the reverse */
+  // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods,
       unsigned int pos) {
@@ -78,9 +76,9 @@ class ServerRpcInfo {
  private:
   grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
-
- public:
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
+
+  friend class internal::InterceptorBatchMethodsImpl;
 };
 
 }  // namespace experimental

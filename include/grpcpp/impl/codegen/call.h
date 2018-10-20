@@ -204,6 +204,36 @@ class WriteOptions {
 };
 
 namespace internal {
+
+class InternalInterceptorBatchMethods
+    : public experimental::InterceptorBatchMethods {
+ public:
+  virtual ~InternalInterceptorBatchMethods() {}
+
+  virtual void AddInterceptionHookPoint(
+      experimental::InterceptionHookPoints type) = 0;
+
+  virtual void SetSendMessage(ByteBuffer* buf) = 0;
+
+  virtual void SetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual void SetSendStatus(grpc_status_code* code,
+                             grpc::string* error_details,
+                             grpc::string* error_message) = 0;
+
+  virtual void SetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual void SetRecvMessage(void* message) = 0;
+
+  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) = 0;
+
+  virtual void SetRecvStatus(Status* status) = 0;
+
+  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
+};
+
 /// Default argument for CallOpSet. I is unused by the class, but can be
 /// used for generating multiple names for the same thing.
 template <int I>
@@ -212,12 +242,12 @@ class CallNoOp {
   void AddOp(grpc_op* ops, size_t* nops) {}
   void FinishOp(bool* status) {}
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
+  }
 };
 
 class CallOpSendInitialMetadata {
@@ -264,7 +294,7 @@ class CallOpSendInitialMetadata {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!send_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA);
@@ -272,10 +302,9 @@ class CallOpSendInitialMetadata {
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
   }
 
@@ -318,7 +347,7 @@ class CallOpSendMessage {
   void FinishOp(bool* status) { send_buf_.Clear(); }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
@@ -326,10 +355,9 @@ class CallOpSendMessage {
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
   }
 
@@ -407,18 +435,17 @@ class CallOpRecvMessage {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     interceptor_methods->SetRecvMessage(message_);
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!got_message) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
   }
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
     if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -503,18 +530,17 @@ class CallOpGenericRecvMessage {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     interceptor_methods->SetRecvMessage(message_);
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!got_message) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
   }
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -546,17 +572,16 @@ class CallOpClientSendClose {
   void FinishOp(bool* status) { send_ = false; }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!send_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_CLOSE);
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
   }
 
@@ -604,7 +629,7 @@ class CallOpServerSendStatus {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (!send_status_available_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_STATUS);
@@ -614,10 +639,9 @@ class CallOpServerSendStatus {
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {}
+      InternalInterceptorBatchMethods* interceptor_methods) {}
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
   }
 
@@ -657,20 +681,19 @@ class CallOpRecvInitialMetadata {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     interceptor_methods->SetRecvInitialMetadata(metadata_map_);
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
     metadata_map_ = nullptr;
   }
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
     if (metadata_map_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -726,21 +749,20 @@ class CallOpClientRecvStatus {
   }
 
   void SetInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     interceptor_methods->SetRecvStatus(recv_status_);
     interceptor_methods->SetRecvTrailingMetadata(metadata_map_);
   }
 
   void SetFinishInterceptionHookPoint(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+      InternalInterceptorBatchMethods* interceptor_methods) {
     if (recv_status_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_STATUS);
     recv_status_ = nullptr;
   }
 
-  void SetHijackingState(
-      experimental::InterceptorBatchMethods* interceptor_methods) {
+  void SetHijackingState(InternalInterceptorBatchMethods* interceptor_methods) {
     hijacked_ = true;
     if (recv_status_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
@@ -834,11 +856,11 @@ class CallOpSetInterface : public CompletionQueueTag {
   // RPC. This should set hijacking state for each of the ops.
   virtual void SetHijackingState() = 0;
 
-  /* Should be called after interceptors are done running */
+  // Should be called after interceptors are done running
   virtual void ContinueFillOpsAfterInterception() = 0;
 
-  /* Should be called after interceptors are done running on the finalize result
-   * path */
+  // Should be called after interceptors are done running on the finalize result
+  // path
   virtual void ContinueFinalizeResultAfterInterception() = 0;
 };
 
@@ -847,8 +869,7 @@ template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
           class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
 class CallOpSet;
 
-class InterceptorBatchMethodsImpl
-    : public experimental::InterceptorBatchMethods {
+class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
  public:
   InterceptorBatchMethodsImpl() {
     for (auto i = 0;
@@ -874,8 +895,8 @@ class InterceptorBatchMethodsImpl
     ProceedServer();
   }
 
-  virtual void Hijack() override { /* fill this */
-    /* Only the client can hijack when sending down initial metadata */
+  virtual void Hijack() override {
+    // Only the client can hijack when sending down initial metadata
     GPR_CODEGEN_ASSERT(!reverse_ && ops_ != nullptr &&
                        call_->client_rpc_info() != nullptr);
     auto* rpc_info = call_->client_rpc_info();
@@ -930,58 +951,55 @@ class InterceptorBatchMethodsImpl
     return recv_trailing_metadata_->map();
   }
 
-  virtual void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
+  virtual void SetSendMessage(ByteBuffer* buf) { send_message_ = buf; }
 
   virtual void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) override {
+      std::multimap<grpc::string, grpc::string>* metadata) {
     send_initial_metadata_ = metadata;
   }
 
   virtual void SetSendStatus(grpc_status_code* code,
                              grpc::string* error_details,
-                             grpc::string* error_message) override {
+                             grpc::string* error_message) {
     code_ = code;
     error_details_ = error_details;
     error_message_ = error_message;
   }
 
   virtual void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) override {
+      std::multimap<grpc::string, grpc::string>* metadata) {
     send_trailing_metadata_ = metadata;
   }
 
-  virtual void SetRecvMessage(void* message) override {
-    recv_message_ = message;
-  }
+  virtual void SetRecvMessage(void* message) { recv_message_ = message; }
 
-  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) override {
+  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) {
     recv_initial_metadata_ = map;
   }
 
-  virtual void SetRecvStatus(Status* status) override { recv_status_ = status; }
+  virtual void SetRecvStatus(Status* status) { recv_status_ = status; }
 
-  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) override {
+  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) {
     recv_trailing_metadata_ = map;
   }
 
-  /* Prepares for Post_recv operations */
+  // Prepares for Post_recv operations
   void SetReverse() {
     reverse_ = true;
     ClearHookPoints();
   }
 
-  /* This needs to be set before interceptors are run */
+  // This needs to be set before interceptors are run
   void SetCall(Call* call) { call_ = call; }
 
   void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
 
-  /* Returns true if no interceptors are run. This should be used only by
-  subclasses of CallOpSetInterface. SetCall and SetCallOpSetInterface should
-  have been called before this. After all the interceptors are done running,
-  either ContinueFillOpsAfterInterception or
-  ContinueFinalizeOpsAfterInterception will be called. Note that neither of them
-  is invoked if there were no interceptors registered.
-   */
+  // Returns true if no interceptors are run. This should be used only by
+  // subclasses of CallOpSetInterface. SetCall and SetCallOpSetInterface should
+  // have been called before this. After all the interceptors are done running,
+  // either ContinueFillOpsAfterInterception or
+  // ContinueFinalizeOpsAfterInterception will be called. Note that neither of
+  // them is invoked if there were no interceptors registered.
   bool RunInterceptors() {
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info == nullptr ||
@@ -1001,9 +1019,10 @@ class InterceptorBatchMethodsImpl
     return false;
   }
 
-  /* Returns true if no interceptors are run. Returns false otherwise if there
-  are interceptors registered. After the interceptors are done running \a f will
-  be invoked. This is to be used only by BaseAsyncRequest and SyncRequest. */
+  // Returns true if no interceptors are run. Returns false otherwise if there
+  // are interceptors registered. After the interceptors are done running \a f
+  // will
+  // be invoked. This is to be used only by BaseAsyncRequest and SyncRequest.
   bool RunInterceptors(std::function<void(void)> f) {
     GPR_CODEGEN_ASSERT(reverse_ == true);
     GPR_CODEGEN_ASSERT(call_->client_rpc_info() == nullptr);
@@ -1049,33 +1068,33 @@ class InterceptorBatchMethodsImpl
     auto* rpc_info = call_->client_rpc_info();
     if (rpc_info->hijacked_ &&
         (!reverse_ && curr_iteration_ == rpc_info->hijacked_interceptor_ + 1)) {
-      /* We now need to provide hijacked recv ops to this interceptor */
+      // We now need to provide hijacked recv ops to this interceptor
       ClearHookPoints();
       ops_->SetHijackingState();
       rpc_info->RunInterceptor(this, curr_iteration_ - 1);
       return;
     }
     if (!reverse_) {
-      /* We are going down the stack of interceptors */
+      // We are going down the stack of interceptors
       if (curr_iteration_ < static_cast<long>(rpc_info->interceptors_.size())) {
         if (rpc_info->hijacked_ &&
             curr_iteration_ > rpc_info->hijacked_interceptor_) {
-          /* This is a hijacked RPC and we are done with hijacking */
+          // This is a hijacked RPC and we are done with hijacking
           ops_->ContinueFillOpsAfterInterception();
         } else {
           rpc_info->RunInterceptor(this, curr_iteration_);
         }
       } else {
-        /* we are done running all the interceptors without any hijacking */
+        // we are done running all the interceptors without any hijacking
         ops_->ContinueFillOpsAfterInterception();
       }
     } else {
-      /* We are going up the stack of interceptors */
+      // We are going up the stack of interceptors
       if (curr_iteration_ >= 0) {
-        /* Continue running interceptors */
+        // Continue running interceptors
         rpc_info->RunInterceptor(this, curr_iteration_);
       } else {
-        /* we are done running all the interceptors without any hijacking */
+        // we are done running all the interceptors without any hijacking
         ops_->ContinueFinalizeResultAfterInterception();
       }
     }
@@ -1090,13 +1109,13 @@ class InterceptorBatchMethodsImpl
       }
     } else {
       curr_iteration_--;
-      /* We are going up the stack of interceptors */
+      // We are going up the stack of interceptors
       if (curr_iteration_ >= 0) {
-        /* Continue running interceptors */
+        // Continue running interceptors
         return rpc_info->RunInterceptor(this, curr_iteration_);
       }
     }
-    /* we are done running all the interceptors */
+    // we are done running all the interceptors
     if (ops_) {
       ops_->ContinueFinalizeResultAfterInterception();
     }
@@ -1170,16 +1189,16 @@ class CallOpSet : public CallOpSetInterface,
     if (RunInterceptors()) {
       ContinueFillOpsAfterInterception();
     } else {
-      /* After the interceptors are run, ContinueFillOpsAfterInterception will
-       * be run */
+      // After the interceptors are run, ContinueFillOpsAfterInterception will
+      // be run
     }
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (done_intercepting_) {
-      /* We have already finished intercepting and filling in the results. This
-       * round trip from the core needed to be made because interceptors were
-       * run  */
+      // We have already finished intercepting and filling in the results. This
+      // round trip from the core needed to be made because interceptors were
+      // run
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
@@ -1198,8 +1217,8 @@ class CallOpSet : public CallOpSetInterface,
       return true;
     }
 
-    /* Interceptors are going to be run, so we can't return the tag just yet.
-    After the interceptors are run, ContinueFinalizeResultAfterInterception */
+    // Interceptors are going to be run, so we can't return the tag just yet.
+    // After the interceptors are run, ContinueFinalizeResultAfterInterception
     return false;
   }
 
@@ -1224,7 +1243,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::SetHijackingState(&interceptor_methods_);
   }
 
-  /* Should be called after interceptors are done running */
+  // Should be called after interceptors are done running
   void ContinueFillOpsAfterInterception() override {
     static const size_t MAX_OPS = 6;
     grpc_op ops[MAX_OPS];
@@ -1240,8 +1259,8 @@ class CallOpSet : public CallOpSetInterface,
                            call_.call(), ops, nops, cq_tag(), nullptr));
   }
 
-  /* Should be called after interceptors are done running on the finalize result
-   * path */
+  // Should be called after interceptors are done running on the finalize result
+  // path
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
@@ -1250,7 +1269,7 @@ class CallOpSet : public CallOpSetInterface,
   }
 
  private:
-  /* Returns true if no interceptors need to be run */
+  // Returns true if no interceptors need to be run
   bool RunInterceptors() {
     this->Op1::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op2::SetInterceptionHookPoint(&interceptor_methods_);
@@ -1264,7 +1283,7 @@ class CallOpSet : public CallOpSetInterface,
     // SetHijackingState, ContinueFinalizeResultAfterInterception);
     return interceptor_methods_.RunInterceptors();
   }
-  /* Returns true if no interceptors need to be run */
+  // Returns true if no interceptors need to be run
   bool RunInterceptorsPostRecv() {
     interceptor_methods_.SetReverse();
     this->Op1::SetFinishInterceptionHookPoint(&interceptor_methods_);
