@@ -35,6 +35,8 @@ extern const char *kCFStreamVarName;
 @implementation GRPCChannelConfiguration
 
 - (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(host.length, @"Host must not be empty.");
+  NSAssert(callOptions, @"callOptions must not be empty.");
   if ((self = [super init])) {
     _host = [host copy];
     _callOptions = [callOptions copy];
