@@ -29,12 +29,22 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCChannel;
 
+/** Caching signature of a channel. */
 @interface GRPCChannelConfiguration : NSObject<NSCopying>
 
+/** The host that this channel is connected to. */
 @property(copy, readonly) NSString *host;
+
+/**
+ * Options of the corresponding call. Note that only the channel-related options are of interest to
+ * this class.
+ */
 @property(strong, readonly) GRPCCallOptions *callOptions;
 
+/** Acquire the factory to generate a new channel with current configurations. */
 @property(readonly) id<GRPCChannelFactory> channelFactory;
+
+/** Acquire the dictionary of channel args with current configurations. */
 @property(readonly) NSDictionary *channelArgs;
 
 - (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
