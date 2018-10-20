@@ -55,7 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
                                     certChain:(nullable NSString *)certChain
                                         error:(NSError **)errorPtr {
   static NSData *defaultRootsASCII;
-  static NSError *kDefaultRootsError;
+  static NSError *defaultRootsError;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
@@ -68,7 +68,7 @@ NS_ASSUME_NONNULL_BEGIN
     NSString *contentInUTF8 =
         [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
     if (contentInUTF8 == nil) {
-      kDefaultRootsError = error;
+      defaultRootsError = error;
       return;
     }
     defaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
@@ -80,15 +80,15 @@ NS_ASSUME_NONNULL_BEGIN
   } else {
     if (defaultRootsASCII == nil) {
       if (errorPtr) {
-        *errorPtr = kDefaultRootsError;
+        *errorPtr = defaultRootsError;
       }
       NSAssert(
-          kDefaultRootsASCII,
+          defaultRootsASCII,
           @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
            "with the root certificates, is needed to establish secure (TLS) connections. "
            "Because the file is distributed with the gRPC library, this error is usually a sign "
            "that the library wasn't configured correctly for your project. Error: %@",
-          kDefaultRootsError);
+          defaultRootsError);
       return nil;
     }
     rootsASCII = defaultRootsASCII;
