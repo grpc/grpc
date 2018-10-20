@@ -32,6 +32,8 @@ struct grpc_channel_credentials;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
++ (nullable instancetype)new NS_UNAVAILABLE;
+
 /**
  * Returns a channel connecting to \a host with options as \a callOptions. The channel may be new
  * or a cached channel that is already connected.
