@@ -161,7 +161,8 @@ static GRPCChannelPool *gChannelPool;
   __block grpc_call *call = nil;
   dispatch_sync(_dispatchQueue, ^{
     if (self->_unmanagedChannel) {
-      NSString *serverAuthority = callOptions.serverAuthority;
+      NSString *serverAuthority =
+          callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
       NSTimeInterval timeout = callOptions.timeout;
       NSAssert(timeout >= 0, @"Invalid timeout");
       grpc_slice host_slice = grpc_empty_slice();
