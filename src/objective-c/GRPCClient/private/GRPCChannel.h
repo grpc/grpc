@@ -59,8 +59,8 @@ struct grpc_channel_credentials;
 - (void)ref;
 
 /**
- * Decrease the refcount of the channel. If the refcount of the channel decrease to 0, start a timer
- * to destroy the channel
+ * Decrease the refcount of the channel. If the refcount of the channel decrease to 0, the channel
+ * is destroyed after 30 seconds.
  */
 - (void)unref;
 
