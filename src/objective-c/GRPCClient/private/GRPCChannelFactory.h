@@ -22,8 +22,10 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/** A factory interface which generates new channel. */
 @protocol GRPCChannelFactory
 
+ /** Create a channel with specific channel args to a specific host. */
 - (nullable grpc_channel *)createChannelWithHost:(NSString *)host
                                      channelArgs:(nullable NSDictionary *)args;
 
