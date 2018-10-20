@@ -150,14 +150,17 @@ NSTimeInterval kChannelDestroyDelay = 30;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
-                     completionQueue:(nonnull GRPCCompletionQueue *)queue
+                     completionQueue:(GRPCCompletionQueue *)queue
                          callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(path.length, @"path must not be empty.");
+  NSAssert(queue, @"completionQueue must not be empty.");
+  NSAssert(callOptions, @"callOptions must not be empty.");
   __block grpc_call *call = nil;
   dispatch_sync(_dispatchQueue, ^{
     if (self->_unmanagedChannel) {
       NSString *serverAuthority = callOptions.serverAuthority;
       NSTimeInterval timeout = callOptions.timeout;
-      GPR_ASSERT(timeout >= 0);
+      NSAssert(timeout >= 0, @"Invalid timeout");
       grpc_slice host_slice = grpc_empty_slice();
       if (serverAuthority) {
         host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
@@ -216,8 +219,12 @@ NSTimeInterval kChannelDestroyDelay = 30;
   });
 }
 
-- (nullable instancetype)initWithUnmanagedChannel:(nullable grpc_channel *)unmanagedChannel
+- (nullable instancetype)initWithUnmanagedChannel:(grpc_channel * _Nullable)unmanagedChannel
                                     configuration:(GRPCChannelConfiguration *)configuration {
+  NSAssert(configuration, @"Configuration must not be empty.");
+  if (!unmanagedChannel) {
+    return nil;
+  }
   if ((self = [super init])) {
     _unmanagedChannel = unmanagedChannel;
     _configuration = [configuration copy];
