@@ -57,7 +57,15 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
   GRPCTransportTypeInsecure,
 };
 
+/**
+ * Implement this protocol to provide a token to gRPC when a call is initiated.
+ */
 @protocol GRPCAuthorizationProtocol
+
+/**
+ * This method is called when gRPC is about to start the call. When OAuth token is acquired,
+ * \a handler is expected to be called with \a token being the new token to be used for this call.
+ */
 - (void)getTokenWithHandler:(void (^)(NSString *token))hander;
 @end
 
