@@ -51,13 +51,6 @@ void GRPCFreeChannelArgs(grpc_channel_args *channel_args) {
   gpr_free(channel_args);
 }
 
-/**
- * Allocates a @c grpc_channel_args and populates it with the options specified in the
- * @c dictionary. Keys must be @c NSString. If the value responds to @c @selector(UTF8String) then
- * it will be mapped to @c GRPC_ARG_STRING. If not, it will be mapped to @c GRPC_ARG_INTEGER if the
- * value responds to @c @selector(intValue). Otherwise, an exception will be raised. The caller of
- * this function is responsible for calling @c freeChannelArgs on a non-NULL returned value.
- */
 grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary) {
   if (!dictionary) {
     return NULL;
