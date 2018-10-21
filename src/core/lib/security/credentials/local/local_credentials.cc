@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/security_connector/local_security_connector.h"
+#include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
 
