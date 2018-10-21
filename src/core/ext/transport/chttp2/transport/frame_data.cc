@@ -34,10 +34,9 @@
 
 grpc_error* grpc_chttp2_data_parser_init(grpc_chttp2_data_parser* parser) {
   parser->state = GRPC_CHTTP2_DATA_FH_0;
-  parser->parsing_frame = nullptr;
   parser->frame_type = 0;
   parser->frame_size = 0;
-  parser->error = nullptr;
+  parser->error = GRPC_ERROR_NONE;
   parser->is_frame_compressed = false;
   parser->parsing_frame = nullptr;
   return GRPC_ERROR_NONE;

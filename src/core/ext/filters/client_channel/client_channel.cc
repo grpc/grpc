@@ -1570,12 +1570,15 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
                                                 int refcount,
                                                 bool set_on_complete) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
+
   subchannel_call_retry_state* retry_state =
       static_cast<subchannel_call_retry_state*>(
           grpc_connected_subchannel_call_get_parent_data(
               calld->subchannel_call));
   subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(
       gpr_arena_alloc(calld->arena, sizeof(*batch_data)));
+  gpr_ref_init(&batch_data->refs, refcount);
   batch_data->elem = elem;
   batch_data->subchannel_call =
       GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
@@ -1587,7 +1590,6 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
   batch_data->batch.recv_message = false;
   batch_data->batch.recv_trailing_metadata = false;
   batch_data->batch.cancel_stream = false;
-  gpr_ref_init(&batch_data->refs, refcount);
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
                       grpc_schedule_on_exec_ctx);
@@ -1595,7 +1597,6 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
   } else {
     batch_data->batch.on_complete = nullptr;
   }
-  GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
   return batch_data;
 }
 
@@ -3157,42 +3158,40 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   // Initialize data members.
+  memset(&calld->deadline_state, 0, sizeof(calld->deadline_state));
   calld->path = grpc_slice_ref_internal(args->path);
   calld->call_start_time = args->start_time;
   calld->deadline = args->deadline;
-  calld->arena = args->arena;
-  calld->owning_call = args->call_stack;
-  calld->call_combiner = args->call_combiner;
-  memset(&calld->deadline_state, 0, sizeof(calld->deadline_state));
   if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
   }
+  calld->arena = args->arena;
+  calld->owning_call = args->call_stack;
+  calld->call_combiner = args->call_combiner;
+  memset(&calld->retry_throttle_data, 0, sizeof(calld->retry_throttle_data));
+  memset(&calld->method_params, 0, sizeof(calld->method_params));
   calld->subchannel_call = nullptr;
+  calld->cancel_error = GRPC_ERROR_NONE;
   memset(&calld->pick, 0, sizeof(calld->pick));
   calld->pollent = nullptr;
   calld->pollent_added_to_interested_parties =false;
-  calld->num_attempts_completed = 0;
-  calld->bytes_buffered_for_retry = 0;
-  calld->num_pending_retriable_subchannel_send_batches = 0;
-  calld->seen_send_initial_metadata = false;
-  calld->send_initial_metadata_storage =nullptr;
-  memset(&calld->retry_throttle_data, 0, sizeof(calld->retry_throttle_data));
-  memset(&calld->method_params, 0, sizeof(calld->method_params));
-  calld->send_initial_metadata_flags = 0;
-  calld->peer_string = nullptr;
-  calld->subchannel_call = nullptr;
-  calld->cancel_error = GRPC_ERROR_NONE;
-  calld->seen_send_trailing_metadata = false;
+  memset(&calld->pending_batches, 0, sizeof(calld->pending_batches));
   calld->pending_send_initial_metadata = false;
   calld->pending_send_message = false;
   calld->pending_send_trailing_metadata = false;
+  calld->enable_retries = chand->enable_retries;
   calld->retry_committed = false;
   calld->last_attempt_got_server_pushback = false;
-  memset(&calld->pending_batches, 0, sizeof(calld->pending_batches));
+  calld->num_attempts_completed = 0;
+  calld->bytes_buffered_for_retry = 0;
   memset(&calld->retry_timer, 0, sizeof(calld->retry_timer));
-  memset(&calld->retry_backoff, 0, sizeof(calld->retry_backoff));
-  calld->enable_retries = chand->enable_retries;
+  calld->num_pending_retriable_subchannel_send_batches = 0;
+  calld->seen_send_initial_metadata = false;
+  calld->send_initial_metadata_storage = nullptr;
+  calld->send_initial_metadata_flags = 0;
+  calld->peer_string = nullptr;
+  calld->seen_send_trailing_metadata = false;
   calld->send_messages.Init();
   calld->send_trailing_metadata_storage = nullptr;
   return GRPC_ERROR_NONE;

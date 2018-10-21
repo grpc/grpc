@@ -227,52 +227,46 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
-  s->arena = arena;
-
-  s->refs = refcount;
-  // Ref this stream right now
-  ref_stream(s, "inproc_init_stream:init");
-
-  s->send_message_op = nullptr;
-  s->send_trailing_md_op = nullptr;
-  s->recv_initial_md_op = nullptr;
-  s->recv_message_op = nullptr;
-  s->recv_trailing_md_op = nullptr;
-
+  s->t = t;
   grpc_metadata_batch_init(&s->to_read_initial_md);
   s->to_read_initial_md_flags = 0;
   s->to_read_initial_md_filled = false;
   grpc_metadata_batch_init(&s->to_read_trailing_md);
   s->to_read_trailing_md_filled = false;
-  grpc_metadata_batch_init(&s->write_buffer_initial_md);
-  s->write_buffer_initial_md_flags = 0;
-  s->write_buffer_initial_md_filled = false;
-  grpc_metadata_batch_init(&s->write_buffer_trailing_md);
-  s->write_buffer_trailing_md_filled = false;
   s->ops_needed = false;
   s->op_closure_scheduled = false;
   GRPC_CLOSURE_INIT(&s->op_closure, op_state_machine, s,
                     grpc_schedule_on_exec_ctx);
-  s->t = t;
-  s->closure_at_destroy = nullptr;
+  grpc_metadata_batch_init(&s->write_buffer_initial_md);
+  s->write_buffer_initial_md_filled = false;
+  s->write_buffer_initial_md_flags = 0;
+  s->write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_metadata_batch_init(&s->write_buffer_trailing_md);
+  s->write_buffer_trailing_md_filled = false;
+  s->write_buffer_cancel_error = GRPC_ERROR_NONE;
   s->other_side_closed = false;
-
+  s->refs = refcount;
+  // Ref this stream right now
+  ref_stream(s, "inproc_init_stream:init");
+  s->closure_at_destroy = nullptr;
+  s->arena = arena;
+  s->send_message_op = nullptr;
+  s->send_trailing_md_op = nullptr;
+  s->recv_initial_md_op = nullptr;
+  s->recv_message_op = nullptr;
+  s->recv_trailing_md_op = nullptr;
   s->recv_inited = false;
-
-  s->initial_md_sent = s->trailing_md_sent = s->initial_md_recvd =
-      s->trailing_md_recvd = false;
-
+  s->initial_md_sent = false;
+  s->trailing_md_sent = false;
+  s->initial_md_recvd = false;
+  s->trailing_md_recvd = false;
   s->closed = false;
-
   s->cancel_self_error = GRPC_ERROR_NONE;
   s->cancel_other_error = GRPC_ERROR_NONE;
-  s->write_buffer_cancel_error = GRPC_ERROR_NONE;
   s->deadline = GRPC_MILLIS_INF_FUTURE;
-  s->write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
-
+  s->listed = true;
   s->stream_list_prev = nullptr;
   gpr_mu_lock(&t->mu->mu);
-  s->listed = true;
   ref_stream(s, "inproc_init_stream:list");
   s->stream_list_next = t->stream_list;
   if (t->stream_list) {
