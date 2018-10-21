@@ -483,33 +483,15 @@ static void init_transport(grpc_chttp2_transport* t,
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
   t->base.vtable = get_vtable();
-  t->ep = ep;
   /* one ref is for destroy */
   gpr_ref_init(&t->refs, 1);
-  t->combiner = grpc_combiner_create();
+  t->ep = ep;
   t->peer_string = grpc_endpoint_get_peer(ep);
+  t->combiner = grpc_combiner_create();
   t->destroying = false;
-  t->closed_with_error = nullptr;
+  t->closed_with_error = GRPC_ERROR_NONE;
   t->endpoint_reading = 1;
-  t->next_stream_id = is_client ? 1 : 2;
-  t->is_client = is_client;
-  t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
-  t->is_first_frame = true;
-  grpc_connectivity_state_init(
-      &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
-      is_client ? "client_transport" : "server_transport");
-
-  grpc_slice_buffer_init(&t->qbuf);
-  grpc_slice_buffer_init(&t->outbuf);
-  grpc_chttp2_hpack_compressor_init(&t->hpack_compressor);
-
-  init_transport_closures(t);
-
-  t->goaway_error = GRPC_ERROR_NONE;
-  grpc_chttp2_goaway_parser_init(&t->goaway_parser);
-  grpc_chttp2_hpack_parser_init(&t->hpack_parser);
-
-  grpc_slice_buffer_init(&t->read_buffer);
+  t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
@@ -518,6 +500,25 @@ static void init_transport(grpc_chttp2_transport* t,
      TODO(ctiller): tune this */
   grpc_chttp2_stream_map_init(&t->stream_map, 8);
 
+  grpc_slice_buffer_init(&t->read_buffer);
+  grpc_connectivity_state_init(
+      &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
+      is_client ? "client_transport" : "server_transport");
+  grpc_slice_buffer_init(&t->outbuf);
+  if (is_client) {
+    grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
+                                          GRPC_CHTTP2_CLIENT_CONNECT_STRING));
+  }
+  grpc_chttp2_hpack_compressor_init(&t->hpack_compressor);
+  t->is_client = is_client;
+  grpc_slice_buffer_init(&t->qbuf);
+  t->write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+  t->goaway_error = GRPC_ERROR_NONE;
+  t->dirtied_local_settings = true;
+  t->sent_local_settings = false;
+  /* Hack: it's common for implementations to assume 65536 bytes initial send
+     window -- this should by rights be 0 */
+  t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   /* copy in initial settings to all setting sets */
   size_t i;
   int j;
@@ -526,17 +527,14 @@ static void init_transport(grpc_chttp2_transport* t,
       t->settings[j][i] = grpc_chttp2_settings_parameters[i].default_value;
     }
   }
-  t->dirtied_local_settings = 1;
-  /* Hack: it's common for implementations to assume 65536 bytes initial send
-     window -- this should by rights be 0 */
-  t->force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
-  t->sent_local_settings = 0;
-  t->write_buffer_size = grpc_core::chttp2::kDefaultWindow;
+  t->next_stream_id = is_client ? 1 : 2;
+  grpc_chttp2_hpack_parser_init(&t->hpack_parser);
+  grpc_chttp2_goaway_parser_init(&t->goaway_parser);
+  t->initial_window_update = 0;
+  t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
+  t->is_first_frame = true;
 
-  if (is_client) {
-    grpc_slice_buffer_add(&t->outbuf, grpc_slice_from_copied_string(
-                                          GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-  }
+  init_transport_closures(t);
 
   /* configure http2 the way we like it */
   if (is_client) {
@@ -550,8 +548,6 @@ static void init_transport(grpc_chttp2_transport* t,
 
   configure_transport_ping_policy(t);
   init_transport_keepalive_settings(t);
-
-  t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
 
   bool enable_bdp = true;
   if (channel_args) {

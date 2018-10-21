@@ -447,27 +447,23 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->recv_initial_metadata = nullptr;
   calld->recv_initial_metadata_error = GRPC_ERROR_NONE;
   calld->original_recv_initial_metadata_ready = nullptr;
-  calld->recv_trailing_metadata = nullptr;
-  calld->original_recv_trailing_metadata_ready = nullptr;
-  calld->send_message_batch = nullptr;
-  calld->send_message_bytes_read = 0;
-  calld->original_send_message_on_complete = nullptr;
-  calld->recv_initial_metadata = nullptr;
-  calld->recv_initial_metadata_error = GRPC_ERROR_NONE;
-  calld->recv_trailing_metadata = nullptr;
-  calld->original_recv_initial_metadata_ready = nullptr;
-  calld->send_message_batch = nullptr;
-  calld->seen_recv_trailing_metadata_ready = false;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
+  calld->recv_trailing_metadata = nullptr;
+  calld->original_recv_trailing_metadata_ready = nullptr;
   GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
                     recv_trailing_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->send_message_on_complete, send_message_on_complete,
-                    elem, grpc_schedule_on_exec_ctx);
+  calld->recv_trailing_metadata_error = GRPC_ERROR_NONE;
+  calld->seen_recv_trailing_metadata_ready = false;
+  calld->send_message_batch = nullptr;
+  calld->send_message_bytes_read = 0;
   GRPC_CLOSURE_INIT(&calld->on_send_message_next_done,
                     on_send_message_next_done, elem, grpc_schedule_on_exec_ctx);
+  calld->original_send_message_on_complete = nullptr;
+  GRPC_CLOSURE_INIT(&calld->send_message_on_complete, send_message_on_complete,
+                    elem, grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 

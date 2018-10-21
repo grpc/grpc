@@ -823,15 +823,15 @@ static void accept_stream(void* cd, grpc_transport* transport,
   /* create a call */
   grpc_call_create_args args;
   args.channel = chand->channel;
-  args.server_transport_data = transport_server_data;
+  args.server = chand->server;
   args.parent = nullptr;
   args.propagation_mask = 0;
   args.cq = nullptr;
   args.pollset_set_alternative = nullptr;
-  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
-  args.server = chand->server;
+  args.server_transport_data = transport_server_data;
   args.add_initial_metadata = nullptr;
   args.add_initial_metadata_count = 0;
+  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   grpc_call* call;
   grpc_error* error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
