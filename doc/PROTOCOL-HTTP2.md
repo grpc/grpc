@@ -92,7 +92,7 @@ The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA 
 
 * **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
 * <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
-* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
+* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer (big endian)
 * **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.

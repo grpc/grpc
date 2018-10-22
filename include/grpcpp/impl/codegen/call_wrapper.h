@@ -29,6 +29,7 @@ class ServerRpcInfo;
 }  // namespace experimental
 namespace internal {
 class CallHook;
+class CallOpSetInterface;
 
 /// Straightforward wrapping of the C call object
 class Call final {
@@ -61,9 +62,7 @@ class Call final {
         max_receive_message_size_(max_receive_message_size),
         server_rpc_info_(rpc_info) {}
 
-  void PerformOps(CallOpSetInterface* ops) {
-    call_hook_->PerformOpsOnCall(ops, this);
-  }
+  void PerformOps(CallOpSetInterface* ops);
 
   grpc_call* call() const { return call_; }
   CompletionQueue* cq() const { return cq_; }

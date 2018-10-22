@@ -1145,6 +1145,25 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : cq_tag_(this), return_tag_(this) {}
+  // The copy constructor and assignment operator reset the value of
+  // cq_tag_ and return_tag_ since those are only meaningful on a specific
+  // object, not across objects.
+  CallOpSet(const CallOpSet& other)
+      : cq_tag_(this),
+        return_tag_(this),
+        call_(other.call_),
+        done_intercepting_(false),
+        interceptor_methods_(InterceptorBatchMethodsImpl()) {}
+
+  CallOpSet& operator=(const CallOpSet& other) {
+    cq_tag_ = this;
+    return_tag_ = this;
+    call_ = other.call_;
+    done_intercepting_ = false;
+    interceptor_methods_ = InterceptorBatchMethodsImpl();
+    return *this;
+  }
+
   void FillOps(Call* call) override {
     done_intercepting_ = false;
     g_core_codegen_interface->grpc_call_ref(call->call());

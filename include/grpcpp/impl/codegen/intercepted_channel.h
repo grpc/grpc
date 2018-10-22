@@ -43,7 +43,9 @@ class InterceptedChannel : public ChannelInterface {
 
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
-                            CompletionQueue* cq) override;
+                            CompletionQueue* cq) override {
+    return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
+  }
 
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override {

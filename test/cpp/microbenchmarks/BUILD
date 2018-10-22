@@ -24,7 +24,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:gpr_test_util",]
+    deps = ["//test/core/util:gpr_test_util"],
 )
 
 grpc_cc_library(
@@ -65,6 +65,13 @@ grpc_cc_binary(
     name = "bm_channel",
     testonly = 1,
     srcs = ["bm_channel.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_call_create",
+    testonly = 1,
+    srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
 )
 

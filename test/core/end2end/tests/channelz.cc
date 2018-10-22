@@ -288,6 +288,8 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
       grpc_server_get_channelz_node(f.server);
   GPR_ASSERT(channelz_server != nullptr);
 
+  run_one_request(config, f, true);
+
   char* json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);

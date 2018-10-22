@@ -90,7 +90,7 @@ class Channel final : public ChannelInterface,
 
   internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                     ClientContext* context, CompletionQueue* cq,
-                                    int interceptor_pos);
+                                    int interceptor_pos) override;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned

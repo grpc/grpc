@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpcpp/impl/codegen/call_wrapper.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -121,6 +122,15 @@ class ChannelInterface {
                                        CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
+  // This is needed to keep codegen_test_minimal happy. InterceptedChannel needs
+  // to make use of this but can't directly call Channel's implementation
+  // because of the test.
+  virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
+                                            ClientContext* context,
+                                            CompletionQueue* cq,
+                                            int interceptor_pos) {
+    return internal::Call();
+  }
 
   // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this

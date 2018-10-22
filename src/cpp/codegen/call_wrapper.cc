@@ -16,14 +16,16 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_CLIENT_LOAD_REPORTING_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_CLIENT_LOAD_REPORTING_FILTER_H
+#include <grpcpp/impl/codegen/call_wrapper.h>
 
-#include <grpc/support/port_platform.h>
+#include <grpcpp/impl/codegen/call_hook.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+namespace grpc {
+namespace internal {
 
-extern const grpc_channel_filter xds_client_load_reporting_filter;
+void Call::PerformOps(CallOpSetInterface* ops) {
+  call_hook_->PerformOpsOnCall(ops, this);
+}
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_CLIENT_LOAD_REPORTING_FILTER_H \
-        */
+}  // namespace internal
+}  // namespace grpc
