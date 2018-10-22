@@ -344,7 +344,6 @@ void HealthCheckClient::CallState::StartCall() {
     return;
   }
   // Initialize payload and batch.
-  memset(&payload_, 0, sizeof(payload_));
   memset(&batch_, 0, sizeof(batch_));
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
@@ -361,6 +360,8 @@ void HealthCheckClient::CallState::StartCall() {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
+  payload_.send_initial_metadata.send_initial_metadata_flags = 0;
+  payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
   EncodeRequest(health_check_client_->service_name_, &send_message_);
@@ -375,6 +376,9 @@ void HealthCheckClient::CallState::StartCall() {
   grpc_metadata_batch_init(&recv_initial_metadata_);
   payload_.recv_initial_metadata.recv_initial_metadata =
       &recv_initial_metadata_;
+  payload_.recv_initial_metadata.recv_flags = nullptr;
+  payload_.recv_initial_metadata.trailing_metadata_available = nullptr;
+  payload_.recv_initial_metadata.peer_string = nullptr;
   // recv_initial_metadata_ready callback takes ref, handled manually.
   Ref(DEBUG_LOCATION, "recv_initial_metadata_ready").release();
   payload_.recv_initial_metadata.recv_initial_metadata_ready =
