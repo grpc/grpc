@@ -20,11 +20,11 @@
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCallOptions.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#import <GRPCClient/GRPCCallOptions.h>
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
