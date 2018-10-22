@@ -122,7 +122,8 @@ tsi_result tsi_construct_allocated_string_peer_property(
     const char* name, size_t value_length, tsi_peer_property* property);
 tsi_result tsi_construct_string_peer_property_from_cstring(
     const char* name, const char* value, tsi_peer_property* property);
-
+const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
+                                                       const char* name);
 /* Utils. */
 char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 

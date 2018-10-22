@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"

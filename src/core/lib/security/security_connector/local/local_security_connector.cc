@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/security_connector/local_security_connector.h"
+#include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 #include <stdbool.h>
 #include <string.h>
