@@ -250,7 +250,7 @@ class CXXLanguage:
             channels=1,
             num_clients=1,
             secure=False,
-            categories=[SMOKETEST] + [INPROC] + [SCALABLE])
+            categories=[INPROC] + [SCALABLE])
 
         yield _ping_pong_scenario(
             'cpp_protobuf_async_streaming_from_client_1channel_1MB',
@@ -280,12 +280,12 @@ class CXXLanguage:
             secure=False,
             async_server_threads=16,
             server_threads_per_cq=1,
-            categories=[SMOKETEST] + [SCALABLE])
+            categories=[SCALABLE])
 
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
-            smoketest_categories = ([SMOKETEST]
-                                    if secure else [INPROC]) + [SCALABLE]
+            smoketest_categories = ([SMOKETEST] if secure else [])
+            inproc_categories = ([INPROC] if not secure else [])
 
             yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_ping_pong_%s' % secstr,
@@ -295,7 +295,8 @@ class CXXLanguage:
                 use_generic_payload=True,
                 async_server_threads=1,
                 secure=secure,
-                categories=smoketest_categories)
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_qps_unconstrained_%s' % secstr,
@@ -306,7 +307,8 @@ class CXXLanguage:
                 use_generic_payload=True,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE])
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE])
 
             for mps in geometric_progression(1, 20, 10):
                 yield _ping_pong_scenario(
@@ -320,7 +322,8 @@ class CXXLanguage:
                     secure=secure,
                     messages_per_stream=mps,
                     minimal_stack=not secure,
-                    categories=smoketest_categories + [SCALABLE])
+                    categories=smoketest_categories + inproc_categories +
+                    [SCALABLE])
 
             for mps in geometric_progression(1, 200, math.sqrt(10)):
                 yield _ping_pong_scenario(
@@ -347,7 +350,7 @@ class CXXLanguage:
                 use_generic_payload=True,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE],
+                categories=inproc_categories + [SCALABLE],
                 channels=1,
                 outstanding=100)
 
@@ -363,7 +366,7 @@ class CXXLanguage:
                 use_generic_payload=True,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_qps_unconstrained_1cq_%s' % secstr,
@@ -375,7 +378,8 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
-                categories=smoketest_categories + [SCALABLE])
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_qps_unconstrained_2waysharedcq_%s'
@@ -388,7 +392,7 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=2,
                 server_threads_per_cq=2,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_protobuf_async_streaming_qps_unconstrained_1cq_%s' %
@@ -400,7 +404,7 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_protobuf_async_streaming_qps_unconstrained_2waysharedcq_%s'
@@ -412,7 +416,7 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=2,
                 server_threads_per_cq=2,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_protobuf_async_unary_qps_unconstrained_1cq_%s' % secstr,
@@ -423,7 +427,8 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=1000000,
                 server_threads_per_cq=1000000,
-                categories=smoketest_categories + [SCALABLE])
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_protobuf_async_unary_qps_unconstrained_2waysharedcq_%s' %
@@ -435,7 +440,7 @@ class CXXLanguage:
                 secure=secure,
                 client_threads_per_cq=2,
                 server_threads_per_cq=2,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_generic_async_streaming_qps_one_server_core_%s' % secstr,
@@ -457,7 +462,8 @@ class CXXLanguage:
                 unconstrained_client='async',
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE],
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE],
                 excluded_poll_engines=['poll-cv'])
 
             yield _ping_pong_scenario(
@@ -472,7 +478,7 @@ class CXXLanguage:
                 resp_size=8 * 1024 * 1024,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE])
+                categories=inproc_categories + [SCALABLE])
 
             yield _ping_pong_scenario(
                 'cpp_protobuf_async_client_sync_server_streaming_qps_unconstrained_%s'
@@ -483,7 +489,8 @@ class CXXLanguage:
                 unconstrained_client='async',
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE],
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE],
                 excluded_poll_engines=['poll-cv'])
 
             yield _ping_pong_scenario(
@@ -495,7 +502,8 @@ class CXXLanguage:
                 resp_size=1024 * 1024,
                 secure=secure,
                 minimal_stack=not secure,
-                categories=smoketest_categories + [SCALABLE])
+                categories=smoketest_categories + inproc_categories +
+                [SCALABLE])
 
             for rpc_type in [
                     'unary', 'streaming', 'streaming_from_client',
@@ -538,7 +546,7 @@ class CXXLanguage:
                         minimal_stack=not secure,
                         server_threads_per_cq=3,
                         client_threads_per_cq=3,
-                        categories=smoketest_categories + [SCALABLE])
+                        categories=inproc_categories + [SCALABLE])
 
                     # TODO(vjpai): Re-enable this test. It has a lot of timeouts
                     # and hasn't yet been conclusively identified as a test failure
@@ -565,7 +573,7 @@ class CXXLanguage:
                                 secure=secure,
                                 messages_per_stream=mps,
                                 minimal_stack=not secure,
-                                categories=smoketest_categories + [SCALABLE])
+                                categories=inproc_categories + [SCALABLE])
 
                         for mps in geometric_progression(1, 200, math.sqrt(10)):
                             yield _ping_pong_scenario(
