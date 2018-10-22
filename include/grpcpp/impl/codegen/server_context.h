@@ -286,8 +286,12 @@ class ServerContext {
   uint32_t initial_metadata_flags() const { return 0; }
 
   experimental::ServerRpcInfo* set_server_rpc_info(
-      experimental::ServerRpcInfo info) {
-    rpc_info_ = std::move(info);
+      const char* method,
+      const std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
+    rpc_info_ = experimental::ServerRpcInfo(this, method);
+    rpc_info_.RegisterInterceptors(creators);
     return &rpc_info_;
   }
 

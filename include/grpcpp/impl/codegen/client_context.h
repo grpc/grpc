@@ -404,8 +404,13 @@ class ClientContext {
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
-      experimental::ClientRpcInfo client_rpc_info) {
-    rpc_info_ = std::move(client_rpc_info);
+      const char* method, grpc::Channel* channel,
+      const std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
+          creators,
+      int interceptor_pos) {
+    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }
 

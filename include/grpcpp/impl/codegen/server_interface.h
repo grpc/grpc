@@ -192,8 +192,8 @@ class ServerInterface : public internal::CallHook {
       }
       call_wrapper_ = internal::Call(
           call_, server_, call_cq_, server_->max_receive_message_size(),
-          context_->set_server_rpc_info(experimental::ServerRpcInfo(
-              context_, name_, *server_->interceptor_creators())));
+          context_->set_server_rpc_info(name_,
+                                        *server_->interceptor_creators()));
       return BaseAsyncRequest::FinalizeResult(tag, status);
     }
 
@@ -272,8 +272,8 @@ class ServerInterface : public internal::CallHook {
       }
       call_wrapper_ = internal::Call(
           call_, server_, call_cq_, server_->max_receive_message_size(),
-          context_->set_server_rpc_info(experimental::ServerRpcInfo(
-              context_, name_, *server_->interceptor_creators())));
+          context_->set_server_rpc_info(name_,
+                                        *server_->interceptor_creators()));
       /* Set interception point for recv message */
       interceptor_methods_.AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_RECV_MESSAGE);

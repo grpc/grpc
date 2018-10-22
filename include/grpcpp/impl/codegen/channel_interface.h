@@ -51,6 +51,7 @@ template <class W, class R>
 class ClientAsyncReaderWriterFactory;
 template <class R>
 class ClientAsyncResponseReaderFactory;
+class InterceptedChannel;
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
@@ -108,6 +109,7 @@ class ChannelInterface {
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
+  friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
                                     CompletionQueue* cq) = 0;

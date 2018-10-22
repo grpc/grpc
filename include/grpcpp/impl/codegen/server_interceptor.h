@@ -45,15 +45,7 @@ class ServerInterceptorFactoryInterface {
 class ServerRpcInfo {
  public:
   ServerRpcInfo() {}
-  ServerRpcInfo(grpc::ServerContext* ctx, const char* method,
-                const std::vector<std::unique_ptr<
-                    experimental::ServerInterceptorFactoryInterface>>& creators)
-      : ctx_(ctx), method_(method) {
-    for (const auto& creator : creators) {
-      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          creator->CreateServerInterceptor(this)));
-    }
-  }
+
   ~ServerRpcInfo(){};
 
   ServerRpcInfo(const ServerRpcInfo&) = delete;
@@ -74,11 +66,24 @@ class ServerRpcInfo {
   }
 
  private:
+  ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
+      : ctx_(ctx), method_(method) {}
+
+  void RegisterInterceptors(
+      const std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
+    for (const auto& creator : creators) {
+      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
+          creator->CreateServerInterceptor(this)));
+    }
+  }
   grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 
   friend class internal::InterceptorBatchMethodsImpl;
+  friend class grpc::ServerContext;
 };
 
 }  // namespace experimental

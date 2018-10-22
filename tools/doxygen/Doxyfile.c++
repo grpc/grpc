@@ -945,6 +945,7 @@ include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
 include/grpcpp/impl/codegen/call_hook.h \
+include/grpcpp/impl/codegen/call_wrapper.h \
 include/grpcpp/impl/codegen/callback_common.h \
 include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
@@ -959,6 +960,7 @@ include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/grpc_library.h \
+include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \

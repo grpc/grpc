@@ -29,11 +29,13 @@
 
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call_hook.h>
+#include <grpcpp/impl/codegen/call_wrapper.h>
 #include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/slice.h>
@@ -232,6 +234,8 @@ class InternalInterceptorBatchMethods
   virtual void SetRecvStatus(Status* status) = 0;
 
   virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
+
+  virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
 };
 
 /// Default argument for CallOpSet. I is unused by the class, but can be
@@ -779,63 +783,6 @@ class CallOpClientRecvStatus {
   grpc_slice error_message_;
 };
 
-/// Straightforward wrapping of the C call object
-class Call final {
- public:
-  Call()
-      : call_hook_(nullptr),
-        cq_(nullptr),
-        call_(nullptr),
-        max_receive_message_size_(-1) {}
-  /** call is owned by the caller */
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-      : call_hook_(call_hook),
-        cq_(cq),
-        call_(call),
-        max_receive_message_size_(-1) {}
-
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
-       experimental::ClientRpcInfo* rpc_info)
-      : call_hook_(call_hook),
-        cq_(cq),
-        call_(call),
-        max_receive_message_size_(-1),
-        client_rpc_info_(rpc_info) {}
-
-  Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
-       int max_receive_message_size, experimental::ServerRpcInfo* rpc_info)
-      : call_hook_(call_hook),
-        cq_(cq),
-        call_(call),
-        max_receive_message_size_(max_receive_message_size),
-        server_rpc_info_(rpc_info) {}
-
-  void PerformOps(CallOpSetInterface* ops) {
-    call_hook_->PerformOpsOnCall(ops, this);
-  }
-
-  grpc_call* call() const { return call_; }
-  CompletionQueue* cq() const { return cq_; }
-
-  int max_receive_message_size() const { return max_receive_message_size_; }
-
-  experimental::ClientRpcInfo* client_rpc_info() const {
-    return client_rpc_info_;
-  }
-
-  experimental::ServerRpcInfo* server_rpc_info() const {
-    return server_rpc_info_;
-  }
-
- private:
-  CallHook* call_hook_;
-  CompletionQueue* cq_;
-  grpc_call* call_;
-  int max_receive_message_size_;
-  experimental::ClientRpcInfo* client_rpc_info_ = nullptr;
-  experimental::ServerRpcInfo* server_rpc_info_ = nullptr;
-};
-
 /// An abstract collection of call ops, used to generate the
 /// grpc_call_op structure to pass down to the lower layers,
 /// and as it is-a CompletionQueueTag, also massages the final
@@ -904,9 +851,8 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     rpc_info->hijacked_interceptor_ = curr_iteration_;
     ClearHookPoints();
     ops_->SetHijackingState();
-    curr_iteration_++;  // increment so that we recognize that we have already
-                        // run the hijacking interceptor
-    rpc_info->RunInterceptor(this, curr_iteration_ - 1);
+    ran_hijacking_interceptor_ = true;
+    rpc_info->RunInterceptor(this, curr_iteration_);
   }
 
   virtual void AddInterceptionHookPoint(
@@ -951,41 +897,56 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     return recv_trailing_metadata_->map();
   }
 
-  virtual void SetSendMessage(ByteBuffer* buf) { send_message_ = buf; }
+  virtual void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
 
   virtual void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) {
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_initial_metadata_ = metadata;
   }
 
   virtual void SetSendStatus(grpc_status_code* code,
                              grpc::string* error_details,
-                             grpc::string* error_message) {
+                             grpc::string* error_message) override {
     code_ = code;
     error_details_ = error_details;
     error_message_ = error_message;
   }
 
   virtual void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) {
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_trailing_metadata_ = metadata;
   }
 
-  virtual void SetRecvMessage(void* message) { recv_message_ = message; }
+  virtual void SetRecvMessage(void* message) override {
+    recv_message_ = message;
+  }
 
-  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) {
+  virtual void SetRecvInitialMetadata(internal::MetadataMap* map) override {
     recv_initial_metadata_ = map;
   }
 
-  virtual void SetRecvStatus(Status* status) { recv_status_ = status; }
+  virtual void SetRecvStatus(Status* status) override { recv_status_ = status; }
 
-  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) {
+  virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) override {
     recv_trailing_metadata_ = map;
+  }
+
+  virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
+    auto* info = call_->client_rpc_info();
+    if (info == nullptr) {
+      return std::unique_ptr<ChannelInterface>(nullptr);
+    }
+    // The intercepted channel starts from the interceptor just after the
+    // current interceptor
+    return std::unique_ptr<ChannelInterface>(new internal::InterceptedChannel(
+        reinterpret_cast<grpc::ChannelInterface*>(info->channel()),
+        curr_iteration_ + 1));
   }
 
   // Prepares for Post_recv operations
   void SetReverse() {
     reverse_ = true;
+    ran_hijacking_interceptor_ = false;
     ClearHookPoints();
   }
 
@@ -1064,17 +1025,19 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
   }
 
   void ProceedClient() {
-    curr_iteration_ = reverse_ ? curr_iteration_ - 1 : curr_iteration_ + 1;
     auto* rpc_info = call_->client_rpc_info();
-    if (rpc_info->hijacked_ &&
-        (!reverse_ && curr_iteration_ == rpc_info->hijacked_interceptor_ + 1)) {
+    if (rpc_info->hijacked_ && !reverse_ &&
+        curr_iteration_ == rpc_info->hijacked_interceptor_ &&
+        !ran_hijacking_interceptor_) {
       // We now need to provide hijacked recv ops to this interceptor
       ClearHookPoints();
       ops_->SetHijackingState();
-      rpc_info->RunInterceptor(this, curr_iteration_ - 1);
+      ran_hijacking_interceptor_ = true;
+      rpc_info->RunInterceptor(this, curr_iteration_);
       return;
     }
     if (!reverse_) {
+      curr_iteration_++;
       // We are going down the stack of interceptors
       if (curr_iteration_ < static_cast<long>(rpc_info->interceptors_.size())) {
         if (rpc_info->hijacked_ &&
@@ -1089,6 +1052,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
         ops_->ContinueFillOpsAfterInterception();
       }
     } else {
+      curr_iteration_--;
       // We are going up the stack of interceptors
       if (curr_iteration_ >= 0) {
         // Continue running interceptors
@@ -1139,6 +1103,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
 
   int curr_iteration_ = 0;  // Current iterator
   bool reverse_ = false;
+  bool ran_hijacking_interceptor_ = false;
   Call* call_ =
       nullptr;  // The Call object is present along with CallOpSet object
   CallOpSetInterface* ops_ = nullptr;

@@ -218,8 +218,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
           request_(nullptr),
           method_(mrd->method_),
           call_(mrd->call_, server, &cq_, server->max_receive_message_size(),
-                ctx_.set_server_rpc_info(experimental::ServerRpcInfo(
-                    &ctx_, method_->name(), server->interceptor_creators_))),
+                ctx_.set_server_rpc_info(method_->name(),
+                                         server->interceptor_creators_)),
           server_(server),
           global_callbacks_(nullptr),
           resources_(false) {
@@ -859,10 +859,9 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   grpc_slice_unref(call_details_.host);
   call_wrapper_ = internal::Call(
       call_, server_, call_cq_, server_->max_receive_message_size(),
-      context_->set_server_rpc_info(experimental::ServerRpcInfo(
-          context_,
+      context_->set_server_rpc_info(
           static_cast<GenericServerContext*>(context_)->method_.c_str(),
-          *server_->interceptor_creators())));
+          *server_->interceptor_creators()));
   return BaseAsyncRequest::FinalizeResult(tag, status);
 }
 

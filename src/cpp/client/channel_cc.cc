@@ -111,9 +111,10 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 }  // namespace experimental
 
-internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
+                                           ClientContext* context,
+                                           CompletionQueue* cq,
+                                           int interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -147,9 +148,15 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
 
-  auto* info = context->set_client_rpc_info(experimental::ClientRpcInfo(
-      context, method.name(), this, interceptor_creators_));
+  auto* info = context->set_client_rpc_info(
+      method.name(), this, interceptor_creators_, interceptor_pos);
   return internal::Call(c_call, this, cq, info);
+}
+
+internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                   ClientContext* context,
+                                   CompletionQueue* cq) {
+  return CreateCallInternal(method, context, cq, 0);
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,

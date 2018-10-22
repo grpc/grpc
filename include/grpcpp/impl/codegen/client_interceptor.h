@@ -46,16 +46,7 @@ class ClientInterceptorFactoryInterface {
 class ClientRpcInfo {
  public:
   ClientRpcInfo() {}
-  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                grpc::Channel* channel,
-                const std::vector<std::unique_ptr<
-                    experimental::ClientInterceptorFactoryInterface>>& creators)
-      : ctx_(ctx), method_(method), channel_(channel) {
-    for (const auto& creator : creators) {
-      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          creator->CreateClientInterceptor(this)));
-    }
-  }
+
   ~ClientRpcInfo(){};
 
   ClientRpcInfo(const ClientRpcInfo&) = delete;
@@ -67,7 +58,10 @@ class ClientRpcInfo {
   Channel* channel() { return channel_; }
   grpc::ClientContext* client_context() { return ctx_; }
 
- public:
+ private:
+  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
+                grpc::Channel* channel)
+      : ctx_(ctx), method_(method), channel_(channel) {}
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods,
@@ -76,7 +70,17 @@ class ClientRpcInfo {
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 
- private:
+  void RegisterInterceptors(
+      const std::vector<std::unique_ptr<
+          experimental::ClientInterceptorFactoryInterface>>& creators,
+      int interceptor_pos) {
+    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
+         ++it) {
+      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
+          (*it)->CreateClientInterceptor(this)));
+    }
+  }
+
   grpc::ClientContext* ctx_ = nullptr;
   const char* method_ = nullptr;
   grpc::Channel* channel_ = nullptr;
@@ -85,6 +89,7 @@ class ClientRpcInfo {
   int hijacked_interceptor_ = false;
 
   friend class internal::InterceptorBatchMethodsImpl;
+  friend class grpc::ClientContext;
 };
 
 }  // namespace experimental

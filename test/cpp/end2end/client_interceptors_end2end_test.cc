@@ -229,9 +229,11 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
       EXPECT_EQ(req.message(), "Hello");
       auto stub = grpc::testing::EchoTestService::NewStub(
-          std::shared_ptr<Channel>(info_->channel()));
+          methods->GetInterceptedChannel());
       ClientContext ctx;
       EchoResponse resp;
+      ctx.AddMetadata(metadata_map_.begin()->first,
+                      metadata_map_.begin()->second);
       Status s = stub->Echo(&ctx, req, &resp);
       EXPECT_EQ(s.ok(), true);
       EXPECT_EQ(resp.message(), "Hello");
@@ -292,6 +294,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       *status = Status(StatusCode::OK, "");
     }
     if (hijack) {
+      gpr_log(GPR_ERROR, "hijacking");
       methods->Hijack();
     } else {
       methods->Proceed();
@@ -301,6 +304,15 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
  private:
   experimental::ClientRpcInfo* info_;
   std::multimap<grpc::string, grpc::string> metadata_map_;
+};
+
+class HijackingInterceptorMakesAnotherCallFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new HijackingInterceptorMakesAnotherCall(info);
+  }
 };
 
 class LoggingInterceptor : public experimental::Interceptor {
@@ -417,14 +429,14 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
       new std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  // Add 10 dummy interceptors before hijacking interceptor
+  // Add 20 dummy interceptors before hijacking interceptor
   for (auto i = 0; i < 20; i++) {
     creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   creators->push_back(std::unique_ptr<HijackingInterceptorFactory>(
       new HijackingInterceptorFactory()));
-  // Add 10 dummy interceptors after hijacking interceptor
+  // Add 20 dummy interceptors after hijacking interceptor
   for (auto i = 0; i < 20; i++) {
     creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -442,7 +454,7 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   Status s = stub->Echo(&ctx, req, &resp);
   EXPECT_EQ(s.ok(), true);
   EXPECT_EQ(resp.message(), "Hello");
-  // Make sure only 10 dummy interceptors were run
+  // Make sure only 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
@@ -469,6 +481,45 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
   Status s = stub->Echo(&ctx, req, &resp);
   EXPECT_EQ(s.ok(), true);
   EXPECT_EQ(resp.message(), "Hello");
+}
+
+TEST_F(ClientInterceptorsEnd2endTest,
+       ClientInterceptorHijackingMakesAnotherCallTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  // Add 20 dummy interceptors before hijacking interceptor
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  creators->push_back(
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>(
+          new HijackingInterceptorMakesAnotherCallFactory()));
+  // Add 20 dummy interceptors after hijacking interceptor
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  ClientContext ctx;
+  EchoRequest req;
+  req.mutable_param()->set_echo_metadata(true);
+  ctx.AddMetadata("testkey", "testvalue");
+  req.set_message("Hello");
+  EchoResponse resp;
+  Status s = stub->Echo(&ctx, req, &resp);
+  EXPECT_EQ(s.ok(), true);
+  EXPECT_EQ(resp.message(), "Hello");
+  // Make sure all interceptors were run once, since the hijacking interceptor
+  // makes an RPC on the intercepted channel
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 40);
 }
 
 }  // namespace

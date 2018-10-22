@@ -21,6 +21,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
@@ -107,6 +108,11 @@ class InterceptorBatchMethods {
   // Returns a modifiable multimap of the received trailing metadata
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvTrailingMetadata() = 0;
+
+  // Gets an intercepted channel. When a call is started on this interceptor,
+  // only interceptors after the current interceptor are created from the
+  // factory objects registered with the channel.
+  virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
 };
 
 class Interceptor {
