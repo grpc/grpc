@@ -26,6 +26,8 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
+#define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
+
 /* Creates a fake connector that emulates real channel security.  */
 grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
