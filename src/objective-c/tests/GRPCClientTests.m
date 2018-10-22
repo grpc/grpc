@@ -120,7 +120,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   }
 }
 
-- (void)receivedProtoMessage:(GPBMessage *_Nullable)message {
+- (void)receivedRawMessage:(GPBMessage *_Nullable)message {
   if (_messageCallback) {
     _messageCallback(message);
   }
@@ -803,7 +803,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
   NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
-                                             path:@""
+                                             path:@"/dummyPath"
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   [GRPCCall setMinConnectTimeout:timeout * 1000
                   initialBackoff:backoff * 1000
