@@ -759,8 +759,12 @@ class PythonLanguage(object):
             self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
     def python_manager_name(self):
-        if self.args.compiler in ['python3.5', 'python3.6', 'python3.7']:
-            return 'stretch'
+        if self.args.compiler == 'python3.5':
+            return 'stretch_35'
+        elif self.args.compiler == 'python3.6':
+            return 'stretch_36'
+        elif self.args.compiler == 'python3.7':
+            return 'stretch_37'
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
