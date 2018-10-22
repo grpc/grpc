@@ -764,7 +764,6 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
-doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
@@ -775,7 +774,6 @@ doc/cpp-style-guide.md \
 doc/cpp/pending_api_cleanups.md \
 doc/cpp/perf_notes.md \
 doc/environment_variables.md \
-doc/epoll-polling-engine.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
