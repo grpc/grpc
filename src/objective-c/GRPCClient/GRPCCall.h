@@ -304,7 +304,7 @@ NS_ASSUME_NONNULL_END
  *
  * The property is initialized to an empty NSMutableDictionary.
  */
-@property(atomic, readonly) NSMutableDictionary *requestHeaders;
+@property(null_unspecified, atomic, readonly) NSMutableDictionary * requestHeaders;
 
 /**
  * This dictionary is populated with the HTTP headers received from the server. This happens before
@@ -315,7 +315,7 @@ NS_ASSUME_NONNULL_END
  * The value of this property is nil until all response headers are received, and will change before
  * any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
  */
-@property(atomic, readonly) NSDictionary *responseHeaders;
+@property(null_unspecified, atomic, readonly) NSDictionary *responseHeaders;
 
 /**
  * Same as responseHeaders, but populated with the HTTP trailers received from the server before the
@@ -324,7 +324,7 @@ NS_ASSUME_NONNULL_END
  * The value of this property is nil until all response trailers are received, and will change
  * before -writesFinishedWithError: is sent to the writeable.
  */
-@property(atomic, readonly) NSDictionary *responseTrailers;
+@property(null_unspecified, atomic, readonly) NSDictionary *responseTrailers;
 
 /**
  * The request writer has to write NSData objects into the provided Writeable. The server will
@@ -337,9 +337,9 @@ NS_ASSUME_NONNULL_END
  * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestWriter;
+- (instancetype _Null_unspecified)initWithHost:(NSString * _Null_unspecified)host
+                                          path:(NSString * _Null_unspecified)path
+                                requestsWriter:(GRXWriter * _Null_unspecified)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -350,10 +350,10 @@ NS_ASSUME_NONNULL_END
 /**
  * The following methods are deprecated.
  */
-+ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
-@property(atomic, copy, readwrite) NSString *serverName;
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString * _Null_unspecified)host path:(NSString * _Null_unspecified)path;
+@property(null_unspecified, atomic, copy, readwrite) NSString *serverName;
 @property NSTimeInterval timeout;
-- (void)setResponseDispatchQueue:(dispatch_queue_t)queue;
+- (void)setResponseDispatchQueue:(dispatch_queue_t _Null_unspecified)queue;
 
 @end
 
@@ -364,11 +364,11 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
-- (id)objectForKeyedSubscript:(id)key;
-- (void)setObject:(id)obj forKeyedSubscript:(id)key;
+- (id _Null_unspecified)objectForKeyedSubscript:(id _Null_unspecified)key;
+- (void)setObject:(id _Null_unspecified)obj forKeyedSubscript:(id _Null_unspecified)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(id)key;
+- (void)removeObjectForKey:(id _Null_unspecified)key;
 @end
 
 #pragma clang diagnostic push
