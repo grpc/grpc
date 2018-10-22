@@ -34,6 +34,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
@@ -244,8 +245,7 @@ static void fake_channel_cancel_check_call_host(
 }
 
 static void fake_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
-    grpc_pollset_set* interested_parties,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,

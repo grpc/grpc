@@ -28,9 +28,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-/* --- URL schemes. --- */
-#define GRPC_SSL_URL_SCHEME "https"
-
 typedef struct {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
   char* pem_root_certs;

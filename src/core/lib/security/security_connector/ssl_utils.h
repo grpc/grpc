@@ -31,6 +31,10 @@
 
 /* --- Util. --- */
 
+/* --- URL schemes. --- */
+#define GRPC_SSL_URL_SCHEME "https"
+#define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
+
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
