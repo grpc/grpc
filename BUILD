@@ -393,7 +393,7 @@ grpc_cc_library(
     srcs = [
         "src/compiler/cpp_generator.cc",
         "src/compiler/csharp_generator.cc",
-        "src/compiler/node_generator.cc",
+        "//third_party/grpc-node:node_generator_cc",
         "src/compiler/objective_c_generator.cc",
         "src/compiler/php_generator.cc",
         "src/compiler/python_generator.cc",
@@ -406,8 +406,8 @@ grpc_cc_library(
         "src/compiler/csharp_generator.h",
         "src/compiler/csharp_generator_helpers.h",
         "src/compiler/generator_helpers.h",
-        "src/compiler/node_generator.h",
-        "src/compiler/node_generator_helpers.h",
+        "//third_party/grpc-node:node_generator_h",
+        "//third_party/grpc-node:node_generator_helpers_h",
         "src/compiler/objective_c_generator.h",
         "src/compiler/objective_c_generator_helpers.h",
         "src/compiler/php_generator.h",
@@ -445,7 +445,7 @@ grpc_proto_plugin(
 
 grpc_proto_plugin(
     name = "grpc_node_plugin",
-    srcs = ["src/compiler/node_plugin.cc"],
+    srcs = ["//third_party/grpc-node:node_plugin_cc"],
     deps = [":grpc_plugin_support"],
 )
 

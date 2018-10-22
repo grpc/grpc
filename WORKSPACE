@@ -43,3 +43,12 @@ git_repository(
 
 load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
 py_proto_repositories()
+
+
+http_archive(
+    name="grpc_grpc_node",
+    urls=[
+        "https://github.com/graknlabs/grpc-node/archive/bazel-migration.tar.gz",
+    ],
+    strip_prefix="grpc-node-bazel-migration",
+)
