@@ -243,13 +243,13 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
 
       interceptor_methods_.SetCall(&call_);
       interceptor_methods_.SetReverse();
-      /* Set interception point for RECV INITIAL METADATA */
+      // Set interception point for RECV INITIAL METADATA
       interceptor_methods_.AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
       interceptor_methods_.SetRecvInitialMetadata(&ctx_.client_metadata_);
 
       if (has_request_payload_) {
-        /* Set interception point for RECV MESSAGE */
+        // Set interception point for RECV MESSAGE
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
         request_ = handler->Deserialize(request_payload_, &request_status_);
@@ -264,8 +264,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
       if (interceptor_methods_.RunInterceptors(f)) {
         ContinueRunAfterInterception();
       } else {
-        /* There were interceptors to be run, so ContinueRunAfterInterception
-        will be run when interceptors are done. */
+        // There were interceptors to be run, so ContinueRunAfterInterception
+        // will be run when interceptors are done.
       }
     }
 
@@ -318,7 +318,6 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
   grpc_metadata_array request_metadata_;
   grpc_byte_buffer* request_payload_;
   grpc_completion_queue* cq_;
-  bool done_intercepting_ = false;
 };
 
 // Implementation of ThreadManager. Each instance of SyncRequestThreadManager
@@ -763,7 +762,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   context_->set_call(call_);
   context_->cq_ = call_cq_;
   if (call_wrapper_.call() == nullptr) {
-    /* Fill it since it is empty. */
+    // Fill it since it is empty.
     call_wrapper_ = internal::Call(
         call_, server_, call_cq_, server_->max_receive_message_size(), nullptr);
   }
@@ -773,7 +772,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
   if (*status && call_ && call_wrapper_.server_rpc_info()) {
     done_intercepting_ = true;
-    /* Set interception point for RECV INITIAL METADATA */
+    // Set interception point for RECV INITIAL METADATA
     interceptor_methods_.AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
     interceptor_methods_.SetRecvInitialMetadata(&context_->client_metadata_);
@@ -781,11 +780,11 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                            ContinueFinalizeResultAfterInterception,
                        this);
     if (interceptor_methods_.RunInterceptors(f)) {
-      /* There are no interceptors to run. Continue */
+      // There are no interceptors to run. Continue
     } else {
-      /* There were interceptors to be run, so
-      ContinueFinalizeResultAfterInterception will be run when interceptors are
-      done. */
+      // There were interceptors to be run, so
+      // ContinueFinalizeResultAfterInterception will be run when interceptors
+      // are done.
       return false;
     }
   }
@@ -802,7 +801,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 void ServerInterface::BaseAsyncRequest::
     ContinueFinalizeResultAfterInterception() {
   context_->BeginCompletionOp(&call_wrapper_);
-  /* Queue a tag which will be returned immediately */
+  // Queue a tag which will be returned immediately
   dummy_alarm_ = new Alarm();
   static_cast<Alarm*>(dummy_alarm_)
       ->Set(notification_cq_,
@@ -844,7 +843,7 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
                                                           bool* status) {
-  /* If we are done intercepting, there is nothing more for us to do */
+  // If we are done intercepting, there is nothing more for us to do
   if (done_intercepting_) {
     return BaseAsyncRequest::FinalizeResult(tag, status);
   }
@@ -870,7 +869,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
 bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (GenericAsyncRequest::FinalizeResult(tag, status)) {
-    /* We either had no interceptors run or we are done interceptinh */
+    // We either had no interceptors run or we are done intercepting
     if (*status) {
       new UnimplementedAsyncRequest(server_, cq_);
       new UnimplementedAsyncResponse(this);
@@ -878,7 +877,7 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
       delete this;
     }
   } else {
-    /* The tag was swallowed due to interception. We will see it again. */
+    // The tag was swallowed due to interception. We will see it again.
   }
   return false;
 }

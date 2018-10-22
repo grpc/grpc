@@ -47,7 +47,7 @@ class ClientRpcInfo {
  public:
   ClientRpcInfo() {}
   ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                const grpc::Channel* channel,
+                grpc::Channel* channel,
                 const std::vector<std::unique_ptr<
                     experimental::ClientInterceptorFactoryInterface>>& creators)
       : ctx_(ctx), method_(method), channel_(channel) {
@@ -64,7 +64,7 @@ class ClientRpcInfo {
 
   // Getter methods
   const char* method() { return method_; }
-  const Channel* channel() { return channel_; }
+  Channel* channel() { return channel_; }
   grpc::ClientContext* client_context() { return ctx_; }
 
  public:
@@ -79,7 +79,7 @@ class ClientRpcInfo {
  private:
   grpc::ClientContext* ctx_ = nullptr;
   const char* method_ = nullptr;
-  const grpc::Channel* channel_ = nullptr;
+  grpc::Channel* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;
   int hijacked_interceptor_ = false;
