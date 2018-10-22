@@ -69,7 +69,7 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = 'Interface', 'Implementation'
 
-  # Certificates, to be able to establish TLS connections:
+  # Certificates, to be able to establish TLS connections
   s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 
   s.header_mappings_dir = 'include/grpcpp'
