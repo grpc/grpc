@@ -103,7 +103,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   /** Serial dispatch queue for tasks inside the call. */
   dispatch_queue_t _dispatchQueue;
   /** Flags whether call has started. */
-  bool _started;
+  BOOL _started;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
