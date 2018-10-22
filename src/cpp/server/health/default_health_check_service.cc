@@ -442,7 +442,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
     SendFinish(std::shared_ptr<CallHandler> self, const Status& status) {
   if (finish_called_) return;
   std::unique_lock<std::mutex> cq_lock(service_->cq_shutdown_mu_);
-  if (!service_->shutdown_) return;
+  if (service_->shutdown_) return;
   SendFinishLocked(std::move(self), status);
 }
 
