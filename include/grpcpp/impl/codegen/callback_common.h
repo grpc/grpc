@@ -94,7 +94,10 @@ class CallbackWithStatusTag
   void Run(bool ok) {
     void* ignored = ops_;
 
-    GPR_CODEGEN_ASSERT(ops_->FinalizeResult(&ignored, &ok));
+    if (!ops_->FinalizeResult(&ignored, &ok)) {
+      // The tag was swallowed
+      return;
+    }
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_ or status_, so ok to move them out

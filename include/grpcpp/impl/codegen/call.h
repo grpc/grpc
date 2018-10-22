@@ -1005,8 +1005,8 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     } else {
       if (rpc_info->hijacked_) {
         curr_iteration_ = rpc_info->hijacked_interceptor_;
-        gpr_log(GPR_ERROR, "running from the hijacked %d",
-                rpc_info->hijacked_interceptor_);
+        // gpr_log(GPR_ERROR, "running from the hijacked %d",
+        // rpc_info->hijacked_interceptor_);
       } else {
         curr_iteration_ = rpc_info->interceptors_.size() - 1;
       }
@@ -1165,6 +1165,7 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   void FillOps(Call* call) override {
+    // gpr_log(GPR_ERROR, "filling ops %p", this);
     done_intercepting_ = false;
     g_core_codegen_interface->grpc_call_ref(call->call());
     call_ =
@@ -1179,10 +1180,12 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
+    // gpr_log(GPR_ERROR, "finalizing result %p", this);
     if (done_intercepting_) {
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
+      // gpr_log(GPR_ERROR, "done intercepting");
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
@@ -1194,13 +1197,15 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::FinishOp(status);
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
+    // gpr_log(GPR_ERROR, "done finish ops");
 
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
+      // gpr_log(GPR_ERROR, "no interceptors");
       return true;
     }
-
+    // gpr_log(GPR_ERROR, "running interceptors");
     // Interceptors are going to be run, so we can't return the tag just yet.
     // After the interceptors are run, ContinueFinalizeResultAfterInterception
     return false;
@@ -1238,6 +1243,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::AddOp(ops, &nops);
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
+    // gpr_log(GPR_ERROR, "going to start call batch %p", this);
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
                            call_.call(), ops, nops, cq_tag(), nullptr));
