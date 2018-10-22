@@ -144,7 +144,7 @@ def create_scenario_jobspec(scenario_json,
 def create_quit_jobspec(workers, remote_host=None):
     """Runs quit using QPS driver."""
     # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-    cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(
+    cmd = 'QPS_WORKERS="%s" cmake/build/qps_json_driver --quit' % ','.join(
         w.host_and_port for w in workers)
     if remote_host:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)

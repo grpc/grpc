@@ -17,7 +17,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-bins/opt/qps_json_driver "$@"
+cmake/build/qps_json_driver "$@"
 
 if [ "$BQ_RESULT_TABLE" != "" ]
 then
