@@ -248,10 +248,13 @@ GRPCAPI void* grpc_call_arena_alloc(grpc_call* call, size_t size);
     appropriate to call grpc_completion_queue_next or
     grpc_completion_queue_pluck consequent to the failed grpc_call_start_batch
     call.
+    If a call to grpc_call_start_batch with an empty batch returns
+    GRPC_CALL_OK, the tag is put in the completion queue immediately.
     THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
-    receive operations. */
+    receive operations. Access to grpc_call_start_batch with an empty batch is
+    thread-compatible. */
 GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call,
                                               const grpc_op* ops, size_t nops,
                                               void* tag, void* reserved);

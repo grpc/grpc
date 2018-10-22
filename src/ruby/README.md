@@ -50,7 +50,19 @@ $ # from this directory
 $ bundle install  # creates the ruby bundle, including building the grpc extension
 $ rake  # runs the unit tests, see rake -T for other options
 ```
-
+- If you are having trouble running the unit tests, try the following
+  1. If you see an error message similar to the one below
+     ```sh
+     Failure/Error: fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
+     ```
+     Try the following:
+     ```sh
+     export CONFIG=opt # set CONFIG environment variable
+     printenv | grep CONFIG # make sure that CONFIG is correctly set
+     ```
+     rerun rake
+  2. If rake is still failing, remove the current installation of protoc and reinstall using the package found in grpc/third_party/protobuf
+ 
 DOCUMENTATION
 -------------
 - rubydoc for the gRPC gem is available online at [rubydoc][].

@@ -16,6 +16,7 @@
 set -ex
 
 readonly NANOPB_ALTS_TMP_OUTPUT="$(mktemp -d)"
+readonly NANOPB_HEALTH_TMP_OUTPUT="$(mktemp -d)"
 readonly NANOPB_TMP_OUTPUT="$(mktemp -d)"
 readonly PROTOBUF_INSTALL_PREFIX="$(mktemp -d)"
 
@@ -66,6 +67,23 @@ if ! diff -r "$NANOPB_TMP_OUTPUT" src/core/ext/filters/client_channel/lb_policy/
   echo "Outputs differ: $NANOPB_TMP_OUTPUT vs $LOAD_BALANCER_GRPC_OUTPUT_PATH"
   exit 2
 fi
+
+#
+# checks for health.proto
+#
+readonly HEALTH_GRPC_OUTPUT_PATH='src/cpp/server/health'
+# nanopb-compile the proto to a temp location
+./tools/codegen/core/gen_nano_proto.sh \
+  src/proto/grpc/health/v1/health.proto \
+  "$NANOPB_HEALTH_TMP_OUTPUT" \
+  "$HEALTH_GRPC_OUTPUT_PATH"
+# compare outputs to checked compiled code
+for NANOPB_OUTPUT_FILE in $NANOPB_HEALTH_TMP_OUTPUT/*.pb.*; do
+  if ! diff "$NANOPB_OUTPUT_FILE" "src/cpp/server/health/$(basename $NANOPB_OUTPUT_FILE)"; then
+    echo "Outputs differ: $NANOPB_HEALTH_TMP_OUTPUT vs $HEALTH_GRPC_OUTPUT_PATH"
+    exit 2
+  fi
+done
 
 #
 # Checks for handshaker.proto and transport_security_common.proto
