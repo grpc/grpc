@@ -151,12 +151,12 @@ namespace Grpc.Core
         {
             private class ClientBaseConfigurationInterceptor : Interceptor
             {
-                readonly Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor;
+                readonly Func<IMethod, string, CallOptions, ClientBaseConfigurationInfo> interceptor;
 
                 /// <summary>
                 /// Creates a new instance of ClientBaseConfigurationInterceptor given the specified header and host interceptor function.
                 /// </summary>
-                public ClientBaseConfigurationInterceptor(Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor)
+                public ClientBaseConfigurationInterceptor(Func<IMethod, string, CallOptions, ClientBaseConfigurationInfo> interceptor)
                 {
                     this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
                 }
@@ -166,7 +166,7 @@ namespace Grpc.Core
                     where TResponse : class
                 {
                     var newHostAndCallOptions = interceptor(context.Method, context.Host, context.Options);
-                    return new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHostAndCallOptions.Item1, newHostAndCallOptions.Item2);
+                    return new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHostAndCallOptions.Host, newHostAndCallOptions.CallOptions);
                 }
 
                 public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
@@ -195,6 +195,18 @@ namespace Grpc.Core
                 }
             }
 
+            internal struct ClientBaseConfigurationInfo
+            {
+                internal readonly string Host;
+                internal readonly CallOptions CallOptions;
+
+                internal ClientBaseConfigurationInfo(string host, CallOptions callOptions)
+                {
+                    Host = host;
+                    CallOptions = callOptions;
+                }
+            }
+
             readonly CallInvoker undecoratedCallInvoker;
             readonly string host;
 
@@ -206,7 +218,7 @@ namespace Grpc.Core
 
             internal CallInvoker CreateDecoratedCallInvoker()
             {
-                return undecoratedCallInvoker.Intercept(new ClientBaseConfigurationInterceptor((method, host, options) => Tuple.Create(this.host, options)));
+                return undecoratedCallInvoker.Intercept(new ClientBaseConfigurationInterceptor((method, host, options) => new ClientBaseConfigurationInfo(this.host, options)));
             }
 
             internal ClientBaseConfiguration WithHost(string host)

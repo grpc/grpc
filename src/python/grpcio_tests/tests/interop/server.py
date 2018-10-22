@@ -25,7 +25,9 @@ from tests.interop import methods
 from tests.interop import resources
 from tests.unit import test_common
 
+logging.basicConfig()
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+_LOGGER = logging.getLogger(__name__)
 
 
 def serve():
@@ -52,14 +54,14 @@ def serve():
         server.add_insecure_port('[::]:{}'.format(args.port))
 
     server.start()
-    logging.info('Server serving.')
+    _LOGGER.info('Server serving.')
     try:
         while True:
             time.sleep(_ONE_DAY_IN_SECONDS)
     except BaseException as e:
-        logging.info('Caught exception "%s"; stopping server...', e)
+        _LOGGER.info('Caught exception "%s"; stopping server...', e)
         server.stop(None)
-        logging.info('Server stopped; exiting.')
+        _LOGGER.info('Server stopped; exiting.')
 
 
 if __name__ == '__main__':

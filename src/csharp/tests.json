@@ -23,8 +23,10 @@
     "Grpc.Core.Tests.ClientServerTest",
     "Grpc.Core.Tests.CompressionTest",
     "Grpc.Core.Tests.ContextPropagationTest",
+    "Grpc.Core.Tests.ContextualMarshallerTest",
     "Grpc.Core.Tests.GrpcEnvironmentTest",
     "Grpc.Core.Tests.HalfcloseTest",
+    "Grpc.Core.Tests.MarshallerTest",
     "Grpc.Core.Tests.MarshallingErrorsTest",
     "Grpc.Core.Tests.MetadataTest",
     "Grpc.Core.Tests.PerformanceTest",
@@ -41,7 +43,9 @@
     "Grpc.Core.Tests.UserAgentStringTest"
   ],
   "Grpc.Examples.Tests": [
-    "Math.Tests.MathClientServerTest"
+    "Math.Tests.MathClientMockableTest",
+    "Math.Tests.MathClientServerTest",
+    "Math.Tests.MathServiceImplTestabilityTest"
   ],
   "Grpc.HealthCheck.Tests": [
     "Grpc.HealthCheck.Tests.HealthClientServerTest",
@@ -60,5 +64,15 @@
   "Grpc.Reflection.Tests": [
     "Grpc.Reflection.Tests.ReflectionClientServerTest",
     "Grpc.Reflection.Tests.SymbolRegistryTest"
+  ],
+  "Grpc.Tools.Tests": [
+    "Grpc.Tools.Tests.CppGeneratorTest",
+    "Grpc.Tools.Tests.CSharpGeneratorTest",
+    "Grpc.Tools.Tests.DepFileUtilTest",
+    "Grpc.Tools.Tests.GeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileBasicTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLineGeneratorTest",
+    "Grpc.Tools.Tests.ProtoCompileCommandLinePrinterTest",
+    "Grpc.Tools.Tests.ProtoToolsPlatformTaskTest"
   ]
 }

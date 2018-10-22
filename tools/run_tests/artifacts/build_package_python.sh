@@ -19,12 +19,19 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p artifacts/
 
-# All the python packages have been built in the artifact phase already
-# and we only collect them here to deliver them to the distribtest phase.
-# Jenkins flow (deprecated)
-cp -r "${EXTERNAL_GIT_ROOT}"/platform={windows,linux,macos}/artifacts/python_*/* artifacts/ || true
-# Kokoro flow
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
+
+strip_binary_wheel() {
+  TEMP_WHEEL_DIR=$(mktemp -d)
+  unzip "$1" -d "$TEMP_WHEEL_DIR"
+  find "$TEMP_WHEEL_DIR" -name "_protoc_compiler*.so" -exec strip --strip-debug {} ";"
+  find "$TEMP_WHEEL_DIR" -name "cygrpc*.so" -exec strip --strip-debug {} ";"
+  (cd "$TEMP_WHEEL_DIR" && zip -r - .) > "$1"
+}
+
+for wheel in artifacts/*.whl; do
+    strip_binary_wheel "$wheel"
+done
 
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
 # source distribution package, and only one of them will end up

@@ -54,6 +54,8 @@ extern void cancel_in_a_vacuum(grpc_end2end_test_config config);
 extern void cancel_in_a_vacuum_pre_init(void);
 extern void cancel_with_status(grpc_end2end_test_config config);
 extern void cancel_with_status_pre_init(void);
+extern void channelz(grpc_end2end_test_config config);
+extern void channelz_pre_init(void);
 extern void compressed_payload(grpc_end2end_test_config config);
 extern void compressed_payload_pre_init(void);
 extern void connectivity(grpc_end2end_test_config config);
@@ -86,8 +88,6 @@ extern void keepalive_timeout(grpc_end2end_test_config config);
 extern void keepalive_timeout_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
-extern void load_reporting_hook(grpc_end2end_test_config config);
-extern void load_reporting_hook_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
 extern void max_connection_age(grpc_end2end_test_config config);
@@ -100,6 +100,8 @@ extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
 extern void network_status_change(grpc_end2end_test_config config);
 extern void network_status_change_pre_init(void);
+extern void no_error_on_hotpath(grpc_end2end_test_config config);
+extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
 extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
@@ -199,6 +201,7 @@ void grpc_end2end_tests_pre_init(void) {
   cancel_before_invoke_pre_init();
   cancel_in_a_vacuum_pre_init();
   cancel_with_status_pre_init();
+  channelz_pre_init();
   compressed_payload_pre_init();
   connectivity_pre_init();
   default_host_pre_init();
@@ -215,13 +218,13 @@ void grpc_end2end_tests_pre_init(void) {
   invoke_large_request_pre_init();
   keepalive_timeout_pre_init();
   large_metadata_pre_init();
-  load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
   max_connection_age_pre_init();
   max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
+  no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
@@ -284,6 +287,7 @@ void grpc_end2end_tests(int argc, char **argv,
     cancel_before_invoke(config);
     cancel_in_a_vacuum(config);
     cancel_with_status(config);
+    channelz(config);
     compressed_payload(config);
     connectivity(config);
     default_host(config);
@@ -300,13 +304,13 @@ void grpc_end2end_tests(int argc, char **argv,
     invoke_large_request(config);
     keepalive_timeout(config);
     large_metadata(config);
-    load_reporting_hook(config);
     max_concurrent_streams(config);
     max_connection_age(config);
     max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
+    no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
     payload(config);
@@ -400,6 +404,10 @@ void grpc_end2end_tests(int argc, char **argv,
       cancel_with_status(config);
       continue;
     }
+    if (0 == strcmp("channelz", argv[i])) {
+      channelz(config);
+      continue;
+    }
     if (0 == strcmp("compressed_payload", argv[i])) {
       compressed_payload(config);
       continue;
@@ -464,10 +472,6 @@ void grpc_end2end_tests(int argc, char **argv,
       large_metadata(config);
       continue;
     }
-    if (0 == strcmp("load_reporting_hook", argv[i])) {
-      load_reporting_hook(config);
-      continue;
-    }
     if (0 == strcmp("max_concurrent_streams", argv[i])) {
       max_concurrent_streams(config);
       continue;
@@ -490,6 +494,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("network_status_change", argv[i])) {
       network_status_change(config);
+      continue;
+    }
+    if (0 == strcmp("no_error_on_hotpath", argv[i])) {
+      no_error_on_hotpath(config);
       continue;
     }
     if (0 == strcmp("no_logging", argv[i])) {

@@ -21,7 +21,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include <stdbool.h>
-#include <string.h>
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -39,6 +38,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/security/transport/target_authority_table.h"
@@ -57,6 +57,16 @@ static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
+/** Environment variable used as a flag to enable/disable loading system root
+    certificates from the OS trust store. */
+#ifndef GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR
+#define GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_NOT_USE_SYSTEM_SSL_ROOTS"
+#endif
+
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
+
 /* -- Overridden default roots. -- */
 
 static grpc_ssl_roots_override_callback ssl_roots_override_cb = nullptr;
@@ -69,8 +79,11 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* Defines the cipher suites that we accept by default. All these cipher suites
    are compliant with HTTP2. */
-#define GRPC_SSL_CIPHER_SUITES \
-  "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384"
+#define GRPC_SSL_CIPHER_SUITES     \
+  "ECDHE-ECDSA-AES128-GCM-SHA256:" \
+  "ECDHE-ECDSA-AES256-GCM-SHA384:" \
+  "ECDHE-RSA-AES128-GCM-SHA256:"   \
+  "ECDHE-RSA-AES256-GCM-SHA384"
 
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
@@ -107,17 +120,19 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
 
 void grpc_channel_security_connector_add_handshakers(
     grpc_channel_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
-    connector->add_handshakers(connector, handshake_mgr);
+    connector->add_handshakers(connector, interested_parties, handshake_mgr);
   }
 }
 
 void grpc_server_security_connector_add_handshakers(
     grpc_server_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   if (connector != nullptr) {
-    connector->add_handshakers(connector, handshake_mgr);
+    connector->add_handshakers(connector, interested_parties, handshake_mgr);
   }
 }
 
@@ -506,7 +521,7 @@ static void fake_channel_cancel_check_call_host(
 }
 
 static void fake_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,
@@ -515,6 +530,7 @@ static void fake_channel_add_handshakers(
 }
 
 static void fake_server_add_handshakers(grpc_server_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(
       handshake_mgr,
@@ -617,6 +633,7 @@ typedef struct {
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   char* target_name;
   char* overridden_target_name;
+  const verify_peer_options* verify_options;
 } grpc_ssl_channel_security_connector;
 
 typedef struct {
@@ -655,6 +672,7 @@ static void ssl_server_destroy(grpc_security_connector* sc) {
 }
 
 static void ssl_channel_add_handshakers(grpc_channel_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_ssl_channel_security_connector*>(sc);
@@ -765,6 +783,7 @@ static bool try_fetch_ssl_server_credentials(
 }
 
 static void ssl_server_add_handshakers(grpc_server_security_connector* sc,
+                                       grpc_pollset_set* interested_parties,
                                        grpc_handshake_manager* handshake_mgr) {
   grpc_ssl_server_security_connector* c =
       reinterpret_cast<grpc_ssl_server_security_connector*>(sc);
@@ -846,7 +865,8 @@ grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer) {
 static grpc_error* ssl_check_peer(grpc_security_connector* sc,
                                   const char* peer_name, const tsi_peer* peer,
                                   grpc_auth_context** auth_context) {
-  /* Check the ALPN. */
+#if TSI_OPENSSL_ALPN_SUPPORT
+  /* Check the ALPN if ALPN is supported. */
   const tsi_peer_property* p =
       tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
   if (p == nullptr) {
@@ -857,7 +877,7 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Cannot check peer: invalid ALPN value.");
   }
-
+#endif /* TSI_OPENSSL_ALPN_SUPPORT */
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
@@ -875,11 +895,34 @@ static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
                                    grpc_closure* on_peer_checked) {
   grpc_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_ssl_channel_security_connector*>(sc);
-  grpc_error* error = ssl_check_peer(sc,
-                                     c->overridden_target_name != nullptr
-                                         ? c->overridden_target_name
-                                         : c->target_name,
-                                     &peer, auth_context);
+  const char* target_name = c->overridden_target_name != nullptr
+                                ? c->overridden_target_name
+                                : c->target_name;
+  grpc_error* error = ssl_check_peer(sc, target_name, &peer, auth_context);
+  if (error == GRPC_ERROR_NONE &&
+      c->verify_options->verify_peer_callback != nullptr) {
+    const tsi_peer_property* p =
+        tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+    if (p == nullptr) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Cannot check peer: missing pem cert property.");
+    } else {
+      char* peer_pem = static_cast<char*>(gpr_malloc(p->value.length + 1));
+      memcpy(peer_pem, p->value.data, p->value.length);
+      peer_pem[p->value.length] = '\0';
+      int callback_status = c->verify_options->verify_peer_callback(
+          target_name, peer_pem,
+          c->verify_options->verify_peer_callback_userdata);
+      gpr_free(peer_pem);
+      if (callback_status) {
+        char* msg;
+        gpr_asprintf(&msg, "Verify peer callback returned a failure (%d)",
+                     callback_status);
+        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        gpr_free(msg);
+      }
+    }
+  }
   GRPC_CLOSURE_SCHED(on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
@@ -1044,6 +1087,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   if (overridden_target_name != nullptr) {
     c->overridden_target_name = gpr_strdup(overridden_target_name);
   }
+  c->verify_options = &config->verify_options;
 
   has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
                       config->pem_key_cert_pair->private_key != nullptr &&
@@ -1153,6 +1197,10 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
+  char* not_use_system_roots_env_value =
+      gpr_getenv(GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
+  const bool not_use_system_roots = gpr_is_true(not_use_system_roots_env_value);
+  gpr_free(not_use_system_roots_env_value);
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
@@ -1174,7 +1222,11 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     }
     gpr_free(pem_root_certs);
   }
-  // Fall back to installed certs if needed.
+  // Try loading roots from OS trust store if flag is enabled.
+  if (GRPC_SLICE_IS_EMPTY(result) && !not_use_system_roots) {
+    result = LoadSystemRootCerts();
+  }
+  // Fallback to roots manually shipped with gRPC.
   if (GRPC_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
     GRPC_LOG_IF_ERROR("load_file",

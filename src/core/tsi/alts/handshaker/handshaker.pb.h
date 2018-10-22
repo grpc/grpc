@@ -3,9 +3,8 @@
 
 #ifndef PB_GRPC_GCP_HANDSHAKER_PB_H_INCLUDED
 #define PB_GRPC_GCP_HANDSHAKER_PB_H_INCLUDED
-#include "third_party/nanopb/pb.h"
+#include "pb.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common.pb.h"
-
 /* @@protoc_insertion_point(includes) */
 #if PB_PROTO_HEADER_VERSION != 30
 #error Regenerate this file with the current version of nanopb generator.

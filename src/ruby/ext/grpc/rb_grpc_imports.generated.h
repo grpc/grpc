@@ -30,11 +30,11 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -89,6 +89,9 @@ extern grpc_init_type grpc_init_import;
 typedef void(*grpc_shutdown_type)(void);
 extern grpc_shutdown_type grpc_shutdown_import;
 #define grpc_shutdown grpc_shutdown_import
+typedef int(*grpc_is_initialized_type)(void);
+extern grpc_is_initialized_type grpc_is_initialized_import;
+#define grpc_is_initialized grpc_is_initialized_import
 typedef const char*(*grpc_version_string_type)(void);
 extern grpc_version_string_type grpc_version_string_import;
 #define grpc_version_string grpc_version_string_import
@@ -104,6 +107,9 @@ extern grpc_completion_queue_create_for_next_type grpc_completion_queue_create_f
 typedef grpc_completion_queue*(*grpc_completion_queue_create_for_pluck_type)(void* reserved);
 extern grpc_completion_queue_create_for_pluck_type grpc_completion_queue_create_for_pluck_import;
 #define grpc_completion_queue_create_for_pluck grpc_completion_queue_create_for_pluck_import
+typedef grpc_completion_queue*(*grpc_completion_queue_create_for_callback_type)(grpc_experimental_completion_queue_functor* shutdown_callback, void* reserved);
+extern grpc_completion_queue_create_for_callback_type grpc_completion_queue_create_for_callback_import;
+#define grpc_completion_queue_create_for_callback grpc_completion_queue_create_for_callback_import
 typedef grpc_completion_queue*(*grpc_completion_queue_create_type)(const grpc_completion_queue_factory* factory, const grpc_completion_queue_attributes* attributes, void* reserved);
 extern grpc_completion_queue_create_type grpc_completion_queue_create_import;
 #define grpc_completion_queue_create grpc_completion_queue_create_import
@@ -170,6 +176,9 @@ extern grpc_channel_get_target_type grpc_channel_get_target_import;
 typedef void(*grpc_channel_get_info_type)(grpc_channel* channel, const grpc_channel_info* channel_info);
 extern grpc_channel_get_info_type grpc_channel_get_info_import;
 #define grpc_channel_get_info grpc_channel_get_info_import
+typedef void(*grpc_channel_reset_connect_backoff_type)(grpc_channel* channel);
+extern grpc_channel_reset_connect_backoff_type grpc_channel_reset_connect_backoff_import;
+#define grpc_channel_reset_connect_backoff grpc_channel_reset_connect_backoff_import
 typedef grpc_channel*(*grpc_insecure_channel_create_type)(const char* target, const grpc_channel_args* args, void* reserved);
 extern grpc_insecure_channel_create_type grpc_insecure_channel_create_import;
 #define grpc_insecure_channel_create grpc_insecure_channel_create_import
@@ -179,12 +188,6 @@ extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_impo
 typedef void(*grpc_channel_destroy_type)(grpc_channel* channel);
 extern grpc_channel_destroy_type grpc_channel_destroy_import;
 #define grpc_channel_destroy grpc_channel_destroy_import
-typedef char*(*grpc_channel_get_trace_type)(grpc_channel* channel);
-extern grpc_channel_get_trace_type grpc_channel_get_trace_import;
-#define grpc_channel_get_trace grpc_channel_get_trace_import
-typedef intptr_t(*grpc_channel_get_uuid_type)(grpc_channel* channel);
-extern grpc_channel_get_uuid_type grpc_channel_get_uuid_import;
-#define grpc_channel_get_uuid grpc_channel_get_uuid_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import
@@ -254,18 +257,36 @@ extern grpc_resource_quota_unref_type grpc_resource_quota_unref_import;
 typedef void(*grpc_resource_quota_resize_type)(grpc_resource_quota* resource_quota, size_t new_size);
 extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 #define grpc_resource_quota_resize grpc_resource_quota_resize_import
+typedef void(*grpc_resource_quota_set_max_threads_type)(grpc_resource_quota* resource_quota, int new_max_threads);
+extern grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
+#define grpc_resource_quota_set_max_threads grpc_resource_quota_set_max_threads_import
 typedef const grpc_arg_pointer_vtable*(*grpc_resource_quota_arg_vtable_type)(void);
 extern grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 #define grpc_resource_quota_arg_vtable grpc_resource_quota_arg_vtable_import
+typedef char*(*grpc_channelz_get_top_channels_type)(intptr_t start_channel_id);
+extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
+#define grpc_channelz_get_top_channels grpc_channelz_get_top_channels_import
+typedef char*(*grpc_channelz_get_servers_type)(intptr_t start_server_id);
+extern grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
+#define grpc_channelz_get_servers grpc_channelz_get_servers_import
+typedef char*(*grpc_channelz_get_server_sockets_type)(intptr_t server_id, intptr_t start_socket_id);
+extern grpc_channelz_get_server_sockets_type grpc_channelz_get_server_sockets_import;
+#define grpc_channelz_get_server_sockets grpc_channelz_get_server_sockets_import
+typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
+extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
+#define grpc_channelz_get_channel grpc_channelz_get_channel_import
+typedef char*(*grpc_channelz_get_subchannel_type)(intptr_t subchannel_id);
+extern grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
+#define grpc_channelz_get_subchannel grpc_channelz_get_subchannel_import
+typedef char*(*grpc_channelz_get_socket_type)(intptr_t socket_id);
+extern grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
+#define grpc_channelz_get_socket grpc_channelz_get_socket_import
 typedef grpc_channel*(*grpc_insecure_channel_create_from_fd_type)(const char* target, int fd, const grpc_channel_args* args);
 extern grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 #define grpc_insecure_channel_create_from_fd grpc_insecure_channel_create_from_fd_import
 typedef void(*grpc_server_add_insecure_channel_from_fd_type)(grpc_server* server, void* reserved, int fd);
 extern grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 #define grpc_server_add_insecure_channel_from_fd grpc_server_add_insecure_channel_from_fd_import
-typedef void(*grpc_use_signal_type)(int signum);
-extern grpc_use_signal_type grpc_use_signal_import;
-#define grpc_use_signal grpc_use_signal_import
 typedef const grpc_auth_property*(*grpc_auth_property_iterator_next_type)(grpc_auth_property_iterator* it);
 extern grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
 #define grpc_auth_property_iterator_next grpc_auth_property_iterator_next_import
@@ -317,7 +338,7 @@ extern grpc_google_default_credentials_create_type grpc_google_default_credentia
 typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
 extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 #define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
-typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, void* reserved);
+typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, const verify_peer_options* verify_options, void* reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);
@@ -389,10 +410,10 @@ extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
 typedef void(*grpc_server_credentials_set_auth_metadata_processor_type)(grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 extern grpc_server_credentials_set_auth_metadata_processor_type grpc_server_credentials_set_auth_metadata_processor_import;
 #define grpc_server_credentials_set_auth_metadata_processor grpc_server_credentials_set_auth_metadata_processor_import
-typedef grpc_alts_credentials_options*(*grpc_alts_credentials_client_options_create_type)();
+typedef grpc_alts_credentials_options*(*grpc_alts_credentials_client_options_create_type)(void);
 extern grpc_alts_credentials_client_options_create_type grpc_alts_credentials_client_options_create_import;
 #define grpc_alts_credentials_client_options_create grpc_alts_credentials_client_options_create_import
-typedef grpc_alts_credentials_options*(*grpc_alts_credentials_server_options_create_type)();
+typedef grpc_alts_credentials_options*(*grpc_alts_credentials_server_options_create_type)(void);
 extern grpc_alts_credentials_server_options_create_type grpc_alts_credentials_server_options_create_import;
 #define grpc_alts_credentials_server_options_create grpc_alts_credentials_server_options_create_import
 typedef void(*grpc_alts_credentials_client_options_add_target_service_account_type)(grpc_alts_credentials_options* options, const char* service_account);
@@ -407,6 +428,12 @@ extern grpc_alts_credentials_create_type grpc_alts_credentials_create_import;
 typedef grpc_server_credentials*(*grpc_alts_server_credentials_create_type)(const grpc_alts_credentials_options* options);
 extern grpc_alts_server_credentials_create_type grpc_alts_server_credentials_create_import;
 #define grpc_alts_server_credentials_create grpc_alts_server_credentials_create_import
+typedef grpc_channel_credentials*(*grpc_local_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_credentials_create_type grpc_local_credentials_create_import;
+#define grpc_local_credentials_create grpc_local_credentials_create_import
+typedef grpc_server_credentials*(*grpc_local_server_credentials_create_type)(grpc_local_connect_type type);
+extern grpc_local_server_credentials_create_type grpc_local_server_credentials_create_import;
+#define grpc_local_server_credentials_create grpc_local_server_credentials_create_import
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 #define grpc_raw_byte_buffer_create grpc_raw_byte_buffer_create_import
@@ -437,6 +464,27 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -611,27 +659,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

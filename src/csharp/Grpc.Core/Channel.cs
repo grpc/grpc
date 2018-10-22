@@ -44,8 +44,6 @@ namespace Grpc.Core
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
 
-        readonly Task connectivityWatcherTask;
-
         bool shutdownRequested;
 
         /// <summary>
@@ -74,9 +72,9 @@ namespace Grpc.Core
             this.environment = GrpcEnvironment.AddRef();
 
             this.completionQueue = this.environment.PickCompletionQueue();
-            using (var nativeCredentials = credentials.ToNativeCredentials())
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
+                var nativeCredentials = credentials.GetNativeCredentials();
                 if (nativeCredentials != null)
                 {
                     this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
@@ -86,9 +84,6 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
-            // TODO(jtattermusch): Workaround for https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822.
-            // Remove once retries are supported in C core
-            this.connectivityWatcherTask = RunConnectivityWatcherAsync();
             GrpcEnvironment.RegisterChannel(this);
         }
 
@@ -141,7 +136,7 @@ namespace Grpc.Core
         /// </summary>
         public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            var result = await WaitForStateChangedInternalAsync(lastObservedState, deadline).ConfigureAwait(false);
+            var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
             if (!result)
             {
                 throw new TaskCanceledException("Reached deadline.");
@@ -152,7 +147,7 @@ namespace Grpc.Core
         /// Returned tasks completes once channel state has become different from
         /// given lastObservedState (<c>true</c> is returned) or if the wait has timed out (<c>false</c> is returned).
         /// </summary>
-        internal Task<bool> WaitForStateChangedInternalAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        public Task<bool> TryWaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
             GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
                 "Shutdown is a terminal state. No further state changes can occur.");
@@ -259,7 +254,7 @@ namespace Grpc.Core
                 handle.Dispose();
             }
 
-            await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
@@ -302,6 +297,12 @@ namespace Grpc.Core
             activeCallCounter.Decrement();
         }
 
+        // for testing only
+        internal long GetCallReferenceCount()
+        {
+            return activeCallCounter.Count;
+        }
+
         private ChannelState GetConnectivityState(bool tryToConnect)
         {
             try
@@ -314,34 +315,6 @@ namespace Grpc.Core
             catch (ObjectDisposedException)
             {
                 return ChannelState.Shutdown;
-            }
-        }
-
-        /// <summary>
-        /// Constantly Watches channel connectivity status to work around https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822
-        /// </summary>
-        private async Task RunConnectivityWatcherAsync()
-        {
-            try
-            {
-                var lastState = State;
-                while (lastState != ChannelState.Shutdown)
-                {
-                    lock (myLock)
-                    {
-                        if (shutdownRequested)
-                        {
-                            break;
-                        }
-                    }
-
-                    // ignore the result
-                    await WaitForStateChangedInternalAsync(lastState, DateTime.UtcNow.AddSeconds(1)).ConfigureAwait(false);
-                    lastState = State;
-                }
-            }
-            catch (ObjectDisposedException) {
-                // during shutdown, channel is going to be disposed.
             }
         }
 

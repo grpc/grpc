@@ -3,7 +3,7 @@
 
 #ifndef PB_GRPC_HEALTH_V1_HEALTH_PB_H_INCLUDED
 #define PB_GRPC_HEALTH_V1_HEALTH_PB_H_INCLUDED
-#include "third_party/nanopb/pb.h"
+#include "pb.h"
 /* @@protoc_insertion_point(includes) */
 #if PB_PROTO_HEADER_VERSION != 30
 #error Regenerate this file with the current version of nanopb generator.
@@ -17,11 +17,12 @@ extern "C" {
 typedef enum _grpc_health_v1_HealthCheckResponse_ServingStatus {
     grpc_health_v1_HealthCheckResponse_ServingStatus_UNKNOWN = 0,
     grpc_health_v1_HealthCheckResponse_ServingStatus_SERVING = 1,
-    grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING = 2
+    grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING = 2,
+    grpc_health_v1_HealthCheckResponse_ServingStatus_SERVICE_UNKNOWN = 3
 } grpc_health_v1_HealthCheckResponse_ServingStatus;
 #define _grpc_health_v1_HealthCheckResponse_ServingStatus_MIN grpc_health_v1_HealthCheckResponse_ServingStatus_UNKNOWN
-#define _grpc_health_v1_HealthCheckResponse_ServingStatus_MAX grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING
-#define _grpc_health_v1_HealthCheckResponse_ServingStatus_ARRAYSIZE ((grpc_health_v1_HealthCheckResponse_ServingStatus)(grpc_health_v1_HealthCheckResponse_ServingStatus_NOT_SERVING+1))
+#define _grpc_health_v1_HealthCheckResponse_ServingStatus_MAX grpc_health_v1_HealthCheckResponse_ServingStatus_SERVICE_UNKNOWN
+#define _grpc_health_v1_HealthCheckResponse_ServingStatus_ARRAYSIZE ((grpc_health_v1_HealthCheckResponse_ServingStatus)(grpc_health_v1_HealthCheckResponse_ServingStatus_SERVICE_UNKNOWN+1))
 
 /* Struct definitions */
 typedef struct _grpc_health_v1_HealthCheckRequest {

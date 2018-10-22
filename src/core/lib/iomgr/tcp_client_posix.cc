@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 
@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -74,6 +75,9 @@ static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
   if (err != GRPC_ERROR_NONE) goto error;
   if (!grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
+    if (err != GRPC_ERROR_NONE) goto error;
+    err = grpc_set_socket_tcp_user_timeout(fd, channel_args,
+                                           true /* is_client */);
     if (err != GRPC_ERROR_NONE) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
@@ -210,8 +214,7 @@ static void on_writable(void* acp, grpc_error* error) {
 finish:
   if (fd != nullptr) {
     grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_orphan");
+    grpc_fd_orphan(fd, nullptr, nullptr, "tcp_client_orphan");
     fd = nullptr;
   }
   done = (--ac->refs == 0);
@@ -233,7 +236,7 @@ finish:
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_str_slice /* takes ownership */);
   } else {
-    grpc_slice_unref(addr_str_slice);
+    grpc_slice_unref_internal(addr_str_slice);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -279,7 +282,7 @@ grpc_error* grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
   }
   addr_str = grpc_sockaddr_to_uri(mapped_addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
-  *fdobj = grpc_fd_create(fd, name);
+  *fdobj = grpc_fd_create(fd, name, true);
   gpr_free(name);
   gpr_free(addr_str);
   return GRPC_ERROR_NONE;
@@ -304,8 +307,7 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(fdobj, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_connect_error");
+    grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
     return;
   }

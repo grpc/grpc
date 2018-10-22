@@ -20,6 +20,8 @@ notes=FIXME,XXX
 
 [MESSAGES CONTROL]
 
+extension-pkg-whitelist=grpc._cython.cygrpc
+
 disable=
 	# These suppressions are specific to tests:
 	#
@@ -103,6 +105,13 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): Maybe we could have
 	# this one if we extracted just a few more helper functions...
 	too-many-nested-blocks,
-	# NOTE(nathaniel): I have disputed the premise of this inspection from
-	# the beginning and will continue to do so until it goes away for good.
+	# TODO(https://github.com/grpc/grpc/issues/261): Disable unnecessary
+	# super-init requirement for abstract class implementations for now.
+	super-init-not-called,
+	# NOTE(nathaniel): A single statement that always returns program
+	# control is better than two statements the first of which sometimes
+	# returns program control and the second of which always returns
+	# program control. Probably generally, but definitely in the cases of
+	# if:/else: and for:/else:.
 	useless-else-on-loop,
+	no-else-return,

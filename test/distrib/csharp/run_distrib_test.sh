@@ -21,8 +21,12 @@ unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip
 
 ./update_version.sh auto
 
-nuget restore
+# Retry "nuget restore" to work around https://github.com/grpc/grpc/issues/16312
+nuget restore || nuget restore || nuget restore
 
 xbuild DistribTest.sln
 
 mono DistribTest/bin/Debug/DistribTest.exe
+
+# test that codegen work
+test_codegen/test_codegen.sh

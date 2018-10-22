@@ -97,6 +97,12 @@ argp.add_argument(
     'reusing the repo can cause git checkout error if you switch '
     'between releases.')
 
+argp.add_argument(
+    '--upload_images',
+    action='store_true',
+    help='If set, images will be uploaded to container registry after building.'
+)
+
 args = argp.parse_args()
 
 
@@ -166,8 +172,10 @@ def build_all_images_for_lang(lang):
     """Build all docker images for a language across releases and runtimes."""
     if not args.git_checkout:
         if args.release != 'master':
-            print('WARNING: --release is set but will be ignored\n')
-        releases = ['master']
+            print(
+                'Cannot use --release without also enabling --git_checkout.\n')
+            sys.exit(1)
+        releases = [args.release]
     else:
         if args.release == 'all':
             releases = client_matrix.get_release_tags(lang)
@@ -268,6 +276,13 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
         sys.exit(1)
     subprocess.check_output(
         ['git', 'apply', patch_file], cwd=stack_base, stderr=subprocess.STDOUT)
+
+    # TODO(jtattermusch): this really would need simplification and refactoring
+    # - "git add" and "git commit" can easily be done in a single command
+    # - it looks like the only reason for the existence of the "files_to_patch"
+    #   entry is to perform "git add" - which is clumsy and fragile.
+    # - we only allow a single patch with name "git_repo.patch". A better design
+    #   would be to allow multiple patches that can have more descriptive names.
     for repo_relative_path in files_to_patch:
         subprocess.check_output(
             ['git', 'add', repo_relative_path],
@@ -334,8 +349,12 @@ languages = args.language if args.language != ['all'] else _LANGUAGES
 for lang in languages:
     docker_images = build_all_images_for_lang(lang)
     for image in docker_images:
-        jobset.message('START', 'Uploading %s' % image, do_newline=True)
-        # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
-        assert image.startswith(args.gcr_path) and image.find(':') != -1
-
-        subprocess.call(['gcloud', 'docker', '--', 'push', image])
+        if args.upload_images:
+            jobset.message('START', 'Uploading %s' % image, do_newline=True)
+            # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
+            assert image.startswith(args.gcr_path) and image.find(':') != -1
+            subprocess.call(['gcloud', 'docker', '--', 'push', image])
+        else:
+            # Uploading (and overwriting images) by default can easily break things.
+            print('Not uploading image %s, run with --upload_images to upload.'
+                  % image)

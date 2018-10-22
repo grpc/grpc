@@ -52,7 +52,7 @@ static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
   }
   if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
     char* tmp;
-    gpr_asprintf(&tmp, " deadline=%" PRIdPTR, md.deadline);
+    gpr_asprintf(&tmp, " deadline=%" PRId64, md.deadline);
     gpr_strvec_add(b, tmp);
   }
 }
@@ -117,13 +117,6 @@ char* grpc_transport_stream_op_batch_string(
         grpc_error_string(op->payload->cancel_stream.cancel_error);
     gpr_asprintf(&tmp, "CANCEL:%s", msg);
 
-    gpr_strvec_add(&b, tmp);
-  }
-
-  if (op->collect_stats) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    gpr_asprintf(&tmp, "COLLECT_STATS:%p",
-                 op->payload->collect_stats.collect_stats);
     gpr_strvec_add(&b, tmp);
   }
 

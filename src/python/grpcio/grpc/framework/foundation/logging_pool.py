@@ -17,6 +17,9 @@ import logging
 
 from concurrent import futures
 
+logging.basicConfig()
+_LOGGER = logging.getLogger(__name__)
+
 
 def _wrap(behavior):
     """Wraps an arbitrary callable behavior in exception-logging."""
@@ -25,7 +28,7 @@ def _wrap(behavior):
         try:
             return behavior(*args, **kwargs)
         except Exception:
-            logging.exception(
+            _LOGGER.exception(
                 'Unexpected exception from %s executed in logging pool!',
                 behavior)
             raise

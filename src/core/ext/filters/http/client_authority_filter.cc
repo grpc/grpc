@@ -59,8 +59,8 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_ref(chand->default_authority)));
+        grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, chand->default_authority,
+                           nullptr));
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
@@ -93,7 +93,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   if (default_authority_arg == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-        "channels must explicity specify a value for this argument.");
+        "channels must explicitly specify a value for this argument.");
   }
   const char* default_authority_str =
       grpc_channel_arg_get_string(default_authority_arg);
@@ -102,7 +102,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
   }
   chand->default_authority =
-      grpc_slice_from_copied_string(default_authority_str);
+      grpc_slice_intern(grpc_slice_from_static_string(default_authority_str));
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
@@ -110,7 +110,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
 /* Destructor for channel data */
 void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  grpc_slice_unref(chand->default_authority);
+  grpc_slice_unref_internal(chand->default_authority);
 }
 }  // namespace
 

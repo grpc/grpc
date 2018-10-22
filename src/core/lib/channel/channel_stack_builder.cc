@@ -25,9 +25,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-grpc_core::TraceFlag grpc_trace_channel_stack_builder(false,
-                                                      "channel_stack_builder");
-
 typedef struct filter_node {
   struct filter_node* next;
   struct filter_node* prev;

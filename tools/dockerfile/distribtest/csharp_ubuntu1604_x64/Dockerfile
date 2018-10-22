@@ -14,19 +14,18 @@
 
 FROM ubuntu:16.04
 
+RUN apt-get update && apt-get install -y apt-transport-https && apt-get clean
+
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-xenial main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+
 RUN apt-get update && apt-get install -y \
     mono-devel \
-    ca-certificates-mono \
     nuget \
     && apt-get clean
 
-# make sure we have nuget 2.12+ (in case there's an older cached docker image)
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy main" | tee /etc/apt/sources.list.d/mono-xamarin.list
-RUN apt-get update && apt-get install -y nuget && apt-get clean
-
-# Prevent "Error: SendFailure (Error writing headers)" when fetching nuget packages
-# See https://github.com/tianon/docker-brew-ubuntu-core/issues/86
-RUN apt-get update && apt-get install -y tzdata && apt-get clean
-
 RUN apt-get update && apt-get install -y unzip && apt-get clean
+
+# Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
+RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem

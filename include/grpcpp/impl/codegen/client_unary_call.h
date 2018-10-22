@@ -50,8 +50,8 @@ class BlockingUnaryCallImpl {
                         ClientContext* context, const InputMessage& request,
                         OutputMessage* result) {
     CompletionQueue cq(grpc_completion_queue_attributes{
-        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-        GRPC_CQ_DEFAULT_POLLING});  // Pluckable completion queue
+        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+        nullptr});  // Pluckable completion queue
     Call call(channel->CreateCall(method, context, &cq));
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,

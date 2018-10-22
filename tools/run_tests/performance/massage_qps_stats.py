@@ -62,6 +62,11 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_pollset_kick_own_thread"] = massage_qps_stats_helpers.counter(
                     core_stats, "pollset_kick_own_thread")
+            stats["core_syscall_epoll_ctl"] = massage_qps_stats_helpers.counter(
+                core_stats, "syscall_epoll_ctl")
+            stats[
+                "core_pollset_fd_cache_hits"] = massage_qps_stats_helpers.counter(
+                    core_stats, "pollset_fd_cache_hits")
             stats[
                 "core_histogram_slow_lookups"] = massage_qps_stats_helpers.counter(
                     core_stats, "histogram_slow_lookups")

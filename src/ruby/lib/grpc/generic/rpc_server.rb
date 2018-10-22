@@ -136,7 +136,7 @@ module GRPC
         begin
           blk, args = worker_queue.pop
           blk.call(*args)
-        rescue StandardError => e
+        rescue StandardError, GRPC::Core::CallError => e
           GRPC.logger.warn('Error in worker thread')
           GRPC.logger.warn(e)
         end
@@ -364,7 +364,8 @@ module GRPC
       # sent yet
       c = ActiveCall.new(an_rpc.call, noop, noop, an_rpc.deadline,
                          metadata_received: true, started: false)
-      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
+      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED,
+                    'No free threads in thread pool')
       nil
     end
 

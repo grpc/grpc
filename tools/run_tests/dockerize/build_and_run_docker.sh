@@ -56,6 +56,7 @@ CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 # shellcheck disable=SC2086
 docker run \
   "$@" \
+  --cap-add SYS_PTRACE \
   -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
@@ -72,6 +73,10 @@ docker run \
 # Copy output artifacts
 if [ "$OUTPUT_DIR" != "" ]
 then
+  # Create the artifact directory in advance to avoid a race in "docker cp" if tasks
+  # that were running in parallel finish at the same time.
+  # see https://github.com/grpc/grpc/issues/16155
+  mkdir -p "$git_root/$OUTPUT_DIR"
   docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
 fi
 

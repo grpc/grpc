@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  gpr_asprintf(&args[0], "%s/memory_profile_server%s", root,
+  gpr_asprintf(&args[0], "%s/memory_usage_server%s", root,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
   gpr_join_host_port(&args[2], "::", port);
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
   gpr_free(args[2]);
 
   /* start the client */
-  gpr_asprintf(&args[0], "%s/memory_profile_client%s", root,
+  gpr_asprintf(&args[0], "%s/memory_usage_client%s", root,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--target");
   gpr_join_host_port(&args[2], "127.0.0.1", port);

@@ -28,5 +28,9 @@ include "_cygrpc/security.pxd.pxi"
 include "_cygrpc/server.pxd.pxi"
 include "_cygrpc/tag.pxd.pxi"
 include "_cygrpc/time.pxd.pxi"
+include "_cygrpc/_hooks.pxd.pxi"
 
-include "_cygrpc/grpc_gevent.pxd"
+include "_cygrpc/grpc_gevent.pxd.pxi"
+
+IF UNAME_SYSNAME != "Windows":
+    include "_cygrpc/fork_posix.pxd.pxi"

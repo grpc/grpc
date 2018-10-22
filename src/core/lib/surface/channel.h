@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -44,11 +45,14 @@ grpc_channel* grpc_channel_create_with_builder(
     value of \a propagation_mask (see propagation_bits.h for possible values) */
 grpc_call* grpc_channel_create_pollset_set_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_pollset_set* pollset_set, grpc_slice method, const grpc_slice* host,
-    grpc_millis deadline, void* reserved);
+    grpc_pollset_set* pollset_set, const grpc_slice& method,
+    const grpc_slice* host, grpc_millis deadline, void* reserved);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
+
+grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
+    grpc_channel* channel);
 
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.

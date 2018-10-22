@@ -45,6 +45,8 @@ static NSMutableDictionary *callFlags;
 static NSString *const kAuthorizationHeader = @"authorization";
 static NSString *const kBearerPrefix = @"Bearer ";
 
+const char *kCFStreamVarName = "grpc_cfstream";
+
 @interface GRPCCall ()<GRXWriteable>
 // Make them read-write.
 @property(atomic, strong) NSDictionary *responseHeaders;
@@ -207,7 +209,11 @@ static NSString *const kBearerPrefix = @"Bearer ";
     [_responseWriteable enqueueSuccessfulCompletion];
   }
 
-  [GRPCConnectivityMonitor unregisterObserver:self];
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor unregisterObserver:self];
+  }
 
   // If the call isn't retained anywhere else, it can be deallocated now.
   _retainSelf = nil;
@@ -219,17 +225,16 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)cancel {
-  [self
-      maybeFinishWithError:[NSError
-                               errorWithDomain:kGRPCErrorDomain
-                                          code:GRPCErrorCodeCancelled
-                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
-
   if (!self.isWaitingForToken) {
     [self cancelCall];
   } else {
     self.isWaitingForToken = NO;
   }
+  [self
+      maybeFinishWithError:[NSError
+                               errorWithDomain:kGRPCErrorDomain
+                                          code:GRPCErrorCodeCancelled
+                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
 }
 
 - (void)maybeFinishWithError:(NSError *)errorOrNil {
@@ -268,8 +273,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
 // method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
 - (void)startNextRead {
-  if (self.state == GRXWriterStatePaused) {
-    return;
+  @synchronized(self) {
+    if (self.state == GRXWriterStatePaused) {
+      return;
+    }
   }
 
   dispatch_async(_callQueue, ^{
@@ -289,6 +296,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
+        [strongSelf cancelCall];
         [strongSelf
             maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                      code:GRPCErrorCodeResourceExhausted
@@ -297,7 +305,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
                                                        @"Client does not have enough memory to "
                                                        @"hold the server response."
                                                  }]];
-        [strongSelf cancelCall];
         return;
       }
       [strongWriteable enqueueValue:data
@@ -460,7 +467,11 @@ static NSString *const kBearerPrefix = @"Bearer ";
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
 
-  [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+  }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
@@ -525,13 +536,17 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)connectivityChanged:(NSNotification *)note {
-  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+  // Cancel underlying call upon this notification
+  __strong GRPCCall *strongSelf = self;
+  if (strongSelf) {
+    [self cancelCall];
+    [self
+        maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                  code:GRPCErrorCodeUnavailable
                                              userInfo:@{
                                                NSLocalizedDescriptionKey : @"Connectivity lost."
                                              }]];
-  // Cancel underlying call upon this notification
-  [self cancelCall];
+  }
 }
 
 @end

@@ -14,21 +14,14 @@
 
 FROM centos:7
 
-RUN rpm --import "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
-RUN yum-config-manager --add-repo http://download.mono-project.com/repo/centos/
+RUN rpm --import "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+RUN curl https://download.mono-project.com/repo/centos7-stable.repo | tee /etc/yum.repos.d/mono-centos7-stable.repo
 
-RUN yum install -y mono
+RUN yum install -y mono-devel
+
+RUN yum install -y nuget
 
 RUN yum install -y unzip
 
-# --nogpgcheck because nuget-2.12 package is not signed.
-RUN yum install -y nuget --nogpgcheck
-
-# Help mono correctly locate libMonoPosixHelper.so
-# as a workaround for issue https://bugzilla.xamarin.com/show_bug.cgi?id=42820
-# The error message you'll get without this workaround:
-# ```
-# WARNING: /usr/lib/libMonoPosixHelper.so
-# WARNING: Unable to read package from path 'Grpc.1.1.0-dev.nupkg'.
-# ```
-RUN cp /usr/lib64/libMonoPosixHelper.so /usr/lib/
+# Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
+RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem

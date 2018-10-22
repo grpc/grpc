@@ -129,7 +129,7 @@ fi
 ############################
 
 # Instantiate the virtualenv from the Python version passed in.
-$PYTHON -m pip install virtualenv
+$PYTHON -m pip install --user virtualenv
 $PYTHON -m virtualenv "$VENV"
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
@@ -150,7 +150,8 @@ pip_install_dir() {
 
 case "$VENV" in
   *gevent*)
-  $VENV_PYTHON -m pip install gevent
+  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
+  $VENV_PYTHON -m pip install gevent==1.3.b1
   ;;
 esac
 

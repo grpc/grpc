@@ -34,15 +34,22 @@ sudo systemsetup -setusingnetworktime on
 date
 
 # Add GCP credentials for BQ access
-pip install google-api-python-client --user python
+# pin google-api-python-client to avoid https://github.com/grpc/grpc/issues/15600
+pip install google-api-python-client==1.6.7 --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+  set +x
   brew update
   brew install jq
   ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
+
+  # TODO(matt-kwong): rename this to GITHUB_OAUTH_TOKEN after Jenkins deprecation
+  export JENKINS_OAUTH_TOKEN=$(cat ${KOKORO_GFILE_DIR}/oauth_token.txt)
+  export ghprbPullId=$KOKORO_GITHUB_PULL_REQUEST_NUMBER
+  set -x
 fi
 
 set +ex  # rvm script is very verbose and exits with errorcode
@@ -66,6 +73,10 @@ pip install virtualenv --user python
 pip install -U Mako six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
+# Install Python 3.7
+curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+
 # set xcode version for Obj-C tests
 sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
@@ -78,3 +89,10 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=true
 date
 
 git submodule update --init
+
+# Store intermediate build files of ObjC tests into /tmpfs
+mkdir /tmpfs/Build-ios-binary-size
+ln -s /tmpfs/Build-ios-binary-size src/objective-c/examples/Sample/Build
+mkdir /tmpfs/DerivedData
+rm -rf ~/Library/Developer/Xcode/DerivedData
+ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData

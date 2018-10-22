@@ -57,6 +57,8 @@ DEFINE_string(proto_path, ".", "Path to look for the proto file.");
 DEFINE_string(protofiles, "", "Name of the proto file.");
 DEFINE_bool(binary_input, false, "Input in binary format");
 DEFINE_bool(binary_output, false, "Output in binary format");
+DEFINE_bool(json_input, false, "Input in json format");
+DEFINE_bool(json_output, false, "Output in json format");
 DEFINE_string(infile, "", "Input file (default is stdin)");
 DEFINE_bool(batch, false,
             "Input contains multiple requests. Please do not use this to send "
@@ -87,6 +89,8 @@ class GrpcTool {
   bool ParseMessage(int argc, const char** argv, const CliCredentials& cred,
                     GrpcToolOutputCallback callback);
   bool ToText(int argc, const char** argv, const CliCredentials& cred,
+              GrpcToolOutputCallback callback);
+  bool ToJson(int argc, const char** argv, const CliCredentials& cred,
               GrpcToolOutputCallback callback);
   bool ToBinary(int argc, const char** argv, const CliCredentials& cred,
                 GrpcToolOutputCallback callback);
@@ -189,8 +193,9 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
     fprintf(stderr, "got response.\n");
     if (!FLAGS_binary_output) {
       gpr_mu_lock(parser_mu);
-      serialized_response_proto = parser->GetTextFormatFromMethod(
-          method_name, serialized_response_proto, false /* is_request */);
+      serialized_response_proto = parser->GetFormattedStringFromMethod(
+          method_name, serialized_response_proto, false /* is_request */,
+          FLAGS_json_output);
       if (parser->HasError() && print_mode) {
         fprintf(stderr, "Failed to parse response.\n");
       }
@@ -204,6 +209,15 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
       fprintf(stderr, "Failed to output response.\n");
     }
   }
+}
+
+std::shared_ptr<grpc::Channel> CreateCliChannel(
+    const grpc::string& server_address, const CliCredentials& cred) {
+  grpc::ChannelArguments args;
+  if (!cred.GetSslTargetNameOverride().empty()) {
+    args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
+  }
+  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 
 struct Command {
@@ -224,6 +238,7 @@ const Command ops[] = {
     {"parse", BindWith5Args(&GrpcTool::ParseMessage), 2, 3},
     {"totext", BindWith5Args(&GrpcTool::ToText), 2, 3},
     {"tobinary", BindWith5Args(&GrpcTool::ToBinary), 2, 3},
+    {"tojson", BindWith5Args(&GrpcTool::ToJson), 2, 3},
 };
 
 void Usage(const grpc::string& msg) {
@@ -235,6 +250,7 @@ void Usage(const grpc::string& msg) {
       "  grpc_cli type ...       ; Print type\n"
       "  grpc_cli parse ...      ; Parse message\n"
       "  grpc_cli totext ...     ; Convert binary message to text\n"
+      "  grpc_cli tojson ...     ; Convert binary message to json\n"
       "  grpc_cli tobinary ...   ; Convert text message to binary\n"
       "  grpc_cli help ...       ; Print this message, or per-command usage\n"
       "\n",
@@ -324,7 +340,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   grpc::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -422,7 +438,7 @@ bool GrpcTool::PrintType(int argc, const char** argv,
 
   grpc::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -456,7 +472,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
       "    --binary_input           ; Input in binary format\n"
-      "    --binary_output          ; Output in binary format\n" +
+      "    --binary_output          ; Output in binary format\n"
+      "    --json_input             ; Input in json format\n"
+      "    --json_output            ; Output in json format\n" +
       cred.GetCredentialUsage());
 
   std::stringstream output_ss;
@@ -469,19 +487,28 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
 
-  parser.reset(new grpc::testing::ProtoFileParser(
-      FLAGS_remotedb ? channel : nullptr, FLAGS_proto_path, FLAGS_protofiles));
+  if (!FLAGS_binary_input || !FLAGS_binary_output) {
+    parser.reset(
+        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
+                                           FLAGS_proto_path, FLAGS_protofiles));
+    if (parser->HasError()) {
+      fprintf(
+          stderr,
+          "Failed to find remote reflection service and local proto files.\n");
+      return false;
+    }
+  }
 
   if (FLAGS_binary_input) {
     formatted_method_name = method_name;
   } else {
     formatted_method_name = parser->GetFormattedMethodName(method_name);
-  }
-
-  if (parser->HasError()) {
-    return false;
+    if (parser->HasError()) {
+      fprintf(stderr, "Failed to find method %s in proto files.\n",
+              method_name.c_str());
+    }
   }
 
   if (argc == 3) {
@@ -530,7 +557,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         } else {
           gpr_mu_lock(&parser_mu);
           serialized_request_proto = parser->GetSerializedProtoFromMethod(
-              method_name, request_text, true /* is_request */);
+              method_name, request_text, true /* is_request */,
+              FLAGS_json_input);
           request_text.clear();
           if (parser->HasError()) {
             if (print_mode) {
@@ -614,7 +642,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
             request_text.clear();
           } else {
             serialized_request_proto = parser->GetSerializedProtoFromMethod(
-                method_name, request_text, true /* is_request */);
+                method_name, request_text, true /* is_request */,
+                FLAGS_json_input);
             request_text.clear();
             if (parser->HasError()) {
               if (print_mode) {
@@ -650,9 +679,10 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
                 break;
               }
             } else {
-              grpc::string response_text = parser->GetTextFormatFromMethod(
+              grpc::string response_text = parser->GetFormattedStringFromMethod(
                   method_name, serialized_response_proto,
-                  false /* is_request */);
+                  false /* is_request */, FLAGS_json_output);
+
               if (parser->HasError() && print_mode) {
                 fprintf(stderr, "Failed to parse response.\n");
               } else {
@@ -709,8 +739,9 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       serialized_request_proto = request_text;
     } else {
       serialized_request_proto = parser->GetSerializedProtoFromMethod(
-          method_name, request_text, true /* is_request */);
+          method_name, request_text, true /* is_request */, FLAGS_json_input);
       if (parser->HasError()) {
+        fprintf(stderr, "Failed to parse request.\n");
         return false;
       }
     }
@@ -732,12 +763,15 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
              receive_initial_metadata ? &server_initial_metadata : nullptr);
          receive_initial_metadata = false) {
       if (!FLAGS_binary_output) {
-        serialized_response_proto = parser->GetTextFormatFromMethod(
-            method_name, serialized_response_proto, false /* is_request */);
+        serialized_response_proto = parser->GetFormattedStringFromMethod(
+            method_name, serialized_response_proto, false /* is_request */,
+            FLAGS_json_output);
         if (parser->HasError()) {
+          fprintf(stderr, "Failed to parse response.\n");
           return false;
         }
       }
+
       if (receive_initial_metadata) {
         PrintMetadata(server_initial_metadata,
                       "Received initial metadata from server:");
@@ -777,7 +811,9 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
       "    --binary_input           ; Input in binary format\n"
-      "    --binary_output          ; Output in binary format\n" +
+      "    --binary_output          ; Output in binary format\n"
+      "    --json_input             ; Input in json format\n"
+      "    --json_output            ; Output in json format\n" +
       cred.GetCredentialUsage());
 
   std::stringstream output_ss;
@@ -809,11 +845,14 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
 
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     std::shared_ptr<grpc::Channel> channel =
-        grpc::CreateChannel(server_address, cred.GetCredentials());
+        CreateCliChannel(server_address, cred);
     parser.reset(
         new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
                                            FLAGS_proto_path, FLAGS_protofiles));
     if (parser->HasError()) {
+      fprintf(
+          stderr,
+          "Failed to find remote reflection service and local proto files.\n");
       return false;
     }
   }
@@ -821,9 +860,10 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (FLAGS_binary_input) {
     serialized_request_proto = message_text;
   } else {
-    serialized_request_proto =
-        parser->GetSerializedProtoFromMessageType(type_name, message_text);
+    serialized_request_proto = parser->GetSerializedProtoFromMessageType(
+        type_name, message_text, FLAGS_json_input);
     if (parser->HasError()) {
+      fprintf(stderr, "Failed to serialize the message.\n");
       return false;
     }
   }
@@ -831,11 +871,14 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
   if (FLAGS_binary_output) {
     output_ss << serialized_request_proto;
   } else {
-    grpc::string output_text = parser->GetTextFormatFromMessageType(
-        type_name, serialized_request_proto);
+    grpc::string output_text;
+    output_text = parser->GetFormattedStringFromMessageType(
+        type_name, serialized_request_proto, FLAGS_json_output);
     if (parser->HasError()) {
+      fprintf(stderr, "Failed to deserialize the message.\n");
       return false;
     }
+
     output_ss << output_text << std::endl;
   }
 
@@ -857,6 +900,25 @@ bool GrpcTool::ToText(int argc, const char** argv, const CliCredentials& cred,
   FLAGS_remotedb = false;
   FLAGS_binary_input = true;
   FLAGS_binary_output = false;
+  return ParseMessage(argc, argv, cred, callback);
+}
+
+bool GrpcTool::ToJson(int argc, const char** argv, const CliCredentials& cred,
+                      GrpcToolOutputCallback callback) {
+  CommandUsage(
+      "Convert binary message to json\n"
+      "  grpc_cli tojson <protofiles> <type>\n"
+      "    <protofiles>             ; Comma separated list of proto files\n"
+      "    <type>                   ; Protocol buffer type name\n"
+      "    --proto_path             ; The search path of proto files\n"
+      "    --infile                 ; Input filename (defaults to stdin)\n"
+      "    --outfile                ; Output filename (defaults to stdout)\n");
+
+  FLAGS_protofiles = argv[0];
+  FLAGS_remotedb = false;
+  FLAGS_binary_input = true;
+  FLAGS_binary_output = false;
+  FLAGS_json_output = true;
   return ParseMessage(argc, argv, cred, callback);
 }
 

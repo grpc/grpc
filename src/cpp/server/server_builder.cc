@@ -24,6 +24,8 @@
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
 
+#include <utility>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -39,8 +41,8 @@ static void do_plugin_list_init(void) {
 }
 
 ServerBuilder::ServerBuilder()
-    : max_receive_message_size_(-1),
-      max_send_message_size_(-1),
+    : max_receive_message_size_(INT_MIN),
+      max_send_message_size_(INT_MIN),
       sync_server_settings_(SyncServerSettings()),
       resource_quota_(nullptr),
       generic_service_(nullptr) {
@@ -164,30 +166,29 @@ ServerBuilder& ServerBuilder::AddListeningPort(
     while (addr_uri[pos] == '/') ++pos;  // Skip slashes.
     addr = addr_uri.substr(pos);
   }
-  Port port = {addr, creds, selected_port};
+  Port port = {addr, std::move(creds), selected_port};
   ports_.push_back(port);
   return *this;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->UpdateServerBuilder(this);
-  }
-
   ChannelArguments args;
-  for (const auto& value : options_) {
-    value->UpdateArguments(&args);
-    value->UpdatePlugins(&plugins_);
+  for (const auto& option : options_) {
+    option->UpdateArguments(&args);
+    option->UpdatePlugins(&plugins_);
   }
 
-  for (const auto& value : plugins_) {
-    value->UpdateChannelArguments(&args);
+  for (const auto& plugin : plugins_) {
+    plugin->UpdateServerBuilder(this);
+    plugin->UpdateChannelArguments(&args);
   }
 
-  if (max_receive_message_size_ >= 0) {
+  if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
 
+  // The default message size is -1 (max), so no need to explicitly set it for
+  // -1.
   if (max_send_message_size_ >= 0) {
     args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
@@ -260,7 +261,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<Server> server(new Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec));
+      sync_server_settings_.cq_timeout_msec, resource_quota_));
 
   if (has_sync_methods) {
     // This is a Sync server

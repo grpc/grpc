@@ -30,6 +30,7 @@
 
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
@@ -63,29 +64,29 @@ static void alts_server_destroy(grpc_security_connector* sc) {
 }
 
 static void alts_channel_add_handshakers(
-    grpc_channel_security_connector* sc,
+    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   auto c = reinterpret_cast<grpc_alts_channel_security_connector*>(sc);
   grpc_alts_credentials* creds =
       reinterpret_cast<grpc_alts_credentials*>(c->base.channel_creds);
-  GPR_ASSERT(alts_tsi_handshaker_create(creds->options, c->target_name,
-                                        creds->handshaker_service_url, true,
-                                        &handshaker) == TSI_OK);
+  GPR_ASSERT(alts_tsi_handshaker_create(
+                 creds->options, c->target_name, creds->handshaker_service_url,
+                 true, interested_parties, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }
 
 static void alts_server_add_handshakers(
-    grpc_server_security_connector* sc,
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   auto c = reinterpret_cast<grpc_alts_server_security_connector*>(sc);
   grpc_alts_server_credentials* creds =
       reinterpret_cast<grpc_alts_server_credentials*>(c->base.server_creds);
-  GPR_ASSERT(alts_tsi_handshaker_create(creds->options, nullptr,
-                                        creds->handshaker_service_url, false,
-                                        &handshaker) == TSI_OK);
+  GPR_ASSERT(alts_tsi_handshaker_create(
+                 creds->options, nullptr, creds->handshaker_service_url, false,
+                 interested_parties, &handshaker) == TSI_OK);
   grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
                                                     handshaker, &sc->base));
 }
@@ -133,7 +134,7 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return GRPC_SECURITY_ERROR;

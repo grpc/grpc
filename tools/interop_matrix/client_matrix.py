@@ -85,10 +85,22 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
         {
-            'v1.11.0': None
+            'v1.11.1': None
+        },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
+        {
+            'v1.15.0': None
         },
     ],
     'go': [
@@ -166,6 +178,18 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.11.0': None
         },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.1': None
+        },
+        {
+            'v1.14.0': None
+        },
+        {
+            'v1.15.0': None
+        },
     ],
     'python': [
         {
@@ -196,10 +220,22 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
         {
-            'v1.11.0': None
+            'v1.11.1': None
+        },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
+        {
+            'v1.15.0': None
         },
     ],
     'node': [
@@ -233,6 +269,12 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.10.0': None
+        },
+        {
+            'v1.11.3': None
+        },
+        {
+            'v1.12.4': None
         },
     ],
     'ruby': [
@@ -269,10 +311,22 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
         {
-            'v1.11.0': None
+            'v1.11.1': None
+        },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
+        {
+            'v1.15.0': None
         },
     ],
     'php': [
@@ -304,14 +358,33 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
         {
-            'v1.11.0': None
+            'v1.11.1': None
+        },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
+        {
+            'v1.15.0': None
         },
     ],
     'csharp': [
-        #{'v1.0.1': None},
+        {
+            'v1.0.1': {
+                'patch': [
+                    'tools/dockerfile/interoptest/grpc_interop_csharp/Dockerfile',
+                    'tools/dockerfile/interoptest/grpc_interop_csharpcoreclr/Dockerfile',
+                ]
+            }
+        },
         {
             'v1.1.4': None
         },
@@ -337,10 +410,22 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
         {
-            'v1.11.0': None
+            'v1.11.1': None
+        },
+        {
+            'v1.12.0': None
+        },
+        {
+            'v1.13.0': None
+        },
+        {
+            'v1.14.1': None
+        },
+        {
+            'v1.15.0': None
         },
     ],
 }
@@ -359,6 +444,7 @@ TESTCASES_VERSION_MATRIX = {
     'node_v1.4.2': 'node__v1.1.4',
     'node_v1.6.6': 'node__v1.1.4',
     'ruby_v1.0.1': 'ruby__v1.0.1',
+    'csharp_v1.0.1': 'csharp__v1.1.4',
     'csharp_v1.1.4': 'csharp__v1.1.4',
     'csharp_v1.2.5': 'csharp__v1.1.4',
     'python_v1.0.x': 'python__v1.0.x',
@@ -370,5 +456,5 @@ TESTCASES_VERSION_MATRIX = {
     'python_v1.7.2': 'python__v1.0.x',
     'python_v1.8.1': 'python__v1.0.x',
     'python_v1.9.1': 'python__v1.0.x',
-    'python_v1.10.0': 'python__v1.0.x',
+    'python_v1.10.1': 'python__v1.0.x',
 }

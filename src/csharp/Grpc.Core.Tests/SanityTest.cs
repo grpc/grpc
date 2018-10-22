@@ -65,13 +65,13 @@ namespace Grpc.Core.Tests
                 {
                     foreach (var m in t.GetMethods())
                     {
-                        var attributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestAttribute), true);
-                        if (attributes.Length > 0)
+                        var testAttributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestAttribute), true);
+                        var testCaseAttributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestCaseAttribute), true);
+                        if (testAttributes.Length > 0 || testCaseAttributes.Length > 0)
                         {
                             testClasses.Add(t.FullName);
                             break;
                         }
-
                     }
                 }
                 testClasses.Sort();
@@ -102,6 +102,7 @@ namespace Grpc.Core.Tests
                 "Grpc.HealthCheck.Tests",
                 "Grpc.IntegrationTesting",
                 "Grpc.Reflection.Tests",
+                "Grpc.Tools.Tests",
             };
             foreach (var assemblyName in otherAssemblies)
             {

@@ -70,16 +70,14 @@ grpc_lb_addresses* grpc_lb_addresses_create(
 grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses);
 
 /** Sets the value of the address at index \a index of \a addresses.
- * \a address is a socket address of length \a address_len.
- * Takes ownership of \a balancer_name. */
+ * \a address is a socket address of length \a address_len. */
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
                                    const void* address, size_t address_len,
                                    bool is_balancer, const char* balancer_name,
                                    void* user_data);
 
 /** Sets the value of the address at index \a index of \a addresses from \a uri.
- * Returns true upon success, false otherwise. Takes ownership of \a
- * balancer_name. */
+ * Returns true upon success, false otherwise. */
 bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses* addresses,
                                             size_t index, const grpc_uri* uri,
                                             bool is_balancer,
@@ -100,6 +98,10 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 /** Returns the \a grpc_lb_addresses instance in \a channel_args or NULL */
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args* channel_args);
+
+// Returns true if addresses contains at least one balancer address.
+bool grpc_lb_addresses_contains_balancer_address(
+    const grpc_lb_addresses& addresses);
 
 //
 // LB policy factory

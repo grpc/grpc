@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 def create_channel_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -30,24 +30,13 @@ end
 
 def create_server_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')
-  p "test root: #{test_root}"
+  GRPC.logger.info("test root: #{test_root}")
   files = ['ca.pem', 'server1.key', 'server1.pem']
   creds = files.map { |f| File.open(File.join(test_root, f)).read }
   GRPC::Core::ServerCredentials.new(
     creds[0],
     [{ private_key: creds[1], cert_chain: creds[2] }],
     true) # force client auth
-end
-
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
 end
 
 # a test service that checks the cert of its peer
@@ -70,7 +59,7 @@ class SslTestService
 
   def a_client_streaming_rpc(call)
     check_peer_cert(call)
-    call.each_remote_read.each { |r| p r }
+    call.each_remote_read.each { |r| GRPC.logger.info(r) }
     EchoMsg.new
   end
 
@@ -81,7 +70,7 @@ class SslTestService
 
   def a_bidi_rpc(requests, call)
     check_peer_cert(call)
-    requests.each { |r| p r }
+    requests.each { |r| GRPC.logger.info(r) }
     [EchoMsg.new, EchoMsg.new]
   end
 end
@@ -127,11 +116,11 @@ describe 'client-server auth' do
 
   it 'client-server auth with server streaming RPCs' do
     responses = @stub.a_server_streaming_rpc(EchoMsg.new)
-    responses.each { |r| p r }
+    responses.each { |r| GRPC.logger.info(r) }
   end
 
   it 'client-server auth with bidi RPCs' do
     responses = @stub.a_bidi_rpc([EchoMsg.new, EchoMsg.new])
-    responses.each { |r| p r }
+    responses.each { |r| GRPC.logger.info(r) }
   end
 end

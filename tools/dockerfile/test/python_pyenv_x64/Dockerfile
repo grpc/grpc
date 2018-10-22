@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:stretch
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies
@@ -80,7 +80,7 @@ RUN apt-get update && apt-get install -y \
   mercurial \
   zlib1g-dev && apt-get clean
 
-# Install Pyenv and dev Python versions 3.5 and 3.6
+# Install Pyenv and dev Python versions 3.{5,6,7}
 RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
 ENV PATH /root/.pyenv/bin:$PATH
 RUN eval "$(pyenv init -)"
@@ -88,20 +88,13 @@ RUN eval "$(pyenv virtualenv-init -)"
 RUN pyenv update
 RUN pyenv install 3.5-dev
 RUN pyenv install 3.6-dev
+RUN pyenv install 3.7-dev
 RUN pyenv install pypy-5.3.1
-RUN pyenv local 3.5-dev 3.6-dev pypy-5.3.1
+RUN pyenv local 3.5-dev 3.6-dev 3.7-dev pypy-5.3.1
 
-# Install pip and virtualenv for Python 3.4
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
-RUN python3.4 -m pip install virtualenv
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+# Install pip and virtualenv for Python 3.5
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
+RUN python3.5 -m pip install virtualenv
 
 
 RUN mkdir /var/local/jenkins

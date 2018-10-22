@@ -41,14 +41,18 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
-#define HASH_FRAGMENT_1(x) ((x)&255)
-#define HASH_FRAGMENT_2(x) ((x >> 8) & 255)
-#define HASH_FRAGMENT_3(x) ((x >> 16) & 255)
-#define HASH_FRAGMENT_4(x) ((x >> 24) & 255)
+#define HASH_FRAGMENT_MASK (GRPC_CHTTP2_HPACKC_NUM_VALUES - 1)
+#define HASH_FRAGMENT_1(x) ((x)&HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_2(x) \
+  (((x) >> GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS) & HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_3(x) \
+  (((x) >> (GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS * 2)) & HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_4(x) \
+  (((x) >> (GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS * 3)) & HASH_FRAGMENT_MASK)
 
 /* if the probability of this item being seen again is < 1/x then don't add
    it to the table */
-#define ONE_ON_ADD_PROBABILITY 128
+#define ONE_ON_ADD_PROBABILITY (GRPC_CHTTP2_HPACKC_NUM_VALUES >> 1)
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
@@ -135,7 +139,7 @@ static void inc_filter(uint8_t idx, uint32_t* sum, uint8_t* elems) {
   } else {
     int i;
     *sum = 0;
-    for (i = 0; i < GRPC_CHTTP2_HPACKC_NUM_FILTERS; i++) {
+    for (i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
       elems[i] /= 2;
       (*sum) += elems[i];
     }
@@ -521,7 +525,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
 
   /* should this elem be in the table? */
   size_t decoder_space_usage =
-      grpc_mdelem_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
+      grpc_chttp2_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
   bool should_add_elem = elem_interned &&
                          decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
                          c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
@@ -684,11 +688,22 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     emit_advertise_table_size_change(c, &st);
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
-    hpack_enc(c, *extra_headers[i], &st);
+    grpc_mdelem md = *extra_headers[i];
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, md, &st);
+    }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    hpack_enc(c, l->md, &st);
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, l->md, &st);
+    }
   }
   grpc_millis deadline = metadata->deadline;
   if (deadline != GRPC_MILLIS_INF_FUTURE) {

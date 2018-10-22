@@ -20,6 +20,8 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h"
 
+#include "src/core/lib/slice/slice_internal.h"
+
 void add_repeated_field(repeated_field** head, const void* data) {
   repeated_field* field =
       static_cast<repeated_field*>(gpr_zalloc(sizeof(*field)));
@@ -67,7 +69,7 @@ grpc_slice* create_slice(const char* data, size_t size) {
 
 void destroy_slice(grpc_slice* slice) {
   if (slice != nullptr) {
-    grpc_slice_unref(*slice);
+    grpc_slice_unref_internal(*slice);
     gpr_free(slice);
   }
 }

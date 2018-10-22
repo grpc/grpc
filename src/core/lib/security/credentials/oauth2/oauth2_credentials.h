@@ -71,7 +71,7 @@ typedef struct {
   grpc_call_credentials base;
   gpr_mu mu;
   grpc_mdelem access_token_md;
-  grpc_millis token_expiration;
+  gpr_timespec token_expiration;
   bool token_fetch_pending;
   grpc_oauth2_pending_get_request_metadata* pending_requests;
   grpc_httpcli_context httpcli_context;

@@ -35,8 +35,14 @@ include "_cygrpc/security.pyx.pxi"
 include "_cygrpc/server.pyx.pxi"
 include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
+include "_cygrpc/_hooks.pyx.pxi"
 
-include "_cygrpc/grpc_gevent.pyx"
+include "_cygrpc/grpc_gevent.pyx.pxi"
+
+IF UNAME_SYSNAME == "Windows":
+    include "_cygrpc/fork_windows.pyx.pxi"
+ELSE:
+    include "_cygrpc/fork_posix.pyx.pxi"
 
 #
 # initialize gRPC

@@ -204,7 +204,7 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      gpr_atm* min_deadline = nullptr;
+      grpc_millis* min_deadline = nullptr;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
           if (min_deadline == nullptr) {

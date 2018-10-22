@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/tsi/grpc_shadow_boringssl.h"
+
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
@@ -216,7 +218,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 /* Used for debugging. TODO(jboeuf): Remove when code is mature enough. */
 static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    gpr_log(GPR_ERROR, "ssl_info_callback: error occured.\n");
+    gpr_log(GPR_ERROR, "ssl_info_callback: error occurred.\n");
     return;
   }
 
@@ -260,14 +262,13 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get subject name from certificate.");
+    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_ERROR,
-            "Could not get common name of subject from certificate.");
+    gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
@@ -1050,9 +1051,9 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
 
   const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
-  result = tsi_construct_string_peer_property(
+  result = tsi_construct_string_peer_property_from_cstring(
       TSI_SSL_SESSION_REUSED_PEER_PROPERTY, session_reused,
-      strlen(session_reused) + 1, &peer->properties[peer->property_count]);
+      &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
 

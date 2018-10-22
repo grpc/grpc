@@ -92,6 +92,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -123,7 +124,7 @@ class GrpcLb : public LoadBalancingPolicy {
   GrpcLb(const grpc_lb_addresses* addresses, const Args& args);
 
   void UpdateLocked(const grpc_channel_args& args) override;
-  bool PickLocked(PickState* pick) override;
+  bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
                                  uint32_t initial_metadata_flags_eq,
@@ -133,8 +134,11 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
-  void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
+  void FillChildRefsForChannelz(
+      channelz::ChildRefsList* child_subchannels,
+      channelz::ChildRefsList* child_channels) override;
 
  private:
   /// Linked list of pending pick requests. It stores all information needed to
@@ -159,18 +163,10 @@ class GrpcLb : public LoadBalancingPolicy {
     // The LB token associated with the pick.  This is set via user_data in
     // the pick.
     grpc_mdelem lb_token;
-    // Stats for client-side load reporting. Note that this holds a
-    // reference, which must be either passed on via context or unreffed.
-    grpc_grpclb_client_stats* client_stats = nullptr;
+    // Stats for client-side load reporting.
+    RefCountedPtr<GrpcLbClientStats> client_stats;
     // Next pending pick.
     PendingPick* next = nullptr;
-  };
-
-  /// A linked list of pending pings waiting for the RR policy to be created.
-  struct PendingPing {
-    grpc_closure* on_initiate;
-    grpc_closure* on_ack;
-    PendingPing* next = nullptr;
   };
 
   /// Contains a call to the LB server and all the data related to the call.
@@ -186,7 +182,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
     void StartQuery();
 
-    grpc_grpclb_client_stats* client_stats() const { return client_stats_; }
+    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+
     bool seen_initial_response() const { return seen_initial_response_; }
 
    private:
@@ -237,7 +234,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
     // The stats for client-side load reporting associated with this LB call.
     // Created after the first serverlist is received.
-    grpc_grpclb_client_stats* client_stats_ = nullptr;
+    RefCountedPtr<GrpcLbClientStats> client_stats_;
     grpc_millis client_stats_report_interval_ = 0;
     grpc_timer client_load_report_timer_;
     bool client_load_report_timer_callback_pending_ = false;
@@ -270,14 +267,12 @@ class GrpcLb : public LoadBalancingPolicy {
   void AddPendingPick(PendingPick* pp);
   static void OnPendingPickComplete(void* arg, grpc_error* error);
 
-  // Pending ping methods.
-  void AddPendingPing(grpc_closure* on_initiate, grpc_closure* on_ack);
-
   // Methods for dealing with the RR policy.
   void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
   void CreateRoundRobinPolicyLocked(const Args& args);
-  bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp);
+  bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
+                                      grpc_error** error);
   void UpdateConnectivityStateFromRoundRobinPolicyLocked(
       grpc_error* rr_state_error);
   static void OnRoundRobinConnectivityChangedLocked(void* arg,
@@ -298,6 +293,9 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
+  // Mutex to protect the channel to the LB server. This is used when
+  // processing a channelz request.
+  gpr_mu lb_channel_mu_;
   grpc_connectivity_state lb_channel_connectivity_;
   grpc_closure lb_channel_on_connectivity_changed_;
   // Are we already watching the LB channel's connectivity?
@@ -337,9 +335,8 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
 
-  // Pending picks and pings that are waiting on the RR policy's connectivity.
+  // Pending picks that are waiting on the RR policy's connectivity.
   PendingPick* pending_picks_ = nullptr;
-  PendingPing* pending_pings_ = nullptr;
 
   // The RR policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> rr_policy_;
@@ -548,9 +545,6 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
   grpc_slice_unref_internal(lb_call_status_details_);
-  if (client_stats_ != nullptr) {
-    grpc_grpclb_client_stats_unref(client_stats_);
-  }
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
@@ -673,22 +667,22 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
 
 bool GrpcLb::BalancerCallState::LoadReportCountersAreZero(
     grpc_grpclb_request* request) {
-  grpc_grpclb_dropped_call_counts* drop_entries =
-      static_cast<grpc_grpclb_dropped_call_counts*>(
+  GrpcLbClientStats::DroppedCallCounts* drop_entries =
+      static_cast<GrpcLbClientStats::DroppedCallCounts*>(
           request->client_stats.calls_finished_with_drop.arg);
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
              0 &&
          request->client_stats.num_calls_finished_known_received == 0 &&
-         (drop_entries == nullptr || drop_entries->num_entries == 0);
+         (drop_entries == nullptr || drop_entries->size() == 0);
 }
 
 void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create_locked(client_stats_);
+      grpc_grpclb_load_report_request_create_locked(client_stats_.get());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {
@@ -779,7 +773,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] Received initial LB response message; "
-                "client load reporting interval = %" PRIdPTR " milliseconds",
+                "client load reporting interval = %" PRId64 " milliseconds",
                 grpclb_policy, lb_calld->client_stats_report_interval_);
       }
     } else if (grpc_lb_glb_trace.enabled()) {
@@ -814,7 +808,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       // serverlist returned from the current LB call.
       if (lb_calld->client_stats_report_interval_ > 0 &&
           lb_calld->client_stats_ == nullptr) {
-        lb_calld->client_stats_ = grpc_grpclb_client_stats_create();
+        lb_calld->client_stats_.reset(New<GrpcLbClientStats>());
         // TODO(roth): We currently track this ref manually.  Once the
         // ClosureRef API is ready, we should pass the RefCountedPtr<> along
         // with the callback.
@@ -859,10 +853,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     }
   } else {
     // No valid initial response or serverlist found.
+    char* response_slice_str =
+        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
             "[grpclb %p] Invalid LB response received: '%s'. Ignoring.",
-            grpclb_policy,
-            grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX));
+            grpclb_policy, response_slice_str);
+    gpr_free(response_slice_str);
   }
   grpc_slice_unref_internal(response_slice);
   if (!grpclb_policy->shutting_down_) {
@@ -1007,6 +1003,10 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
+      // A channel arg indicating this is an internal channels, aka it is
+      // owned by components in Core, not by the user application.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1036,6 +1036,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
               .set_max_backoff(GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS *
                                1000)) {
   // Initialization.
+  gpr_mu_init(&lb_channel_mu_);
   grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
@@ -1073,7 +1074,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
 
 GrpcLb::~GrpcLb() {
   GPR_ASSERT(pending_picks_ == nullptr);
-  GPR_ASSERT(pending_pings_ == nullptr);
+  gpr_mu_destroy(&lb_channel_mu_);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
   grpc_connectivity_state_destroy(&state_tracker_);
@@ -1103,8 +1104,10 @@ void GrpcLb::ShutdownLocked() {
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
   // alive when that callback is invoked.
   if (lb_channel_ != nullptr) {
+    gpr_mu_lock(&lb_channel_mu_);
     grpc_channel_destroy(lb_channel_);
     lb_channel_ = nullptr;
+    gpr_mu_unlock(&lb_channel_mu_);
   }
   grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
                               GRPC_ERROR_REF(error), "grpclb_shutdown");
@@ -1115,14 +1118,6 @@ void GrpcLb::ShutdownLocked() {
     pp->pick->connected_subchannel.reset();
     // Note: pp is deleted in this callback.
     GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
-  }
-  // Clear pending pings.
-  PendingPing* pping;
-  while ((pping = pending_pings_) != nullptr) {
-    pending_pings_ = pping->next;
-    GRPC_CLOSURE_SCHED(pping->on_initiate, GRPC_ERROR_REF(error));
-    GRPC_CLOSURE_SCHED(pping->on_ack, GRPC_ERROR_REF(error));
-    Delete(pping);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1137,9 +1132,10 @@ void GrpcLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
     pending_picks_ = pp->next;
     pp->pick->on_complete = pp->original_on_complete;
     pp->pick->user_data = nullptr;
-    if (new_policy->PickLocked(pp->pick)) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (new_policy->PickLocked(pp->pick, &error)) {
       // Synchronous return; schedule closure.
-      GRPC_CLOSURE_SCHED(pp->pick->on_complete, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(pp->pick->on_complete, error);
     }
     Delete(pp);
   }
@@ -1223,54 +1219,57 @@ void GrpcLb::ExitIdleLocked() {
   }
 }
 
-bool GrpcLb::PickLocked(PickState* pick) {
+void GrpcLb::ResetBackoffLocked() {
+  if (lb_channel_ != nullptr) {
+    grpc_channel_reset_connect_backoff(lb_channel_);
+  }
+  if (rr_policy_ != nullptr) {
+    rr_policy_->ResetBackoffLocked();
+  }
+}
+
+bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
   PendingPick* pp = PendingPickCreate(pick);
   bool pick_done = false;
   if (rr_policy_ != nullptr) {
-    const grpc_connectivity_state rr_connectivity_state =
-        rr_policy_->CheckConnectivityLocked(nullptr);
-    // The RR policy may have transitioned to SHUTDOWN but the callback
-    // registered to capture this event (on_rr_connectivity_changed_) may not
-    // have been invoked yet. We need to make sure we aren't trying to pick
-    // from an RR policy instance that's in shutdown.
-    if (rr_connectivity_state == GRPC_CHANNEL_SHUTDOWN) {
+    if (grpc_lb_glb_trace.enabled()) {
+      gpr_log(GPR_INFO, "[grpclb %p] about to PICK from RR %p", this,
+              rr_policy_.get());
+    }
+    pick_done =
+        PickFromRoundRobinPolicyLocked(false /* force_async */, pp, error);
+  } else {  // rr_policy_ == NULL
+    if (pick->on_complete == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No pick result available but synchronous result required.");
+      pick_done = true;
+    } else {
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "[grpclb %p] NOT picking from from RR %p: RR conn state=%s",
-                this, rr_policy_.get(),
-                grpc_connectivity_state_name(rr_connectivity_state));
+                "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
+                this);
       }
       AddPendingPick(pp);
-      pick_done = false;
-    } else {  // RR not in shutdown
-      if (grpc_lb_glb_trace.enabled()) {
-        gpr_log(GPR_INFO, "[grpclb %p] about to PICK from RR %p", this,
-                rr_policy_.get());
+      if (!started_picking_) {
+        StartPickingLocked();
       }
-      pick_done = PickFromRoundRobinPolicyLocked(false /* force_async */, pp);
+      pick_done = false;
     }
-  } else {  // rr_policy_ == NULL
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
-              this);
-    }
-    AddPendingPick(pp);
-    if (!started_picking_) {
-      StartPickingLocked();
-    }
-    pick_done = false;
   }
   return pick_done;
 }
 
-void GrpcLb::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
-  if (rr_policy_ != nullptr) {
-    rr_policy_->PingOneLocked(on_initiate, on_ack);
-  } else {
-    AddPendingPing(on_initiate, on_ack);
-    if (!started_picking_) {
-      StartPickingLocked();
+void GrpcLb::FillChildRefsForChannelz(
+    channelz::ChildRefsList* child_subchannels,
+    channelz::ChildRefsList* child_channels) {
+  // delegate to the RoundRobin to fill the children subchannels.
+  rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
+  MutexLock lock(&lb_channel_mu_);
+  if (lb_channel_ != nullptr) {
+    grpc_core::channelz::ChannelNode* channel_node =
+        grpc_channel_get_channelz_node(lb_channel_);
+    if (channel_node != nullptr) {
+      child_channels->push_back(channel_node->uuid());
     }
   }
 }
@@ -1318,9 +1317,11 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   if (lb_channel_ == nullptr) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
+    gpr_mu_lock(&lb_channel_mu_);
     lb_channel_ = grpc_client_channel_factory_create_channel(
         client_channel_factory(), uri_str,
         GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, lb_channel_args);
+    gpr_mu_unlock(&lb_channel_mu_);
     GPR_ASSERT(lb_channel_ != nullptr);
     gpr_free(uri_str);
   }
@@ -1420,7 +1421,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
     gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
-      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout);
     } else {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
@@ -1490,7 +1491,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
         grpclb_policy->lb_call_backoff_.Reset();
         grpclb_policy->StartBalancerCallLocked();
       }
-      // Fall through.
+      // fallthrough
     case GRPC_CHANNEL_SHUTDOWN:
     done:
       grpclb_policy->watching_lb_channel_ = false;
@@ -1516,7 +1517,7 @@ grpc_error* AddLbTokenToInitialMetadata(
 
 // Destroy function used when embedding client stats in call context.
 void DestroyClientStats(void* arg) {
-  grpc_grpclb_client_stats_unref(static_cast<grpc_grpclb_client_stats*>(arg));
+  static_cast<GrpcLbClientStats*>(arg)->Unref();
 }
 
 void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
@@ -1537,14 +1538,12 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
     // Pass on client stats via context. Passes ownership of the reference.
     if (pp->client_stats != nullptr) {
       pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-          pp->client_stats;
+          pp->client_stats.release();
       pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
           DestroyClientStats;
     }
   } else {
-    if (pp->client_stats != nullptr) {
-      grpc_grpclb_client_stats_unref(pp->client_stats);
-    }
+    pp->client_stats.reset();
   }
 }
 
@@ -1575,18 +1574,6 @@ void GrpcLb::AddPendingPick(PendingPick* pp) {
 }
 
 //
-// PendingPing
-//
-
-void GrpcLb::AddPendingPing(grpc_closure* on_initiate, grpc_closure* on_ack) {
-  PendingPing* pping = New<PendingPing>();
-  pping->on_initiate = on_initiate;
-  pping->on_ack = on_ack;
-  pping->next = pending_pings_;
-  pending_pings_ = pping;
-}
-
-//
 // code for interacting with the RR policy
 //
 
@@ -1595,7 +1582,8 @@ void GrpcLb::AddPendingPing(grpc_closure* on_initiate, grpc_closure* on_ack) {
 // cleanups this callback would otherwise be responsible for.
 // If \a force_async is true, then we will manually schedule the
 // completion callback even if the pick is available immediately.
-bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
+bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
+                                            grpc_error** error) {
   // Check for drops if we are not using fallback backend addresses.
   if (serverlist_ != nullptr) {
     // Look at the index into the serverlist to see if we should drop this call.
@@ -1610,8 +1598,8 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
       // subchannel call (and therefore no client_load_reporting filter)
       // for dropped calls.
       if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-        grpc_grpclb_client_stats_add_call_dropped_locked(
-            server->load_balance_token, lb_calld_->client_stats());
+        lb_calld_->client_stats()->AddCallDroppedLocked(
+            server->load_balance_token);
       }
       if (force_async) {
         GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
@@ -1624,16 +1612,17 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
   }
   // Set client_stats and user_data.
   if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-    pp->client_stats = grpc_grpclb_client_stats_ref(lb_calld_->client_stats());
+    pp->client_stats = lb_calld_->client_stats()->Ref();
   }
   GPR_ASSERT(pp->pick->user_data == nullptr);
   pp->pick->user_data = (void**)&pp->lb_token;
   // Pick via the RR policy.
-  bool pick_done = rr_policy_->PickLocked(pp->pick);
+  bool pick_done = rr_policy_->PickLocked(pp->pick, error);
   if (pick_done) {
     PendingPickSetMetadataAndContext(pp);
     if (force_async) {
-      GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_SCHED(pp->original_on_complete, *error);
+      *error = GRPC_ERROR_NONE;
       pick_done = false;
     }
     Delete(pp);
@@ -1685,18 +1674,8 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
               "[grpclb %p] Pending pick about to (async) PICK from RR %p", this,
               rr_policy_.get());
     }
-    PickFromRoundRobinPolicyLocked(true /* force_async */, pp);
-  }
-  // Send pending pings to RR policy.
-  PendingPing* pping;
-  while ((pping = pending_pings_)) {
-    pending_pings_ = pping->next;
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Pending ping about to PING from RR %p",
-              this, rr_policy_.get());
-    }
-    rr_policy_->PingOneLocked(pping->on_initiate, pping->on_ack);
-    Delete(pping);
+    grpc_error* error = GRPC_ERROR_NONE;
+    PickFromRoundRobinPolicyLocked(true /* force_async */, pp, &error);
   }
 }
 

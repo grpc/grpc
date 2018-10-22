@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #================
 # C# dependencies
@@ -70,6 +70,13 @@ RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
     && apt-get clean
 
 RUN nuget update -self
+
+#=================
+# Use cmake 3.6 from jessie-backports
+# needed to build grpc_csharp_ext with cmake
+
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 # Install dotnet SDK based on https://www.microsoft.com/net/core#debian
 RUN apt-get update && apt-get install -y curl libunwind8 gettext
@@ -100,12 +107,13 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
 # Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm install 9 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm alias default 9"
+RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 9 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm install 10 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm alias default 10"
 #=================
 # PHP dependencies
 
@@ -152,13 +160,8 @@ RUN python3.4 -m pip install virtualenv
 RUN pip install coverage
 ENV PATH ~/.local/bin:$PATH
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
 
 
 RUN mkdir /var/local/jenkins

@@ -65,9 +65,7 @@ class RefCounted {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  // Allow Delete() to access destructor.
-  template <typename T>
-  friend void Delete(T*);
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   RefCounted() { gpr_ref_init(&refs_, 1); }
 
@@ -75,7 +73,8 @@ class RefCounted {
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
-  friend class RefCountedPtr<Child>;
+  template <typename T>
+  friend class RefCountedPtr;
 
   void IncrementRefCount() { gpr_ref(&refs_); }
 
@@ -135,9 +134,7 @@ class RefCountedWithTracing {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  // Allow Delete() to access destructor.
-  template <typename T>
-  friend void Delete(T*);
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   RefCountedWithTracing()
       : RefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
@@ -156,7 +153,8 @@ class RefCountedWithTracing {
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
-  friend class RefCountedPtr<Child>;
+  template <typename T>
+  friend class RefCountedPtr;
 
   void IncrementRefCount() { gpr_ref(&refs_); }
 

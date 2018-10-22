@@ -39,6 +39,7 @@
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"
+#include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -59,6 +60,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
       return config.payload_config().has_bytebuf_params()
                  ? CreateGenericAsyncStreamingClient(config)
                  : CreateAsyncClient(config);
+    case ClientType::CALLBACK_CLIENT:
+      return CreateCallbackClient(config);
     default:
       abort();
   }
@@ -272,18 +275,18 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
-  ServerBuilder builder;
+  std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   if (driver_port >= 0) {
     char* server_address = nullptr;
     gpr_join_host_port(&server_address, "::", driver_port);
-    builder.AddListeningPort(
+    builder->AddListeningPort(
         server_address,
         GetCredentialsProvider()->GetServerCredentials(credential_type));
     gpr_free(server_address);
   }
-  builder.RegisterService(impl_.get());
+  builder->RegisterService(impl_.get());
 
-  server_ = builder.BuildAndStart();
+  server_ = builder->BuildAndStart();
 }
 
 QpsWorker::~QpsWorker() {}

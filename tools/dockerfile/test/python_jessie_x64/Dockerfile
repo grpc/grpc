@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies
@@ -71,14 +71,6 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 # Install pip and virtualenv for Python 3.4
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
 RUN python3.4 -m pip install virtualenv
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 
 RUN mkdir /var/local/jenkins

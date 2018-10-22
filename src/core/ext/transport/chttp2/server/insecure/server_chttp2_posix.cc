@@ -43,8 +43,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   char* name;
   gpr_asprintf(&name, "fd:%d", fd);
 
-  grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name), grpc_server_get_channel_args(server), name);
+  grpc_endpoint* server_endpoint =
+      grpc_tcp_create(grpc_fd_create(fd, name, true),
+                      grpc_server_get_channel_args(server), name);
 
   gpr_free(name);
 
@@ -60,7 +61,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     grpc_endpoint_add_to_pollset(server_endpoint, pollsets[i]);
   }
 
-  grpc_server_setup_transport(server, transport, nullptr, server_args);
+  grpc_server_setup_transport(server, transport, nullptr, server_args, 0);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 }
 

@@ -160,6 +160,8 @@ static void encode_int_to_str(int i, char* p) {
 }
 
 static void test_decode_table_overflow() {
+  // Decrease the default table size to make decode table overflow easier.
+  grpc_chttp2_hpack_compressor_set_max_table_size(&g_compressor, 1024);
   int i;
   char key[3], value[3];
   char* expect;
@@ -170,27 +172,20 @@ static void test_decode_table_overflow() {
       false,
   };
 
-  for (i = 0; i < 114; i++) {
+  for (i = 0; i < 29; i++) {
     encode_int_to_str(i, key);
     encode_int_to_str(i + 1, value);
-
-    if (i + 61 >= 127) {
+    if (i == 0) {
+      // 3fe107 corresponds to the table size update.
       gpr_asprintf(&expect,
-                   "000009 0104 deadbeef ff%02x 40 02%02x%02x 02%02x%02x",
-                   i + 61 - 127, key[0], key[1], value[0], value[1]);
-    } else if (i > 0) {
+                   "00000a 0104 deadbeef 3fe107 40 02%02x%02x 02%02x%02x",
+                   key[0], key[1], value[0], value[1]);
+      verify(params, expect, 1, key, value);
+    } else {
       gpr_asprintf(&expect,
                    "000008 0104 deadbeef %02x 40 02%02x%02x 02%02x%02x",
                    0x80 + 61 + i, key[0], key[1], value[0], value[1]);
-    } else {
-      gpr_asprintf(&expect, "000007 0104 deadbeef 40 02%02x%02x 02%02x%02x",
-                   key[0], key[1], value[0], value[1]);
-    }
-
-    if (i > 0) {
       verify(params, expect, 2, "aa", "ba", key, value);
-    } else {
-      verify(params, expect, 1, key, value);
     }
     gpr_free(expect);
   }
@@ -207,7 +202,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, use_true_binary);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, use_true_binary);
   size_t initial_table_size = g_compressor.table_size;
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));

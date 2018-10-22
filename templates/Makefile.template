@@ -37,10 +37,10 @@
 
     # warnings we'd like, but that dont exist in all compilers
     PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
 
     def warning_var(fmt, warning):
-      return fmt % warning.replace('-', '_').upper()
+      return fmt % warning.replace('-', '_').replace('+', 'X').upper()
 
     def neg_warning(warning):
       if warning[0:3] == 'no-':
@@ -191,6 +191,12 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
+  W_NO_CXX14_COMPAT=-Wno-c++14-compat
+  endif
+
   %for warning in CHECK_WARNINGS:
   ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
@@ -220,8 +226,6 @@
   ${arg} += ${defaults.get('global').get(arg)}
   %  endif
   % endfor
-
-  DEFINES += PB_FIELD_16BIT
 
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
   CFLAGS += $(CFLAGS_$(CONFIG))
@@ -414,7 +418,6 @@
 
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
-  OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
   PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
@@ -427,7 +430,6 @@
   endif
 
   OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-  OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
   BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
@@ -455,13 +457,7 @@
   ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
   HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-  HAS_SYSTEM_OPENSSL_NPN = true
   CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
-  else
-  HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  endif
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
   endif
   HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_SYSTEM_ZLIB),true)
@@ -478,7 +474,6 @@
   else
   # override system libraries if the config requires a custom compiled library
   HAS_SYSTEM_OPENSSL_ALPN = false
-  HAS_SYSTEM_OPENSSL_NPN = false
   HAS_SYSTEM_ZLIB = false
   HAS_SYSTEM_PROTOBUF = false
   HAS_SYSTEM_CARES = false
@@ -625,12 +620,7 @@
   EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
   NO_SECURE ?= false
   else # HAS_EMBEDDED_OPENSSL_ALPN=false
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  EMBED_OPENSSL ?= false
-  NO_SECURE ?= false
-  else
   NO_SECURE ?= true
-  endif # HAS_SYSTEM_OPENSSL_NPN=true
   endif # HAS_EMBEDDED_OPENSSL_ALPN
   endif # HAS_SYSTEM_OPENSSL_ALPN
 
@@ -664,10 +654,10 @@
   else # HAS_PKG_CONFIG=false
   LIBS_SECURE = $(OPENSSL_LIBS)
   endif # HAS_PKG_CONFIG
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  ifeq ($(DISABLE_ALPN),true)
   CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
   LIBS_SECURE = $(OPENSSL_LIBS)
-  endif # HAS_SYSTEM_OPENSSL_NPN
+  endif # DISABLE_ALPN
   PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
   endif # EMBED_OPENSSL
   endif # NO_SECURE
@@ -678,11 +668,20 @@
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
   endif
 
+  # gpr .pc file
+  PC_NAME = gpr
+  PC_DESCRIPTION = gRPC platform support library
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
+  PC_LIB = -lgpr
+  GPR_PC_FILE := $(CORE_PC_TEMPLATE)
+
   # grpc .pc file
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -691,9 +690,9 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
-  PC_LIB = -lgrpc
+  PC_LIB = -lgrpc_unsecure
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
   PROTOBUF_PKG_CONFIG = false
@@ -770,7 +769,7 @@
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-  PC_LIB = -lgrpc++
+  PC_LIB = -lgrpc++_unsecure
   GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
   ifeq ($(MAKECMDGOALS),clean)
@@ -888,7 +887,6 @@
 
   run_dep_checks:
   	$(OPENSSL_ALPN_CHECK_CMD) || true
-  	$(OPENSSL_NPN_CHECK_CMD) || true
   	$(ZLIB_CHECK_CMD) || true
   	$(PERFTOOLS_CHECK_CMD) || true
   	$(PROTOBUF_CHECK_CMD) || true
@@ -926,6 +924,16 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+
+
+  static_csharp: static_c \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endif
@@ -977,9 +985,9 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -1200,6 +1208,11 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
+  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
+
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1284,6 +1297,11 @@
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
   $(OBJDIR)/$(CONFIG)/%.o : %.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+  $(OBJDIR)/$(CONFIG)/%.o : %.cpp
   	$(E) "[CXX]     Compiling $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
@@ -1393,6 +1411,7 @@
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
   	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
@@ -1503,13 +1522,9 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ['z', 'ares', 'address_sorting']:
   $(ZLIB_DEP) \
-  % endif
-  % if lib.name != 'ares':
   $(CARES_DEP) \
-  % endif
-  % if lib.name != 'address_sorting':
   $(ADDRESS_SORTING_DEP) \
   % endif
   % endif

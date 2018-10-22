@@ -34,18 +34,20 @@ typedef std::function<void(const InteropClientContextInspector&,
                            const SimpleRequest*, const SimpleResponse*)>
     CheckerFn;
 
+typedef std::function<std::shared_ptr<Channel>(void)> ChannelCreationFunc;
+
 class InteropClient {
  public:
   /// If new_stub_every_test_case is true, a new TestService::Stub object is
   /// created for every test case
   /// If do_not_abort_on_transient_failures is true, abort() is not called in
   /// case of transient failures (like connection failures)
-  explicit InteropClient(std::shared_ptr<Channel> channel,
+  explicit InteropClient(ChannelCreationFunc channel_creation_func,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<Channel> channel);
+  void Reset(const std::shared_ptr<Channel>& channel);
 
   bool DoEmpty();
   bool DoLargeUnary();
@@ -67,6 +69,16 @@ class InteropClient {
   bool DoUnimplementedMethod();
   bool DoUnimplementedService();
   bool DoCacheableUnary();
+
+  // The following interop test are not yet part of the interop spec, and are
+  // not implemented cross-language. They are considered experimental for now,
+  // but at some point in the future, might be codified and implemented in all
+  // languages
+  bool DoChannelSoakTest(int32_t soak_iterations);
+  bool DoRpcSoakTest(int32_t soak_iterations);
+  bool DoLongLivedChannelTest(int32_t soak_iterations,
+                              int32_t iteration_interval);
+
   // Auth tests.
   // username is a string containing the user email
   bool DoJwtTokenCreds(const grpc::string& username);
@@ -83,14 +95,17 @@ class InteropClient {
    public:
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
-    ServiceStub(std::shared_ptr<Channel> channel, bool new_stub_every_call);
+    ServiceStub(ChannelCreationFunc channel_creation_func,
+                bool new_stub_every_call);
 
     TestService::Stub* Get();
     UnimplementedService::Stub* GetUnimplementedServiceStub();
 
-    void Reset(std::shared_ptr<Channel> channel);
+    // forces channel to be recreated.
+    void ResetChannel();
 
    private:
+    ChannelCreationFunc channel_creation_func_;
     std::unique_ptr<TestService::Stub> stub_;
     std::unique_ptr<UnimplementedService::Stub> unimplemented_service_stub_;
     std::shared_ptr<Channel> channel_;
@@ -102,14 +117,14 @@ class InteropClient {
 
   /// Run \a custom_check_fn as an additional check.
   bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
-                         CheckerFn custom_checks_fn);
+                         const CheckerFn& custom_checks_fn);
   bool AssertStatusOk(const Status& s,
                       const grpc::string& optional_debug_string);
   bool AssertStatusCode(const Status& s, StatusCode expected_code,
                         const grpc::string& optional_debug_string);
   bool TransientFailureOrAbort();
-  ServiceStub serviceStub_;
 
+  ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures
   bool do_not_abort_on_transient_failures_;
 };

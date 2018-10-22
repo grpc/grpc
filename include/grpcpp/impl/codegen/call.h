@@ -50,8 +50,6 @@ namespace internal {
 class Call;
 class CallHook;
 
-const char kBinaryErrorDetailsKey[] = "grpc-status-details-bin";
-
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
 inline grpc_metadata* FillMetadataArray(
@@ -171,8 +169,8 @@ class WriteOptions {
     return *this;
   }
 
-  /// Guarantee that all bytes have been written to the wire before completing
-  /// this write (usually writes are completed when they pass flow control)
+  /// Guarantee that all bytes have been written to the socket before completing
+  /// this write (usually writes are completed when they pass flow control).
   inline WriteOptions& set_write_through() {
     SetBit(GRPC_WRITE_THROUGH);
     return *this;
@@ -531,7 +529,6 @@ class CallOpRecvInitialMetadata {
 
   void FinishOp(bool* status) {
     if (metadata_map_ == nullptr) return;
-    metadata_map_->FillMap();
     metadata_map_ = nullptr;
   }
 
@@ -566,17 +563,14 @@ class CallOpClientRecvStatus {
 
   void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
-    metadata_map_->FillMap();
-    grpc::string binary_error_details;
-    auto iter = metadata_map_->map()->find(kBinaryErrorDetailsKey);
-    if (iter != metadata_map_->map()->end()) {
-      binary_error_details =
-          grpc::string(iter->second.begin(), iter->second.length());
-    }
-    *recv_status_ = Status(static_cast<StatusCode>(status_code_),
-                           grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                        GRPC_SLICE_END_PTR(error_message_)),
-                           binary_error_details);
+    grpc::string binary_error_details = metadata_map_->GetBinaryErrorDetails();
+    *recv_status_ =
+        Status(static_cast<StatusCode>(status_code_),
+               GRPC_SLICE_IS_EMPTY(error_message_)
+                   ? grpc::string()
+                   : grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                                  GRPC_SLICE_END_PTR(error_message_)),
+               binary_error_details);
     client_context_->set_debug_error_string(
         debug_error_string_ != nullptr ? debug_error_string_ : "");
     g_core_codegen_interface->grpc_slice_unref(error_message_);
@@ -605,6 +599,11 @@ class CallOpSetInterface : public CompletionQueueTag {
   /// Fills in grpc_op, starting from ops[*nops] and moving
   /// upwards.
   virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) = 0;
+
+  /// Get the tag to be used at the core completion queue. Generally, the
+  /// value of cq_tag will be "this". However, it can be overridden if we
+  /// want core to process the tag differently (e.g., as a core callback)
+  virtual void* cq_tag() = 0;
 };
 
 /// Primary implementation of CallOpSetInterface.
@@ -624,7 +623,20 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : return_tag_(this), call_(nullptr) {}
+  CallOpSet() : cq_tag_(this), return_tag_(this), call_(nullptr) {}
+
+  // The copy constructor and assignment operator reset the value of
+  // cq_tag_ and return_tag_ since those are only meaningful on a specific
+  // object, not across objects.
+  CallOpSet(const CallOpSet& other)
+      : cq_tag_(this), return_tag_(this), call_(other.call_) {}
+  CallOpSet& operator=(const CallOpSet& other) {
+    cq_tag_ = this;
+    return_tag_ = this;
+    call_ = other.call_;
+    return *this;
+  }
+
   void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
@@ -651,7 +663,16 @@ class CallOpSet : public CallOpSetInterface,
 
   void set_output_tag(void* return_tag) { return_tag_ = return_tag; }
 
+  void* cq_tag() override { return cq_tag_; }
+
+  /// set_cq_tag is used to provide a different core CQ tag than "this".
+  /// This is used for callback-based tags, where the core tag is the core
+  /// callback function. It does not change the use or behavior of any other
+  /// function (such as FinalizeResult)
+  void set_cq_tag(void* cq_tag) { cq_tag_ = cq_tag; }
+
  private:
+  void* cq_tag_;
   void* return_tag_;
   grpc_call* call_;
 };

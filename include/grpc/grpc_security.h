@@ -163,6 +163,26 @@ typedef struct {
   const char* cert_chain;
 } grpc_ssl_pem_key_cert_pair;
 
+/** Object that holds additional peer-verification options on a secure
+   channel. */
+typedef struct {
+  /** If non-NULL this callback will be invoked with the expected
+     target_name, the peer's certificate (in PEM format), and whatever
+     userdata pointer is set below. If a non-zero value is returned by this
+     callback then it is treated as a verification failure. Invocation of
+     the callback is blocking, so any implementation should be light-weight.
+     */
+  int (*verify_peer_callback)(const char* target_name, const char* peer_pem,
+                              void* userdata);
+  /** Arbitrary userdata that will be passed as the last argument to
+     verify_peer_callback. */
+  void* verify_peer_callback_userdata;
+  /** A destruct callback that will be invoked when the channel is being
+     cleaned up. The userdata argument will be passed to it. The intent is
+     to perform any cleanup associated with that userdata. */
+  void (*verify_peer_destruct)(void* userdata);
+} verify_peer_options;
+
 /** Creates an SSL credentials object.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
      of the server root certificates. If this parameter is NULL, the
@@ -173,10 +193,17 @@ typedef struct {
      disk (in the grpc install directory).
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
-     not have such a key/cert pair. */
+     not have such a key/cert pair.
+   - verify_options is an optional verify_peer_options object which holds
+     additional options controlling how peer certificates are verified. For
+     example, you can supply a callback which receives the peer's certificate
+     with which you can do additional verification. Can be NULL, in which
+     case verification will retain default behavior. Any settings in
+     verify_options are copied during this call, so the verify_options
+     object can be released afterwards. */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    void* reserved);
+    const verify_peer_options* verify_options, void* reserved);
 
 /** --- grpc_call_credentials object.
 
@@ -505,14 +532,14 @@ typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_alts_credentials_options*
-grpc_alts_credentials_client_options_create();
+grpc_alts_credentials_client_options_create(void);
 
 /**
  * This method creates a grpc ALTS credentials server options instance.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI grpc_alts_credentials_options*
-grpc_alts_credentials_server_options_create();
+grpc_alts_credentials_server_options_create(void);
 
 /**
  * This method adds a target service account to grpc client's ALTS credentials
@@ -557,6 +584,30 @@ GRPCAPI grpc_channel_credentials* grpc_alts_credentials_create(
  */
 GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
     const grpc_alts_credentials_options* options);
+
+/** --- Local channel/server credentials --- **/
+
+/**
+ * This method creates a local channel credential object. It is used for
+ * experimental purpose for now and subject to change.
+ *
+ * - type: local connection type
+ *
+ * It returns the created local channel credential object.
+ */
+GRPCAPI grpc_channel_credentials* grpc_local_credentials_create(
+    grpc_local_connect_type type);
+
+/**
+ * This method creates a local server credential object. It is used for
+ * experimental purpose for now and subject to change.
+ *
+ * - type: local connection type
+ *
+ * It returns the created local server credential object.
+ */
+GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
+    grpc_local_connect_type type);
 
 #ifdef __cplusplus
 }

@@ -63,7 +63,7 @@ struct ServerStartedCondition {
 /// Run gRPC interop server using port FLAGS_port.
 ///
 /// \param creds The credentials associated with the server.
-void RunServer(std::shared_ptr<ServerCredentials> creds);
+void RunServer(const std::shared_ptr<ServerCredentials>& creds);
 
 /// Run gRPC interop server.
 ///
@@ -71,7 +71,7 @@ void RunServer(std::shared_ptr<ServerCredentials> creds);
 /// \param port Port to use for the server.
 /// \param server_started_condition (optional) Struct holding mutex, condition
 ///     variable, and condition used to notify when the server has started.
-void RunServer(std::shared_ptr<ServerCredentials> creds, int port,
+void RunServer(const std::shared_ptr<ServerCredentials>& creds, int port,
                ServerStartedCondition* server_started_condition);
 
 /// Run gRPC interop server.
@@ -79,7 +79,7 @@ void RunServer(std::shared_ptr<ServerCredentials> creds, int port,
 /// \param creds The credentials associated with the server.
 /// \param server_options List of options to set when building the server.
 void RunServer(
-    std::shared_ptr<ServerCredentials> creds,
+    const std::shared_ptr<ServerCredentials>& creds,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options);
 
@@ -91,7 +91,7 @@ void RunServer(
 /// \param server_started_condition (optional) Struct holding mutex, condition
 //     variable, and condition used to notify when the server has started.
 void RunServer(
-    std::shared_ptr<ServerCredentials> creds, const int port,
+    const std::shared_ptr<ServerCredentials>& creds, const int port,
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<grpc::ServerBuilderOption>>>
         server_options);

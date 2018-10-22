@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
@@ -105,7 +105,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     s->tail = sp;
     sp->server = s;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
+    sp->emfd = grpc_fd_create(fd, name, true);
     memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = port_index;
@@ -166,6 +166,9 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     if (err != GRPC_ERROR_NONE) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (err != GRPC_ERROR_NONE) goto error;
+    err = grpc_set_socket_tcp_user_timeout(fd, s->channel_args,
+                                           false /* is_client */);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
@@ -217,4 +220,4 @@ error:
   return ret;
 }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */

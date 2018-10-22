@@ -63,6 +63,12 @@
   doc: How many times could a polling wakeup be satisfied by keeping the waking
        thread awake?
        (only valid for epoll1 right now)
+# polling
+- counter: syscall_epoll_ctl
+  doc: Number of epoll_ctl calls made (only valid for epollex right now)
+- counter: pollset_fd_cache_hits
+  doc: Number of epoll_ctl calls skipped because the fd was cached as
+       already being added.  (only valid for epollex right now)
 # stats system
 - counter: histogram_slow_lookups
   doc: Number of times histogram increments went through the slow

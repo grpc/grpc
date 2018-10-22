@@ -51,7 +51,7 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies
@@ -73,9 +73,14 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #=================
-# Update clang to a version with improved tsan and fuzzing capabilities
+# Use cmake 3.6 from jessie-backports
+# should only be used for images based on debian jessie.
 
-RUN apt-get update && apt-get -y install python cmake && apt-get clean
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
+#=================
+# Update clang to a version with improved tsan and fuzzing capabilities
 
 RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && \
   cd llvm && git checkout ad57503 && cd ..
@@ -104,14 +109,6 @@ RUN cd llvm-build && cmake \
   -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
   ../llvm
 RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 
 RUN mkdir /var/local/jenkins

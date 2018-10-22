@@ -141,7 +141,7 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
   TCP_UNREF(tcp, "read");
   tcp->read_slices = nullptr;
   tcp->read_cb = nullptr;
-  GRPC_CLOSURE_RUN(cb, error);
+  GRPC_CLOSURE_SCHED(cb, error);
 }
 
 static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
@@ -221,7 +221,7 @@ static void custom_write_callback(grpc_custom_socket* socket,
 }
 
 static void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* write_slices,
-                           grpc_closure* cb) {
+                           grpc_closure* cb, void* arg) {
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)ep;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
 

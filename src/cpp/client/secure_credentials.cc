@@ -36,12 +36,22 @@ SecureChannelCredentials::SecureChannelCredentials(
 
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
+  return CreateChannelWithInterceptors(target, args, nullptr);
+}
+
+std::shared_ptr<grpc::Channel>
+SecureChannelCredentials::CreateChannelWithInterceptors(
+    const string& target, const grpc::ChannelArguments& args,
+    std::unique_ptr<std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+        interceptor_creators) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
   return CreateChannelInternal(
       args.GetSslTargetNameOverride(),
       grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args,
-                                 nullptr));
+                                 nullptr),
+      std::move(interceptor_creators));
 }
 
 SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
@@ -83,7 +93,8 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 
   grpc_channel_credentials* c_creds = grpc_ssl_credentials_create(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr);
+      options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
+      nullptr);
   return WrapChannelCredentials(c_creds);
 }
 
@@ -104,6 +115,13 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
   return WrapChannelCredentials(c_creds);
+}
+
+// Builds Local Credentials
+std::shared_ptr<ChannelCredentials> LocalCredentials(
+    grpc_local_connect_type type) {
+  GrpcLibraryCodegen init;  // To call grpc_init().
+  return WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
 }  // namespace experimental

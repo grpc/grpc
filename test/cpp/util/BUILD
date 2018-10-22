@@ -117,11 +117,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_cli_libs",
+    name = "grpc_cli_utils",
     srcs = [
         "cli_call.cc",
         "cli_credentials.cc",
-        "grpc_tool.cc",
         "proto_file_parser.cc",
         "service_describer.cc",
     ],
@@ -129,7 +128,6 @@ grpc_cc_library(
         "cli_call.h",
         "cli_credentials.h",
         "config_grpc_cli.h",
-        "grpc_tool.h",
         "proto_file_parser.h",
         "service_describer.h",
     ],
@@ -142,6 +140,22 @@ grpc_cc_library(
         ":grpc++_proto_reflection_desc_db",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_cli_libs",
+    srcs = [
+        "grpc_tool.cc",
+    ],
+    hdrs = [
+        "grpc_tool.h",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+    deps = [
+        ":grpc_cli_utils",
     ],
 )
 
@@ -177,6 +191,7 @@ grpc_cc_test(
         "//:grpc++_reflection",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -217,6 +232,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -260,33 +276,22 @@ grpc_cc_test(
     deps = [
         "//:grpc++_error_details",
         "//src/proto/grpc/testing:echo_messages_proto",
+        "//test/core/util:gpr_test_util",
     ],
 )
 
 grpc_cc_binary(
     name = "grpc_cli",
     srcs = [
-        "cli_call.cc",
-        "cli_call.h",
-        "cli_credentials.cc",
-        "cli_credentials.h",
-        "config_grpc_cli.h",
         "grpc_cli.cc",
-        "grpc_tool.cc",
-        "grpc_tool.h",
-        "proto_file_parser.cc",
-        "proto_file_parser.h",
-        "proto_reflection_descriptor_database.cc",
-        "proto_reflection_descriptor_database.h",
-        "service_describer.cc",
-        "service_describer.h",
-        "test_config.h",
-        "test_config_cc.cc",
     ],
     external_deps = [
         "gflags",
     ],
     deps = [
+        ":grpc_cli_libs",
+        ":grpc++_proto_reflection_desc_db",
+        ":test_config",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],

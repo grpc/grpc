@@ -61,6 +61,6 @@ grpc_closure_scheduler* grpc_combiner_finally_scheduler(grpc_combiner* lock);
 
 bool grpc_combiner_continue_exec_ctx();
 
-extern grpc_core::TraceFlag grpc_combiner_trace;
+extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */

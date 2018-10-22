@@ -14,6 +14,7 @@
 # limitations under the License.
 
 export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address --test_timeout=3600"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address --test_timeout=3600 --cache_test_results=no"
+EXCLUDE_TESTS="--test_tag_filters=-qps_json_driver,-json_run_localhost"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}" "${EXCLUDE_TESTS}"
 

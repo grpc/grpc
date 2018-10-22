@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 6.0.0-dev
+PROJECT_NUMBER         = 7.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -771,7 +771,10 @@ doc/compression_cookbook.md \
 doc/connection-backoff-interop-test-description.md \
 doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
+doc/core/grpc-client-server-polling-engine-usage.md \
+doc/core/grpc-cq.md \
 doc/core/grpc-error.md \
+doc/core/grpc-polling-engines.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
 doc/core/transport_explainer.md \
@@ -786,15 +789,16 @@ doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
+doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/server-reflection.md \
 doc/server_reflection_tutorial.md \
 doc/server_side_auth.md \
 doc/service_config.md \
+doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
-doc/stress_test_framework.md \
 doc/unit_testing.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
@@ -826,6 +830,8 @@ include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/log.h \
+include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \

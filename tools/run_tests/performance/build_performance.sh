@@ -53,7 +53,17 @@ do
     fi
     ;;
   "csharp")
-    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8 --compiler coreclr
+    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8
+    # unbreak subsequent make builds by restoring zconf.h (previously renamed by cmake portion of C#'s build)
+    # See https://github.com/grpc/grpc/issues/11581
+    (cd third_party/zlib; git checkout zconf.h)
+    ;;
+  "node"|"node_purejs")
+    tools/run_tests/performance/build_performance_node.sh
+    ;;
+  "python")
+    # python workers are only run with python2.7 and building with multiple python versions is costly
+    python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --compiler python2.7 --build_only -j 8
     ;;
   *)
     python tools/run_tests/run_tests.py -l "$language" -c "$CONFIG" --build_only -j 8

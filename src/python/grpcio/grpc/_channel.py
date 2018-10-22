@@ -24,6 +24,9 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
+logging.basicConfig()
+_LOGGER = logging.getLogger(__name__)
+
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
@@ -58,6 +61,17 @@ _STREAM_STREAM_INITIAL_DUE = (
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
 
+_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+                              '\tstatus = {}\n'
+                              '\tdetails = "{}"\n'
+                              '>')
+
+_NON_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+                                  '\tstatus = {}\n'
+                                  '\tdetails = "{}"\n'
+                                  '\tdebug_error_string = "{}"\n'
+                                  '>')
+
 
 def _deadline(timeout):
     return None if timeout is None else time.time() + timeout
@@ -91,12 +105,17 @@ class _RPCState(object):
         self.trailing_metadata = trailing_metadata
         self.code = code
         self.details = details
+        self.debug_error_string = None
         # The semantics of grpc.Future.cancel and grpc.Future.cancelled are
         # slightly wonky, so they have to be tracked separately from the rest of the
         # result of the RPC. This field tracks whether cancellation was requested
         # prior to termination of the RPC.
         self.cancelled = False
         self.callbacks = []
+        self.fork_epoch = cygrpc.get_fork_epoch()
+
+    def reset_postfork_child(self):
+        self.condition = threading.Condition()
 
 
 def _abort(state, code, details):
@@ -137,6 +156,7 @@ def _handle_event(event, state, response_deserializer):
                 else:
                     state.code = code
                     state.details = batch_operation.details()
+                    state.debug_error_string = batch_operation.error_string()
             callbacks.extend(state.callbacks)
             state.callbacks = None
     return callbacks
@@ -151,33 +171,45 @@ def _event_handler(state, response_deserializer):
             done = not state.due
         for callback in callbacks:
             callback()
-        return done
+        return done and state.fork_epoch >= cygrpc.get_fork_epoch()
 
     return handle_event
 
 
 def _consume_request_iterator(request_iterator, state, call, request_serializer,
                               event_handler):
+    if cygrpc.is_fork_support_enabled():
+        condition_wait_timeout = 1.0
+    else:
+        condition_wait_timeout = None
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
         while True:
+            return_from_user_request_generator_invoked = False
             try:
+                # The thread may die in user-code. Do not block fork for this.
+                cygrpc.enter_user_request_generator()
                 request = next(request_iterator)
             except StopIteration:
                 break
             except Exception:  # pylint: disable=broad-except
+                cygrpc.return_from_user_request_generator()
+                return_from_user_request_generator_invoked = True
                 code = grpc.StatusCode.UNKNOWN
                 details = 'Exception iterating requests!'
-                logging.exception(details)
+                _LOGGER.exception(details)
                 call.cancel(_common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[code],
                             details)
                 _abort(state, code, details)
                 return
+            finally:
+                if not return_from_user_request_generator_invoked:
+                    cygrpc.return_from_user_request_generator()
             serialized_request = _common.serialize(request, request_serializer)
             with state.condition:
                 if state.code is None and not state.cancelled:
                     if serialized_request is None:
-                        code = grpc.StatusCode.INTERNAL  # pylint: disable=redefined-variable-type
+                        code = grpc.StatusCode.INTERNAL
                         details = 'Exception serializing request!'
                         call.cancel(
                             _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[code],
@@ -193,7 +225,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                         else:
                             return
                         while True:
-                            state.condition.wait()
+                            state.condition.wait(condition_wait_timeout)
+                            cygrpc.block_if_fork_in_progress(state)
                             if state.code is None:
                                 if cygrpc.OperationType.send_message not in state.due:
                                     break
@@ -209,8 +242,9 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 if operating:
                     state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    consumption_thread = threading.Thread(target=consume_request_iterator)
-    consumption_thread.daemon = True
+    consumption_thread = cygrpc.ForkManagedThread(
+        target=consume_request_iterator)
+    consumption_thread.setDaemon(True)
     consumption_thread.start()
 
 
@@ -374,13 +408,23 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
                 self._state.condition.wait()
             return _common.decode(self._state.details)
 
+    def debug_error_string(self):
+        with self._state.condition:
+            while self._state.debug_error_string is None:
+                self._state.condition.wait()
+            return _common.decode(self._state.debug_error_string)
+
     def _repr(self):
         with self._state.condition:
             if self._state.code is None:
                 return '<_Rendezvous object of in-flight RPC>'
+            elif self._state.code is grpc.StatusCode.OK:
+                return _OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self._state.code, self._state.details)
             else:
-                return '<_Rendezvous of RPC that terminated with ({}, {})>'.format(
-                    self._state.code, _common.decode(self._state.details))
+                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self._state.code, self._state.details,
+                    self._state.debug_error_string)
 
     def __repr__(self):
         return self._repr()
@@ -646,13 +690,20 @@ class _ChannelCallState(object):
         self.lock = threading.Lock()
         self.channel = channel
         self.managed_calls = 0
+        self.threading = False
+
+    def reset_postfork_child(self):
+        self.managed_calls = 0
 
 
 def _run_channel_spin_thread(state):
 
     def channel_spin():
         while True:
+            cygrpc.block_if_fork_in_progress(state)
             event = state.channel.next_call_event()
+            if event.completion_type == cygrpc.CompletionType.queue_timeout:
+                continue
             call_completed = event.tag(event)
             if call_completed:
                 with state.lock:
@@ -660,8 +711,8 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    channel_spin_thread = threading.Thread(target=channel_spin)
-    channel_spin_thread.daemon = True
+    channel_spin_thread = cygrpc.ForkManagedThread(target=channel_spin)
+    channel_spin_thread.setDaemon(True)
     channel_spin_thread.start()
 
 
@@ -717,6 +768,13 @@ class _ChannelConnectivityState(object):
         self.callbacks_and_connectivities = []
         self.delivering = False
 
+    def reset_postfork_child(self):
+        self.polling = False
+        self.connectivity = None
+        self.try_to_connect = False
+        self.callbacks_and_connectivities = []
+        self.delivering = False
+
 
 def _deliveries(state):
     callbacks_needing_update = []
@@ -733,6 +791,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
     callbacks = initial_callbacks
     while True:
         for callback in callbacks:
+            cygrpc.block_if_fork_in_progress(state)
             callable_util.call_logging_exceptions(
                 callback, _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE,
                 connectivity)
@@ -746,7 +805,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 
 def _spawn_delivery(state, callbacks):
-    delivering_thread = threading.Thread(
+    delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver, args=(
             state,
             state.connectivity,
@@ -774,6 +833,7 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
     while True:
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
+        cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             if not state.callbacks_and_connectivities and not state.try_to_connect:
                 state.polling = False
@@ -788,10 +848,7 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
                     _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                         connectivity])
                 if not state.delivering:
-                    # NOTE(nathaniel): The field is only ever used as a
-                    # sequence so it's fine that both lists and tuples are
-                    # assigned to it.
-                    callbacks = _deliveries(state)  # pylint: disable=redefined-variable-type
+                    callbacks = _deliveries(state)
                     if callbacks:
                         _spawn_delivery(state, callbacks)
 
@@ -804,10 +861,10 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = threading.Thread(
+            polling_thread = cygrpc.ForkManagedThread(
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
-            polling_thread.daemon = True
+            polling_thread.setDaemon(True)
             polling_thread.start()
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
@@ -854,6 +911,7 @@ class Channel(grpc.Channel):
             _common.encode(target), _options(options), credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
+        cygrpc.fork_register_channel(self)
 
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)
@@ -897,6 +955,11 @@ class Channel(grpc.Channel):
         self._channel.close(cygrpc.StatusCode.cancelled, 'Channel closed!')
         _moot(self._connectivity_state)
 
+    def _close_on_fork(self):
+        self._channel.close_on_fork(cygrpc.StatusCode.cancelled,
+                                    'Channel closed due to fork')
+        _moot(self._connectivity_state)
+
     def __enter__(self):
         return self
 
@@ -917,4 +980,8 @@ class Channel(grpc.Channel):
         # for as long as they are in use and to close them after using them,
         # then deletion of this grpc._channel.Channel instance can be made to
         # effect closure of the underlying cygrpc.Channel instance.
-        _moot(self._connectivity_state)
+        cygrpc.fork_unregister_channel(self)
+        # This prevent the failed-at-initializing object removal from failing.
+        # Though the __init__ failed, the removal will still trigger __del__.
+        if hasattr(self, "_connectivity_state"):
+            _moot(self._connectivity_state)

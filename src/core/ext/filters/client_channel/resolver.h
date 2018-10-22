@@ -81,18 +81,15 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   ///
   /// If this causes new data to become available, then the currently
   /// pending call to \a NextLocked() will return the new result.
-  ///
-  /// Note: Currently, all resolvers are required to return a new result
-  /// shortly after this method is called.  For pull-based mechanisms, if
-  /// the implementation decides to delay querying the name service, it
-  /// should immediately return a new copy of the previously returned
-  /// result (and it can then return the updated data later, when it
-  /// actually does query the name service).  For push-based mechanisms,
-  /// the implementation should immediately return a new copy of the
-  /// last-seen result.
-  /// TODO(roth): Remove this requirement once we fix pick_first to not
-  /// throw away unselected subchannels.
-  virtual void RequestReresolutionLocked() GRPC_ABSTRACT;
+  virtual void RequestReresolutionLocked() {}
+
+  /// Resets the re-resolution backoff, if any.
+  /// This needs to be implemented only by pull-based implementations;
+  /// for push-based implementations, it will be a no-op.
+  /// TODO(roth): Pull the backoff code out of resolver and into
+  /// client_channel, so that it can be shared across resolver
+  /// implementations.  At that point, this method can go away.
+  virtual void ResetBackoffLocked() {}
 
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
@@ -105,9 +102,7 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  // So Delete() can access our protected dtor.
-  template <typename T>
-  friend void Delete(T*);
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   /// Does NOT take ownership of the reference to \a combiner.
   // TODO(roth): Once we have a C++-like interface for combiners, this

@@ -21,6 +21,8 @@ namespace Grpc;
 
 /**
  * Represents an interceptor that intercept RPC invocations before call starts.
+ * There is one proposal related to the argument $deserialize under the review.
+ * The proposal link is https://github.com/grpc/proposal/pull/86.
  * This is an EXPERIMENTAL API.
  */
 class Interceptor
@@ -28,39 +30,43 @@ class Interceptor
     public function interceptUnaryUnary(
         $method,
         $argument,
+        $deserialize,
         array $metadata = [],
         array $options = [],
         $continuation
     ) {
-        return $continuation($method, $argument, $metadata, $options);
+        return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
     public function interceptStreamUnary(
         $method,
+        $deserialize,
         array $metadata = [],
         array $options = [],
         $continuation
     ) {
-        return $continuation($method, $metadata, $options);
+        return $continuation($method, $deserialize, $metadata, $options);
     }
 
     public function interceptUnaryStream(
         $method,
         $argument,
+        $deserialize,
         array $metadata = [],
         array $options = [],
         $continuation
     ) {
-        return $continuation($method, $argument, $metadata, $options);
+        return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
     public function interceptStreamStream(
         $method,
+        $deserialize,
         array $metadata = [],
         array $options = [],
         $continuation
     ) {
-        return $continuation($method, $metadata, $options);
+        return $continuation($method, $deserialize, $metadata, $options);
     }
 
     /**
@@ -75,10 +81,10 @@ class Interceptor
     {
         if (is_array($interceptors)) {
             for ($i = count($interceptors) - 1; $i >= 0; $i--) {
-                $channel = new InterceptorChannel($channel, $interceptors[$i]);
+                $channel = new Internal\InterceptorChannel($channel, $interceptors[$i]);
             }
         } else {
-            $channel =  new InterceptorChannel($channel, $interceptors);
+            $channel =  new Internal\InterceptorChannel($channel, $interceptors);
         }
         return $channel;
     }

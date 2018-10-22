@@ -320,7 +320,7 @@ static void http_connect_handshaker_do_handshake(
   // Take a new ref to be held by the write callback.
   gpr_ref(&handshaker->refcount);
   grpc_endpoint_write(args->endpoint, &handshaker->write_buffer,
-                      &handshaker->request_done_closure);
+                      &handshaker->request_done_closure, nullptr);
   gpr_mu_unlock(&handshaker->mu);
 }
 
@@ -351,6 +351,7 @@ static grpc_handshaker* grpc_http_connect_handshaker_create() {
 
 static void handshaker_factory_add_handshakers(
     grpc_handshaker_factory* factory, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_handshake_manager_add(handshake_mgr,
                              grpc_http_connect_handshaker_create());
