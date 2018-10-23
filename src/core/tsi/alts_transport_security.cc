@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/tsi/alts_transport_security.h"
-
 #include <string.h>
+
+#include "src/core/tsi/alts_transport_security.h"
 
 static alts_shared_resource g_alts_resource;
 

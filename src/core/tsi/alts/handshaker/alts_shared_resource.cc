@@ -31,22 +31,6 @@ alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void) {
   return &g_alts_resource_dedicated;
 }
 
-static void wait_for_cq_drain() {
-  gpr_mu_lock(&g_shared_resources->mu);
-  while (!g_alts_resource_dedicated.is_cq_drained) {
-    gpr_cv_wait(&g_alts_resource_dedicated.cv, &g_shared_resources->mu,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  gpr_mu_unlock(&g_shared_resources->mu);
-}
-
-static void signal_for_cq_destroy() {
-  gpr_mu_lock(&g_shared_resources->mu);
-  g_alts_resource_dedicated.is_cq_drained = true;
-  gpr_cv_signal(&g_alts_resource_dedicated.cv);
-  gpr_mu_unlock(&g_shared_resources->mu);
-}
-
 static void thread_worker(void* arg) {
   while (true) {
     grpc_event event =
@@ -54,7 +38,6 @@ static void thread_worker(void* arg) {
                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     GPR_ASSERT(event.type != GRPC_QUEUE_TIMEOUT);
     if (event.type == GRPC_QUEUE_SHUTDOWN) {
-      signal_for_cq_destroy();
       break;
     }
     GPR_ASSERT(event.type == GRPC_OP_COMPLETE);
@@ -65,7 +48,6 @@ static void thread_worker(void* arg) {
 }
 
 void grpc_alts_shared_resource_dedicated_init() {
-  gpr_cv_init(&g_alts_resource_dedicated.cv);
   g_alts_resource_dedicated.cq = nullptr;
 }
 
@@ -81,13 +63,11 @@ void grpc_alts_shared_resource_dedicated_start() {
 
 void grpc_alts_shared_resource_dedicated_shutdown() {
   if (g_alts_resource_dedicated.cq != nullptr) {
+    grpc_completion_queue_shutdown(g_alts_resource_dedicated.cq);
+    g_alts_resource_dedicated.thread.Join();
+    grpc_completion_queue_destroy(g_alts_resource_dedicated.cq);
     grpc_pollset_set_del_pollset(g_alts_resource_dedicated.interested_parties,
                                  grpc_cq_pollset(g_alts_resource_dedicated.cq));
     grpc_pollset_set_destroy(g_alts_resource_dedicated.interested_parties);
-    grpc_completion_queue_shutdown(g_alts_resource_dedicated.cq);
-    wait_for_cq_drain();
-    grpc_completion_queue_destroy(g_alts_resource_dedicated.cq);
-    g_alts_resource_dedicated.thread.Join();
   }
-  gpr_cv_destroy(&g_alts_resource_dedicated.cv);
 }

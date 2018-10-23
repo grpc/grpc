@@ -247,7 +247,6 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   tsi_result ok = TSI_OK;
-  alts_handshaker_client_buffer_destroy(handshaker->client);
   if (!alts_handshaker_client_is_initialized(handshaker->client)) {
     alts_handshaker_client_init(handshaker->client, handshaker, cb, user_data,
                                 handshaker->options, handshaker->target_name);

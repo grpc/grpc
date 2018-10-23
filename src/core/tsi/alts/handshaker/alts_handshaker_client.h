@@ -49,7 +49,7 @@ typedef struct alts_handshaker_client alts_handshaker_client;
 
 /* A function that makes the grpc call to the handshaker service. */
 typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
-                                            size_t nops, void* tag);
+                                            size_t nops, grpc_closure* tag);
 
 /* V-table for ALTS handshaker client operations. */
 typedef struct alts_handshaker_client_vtable {
@@ -158,15 +158,9 @@ void alts_handshaker_client_init(alts_handshaker_client* client,
                                  grpc_slice target_name);
 
 /**
- * This method destroys send and recv buffers of an ALTS handshaker client.
- *
- * - client: an ALTS handshaker client instance.
- */
-void alts_handshaker_client_buffer_destroy(alts_handshaker_client* client);
-
-/**
  * This method handles handshaker response returned from ALTS handshaker
- * service.
+ * service. Note that the only reason the API is exposed is that it is used in
+ * alts_shared_resources.cc.
  *
  * - client: an ALTS handshaker client instance.
  * - is_ok: a boolean value indicating if the handshaker response is ok to read.

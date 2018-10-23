@@ -139,7 +139,7 @@ static grpc_gcp_handshaker_req* deserialize_handshaker_req(
  */
 static grpc_call_error check_must_not_be_called(grpc_call* call,
                                                 const grpc_op* ops, size_t nops,
-                                                void* tag) {
+                                                grpc_closure* tag) {
   GPR_ASSERT(0);
 }
 
@@ -151,8 +151,8 @@ static grpc_call_error check_must_not_be_called(grpc_call* call,
  */
 static grpc_call_error check_client_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag) {
-  grpc_closure* closure = (grpc_closure*)tag;
+                                                  size_t nops,
+                                                  grpc_closure* closure) {
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
@@ -198,8 +198,8 @@ static grpc_call_error check_client_start_success(grpc_call* call,
  */
 static grpc_call_error check_server_start_success(grpc_call* call,
                                                   const grpc_op* op,
-                                                  size_t nops, void* tag) {
-  grpc_closure* closure = (grpc_closure*)tag;
+                                                  size_t nops,
+                                                  grpc_closure* closure) {
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
@@ -237,8 +237,7 @@ static grpc_call_error check_server_start_success(grpc_call* call,
  * and op is correctly populated.
  */
 static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
-                                          size_t nops, void* tag) {
-  grpc_closure* closure = (grpc_closure*)tag;
+                                          size_t nops, grpc_closure* closure) {
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
@@ -260,7 +259,7 @@ static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
  */
 static grpc_call_error check_grpc_call_failure(grpc_call* call,
                                                const grpc_op* op, size_t nops,
-                                               void* tag) {
+                                               grpc_closure* tag) {
   return GRPC_CALL_ERROR;
 }
 
@@ -365,14 +364,14 @@ static void schedule_request_success_test() {
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, check_client_start_success);
   GPR_ASSERT(alts_handshaker_client_start_client(config->client) == TSI_OK);
-  alts_handshaker_client_buffer_destroy(config->client);
+  // alts_handshaker_client_buffer_destroy(config->client);
 
   /* Check server_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->server, check_server_start_success);
   GPR_ASSERT(alts_handshaker_client_start_server(config->server,
                                                  &config->out_frame) == TSI_OK);
-  alts_handshaker_client_buffer_destroy(config->server);
+  // alts_handshaker_client_buffer_destroy(config->server);
 
   /* Check client next success. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
@@ -398,14 +397,14 @@ static void schedule_request_grpc_call_failure_test() {
                                                      check_grpc_call_failure);
   GPR_ASSERT(alts_handshaker_client_start_client(config->client) ==
              TSI_INTERNAL_ERROR);
-  alts_handshaker_client_buffer_destroy(config->client);
+  // alts_handshaker_client_buffer_destroy(config->client);
 
   /* Check server_start failure. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                      check_grpc_call_failure);
   GPR_ASSERT(alts_handshaker_client_start_server(
                  config->server, &config->out_frame) == TSI_INTERNAL_ERROR);
-  alts_handshaker_client_buffer_destroy(config->server);
+  // alts_handshaker_client_buffer_destroy(config->server);
 
   /* Check client next failure. */
   GPR_ASSERT(alts_handshaker_client_next(config->client, &config->out_frame) ==

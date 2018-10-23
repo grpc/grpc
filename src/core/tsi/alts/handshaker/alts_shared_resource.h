@@ -35,8 +35,6 @@
 typedef struct alts_shared_resource_dedicated {
   grpc_core::Thread thread;
   grpc_completion_queue* cq;
-  gpr_cv cv;
-  bool is_cq_drained;
   grpc_pollset_set* interested_parties;
   grpc_cq_completion storage;
 } alts_shared_resource_dedicated;
