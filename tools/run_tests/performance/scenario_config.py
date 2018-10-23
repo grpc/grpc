@@ -231,7 +231,7 @@ class CXXLanguage:
         self.safename = 'cxx'
 
     def worker_cmdline(self):
-        return ['bins/opt/qps_worker']
+        return ['cmake/build/qps_worker']
 
     def worker_port_offset(self):
         return 0
