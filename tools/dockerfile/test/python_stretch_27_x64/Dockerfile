@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:stretch
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -53,25 +53,9 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
-
-# Install pip and virtualenv for Python 3.4
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
-RUN python3.4 -m pip install virtualenv
-
+# Install Python 2.7
+RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
 RUN mkdir /var/local/jenkins
 

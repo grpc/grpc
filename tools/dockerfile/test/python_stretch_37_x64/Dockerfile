@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2018 The gRPC authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,13 +53,15 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
-
-# Install Python Versions from Debian 'testing' repository
+# Install Python 2.7
+RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+# Add Debian 'testing' repository
 RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
 RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-RUN apt-get update && apt-get -t testing install -y python2.7 python3.7 python-all-dev python3-all-dev
 
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+
+RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 
