@@ -121,7 +121,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), 1);
+      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -143,7 +143,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -172,7 +172,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
@@ -185,7 +185,7 @@ class HijackingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -224,7 +224,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), 1);
+      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -239,16 +239,16 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
       EXPECT_EQ(req.message(), "Hello");
       req_ = req;
-      auto stub = grpc::testing::EchoTestService::NewStub(
+      stub_ = grpc::testing::EchoTestService::NewStub(
           methods->GetInterceptedChannel());
       ctx_.AddMetadata(metadata_map_.begin()->first,
                        metadata_map_.begin()->second);
-      stub->experimental_async()->Echo(&ctx_, &req_, &resp_,
-                                       [this, &methods](Status s) {
-                                         EXPECT_EQ(s.ok(), true);
-                                         EXPECT_EQ(resp_.message(), "Hello");
-                                         methods->Hijack();
-                                       });
+      stub_->experimental_async()->Echo(&ctx_, &req_, &resp_,
+                                        [this, methods](Status s) {
+                                          EXPECT_EQ(s.ok(), true);
+                                          EXPECT_EQ(resp_.message(), "Hello");
+                                          methods->Hijack();
+                                        });
       // There isn't going to be any other interesting operation in this batch,
       // so it is fine to return
       return;
@@ -261,7 +261,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -289,7 +289,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
@@ -302,7 +302,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       *map = ctx_.GetServerTrailingMetadata();
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
@@ -317,6 +317,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
   ClientContext ctx_;
   EchoRequest req_;
   EchoResponse resp_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class HijackingInterceptorMakesAnotherCallFactory
@@ -342,7 +343,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
       // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), 1);
+      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
       EXPECT_EQ("testkey", iterator->first);
       EXPECT_EQ("testvalue", iterator->second);
@@ -363,7 +364,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), 0);
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -401,7 +402,7 @@ class LoggingInterceptorFactory
   }
 };
 
-void MakeCall(std::shared_ptr<Channel> channel) {
+void MakeCall(const std::shared_ptr<Channel> channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -414,7 +415,7 @@ void MakeCall(std::shared_ptr<Channel> channel) {
   EXPECT_EQ(resp.message(), "Hello");
 }
 
-void MakeCallbackCall(std::shared_ptr<Channel> channel) {
+void MakeCallbackCall(const std::shared_ptr<Channel> channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -525,8 +526,11 @@ TEST_F(ClientInterceptorsEnd2endTest,
     creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
-  auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  // auto channel = experimental::CreateCustomChannelWithInterceptors(
+  //    server_address_, InsecureChannelCredentials(), args,
+  //    std::move(creators));
+  auto channel = server_->experimental().InProcessChannelWithInterceptors(
+      args, std::move(creators));
 
   MakeCall(channel);
   // Make sure all interceptors were run once, since the hijacking interceptor
@@ -549,8 +553,8 @@ TEST_F(ClientInterceptorsEnd2endTest,
     creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
-  auto channel = experimental::CreateCustomChannelWithInterceptors(
-      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  auto channel = server_->experimental().InProcessChannelWithInterceptors(
+      args, std::move(creators));
   MakeCallbackCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);

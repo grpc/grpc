@@ -4512,6 +4512,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_interceptors_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/client_interceptors_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: client_lb_end2end_test
   gtest: true
   build: test
