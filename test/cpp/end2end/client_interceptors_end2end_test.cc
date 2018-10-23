@@ -64,9 +64,9 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
   }
 };
 
-class ClientInterceptorsStreamingEnd2EndTest : public ::testing::Test {
+class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
  protected:
-  ClientInterceptorsStreamingEnd2EndTest() {
+  ClientInterceptorsStreamingEnd2endTest() {
     int port = grpc_pick_unused_port_or_die();
 
     ServerBuilder builder;
@@ -75,6 +75,9 @@ class ClientInterceptorsStreamingEnd2EndTest : public ::testing::Test {
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
   }
+
+  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
+
   std::string server_address_;
   EchoTestServiceStreamingImpl service_;
   std::unique_ptr<Server> server_;
@@ -613,7 +616,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
-TEST_F(ClientInterceptorsStreamingEnd2EndTest, ClientInterceptorLoggingTest) {
+TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientInterceptorLoggingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
   auto creators = std::unique_ptr<std::vector<

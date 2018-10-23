@@ -59,6 +59,7 @@ class RpcMethodHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
+    gpr_log(GPR_ERROR, "running handler");
     ResponseType rsp;
     Status status = param.status;
     if (status.ok()) {
@@ -83,7 +84,7 @@ class RpcMethodHandler : public MethodHandler {
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
-    param.call->cq()->Pluck(&ops);
+    GPR_CODEGEN_ASSERT(param.call->cq()->Pluck(&ops));
   }
 
   void* Deserialize(grpc_byte_buffer* req, Status* status) final {

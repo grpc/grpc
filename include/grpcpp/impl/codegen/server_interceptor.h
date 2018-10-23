@@ -73,7 +73,9 @@ class ServerRpcInfo {
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
+    gpr_log(GPR_ERROR, "Registering interceptors");
     for (const auto& creator : creators) {
+      gpr_log(GPR_ERROR, "registering one");
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
           creator->CreateServerInterceptor(this)));
     }
