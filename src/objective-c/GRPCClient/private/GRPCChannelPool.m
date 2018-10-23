@@ -150,7 +150,7 @@ extern const char *kCFStreamVarName;
   NSAssert([object isKindOfClass:[GRPCChannelConfiguration class]], @"Illegal :isEqual");
   GRPCChannelConfiguration *obj = (GRPCChannelConfiguration *)object;
   if (!(obj.host == _host || [obj.host isEqualToString:_host])) return NO;
-  if (!(obj.callOptions == _callOptions || [obj.callOptions isChannelOptionsEqualTo:_callOptions]))
+  if (!(obj.callOptions == _callOptions || [obj.callOptions hasChannelOptionsEqualTo:_callOptions]))
     return NO;
 
   return YES;

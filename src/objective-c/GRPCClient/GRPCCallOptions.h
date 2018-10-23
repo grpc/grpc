@@ -199,7 +199,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 /**
  * Return if the channel options are equal to another object.
  */
-- (BOOL)isChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
+- (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
 
 /**
  * Hash for channel options.

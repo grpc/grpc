@@ -229,7 +229,7 @@ static const NSUInteger kDefaultChannelID = 0;
   return newOptions;
 }
 
-- (BOOL)isChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
+- (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
   if (!(callOptions.userAgentPrefix == _userAgentPrefix ||
         [callOptions.userAgentPrefix isEqualToString:_userAgentPrefix]))
     return NO;
