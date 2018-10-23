@@ -760,14 +760,13 @@ class PythonLanguage(object):
 
     def python_manager_name(self):
         if self.args.compiler in [
-                'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7'
+                'python2.7', 'python3.5', 'python3.6', 'python3.7'
         ]:
             return 'stretch_%s' % re.sub(r'\D*', '', self.args.compiler)
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
-            raise ValueError("No Docker Python manager available for %s" %
-                             self.args.compiler)
+            return 'jessie'
 
     def _get_pythons(self, args):
         if args.arch == 'x86':
