@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#import "../internal/GRPCCallOptions+internal.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
@@ -32,7 +33,6 @@
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
 #import "version.h"
-#import "../internal/GRPCCallOptions+internal.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

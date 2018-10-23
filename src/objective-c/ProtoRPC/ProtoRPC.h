@@ -31,8 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 @optional
 
 /**
-  * Issued when initial metadata is received from the server. The task must be scheduled onto the
-  * dispatch queue in property \a dispatchQueue. */
+ * Issued when initial metadata is received from the server. The task must be scheduled onto the
+ * dispatch queue in property \a dispatchQueue. */
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
 
 /**

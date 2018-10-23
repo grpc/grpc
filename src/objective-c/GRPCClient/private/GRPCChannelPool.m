@@ -18,6 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "../internal/GRPCCallOptions+internal.h"
 #import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
@@ -26,7 +27,6 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "version.h"
-#import "../internal/GRPCCallOptions+internal.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>

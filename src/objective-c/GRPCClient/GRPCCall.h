@@ -156,9 +156,9 @@ extern NSString *const kGRPCTrailersKey;
 @optional
 
 /**
-  * Issued when initial metadata is received from the server. The task must be scheduled onto the
-  * dispatch queue in property \a dispatchQueue.
-  */
+ * Issued when initial metadata is received from the server. The task must be scheduled onto the
+ * dispatch queue in property \a dispatchQueue.
+ */
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
 
 /**
@@ -309,7 +309,7 @@ NS_ASSUME_NONNULL_END
  *
  * The property is initialized to an empty NSMutableDictionary.
  */
-@property(null_unspecified, atomic, readonly) NSMutableDictionary * requestHeaders;
+@property(null_unspecified, atomic, readonly) NSMutableDictionary *requestHeaders;
 
 /**
  * This dictionary is populated with the HTTP headers received from the server. This happens before
@@ -342,9 +342,9 @@ NS_ASSUME_NONNULL_END
  * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-- (instancetype _Null_unspecified)initWithHost:(NSString * _Null_unspecified)host
-                                          path:(NSString * _Null_unspecified)path
-                                requestsWriter:(GRXWriter * _Null_unspecified)requestWriter;
+- (instancetype _Null_unspecified)initWithHost:(NSString *_Null_unspecified)host
+                                          path:(NSString *_Null_unspecified)path
+                                requestsWriter:(GRXWriter *_Null_unspecified)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -355,7 +355,9 @@ NS_ASSUME_NONNULL_END
 /**
  * The following methods are deprecated.
  */
-+ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString * _Null_unspecified)host path:(NSString * _Null_unspecified)path;
++ (void)setCallSafety:(GRPCCallSafety)callSafety
+                 host:(NSString *_Null_unspecified)host
+                 path:(NSString *_Null_unspecified)path;
 @property(null_unspecified, atomic, copy, readwrite) NSString *serverName;
 @property NSTimeInterval timeout;
 - (void)setResponseDispatchQueue:(dispatch_queue_t _Null_unspecified)queue;

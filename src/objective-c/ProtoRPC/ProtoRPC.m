@@ -28,19 +28,19 @@
 #import <RxLibrary/GRXWriter+Transformations.h>
 
 /**
-  * Generate an NSError object that represents a failure in parsing a proto class.
-  */
+ * Generate an NSError object that represents a failure in parsing a proto class.
+ */
 static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
   NSDictionary *info = @{
-                         NSLocalizedDescriptionKey : @"Unable to parse response from the server",
-                         NSLocalizedRecoverySuggestionErrorKey :
-                           @"If this RPC is idempotent, retry "
-                         @"with exponential backoff. Otherwise, query the server status before "
-                         @"retrying.",
-                         NSUnderlyingErrorKey : parsingError,
-                         @"Expected class" : expectedClass,
-                         @"Received value" : proto,
-                         };
+    NSLocalizedDescriptionKey : @"Unable to parse response from the server",
+    NSLocalizedRecoverySuggestionErrorKey :
+        @"If this RPC is idempotent, retry "
+        @"with exponential backoff. Otherwise, query the server status before "
+        @"retrying.",
+    NSUnderlyingErrorKey : parsingError,
+    @"Expected class" : expectedClass,
+    @"Received value" : proto,
+  };
   // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
   return [NSError errorWithDomain:@"io.grpc" code:13 userInfo:info];
 }
@@ -190,7 +190,9 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
         }
       } else {
         if ([self->_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-          [self->_handler closedWithTrailingMetadata:nil error:ErrorForBadProto(message, _responseClass, error)];
+          [self->_handler
+              closedWithTrailingMetadata:nil
+                                   error:ErrorForBadProto(message, _responseClass, error)];
         }
         self->_handler = nil;
         [self->_call cancel];
