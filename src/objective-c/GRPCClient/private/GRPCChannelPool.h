@@ -45,7 +45,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(readonly) id<GRPCChannelFactory> channelFactory;
 
 /** Acquire the dictionary of channel args with current configurations. */
-@property(readonly) NSDictionary *channelArgs;
+@property(copy, readonly) NSDictionary *channelArgs;
 
 - (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
 
