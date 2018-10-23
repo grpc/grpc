@@ -102,6 +102,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.15.0': None
         },
+        {
+            'v1.16.0': None
+        },
     ],
     'go': [
         {
@@ -237,6 +240,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.15.0': None
         },
+        {
+            'v1.16.0': None
+        },
     ],
     'node': [
         {
@@ -328,6 +334,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.15.0': None
         },
+        {
+            'v1.16.0': None
+        },
     ],
     'php': [
         {
@@ -374,6 +383,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.15.0': None
+        },
+        {
+            'v1.16.0': None
         },
     ],
     'csharp': [
@@ -426,6 +438,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.15.0': None
+        },
+        {
+            'v1.16.0': None
         },
     ],
 }
