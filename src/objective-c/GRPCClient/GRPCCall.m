@@ -104,11 +104,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_queue_t _dispatchQueue;
   /** Flags whether call has started. */
   BOOL _started;
-  /**
-   * Flags that the call has been canceled. When this is true, pending initial metadata and message
-   * should not be issued to \a _handler. This ivar must be accessed with lock to self.
-   */
-  BOOL _canceled;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -140,7 +135,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
     dispatch_set_target_queue(responseHandler.dispatchQueue, _dispatchQueue);
     _started = NO;
-    _canceled = NO;
   }
 
   return self;
@@ -223,9 +217,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
       self->_pipe = nil;
     }
     if (self->_handler) {
-      @synchronized(self) {
-        self->_canceled = YES;
-      }
       id<GRPCResponseHandler> handler = self->_handler;
       dispatch_async(handler.dispatchQueue, ^{
         if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
@@ -261,50 +252,30 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  if (_handler != nil && initialMetadata != nil) {
-    id<GRPCResponseHandler> handler = _handler;
-    if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
-      dispatch_async(handler.dispatchQueue, ^{
-        // Do not issue initial metadata if the call is already canceled.
-        __block BOOL canceled = NO;
-        @synchronized(self) {
-          canceled = self->_canceled;
-        }
-        if (!canceled) {
-          [handler receivedInitialMetadata:initialMetadata];
-        }
-      });
-    }
+  id<GRPCResponseHandler> handler = _handler;
+  if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler receivedInitialMetadata:initialMetadata];
+    });
   }
 }
 
 - (void)issueMessage:(id)message {
-  if (_handler != nil && message != nil) {
-    id<GRPCResponseHandler> handler = _handler;
-    if ([handler respondsToSelector:@selector(receivedRawMessage:)]) {
-      dispatch_async(handler.dispatchQueue, ^{
-        // Do not issue message if the call is already canceled.
-        __block BOOL canceled = NO;
-        @synchronized(self) {
-          canceled = self->_canceled;
-        }
-        if (!canceled) {
-          [handler receivedRawMessage:message];
-        }
-      });
-    }
+  id<GRPCResponseHandler> handler = _handler;
+  if ([handler respondsToSelector:@selector(receivedRawMessage:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler receivedRawMessage:message];
+    });
   }
 }
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  if (_handler != nil) {
-    id<GRPCResponseHandler> handler = _handler;
-    NSDictionary *trailers = _call.responseTrailers;
-    if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler closedWithTrailingMetadata:trailers error:error];
-      });
-    }
+  id<GRPCResponseHandler> handler = _handler;
+  NSDictionary *trailers = _call.responseTrailers;
+  if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+    dispatch_async(handler.dispatchQueue, ^{
+      [handler closedWithTrailingMetadata:trailers error:error];
+    });
   }
 }
 

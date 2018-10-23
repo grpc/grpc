@@ -84,11 +84,6 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
   GRPCCall2 *_call;
   dispatch_queue_t _dispatchQueue;
-  /**
-    * Flags that the call has been canceled. When this is true, pending initial metadata and message
-    * should not be issued to \a _handler. This ivar must be accessed with lock to self.
-    */
-  BOOL _canceled;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -118,7 +113,6 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
       _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
     }
     dispatch_set_target_queue(handler.dispatchQueue, _dispatchQueue);
-    _canceled = NO;
 
     [self start];
   }
@@ -134,15 +128,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
-    if (self->_call) {
-      [self->_call cancel];
-      self->_call = nil;
+    if (_call) {
+      [_call cancel];
+      _call = nil;
     }
-    if (self->_handler) {
-      @synchronized(self) {
-        self->_canceled = YES;
-      }
-      id<GRPCProtoResponseHandler> handler = self->_handler;
+    if (_handler) {
+      id<GRPCProtoResponseHandler> handler = _handler;
       if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
         dispatch_async(handler.dispatchQueue, ^{
           [handler closedWithTrailingMetadata:nil
@@ -154,7 +145,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                                                               }]];
         });
       }
-      self->_handler = nil;
+      _handler = nil;
     }
   });
 }
@@ -182,17 +173,10 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
   if (_handler && initialMetadata != nil) {
-    __block id<GRPCResponseHandler> handler = _handler;
+    id<GRPCProtoResponseHandler> handler = _handler;
     if ([handler respondsToSelector:@selector(initialMetadata:)]) {
       dispatch_async(handler.dispatchQueue, ^{
-        // Do not issue initial metadata if the call is already canceled.
-        __block BOOL canceled = NO;
-        @synchronized(self) {
-          canceled = self->_canceled;
-        }
-        if (!canceled) {
-          [handler receivedInitialMetadata:initialMetadata];
-        }
+        [handler receivedInitialMetadata:initialMetadata];
       });
     }
   }
@@ -200,20 +184,13 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)receivedRawMessage:(NSData *_Nullable)message {
   if (_handler && message != nil) {
-    __block id<GRPCProtoResponseHandler> handler = _handler;
+    id<GRPCProtoResponseHandler> handler = _handler;
     NSError *error = nil;
     GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
     if (parsed) {
       if ([handler respondsToSelector:@selector(receivedProtoMessage:)]) {
         dispatch_async(handler.dispatchQueue, ^{
-          // Do not issue message if the call is already canceled.
-          __block BOOL canceled = NO;
-          @synchronized(self) {
-            canceled = self->_canceled;
-          }
-          if (!canceled) {
-            [handler receivedProtoMessage:parsed];
-          }
+          [handler receivedProtoMessage:parsed];
         });
       }
     } else {
