@@ -104,9 +104,9 @@ extern const char *kCFStreamVarName;
 
   if (_callOptions.keepaliveInterval != 0) {
     args[@GRPC_ARG_KEEPALIVE_TIME_MS] =
-        [NSNumber numberWithUnsignedInteger:(unsigned int)(_callOptions.keepaliveInterval * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveInterval * 1000)];
     args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] =
-        [NSNumber numberWithUnsignedInteger:(unsigned int)(_callOptions.keepaliveTimeout * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
   }
 
   if (_callOptions.retryEnabled == NO) {
@@ -115,15 +115,15 @@ extern const char *kCFStreamVarName;
 
   if (_callOptions.connectMinTimeout > 0) {
     args[@GRPC_ARG_MIN_RECONNECT_BACKOFF_MS] =
-        [NSNumber numberWithUnsignedInteger:(unsigned int)(_callOptions.connectMinTimeout * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMinTimeout * 1000)];
   }
   if (_callOptions.connectInitialBackoff > 0) {
     args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = [NSNumber
-        numberWithUnsignedInteger:(unsigned int)(_callOptions.connectInitialBackoff * 1000)];
+        numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectInitialBackoff * 1000)];
   }
   if (_callOptions.connectMaxBackoff > 0) {
     args[@GRPC_ARG_MAX_RECONNECT_BACKOFF_MS] =
-        [NSNumber numberWithUnsignedInteger:(unsigned int)(_callOptions.connectMaxBackoff * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMaxBackoff * 1000)];
   }
 
   if (_callOptions.logContext != nil) {
