@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/server.h"
 
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
@@ -44,16 +45,17 @@ namespace channelz {
 namespace testing {
 
 // testing peer to access channel internals
-class ChannelNodePeer {
+class CallCountingHelperPeer {
  public:
-  ChannelNodePeer(ChannelNode* channel) : channel_(channel) {}
-  grpc_millis last_call_started_millis() {
-    return (grpc_millis)gpr_atm_no_barrier_load(
-        &channel_->last_call_started_millis_);
+  explicit CallCountingHelperPeer(CallCountingHelper* node) : node_(node) {}
+  grpc_millis last_call_started_millis() const {
+    CallCountingHelper::CounterData data;
+    node_->CollectData(&data);
+    return (grpc_millis)gpr_atm_no_barrier_load(&data.last_call_started_millis);
   }
 
  private:
-  ChannelNode* channel_;
+  CallCountingHelper* node_;
 };
 
 namespace {
@@ -67,17 +69,82 @@ grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
   return nullptr;
 }
 
+void ValidateJsonArraySize(grpc_json* json, const char* key,
+                           size_t expected_size) {
+  grpc_json* arr = GetJsonChild(json, key);
+  if (expected_size == 0) {
+    ASSERT_EQ(arr, nullptr);
+    return;
+  }
+  ASSERT_NE(arr, nullptr);
+  ASSERT_EQ(arr->type, GRPC_JSON_ARRAY);
+  size_t count = 0;
+  for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
+    ++count;
+  }
+  EXPECT_EQ(count, expected_size);
+}
+
+std::vector<intptr_t> GetUuidListFromArray(grpc_json* arr) {
+  EXPECT_EQ(arr->type, GRPC_JSON_ARRAY);
+  std::vector<intptr_t> uuids;
+  for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
+    grpc_json* it = GetJsonChild(child, "ref");
+    EXPECT_NE(it, nullptr);
+    it = GetJsonChild(it, "channelId");
+    EXPECT_NE(it, nullptr);
+    uuids.push_back(atoi(it->value));
+  }
+  return uuids;
+}
+
+void ValidateGetTopChannels(size_t expected_channels) {
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // This check will naturally have to change when we support pagination.
+  // tracked: https://github.com/grpc/grpc/issues/16019.
+  ValidateJsonArraySize(parsed_json, "channel", expected_channels);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // also check that the core API formats this correctly
+  char* core_api_json_str = grpc_channelz_get_top_channels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
+}
+
+void ValidateGetServers(size_t expected_servers) {
+  char* json_str = ChannelzRegistry::GetServers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // This check will naturally have to change when we support pagination.
+  // tracked: https://github.com/grpc/grpc/issues/16019.
+  ValidateJsonArraySize(parsed_json, "server", expected_servers);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // also check that the core API formats this correctly
+  char* core_api_json_str = grpc_channelz_get_servers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
+}
+
 class ChannelFixture {
  public:
-  ChannelFixture(int max_trace_nodes) {
-    grpc_arg client_a[2];
-    client_a[0].type = GRPC_ARG_INTEGER;
-    client_a[0].key =
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    client_a[0].value.integer = max_trace_nodes;
-    client_a[1].type = GRPC_ARG_INTEGER;
-    client_a[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-    client_a[1].value.integer = true;
+  ChannelFixture(int max_tracer_event_memory = 0) {
+    grpc_arg client_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            max_tracer_event_memory),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -91,6 +158,28 @@ class ChannelFixture {
   grpc_channel* channel_;
 };
 
+class ServerFixture {
+ public:
+  explicit ServerFixture(int max_tracer_event_memory = 0) {
+    grpc_arg server_a[] = {
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+            max_tracer_event_memory),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
+    };
+    grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+    server_ = grpc_server_create(&server_args, nullptr);
+  }
+
+  ~ServerFixture() { grpc_server_destroy(server_); }
+
+  grpc_server* server() const { return server_; }
+
+ private:
+  grpc_server* server_;
+};
+
 struct validate_channel_data_args {
   int64_t calls_started;
   int64_t calls_failed;
@@ -99,6 +188,10 @@ struct validate_channel_data_args {
 
 void ValidateChildInteger(grpc_json* json, int64_t expect, const char* key) {
   grpc_json* gotten_json = GetJsonChild(json, key);
+  if (expect == 0) {
+    ASSERT_EQ(gotten_json, nullptr);
+    return;
+  }
   ASSERT_NE(gotten_json, nullptr);
   int64_t gotten_number = (int64_t)strtol(gotten_json->value, nullptr, 0);
   EXPECT_EQ(gotten_number, expect);
@@ -115,14 +208,26 @@ void ValidateCounters(char* json_str, validate_channel_data_args args) {
 }
 
 void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
-  char* json_str = channel->RenderJSON();
+  char* json_str = channel->RenderJsonString();
   grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
+  ValidateCounters(json_str, args);
+  gpr_free(json_str);
+  // also check that the core API formats this the correct way
+  char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
+  grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
+}
+
+void ValidateServer(ServerNode* server, validate_channel_data_args args) {
+  char* json_str = server->RenderJsonString();
+  grpc::testing::ValidateServerProtoJsonTranslation(json_str);
   ValidateCounters(json_str, args);
   gpr_free(json_str);
 }
 
-grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {
-  ChannelNodePeer peer(channel);
+grpc_millis GetLastCallStartedMillis(CallCountingHelper* channel) {
+  CallCountingHelperPeer peer(channel);
   return peer.last_call_started_millis();
 }
 
@@ -141,15 +246,21 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ChannelFixture channel(GetParam());
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
-  char* json_str = channelz_channel->RenderJSON();
-  ValidateCounters(json_str, {0, 0, 0});
-  gpr_free(json_str);
+  ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   grpc_core::ExecCtx exec_ctx;
+  // explicitly disable channelz
+  grpc_arg arg[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
+          0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
+  grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
   grpc_channel* channel =
-      grpc_insecure_channel_create("fake_target", nullptr, nullptr);
+      grpc_insecure_channel_create("fake_target", &args, nullptr);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
@@ -175,32 +286,250 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
 
 TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
-  ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  CallCountingHelper counter;
   // start a call to set the last call started timestamp
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis1 = GetLastCallStartedMillis(&counter);
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
-  grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
+  grpc_millis millis2 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis2);
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
-  channelz_channel->RecordCallFailed();
-  channelz_channel->RecordCallSucceeded();
-  grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallFailed();
+  counter.RecordCallSucceeded();
+  grpc_millis millis3 = GetLastCallStartedMillis(&counter);
   EXPECT_EQ(millis1, millis3);
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
-  channelz_channel->RecordCallStarted();
-  grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
+  counter.RecordCallStarted();
+  grpc_millis millis4 = GetLastCallStartedMillis(&counter);
   EXPECT_NE(millis1, millis4);
 }
 
+class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
+ protected:
+  // ensure we always have a fresh registry for tests.
+  void SetUp() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+
+  void TearDown() override {
+    ChannelzRegistry::Shutdown();
+    ChannelzRegistry::Init();
+  }
+};
+
+TEST_F(ChannelzRegistryBasedTest, BasicGetTopChannelsTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channel;
+  ValidateGetTopChannels(1);
+}
+
+TEST_F(ChannelzRegistryBasedTest, NoChannelsTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ValidateGetTopChannels(0);
+}
+
+TEST_F(ChannelzRegistryBasedTest, ManyChannelsTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channels[10];
+  (void)channels;  // suppress unused variable error
+  ValidateGetTopChannels(10);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
+  grpc_core::ExecCtx exec_ctx;
+  // this is over the pagination limit.
+  ChannelFixture channels[150];
+  (void)channels;  // suppress unused variable error
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  // 100 is the pagination limit.
+  ValidateJsonArraySize(parsed_json, "channel", 100);
+  grpc_json* end = GetJsonChild(parsed_json, "end");
+  EXPECT_EQ(end, nullptr);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  // Now we get the rest
+  json_str = ChannelzRegistry::GetTopChannels(101);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
+  parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 50);
+  end = GetJsonChild(parsed_json, "end");
+  ASSERT_NE(end, nullptr);
+  EXPECT_EQ(end->type, GRPC_JSON_TRUE);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
+  const intptr_t kNumChannels = 50;
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channels[kNumChannels];
+  (void)channels;  // suppress unused variable error
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", kNumChannels);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  for (int i = 0; i < kNumChannels; ++i) {
+    EXPECT_EQ(i + 1, uuids[i]);
+  }
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
+  const intptr_t kNumChannels = 50;
+  const intptr_t kMidQuery = 40;
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channels[kNumChannels];
+  (void)channels;  // suppress unused variable error
+  // only query for the end of the channels
+  char* json_str = ChannelzRegistry::GetTopChannels(kMidQuery);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", kNumChannels - kMidQuery + 1);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  for (size_t i = 0; i < uuids.size(); ++i) {
+    EXPECT_EQ(static_cast<intptr_t>(kMidQuery + i), uuids[i]);
+  }
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture pre_channels[40];  // will take uuid[1, 40]
+  (void)pre_channels;               // suppress unused variable error
+  ServerFixture servers[10];        // will take uuid[41, 50]
+  (void)servers;                    // suppress unused variable error
+  ChannelFixture channels[10];      // will take uuid[51, 60]
+  (void)channels;                   // suppress unused variable error
+  // query in the middle of the server channels
+  char* json_str = ChannelzRegistry::GetTopChannels(45);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 10);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  for (size_t i = 0; i < uuids.size(); ++i) {
+    EXPECT_EQ(static_cast<intptr_t>(51 + i), uuids[i]);
+  }
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channel_with_uuid1;
+  { ServerFixture channel_with_uuid2; }
+  ChannelFixture channel_with_uuid3;
+  { ServerFixture server_with_uuid4; }
+  ChannelFixture channel_with_uuid5;
+  // Current state of list: [1, NULL, 3, NULL, 5]
+  char* json_str = ChannelzRegistry::GetTopChannels(2);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 2);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  EXPECT_EQ(static_cast<intptr_t>(3), uuids[0]);
+  EXPECT_EQ(static_cast<intptr_t>(5), uuids[1]);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+  json_str = ChannelzRegistry::GetTopChannels(4);
+  parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", 1);
+  json_channels = GetJsonChild(parsed_json, "channel");
+  uuids = GetUuidListFromArray(json_channels);
+  EXPECT_EQ(static_cast<intptr_t>(5), uuids[0]);
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
+  const intptr_t kLoopIterations = 50;
+  grpc_core::ExecCtx exec_ctx;
+  std::vector<UniquePtr<ChannelFixture>> even_channels;
+  {
+    // these will delete and unregister themselves after this block.
+    std::vector<UniquePtr<ChannelFixture>> odd_channels;
+    for (int i = 0; i < kLoopIterations; i++) {
+      odd_channels.push_back(MakeUnique<ChannelFixture>());
+      even_channels.push_back(MakeUnique<ChannelFixture>());
+    }
+  }
+  char* json_str = ChannelzRegistry::GetTopChannels(0);
+  grpc_json* parsed_json = grpc_json_parse_string(json_str);
+  ValidateJsonArraySize(parsed_json, "channel", kLoopIterations);
+  grpc_json* json_channels = GetJsonChild(parsed_json, "channel");
+  std::vector<intptr_t> uuids = GetUuidListFromArray(json_channels);
+  for (int i = 0; i < kLoopIterations; ++i) {
+    // only the even uuids will still be present.
+    EXPECT_EQ((i + 1) * 2, uuids[i]);
+  }
+  grpc_json_destroy(parsed_json);
+  gpr_free(json_str);
+}
+
+TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ChannelFixture channels[10];
+  (void)channels;  // suppress unused variable error
+  // create an internal channel
+  grpc_arg client_a[2];
+  client_a[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), true);
+  client_a[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+  grpc_channel* internal_channel =
+      grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+  // The internal channel should not be returned from the request
+  ValidateGetTopChannels(10);
+  grpc_channel_destroy(internal_channel);
+}
+
+TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server(10);
+  ServerNode* channelz_server = grpc_server_get_channelz_node(server.server());
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {1, 1, 1});
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  channelz_server->RecordCallStarted();
+  channelz_server->RecordCallFailed();
+  channelz_server->RecordCallSucceeded();
+  ValidateServer(channelz_server, {3, 3, 3});
+}
+
+TEST_F(ChannelzRegistryBasedTest, BasicGetServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture server;
+  ValidateGetServers(1);
+}
+
+TEST_F(ChannelzRegistryBasedTest, NoServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ValidateGetServers(0);
+}
+
+TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
+  grpc_core::ExecCtx exec_ctx;
+  ServerFixture servers[10];
+  (void)servers;  // suppress unused variable error
+  ValidateGetServers(10);
+}
+
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
-                        ::testing::Values(0, 1, 2, 6, 10, 15));
+                        ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
 
 }  // namespace testing
 }  // namespace channelz

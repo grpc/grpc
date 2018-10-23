@@ -198,7 +198,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
     const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type, bool run_inproc) {
+    const grpc::string& credential_type, bool run_inproc,
+    int32_t median_latency_collection_interval_millis) {
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
@@ -316,6 +317,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_free(cli_target);
     }
   }
+
+  client_config.set_median_latency_collection_interval_millis(
+      median_latency_collection_interval_millis);
 
   // Targets are all set by now
   result_client_config = client_config;

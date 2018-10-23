@@ -591,4 +591,39 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   [self testTimeoutBackoffWithTimeout:0.3 Backoff:0.7];
 }
 
+- (void)testErrorDebugInformation {
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.fillUsername = YES;
+  request.fillOauthScope = YES;
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteSSLHost
+                                             path:kUnaryCallMethod.HTTPPath
+                                   requestsWriter:requestsWriter];
+
+  call.oauth2AccessToken = @"bogusToken";
+
+  id<GRXWriteable> responsesWriteable =
+      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+        XCTFail(@"Received unexpected response: %@", value);
+      }
+          completionHandler:^(NSError *errorOrNil) {
+            XCTAssertNotNil(errorOrNil, @"Finished without error!");
+            NSDictionary *userInfo = errorOrNil.userInfo;
+            NSString *debugInformation = userInfo[NSDebugDescriptionErrorKey];
+            XCTAssertNotNil(debugInformation);
+            XCTAssertNotEqual([debugInformation length], 0);
+            NSString *challengeHeader = call.oauth2ChallengeHeader;
+            XCTAssertGreaterThan(challengeHeader.length, 0, @"No challenge in response headers %@",
+                                 call.responseHeaders);
+            [expectation fulfill];
+          }];
+
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 @end

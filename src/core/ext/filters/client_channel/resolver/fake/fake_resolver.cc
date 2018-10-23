@@ -73,11 +73,6 @@ class FakeResolver : public Resolver {
   // Results to use for the pretended re-resolution in
   // RequestReresolutionLocked().
   grpc_channel_args* reresolution_results_ = nullptr;
-  // TODO(juanlishen): This can go away once pick_first is changed to not throw
-  // away its subchannels, since that will eliminate its dependence on
-  // channel_saw_error_locked() causing an immediate resolver return.
-  // A copy of the most-recently used resolution results.
-  grpc_channel_args* last_used_results_ = nullptr;
   // pending next completion, or NULL
   grpc_closure* next_completion_ = nullptr;
   // target result address for next completion
@@ -96,7 +91,6 @@ FakeResolver::FakeResolver(const ResolverArgs& args) : Resolver(args.combiner) {
 FakeResolver::~FakeResolver() {
   grpc_channel_args_destroy(next_results_);
   grpc_channel_args_destroy(reresolution_results_);
-  grpc_channel_args_destroy(last_used_results_);
   grpc_channel_args_destroy(channel_args_);
 }
 
@@ -109,17 +103,11 @@ void FakeResolver::NextLocked(grpc_channel_args** target_result,
 }
 
 void FakeResolver::RequestReresolutionLocked() {
-  // A resolution must have been returned before an error is seen.
-  GPR_ASSERT(last_used_results_ != nullptr);
-  grpc_channel_args_destroy(next_results_);
   if (reresolution_results_ != nullptr) {
+    grpc_channel_args_destroy(next_results_);
     next_results_ = grpc_channel_args_copy(reresolution_results_);
-  } else {
-    // If reresolution_results is unavailable, re-resolve with the most-recently
-    // used results to avoid a no-op re-resolution.
-    next_results_ = grpc_channel_args_copy(last_used_results_);
+    MaybeFinishNextLocked();
   }
-  MaybeFinishNextLocked();
 }
 
 void FakeResolver::MaybeFinishNextLocked() {
@@ -161,8 +149,6 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   FakeResolver* resolver = closure_arg->generator->resolver_;
   grpc_channel_args_destroy(resolver->next_results_);
   resolver->next_results_ = closure_arg->response;
-  grpc_channel_args_destroy(resolver->last_used_results_);
-  resolver->last_used_results_ = grpc_channel_args_copy(closure_arg->response);
   resolver->MaybeFinishNextLocked();
   Delete(closure_arg);
 }

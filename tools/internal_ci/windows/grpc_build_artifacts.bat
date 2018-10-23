@@ -18,6 +18,7 @@ rename C:\Python27_32bit Python27_32bits
 rename C:\Python34_32bit Python34_32bits
 rename C:\Python35_32bit Python35_32bits
 rename C:\Python36_32bit Python36_32bits
+rename C:\Python37_32bit Python37_32bits
 
 @rem enter repo root
 cd /d %~dp0\..\..\..

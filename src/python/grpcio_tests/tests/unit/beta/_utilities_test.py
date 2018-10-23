@@ -41,6 +41,7 @@ class _Callback(object):
             return self._value
 
 
+@unittest.skip('https://github.com/grpc/grpc/issues/16134')
 class ChannelConnectivityTest(unittest.TestCase):
 
     def test_lonely_channel_connectivity(self):

@@ -235,7 +235,7 @@ def run_tests_for_lang(lang, runtime, images):
             maxjobs=args.jobs)
         if args.bq_result_table and resultset:
             upload_test_results.upload_interop_results_to_bq(
-                resultset, args.bq_result_table, args)
+                resultset, args.bq_result_table)
         if num_failures:
             jobset.message('FAILED', 'Some tests failed', do_newline=True)
             total_num_failures += num_failures

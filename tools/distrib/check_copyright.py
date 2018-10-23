@@ -100,6 +100,10 @@ _EXEMPT = frozenset((
     # Gradle wrappers used to build for Android
     'examples/android/helloworld/gradlew.bat',
     'src/android/test/interop/gradlew.bat',
+
+    # Designer-generated source
+    'examples/csharp/HelloworldXamarin/Droid/Resources/Resource.designer.cs',
+    'examples/csharp/HelloworldXamarin/iOS/ViewController.designer.cs',
 ))
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'

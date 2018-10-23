@@ -24,6 +24,16 @@
 namespace grpc {
 namespace load_reporter {
 
+// TODO(juanlishen): Update the version number with the PR number every time
+// there is any change to the server load reporter.
+constexpr uint32_t kVersion = 15853;
+
+// TODO(juanlishen): This window size is from the internal spec for the load
+// reporter. Need to ask the gRPC LB team whether we should make this and the
+// fetching interval configurable.
+constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
+constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
+
 constexpr size_t kLbIdLength = 8;
 constexpr size_t kIpv4AddressLength = 8;
 constexpr size_t kIpv6AddressLength = 32;

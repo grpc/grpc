@@ -16,9 +16,11 @@
  *
  */
 
-#include <grpcpp/generic/generic_stub.h>
+#include <functional>
 
+#include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/support/client_callback.h>
 
 namespace grpc {
 
@@ -58,6 +60,16 @@ std::unique_ptr<GenericClientAsyncResponseReader> GenericStub::PrepareUnaryCall(
           channel_.get(), cq,
           internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
           context, request, false));
+}
+
+void GenericStub::experimental_type::UnaryCall(
+    ClientContext* context, const grpc::string& method,
+    const ByteBuffer* request, ByteBuffer* response,
+    std::function<void(Status)> on_completion) {
+  internal::CallbackUnaryCall(
+      stub_->channel_.get(),
+      internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
+      context, request, response, std::move(on_completion));
 }
 
 }  // namespace grpc

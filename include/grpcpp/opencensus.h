@@ -19,6 +19,8 @@
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
 
+#include "opencensus/trace/span.h"
+
 namespace grpc {
 // These symbols in this file will not be included in the binary unless
 // grpc_opencensus_plugin build target was added as a dependency. At the moment
@@ -35,6 +37,11 @@ void RegisterOpenCensusPlugin();
 // registered stats exporter. For on-task stats, construct a View using the
 // ViewDescriptors below.
 void RegisterOpenCensusViewsForExport();
+
+class ServerContext;
+
+// Returns the tracing Span for the current RPC.
+::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
 }  // namespace grpc
 

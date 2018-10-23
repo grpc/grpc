@@ -243,8 +243,8 @@ class ClientReader final : public ClientReaderInterface<R> {
                ClientContext* context, const W& request)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpSendMessage,
@@ -377,8 +377,8 @@ class ClientWriter : public ClientWriterInterface<W> {
                ClientContext* context, R* response)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
@@ -551,8 +551,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
                      ClientContext* context)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK,
-            GRPC_CQ_DEFAULT_POLLING}),  // Pluckable cq
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     if (!context_->initial_metadata_corked_) {
       ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>

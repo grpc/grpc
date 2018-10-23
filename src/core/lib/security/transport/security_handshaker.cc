@@ -259,7 +259,7 @@ static grpc_error* on_handshake_next_done_locked(
     grpc_slice_buffer_reset_and_unref_internal(&h->outgoing);
     grpc_slice_buffer_add(&h->outgoing, to_send);
     grpc_endpoint_write(h->args->endpoint, &h->outgoing,
-                        &h->on_handshake_data_sent_to_peer);
+                        &h->on_handshake_data_sent_to_peer, nullptr);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(h->args->endpoint, h->args->read_buffer,
@@ -475,22 +475,24 @@ static grpc_handshaker* fail_handshaker_create() {
 
 static void client_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_channel_security_connector* security_connector =
       reinterpret_cast<grpc_channel_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_channel_security_connector_add_handshakers(security_connector,
-                                                  handshake_mgr);
+  grpc_channel_security_connector_add_handshakers(
+      security_connector, interested_parties, handshake_mgr);
 }
 
 static void server_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* hf, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_server_security_connector* security_connector =
       reinterpret_cast<grpc_server_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_server_security_connector_add_handshakers(security_connector,
-                                                 handshake_mgr);
+  grpc_server_security_connector_add_handshakers(
+      security_connector, interested_parties, handshake_mgr);
 }
 
 static void handshaker_factory_destroy(

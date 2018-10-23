@@ -40,6 +40,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.cc"],
+    data = ["//third_party/toolchains:RBE_USE_MACHINE_TYPE_LARGE"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -88,18 +89,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "ev_epollsig_linux_test",
-    srcs = ["ev_epollsig_linux_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
     language = "C++",
@@ -124,8 +113,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "load_file_test",
-    srcs = ["load_file_test.cc"],
+    name = "grpc_ipv6_loopback_available_test",
+    srcs = ["grpc_ipv6_loopback_available_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -136,8 +125,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "pollset_set_test",
-    srcs = ["pollset_set_test.cc"],
+    name = "load_file_test",
+    srcs = ["load_file_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -160,8 +149,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "resolve_address_test",
+    name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
+    args = [
+        "--resolver=ares",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "resolve_address_using_native_resolver_test",
+    srcs = ["resolve_address_test.cc"],
+    args = [
+        "--resolver=native",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -225,6 +232,18 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":endpoint_tests",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "buffer_list_test",
+    srcs = ["buffer_list_test.cc"],
+    language = "C++",
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",

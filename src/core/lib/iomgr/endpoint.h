@@ -33,10 +33,12 @@
 
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
+class Timestamps;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
-  void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+                void* arg);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
@@ -70,9 +72,11 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
    \a slices may be mutated at will by the endpoint until cb is called.
    No guarantee is made to the content of slices after a write EXCEPT that
    it is a valid slice buffer.
+   \a arg is platform specific. It is currently only used by TCP on linux
+   platforms as an argument that would be forwarded to the timestamps callback.
    */
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb);
+                         grpc_closure* cb, void* arg);
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */

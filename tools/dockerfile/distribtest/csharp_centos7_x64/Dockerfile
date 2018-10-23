@@ -22,3 +22,6 @@ RUN yum install -y mono-devel
 RUN yum install -y nuget
 
 RUN yum install -y unzip
+
+# Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
+RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem

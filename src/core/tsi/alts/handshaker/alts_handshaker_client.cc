@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h"
 
 const int kHandshakerClientOpNum = 4;
@@ -109,7 +110,7 @@ static grpc_byte_buffer* get_serialized_start_client(alts_tsi_event* event) {
   if (ok) {
     buffer = grpc_raw_byte_buffer_create(&slice, 1 /* number of slices */);
   }
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   gpr_free(target_name);
   grpc_gcp_handshaker_req_destroy(req);
   return buffer;
@@ -157,7 +158,7 @@ static grpc_byte_buffer* get_serialized_start_server(
   if (ok) {
     buffer = grpc_raw_byte_buffer_create(&req_slice, 1 /* number of slices */);
   }
-  grpc_slice_unref(req_slice);
+  grpc_slice_unref_internal(req_slice);
   grpc_gcp_handshaker_req_destroy(req);
   return buffer;
 }
@@ -195,7 +196,7 @@ static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received) {
   if (ok) {
     buffer = grpc_raw_byte_buffer_create(&req_slice, 1 /* number of slices */);
   }
-  grpc_slice_unref(req_slice);
+  grpc_slice_unref_internal(req_slice);
   grpc_gcp_handshaker_req_destroy(req);
   return buffer;
 }
@@ -258,7 +259,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
       grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   client->base.vtable = &vtable;
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   return &client->base;
 }
 

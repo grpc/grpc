@@ -21,7 +21,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_perf_multilang_rc
 
 # run 8core client vs 8core server
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp ruby java python go php7 php7_protobuf_c \
+    -l c++ csharp ruby java python go php7 php7_protobuf_c node node_purejs \
     --netperf \
     --category scalable \
     --remote_worker_host grpc-kokoro-performance-server-8core grpc-kokoro-performance-client-8core grpc-kokoro-performance-client2-8core \

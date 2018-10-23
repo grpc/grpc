@@ -45,7 +45,9 @@ void grpc_tsi_alts_signal_for_cq_destroy() {
 }
 
 void grpc_tsi_alts_init() {
-  memset(&g_alts_resource, 0, sizeof(alts_shared_resource));
+  g_alts_resource.channel = nullptr;
+  g_alts_resource.cq = nullptr;
+  g_alts_resource.is_cq_drained = false;
   gpr_mu_init(&g_alts_resource.mu);
   gpr_cv_init(&g_alts_resource.cv);
 }

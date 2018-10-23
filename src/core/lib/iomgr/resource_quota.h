@@ -93,6 +93,22 @@ void grpc_resource_user_ref(grpc_resource_user* resource_user);
 void grpc_resource_user_unref(grpc_resource_user* resource_user);
 void grpc_resource_user_shutdown(grpc_resource_user* resource_user);
 
+/* Attempts to get quota from the resource_user to create 'thread_count' number
+ * of threads. Returns true if successful (i.e the caller is now free to create
+ * 'thread_count' number of threads) or false if quota is not available */
+bool grpc_resource_user_allocate_threads(grpc_resource_user* resource_user,
+                                         int thread_count);
+/* Releases 'thread_count' worth of quota back to the resource user. The quota
+ * should have been previously obtained successfully by calling
+ * grpc_resource_user_allocate_threads().
+ *
+ * Note: There need not be an exact one-to-one correspondence between
+ * grpc_resource_user_allocate_threads() and grpc_resource_user_free_threads()
+ * calls. The only requirement is that the number of threads allocated should
+ * all be eventually released */
+void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
+                                     int thread_count);
+
 /* Allocate from the resource user (and its quota).
    If optional_on_done is NULL, then allocate immediately. This may push the
    quota over-limit, at which point reclamation will kick in.

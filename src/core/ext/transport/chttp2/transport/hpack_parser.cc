@@ -1622,7 +1622,7 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last) {
-  GPR_TIMER_SCOPE("grpc_chttp2_hpack_parser_parse", 0);
+  GPR_TIMER_SCOPE("grpc_chttp2_header_parser_parse", 0);
   grpc_chttp2_hpack_parser* parser =
       static_cast<grpc_chttp2_hpack_parser*>(hpack_parser);
   if (s != nullptr) {

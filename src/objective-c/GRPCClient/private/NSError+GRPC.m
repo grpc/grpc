@@ -23,13 +23,21 @@
 NSString *const kGRPCErrorDomain = @"io.grpc";
 
 @implementation NSError (GRPC)
-+ (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode details:(char *)details {
++ (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode
+                                 details:(const char *)details
+                             errorString:(const char *)errorString {
   if (statusCode == GRPC_STATUS_OK) {
     return nil;
   }
-  NSString *message = [NSString stringWithCString:details encoding:NSUTF8StringEncoding];
-  return [NSError errorWithDomain:kGRPCErrorDomain
-                             code:statusCode
-                         userInfo:@{NSLocalizedDescriptionKey : message}];
+  NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+  if (details) {
+    userInfo[NSLocalizedDescriptionKey] =
+        [NSString stringWithCString:details encoding:NSUTF8StringEncoding];
+  }
+  if (errorString) {
+    userInfo[NSDebugDescriptionErrorKey] =
+        [NSString stringWithCString:errorString encoding:NSUTF8StringEncoding];
+  }
+  return [NSError errorWithDomain:kGRPCErrorDomain code:statusCode userInfo:userInfo];
 }
 @end

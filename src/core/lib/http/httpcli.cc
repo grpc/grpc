@@ -163,7 +163,7 @@ static void done_write(void* arg, grpc_error* error) {
 static void start_write(internal_request* req) {
   grpc_slice_ref_internal(req->request_text);
   grpc_slice_buffer_add(&req->outgoing, req->request_text);
-  grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write);
+  grpc_endpoint_write(req->ep, &req->outgoing, &req->done_write, nullptr);
 }
 
 static void on_handshake_done(void* arg, grpc_endpoint* ep) {

@@ -33,12 +33,19 @@ namespace Grpc.Core.Internal
     internal static class PlatformApis
     {
         const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
+        const string XamarinAndroidObjectClassName = "Java.Lang.Object, Mono.Android";
+        const string XamarinIOSObjectClassName = "Foundation.NSObject, Xamarin.iOS";
+
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
         static readonly bool isNetCore;
         static readonly bool isUnity;
+        static readonly bool isUnityIOS;
+        static readonly bool isXamarin;
+        static readonly bool isXamarinIOS;
+        static readonly bool isXamarinAndroid;
 
         static PlatformApis()
         {
@@ -57,7 +64,28 @@ namespace Grpc.Core.Internal
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
-            isUnity = Type.GetType(UnityEngineApplicationClassName) != null;
+
+            // Unity
+            var unityApplicationClass = Type.GetType(UnityEngineApplicationClassName);
+            if (unityApplicationClass != null)
+            {
+                isUnity = true;
+                // Consult value of Application.platform via reflection
+                // https://docs.unity3d.com/ScriptReference/Application-platform.html
+                var platformProperty = unityApplicationClass.GetTypeInfo().GetProperty("platform");
+                var unityRuntimePlatform = platformProperty?.GetValue(null)?.ToString();
+                isUnityIOS = (unityRuntimePlatform == "IPhonePlayer");
+            }
+            else
+            {
+                isUnity = false;
+                isUnityIOS = false;
+            }
+
+            // Xamarin
+            isXamarinIOS = Type.GetType(XamarinIOSObjectClassName) != null;
+            isXamarinAndroid = Type.GetType(XamarinAndroidObjectClassName) != null;
+            isXamarin = isXamarinIOS || isXamarinAndroid;
         }
 
         public static bool IsLinux
@@ -86,6 +114,39 @@ namespace Grpc.Core.Internal
         public static bool IsUnity
         {
             get { return isUnity; }
+        }
+
+        /// <summary>
+        /// true if running on Unity iOS, false otherwise.
+        /// </summary>
+        public static bool IsUnityIOS
+        {
+            get { return isUnityIOS; }
+        }
+
+        /// <summary>
+        /// true if running on a Xamarin platform (either Xamarin.Android or Xamarin.iOS),
+        /// false otherwise.
+        /// </summary>
+        public static bool IsXamarin
+        {
+            get { return isXamarin; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.iOS, false otherwise.
+        /// </summary>
+        public static bool IsXamarinIOS
+        {
+            get { return isXamarinIOS; }
+        }
+
+        /// <summary>
+        /// true if running on Xamarin.Android, false otherwise.
+        /// </summary>
+        public static bool IsXamarinAndroid
+        {
+            get { return isXamarinAndroid; }
         }
 
         /// <summary>

@@ -22,7 +22,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <string.h>
 #include <sys/types.h>
@@ -49,6 +48,8 @@ static gpr_mu g_init_mu;
 
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
+
+grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
@@ -85,15 +86,6 @@ typedef struct grpc_ares_hostbyname_request {
 } grpc_ares_hostbyname_request;
 
 static void do_basic_init(void) { gpr_mu_init(&g_init_mu); }
-
-static uint16_t strhtons(const char* port) {
-  if (strcmp(port, "http") == 0) {
-    return htons(80);
-  } else if (strcmp(port, "https") == 0) {
-    return htons(443);
-  }
-  return htons(static_cast<unsigned short>(atoi(port)));
-}
 
 static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
                                      const char* input_output_str) {
@@ -138,12 +130,6 @@ void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
   }
 }
 
-/* Allow tests to access grpc_ares_wrapper_address_sorting_sort */
-void grpc_cares_wrapper_test_only_address_sorting_sort(
-    grpc_lb_addresses* lb_addrs) {
-  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
-}
-
 static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
   r->pending_queries++;
 }
@@ -158,12 +144,12 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
 void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   /* Invoke on_done callback and destroy the
      request */
+  r->ev_driver = nullptr;
   grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
   if (lb_addrs != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(lb_addrs);
   }
   GRPC_CLOSURE_SCHED(r->on_done, r->error);
-  gpr_free(r);
 }
 
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
@@ -215,7 +201,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin6_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin6_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -236,7 +222,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           memset(&addr, 0, addr_len);
           memcpy(&addr.sin_addr, hostent->h_addr_list[i - prev_naddr],
                  sizeof(struct in_addr));
-          addr.sin_family = static_cast<sa_family_t>(hostent->h_addrtype);
+          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
           addr.sin_port = hr->port;
           grpc_lb_addresses_set_address(
               *lb_addresses, i, &addr, addr_len,
@@ -281,7 +267,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
           grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
-        if (grpc_ipv6_loopback_available()) {
+        if (grpc_ares_query_ipv6()) {
           grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
               r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
           ares_gethostbyname(*channel, hr->host, AF_INET6,
@@ -370,14 +356,12 @@ done:
   grpc_ares_request_unref_locked(r);
 }
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner) {
+void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
+    grpc_ares_request* r, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    bool check_grpclb, grpc_combiner* combiner) {
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
-  grpc_ares_request* r = nullptr;
   ares_channel* channel = nullptr;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
@@ -403,14 +387,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
     port = gpr_strdup(default_port);
   }
-  r = static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
-  r->ev_driver = nullptr;
-  r->on_done = on_done;
-  r->lb_addrs_out = addrs;
-  r->service_config_json_out = service_config_json;
-  r->success = false;
-  r->error = GRPC_ERROR_NONE;
-  r->pending_queries = 0;
   error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
                                             combiner, r);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
@@ -452,13 +428,13 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
   }
   r->pending_queries = 1;
-  if (grpc_ipv6_loopback_available()) {
-    hr = create_hostbyname_request_locked(r, host, strhtons(port),
+  if (grpc_ares_query_ipv6()) {
+    hr = create_hostbyname_request_locked(r, host, grpc_strhtons(port),
                                           false /* is_balancer */);
     ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
                        hr);
   }
-  hr = create_hostbyname_request_locked(r, host, strhtons(port),
+  hr = create_hostbyname_request_locked(r, host, grpc_strhtons(port),
                                         false /* is_balancer */);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
                      hr);
@@ -471,7 +447,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                on_srv_query_done_locked, r);
     gpr_free(service_name);
   }
-  if (service_config_json != nullptr) {
+  if (r->service_config_json_out != nullptr) {
     grpc_ares_request_ref_locked(r);
     char* config_name;
     gpr_asprintf(&config_name, "_grpc_config.%s", host);
@@ -483,14 +459,95 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   grpc_ares_request_unref_locked(r);
   gpr_free(host);
   gpr_free(port);
-  return r;
+  return;
 
 error_cleanup:
-  GRPC_CLOSURE_SCHED(on_done, error);
-  gpr_free(r);
+  GRPC_CLOSURE_SCHED(r->on_done, error);
   gpr_free(host);
   gpr_free(port);
-  return nullptr;
+}
+
+static bool inner_resolve_as_ip_literal_locked(const char* name,
+                                               const char* default_port,
+                                               grpc_lb_addresses** addrs,
+                                               char** host, char** port,
+                                               char** hostport) {
+  gpr_split_host_port(name, host, port);
+  if (*host == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Failed to parse %s to host:port while attempting to resolve as ip "
+            "literal.",
+            name);
+    return false;
+  }
+  if (*port == nullptr) {
+    if (default_port == nullptr) {
+      gpr_log(GPR_ERROR,
+              "No port or default port for %s while attempting to resolve as "
+              "ip literal.",
+              name);
+      return false;
+    }
+    *port = gpr_strdup(default_port);
+  }
+  grpc_resolved_address addr;
+  GPR_ASSERT(gpr_join_host_port(hostport, *host, atoi(*port)));
+  if (grpc_parse_ipv4_hostport(*hostport, &addr, false /* log errors */) ||
+      grpc_parse_ipv6_hostport(*hostport, &addr, false /* log errors */)) {
+    GPR_ASSERT(*addrs == nullptr);
+    *addrs = grpc_lb_addresses_create(1, nullptr);
+    grpc_lb_addresses_set_address(
+        *addrs, 0, addr.addr, addr.len, false /* is_balancer */,
+        nullptr /* balancer_name */, nullptr /* user_data */);
+    return true;
+  }
+  return false;
+}
+
+static bool resolve_as_ip_literal_locked(const char* name,
+                                         const char* default_port,
+                                         grpc_lb_addresses** addrs) {
+  char* host = nullptr;
+  char* port = nullptr;
+  char* hostport = nullptr;
+  bool out = inner_resolve_as_ip_literal_locked(name, default_port, addrs,
+                                                &host, &port, &hostport);
+  gpr_free(host);
+  gpr_free(port);
+  gpr_free(hostport);
+  return out;
+}
+
+static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
+  grpc_ares_request* r =
+      static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
+  r->ev_driver = nullptr;
+  r->on_done = on_done;
+  r->lb_addrs_out = addrs;
+  r->service_config_json_out = service_config_json;
+  r->success = false;
+  r->error = GRPC_ERROR_NONE;
+  r->pending_queries = 0;
+  // Early out if the target is an ipv4 or ipv6 literal.
+  if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
+    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    return r;
+  }
+  // Early out if the target is localhost and we're on Windows.
+  if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
+                                                        addrs)) {
+    GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+    return r;
+  }
+  // Look up name using c-ares lib.
+  grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
+      r, dns_server, name, default_port, interested_parties, check_grpclb,
+      combiner);
+  return r;
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
@@ -499,11 +556,15 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
     grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
-void grpc_cancel_ares_request(grpc_ares_request* r) {
-  if (grpc_dns_lookup_ares_locked == grpc_dns_lookup_ares_locked_impl) {
+static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
+  GPR_ASSERT(r != nullptr);
+  if (r->ev_driver != nullptr) {
     grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
   }
 }
+
+void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
+    grpc_cancel_ares_request_locked_impl;
 
 grpc_error* grpc_ares_init(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
@@ -541,20 +602,23 @@ typedef struct grpc_resolve_address_ares_request {
   grpc_lb_addresses* lb_addrs;
   /** closure to call when the resolve_address_ares request completes */
   grpc_closure* on_resolve_address_done;
-  /** a closure wrapping on_dns_lookup_done_cb, which should be invoked when the
-      grpc_dns_lookup_ares_locked operation is done. */
-  grpc_closure on_dns_lookup_done;
+  /** a closure wrapping on_resolve_address_done, which should be invoked when
+     the grpc_dns_lookup_ares_locked operation is done. */
+  grpc_closure on_dns_lookup_done_locked;
   /* target name */
   const char* name;
   /* default port to use if none is specified */
   const char* default_port;
   /* pollset_set to be driven by */
   grpc_pollset_set* interested_parties;
+  /* underlying ares_request that the query is performed on */
+  grpc_ares_request* ares_request;
 } grpc_resolve_address_ares_request;
 
-static void on_dns_lookup_done_cb(void* arg, grpc_error* error) {
+static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
+  gpr_free(r->ares_request);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->lb_addrs == nullptr || r->lb_addrs->num_addresses == 0) {
     *resolved_addresses = nullptr;
@@ -581,9 +645,9 @@ static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
     void* arg, grpc_error* unused_error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  grpc_dns_lookup_ares_locked(
+  r->ares_request = grpc_dns_lookup_ares_locked(
       nullptr /* dns_server */, r->name, r->default_port, r->interested_parties,
-      &r->on_dns_lookup_done, &r->lb_addrs, false /* check_grpclb */,
+      &r->on_dns_lookup_done_locked, &r->lb_addrs, false /* check_grpclb */,
       nullptr /* service_config_json */, r->combiner);
 }
 
@@ -598,8 +662,8 @@ static void grpc_resolve_address_ares_impl(const char* name,
   r->combiner = grpc_combiner_create();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
-  GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done_locked, r,
+                    grpc_combiner_scheduler(r->combiner));
   r->name = name;
   r->default_port = default_port;
   r->interested_parties = interested_parties;

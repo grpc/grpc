@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -245,6 +246,8 @@ class Chttp2IncomingByteStream : public ByteStream {
  private:
   static void NextLocked(void* arg, grpc_error* error_ignored);
   static void OrphanLocked(void* arg, grpc_error* error_ignored);
+
+  void MaybeCreateStreamDecompressionCtx();
 
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
@@ -469,6 +472,9 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
+  uint32_t num_messages_in_next_write;
 };
 
 typedef enum {
@@ -531,6 +537,10 @@ struct grpc_chttp2_stream {
   bool write_buffering;
   /** Has trailing metadata been received. */
   bool received_trailing_metadata;
+
+  /* have we sent or received the EOS bit? */
+  bool eos_received;
+  bool eos_sent;
 
   /** the error that resulted in this stream being read-closed */
   grpc_error* read_closed_error;

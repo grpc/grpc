@@ -139,5 +139,11 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
       new SecureServerCredentials(c_creds));
 }
 
+std::shared_ptr<ServerCredentials> LocalServerCredentials(
+    grpc_local_connect_type type) {
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(grpc_local_server_credentials_create(type)));
+}
+
 }  // namespace experimental
 }  // namespace grpc

@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <grpc/fork.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/env.h"
@@ -34,7 +35,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-#include "src/core/lib/surface/init.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -57,6 +57,12 @@ void grpc_prefork() {
             "Fork support not enabled; try running with the "
             "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
     return;
+  }
+  if (strcmp(grpc_get_poll_strategy_name(), "epoll1") != 0 &&
+      strcmp(grpc_get_poll_strategy_name(), "poll") != 0) {
+    gpr_log(GPR_ERROR,
+            "Fork support is only compatible with the epoll1 and poll polling "
+            "strategies");
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
     gpr_log(GPR_INFO,
@@ -84,6 +90,11 @@ void grpc_postfork_child() {
   if (!skipped_handler) {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::Fork::child_postfork_func reset_polling_engine =
+        grpc_core::Fork::GetResetChildPollingEngineFunc();
+    if (reset_polling_engine != nullptr) {
+      reset_polling_engine();
+    }
     grpc_timer_manager_set_threading(true);
     grpc_executor_set_threading(true);
   }

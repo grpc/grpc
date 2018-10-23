@@ -27,6 +27,24 @@
 #include <time.h>
 #include "src/core/lib/profiling/timers.h"
 
+// For debug of the timer manager crash only.
+// TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+void (*g_grpc_debug_timer_manager_stats)(
+    int64_t timer_manager_init_count, int64_t timer_manager_shutdown_count,
+    int64_t fork_count, int64_t timer_wait_err, int64_t timer_cv_value,
+    int64_t timer_mu_value, int64_t abstime_sec_value,
+    int64_t abstime_nsec_value) = nullptr;
+int64_t g_timer_manager_init_count = 0;
+int64_t g_timer_manager_shutdown_count = 0;
+int64_t g_fork_count = 0;
+int64_t g_timer_wait_err = 0;
+int64_t g_timer_cv_value = 0;
+int64_t g_timer_mu_value = 0;
+int64_t g_abstime_sec_value = -1;
+int64_t g_abstime_nsec_value = -1;
+#endif  // GRPC_DEBUG_TIMER_MANAGER
+
 #ifdef GPR_LOW_LEVEL_COUNTERS
 gpr_atm gpr_mu_locks = 0;
 gpr_atm gpr_counter_atm_cas = 0;
@@ -87,7 +105,31 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
     abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
     err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+    // For debug of the timer manager crash only.
+    // TODO (mxyan): remove after bug is fixed.
+    if (GPR_UNLIKELY(!(err == 0 || err == ETIMEDOUT || err == EAGAIN))) {
+      g_abstime_sec_value = abs_deadline_ts.tv_sec;
+      g_abstime_nsec_value = abs_deadline_ts.tv_nsec;
+    }
+#endif
   }
+
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+  // For debug of the timer manager crash only.
+  // TODO (mxyan): remove after bug is fixed.
+  if (GPR_UNLIKELY(!(err == 0 || err == ETIMEDOUT || err == EAGAIN))) {
+    if (g_grpc_debug_timer_manager_stats) {
+      g_timer_wait_err = err;
+      g_timer_cv_value = (int64_t)cv;
+      g_timer_mu_value = (int64_t)mu;
+      g_grpc_debug_timer_manager_stats(
+          g_timer_manager_init_count, g_timer_manager_shutdown_count,
+          g_fork_count, g_timer_wait_err, g_timer_cv_value, g_timer_mu_value,
+          g_abstime_sec_value, g_abstime_nsec_value);
+    }
+  }
+#endif
   GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   return err == ETIMEDOUT;
 }

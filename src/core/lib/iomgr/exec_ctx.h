@@ -116,12 +116,7 @@ class ExecCtx {
   ExecCtx(const ExecCtx&) = delete;
   ExecCtx& operator=(const ExecCtx&) = delete;
 
-  /** Return starting_cpu. This is only required for stats collection and is
-   *  hence only defined if GRPC_COLLECT_STATS is enabled.
-   */
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   unsigned starting_cpu() const { return starting_cpu_; }
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
   struct CombinerData {
     /* currently active combiner: updated only via combiner.c */
@@ -192,6 +187,8 @@ class ExecCtx {
     now_is_valid_ = true;
   }
 
+  static void TestOnlyGlobalInit(gpr_timespec new_val);
+
   /** Global initialization for ExecCtx. Called by iomgr. */
   static void GlobalInit(void);
 
@@ -221,9 +218,7 @@ class ExecCtx {
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
 
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   unsigned starting_cpu_ = gpr_cpu_current_cpu();
-#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;

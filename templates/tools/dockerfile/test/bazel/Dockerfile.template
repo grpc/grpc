@@ -28,6 +28,8 @@
     openjdk-8-jdk ${'\\'}
     vim
   
+  <%include file="../../python_deps.include"/>
+
   <%include file="../../bazel.include"/>
   
   RUN mkdir -p /var/local/jenkins

@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/end2end")
 
-load(":generate_tests.bzl", "grpc_end2end_tests")
+load(":generate_tests.bzl", "grpc_end2end_tests", "grpc_end2end_nosec_tests")
 
 grpc_cc_library(
     name = "cq_verifier",
@@ -45,7 +45,6 @@ grpc_cc_library(
     language = "C++",
     visibility = ["//test:__subpackages__"],
 )
-
 
 grpc_cc_library(
     name = "http_proxy",
@@ -124,6 +123,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "inproc_callback_test",
+    srcs = ["inproc_callback_test.cc"],
+    language = "C++",
+    deps = [
+        ":end2end_tests",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
     language = "C++",
@@ -164,6 +176,8 @@ grpc_cc_test(
 
 grpc_end2end_tests()
 
+grpc_end2end_nosec_tests()
+
 grpc_cc_test(
     name = "h2_ssl_session_reuse_test",
     srcs = ["h2_ssl_session_reuse_test.cc"],
@@ -172,11 +186,11 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        ':end2end_tests',
-        '//:gpr',
-        '//:grpc',
-        '//:tsi',
-        '//test/core/util:gpr_test_util',
-        '//test/core/util:grpc_test_util',
+        ":end2end_tests",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )

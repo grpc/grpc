@@ -59,7 +59,10 @@ class CensusViewProvider {
   // with the same tag values in a related view data. Several ViewData's are
   // considered related if their views are based on the measures that are always
   // recorded at the same time.
-  double static GetRelatedViewDataRowDouble(
+  static double GetRelatedViewDataRowDouble(
+      const ViewDataMap& view_data_map, const char* view_name,
+      size_t view_name_len, const std::vector<grpc::string>& tag_values);
+  static uint64_t GetRelatedViewDataRowInt(
       const ViewDataMap& view_data_map, const char* view_name,
       size_t view_name_len, const std::vector<grpc::string>& tag_values);
 

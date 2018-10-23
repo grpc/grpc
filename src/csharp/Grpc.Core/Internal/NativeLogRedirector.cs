@@ -51,6 +51,7 @@ namespace Grpc.Core.Internal
             }
         }
 
+        [MonoPInvokeCallback(typeof(GprLogDelegate))]
         private static void HandleWrite(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr)
         {
             try
@@ -85,5 +86,23 @@ namespace Grpc.Core.Internal
                 Console.WriteLine("Caught exception in native callback " + e);
             }
         }
+    }
+
+    /// <summary>
+    /// Use this attribute to mark methods that will be called back from P/Invoke calls.
+    /// iOS (and probably other AOT platforms) needs to have delegates registered.
+    /// Instead of depending on Xamarin.iOS for this, we can just create our own,
+    /// the iOS runtime just checks for the type name.
+    /// See: https://docs.microsoft.com/en-gb/xamarin/ios/internals/limitations#reverse-callbacks
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    internal sealed class MonoPInvokeCallbackAttribute : Attribute
+    {
+        public MonoPInvokeCallbackAttribute(Type type)
+        {
+            Type = type;
+        }
+
+        public Type Type { get; private set; }
     }
 }

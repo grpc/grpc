@@ -31,6 +31,19 @@ namespace Grpc.Core
     public abstract class ChannelCredentials
     {
         static readonly ChannelCredentials InsecureInstance = new InsecureCredentialsImpl();
+        readonly Lazy<ChannelCredentialsSafeHandle> cachedNativeCredentials;
+
+        /// <summary>
+        /// Creates a new instance of channel credentials
+        /// </summary>
+        public ChannelCredentials()
+        {
+            // Native credentials object need to be kept alive once initialized for subchannel sharing to work correctly
+            // with secure connections. See https://github.com/grpc/grpc/issues/15207.
+            // We rely on finalizer to clean up the native portion of ChannelCredentialsSafeHandle after the ChannelCredentials
+            // instance becomes unused.
+            this.cachedNativeCredentials = new Lazy<ChannelCredentialsSafeHandle>(() => CreateNativeCredentials());
+        }
 
         /// <summary>
         /// Returns instance of credentials that provides no security and 
@@ -57,11 +70,22 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Creates native object for the credentials. May return null if insecure channel
-        /// should be created.
+        /// Gets native object for the credentials, creating one if it already doesn't exist. May return null if insecure channel
+        /// should be created. Caller must not call <c>Dispose()</c> on the returned native credentials as their lifetime
+        /// is managed by this class (and instances of native credentials are cached).
         /// </summary>
         /// <returns>The native credentials.</returns>
-        internal abstract ChannelCredentialsSafeHandle ToNativeCredentials();
+        internal ChannelCredentialsSafeHandle GetNativeCredentials()
+        {
+            return cachedNativeCredentials.Value;
+        }
+
+        /// <summary>
+        /// Creates a new native object for the credentials. May return null if insecure channel
+        /// should be created. For internal use only, use <see cref="GetNativeCredentials"/> instead.
+        /// </summary>
+        /// <returns>The native credentials.</returns>
+        internal abstract ChannelCredentialsSafeHandle CreateNativeCredentials();
 
         /// <summary>
         /// Returns <c>true</c> if this credential type allows being composed by <c>CompositeCredentials</c>.
@@ -73,7 +97,7 @@ namespace Grpc.Core
 
         private sealed class InsecureCredentialsImpl : ChannelCredentials
         {
-            internal override ChannelCredentialsSafeHandle ToNativeCredentials()
+            internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
             {
                 return null;
             }
@@ -145,7 +169,7 @@ namespace Grpc.Core
             get { return true; }
         }
 
-        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
+        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
         {
             return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
         }
@@ -173,12 +197,11 @@ namespace Grpc.Core
             GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
         }
 
-        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
+        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
         {
-            using (var channelCreds = channelCredentials.ToNativeCredentials())
             using (var callCreds = callCredentials.ToNativeCredentials())
             {
-                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCreds, callCreds);
+                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCredentials.GetNativeCredentials(), callCreds);
                 if (nativeComposite.IsInvalid)
                 {
                     throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");

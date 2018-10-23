@@ -37,6 +37,8 @@ For instructions on how to use the language-specific gRPC runtime in your projec
 
 You can find per-language quickstart guides and tutorials in [Documentation section on grpc.io website](https://grpc.io/docs/). The code examples are available in the [examples](examples) directory.
 
+Precompiled bleeding-edge package builds of gRPC `master` branch's `HEAD` are uploaded daily to [packages.grpc.io](https://packages.grpc.io).
+
 # To start developing gRPC
 
 Contributions are welcome!

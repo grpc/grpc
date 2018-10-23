@@ -127,7 +127,7 @@ void grpc_init(void) {
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
     grpc_channel_init_init();
-    grpc_core::ChannelzRegistry::Init();
+    grpc_core::channelz::ChannelzRegistry::Init();
     grpc_security_pre_init();
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
@@ -176,7 +176,7 @@ void grpc_shutdown(void) {
       grpc_mdctx_global_shutdown();
       grpc_handshaker_factory_registry_shutdown();
       grpc_slice_intern_shutdown();
-      grpc_core::ChannelzRegistry::Shutdown();
+      grpc_core::channelz::ChannelzRegistry::Shutdown();
       grpc_stats_shutdown();
       grpc_core::Fork::GlobalShutdown();
     }

@@ -78,9 +78,10 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-class UnknownMethodHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
+template <StatusCode code>
+class ErrorMethodHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 }  // namespace internal
@@ -97,7 +98,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// instance.
   CompletionQueue()
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -264,12 +266,16 @@ class CompletionQueue : private GrpcLibraryCodegen {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  friend class ::grpc::internal::UnknownMethodHandler;
+  template <StatusCode code>
+  friend class ::grpc::internal::ErrorMethodHandler;
   friend class ::grpc::Server;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+
+  // Friends that need access to constructor for callback CQ
+  friend class ::grpc::Channel;
 
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
@@ -367,7 +373,7 @@ class ServerCompletionQueue : public CompletionQueue {
 
  protected:
   /// Default constructor
-  ServerCompletionQueue() {}
+  ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
   /// \param is_frequently_polled Informs the GRPC library about whether the
@@ -376,11 +382,12 @@ class ServerCompletionQueue : public CompletionQueue {
   /// frequently polled.
   ServerCompletionQueue(grpc_cq_polling_type polling_type)
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type, nullptr}),
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
+  friend class Server;
 };
 
 }  // namespace grpc

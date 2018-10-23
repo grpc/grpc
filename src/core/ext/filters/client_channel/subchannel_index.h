@@ -65,12 +65,9 @@ void grpc_subchannel_index_ref(void);
 void grpc_subchannel_index_unref(void);
 
 /** \em TEST ONLY.
- * If \a force_creation is true, all key comparisons will be false, resulting in
+ * If \a force_creation is true, all keys are regarded different, resulting in
  * new subchannels always being created. Otherwise, the keys will be compared as
  * usual.
- *
- * This function is *not* threadsafe on purpose: it should *only* be used in
- * test code.
  *
  * Tests using this function \em MUST run tests with and without \a
  * force_creation set. */

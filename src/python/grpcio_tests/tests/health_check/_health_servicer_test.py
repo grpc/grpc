@@ -73,6 +73,9 @@ class HealthServicerTest(unittest.TestCase):
 
         self.assertEqual(grpc.StatusCode.NOT_FOUND, context.exception.code())
 
+    def test_health_service_name(self):
+        self.assertEqual(health.SERVICE_NAME, 'grpc.health.v1.Health')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/gpr_types.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -80,6 +82,14 @@ char* gpr_strjoin_sep(const char** strs, size_t nstrs, const char* sep,
 
 void gpr_string_split(const char* input, const char* sep, char*** strs,
                       size_t* nstrs);
+
+/* Returns an allocated string that represents tm according to RFC-3339, and,
+   more specifically, follows:
+   https://developers.google.com/protocol-buffers/docs/proto3#json
+
+   Uses RFC 3339, where generated output will always be Z-normalized and uses
+   0, 3, 6 or 9 fractional digits. */
+char* gpr_format_timespec(gpr_timespec);
 
 /* A vector of strings... for building up a final string one piece at a time */
 typedef struct {

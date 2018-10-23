@@ -17,6 +17,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+# ANDROID_ABI is set by the job definition in artifact_targets.py
 src/csharp/experimental/build_native_ext_for_android.sh
 
 mkdir -p "${ARTIFACTS_OUT}"

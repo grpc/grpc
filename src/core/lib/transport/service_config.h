@@ -103,7 +103,7 @@ class ServiceConfig {
   ServiceConfig(UniquePtr<char> json_string, grpc_json* json_tree);
 
   // Returns the number of names specified in the method config \a json.
-  static size_t CountNamesInMethodConfig(grpc_json* json);
+  static int CountNamesInMethodConfig(grpc_json* json);
 
   // Returns a path string for the JSON name object specified by \a json.
   // Returns null on error.
@@ -188,9 +188,9 @@ ServiceConfig::CreateMethodConfigTable(CreateValue<T> create_value) {
       // Find number of entries.
       for (grpc_json* method = field->child; method != nullptr;
            method = method->next) {
-        size_t count = CountNamesInMethodConfig(method);
+        int count = CountNamesInMethodConfig(method);
         if (count <= 0) return nullptr;
-        num_entries += count;
+        num_entries += static_cast<size_t>(count);
       }
       // Populate method config table entries.
       entries = static_cast<typename SliceHashTable<RefCountedPtr<T>>::Entry*>(

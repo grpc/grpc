@@ -91,7 +91,7 @@ class WeightedRandomTestSelector {
 class StressTestInteropClient {
  public:
   StressTestInteropClient(int test_id, const grpc::string& server_address,
-                          const std::shared_ptr<Channel>& channel,
+                          ChannelCreationFunc channel_creation_func,
                           const WeightedRandomTestSelector& test_selector,
                           long test_duration_secs, long sleep_duration_ms,
                           bool do_not_abort_on_transient_failures);
@@ -105,7 +105,7 @@ class StressTestInteropClient {
 
   int test_id_;
   const grpc::string& server_address_;
-  std::shared_ptr<Channel> channel_;
+  ChannelCreationFunc channel_creation_func_;
   std::unique_ptr<InteropClient> interop_client_;
   const WeightedRandomTestSelector& test_selector_;
   long test_duration_secs_;

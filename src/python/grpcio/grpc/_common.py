@@ -20,6 +20,7 @@ import six
 import grpc
 from grpc._cython import cygrpc
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {

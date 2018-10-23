@@ -52,7 +52,7 @@ static void RunQPS() {
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, false);
+                  kInsecureCredentialsType, false, 0);
 
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);

@@ -21,6 +21,7 @@ import logging
 
 import six
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 

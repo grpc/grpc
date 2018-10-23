@@ -150,8 +150,8 @@ static void read_and_write_test_write_handler(void* data, grpc_error* error) {
                                &state->current_write_data);
       grpc_slice_buffer_reset_and_unref(&state->outgoing);
       grpc_slice_buffer_addn(&state->outgoing, slices, nslices);
-      grpc_endpoint_write(state->write_ep, &state->outgoing,
-                          &state->done_write);
+      grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
+                          nullptr);
       gpr_free(slices);
       return;
     }
@@ -294,7 +294,8 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
   grpc_endpoint_write(f.client_ep, &slice_buffer,
                       GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
-                                          grpc_schedule_on_exec_ctx));
+                                          grpc_schedule_on_exec_ctx),
+                      nullptr);
   wait_for_fail_count(&fail_count, 3);
   grpc_endpoint_shutdown(f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));

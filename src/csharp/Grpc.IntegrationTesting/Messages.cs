@@ -77,7 +77,6 @@ namespace Grpc.Testing {
   }
   #region Enums
   /// <summary>
-  /// DEPRECATED, don't use. To be removed shortly.
   /// The type of payload that should be returned.
   /// </summary>
   public enum PayloadType {
@@ -269,7 +268,6 @@ namespace Grpc.Testing {
     public const int TypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType type_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// The type of data in body.
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -585,12 +583,12 @@ namespace Grpc.Testing {
     public SimpleRequest(SimpleRequest other) : this() {
       responseType_ = other.responseType_;
       responseSize_ = other.responseSize_;
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       fillUsername_ = other.fillUsername_;
       fillOauthScope_ = other.fillOauthScope_;
-      ResponseCompressed = other.responseCompressed_ != null ? other.ResponseCompressed.Clone() : null;
-      ResponseStatus = other.responseStatus_ != null ? other.ResponseStatus.Clone() : null;
-      ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
+      responseCompressed_ = other.responseCompressed_ != null ? other.responseCompressed_.Clone() : null;
+      responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
+      expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -603,7 +601,6 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// Desired payload type in the response from the server.
     /// If response_type is RANDOM, server randomly chooses one from other formats.
     /// </summary>
@@ -964,7 +961,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public SimpleResponse(SimpleResponse other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       username_ = other.username_;
       oauthScope_ = other.oauthScope_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
@@ -1168,8 +1165,8 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingInputCallRequest(StreamingInputCallRequest other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
-      ExpectCompressed = other.expectCompressed_ != null ? other.ExpectCompressed.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
+      expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1486,7 +1483,7 @@ namespace Grpc.Testing {
     public ResponseParameters(ResponseParameters other) : this() {
       size_ = other.size_;
       intervalUs_ = other.intervalUs_;
-      Compressed = other.compressed_ != null ? other.Compressed.Clone() : null;
+      compressed_ = other.compressed_ != null ? other.compressed_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1693,8 +1690,8 @@ namespace Grpc.Testing {
     public StreamingOutputCallRequest(StreamingOutputCallRequest other) : this() {
       responseType_ = other.responseType_;
       responseParameters_ = other.responseParameters_.Clone();
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
-      ResponseStatus = other.responseStatus_ != null ? other.ResponseStatus.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
+      responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1707,7 +1704,6 @@ namespace Grpc.Testing {
     public const int ResponseTypeFieldNumber = 1;
     private global::Grpc.Testing.PayloadType responseType_ = 0;
     /// <summary>
-    /// DEPRECATED, don't use. To be removed shortly.
     /// Desired payload type in the response from the server.
     /// If response_type is RANDOM, the payload from each response in the stream
     /// might be of different types. This is to simulate a mixed type of payload
@@ -1927,7 +1923,7 @@ namespace Grpc.Testing {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public StreamingOutputCallResponse(StreamingOutputCallResponse other) : this() {
-      Payload = other.payload_ != null ? other.Payload.Clone() : null;
+      payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 

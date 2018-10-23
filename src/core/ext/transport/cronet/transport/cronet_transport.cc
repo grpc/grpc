@@ -1287,7 +1287,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     grpc_error* error = GRPC_ERROR_NONE;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
-    } else if (stream_state->state_op_done[OP_FAILED]) {
+    } else if (stream_state->state_callback_received[OP_FAILED]) {
       error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable.");
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(

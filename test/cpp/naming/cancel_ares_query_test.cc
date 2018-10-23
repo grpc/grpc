@@ -45,11 +45,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-// TODO: pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
+#ifdef GPR_WINDOWS
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL -1
+#endif
 
 namespace {
 
@@ -91,7 +94,13 @@ class FakeNonResponsiveDNSServer {
       abort();
     }
   }
-  ~FakeNonResponsiveDNSServer() { close(socket_); }
+  ~FakeNonResponsiveDNSServer() {
+#ifdef GPR_WINDOWS
+    closesocket(socket_);
+#else
+    close(socket_);
+#endif
+  }
 
  private:
   int socket_;
@@ -193,6 +202,38 @@ TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
   TestCancelActiveDNSQuery(&args);
 }
 
+#ifdef GPR_WINDOWS
+
+void MaybePollArbitraryPollsetTwice() {
+  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  gpr_mu* mu;
+  grpc_pollset_init(pollset, &mu);
+  grpc_pollset_worker* worker = nullptr;
+  // Make a zero timeout poll
+  gpr_mu_lock(mu);
+  GRPC_LOG_IF_ERROR(
+      "pollset_work",
+      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+  gpr_mu_unlock(mu);
+  grpc_core::ExecCtx::Get()->Flush();
+  // Make a second zero-timeout poll (in case the first one
+  // short-circuited by picking up a previous "kick")
+  gpr_mu_lock(mu);
+  GRPC_LOG_IF_ERROR(
+      "pollset_work",
+      grpc_pollset_work(pollset, &worker, grpc_core::ExecCtx::Get()->Now()));
+  gpr_mu_unlock(mu);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(pollset);
+  gpr_free(pollset);
+}
+
+#else
+
+void MaybePollArbitraryPollsetTwice() {}
+
+#endif
+
 TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
@@ -209,6 +250,12 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // this test. This test only cares about what happens to fd's that c-ares
   // opens.
   TestCancelActiveDNSQuery(&args);
+  // This test relies on the assumption that cancelling a c-ares query
+  // will flush out all callbacks on the current exec ctx, which is true
+  // on posix platforms but not on Windows, because fd shutdown on Windows
+  // requires a trip through the polling loop to schedule the callback.
+  // So we need to do extra polling work on Windows to free things up.
+  MaybePollArbitraryPollsetTwice();
   EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }

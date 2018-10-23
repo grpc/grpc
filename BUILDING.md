@@ -103,6 +103,9 @@ repository at the latest stable version.
 In the C++ world, there's no "standard" build system that would work for in all supported use cases and on all supported platforms.
 Therefore, gRPC supports several major build systems, which should satisfy most users.
 
+Note that this section only covers the build of gRPC itself, not the installation. See the [How to use](https://github.com/grpc/grpc/tree/master/src/cpp#to-start-using-grpc-c) instructions
+for guidance on how to add gRPC as a dependency to a C++ application (there are several ways and system wide installation is often not the best choice).
+
 ## make (on UNIX systems)
 
 From the grpc repository root
@@ -129,8 +132,8 @@ you will be able to browse and build the code.
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
 > cd .build
-> cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release
-> cmake --build .
+> cmake .. -G "Visual Studio 14 2015"
+> cmake --build . --config Release
 ```
 
 ## cmake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).

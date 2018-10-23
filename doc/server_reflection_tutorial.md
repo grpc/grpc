@@ -10,7 +10,7 @@ RPCs.
 
 ### Enable server reflection in C++ servers
 
-C++ Server Reflection is an add-on library, `libgrpc++_reflction`. To enable C++
+C++ Server Reflection is an add-on library, `libgrpc++_reflection`. To enable C++
 server reflection, you can link this library to your server binary.
 
 Some platforms (e.g. Ubuntu 11.10 onwards) only link in libraries that directly

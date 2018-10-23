@@ -127,7 +127,7 @@ class CompressionLevel:
 cdef class CallDetails:
 
   def __cinit__(self):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     with nogil:
       grpc_call_details_init(&self.c_details)
 

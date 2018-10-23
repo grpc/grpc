@@ -131,6 +131,13 @@ static void epoll_set_shutdown() {
  * Fd Declarations
  */
 
+/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+struct grpc_fork_fd_list {
+  grpc_fd* fd;
+  grpc_fd* next;
+  grpc_fd* prev;
+};
+
 struct grpc_fd {
   int fd;
 
@@ -140,11 +147,10 @@ struct grpc_fd {
 
   struct grpc_fd* freelist_next;
 
-  /* The pollset that last noticed that the fd is readable. The actual type
-   * stored in this is (grpc_pollset *) */
-  gpr_atm read_notifier_pollset;
-
   grpc_iomgr_object iomgr_object;
+
+  /* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+  grpc_fork_fd_list* fork_fd_list;
 };
 
 static void fd_global_init(void);
@@ -187,9 +193,13 @@ struct grpc_pollset_worker {
 #define MAX_NEIGHBORHOODS 1024
 
 typedef struct pollset_neighborhood {
-  gpr_mu mu;
-  grpc_pollset* active_root;
-  char pad[GPR_CACHELINE_SIZE];
+  union {
+    char pad[GPR_CACHELINE_SIZE];
+    struct {
+      gpr_mu mu;
+      grpc_pollset* active_root;
+    };
+  };
 } pollset_neighborhood;
 
 struct grpc_pollset {
@@ -260,9 +270,17 @@ static bool append_error(grpc_error** composite, grpc_error* error,
 static grpc_fd* fd_freelist = nullptr;
 static gpr_mu fd_freelist_mu;
 
+/* Only used when GRPC_ENABLE_FORK_SUPPORT=1 */
+static grpc_fd* fork_fd_list_head = nullptr;
+static gpr_mu fork_fd_list_mu;
+
 static void fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 
 static void fd_global_shutdown(void) {
+  // TODO(guantaol): We don't have a reasonable explanation about this
+  // lock()/unlock() pattern. It can be a valid barrier if there is at most one
+  // pending lock() at this point. Otherwise, there is still a possibility of
+  // use-after-free race. Need to reason about the code and/or clean it up.
   gpr_mu_lock(&fd_freelist_mu);
   gpr_mu_unlock(&fd_freelist_mu);
   while (fd_freelist != nullptr) {
@@ -271,6 +289,38 @@ static void fd_global_shutdown(void) {
     gpr_free(fd);
   }
   gpr_mu_destroy(&fd_freelist_mu);
+}
+
+static void fork_fd_list_add_grpc_fd(grpc_fd* fd) {
+  if (grpc_core::Fork::Enabled()) {
+    gpr_mu_lock(&fork_fd_list_mu);
+    fd->fork_fd_list =
+        static_cast<grpc_fork_fd_list*>(gpr_malloc(sizeof(grpc_fork_fd_list)));
+    fd->fork_fd_list->next = fork_fd_list_head;
+    fd->fork_fd_list->prev = nullptr;
+    if (fork_fd_list_head != nullptr) {
+      fork_fd_list_head->fork_fd_list->prev = fd;
+    }
+    fork_fd_list_head = fd;
+    gpr_mu_unlock(&fork_fd_list_mu);
+  }
+}
+
+static void fork_fd_list_remove_grpc_fd(grpc_fd* fd) {
+  if (grpc_core::Fork::Enabled()) {
+    gpr_mu_lock(&fork_fd_list_mu);
+    if (fork_fd_list_head == fd) {
+      fork_fd_list_head = fd->fork_fd_list->next;
+    }
+    if (fd->fork_fd_list->prev != nullptr) {
+      fd->fork_fd_list->prev->fork_fd_list->next = fd->fork_fd_list->next;
+    }
+    if (fd->fork_fd_list->next != nullptr) {
+      fd->fork_fd_list->next->fork_fd_list->prev = fd->fork_fd_list->prev;
+    }
+    gpr_free(fd->fork_fd_list);
+    gpr_mu_unlock(&fork_fd_list_mu);
+  }
 }
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
@@ -293,13 +343,13 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = nullptr;
 
   char* fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
   grpc_iomgr_register_object(&new_fd->iomgr_object, fd_name);
+  fork_fd_list_add_grpc_fd(new_fd);
 #ifndef NDEBUG
   if (grpc_trace_fd_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "FD %d %p create %s", fd, new_fd, fd_name);
@@ -366,6 +416,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_REF(error));
 
   grpc_iomgr_unregister_object(&fd->iomgr_object);
+  fork_fd_list_remove_grpc_fd(fd);
   fd->read_closure->DestroyEvent();
   fd->write_closure->DestroyEvent();
   fd->error_closure->DestroyEvent();
@@ -374,11 +425,6 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   fd->freelist_next = fd_freelist;
   fd_freelist = fd;
   gpr_mu_unlock(&fd_freelist_mu);
-}
-
-static grpc_pollset* fd_get_read_notifier_pollset(grpc_fd* fd) {
-  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
-  return (grpc_pollset*)notifier;
 }
 
 static bool fd_is_shutdown(grpc_fd* fd) {
@@ -397,11 +443,7 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   fd->error_closure->NotifyOn(closure);
 }
 
-static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
-  fd->read_closure->SetReady();
-  /* Use release store to match with acquire load in fd_get_read_notifier */
-  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
-}
+static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
 
 static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
@@ -642,7 +684,7 @@ static grpc_error* process_epoll_events(grpc_pollset* pollset) {
       }
 
       if (read_ev || cancel || err_fallback) {
-        fd_become_readable(fd, pollset);
+        fd_become_readable(fd);
       }
 
       if (write_ev || cancel || err_fallback) {
@@ -1204,6 +1246,10 @@ static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
   epoll_set_shutdown();
+  if (grpc_core::Fork::Enabled()) {
+    gpr_mu_destroy(&fork_fd_list_mu);
+    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+  }
 }
 
 static const grpc_event_engine_vtable vtable = {
@@ -1217,8 +1263,10 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_become_readable,
+    fd_become_writable,
+    fd_has_errors,
     fd_is_shutdown,
-    fd_get_read_notifier_pollset,
 
     pollset_init,
     pollset_shutdown,
@@ -1238,6 +1286,21 @@ static const grpc_event_engine_vtable vtable = {
 
     shutdown_engine,
 };
+
+/* Called by the child process's post-fork handler to close open fds, including
+ * the global epoll fd. This allows gRPC to shutdown in the child process
+ * without interfering with connections or RPCs ongoing in the parent. */
+static void reset_event_manager_on_fork() {
+  gpr_mu_lock(&fork_fd_list_mu);
+  while (fork_fd_list_head != nullptr) {
+    close(fork_fd_list_head->fd);
+    fork_fd_list_head->fd = -1;
+    fork_fd_list_head = fork_fd_list_head->fork_fd_list->next;
+  }
+  gpr_mu_unlock(&fork_fd_list_mu);
+  shutdown_engine();
+  grpc_init_epoll1_linux(true);
+}
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
@@ -1260,6 +1323,11 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
     return nullptr;
   }
 
+  if (grpc_core::Fork::Enabled()) {
+    gpr_mu_init(&fork_fd_list_mu);
+    grpc_core::Fork::SetResetChildPollingEngineFunc(
+        reset_event_manager_on_fork);
+  }
   return &vtable;
 }
 

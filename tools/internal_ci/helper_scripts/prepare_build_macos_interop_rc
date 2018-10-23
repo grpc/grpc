@@ -17,17 +17,6 @@
 # builds. This rc script must be used in the root directory of gRPC
 # and is expected to be used before prepare_build_macos_rc
 
-export CONFIG=opt
-
-# Move gRPC repo to directory that Docker for Mac has drive access to
-mkdir /Users/kbuilder/workspace
-cp -R ./ /Users/kbuilder/workspace/grpc
-cd /Users/kbuilder/workspace/grpc
-
-# Needed for identifying Docker image sha1
-brew update
-brew install md5sha1sum
-
 # Set up gRPC-Go and gRPC-Java to test
 git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
 git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java

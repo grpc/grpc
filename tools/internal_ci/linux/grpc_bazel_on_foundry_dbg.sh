@@ -14,5 +14,5 @@
 # limitations under the License.
 
 export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="-c dbg --test_timeout=300,450,1200,3600 --runs_per_test_detects_flakes --runs_per_test=2"
+EXTRA_FLAGS="-c dbg --test_timeout=300,450,1200,3600 --cache_test_results=no"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"

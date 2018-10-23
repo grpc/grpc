@@ -35,7 +35,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
-#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 
 grpc_core::TraceFlag grpc_polling_trace(false,
@@ -59,7 +58,14 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
+#ifndef GPR_AIX
 grpc_poll_function_type grpc_poll_function = poll;
+#else
+int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  return poll(fds, nfds, timeout);
+}
+grpc_poll_function_type grpc_poll_function = aix_poll;
+#endif
 
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
@@ -101,10 +107,28 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 }
 }  // namespace
 
-static const event_engine_factory g_factories[] = {
-    {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
-    {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
-    {"poll-cv", grpc_init_poll_cv_posix},   {"none", init_non_polling},
+#define ENGINE_HEAD_CUSTOM "head_custom"
+#define ENGINE_TAIL_CUSTOM "tail_custom"
+
+// The global array of event-engine factories. Each entry is a pair with a name
+// and an event-engine generator function (nullptr if there is no generator
+// registered for this name). The middle entries are the engines predefined by
+// open-source gRPC. The head entries represent an opportunity for specific
+// high-priority custom pollers to be added by the initializer plugins of
+// custom-built gRPC libraries. The tail entries represent the same, but for
+// low-priority custom pollers. The actual poller selected is either the first
+// available one in the list if no specific poller is requested, or the first
+// specific poller that is requested by name in the GRPC_POLL_STRATEGY
+// environment variable if that variable is set (which should be a
+// comma-separated list of one or more event engine names)
+static event_engine_factory g_factories[] = {
+    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
+    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
+    {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
+    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
+    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -138,7 +162,7 @@ static bool is(const char* want, const char* have) {
 
 static void try_engine(const char* engine) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
-    if (is(engine, g_factories[i].name)) {
+    if (g_factories[i].factory != nullptr && is(engine, g_factories[i].name)) {
       if ((g_event_engine = g_factories[i].factory(
                0 == strcmp(engine, g_factories[i].name)))) {
         g_poll_strategy_name = g_factories[i].name;
@@ -149,14 +173,32 @@ static void try_engine(const char* engine) {
   }
 }
 
-/* This should be used for testing purposes ONLY */
-void grpc_set_event_engine_test_only(
-    const grpc_event_engine_vtable* ev_engine) {
-  g_event_engine = ev_engine;
-}
+/* Call this before calling grpc_event_engine_init() */
+void grpc_register_event_engine_factory(const char* name,
+                                        event_engine_factory_fn factory,
+                                        bool add_at_head) {
+  const char* custom_match =
+      add_at_head ? ENGINE_HEAD_CUSTOM : ENGINE_TAIL_CUSTOM;
 
-const grpc_event_engine_vtable* grpc_get_event_engine_test_only() {
-  return g_event_engine;
+  // Overwrite an existing registration if already registered
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
+    if (0 == strcmp(name, g_factories[i].name)) {
+      g_factories[i].factory = factory;
+      return;
+    }
+  }
+
+  // Otherwise fill in an available custom slot
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(g_factories); i++) {
+    if (0 == strcmp(g_factories[i].name, custom_match)) {
+      g_factories[i].name = name;
+      g_factories[i].factory = factory;
+      return;
+    }
+  }
+
+  // Otherwise fail
+  GPR_ASSERT(false);
 }
 
 /* Call this only after calling grpc_event_engine_init() */
@@ -194,14 +236,19 @@ void grpc_event_engine_shutdown(void) {
 }
 
 bool grpc_event_engine_can_track_errors(void) {
+/* Only track errors if platform supports errqueue. */
+#ifdef GRPC_LINUX_ERRQUEUE
   return g_event_engine->can_track_err;
+#else
+  return false;
+#endif /* GRPC_LINUX_ERRQUEUE */
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  GPR_DEBUG_ASSERT(!track_err || g_event_engine->can_track_err);
-  return g_event_engine->fd_create(fd, name, track_err);
+  return g_event_engine->fd_create(fd, name,
+                                   track_err && g_event_engine->can_track_err);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {
@@ -238,6 +285,12 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_error(fd, closure);
 }
+
+void grpc_fd_set_readable(grpc_fd* fd) { g_event_engine->fd_set_readable(fd); }
+
+void grpc_fd_set_writable(grpc_fd* fd) { g_event_engine->fd_set_writable(fd); }
+
+void grpc_fd_set_error(grpc_fd* fd) { g_event_engine->fd_set_error(fd); }
 
 static size_t pollset_size(void) { return g_event_engine->pollset_size; }
 

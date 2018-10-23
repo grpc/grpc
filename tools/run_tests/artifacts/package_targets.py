@@ -56,7 +56,8 @@ def create_jobspec(name,
                    cwd=None,
                    shell=False,
                    flake_retries=0,
-                   timeout_retries=0):
+                   timeout_retries=0,
+                   cpu_cost=1.0):
     """Creates jobspec."""
     jobspec = jobset.JobSpec(
         cmdline=cmdline,
@@ -66,31 +67,36 @@ def create_jobspec(name,
         timeout_seconds=10 * 60,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
+        cpu_cost=cpu_cost,
         shell=shell)
     return jobspec
 
 
 class CSharpPackage:
-    """Builds C# nuget packages."""
+    """Builds C# packages."""
 
-    def __init__(self, linux=False):
-        self.linux = linux
-        self.labels = ['package', 'csharp']
-        if linux:
-            self.name = 'csharp_package_dotnetcli_linux'
-            self.labels += ['linux']
+    def __init__(self, unity=False):
+        self.unity = unity
+        self.labels = ['package', 'csharp', 'windows']
+        if unity:
+            self.name = 'csharp_package_unity_windows'
+            self.labels += ['unity']
         else:
-            self.name = 'csharp_package_dotnetcli_windows'
-            self.labels += ['windows']
+            self.name = 'csharp_package_nuget_windows'
+            self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
         return []
 
     def build_jobspec(self):
-        if self.linux:
-            return create_docker_jobspec(
-                self.name, 'tools/dockerfile/test/csharp_jessie_x64',
-                'src/csharp/build_packages_dotnetcli.sh')
+        if self.unity:
+            # use very high CPU cost to avoid running nuget package build
+            # and unity build concurrently
+            return create_jobspec(
+                self.name, ['build_unitypackage.bat'],
+                cwd='src\\csharp',
+                cpu_cost=1e6,
+                shell=True)
         else:
             return create_jobspec(
                 self.name, ['build_packages_dotnetcli.bat'],
@@ -153,7 +159,7 @@ def targets():
     """Gets list of supported targets"""
     return [
         CSharpPackage(),
-        CSharpPackage(linux=True),
+        CSharpPackage(unity=True),
         RubyPackage(),
         PythonPackage(),
         PHPPackage()

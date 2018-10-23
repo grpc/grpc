@@ -24,6 +24,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
+
 tsi_result alts_tsi_event_create(alts_tsi_handshaker* handshaker,
                                  tsi_handshaker_on_next_done_cb cb,
                                  void* user_data,
@@ -66,8 +68,8 @@ void alts_tsi_event_destroy(alts_tsi_event* event) {
   grpc_byte_buffer_destroy(event->recv_buffer);
   grpc_metadata_array_destroy(&event->initial_metadata);
   grpc_metadata_array_destroy(&event->trailing_metadata);
-  grpc_slice_unref(event->details);
-  grpc_slice_unref(event->target_name);
+  grpc_slice_unref_internal(event->details);
+  grpc_slice_unref_internal(event->target_name);
   grpc_alts_credentials_options_destroy(event->options);
   gpr_free(event);
 }

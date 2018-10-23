@@ -16,6 +16,8 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["RBE_USE_MACHINE_TYPE_LARGE",])
+
 # Latest RBE Ubuntu16_04 container
 # Update every time when a new container is released.
 alias(
@@ -39,8 +41,12 @@ platform(
           value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f"
         }
         properties: {
-          name: "gceMachineType"
+          name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-highmem-2"
+        }
+        properties: {
+          name: "gceMachineType_LARGE"  # Large machines for a small set of resource-consuming tests such as combiner_tests under TSAN.
+          value: "n1-standard-8"
         }
         """,
 )

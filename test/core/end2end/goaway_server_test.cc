@@ -50,6 +50,8 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     grpc_lb_addresses** addresses, bool check_grpclb,
     char** service_config_json, grpc_combiner* combiner);
 
+static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
+
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
   g_resolve_port = port;
@@ -130,6 +132,12 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
+static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+  if (request != nullptr) {
+    iomgr_cancel_ares_request_locked(request);
+  }
+}
+
 int main(int argc, char** argv) {
   grpc_completion_queue* cq;
   cq_verifier* cqv;
@@ -143,7 +151,9 @@ int main(int argc, char** argv) {
   default_resolver = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
   iomgr_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
+  iomgr_cancel_ares_request_locked = grpc_cancel_ares_request_locked;
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
 
   int was_cancelled1;
   int was_cancelled2;

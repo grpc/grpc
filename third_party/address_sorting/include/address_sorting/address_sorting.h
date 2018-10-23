@@ -103,6 +103,9 @@ address_sorting_family address_sorting_abstract_get_family(
 void address_sorting_override_source_addr_factory_for_testing(
     address_sorting_source_addr_factory* factory);
 
+bool address_sorting_get_source_addr_for_testing(
+    const address_sorting_address* dest, address_sorting_address* source);
+
 #ifdef __cplusplus
 }
 #endif

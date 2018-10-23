@@ -26,11 +26,27 @@ RUN apt-get update && apt-get -y install \
   openjdk-8-jdk \
   vim
 
+#====================
+# Python dependencies
+
+# Install dependencies
+
+RUN apt-get update && apt-get install -y \
+    python-all-dev \
+    python3-all-dev \
+    python-pip
+
+# Install Python packages from PyPI
+RUN pip install --upgrade pip==10.0.1
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+
 #========================
 # Bazel installation
 RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
 RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update && apt-get -y install bazel=0.13.1 && apt-get clean
+RUN apt-get -y update && apt-get -y install bazel=0.15.0 && apt-get clean
 
 
 RUN mkdir -p /var/local/jenkins

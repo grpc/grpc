@@ -46,6 +46,7 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -135,7 +136,7 @@ struct pollable {
   //     underlying epoll set (i.e whenever fd_orphan() is called).
   //
   // Implementing (2) above (i.e removing fds from cache on fd_orphan) adds a
-  // lot of complexity since an fd can be present in multiple pollalbles. So our
+  // lot of complexity since an fd can be present in multiple pollables. So our
   // implementation ONLY DOES (1) and NOT (2).
   //
   // The cache_fd.salt variable helps here to maintain correctness (it serves as
@@ -219,10 +220,6 @@ struct grpc_fd {
 
   struct grpc_fd* freelist_next;
   grpc_closure* on_done_closure;
-
-  // The pollset that last noticed that the fd is readable. The actual type
-  // stored in this is (grpc_pollset *)
-  gpr_atm read_notifier_pollset;
 
   grpc_iomgr_object iomgr_object;
 
@@ -353,7 +350,6 @@ static void invalidate_fd(grpc_fd* fd) {
   memset(&fd->pollable_mu, -1, sizeof(fd->pollable_mu));
   fd->pollable_obj = nullptr;
   fd->on_done_closure = nullptr;
-  gpr_atm_no_barrier_store(&fd->read_notifier_pollset, 0);
   memset(&fd->iomgr_object, -1, sizeof(fd->iomgr_object));
   fd->track_err = false;
 }
@@ -407,6 +403,10 @@ static void unref_by(grpc_fd* fd, int n) {
 static void fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 
 static void fd_global_shutdown(void) {
+  // TODO(guantaol): We don't have a reasonable explanation about this
+  // lock()/unlock() pattern. It can be a valid barrier if there is at most one
+  // pending lock() at this point. Otherwise, there is still a possibility of
+  // use-after-free race. Need to reason about the code and/or clean it up.
   gpr_mu_lock(&fd_freelist_mu);
   gpr_mu_unlock(&fd_freelist_mu);
   while (fd_freelist != nullptr) {
@@ -445,7 +445,6 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   new_fd->error_closure->InitEvent();
   new_fd->freelist_next = nullptr;
   new_fd->on_done_closure = nullptr;
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   char* fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
@@ -494,8 +493,9 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
     is_fd_closed = true;
   }
 
+  // TODO(sreek): handle fd removal (where is_fd_closed=false)
   if (!is_fd_closed) {
-    gpr_log(GPR_DEBUG, "TODO: handle fd removal?");
+    GRPC_FD_TRACE("epoll_fd %p (%d) was orphaned but not closed.", fd, fd->fd);
   }
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
@@ -511,11 +511,6 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   gpr_mu_unlock(&fd->orphan_mu);
 
   UNREF_BY(fd, 2, reason); /* Drop the reference */
-}
-
-static grpc_pollset* fd_get_read_notifier_pollset(grpc_fd* fd) {
-  gpr_atm notifier = gpr_atm_acq_load(&fd->read_notifier_pollset);
-  return (grpc_pollset*)notifier;
 }
 
 static bool fd_is_shutdown(grpc_fd* fd) {
@@ -745,7 +740,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("kick_one_worker", 0);
   pollable* p = specific_worker->pollable_obj;
-  grpc_core::mu_guard lock(&p->mu);
+  grpc_core::MutexLock lock(&p->mu);
   GPR_ASSERT(specific_worker != nullptr);
   if (specific_worker->kicked) {
     if (grpc_polling_trace.enabled()) {
@@ -874,17 +869,7 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
     return static_cast<int>(delta);
 }
 
-static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
-  fd->read_closure->SetReady();
-
-  /* Note, it is possible that fd_become_readable might be called twice with
-     different 'notifier's when an fd becomes readable and it is in two epoll
-     sets (This can happen briefly during polling island merges). In such cases
-     it does not really matter which notifer is set as the read_notifier_pollset
-     (They would both point to the same polling island anyway) */
-  /* Use release store to match with acquire load in fd_get_read_notifier */
-  gpr_atm_rel_store(&fd->read_notifier_pollset, (gpr_atm)notifier);
-}
+static void fd_become_readable(grpc_fd* fd) { fd->read_closure->SetReady(); }
 
 static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
@@ -982,7 +967,7 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
         fd_has_errors(fd);
       }
       if (read_ev || cancel || err_fallback) {
-        fd_become_readable(fd, pollset);
+        fd_become_readable(fd);
       }
       if (write_ev || cancel || err_fallback) {
         fd_become_writable(fd);
@@ -1564,7 +1549,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
     gpr_mu_unlock(b_mu);
   }
   // try to do the least copying possible
-  // TODO(ctiller): there's probably a better heuristic here
+  // TODO(sreek): there's probably a better heuristic here
   const size_t a_size = a->fd_count + a->pollset_count;
   const size_t b_size = b->fd_count + b->pollset_count;
   if (b_size > a_size) {
@@ -1635,8 +1620,10 @@ static const grpc_event_engine_vtable vtable = {
     fd_notify_on_read,
     fd_notify_on_write,
     fd_notify_on_error,
+    fd_become_readable,
+    fd_become_writable,
+    fd_has_errors,
     fd_is_shutdown,
-    fd_get_read_notifier_pollset,
 
     pollset_init,
     pollset_shutdown,

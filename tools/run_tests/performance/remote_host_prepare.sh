@@ -38,3 +38,6 @@ ssh "${USER_AT_HOST}" "tar -xf ~/performance_workspace/grpc.tar -C ~/performance
 # For consistency with local run, invoke the kill_workers script remotely.
 # shellcheck disable=SC2088
 ssh "${USER_AT_HOST}" "~/performance_workspace/grpc/tools/run_tests/performance/kill_workers.sh"
+
+# make sure the port server is running (required by C++ qps_worker)
+ssh "${USER_AT_HOST}" "cd ~/performance_workspace/grpc/ && python tools/run_tests/start_port_server.py"

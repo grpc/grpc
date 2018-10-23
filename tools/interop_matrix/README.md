@@ -9,7 +9,7 @@ from specific releases/tag, are used to test version compatiblity between gRPC r
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
 - Add (or update) an entry in `./client_matrix.py` file to reference the github tag for the release.
 - Build new client docker image(s).  For example, for C and wrapper languages release `v1.9.9`, do
-  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --language cxx csharp python ruby php`
+  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx csharp python ruby php`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
   - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
   - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.

@@ -65,8 +65,8 @@ const char* ServiceConfig::GetLoadBalancingPolicyName() const {
   return lb_policy_name;
 }
 
-size_t ServiceConfig::CountNamesInMethodConfig(grpc_json* json) {
-  size_t num_names = 0;
+int ServiceConfig::CountNamesInMethodConfig(grpc_json* json) {
+  int num_names = 0;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {
     if (field->key != nullptr && strcmp(field->key, "name") == 0) {
       if (field->type != GRPC_JSON_ARRAY) return -1;

@@ -34,6 +34,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+extern const char *kCFStreamVarName;
+
 static NSMutableDictionary *kHostCache;
 
 @implementation GRPCHost {
@@ -49,9 +51,11 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
-#ifndef GRPC_CFSTREAM
-  [GRPCConnectivityMonitor unregisterObserver:self];
-#endif
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor unregisterObserver:self];
+  }
 }
 
 // Default initializer.
@@ -65,7 +69,7 @@ static NSMutableDictionary *kHostCache;
   // gRPC library.
   // TODO(jcanizales): Add unit tests for the types of addresses we want to let pass untouched.
   NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
-  if (hostURL.host && !hostURL.port) {
+  if (hostURL.host && hostURL.port == nil) {
     address = [hostURL.host stringByAppendingString:@":443"];
   }
 
@@ -87,9 +91,12 @@ static NSMutableDictionary *kHostCache;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
       _retryEnabled = YES;
     }
-#ifndef GRPC_CFSTREAM
-    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
-#endif
+
+    // Connectivity monitor is not required for CFStream
+    char *enableCFStream = getenv(kCFStreamVarName);
+    if (enableCFStream == nil || enableCFStream[0] != '1') {
+      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
+    }
   }
   return self;
 }
@@ -186,6 +193,7 @@ static NSMutableDictionary *kHostCache;
   if (pemPrivateKey == nil && pemCertChain == nil) {
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
   } else {
+    assert(pemPrivateKey != nil && pemCertChain != nil);
     grpc_ssl_pem_key_cert_pair key_cert_pair;
     NSData *privateKeyASCII = [self nullTerminatedDataWithString:pemPrivateKey];
     NSData *certChainASCII = [self nullTerminatedDataWithString:pemCertChain];
@@ -219,7 +227,7 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
   }
 
-  if (_responseSizeLimitOverride) {
+  if (_responseSizeLimitOverride != nil) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
 

@@ -23,9 +23,13 @@
 
 #include <math.h>
 #include <ruby/vm.h>
+#include <stdbool.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "rb_call.h"
 #include "rb_call_credentials.h"
@@ -255,7 +259,26 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
-static void grpc_rb_shutdown(void) { grpc_shutdown(); }
+#if GPR_WINDOWS
+static void grpc_ruby_set_init_pid(void) {}
+static bool grpc_ruby_forked_after_init(void) { return false; }
+#else
+static pid_t grpc_init_pid;
+
+static void grpc_ruby_set_init_pid(void) {
+  GPR_ASSERT(grpc_init_pid == 0);
+  grpc_init_pid = getpid();
+}
+
+static bool grpc_ruby_forked_after_init(void) {
+  GPR_ASSERT(grpc_init_pid != 0);
+  return grpc_init_pid != getpid();
+}
+#endif
+
+static void grpc_rb_shutdown(void) {
+  if (!grpc_ruby_forked_after_init()) grpc_shutdown();
+}
 
 /* Initialize the GRPC module structs */
 
@@ -276,8 +299,15 @@ VALUE sym_metadata = Qundef;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 
 static void grpc_ruby_once_init_internal() {
+  grpc_ruby_set_init_pid();
   grpc_init();
   atexit(grpc_rb_shutdown);
+}
+
+void grpc_ruby_fork_guard() {
+  if (grpc_ruby_forked_after_init()) {
+    rb_raise(rb_eRuntimeError, "grpc cannot be used before and after forking");
+  }
 }
 
 static VALUE bg_thread_init_rb_mu = Qundef;

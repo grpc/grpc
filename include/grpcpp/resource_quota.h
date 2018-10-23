@@ -26,10 +26,10 @@ struct grpc_resource_quota;
 
 namespace grpc {
 
-/// ResourceQuota represents a bound on memory usage by the gRPC library.
-/// A ResourceQuota can be attached to a server (via \a ServerBuilder),
+/// ResourceQuota represents a bound on memory and thread usage by the gRPC
+/// library. A ResourceQuota can be attached to a server (via \a ServerBuilder),
 /// or a client channel (via \a ChannelArguments).
-/// gRPC will attempt to keep memory used by all attached entities
+/// gRPC will attempt to keep memory and threads used by all attached entities
 /// below the ResourceQuota bound.
 class ResourceQuota final : private GrpcLibraryCodegen {
  public:
@@ -43,6 +43,16 @@ class ResourceQuota final : private GrpcLibraryCodegen {
   /// decreased until it falls under \a new_size.
   /// No time bound is given for this to occur however.
   ResourceQuota& Resize(size_t new_size);
+
+  /// Set the max number of threads that can be allocated from this
+  /// ResourceQuota object.
+  ///
+  /// If the new_max_threads value is smaller than the current value, no new
+  /// threads are allocated until the number of active threads fall below
+  /// new_max_threads. There is no time bound on when this may happen i.e none
+  /// of the current threads are forcefully destroyed and all threads run their
+  /// normal course.
+  ResourceQuota& SetMaxThreads(int new_max_threads);
 
   grpc_resource_quota* c_resource_quota() const { return impl_; }
 

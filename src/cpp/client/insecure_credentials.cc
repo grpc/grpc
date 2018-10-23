@@ -32,11 +32,20 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
   std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) override {
+    return CreateChannelWithInterceptors(target, args, nullptr);
+  }
+
+  std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
+      const string& target, const grpc::ChannelArguments& args,
+      std::unique_ptr<std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+          interceptor_creators) override {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     return CreateChannelInternal(
         "",
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr));
+        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr),
+        std::move(interceptor_creators));
   }
 
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }

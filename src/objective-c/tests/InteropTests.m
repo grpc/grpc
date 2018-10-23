@@ -36,6 +36,8 @@
 
 #define TEST_TIMEOUT 32
 
+extern const char *kCFStreamVarName;
+
 // Convenience constructors for the generated proto messages:
 
 @interface RMTStreamingOutputCallRequest (Constructors)
@@ -96,6 +98,9 @@ BOOL isRemoteInteropTest(NSString *host) {
   [Cronet setHttp2Enabled:YES];
   [Cronet start];
   [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
+#endif
+#ifdef GRPC_CFSTREAM
+  setenv(kCFStreamVarName, "1", 1);
 #endif
 }
 
@@ -540,7 +545,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                             } else {
                               // Keepalive should kick after 1s elapsed and fails the call.
                               XCTAssertNotNil(error);
-                              XCTAssertEqual(error.code, GRPC_STATUS_INTERNAL);
+                              XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE);
                               XCTAssertEqualObjects(
                                   error.localizedDescription, @"keepalive watchdog timeout",
                                   @"Unexpected failure that is not keepalive watchdog timeout.");

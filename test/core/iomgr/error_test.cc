@@ -187,16 +187,6 @@ static void test_os_error() {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_special() {
-  grpc_error* error = GRPC_ERROR_NONE;
-  error = grpc_error_add_child(
-      error, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test child"));
-  intptr_t i;
-  GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
-  GPR_ASSERT(i == GRPC_STATUS_OK);
-  GRPC_ERROR_UNREF(error);
-}
-
 static void test_overflow() {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
 
@@ -235,7 +225,6 @@ int main(int argc, char** argv) {
   test_os_error();
   test_create_referencing();
   test_create_referencing_many();
-  test_special();
   test_overflow();
   grpc_shutdown();
 

@@ -30,6 +30,17 @@
 #include "test/core/util/port.h"
 
 struct grpc_end2end_proxy {
+  grpc_end2end_proxy()
+      : proxy_port(nullptr),
+        server_port(nullptr),
+        cq(nullptr),
+        server(nullptr),
+        client(nullptr),
+        shutdown(false),
+        new_call(nullptr) {
+    memset(&new_call_details, 0, sizeof(new_call_details));
+    memset(&new_call_metadata, 0, sizeof(new_call_metadata));
+  }
   grpc_core::Thread thd;
   char* proxy_port;
   char* server_port;
@@ -79,9 +90,7 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
-  grpc_end2end_proxy* proxy =
-      static_cast<grpc_end2end_proxy*>(gpr_malloc(sizeof(*proxy)));
-  memset(proxy, 0, sizeof(*proxy));
+  grpc_end2end_proxy* proxy = grpc_core::New<grpc_end2end_proxy>();
 
   gpr_join_host_port(&proxy->proxy_port, "localhost", proxy_port);
   gpr_join_host_port(&proxy->server_port, "localhost", server_port);
@@ -128,7 +137,7 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_channel_destroy(proxy->client);
   grpc_completion_queue_destroy(proxy->cq);
   grpc_call_details_destroy(&proxy->new_call_details);
-  gpr_free(proxy);
+  grpc_core::Delete(proxy);
 }
 
 static void unrefpc(proxy_call* pc, const char* reason) {

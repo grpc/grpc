@@ -89,7 +89,11 @@ void LockfreeEvent::DestroyEvent() {
 
 void LockfreeEvent::NotifyOn(grpc_closure* closure) {
   while (true) {
-    gpr_atm curr = gpr_atm_no_barrier_load(&state_);
+    /* This load needs to be an acquire load because this can be a shutdown
+     * error that we might need to reference. Adding acquire semantics makes
+     * sure that the shutdown error has been initialized properly before us
+     * referencing it. */
+    gpr_atm curr = gpr_atm_acq_load(&state_);
     if (grpc_polling_trace.enabled()) {
       gpr_log(GPR_ERROR, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
               (void*)curr, closure);

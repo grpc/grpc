@@ -20,6 +20,8 @@ notes=FIXME,XXX
 
 [MESSAGES CONTROL]
 
+extension-pkg-whitelist=grpc._cython.cygrpc
+
 disable=
 	# These suppressions are specific to tests:
 	#

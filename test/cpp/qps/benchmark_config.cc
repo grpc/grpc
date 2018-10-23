@@ -22,6 +22,8 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
+#include "test/cpp/util/test_credentials_provider.h"
+
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");
 
@@ -44,6 +46,10 @@ DEFINE_string(rpc_reporter_server_address, "",
 
 DEFINE_bool(enable_rpc_reporter, false, "Enable use of RPC reporter");
 
+DEFINE_string(
+    rpc_reporter_credential_type, grpc::testing::kInsecureCredentialsType,
+    "Credential type for communication to the QPS benchmark report server");
+
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.
 namespace google {}
@@ -65,11 +71,14 @@ static std::shared_ptr<Reporter> InitBenchmarkReporters() {
         new JsonReporter("JsonReporter", FLAGS_scenario_result_file)));
   }
   if (FLAGS_enable_rpc_reporter) {
+    ChannelArguments channel_args;
+    std::shared_ptr<ChannelCredentials> channel_creds =
+        testing::GetCredentialsProvider()->GetChannelCredentials(
+            FLAGS_rpc_reporter_credential_type, &channel_args);
     GPR_ASSERT(!FLAGS_rpc_reporter_server_address.empty());
     composite_reporter->add(std::unique_ptr<Reporter>(new RpcReporter(
-        "RpcReporter",
-        grpc::CreateChannel(FLAGS_rpc_reporter_server_address,
-                            grpc::InsecureChannelCredentials()))));
+        "RpcReporter", grpc::CreateChannel(FLAGS_rpc_reporter_server_address,
+                                           channel_creds))));
   }
 
   return std::shared_ptr<Reporter>(composite_reporter);

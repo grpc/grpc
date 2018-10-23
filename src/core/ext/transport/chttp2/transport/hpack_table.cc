@@ -29,6 +29,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
@@ -365,4 +366,32 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   }
 
   return r;
+}
+
+static size_t get_base64_encoded_size(size_t raw_length) {
+  static const uint8_t tail_xtra[3] = {0, 2, 3};
+  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
+}
+
+size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
+                                           bool use_true_binary_metadata) {
+  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
+  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+    return overhead_and_key + (use_true_binary_metadata
+                                   ? value_len + 1
+                                   : get_base64_encoded_size(value_len));
+  } else {
+    return overhead_and_key + value_len;
+  }
+}
+
+uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
+  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
+    uint8_t index = GRPC_MDELEM_DATA(md) - grpc_static_mdelem_table;
+    if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      return index + 1;  // Hpack static metadata element indices start at 1
+    }
+  }
+  return 0;
 }

@@ -127,7 +127,7 @@ TEST(RefCountedPtr, ResetFromNonNullToNull) {
 TEST(RefCountedPtr, ResetFromNullToNull) {
   RefCountedPtr<Foo> foo;
   EXPECT_EQ(nullptr, foo.get());
-  foo.reset(nullptr);
+  foo.reset();
   EXPECT_EQ(nullptr, foo.get());
 }
 
@@ -173,6 +173,67 @@ TEST(RefCountedPtr, RefCountedWithTracing) {
   RefCountedPtr<FooWithTracing> foo2 = foo->Ref(DEBUG_LOCATION, "foo");
   foo2.release();
   foo->Unref(DEBUG_LOCATION, "foo");
+}
+
+class BaseClass : public RefCounted<BaseClass> {
+ public:
+  BaseClass() {}
+};
+
+class Subclass : public BaseClass {
+ public:
+  Subclass() {}
+};
+
+TEST(RefCountedPtr, ConstructFromSubclass) {
+  RefCountedPtr<BaseClass> p(New<Subclass>());
+}
+
+TEST(RefCountedPtr, CopyAssignFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  RefCountedPtr<Subclass> s = MakeRefCounted<Subclass>();
+  b = s;
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, MoveAssignFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  RefCountedPtr<Subclass> s = MakeRefCounted<Subclass>();
+  b = std::move(s);
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, ResetFromSubclass) {
+  RefCountedPtr<BaseClass> b;
+  EXPECT_EQ(nullptr, b.get());
+  b.reset(New<Subclass>());
+  EXPECT_NE(nullptr, b.get());
+}
+
+TEST(RefCountedPtr, EqualityWithSubclass) {
+  Subclass* s = New<Subclass>();
+  RefCountedPtr<BaseClass> b(s);
+  EXPECT_EQ(b, s);
+}
+
+void FunctionTakingBaseClass(RefCountedPtr<BaseClass> p) {
+  p.reset();  // To appease clang-tidy.
+}
+
+TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingBaseClass) {
+  RefCountedPtr<Subclass> p = MakeRefCounted<Subclass>();
+  FunctionTakingBaseClass(p);
+}
+
+void FunctionTakingSubclass(RefCountedPtr<Subclass> p) {
+  p.reset();  // To appease clang-tidy.
+}
+
+TEST(RefCountedPtr, CanPassSubclassToFunctionExpectingSubclass) {
+  RefCountedPtr<Subclass> p = MakeRefCounted<Subclass>();
+  FunctionTakingSubclass(p);
 }
 
 }  // namespace

@@ -237,7 +237,7 @@ static void rehash_mdtab(mdtab_shard* shard) {
 }
 
 grpc_mdelem grpc_mdelem_create(
-    grpc_slice key, grpc_slice value,
+    const grpc_slice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store) {
   if (!grpc_slice_is_interned(key) || !grpc_slice_is_interned(value)) {
     if (compatible_external_backing_store != nullptr) {
@@ -324,7 +324,8 @@ grpc_mdelem grpc_mdelem_create(
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value) {
+grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
+                                    const grpc_slice& value) {
   grpc_mdelem out = grpc_mdelem_create(key, value, nullptr);
   grpc_slice_unref_internal(key);
   grpc_slice_unref_internal(value);
@@ -340,24 +341,6 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
   return grpc_mdelem_create(
       key_slice, value_slice,
       changed ? nullptr : reinterpret_cast<grpc_mdelem_data*>(metadata));
-}
-
-static size_t get_base64_encoded_size(size_t raw_length) {
-  static const uint8_t tail_xtra[3] = {0, 2, 3};
-  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
-}
-
-size_t grpc_mdelem_get_size_in_hpack_table(grpc_mdelem elem,
-                                           bool use_true_binary_metadata) {
-  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
-    return overhead_and_key + (use_true_binary_metadata
-                                   ? value_len + 1
-                                   : get_base64_encoded_size(value_len));
-  } else {
-    return overhead_and_key + value_len;
-  }
 }
 
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {

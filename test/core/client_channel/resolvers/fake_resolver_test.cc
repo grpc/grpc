@@ -124,8 +124,8 @@ static void test_fake_resolver() {
       build_fake_resolver(combiner, response_generator.get());
   GPR_ASSERT(resolver.get() != nullptr);
   // Test 1: normal resolution.
-  // next_results != NULL, reresolution_results == NULL, last_used_results ==
-  // NULL. Expected response is next_results.
+  // next_results != NULL, reresolution_results == NULL.
+  // Expected response is next_results.
   grpc_channel_args* results = create_new_resolver_result();
   on_resolution_arg on_res_arg = create_on_resolution_arg(results);
   grpc_closure* on_resolution = GRPC_CLOSURE_CREATE(
@@ -137,10 +137,9 @@ static void test_fake_resolver() {
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
   // Test 2: update resolution.
-  // next_results != NULL, reresolution_results == NULL, last_used_results !=
-  // NULL. Expected response is next_results.
+  // next_results != NULL, reresolution_results == NULL.
+  // Expected response is next_results.
   results = create_new_resolver_result();
-  grpc_channel_args* last_used_results = grpc_channel_args_copy(results);
   on_res_arg = create_on_resolution_arg(results);
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
                                       grpc_combiner_scheduler(combiner));
@@ -150,21 +149,9 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 3: fallback re-resolution.
-  // next_results == NULL, reresolution_results == NULL, last_used_results !=
-  // NULL. Expected response is last_used_results.
-  on_res_arg = create_on_resolution_arg(last_used_results);
-  on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
-                                      grpc_combiner_scheduler(combiner));
-  resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
-  // Trigger a re-resolution.
-  resolver->RequestReresolutionLocked();
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
-                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 4: normal re-resolution.
-  // next_results == NULL, reresolution_results != NULL, last_used_results !=
-  // NULL. Expected response is reresolution_results.
+  // Test 3: normal re-resolution.
+  // next_results == NULL, reresolution_results != NULL.
+  // Expected response is reresolution_results.
   grpc_channel_args* reresolution_results = create_new_resolver_result();
   on_res_arg =
       create_on_resolution_arg(grpc_channel_args_copy(reresolution_results));
@@ -180,9 +167,9 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 5: repeat re-resolution.
-  // next_results == NULL, reresolution_results != NULL, last_used_results !=
-  // NULL. Expected response is reresolution_results.
+  // Test 4: repeat re-resolution.
+  // next_results == NULL, reresolution_results != NULL.
+  // Expected response is reresolution_results.
   on_res_arg = create_on_resolution_arg(reresolution_results);
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
                                       grpc_combiner_scheduler(combiner));
@@ -192,11 +179,10 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 6: normal resolution.
-  // next_results != NULL, reresolution_results != NULL, last_used_results !=
-  // NULL. Expected response is next_results.
+  // Test 5: normal resolution.
+  // next_results != NULL, reresolution_results != NULL.
+  // Expected response is next_results.
   results = create_new_resolver_result();
-  last_used_results = grpc_channel_args_copy(results);
   on_res_arg = create_on_resolution_arg(results);
   on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
                                       grpc_combiner_scheduler(combiner));
@@ -206,23 +192,7 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 7: fallback re-resolution.
-  // next_results == NULL, reresolution_results == NULL, last_used_results !=
-  // NULL. Expected response is last_used_results.
-  on_res_arg = create_on_resolution_arg(last_used_results);
-  on_resolution = GRPC_CLOSURE_CREATE(on_resolution_cb, &on_res_arg,
-                                      grpc_combiner_scheduler(combiner));
-  resolver->NextLocked(&on_res_arg.resolver_result, on_resolution);
-  // Reset reresolution_results.
-  response_generator->SetReresolutionResponse(nullptr);
-  // Flush here to guarantee that reresolution_results has been reset.
-  grpc_core::ExecCtx::Get()->Flush();
-  // Trigger a re-resolution.
-  resolver->RequestReresolutionLocked();
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(gpr_event_wait(&on_res_arg.ev,
-                            grpc_timeout_seconds_to_deadline(5)) != nullptr);
-  // Test 8: no-op.
+  // Test 6: no-op.
   // Requesting a new resolution without setting the response shouldn't trigger
   // the resolution callback.
   memset(&on_res_arg, 0, sizeof(on_res_arg));

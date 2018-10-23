@@ -18,8 +18,8 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
+source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
 
 # using run_interop_tests.py without --use_docker, so we need to build first
 tools/run_tests/run_tests.py -l c++ -c opt --build_only
