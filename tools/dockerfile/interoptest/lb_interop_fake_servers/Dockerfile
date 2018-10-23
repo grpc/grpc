@@ -1,4 +1,3 @@
-#!/bin/sh
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,24 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+FROM golang:1.10
 
-gen_build_yaml_dirs="  \
-  src/boringssl        \
-  src/benchmark \
-  src/proto            \
-  src/zlib             \
-  src/c-ares           \
-  test/core/bad_client \
-  test/core/bad_ssl    \
-  test/core/end2end    \
-  test/cpp/naming \
-  test/cpp/qps \
-  tools/run_tests/lb_interop_tests"
-gen_build_files=""
-for gen_build_yaml in $gen_build_yaml_dirs
-do
-  output_file=`mktemp /tmp/genXXXXXX`
-  $gen_build_yaml/gen_build_yaml.py > $output_file
-  gen_build_files="$gen_build_files $output_file"
-done
+RUN apt-get update && apt-get install -y \
+  dnsutils \
+  git \
+  vim \
+  curl \
+  python-pip \
+  python-yaml \
+  make && apt-get clean
+
+RUN ln -s /usr/local/go/bin/go /usr/local/bin
+
+# Install Python packages from PyPI
+RUN pip install --upgrade pip==10.0.1
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+# Define the default command.
+CMD ["bash"]
