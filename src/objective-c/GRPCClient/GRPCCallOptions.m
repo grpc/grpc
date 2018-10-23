@@ -25,7 +25,7 @@ static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
-static const BOOL kDefaultEnableRetry = YES;
+static const BOOL kDefaultRetryEnabled = YES;
 static const NSTimeInterval kDefaultKeepaliveInterval = 0;
 static const NSTimeInterval kDefaultKeepaliveTimeout = 0;
 static const NSTimeInterval kDefaultConnectMinTimeout = 0;
@@ -53,7 +53,7 @@ static const NSUInteger kDefaultChannelID = 0;
   NSString *_userAgentPrefix;
   NSUInteger _responseSizeLimit;
   GRPCCompressionAlgorithm _compressionAlgorithm;
-  BOOL _enableRetry;
+  BOOL _retryEnabled;
   NSTimeInterval _keepaliveInterval;
   NSTimeInterval _keepaliveTimeout;
   NSTimeInterval _connectMinTimeout;
@@ -78,7 +78,7 @@ static const NSUInteger kDefaultChannelID = 0;
 @synthesize userAgentPrefix = _userAgentPrefix;
 @synthesize responseSizeLimit = _responseSizeLimit;
 @synthesize compressionAlgorithm = _compressionAlgorithm;
-@synthesize enableRetry = _enableRetry;
+@synthesize retryEnabled = _retryEnabled;
 @synthesize keepaliveInterval = _keepaliveInterval;
 @synthesize keepaliveTimeout = _keepaliveTimeout;
 @synthesize connectMinTimeout = _connectMinTimeout;
@@ -103,7 +103,7 @@ static const NSUInteger kDefaultChannelID = 0;
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
-                           enableRetry:kDefaultEnableRetry
+                          retryEnabled:kDefaultRetryEnabled
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
                      connectMinTimeout:kDefaultConnectMinTimeout
@@ -128,7 +128,7 @@ static const NSUInteger kDefaultChannelID = 0;
                         userAgentPrefix:(NSString *)userAgentPrefix
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
-                            enableRetry:(BOOL)enableRetry
+                           retryEnabled:(BOOL)retryEnabled
                       keepaliveInterval:(NSTimeInterval)keepaliveInterval
                        keepaliveTimeout:(NSTimeInterval)keepaliveTimeout
                       connectMinTimeout:(NSTimeInterval)connectMinTimeout
@@ -152,7 +152,7 @@ static const NSUInteger kDefaultChannelID = 0;
     _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
-    _enableRetry = enableRetry;
+    _retryEnabled = retryEnabled;
     _keepaliveInterval = keepaliveInterval;
     _keepaliveTimeout = keepaliveTimeout;
     _connectMinTimeout = connectMinTimeout;
@@ -182,7 +182,7 @@ static const NSUInteger kDefaultChannelID = 0;
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
-                                                        enableRetry:_enableRetry
+                                                        retryEnabled:_retryEnabled
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
                                                   connectMinTimeout:_connectMinTimeout
@@ -210,7 +210,7 @@ static const NSUInteger kDefaultChannelID = 0;
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
-                  enableRetry:_enableRetry
+                  retryEnabled:_retryEnabled
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
             connectMinTimeout:_connectMinTimeout
@@ -234,7 +234,7 @@ static const NSUInteger kDefaultChannelID = 0;
     return NO;
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
   if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
-  if (!(callOptions.enableRetry == _enableRetry)) return NO;
+  if (!(callOptions.retryEnabled == _retryEnabled)) return NO;
   if (!(callOptions.keepaliveInterval == _keepaliveInterval)) return NO;
   if (!(callOptions.keepaliveTimeout == _keepaliveTimeout)) return NO;
   if (!(callOptions.connectMinTimeout == _connectMinTimeout)) return NO;
@@ -271,7 +271,7 @@ static const NSUInteger kDefaultChannelID = 0;
   result ^= _userAgentPrefix.hash;
   result ^= _responseSizeLimit;
   result ^= _compressionAlgorithm;
-  result ^= _enableRetry;
+  result ^= _retryEnabled;
   result ^= (unsigned int)(_keepaliveInterval * 1000);
   result ^= (unsigned int)(_keepaliveTimeout * 1000);
   result ^= (unsigned int)(_connectMinTimeout * 1000);
@@ -302,7 +302,7 @@ static const NSUInteger kDefaultChannelID = 0;
 @dynamic userAgentPrefix;
 @dynamic responseSizeLimit;
 @dynamic compressionAlgorithm;
-@dynamic enableRetry;
+@dynamic retryEnabled;
 @dynamic keepaliveInterval;
 @dynamic keepaliveTimeout;
 @dynamic connectMinTimeout;
@@ -327,7 +327,7 @@ static const NSUInteger kDefaultChannelID = 0;
                        userAgentPrefix:kDefaultUserAgentPrefix
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
-                           enableRetry:kDefaultEnableRetry
+                           retryEnabled:kDefaultRetryEnabled
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
                      connectMinTimeout:kDefaultConnectMinTimeout
@@ -354,7 +354,7 @@ static const NSUInteger kDefaultChannelID = 0;
                                                     userAgentPrefix:_userAgentPrefix
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
-                                                        enableRetry:_enableRetry
+                                                        retryEnabled:_retryEnabled
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
                                                   connectMinTimeout:_connectMinTimeout
@@ -382,7 +382,7 @@ static const NSUInteger kDefaultChannelID = 0;
               userAgentPrefix:_userAgentPrefix
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
-                  enableRetry:_enableRetry
+                  retryEnabled:_retryEnabled
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
             connectMinTimeout:_connectMinTimeout
@@ -436,8 +436,8 @@ static const NSUInteger kDefaultChannelID = 0;
   _compressionAlgorithm = compressionAlgorithm;
 }
 
-- (void)setEnableRetry:(BOOL)enableRetry {
-  _enableRetry = enableRetry;
+- (void)setRetryEnabled:(BOOL)retryEnabled {
+  _retryEnabled = retryEnabled;
 }
 
 - (void)setKeepaliveInterval:(NSTimeInterval)keepaliveInterval {

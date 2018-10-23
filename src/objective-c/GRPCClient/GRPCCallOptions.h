@@ -132,7 +132,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
-@property(readonly) BOOL enableRetry;
+@property(readonly) BOOL retryEnabled;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
@@ -279,7 +279,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
-@property(readwrite) BOOL enableRetry;
+@property(readwrite) BOOL retryEnabled;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the

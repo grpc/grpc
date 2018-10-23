@@ -103,7 +103,7 @@ static NSMutableDictionary *gHostCache;
   options.userAgentPrefix = _userAgentPrefix;
   options.responseSizeLimit = _responseSizeLimitOverride;
   options.compressionAlgorithm = (GRPCCompressionAlgorithm)_compressAlgorithm;
-  options.enableRetry = _retryEnabled;
+  options.retryEnabled = _retryEnabled;
   options.keepaliveInterval = (NSTimeInterval)_keepaliveInterval / 1000;
   options.keepaliveTimeout = (NSTimeInterval)_keepaliveTimeout / 1000;
   options.connectMinTimeout = (NSTimeInterval)_minConnectTimeout / 1000;

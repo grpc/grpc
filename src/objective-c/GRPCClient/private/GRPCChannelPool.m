@@ -108,8 +108,8 @@ extern const char *kCFStreamVarName;
         [NSNumber numberWithUnsignedInteger:(unsigned int)(_callOptions.keepaliveTimeout * 1000)];
   }
 
-  if (_callOptions.enableRetry == NO) {
-    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:_callOptions.enableRetry];
+  if (_callOptions.retryEnabled == NO) {
+    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:_callOptions.retryEnabled];
   }
 
   if (_callOptions.connectMinTimeout > 0) {
