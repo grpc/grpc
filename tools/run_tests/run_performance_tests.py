@@ -41,6 +41,11 @@ os.chdir(_ROOT)
 
 _REMOTE_HOST_USERNAME = 'jenkins'
 
+_SCENARIO_TIMEOUT = 3 * 60
+_WORKER_TIMEOUT = 3 * 60
+_NETPERF_TIMEOUT = 60
+_QUIT_WORKER_TIMEOUT = 2 * 60
+
 
 class QpsWorkerJob:
     """Encapsulates a qps worker server job."""
@@ -85,7 +90,7 @@ def create_qpsworker_job(language,
         cmdline = perf_cmd + ['-o', '%s-perf.data' % perf_file_base_name
                              ] + cmdline
 
-    worker_timeout = 3 * 60
+    worker_timeout = _WORKER_TIMEOUT
     if remote_host:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
         ssh_cmd = ['ssh']
@@ -131,7 +136,7 @@ def create_scenario_jobspec(scenario_json,
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='qps_json_driver.%s' % scenario_json['name'],
-        timeout_seconds=12 * 60,
+        timeout_seconds=_SCENARIO_TIMEOUT,
         shell=True,
         verbose_success=True)
 
@@ -149,7 +154,7 @@ def create_quit_jobspec(workers, remote_host=None):
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='qps_json_driver.quit',
-        timeout_seconds=3 * 60,
+        timeout_seconds=_QUIT_WORKER_TIMEOUT,
         shell=True,
         verbose_success=True)
 
@@ -181,7 +186,7 @@ def create_netperf_jobspec(server_host='localhost',
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='netperf',
-        timeout_seconds=60,
+        timeout_seconds=_NETPERF_TIMEOUT,
         shell=True,
         verbose_success=True)
 
