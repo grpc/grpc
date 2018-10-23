@@ -42,6 +42,28 @@ namespace grpc {
 namespace testing {
 namespace {
 
+class EchoTestServiceStreamingImpl : public EchoTestService::Service {
+ public:
+  ~EchoTestServiceStreamingImpl() override {}
+
+  Status BidiStream(
+      ServerContext* context,
+      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+    EchoRequest req;
+    EchoResponse resp;
+    auto client_metadata = context->client_metadata();
+    for (const auto& pair : client_metadata) {
+      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
+    }
+
+    while (stream->Read(&req)) {
+      resp.set_message(req.message());
+      stream->Write(resp, grpc::WriteOptions());
+    }
+    return Status::OK;
+  }
+};
+
 /* This interceptor does nothing. Just keeps a global count on the number of
  * times it was invoked. */
 class DummyInterceptor : public experimental::Interceptor {
@@ -49,7 +71,6 @@ class DummyInterceptor : public experimental::Interceptor {
   DummyInterceptor(experimental::ServerRpcInfo* info) {}
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    gpr_log(GPR_ERROR, "running dummy");
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       num_times_run_++;
@@ -84,7 +105,6 @@ class DummyInterceptorFactory
  public:
   virtual experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
-    gpr_log(GPR_ERROR, "created dummy");
     return new DummyInterceptor(info);
   }
 };
@@ -98,11 +118,8 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
-      // Check that we can see the test metadata
-      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
-      auto iterator = map->begin();
-      EXPECT_EQ("testkey", iterator->first);
-      EXPECT_EQ("testvalue", iterator->second);
+      // Got nothing better to do here for now
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
@@ -113,14 +130,30 @@ class LoggingInterceptor : public experimental::Interceptor {
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {
-      // Got nothing to do here for now
+            experimental::InterceptionHookPoints::PRE_SEND_STATUS)) {
+      auto* map = methods->GetSendTrailingMetadata();
+      bool found = false;
+      // Check that we received the metadata as an echo
+      for (const auto& pair : *map) {
+        found = pair.first.find("testkey") == 0 &&
+                pair.second.find("testvalue") == 0;
+        if (found) break;
+      }
+      EXPECT_EQ(found, true);
+      auto status = methods->GetSendStatus();
+      EXPECT_EQ(status.ok(), true);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
       auto* map = methods->GetRecvInitialMetadata();
-      // Got nothing better to do here for now
-      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      bool found = false;
+      // Check that we received the metadata as an echo
+      for (const auto& pair : *map) {
+        found = pair.first.find("testkey") == 0 &&
+                pair.second.find("testvalue") == 0;
+        if (found) break;
+      }
+      EXPECT_EQ(found, true);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
@@ -129,18 +162,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       EXPECT_TRUE(resp->message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* map = methods->GetRecvTrailingMetadata();
-      bool found = false;
-      // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
-        if (found) break;
-      }
-      EXPECT_EQ(found, true);
-      auto* status = methods->GetRecvStatus();
-      EXPECT_EQ(status->ok(), true);
+            experimental::InterceptionHookPoints::POST_RECV_CLOSE)) {
+      // Got nothing interesting to do here
     }
     methods->Proceed();
   }
@@ -156,29 +179,6 @@ class LoggingInterceptorFactory
       experimental::ServerRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
-};
-
-class ServerInterceptorsEnd2endTest : public ::testing::Test {
- protected:
-  ServerInterceptorsEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-
-    std::vector<
-        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
-        creators;
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
-    builder.experimental().SetInterceptorCreators(std::move(creators));
-    server_ = builder.BuildAndStart();
-  }
-  std::string server_address_;
-  TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
 };
 
 void MakeCall(const std::shared_ptr<Channel>& channel) {
@@ -212,13 +212,80 @@ void MakeCall(const std::shared_ptr<Channel>& channel) {
   EXPECT_EQ(s.ok(), true);
 }*/
 
-TEST_F(ServerInterceptorsEnd2endTest, ServerInterceptorDummyTest) {
+class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
+ protected:
+  ServerInterceptorsEnd2endSyncUnaryTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+
+    std::vector<
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+        creators;
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new LoggingInterceptorFactory()));
+    for (auto i = 0; i < 20; i++) {
+      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+          new DummyInterceptorFactory()));
+    }
+    builder.experimental().SetInterceptorCreators(std::move(creators));
+    server_ = builder.BuildAndStart();
+  }
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, ServerInterceptorTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
   auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
   MakeCall(channel);
   // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 1);
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+class ServerInterceptorsEnd2endSyncClientStreamingTest
+    : public ::testing::Test {
+ protected:
+  ServerInterceptorsEnd2endSyncClientStreamingTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+
+    std::vector<
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+        creators;
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new LoggingInterceptorFactory()));
+    for (auto i = 0; i < 20; i++) {
+      creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+          new DummyInterceptorFactory()));
+    }
+    builder.experimental().SetInterceptorCreators(std::move(creators));
+    server_ = builder.BuildAndStart();
+  }
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_F(ServerInterceptorsEnd2endSyncClientStreamingTest,
+       ServerInterceptorTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
 }  // namespace

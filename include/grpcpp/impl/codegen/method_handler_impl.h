@@ -84,7 +84,7 @@ class RpcMethodHandler : public MethodHandler {
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
-    GPR_CODEGEN_ASSERT(param.call->cq()->Pluck(&ops));
+    param.call->cq()->Pluck(&ops);
   }
 
   void* Deserialize(grpc_byte_buffer* req, Status* status) final {
