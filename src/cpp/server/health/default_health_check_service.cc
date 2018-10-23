@@ -78,12 +78,12 @@ void DefaultHealthCheckService::RegisterCallHandler(
 
 void DefaultHealthCheckService::UnregisterCallHandler(
     const grpc::string& service_name,
-    std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
+    const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
   std::unique_lock<std::mutex> lock(mu_);
   auto it = services_map_.find(service_name);
   if (it == services_map_.end()) return;
   ServiceData& service_data = it->second;
-  service_data.RemoveCallHandler(std::move(handler));
+  service_data.RemoveCallHandler(handler);
   if (service_data.Unused()) {
     services_map_.erase(it);
   }
@@ -115,7 +115,7 @@ void DefaultHealthCheckService::ServiceData::AddCallHandler(
 }
 
 void DefaultHealthCheckService::ServiceData::RemoveCallHandler(
-    std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler) {
+    const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler) {
   call_handlers_.erase(handler);
 }
 
@@ -184,16 +184,13 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   std::vector<Slice> slices;
   if (!request.Dump(&slices).ok()) return false;
   uint8_t* request_bytes = nullptr;
-  bool request_bytes_owned = false;
   size_t request_size = 0;
   grpc_health_v1_HealthCheckRequest request_struct;
-  if (slices.empty()) {
-    request_struct.has_service = false;
-  } else if (slices.size() == 1) {
+  request_struct.has_service = false;
+  if (slices.size() == 1) {
     request_bytes = const_cast<uint8_t*>(slices[0].begin());
     request_size = slices[0].size();
-  } else {
-    request_bytes_owned = true;
+  } else if (slices.size() > 1) {
     request_bytes = static_cast<uint8_t*>(gpr_malloc(request.Length()));
     uint8_t* copy_to = request_bytes;
     for (size_t i = 0; i < slices.size(); i++) {
@@ -201,15 +198,13 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
       copy_to += slices[i].size();
     }
   }
-  if (request_bytes != nullptr) {
-    pb_istream_t istream = pb_istream_from_buffer(request_bytes, request_size);
-    bool decode_status = pb_decode(
-        &istream, grpc_health_v1_HealthCheckRequest_fields, &request_struct);
-    if (request_bytes_owned) {
-      gpr_free(request_bytes);
-    }
-    if (!decode_status) return false;
+  pb_istream_t istream = pb_istream_from_buffer(request_bytes, request_size);
+  bool decode_status = pb_decode(
+      &istream, grpc_health_v1_HealthCheckRequest_fields, &request_struct);
+  if (slices.size() > 1) {
+    gpr_free(request_bytes);
   }
+  if (!decode_status) return false;
   *service_name = request_struct.has_service ? request_struct.service : "";
   return true;
 }
@@ -318,6 +313,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::CheckCallHandler::
     gpr_log(GPR_DEBUG, "[HCS %p] Health check call finished for handler %p",
             service_, this);
   }
+  self.reset();  // To appease clang-tidy.
 }
 
 //
@@ -464,6 +460,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
             "handler: %p).",
             service_, service_name_.c_str(), this);
   }
+  self.reset();  // To appease clang-tidy.
 }
 
 // TODO(roth): This method currently assumes that there will be only one
@@ -476,6 +473,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchCallHandler::
           "[HCS %p] Health watch call is notified done (handler: %p, "
           "is_cancelled: %d).",
           service_, this, static_cast<int>(ctx_.IsCancelled()));
+  database_->UnregisterCallHandler(service_name_, self);
   SendFinish(std::move(self), Status::CANCELLED);
 }
 
