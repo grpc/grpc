@@ -32,6 +32,7 @@
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
 #import "version.h"
+#import "../internal/GRPCCallOptions+internal.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

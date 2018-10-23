@@ -26,6 +26,7 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "version.h"
+#import "../internal/GRPCCallOptions+internal.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>

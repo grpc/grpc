@@ -183,11 +183,6 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
 @property(copy, readonly) NSString *hostNameOverride;
 
 /**
- * Parameter used for internal logging.
- */
-@property(readonly) id logContext;
-
-/**
  * A string that specify the domain where channel is being cached. Channels with different domains
  * will not get cached to the same connection.
  */
@@ -330,11 +325,6 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * Override the hostname during the TLS hostname validation process.
  */
 @property(copy, readwrite) NSString *hostNameOverride;
-
-/**
- * Parameter used for internal logging.
- */
-@property(copy, readwrite) id logContext;
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains

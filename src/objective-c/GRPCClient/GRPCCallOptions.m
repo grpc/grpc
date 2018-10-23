@@ -17,6 +17,7 @@
  */
 
 #import "GRPCCallOptions.h"
+#import "internal/GRPCCallOptions+internal.h"
 
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
