@@ -163,9 +163,8 @@ static void start_handshake_locked(chttp2_connector* c) {
                        c->args.interested_parties, c->handshake_mgr);
   grpc_endpoint_add_to_pollset_set(c->endpoint, c->args.interested_parties);
   grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, c->args.interested_parties, c->endpoint,
-      c->args.channel_args, c->args.deadline, nullptr /* acceptor */,
-      on_handshake_done, c);
+      c->handshake_mgr, c->endpoint, c->args.channel_args, c->args.deadline,
+      nullptr /* acceptor */, on_handshake_done, c);
   c->endpoint = nullptr;  // Endpoint handed off to handshake manager.
 }
 

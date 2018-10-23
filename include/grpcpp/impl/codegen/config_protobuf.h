@@ -66,6 +66,11 @@
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #endif
 
+#ifndef GRPC_CUSTOM_UTIL_STATUS
+#include <google/protobuf/util/json_util.h>
+#define GRPC_CUSTOM_UTIL_STATUS ::google::protobuf::util::Status
+#endif
+
 namespace grpc {
 namespace protobuf {
 
@@ -82,6 +87,17 @@ typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
 typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
 typedef GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE SimpleDescriptorDatabase;
 typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
+
+namespace util {
+typedef GRPC_CUSTOM_UTIL_STATUS Status;
+
+inline util::Status JsonStringToMessage(const std::string& input,
+                                        Message* message) {
+  return ::google::protobuf::util::JsonStringToMessage(
+      input, message, ::google::protobuf::util::JsonParseOptions());
+}
+
+}  // namespace util
 
 namespace io {
 typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;

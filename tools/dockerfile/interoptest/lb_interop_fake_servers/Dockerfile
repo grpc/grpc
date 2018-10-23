@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,13 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+FROM golang:1.10
 
-cd "$(dirname "$0")/../../.."
+RUN apt-get update && apt-get install -y \
+  dnsutils \
+  git \
+  vim \
+  curl \
+  python-pip \
+  python-yaml \
+  make && apt-get clean
 
-cmake/build/qps_json_driver "$@"
+RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
-if [ "$BQ_RESULT_TABLE" != "" ]
-then
-  tools/run_tests/performance/bq_upload_result.py --bq_result_table="$BQ_RESULT_TABLE"
-fi
+# Install Python packages from PyPI
+RUN pip install --upgrade pip==10.0.1
+RUN pip install virtualenv
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+# Define the default command.
+CMD ["bash"]
