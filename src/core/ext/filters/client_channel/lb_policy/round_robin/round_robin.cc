@@ -315,7 +315,7 @@ void RoundRobin::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
   pending_picks_ = nullptr;
   while (pick != nullptr) {
     PickState* next = pick->next;
-    if ((pick->initial_metadata_flags & initial_metadata_flags_mask) ==
+    if ((*pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(pick->on_complete,

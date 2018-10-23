@@ -64,13 +64,9 @@ class LoadBalancingPolicy
   struct PickState {
     /// Initial metadata associated with the picking call.
     grpc_metadata_batch* initial_metadata;
-    /// Bitmask used for selective cancelling. See
+    /// Pointer to bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
-// FIXME: changed this to a pointer so that we can reset the data it
-// points to when the service config arrives and have the change be
-// visible to both the LB policy and the subchannel stack.
-// Need to update implementations accordingly.
     uint32_t* initial_metadata_flags;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;

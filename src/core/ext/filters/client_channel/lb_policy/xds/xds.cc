@@ -1188,7 +1188,7 @@ void XdsLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
   pending_picks_ = nullptr;
   while (pp != nullptr) {
     PendingPick* next = pp->next;
-    if ((pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
+    if ((*pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       // Note: pp is deleted in this callback.
       GRPC_CLOSURE_SCHED(&pp->on_complete,

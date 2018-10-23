@@ -348,6 +348,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/request_routing.cc \
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \

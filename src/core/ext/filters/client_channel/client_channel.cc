@@ -2823,8 +2823,8 @@ class LbPicker {
                   .batch->payload->send_initial_metadata.send_initial_metadata;
     calld->pick.initial_metadata_flags =
         calld->seen_send_initial_metadata
-            ? calld->send_initial_metadata_flags
-            : calld->pending_batches[0]
+            ? &calld->send_initial_metadata_flags
+            : &calld->pending_batches[0]
                   .batch->payload->send_initial_metadata
                   .send_initial_metadata_flags;
     GRPC_CLOSURE_INIT(&calld->pick_closure, &LbPicker::DoneLocked, elem,

@@ -66,6 +66,7 @@ namespace grpc_core {
 
 namespace {
 
+// FIXME: make this a class?
 struct ReresolutionRequestArgs {
   RequestRouter* request_router;
   // LB policy address. Used for logging only; no ref held, so not
@@ -88,15 +89,16 @@ RequestRouter::RequestRouter(
     grpc_channel_stack* owning_stack, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     grpc_pollset_set* interested_parties, TraceFlag* tracer,
+    channelz::ClientChannelNode* channelz_node,
     grpc_closure* on_resolver_result, bool request_service_config)
     : owning_stack_(owning_stack), combiner_(combiner),
       client_channel_factory_(client_channel_factory),
       interested_parties_(interested_parties), tracer_(tracer),
-      on_resolver_result_(on_resolver_result),
+      channelz_node_(channelz_node), on_resolver_result_(on_resolver_result),
       request_service_config_(request_service_config) {
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
-                    grpc_combiner_schedule(combiner));
+                    grpc_combiner_scheduler(combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "request_router");
 }
@@ -131,7 +133,7 @@ grpc_error* RequestRouter::Init(const char* target_uri,
   resolver_ = ResolverRegistry::CreateResolver(
       target_uri, (new_args == nullptr ? args : new_args), interested_parties_,
       combiner_);
-  if (new_args != nullptr) grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(new_args);
   return resolver_ == nullptr
       ? GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed")
       : GRPC_ERROR_NONE;
@@ -163,7 +165,7 @@ void RequestRouter::OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
   LbConnectivityWatchState* w = static_cast<LbConnectivityWatchState*>(arg);
   // Check if the notification is for the current LB policy.
   if (w->lb_policy == w->request_router->lb_policy_.get()) {
-    if (tracer_->enabled()) {
+    if (w->request_router->tracer_->enabled()) {
       gpr_log(GPR_INFO, "request_router=%p: lb_policy=%p state changed to %s",
               w->request_router, w->lb_policy,
               grpc_connectivity_state_name(w->state));
@@ -176,7 +178,7 @@ void RequestRouter::OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
   }
 // FIXME: don't free every time!  reuse the same object unless we've
 // switched LB policies
-  GRPC_CHANNEL_STACK_UNREF(w->request_router->owning_stack, "watch_lb_policy");
+  GRPC_CHANNEL_STACK_UNREF(w->request_router->owning_stack_, "watch_lb_policy");
   Delete(w);
 }
 
@@ -284,8 +286,9 @@ void RequestRouter::OnRequestReresolutionLocked(void* arg, grpc_error* error) {
     Delete(args);
     return;
   }
-  if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "request_router=%p: started name re-resolving", this);
+  if (request_router->tracer_->enabled()) {
+    gpr_log(GPR_INFO, "request_router=%p: started name re-resolving",
+            request_router);
   }
   request_router->resolver_->RequestReresolutionLocked();
   // Give back the closure to the LB policy.
@@ -297,8 +300,8 @@ void RequestRouter::OnRequestReresolutionLocked(void* arg, grpc_error* error) {
 // *connectivity_error to its initial connectivity state; otherwise,
 // leaves them unchanged.
 void RequestRouter::CreateNewLbPolicyLocked(
-    char* lb_policy_name, grpc_connectivity_state* connectivity_state,
-    grpc_error** connectivity_error) {
+    const char* lb_policy_name, grpc_connectivity_state* connectivity_state,
+    grpc_error** connectivity_error, TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner_;
   lb_policy_args.client_channel_factory = client_channel_factory_;
@@ -308,13 +311,22 @@ void RequestRouter::CreateNewLbPolicyLocked(
           lb_policy_name, lb_policy_args);
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
+    if (channelz_node_ != nullptr) {
+      char* str;
+      gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
+      trace_strings->push_back(str);
+    }
   } else {
     if (tracer_->enabled()) {
       gpr_log(GPR_INFO, "request_router=%p: created new LB policy \"%s\" (%p)",
               this, lb_policy_name, new_lb_policy.get());
     }
-    // Swap out the LB policy and update the fds in
-    // chand->interested_parties.
+    if (channelz_node_ != nullptr) {
+      char* str;
+      gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
+      trace_strings->push_back(str);
+    }
+    // Swap out the LB policy and update the fds in interested_parties_.
     if (lb_policy_ != nullptr) {
       if (tracer_->enabled()) {
         gpr_log(GPR_INFO, "request_router=%p: shutting down lb_policy=%p",
@@ -331,8 +343,7 @@ void RequestRouter::CreateNewLbPolicyLocked(
     ReresolutionRequestArgs* args = New<ReresolutionRequestArgs>();
     args->request_router = this;
     args->lb_policy = lb_policy_.get();
-    GRPC_CLOSURE_INIT(&args->closure,
-                      &RequestRouter::OnRequestReresolutionLocked, args,
+    GRPC_CLOSURE_INIT(&args->closure, &OnRequestReresolutionLocked, args,
                       grpc_combiner_scheduler(combiner_));
     GRPC_CHANNEL_STACK_REF(owning_stack_, "re-resolution");
     lb_policy_->SetReresolutionClosureLocked(&args->closure);
@@ -349,11 +360,55 @@ void RequestRouter::CreateNewLbPolicyLocked(
   }
 }
 
+void RequestRouter::MaybeAddTraceMessagesForAddressChangesLocked(
+    TraceStringVector* trace_strings) {
+  bool resolution_contains_addresses = false;
+  const grpc_arg* channel_arg =
+      grpc_channel_args_find(resolver_result_, GRPC_ARG_LB_ADDRESSES);
+  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+    grpc_lb_addresses* addresses =
+        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+    if (addresses->num_addresses > 0) {
+      resolution_contains_addresses = true;
+    }
+  }
+  if (!resolution_contains_addresses &&
+      previous_resolution_contained_addresses_) {
+    trace_strings->push_back(gpr_strdup("Address list became empty"));
+  } else if (resolution_contains_addresses &&
+             !previous_resolution_contained_addresses_) {
+    trace_strings->push_back(gpr_strdup("Address list became non-empty"));
+  }
+  previous_resolution_contained_addresses_ = resolution_contains_addresses;
+}
+
+void RequestRouter::ConcatenateAndAddChannelTraceLocked(
+    TraceStringVector* trace_strings) const {
+  if (!trace_strings->empty()) {
+    gpr_strvec v;
+    gpr_strvec_init(&v);
+    gpr_strvec_add(&v, gpr_strdup("Resolution event: "));
+    bool is_first = 1;
+    for (size_t i = 0; i < trace_strings->size(); ++i) {
+      if (!is_first) gpr_strvec_add(&v, gpr_strdup(", "));
+      is_first = false;
+      gpr_strvec_add(&v, (*trace_strings)[i]);
+    }
+    char* flat;
+    size_t flat_len = 0;
+    flat = gpr_strvec_flatten(&v, &flat_len);
+    channelz_node_->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_new(flat, flat_len, gpr_free));
+    gpr_strvec_destroy(&v);
+  }
+}
+
 // Callback invoked when a resolver result is available.
 void RequestRouter::OnResolverResultChangedLocked(void* arg,
                                                   grpc_error* error) {
   RequestRouter* request_router = static_cast<RequestRouter*>(arg);
-  if (tracer_->enabled()) {
+  if (request_router->tracer_->enabled()) {
     const char* disposition =
         request_router->resolver_result_ != nullptr
             ? ""
@@ -366,20 +421,30 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
             grpc_error_string(error), disposition);
   }
   // Handle shutdown.
-  if (error != GRPC_ERROR_NONE || request_router_->resolver_ == nullptr) {
+  if (error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
     request_router->OnResolverShutdownLocked(GRPC_ERROR_REF(error));
     return;
   }
   // Data used to set the channel's connectivity state.
   bool set_connectivity_state = true;
+  // We only want to trace the address resolution in the follow cases:
+  // (a) Address resolution resulted in service config change.
+  // (b) Address resolution that causes number of backends to go from
+  //     zero to non-zero.
+  // (c) Address resolution that causes number of backends to go from
+  //     non-zero to zero.
+  // (d) Address resolution that causes a new LB policy to be created.
+  //
+  // we track a list of strings to eventually be concatenated and traced.
+  TraceStringVector trace_strings;
   grpc_connectivity_state connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   grpc_error* connectivity_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
-  // chand->resolver_result will be null in the case of a transient
+  // resolver_result_ will be null in the case of a transient
   // resolution error.  In that case, we don't have any new result to
   // process, which means that we keep using the previous result (if any).
   if (request_router->resolver_result_ == nullptr) {
-    if (tracer_->enabled()) {
+    if (request_router->tracer_->enabled()) {
       gpr_log(GPR_INFO, "request_router=%p: resolver transient failure",
               request_router);
     }
@@ -387,12 +452,12 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
     const char* lb_policy_name =
         request_router->GetLbPolicyNameFromResolverResultLocked();
     // Check to see if we're already using the right LB policy.
-    bool lb_policy_name_changed =
+    const bool lb_policy_name_changed =
         request_router->lb_policy_ == nullptr ||
         gpr_stricmp(request_router->lb_policy_->name(), lb_policy_name) != 0;
     if (request_router->lb_policy_ != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
-      if (tracer_->enabled()) {
+      if (request_router->tracer_->enabled()) {
         gpr_log(GPR_INFO,
                 "request_router=%p: updating existing LB policy \"%s\" (%p)",
                 request_router, lb_policy_name,
@@ -406,7 +471,15 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
     } else {
       // Instantiate new LB policy.
       request_router->CreateNewLbPolicyLocked(
-          lb_policy_name, &connectivity_state, &connectivity_error);
+          lb_policy_name, &connectivity_state, &connectivity_error,
+          &trace_strings);
+    }
+// FIXME: do we need to handle service config update here, for the
+// purposes of channel tracing?
+    if (request_router->channelz_node_ != nullptr) {
+      request_router->MaybeAddTraceMessagesForAddressChangesLocked(
+          &trace_strings);
+      request_router->ConcatenateAndAddChannelTraceLocked(&trace_strings);
     }
     // Invoke on_resolver_result_.
     GRPC_CLOSURE_RUN(request_router->on_resolver_result_, GRPC_ERROR_NONE);
@@ -529,10 +602,11 @@ class RequestRouter::Request::ResolverResultWaiter {
   }
 
  private:
-  // Adds closure_ to chand->waiting_for_resolver_result_closures.
+  // Adds done_closure_ to
+  // request_router_->waiting_for_resolver_result_closures_.
   void AddToWaitingList() {
     grpc_closure_list_append(
-        &request_router_->waiting_for_resolver_result_closures,
+        &request_router_->waiting_for_resolver_result_closures_,
         &done_closure_, GRPC_ERROR_NONE);
   }
 
@@ -572,7 +646,7 @@ class RequestRouter::Request::ResolverResultWaiter {
     } else if (request_router->lb_policy_ == nullptr) {
       // Transient resolver failure.
       // If call has wait_for_ready=true, try again; otherwise, fail.
-      if (request->send_initial_metadata_flags_ &
+      if (*request->pick_.initial_metadata_flags &
           GRPC_INITIAL_METADATA_WAIT_FOR_READY) {
         if (request_router->tracer_->enabled()) {
           gpr_log(GPR_INFO,
@@ -640,7 +714,7 @@ class RequestRouter::Request::ResolverResultWaiter {
   }
 
   RequestRouter* request_router_;
-  Request* request_;
+  State* state_;
   grpc_closure done_closure_;
   grpc_closure cancel_closure_;
   bool finished_ = false;
@@ -657,10 +731,31 @@ void RequestRouter::Request::ProcessServiceConfigAndStartLbPickLocked(
   StartLbPickLocked(state);
 }
 
+void RequestRouter::Request::MaybeAddCallToInterestedPartiesLocked(
+    State* state) {
+  if (!pollent_added_to_interested_parties_ &&
+      !state->pollent_added_to_interested_parties) {
+    pollent_added_to_interested_parties_ = true;
+    state->pollent_added_to_interested_parties = true;
+    grpc_polling_entity_add_to_pollset_set(
+        pollent_, state->request_router->interested_parties_);
+  }
+}
+
+void RequestRouter::Request::MaybeRemoveCallFromInterestedPartiesLocked(
+    State* state) {
+  if (state->pollent_added_to_interested_parties) {
+    pollent_added_to_interested_parties_ = false;
+    state->pollent_added_to_interested_parties = false;
+    grpc_polling_entity_del_from_pollset_set(
+        pollent_, state->request_router->interested_parties_);
+  }
+}
+
 // Starts a pick on the LB policy.
 void RequestRouter::Request::StartLbPickLocked(State* state) {
   RequestRouter* request_router = state->request_router;
-  if (tracer_->enabled()) {
+  if (request_router->tracer_->enabled()) {
     gpr_log(GPR_INFO,
             "request_router=%p request=%p: starting pick on lb_policy=%p",
             request_router, this, request_router->lb_policy_.get());
@@ -669,7 +764,8 @@ void RequestRouter::Request::StartLbPickLocked(State* state) {
                     grpc_combiner_scheduler(request_router->combiner_));
   pick_.on_complete = &state->on_pick_done;
   GRPC_CALL_STACK_REF(owning_call_, "pick_callback");
-  const bool pick_done = request_router->lb_policy_->PickLocked(&pick_);
+  grpc_error* error = GRPC_ERROR_NONE;
+  const bool pick_done = request_router->lb_policy_->PickLocked(&pick_, &error);
   if (pick_done) {
     // Pick completed synchronously.
     if (request_router->tracer_->enabled()) {
@@ -677,23 +773,14 @@ void RequestRouter::Request::StartLbPickLocked(State* state) {
               "request_router=%p request=%p: pick completed synchronously",
               request_router, this);
     }
-    GRPC_CLOSURE_RUN(on_route_done_, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(on_route_done_, error);
     GRPC_CALL_STACK_UNREF(owning_call_, "pick_callback");
   } else {
     // Pick will be returned asynchronously.
-    // Add the polling entity from call_data to the channel_data's
+    // Add the request's polling entity to the request_router's
     // interested_parties, so that the I/O of the LB policy can be done
-    // under it.  It will be removed in pick_done_locked().
-// FIXME: handle pollset_set stuff here?
-// removed most of this already, but not sure how to handle this case.
-// don't really want to return a bool and have the caller do something
-// different there.  would rather handle it here, which may mean
-// re-adding most of the other places where we touched this.
-// however, we only need to do this at the top level of the tree, so
-// ideally it should be done in the client_channel code instead of here.
-// Note: if we do pull this out back into the client_channel code, we
-// may want to do the same thing with the refs to owning_call_.
-    maybe_add_call_to_channel_interested_parties_locked(elem);
+    // under it.  It will be removed in LbPickDoneLocked().
+    MaybeAddCallToInterestedPartiesLocked(state);
     // Request notification on call cancellation.
     GRPC_CALL_STACK_REF(owning_call_, "pick_callback_cancel");
     GRPC_CLOSURE_INIT(&state->on_cancel, &Request::LbPickCancelLocked, state,
@@ -711,8 +798,9 @@ void RequestRouter::Request::LbPickDoneLocked(void* arg, grpc_error* error) {
   if (request_router->tracer_->enabled()) {
     gpr_log(GPR_INFO,
             "request_router=%p request=%p: pick completed asynchronously",
-            request_router_, request_);
+            request_router, request);
   }
+  request->MaybeRemoveCallFromInterestedPartiesLocked(state);
   GRPC_CLOSURE_RUN(request->on_route_done_, GRPC_ERROR_REF(error));
   GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback");
 }
@@ -738,7 +826,8 @@ void RequestRouter::Request::LbPickCancelLocked(void* arg, grpc_error* error) {
   GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
 }
 
-State* RequestRouter::Request::AddState(RequestRouter* request_router) {
+RequestRouter::Request::State* RequestRouter::Request::AddState(
+    RequestRouter* request_router) {
   state_.emplace_back();
   State& state = state_[state_.size() - 1];
   state.request = this;
@@ -746,8 +835,8 @@ State* RequestRouter::Request::AddState(RequestRouter* request_router) {
   return &state;
 }
 
-bool RequestRouter::RouteCall(Request* request) {
-  GPR_ASSERT(pick_.connected_subchannel == nullptr);
+void RequestRouter::RouteCall(Request* request) {
+  GPR_ASSERT(request->pick_.connected_subchannel == nullptr);
   Request::State* state = request->AddState(this);
   if (lb_policy_ != nullptr) {
     // We already have resolver results, so process the service config
@@ -762,11 +851,11 @@ bool RequestRouter::RouteCall(Request* request) {
       StartResolvingLocked();
     }
     // Create a new waiter, which will delete itself when done.
-    grpc_core::New<grpc_core::ResolverResultWaiter>(state);
-    // Add the polling entity from call_data to the channel_data's
+    New<Request::ResolverResultWaiter>(state);
+    // Add the request's polling entity to the request_router's
     // interested_parties, so that the I/O of the resolver can be done
-    // under it.  It will be removed in pick_done_locked().
-    maybe_add_call_to_channel_interested_parties_locked(elem);
+    // under it.  It will be removed in LbPickDoneLocked().
+    request->MaybeAddCallToInterestedPartiesLocked(state);
   }
 }
 

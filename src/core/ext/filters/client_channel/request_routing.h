@@ -34,17 +34,19 @@ class RequestRouter {
   class Request {
    public:
     Request(grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
+            grpc_polling_entity* pollent,
             grpc_metadata_batch* send_initial_metadata,
             uint32_t* send_initial_metadata_flags,
             grpc_closure* on_service_config, grpc_closure* on_route_done)
         : owning_call_(owning_call), call_combiner_(call_combiner),
+          pollent_(pollent),
           on_service_config_(on_service_config),
           on_route_done_(on_route_done) {
       pick_.initial_metadata = send_initial_metadata;
       pick_.initial_metadata_flags = send_initial_metadata_flags;
     }
 
-    LoadBalancingPolicy::PickState* pick() const { return &pick_; }
+    const LoadBalancingPolicy::PickState* pick() const { return &pick_; }
 
     GRPC_ABSTRACT_BASE_CLASS
 
@@ -59,6 +61,7 @@ class RequestRouter {
       grpc_closure on_cancel;
       Request* request;
       RequestRouter* request_router;
+      bool pollent_added_to_interested_parties = false;
     };
 
     State* AddState(RequestRouter* request_router);
@@ -70,9 +73,13 @@ class RequestRouter {
     static void LbPickDoneLocked(void* arg, grpc_error* error);
     static void LbPickCancelLocked(void* arg, grpc_error* error);
 
+    void MaybeAddCallToInterestedPartiesLocked(State* state);
+    void MaybeRemoveCallFromInterestedPartiesLocked(State* state);
+
     // Populated by caller.
     grpc_call_stack* owning_call_;
     grpc_call_combiner* call_combiner_;
+    grpc_polling_entity* pollent_;
     grpc_closure* on_service_config_;
     grpc_closure* on_route_done_;
     LoadBalancingPolicy::PickState pick_;
@@ -80,11 +87,13 @@ class RequestRouter {
     // Internal state.
 // FIXME: should we allocate these on the arena instead?
     InlinedVector<State, 1> state_;
+    bool pollent_added_to_interested_parties_ = false;
   };
 
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
+                channelz::ClientChannelNode* channelz_node,
                 grpc_closure* on_resolver_result, bool request_service_config);
 
   ~RequestRouter();
@@ -92,7 +101,7 @@ class RequestRouter {
 // FIXME: avoid two-phase initialization somehow
   grpc_error* Init(const char* target_uri, grpc_channel_args* args);
 
-  bool RouteCall(Request* request);
+  void RouteCall(Request* request);
 
   void Shutdown(grpc_error* error);
 
@@ -104,15 +113,22 @@ class RequestRouter {
   }
 
  private:
+  using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
+
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   const char* GetLbPolicyNameFromResolverResultLocked();
-  void OnRequestReresolutionLocked(void* arg, grpc_error* error);
+  static void OnRequestReresolutionLocked(void* arg, grpc_error* error);
   static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
+  void MaybeAddTraceMessagesForAddressChangesLocked(
+      TraceStringVector* trace_strings);
+  void ConcatenateAndAddChannelTraceLocked(TraceStringVector* trace_strings)
+      const;
 
-  void CreateNewLbPolicyLocked(char* lb_policy_name,
+  void CreateNewLbPolicyLocked(const char* lb_policy_name,
                                grpc_connectivity_state* connectivity_state,
-                               grpc_error** connectivity_error);
+                               grpc_error** connectivity_error,
+                               TraceStringVector* trace_strings);
   void WatchLbPolicyLocked(grpc_connectivity_state current_state);
   static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error);
 
@@ -125,6 +141,8 @@ class RequestRouter {
   grpc_client_channel_factory* client_channel_factory_;
   grpc_pollset_set* interested_parties_;
   TraceFlag* tracer_;
+// FIXME: should this take a ref?
+  channelz::ClientChannelNode* channelz_node_;
   grpc_closure* on_resolver_result_;
   bool request_service_config_;
 
@@ -132,6 +150,7 @@ class RequestRouter {
   OrphanablePtr<Resolver> resolver_;
   bool started_resolving_ = false;
   grpc_channel_args* resolver_result_ = nullptr;
+  bool previous_resolution_contained_addresses_ = false;
   grpc_closure_list waiting_for_resolver_result_closures_;
   grpc_closure on_resolver_result_changed_;
 
