@@ -117,6 +117,7 @@ typedef struct client_channel_channel_data {
   grpc_channel_stack* owning_stack;
   /** interested parties (owned) */
   grpc_pollset_set* interested_parties;
+  grpc_closure on_resolver_destroyed_locked;
 
   /* external_connectivity_watcher_list head is guarded by its own mutex, since
    * counts need to be grabbed immediately without polling on a cq */
@@ -309,6 +310,11 @@ static void parse_retry_throttle_params(
         grpc_core::internal::ServerRetryThrottleMap::GetDataForServer(
             parsing_state->server_name, max_milli_tokens, milli_token_ratio);
   }
+}
+
+static void on_resolver_destroyed_locked(void* arg, grpc_error* error) {
+  grpc_channel_stack* cs = static_cast<grpc_channel_stack*>(arg);
+  GRPC_CHANNEL_STACK_UNREF(cs, "on_resolver_destroyed_locked");
 }
 
 // Invoked from the resolver NextLocked() callback when the resolver
@@ -847,6 +853,11 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
+  GRPC_CLOSURE_INIT(&chand->on_resolver_destroyed_locked,
+                    on_resolver_destroyed_locked, chand->owning_stack,
+                    grpc_combiner_scheduler(chand->combiner));
+  GRPC_CHANNEL_STACK_REF(chand->owning_stack, "on_resolver_destroyed_locked");
+  chand->resolver->SetOnDestroyed(&chand->on_resolver_destroyed_locked);
   if (proxy_name != nullptr) gpr_free(proxy_name);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   if (chand->resolver == nullptr) {

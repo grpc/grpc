@@ -99,6 +99,11 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
         GRPC_ERROR_NONE);
   }
 
+  void SetOnDestroyed(grpc_closure* on_destroyed) {
+    GPR_ASSERT(on_destroyed_ == nullptr && on_destroyed != nullptr);
+    on_destroyed_ = on_destroyed;
+  }
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -126,6 +131,7 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   }
 
   grpc_combiner* combiner_;
+  grpc_closure* on_destroyed_ = nullptr;
 };
 
 }  // namespace grpc_core

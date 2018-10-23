@@ -120,7 +120,7 @@ class AresDnsResolver : public Resolver {
   grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
-  // has shutdown been request
+  // has shutdown been initiated
   bool shutdown_initiated_ = false;
 };
 
@@ -207,17 +207,23 @@ void AresDnsResolver::ShutdownLocked() {
   if (pending_request_ != nullptr) {
     grpc_cancel_ares_request_locked(pending_request_);
   }
+  if (next_completion_ != nullptr) {
+    *target_result_ = nullptr;
+    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Resolver Shutdown"));
+    next_completion_ = nullptr;
+  }
 }
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  gpr_log(GPR_DEBUG,
-          "re-resolution timer fired. error: %s. shutdown_initiated_: %d",
-          grpc_error_string(error), r->shutdown_initiated_);
+  GRPC_CARES_TRACE_LOG(
+      "%p re-resolution timer fired. error: %s. shutdown_initiated_: %d", r,
+      grpc_error_string(error), r->shutdown_initiated_);
   r->have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !r->shutdown_initiated_) {
     if (!r->resolving_) {
-      gpr_log(GPR_DEBUG, "start resolving due to re-resolution timer");
+      GRPC_CARES_TRACE_LOG("%p start resolving due to re-resolution timer", r);
       r->StartResolvingLocked();
     }
   }
@@ -342,7 +348,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();
-  } else {
+  } else if (!r->shutdown_initiated_) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_millis next_try = r->backoff_.NextAttemptTime();
@@ -369,9 +375,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   }
   r->resolved_result_ = result;
   ++r->resolved_version_;
-  if (!r->shutdown_initiated_) {
-    r->MaybeFinishNextLocked();
-  }
+  r->MaybeFinishNextLocked();
   r->Unref(DEBUG_LOCATION, "dns-resolving");
 }
 

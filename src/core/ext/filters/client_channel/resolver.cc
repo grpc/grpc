@@ -30,6 +30,11 @@ Resolver::Resolver(grpc_combiner* combiner)
     : InternallyRefCountedWithTracing(&grpc_trace_resolver_refcount),
       combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
 
-Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
+Resolver::~Resolver() {
+  GRPC_COMBINER_UNREF(combiner_, "resolver");
+  if (on_destroyed_ != nullptr) {
+    GRPC_CLOSURE_SCHED(on_destroyed_, GRPC_ERROR_NONE);
+  }
+}
 
 }  // namespace grpc_core
