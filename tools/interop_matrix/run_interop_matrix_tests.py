@@ -165,6 +165,8 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
 
     job_spec_list = []
     for line in testcase_lines:
+        # TODO(jtattermusch): revisit the logic for updating test case commands
+        # what it currently being done seems fragile.
         m = re.search('--test_case=(.*)"', line)
         shortname = m.group(1) if m else 'unknown_test'
         m = re.search('--server_host_override=(.*).sandbox.googleapis.com',
@@ -198,8 +200,8 @@ def _pull_images_for_lang(lang, images):
     download_specs = []
     for release, image in images:
         # Pull the image and warm it up.
-        # First time we use an image with "docker run", it takes time to unpack the image
-        # and later this delay would fail our test cases.
+        # First time we use an image with "docker run", it takes time to unpack
+        # the image and later this delay would fail our test cases.
         cmdline = [
             'gcloud docker -- pull %s && docker run --rm=true %s /bin/true' %
             (image, image)
