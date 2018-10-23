@@ -129,6 +129,10 @@ typedef struct client_channel_channel_data {
   grpc_core::UniquePtr<char> info_lb_policy_name;
   /** service config in JSON form */
   grpc_core::UniquePtr<char> info_service_config_json;
+  /* backpointer to grpc_channel's channelz node */
+  grpc_core::channelz::ClientChannelNode* channelz_channel;
+  /* caches if the last resolution event contained addresses */
+  bool previous_resolution_contained_addresses;
 } channel_data;
 
 typedef struct {
@@ -153,6 +157,23 @@ static void watch_lb_policy_locked(channel_data* chand,
                                    grpc_core::LoadBalancingPolicy* lb_policy,
                                    grpc_connectivity_state current_state);
 
+static const char* channel_connectivity_state_change_string(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Channel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Channel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Channel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Channel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Channel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 static void set_channel_connectivity_state_locked(channel_data* chand,
                                                   grpc_connectivity_state state,
                                                   grpc_error* error,
@@ -176,6 +197,12 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: setting connectivity state to %s", chand,
             grpc_connectivity_state_name(state));
+  }
+  if (chand->channelz_channel != nullptr) {
+    chand->channelz_channel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            channel_connectivity_state_change_string(state)));
   }
   grpc_connectivity_state_set(&chand->state_tracker, state, error, reason);
 }
@@ -376,6 +403,8 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   chand->lb_policy->SetReresolutionClosureLocked(&args->closure);
 }
 
+using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
+
 // Creates a new LB policy, replacing any previous one.
 // If the new policy is created successfully, sets *connectivity_state and
 // *connectivity_error to its initial connectivity state; otherwise,
@@ -383,7 +412,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
 static void create_new_lb_policy_locked(
     channel_data* chand, char* lb_policy_name,
     grpc_connectivity_state* connectivity_state,
-    grpc_error** connectivity_error) {
+    grpc_error** connectivity_error, TraceStringVector* trace_strings) {
   grpc_core::LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = chand->combiner;
   lb_policy_args.client_channel_factory = chand->client_channel_factory;
@@ -393,10 +422,20 @@ static void create_new_lb_policy_locked(
           lb_policy_name, lb_policy_args);
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
+    if (chand->channelz_channel != nullptr) {
+      char* str;
+      gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
+      trace_strings->push_back(str);
+    }
   } else {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: created new LB policy \"%s\" (%p)", chand,
               lb_policy_name, new_lb_policy.get());
+    }
+    if (chand->channelz_channel != nullptr) {
+      char* str;
+      gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
+      trace_strings->push_back(str);
     }
     // Swap out the LB policy and update the fds in
     // chand->interested_parties.
@@ -472,6 +511,51 @@ get_service_config_from_resolver_result_locked(channel_data* chand) {
   return grpc_core::UniquePtr<char>(gpr_strdup(service_config_json));
 }
 
+static void maybe_add_trace_message_for_address_changes_locked(
+    channel_data* chand, TraceStringVector* trace_strings) {
+  int resolution_contains_addresses = false;
+  const grpc_arg* channel_arg =
+      grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+    grpc_lb_addresses* addresses =
+        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+    if (addresses->num_addresses > 0) {
+      resolution_contains_addresses = true;
+    }
+  }
+  if (!resolution_contains_addresses &&
+      chand->previous_resolution_contained_addresses) {
+    trace_strings->push_back(gpr_strdup("Address list became empty"));
+  } else if (resolution_contains_addresses &&
+             !chand->previous_resolution_contained_addresses) {
+    trace_strings->push_back(gpr_strdup("Address list became non-empty"));
+  }
+  chand->previous_resolution_contained_addresses =
+      resolution_contains_addresses;
+}
+
+static void concatenate_and_add_channel_trace_locked(
+    channel_data* chand, TraceStringVector* trace_strings) {
+  if (!trace_strings->empty()) {
+    gpr_strvec v;
+    gpr_strvec_init(&v);
+    gpr_strvec_add(&v, gpr_strdup("Resolution event: "));
+    bool is_first = 1;
+    for (size_t i = 0; i < trace_strings->size(); ++i) {
+      if (!is_first) gpr_strvec_add(&v, gpr_strdup(", "));
+      is_first = false;
+      gpr_strvec_add(&v, (*trace_strings)[i]);
+    }
+    char* flat;
+    size_t flat_len = 0;
+    flat = gpr_strvec_flatten(&v, &flat_len);
+    chand->channelz_channel->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_new(flat, flat_len, gpr_free));
+    gpr_strvec_destroy(&v);
+  }
+}
+
 // Callback invoked when a resolver result is available.
 static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(arg);
@@ -493,6 +577,16 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   }
   // Data used to set the channel's connectivity state.
   bool set_connectivity_state = true;
+  // We only want to trace the address resolution in the follow cases:
+  // (a) Address resolution resulted in service config change.
+  // (b) Address resolution that causes number of backends to go from
+  //     zero to non-zero.
+  // (c) Address resolution that causes number of backends to go from
+  //     non-zero to zero.
+  // (d) Address resolution that causes a new LB policy to be created.
+  //
+  // we track a list of strings to eventually be concatenated and traced.
+  TraceStringVector trace_strings;
   grpc_connectivity_state connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   grpc_error* connectivity_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
@@ -527,11 +621,29 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     } else {
       // Instantiate new LB policy.
       create_new_lb_policy_locked(chand, lb_policy_name.get(),
-                                  &connectivity_state, &connectivity_error);
+                                  &connectivity_state, &connectivity_error,
+                                  &trace_strings);
     }
     // Find service config.
     grpc_core::UniquePtr<char> service_config_json =
         get_service_config_from_resolver_result_locked(chand);
+    // Note: It's safe to use chand->info_service_config_json here without
+    // taking a lock on chand->info_mu, because this function is the
+    // only thing that modifies its value, and it can only be invoked
+    // once at any given time.
+    if (chand->channelz_channel != nullptr) {
+      if (((service_config_json == nullptr) !=
+           (chand->info_service_config_json == nullptr)) ||
+          (service_config_json != nullptr &&
+           strcmp(service_config_json.get(),
+                  chand->info_service_config_json.get()) != 0)) {
+        // TODO(ncteisen): might be worth somehow including a snippet of the
+        // config in the trace, at the risk of bloating the trace logs.
+        trace_strings.push_back(gpr_strdup("Service config changed"));
+      }
+      maybe_add_trace_message_for_address_changes_locked(chand, &trace_strings);
+      concatenate_and_add_channel_trace_locked(chand, &trace_strings);
+    }
     // Swap out the data used by cc_get_channel_info().
     gpr_mu_lock(&chand->info_mu);
     chand->info_lb_policy_name = std::move(lb_policy_name);
@@ -699,6 +811,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   // Record enable_retries.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
   chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
+  chand->channelz_channel = nullptr;
+  chand->previous_resolution_contained_addresses = false;
   // Record client channel factory.
   arg = grpc_channel_args_find(args->channel_args,
                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
@@ -933,11 +1047,6 @@ typedef struct client_channel_call_data {
   grpc_closure pick_closure;
   grpc_closure pick_cancel_closure;
 
-  // state needed to support channelz interception of recv trailing metadata.
-  grpc_closure recv_trailing_metadata_ready_channelz;
-  grpc_closure* original_recv_trailing_metadata;
-  grpc_metadata_batch* recv_trailing_metadata;
-
   grpc_polling_entity* pollent;
   bool pollent_added_to_interested_parties;
 
@@ -999,8 +1108,6 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
 static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
 static void start_pick_locked(void* arg, grpc_error* ignored);
-static void maybe_intercept_recv_trailing_metadata_for_channelz(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
 //
 // send op data caching
@@ -1299,7 +1406,6 @@ static void pending_batches_resume(grpc_call_element* elem) {
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
-      maybe_intercept_recv_trailing_metadata_for_channelz(elem, batch);
       batch->handler_private.extra_arg = calld->subchannel_call;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         resume_pending_batch_in_call_combiner, batch,
@@ -1977,15 +2083,6 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata;
   get_call_status(elem, md_batch, GRPC_ERROR_REF(error), &status,
                   &server_pushback_md);
-  grpc_core::channelz::SubchannelNode* channelz_subchannel =
-      calld->pick.connected_subchannel->channelz_subchannel();
-  if (channelz_subchannel != nullptr) {
-    if (status == GRPC_STATUS_OK) {
-      channelz_subchannel->RecordCallSucceeded();
-    } else {
-      channelz_subchannel->RecordCallFailed();
-    }
-  }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
             calld, grpc_status_code_to_string(status));
@@ -2211,9 +2308,9 @@ static void add_retriable_send_initial_metadata_op(
                                    .grpc_previous_rpc_attempts);
   }
   if (GPR_UNLIKELY(calld->num_attempts_completed > 0)) {
-    grpc_mdelem retry_md = grpc_mdelem_from_slices(
+    grpc_mdelem retry_md = grpc_mdelem_create(
         GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
-        *retry_count_strings[calld->num_attempts_completed - 1]);
+        *retry_count_strings[calld->num_attempts_completed - 1], nullptr);
     grpc_error* error = grpc_metadata_batch_add_tail(
         &retry_state->send_initial_metadata,
         &retry_state->send_initial_metadata_storage[calld->send_initial_metadata
@@ -2587,69 +2684,6 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
   }
   // Note: This will yield the call combiner.
   closures.RunClosures(calld->call_combiner);
-}
-
-//
-// Channelz
-//
-
-static void recv_trailing_metadata_ready_channelz(void* arg,
-                                                  grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: got recv_trailing_metadata_ready_channelz, "
-            "error=%s",
-            chand, calld, grpc_error_string(error));
-  }
-  GPR_ASSERT(calld->recv_trailing_metadata != nullptr);
-  grpc_status_code status = GRPC_STATUS_OK;
-  grpc_metadata_batch* md_batch = calld->recv_trailing_metadata;
-  get_call_status(elem, md_batch, GRPC_ERROR_REF(error), &status, nullptr);
-  grpc_core::channelz::SubchannelNode* channelz_subchannel =
-      calld->pick.connected_subchannel->channelz_subchannel();
-  GPR_ASSERT(channelz_subchannel != nullptr);
-  if (status == GRPC_STATUS_OK) {
-    channelz_subchannel->RecordCallSucceeded();
-  } else {
-    channelz_subchannel->RecordCallFailed();
-  }
-  calld->recv_trailing_metadata = nullptr;
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata, error);
-}
-
-// If channelz is enabled, intercept recv_trailing so that we may check the
-// status and associate it to a subchannel.
-// Returns true if callback was intercepted, false otherwise.
-static void maybe_intercept_recv_trailing_metadata_for_channelz(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // only intercept payloads with recv trailing.
-  if (!batch->recv_trailing_metadata) {
-    return;
-  }
-  // only add interceptor is channelz is enabled.
-  if (calld->pick.connected_subchannel->channelz_subchannel() == nullptr) {
-    return;
-  }
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "calld=%p batch=%p: intercepting recv trailing for channelz", calld,
-            batch);
-  }
-  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_channelz,
-                    recv_trailing_metadata_ready_channelz, elem,
-                    grpc_schedule_on_exec_ctx);
-  // save some state needed for the interception callback.
-  GPR_ASSERT(calld->recv_trailing_metadata == nullptr);
-  calld->recv_trailing_metadata =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-  calld->original_recv_trailing_metadata =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &calld->recv_trailing_metadata_ready_channelz;
 }
 
 //
@@ -3286,6 +3320,12 @@ static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "try_to_connect");
+}
+
+void grpc_client_channel_set_channelz_node(
+    grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  chand->channelz_channel = node;
 }
 
 void grpc_client_channel_populate_child_refs(

@@ -109,7 +109,8 @@ struct grpc_mdelem {
                               (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))
 
 /* Unrefs the slices. */
-grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
+                                    const grpc_slice& value);
 
 /* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
    object as backing storage (so lifetimes should align) */
@@ -120,7 +121,7 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata);
    compatible_external_backing_store if it is non-NULL (in which case it's the
    users responsibility to ensure that it outlives usage) */
 grpc_mdelem grpc_mdelem_create(
-    grpc_slice key, grpc_slice value,
+    const grpc_slice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store);
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);

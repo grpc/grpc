@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 6.0.0-dev
+PROJECT_NUMBER         = 7.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -910,6 +910,14 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balan
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
+src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy_factory.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \

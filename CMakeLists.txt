@@ -328,10 +328,10 @@ add_dependencies(buildtests_c grpc_jwt_verifier_test)
 add_dependencies(buildtests_c grpc_security_connector_test)
 add_dependencies(buildtests_c grpc_ssl_credentials_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_client)
+add_dependencies(buildtests_c handshake_client_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_server)
+add_dependencies(buildtests_c handshake_server_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
@@ -359,10 +359,10 @@ add_dependencies(buildtests_c json_stream_error_test)
 add_dependencies(buildtests_c json_test)
 add_dependencies(buildtests_c lame_client_test)
 add_dependencies(buildtests_c load_file_test)
-add_dependencies(buildtests_c memory_profile_client)
-add_dependencies(buildtests_c memory_profile_server)
+add_dependencies(buildtests_c memory_usage_client)
+add_dependencies(buildtests_c memory_usage_server)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_c memory_profile_test)
+add_dependencies(buildtests_c memory_usage_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
@@ -1264,10 +1264,14 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2617,12 +2621,16 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -5249,6 +5257,7 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
+  test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
   test/cpp/qps/parse_json.cc
@@ -8040,12 +8049,12 @@ target_link_libraries(grpc_verify_jwt
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_client
+add_executable(handshake_client_ssl
   test/core/handshake/client_ssl.cc
 )
 
 
-target_include_directories(handshake_client
+target_include_directories(handshake_client_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8058,7 +8067,7 @@ target_include_directories(handshake_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_client
+target_link_libraries(handshake_client_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8069,8 +8078,8 @@ target_link_libraries(handshake_client
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(handshake_client_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_client_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()
@@ -8078,13 +8087,13 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_server
+add_executable(handshake_server_ssl
   test/core/handshake/server_ssl.cc
   test/core/handshake/server_ssl_common.cc
 )
 
 
-target_include_directories(handshake_server
+target_include_directories(handshake_server_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8097,7 +8106,7 @@ target_include_directories(handshake_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_server
+target_link_libraries(handshake_server_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8108,8 +8117,8 @@ target_link_libraries(handshake_server
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(handshake_server_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_server_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()
@@ -8755,12 +8764,12 @@ target_link_libraries(load_file_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_client
+add_executable(memory_usage_client
   test/core/memory_usage/client.cc
 )
 
 
-target_include_directories(memory_profile_client
+target_include_directories(memory_usage_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8773,7 +8782,7 @@ target_include_directories(memory_profile_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_client
+target_link_libraries(memory_usage_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8783,19 +8792,19 @@ target_link_libraries(memory_profile_client
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_client PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_server
+add_executable(memory_usage_server
   test/core/memory_usage/server.cc
 )
 
 
-target_include_directories(memory_profile_server
+target_include_directories(memory_usage_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8808,7 +8817,7 @@ target_include_directories(memory_profile_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_server
+target_link_libraries(memory_usage_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8818,20 +8827,20 @@ target_link_libraries(memory_profile_server
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_server PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(memory_profile_test
+add_executable(memory_usage_test
   test/core/memory_usage/memory_usage_test.cc
 )
 
 
-target_include_directories(memory_profile_test
+target_include_directories(memory_usage_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8844,7 +8853,7 @@ target_include_directories(memory_profile_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_test
+target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -8854,8 +8863,8 @@ target_link_libraries(memory_profile_test
 
   # avoid dependency on libstdc++
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_profile_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_profile_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+    set_target_properties(memory_usage_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif()

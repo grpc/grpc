@@ -778,7 +778,7 @@ def cloud_to_prod_jobspec(language,
     if transport_security == 'tls':
         transport_security_options = ['--use_tls=true']
     elif transport_security == 'google_default_credentials' and str(
-            language) in ['c++', 'go']:
+            language) in ['c++', 'go', 'java', 'javaokhttp']:
         transport_security_options = [
             '--custom_credentials_type=google_default_credentials'
         ]
@@ -1323,7 +1323,9 @@ try:
                                 service_account_key_file,
                                 transport_security='tls')
                             jobs.append(tls_test_job)
-                            if str(language) in ['c++', 'go']:
+                            if str(language) in [
+                                    'c++', 'go', 'java', 'javaokhttp'
+                            ]:
                                 google_default_creds_test_job = cloud_to_prod_jobspec(
                                     language,
                                     test_case,

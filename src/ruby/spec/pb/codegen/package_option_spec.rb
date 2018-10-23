@@ -21,9 +21,8 @@ describe 'Code Generation Options' do
     fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
     bins_sub_dir = ENV['CONFIG']
 
-    src_dir = File.join(File.dirname(__FILE__), '..', '..', '..', '..')
-    pb_dir = File.join(src_dir, 'proto')
-    bins_dir = File.join(src_dir, '..', 'bins', bins_sub_dir)
+    pb_dir = File.dirname(__FILE__)
+    bins_dir = File.join('..', '..', '..', '..', '..', 'bins', bins_sub_dir)
 
     plugin = File.join(bins_dir, 'grpc_ruby_plugin')
     protoc = File.join(bins_dir, 'protobuf', 'protoc')

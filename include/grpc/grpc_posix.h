@@ -52,14 +52,6 @@ GRPCAPI grpc_channel* grpc_insecure_channel_create_from_fd(
 GRPCAPI void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
                                                       void* reserved, int fd);
 
-/** GRPC Core POSIX library may internally use signals to optimize some work.
-   The library uses (SIGRTMIN + 6) signal by default. Use this API to instruct
-   the library to use a different signal i.e 'signum' instead.
-   Note:
-   - To prevent GRPC library from using any signals, pass a 'signum' of -1
-   - This API is optional but if called, it MUST be called before grpc_init() */
-GRPCAPI void grpc_use_signal(int signum);
-
 #ifdef __cplusplus
 }
 #endif

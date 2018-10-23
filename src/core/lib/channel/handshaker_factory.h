@@ -32,6 +32,7 @@ typedef struct grpc_handshaker_factory grpc_handshaker_factory;
 typedef struct {
   void (*add_handshakers)(grpc_handshaker_factory* handshaker_factory,
                           const grpc_channel_args* args,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
   void (*destroy)(grpc_handshaker_factory* handshaker_factory);
 } grpc_handshaker_factory_vtable;
@@ -42,6 +43,7 @@ struct grpc_handshaker_factory {
 
 void grpc_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr);
 
 void grpc_handshaker_factory_destroy(

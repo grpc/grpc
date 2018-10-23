@@ -33,6 +33,14 @@ TEST_CHANNEL_ARGS = (
     ('arg6', TestPointerWrapper()),
 )
 
+INVALID_TEST_CHANNEL_ARGS = [
+    {
+        'foo': 'bar'
+    },
+    (('key',),),
+    'str',
+]
+
 
 class ChannelArgsTest(unittest.TestCase):
 
@@ -43,6 +51,14 @@ class ChannelArgsTest(unittest.TestCase):
         grpc.server(
             futures.ThreadPoolExecutor(max_workers=1),
             options=TEST_CHANNEL_ARGS)
+
+    def test_invalid_client_args(self):
+        for invalid_arg in INVALID_TEST_CHANNEL_ARGS:
+            self.assertRaises(
+                ValueError,
+                grpc.insecure_channel,
+                'localhost:8080',
+                options=invalid_arg)
 
 
 if __name__ == '__main__':

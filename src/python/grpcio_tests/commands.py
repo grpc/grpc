@@ -116,6 +116,8 @@ class TestGevent(setuptools.Command):
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
         'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
+        'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
         # using the c-core
         'testing._client_test.ClientTest.test_infinite_request_stream_real_time',

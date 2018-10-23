@@ -85,9 +85,11 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     size_t parent_data_size;
   };
 
-  explicit ConnectedSubchannel(grpc_channel_stack* channel_stack,
-                               channelz::SubchannelNode* channelz_subchannel,
-                               intptr_t socket_uuid);
+  explicit ConnectedSubchannel(
+      grpc_channel_stack* channel_stack,
+      grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+          channelz_subchannel,
+      intptr_t socket_uuid);
   ~ConnectedSubchannel();
 
   grpc_channel_stack* channel_stack() { return channel_stack_; }
@@ -97,15 +99,16 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
   channelz::SubchannelNode* channelz_subchannel() {
-    return channelz_subchannel_;
+    return channelz_subchannel_.get();
   }
   intptr_t socket_uuid() { return socket_uuid_; }
 
  private:
   grpc_channel_stack* channel_stack_;
-  // backpointer to the channelz node in this connected subchannel's
+  // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
-  channelz::SubchannelNode* channelz_subchannel_;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+      channelz_subchannel_;
   // uuid of this subchannel's socket. 0 if this subchannel is not connected.
   const intptr_t socket_uuid_;
 };

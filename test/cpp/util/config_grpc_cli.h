@@ -40,6 +40,11 @@
 #define GRPC_CUSTOM_TEXTFORMAT ::google::protobuf::TextFormat
 #endif
 
+#ifndef GRPC_CUSTOM_JSONUTIL
+#include <google/protobuf/util/json_util.h>
+#define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
+#endif
+
 #ifndef GRPC_CUSTOM_DISKSOURCETREE
 #include <google/protobuf/compiler/importer.h>
 #define GRPC_CUSTOM_DISKSOURCETREE ::google::protobuf::compiler::DiskSourceTree
@@ -57,6 +62,8 @@ typedef GRPC_CUSTOM_DESCRIPTORPOOLDATABASE DescriptorPoolDatabase;
 typedef GRPC_CUSTOM_MERGEDDESCRIPTORDATABASE MergedDescriptorDatabase;
 
 typedef GRPC_CUSTOM_TEXTFORMAT TextFormat;
+
+namespace json = GRPC_CUSTOM_JSONUTIL;
 
 namespace compiler {
 typedef GRPC_CUSTOM_DISKSOURCETREE DiskSourceTree;

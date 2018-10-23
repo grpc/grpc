@@ -953,6 +953,114 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   EXPECT_TRUE(recv_status.ok());
 }
 
+// 1 ping, 2 pongs.
+TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
+  ResetStub();
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+
+  std::pair<::grpc::string, ::grpc::string> meta1("key1", "val1");
+  std::pair<::grpc::string, ::grpc::string> meta2("key2", "val2");
+
+  std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
+      stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
+  cli_stream->ReadInitialMetadata(tag(11));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                  cq_.get(), cq_.get(), tag(2));
+
+  Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
+
+  srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
+  srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
+  srv_stream.SendInitialMetadata(tag(10));
+  Verifier().Expect(10, true).Expect(11, true).Verify(cq_.get());
+  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  EXPECT_EQ(meta1.second,
+            ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+
+  srv_stream.Write(send_response, tag(3));
+
+  cli_stream->Read(&recv_response, tag(4));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
+
+  srv_stream.Write(send_response, tag(5));
+  cli_stream->Read(&recv_response, tag(6));
+  Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
+
+  srv_stream.Finish(Status::OK, tag(7));
+  cli_stream->Read(&recv_response, tag(8));
+  Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
+
+  cli_stream->Finish(&recv_status, tag(9));
+  Verifier().Expect(9, true).Verify(cq_.get());
+
+  EXPECT_TRUE(recv_status.ok());
+}
+
+// 1 ping, 2 pongs.
+// Test for server initial metadata being sent implicitly
+TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
+  ResetStub();
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  ServerAsyncWriter<EchoResponse> srv_stream(&srv_ctx);
+
+  send_request.set_message(GetParam().message_content);
+  std::pair<::grpc::string, ::grpc::string> meta1("key1", "val1");
+  std::pair<::grpc::string, ::grpc::string> meta2("key2", "val2");
+
+  std::unique_ptr<ClientAsyncReader<EchoResponse>> cli_stream(
+      stub_->AsyncResponseStream(&cli_ctx, send_request, cq_.get(), tag(1)));
+  service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
+                                  cq_.get(), cq_.get(), tag(2));
+
+  Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
+  srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
+  send_response.set_message(recv_request.message());
+  srv_stream.Write(send_response, tag(3));
+
+  cli_stream->Read(&recv_response, tag(4));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
+  EXPECT_EQ(meta1.second,
+            ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
+
+  srv_stream.Write(send_response, tag(5));
+  cli_stream->Read(&recv_response, tag(6));
+  Verifier().Expect(5, true).Expect(6, true).Verify(cq_.get());
+
+  srv_stream.Finish(Status::OK, tag(7));
+  cli_stream->Read(&recv_response, tag(8));
+  Verifier().Expect(7, true).Expect(8, false).Verify(cq_.get());
+
+  cli_stream->Finish(&recv_status, tag(9));
+  Verifier().Expect(9, true).Verify(cq_.get());
+
+  EXPECT_TRUE(recv_status.ok());
+}
+
 TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   ResetStub();
 

@@ -47,7 +47,6 @@ sudo apt-get install -y \
   libtool \
   make \
   strace \
-  pypy \
   python-dev \
   python-pip \
   python-setuptools \
@@ -68,30 +67,34 @@ sudo apt-get install -y google-perftools libgoogle-perftools-dev
 # netperf
 sudo apt-get install -y netperf
 
+# required to run kokoro_log_reader.py
+sudo apt-get install -y python-psutil python3-psutil
+
+# gcloud tools, including gsutil
+sudo apt-get install -y google-cloud-sdk
+
 # C++ dependencies
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
 sudo pip install --upgrade pip==10.0.1
 sudo pip install tabulate
-sudo pip install google-api-python-client
+sudo pip install google-api-python-client oauth2client
 sudo pip install virtualenv
 
-# Building gRPC Python depends on python3.4 being installed, but python3.4
-# is not available on Ubuntu 16.10, so install from source
-curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
-tar xzvf Python-3.4.6.tgz
-(
-cd Python-3.4.6 || exit
-./configure --enable-shared --prefix=/usr/local LDFLAGS="-Wl,--rpath=/usr/local/lib"
-sudo make altinstall
-)
-rm Python-3.4.6.tgz
-
+# pypy is used instead of python for postprocessing benchmark outputs
+# because some reports are huge and pypy is much faster.
+# TODO(jtattermusch): get rid of pypy once possible, it's hard to
+# keep track of all the installed variants of python.
+sudo apt-get install -y pypy pypy-dev
 curl -O https://bootstrap.pypa.io/get-pip.py
 sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
-sudo pip install google-api-python-client
+sudo pypy -m pip install google-api-python-client oauth2client
+# TODO(jtattermusch): for some reason, we need psutil installed
+# in pypy for kokoro_log_reader.py (strange, because the comand is
+# "python kokoro_log_reader.py" and pypy is not the system default)
+sudo pypy -m pip install psutil
 
 # Node dependencies (nvm has to be installed under user kbuilder)
 touch .profile
@@ -104,31 +107,31 @@ nvm install 4 && npm config set cache /tmp/npm-cache
 nvm install 5 && npm config set cache /tmp/npm-cache
 nvm alias default 4
 
+# C# dependencies
+sudo apt-get install -y cmake
+
 # C# mono dependencies (http://www.mono-project.com/docs/getting-started/install/linux/#debian-ubuntu-and-derivatives)
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
+echo "deb https://download.mono-project.com/repo/ubuntu stable-bionic main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
 sudo apt-get update
-sudo apt-get install -y mono-devel nuget
+sudo apt-get install -y mono-devel
 
-# C# .NET Core dependencies (https://www.microsoft.com/net/core#ubuntu)
-sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ yakkety main" > /etc/apt/sources.list.d/dotnetdev.list'
-sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+# C# .NET Core dependencies (https://www.microsoft.com/net/download)
+wget -q https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+
+sudo apt-get install -y apt-transport-https
 sudo apt-get update
-sudo apt-get install -y dotnet-dev-1.0.0-preview2.1-003155
-sudo apt-get install -y dotnet-dev-1.0.1
+sudo apt-get install -y dotnet-sdk-2.1
 
-# C# 1.0.4 SDK
-curl -O https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
-sudo mkdir -p /opt/dotnet
-sudo tar zxf dotnet-ubuntu.16.04-x64.1.0.5.tar.gz -C /opt/dotnet
-sudo ln -s /opt/dotnet/dotnet /usr/local/bin
-
-# C# .NET dependencies
-wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu52_52.1-8ubuntu0.2_amd64.deb
-sudo dpkg -i libicu52_52.1-8ubuntu0.2_amd64.deb
-wget http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.3_amd64.deb
-sudo dpkg -i libicu55_55.1-7ubuntu0.3_amd64.deb
-sudo apt-get update && sudo apt-get install -y libicu55
+# Install .NET Core 1.0.5 Runtime (required to run netcoreapp1.0)
+wget -q https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-ubuntu.16.04-x64.1.0.5.tar.gz
+mkdir -p dotnet105_download
+tar zxf dotnet-ubuntu.16.04-x64.1.0.5.tar.gz -C dotnet105_download
+sudo cp -r dotnet105_download/shared/Microsoft.NETCore.App/1.0.5/ /usr/share/dotnet/shared/Microsoft.NETCore.App/
+# To prevent "Failed to initialize CoreCLR, HRESULT: 0x80131500" with .NET Core 1.0.5 runtime
+wget -q http://security.ubuntu.com/ubuntu/pool/main/i/icu/libicu55_55.1-7ubuntu0.4_amd64.deb
+sudo dpkg -i libicu55_55.1-7ubuntu0.4_amd64.deb
 
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
@@ -163,7 +166,7 @@ sudo mv composer.phar /usr/local/bin/composer
 # Significant performance improvements with grpc-go have been observed after
 # upgrading from go 1.5 to a later version, so a later go version is preferred.
 # Following go install instructions from https://golang.org/doc/install
-GO_VERSION=1.8
+GO_VERSION=1.10
 OS=linux
 ARCH=amd64
 curl -O https://storage.googleapis.com/golang/go${GO_VERSION}.${OS}-${ARCH}.tar.gz
@@ -190,10 +193,21 @@ git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 # Install scipy and numpy for benchmarking scripts
 sudo apt-get install -y python-scipy python-numpy
 
+# Install docker
+curl -sSL https://get.docker.com/ | sh
+# Enable kbuilder to use docker without sudo:
+sudo usermod -aG docker kbuilder
+
 # Add pubkey of Kokoro driver VM to allow SSH
 # silence false-positive shellcheck warning ("< redirect does not affect sudo")
 # shellcheck disable=SC2024
 sudo tee --append ~kbuilder/.ssh/authorized_keys < kokoro_performance.pub
+
+# Kokoro requires /tmpfs/READY file to exist the directory and file itself should
+# be owned by kbuilder.
+sudo mkdir /tmpfs
+sudo chown kbuilder /tmpfs
+touch /tmpfs/READY
 
 # Restart for VM to pick up kernel update
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'

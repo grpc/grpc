@@ -468,7 +468,9 @@ static void tcp_do_read(grpc_tcp* tcp) {
     GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
-    if (static_cast<size_t>(read_bytes) < tcp->incoming_buffer->length) {
+    if (static_cast<size_t>(read_bytes) == tcp->incoming_buffer->length) {
+      finish_estimate(tcp);
+    } else if (static_cast<size_t>(read_bytes) < tcp->incoming_buffer->length) {
       grpc_slice_buffer_trim_end(
           tcp->incoming_buffer,
           tcp->incoming_buffer->length - static_cast<size_t>(read_bytes),
@@ -498,7 +500,7 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
 
 static void tcp_continue_read(grpc_tcp* tcp) {
   size_t target_read_size = get_target_read_size(tcp);
-  if (tcp->incoming_buffer->length < target_read_size &&
+  if (tcp->incoming_buffer->length < target_read_size / 2 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);

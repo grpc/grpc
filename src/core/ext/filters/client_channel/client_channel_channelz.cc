@@ -49,6 +49,7 @@ ClientChannelNode::ClientChannelNode(grpc_channel* channel,
     : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_client_channel_set_channelz_node(client_channel_, this);
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
 }
 
