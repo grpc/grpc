@@ -36,12 +36,17 @@
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -994,6 +999,187 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // after the subchannel retry delay otherwise (RR's subchannel retried before
   // the server was fully back up).
   WaitForServer(stub, 0, DEBUG_LOCATION);
+}
+
+
+const char intercept_trailing_name[] = "intercept_trailing_metadata";
+
+// LoadBalancingPolicy implementations are not designed to be extended.
+// A hacky forwarding class to avoid implementing a standalone test LB.
+class InterceptTrailing : public grpc_core::LoadBalancingPolicy {
+ public:
+  InterceptTrailing(const Args& args)
+      : grpc_core::LoadBalancingPolicy(args) {
+    UpdateLocked(*args.args);
+    grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
+                                 intercept_trailing_name);
+  }
+
+  bool PickLocked(PickState* pick, grpc_error** error) override {
+    GRPC_CLOSURE_INIT(
+        &recv_trailing_metadata_ready_,
+        InterceptTrailing::RecordRecvTrailingMetadata,
+        /*cb_arg=*/ nullptr,
+        grpc_schedule_on_exec_ctx);
+    pick->recv_trailing_metadata_ready = &recv_trailing_metadata_ready_;
+    pick->recv_trailing_metadata = &recv_trailing_metadata_;
+    pick->connected_subchannel =
+        grpc_subchannel_get_connected_subchannel(hardcoded_subchannel_);
+
+    if (pick->connected_subchannel.get() != nullptr) {
+      *error = GRPC_ERROR_NONE;
+      return true;
+    }
+
+    if (pick->on_complete == nullptr) {
+        *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "No pick result available but synchronous result required.");
+        return true;
+    } else {
+      on_complete_ = pick->on_complete;
+      // TODO(zpencer): call on_completed_ at some point
+      return false;
+    }
+  }
+
+  void UpdateLocked(const grpc_channel_args& args) override {
+    const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
+    grpc_lb_addresses* addresses =
+        static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+    grpc_arg addr_arg =
+        grpc_create_subchannel_address_arg(&addresses->addresses[0].address);
+    static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
+                                           GRPC_ARG_LB_ADDRESSES};
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+        &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &addr_arg, 1);
+    gpr_free(addr_arg.value.string);
+    grpc_subchannel_args sc_args;
+    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
+    sc_args.args = new_args;
+    if (hardcoded_subchannel_ != nullptr) {
+      GRPC_SUBCHANNEL_UNREF(hardcoded_subchannel_, "new pick");
+    }
+    hardcoded_subchannel_ = grpc_client_channel_factory_create_subchannel(
+        client_channel_factory(), &sc_args);
+    grpc_channel_args_destroy(new_args);
+  }
+
+  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
+  void CancelPickLocked(PickState* pick,
+                        grpc_error* error) override {
+    pick->connected_subchannel.reset();
+    GRPC_CLOSURE_SCHED(pick->on_complete,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Pick Cancelled", &error, 1));
+
+    GRPC_ERROR_UNREF(error);
+  }
+
+  grpc_connectivity_state CheckConnectivityLocked(
+      grpc_error** error) override {
+    return grpc_connectivity_state_get(&state_tracker_, error);
+  }
+
+  void NotifyOnStateChangeLocked(grpc_connectivity_state* current,
+                                 grpc_closure* notify) override {
+    grpc_connectivity_state_notify_on_state_change(&state_tracker_, current,
+                                                   notify);
+  }
+
+  void ShutdownLocked() override {
+    grpc_error* error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
+    grpc_connectivity_state_set(
+        &state_tracker_,
+        GRPC_CHANNEL_SHUTDOWN,
+        GRPC_ERROR_REF(error),
+        "intercept_trailing_shutdown");
+  }
+
+  ~InterceptTrailing() {
+    grpc_connectivity_state_destroy(&state_tracker_);
+  }
+
+ private:
+  grpc_closure* on_complete_ = nullptr;
+  grpc_closure recv_trailing_metadata_ready_;
+  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  grpc_subchannel* hardcoded_subchannel_ = nullptr;
+  grpc_connectivity_state_tracker state_tracker_;
+
+  static void RecordRecvTrailingMetadata(
+      void* ignored_arg, grpc_error* ignored_err) {
+    gpr_log(GPR_INFO, "trailer intercepted by lb");
+  }
+};
+
+// A factory for a test LB policy that intercepts trailing metadata.
+// The LB policy is implemented as a wrapper around a delegate LB policy.
+class InterceptTrailingFactory : public grpc_core::LoadBalancingPolicyFactory {
+ public:
+  InterceptTrailingFactory(){}
+
+  grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
+   CreateLoadBalancingPolicy(
+       const grpc_core::LoadBalancingPolicy::Args& args) const override {
+    return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
+        grpc_core::New<InterceptTrailing>(args));
+  }
+
+  const char* name() const override {
+    return intercept_trailing_name;
+  }
+};
+
+class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
+ protected:
+  void SetUp() override {
+    ClientLbEnd2endTest::SetUp();
+    grpc_core::LoadBalancingPolicyRegistry::Builder::
+        RegisterLoadBalancingPolicyFactory(
+            grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
+                grpc_core::New<InterceptTrailingFactory>()));
+  }
+
+  void TearDown() override {
+    ClientLbEnd2endTest::TearDown();
+  }
+};
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, Intercepts_retries_disabled) {
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  auto channel = BuildChannel(intercept_trailing_name);
+  auto stub = BuildStub(channel);
+  std::vector<int> ports;
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    ports.emplace_back(servers_[i]->port_);
+  }
+  SetNextResolution(ports);
+
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // All requests should have gone to a single server.
+  bool found = false;
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    const int request_count = servers_[i]->service_.request_count();
+    if (request_count == kNumServers) {
+      found = true;
+    } else {
+      EXPECT_EQ(0, request_count);
+    }
+  }
+  EXPECT_TRUE(found);
+  // Check LB policy name for the channel.
+  EXPECT_EQ(
+      intercept_trailing_name,
+      channel->GetLoadBalancingPolicyName());
 }
 
 }  // namespace

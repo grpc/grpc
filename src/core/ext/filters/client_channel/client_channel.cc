@@ -937,6 +937,7 @@ typedef struct client_channel_call_data {
   grpc_closure recv_trailing_metadata_ready_for_lb;
   // The original trailer interception callback.
   grpc_closure* original_recv_trailing_metadata_ready;
+  grpc_transport_stream_op_batch* recv_trailing_metadata_op_batch;
 
   grpc_polling_entity* pollent;
   bool pollent_added_to_interested_parties;
@@ -1000,8 +1001,7 @@ static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
 static void start_pick_locked(void* arg, grpc_error* ignored);
 static void maybe_intercept_trailing_metadata_for_lb(
-    void* arg, grpc_transport_stream_op_batch* batch);
-static void recv_trailing_metadata_ready_for_lb(void* arg, grpc_error* error);
+    grpc_call_element* arg, grpc_transport_stream_op_batch* batch);
 
 //
 // send op data caching
@@ -1977,6 +1977,16 @@ static void recv_trailing_metadata_ready_for_retries(
   grpc_mdelem* server_pushback_md = nullptr;
   grpc_metadata_batch* md_batch =
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata;
+  // If the lb policy asks for the trailing metadata, set its receiving ptr
+  if (calld->pick.recv_trailing_metadata != nullptr) {
+    *calld->pick.recv_trailing_metadata = md_batch;
+  }
+  // We use GRPC_CLOSURE_RUN synchronously on the callback. In the case of
+  // a retry, we would have already freed the metadata before returning from
+  // this function.
+  GRPC_CLOSURE_RUN(
+      calld->pick.recv_trailing_metadata_ready,
+      GRPC_ERROR_REF(error));
   get_call_status(elem, md_batch, GRPC_ERROR_REF(error), &status,
                   &server_pushback_md);
   if (grpc_client_channel_trace.enabled()) {
@@ -2000,13 +2010,6 @@ static void recv_trailing_metadata_ready_for_retries(
   }
   // Not retrying, so commit the call.
   retry_commit(elem, retry_state);
-  // Now that the try is committed, give the trailer to the lb policy as needed
-  if (calld->pick.recv_trailing_metadata != nullptr) {
-    *calld->pick.recv_trailing_metadata = md_batch;
-  }
-  GRPC_CLOSURE_SCHED(
-      calld->pick.recv_trailing_metadata_ready,
-      GRPC_ERROR_REF(error));
   // Run any necessary closures.
   run_closures_for_completed_call(batch_data, GRPC_ERROR_REF(error));
 }
@@ -2595,13 +2598,12 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
 
 // The callback to intercept trailing metadata if retries is not enabled
 static void recv_trailing_metadata_ready_for_lb(void* arg, grpc_error* error) {
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
-  grpc_call_element* elem = batch_data->elem;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->pick.recv_trailing_metadata != nullptr) {
     *calld->pick.recv_trailing_metadata =
-        batch_data->batch.payload->recv_trailing_metadata
-            .recv_trailing_metadata;
+        calld->recv_trailing_metadata_op_batch->payload
+            ->recv_trailing_metadata.recv_trailing_metadata;
   }
   GRPC_CLOSURE_SCHED(
       calld->pick.recv_trailing_metadata_ready,
@@ -2611,19 +2613,22 @@ static void recv_trailing_metadata_ready_for_lb(void* arg, grpc_error* error) {
       GRPC_ERROR_REF(error));
 }
 
-// Installs a interceptor to inform the lb of the trailing metadata, if needed
+// If needed, intercepts the recv_trailing_metadata_ready callback to return
+// trailing metadata to the LB policy.
 static void maybe_intercept_trailing_metadata_for_lb(
-    void* arg, grpc_transport_stream_op_batch* batch) {
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
-  grpc_call_element* elem = batch_data->elem;
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->original_recv_trailing_metadata_ready =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_for_lb,
-                    recv_trailing_metadata_ready_for_lb, elem,
-                    grpc_schedule_on_exec_ctx);
-  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &calld->recv_trailing_metadata_ready_for_lb;
+  if (!batch->recv_trailing_metadata) {
+    return;
+  }
+  if (calld->pick.recv_trailing_metadata_ready != nullptr) {
+    calld->recv_trailing_metadata_op_batch = batch;
+    GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_for_lb,
+                      recv_trailing_metadata_ready_for_lb, elem,
+                      grpc_schedule_on_exec_ctx);
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &calld->recv_trailing_metadata_ready_for_lb;
+  }
 }
 
 static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
