@@ -30,11 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 
-/** Issued when initial metadata is received from the server. */
+/**
+  * Issued when initial metadata is received from the server. The task must be scheduled onto the
+  * dispatch queue in property \a dispatchQueue. */
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the deserialized proto object.
+ * The task must be scheduled onto the dispatch queue in property \a dispatchQueue.
  */
 - (void)receivedProtoMessage:(GPBMessage *_Nullable)message;
 
@@ -42,7 +45,8 @@ NS_ASSUME_NONNULL_BEGIN
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
  * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
  * is non-nil and contains the corresponding error information, including gRPC error codes and
- * error descriptions.
+ * error descriptions. The task must be scheduled onto the dispatch queue in property
+ * \a dispatchQueue.
  */
 - (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
                              error:(NSError *_Nullable)error;

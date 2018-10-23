@@ -172,53 +172,44 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
-  if (_handler && initialMetadata != nil) {
-    id<GRPCProtoResponseHandler> handler = _handler;
-    if ([handler respondsToSelector:@selector(initialMetadata:)]) {
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler receivedInitialMetadata:initialMetadata];
-      });
+  dispatch_async(_dispatchQueue, ^{
+    if (initialMetadata != nil && [self->_handler respondsToSelector:@selector(initialMetadata:)]) {
+      [self->_handler receivedInitialMetadata:initialMetadata];
     }
-  }
+  });
 }
 
 - (void)receivedRawMessage:(NSData *_Nullable)message {
-  if (_handler && message != nil) {
-    id<GRPCProtoResponseHandler> handler = _handler;
-    NSError *error = nil;
-    GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
-    if (parsed) {
-      if ([handler respondsToSelector:@selector(receivedProtoMessage:)]) {
-        dispatch_async(handler.dispatchQueue, ^{
-          [handler receivedProtoMessage:parsed];
-        });
+  dispatch_async(_dispatchQueue, ^{
+    if (self->_handler && message != nil) {
+      NSError *error = nil;
+      GPBMessage *parsed = [self->_responseClass parseFromData:message error:&error];
+      if (parsed) {
+        if ([self->_handler respondsToSelector:@selector(receivedProtoMessage:)]) {
+          [self->_handler receivedProtoMessage:parsed];
+        }
+      } else {
+        if ([self->_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+          [self->_handler closedWithTrailingMetadata:nil error:ErrorForBadProto(message, _responseClass, error)];
+        }
+        self->_handler = nil;
+        [self->_call cancel];
+        self->_call = nil;
       }
-    } else {
-      if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-        dispatch_async(handler.dispatchQueue, ^{
-          [handler closedWithTrailingMetadata:nil error:ErrorForBadProto(message, _responseClass, error)];
-        });
-      }
-      _handler = nil;
-      [_call cancel];
-      _call = nil;
     }
-  }
+  });
 }
 
 - (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
                              error:(NSError *_Nullable)error {
-  if (_handler) {
-    id<GRPCProtoResponseHandler> handler = _handler;
-    if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-      dispatch_async(handler.dispatchQueue, ^{
-        [handler closedWithTrailingMetadata:trailingMetadata error:error];
-      });
+  dispatch_async(_dispatchQueue, ^{
+    if ([self->_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+      [self->_handler closedWithTrailingMetadata:trailingMetadata error:error];
     }
-    _handler = nil;
-  }
-  [_call cancel];
-  _call = nil;
+    self->_handler = nil;
+    [self->_call cancel];
+    self->_call = nil;
+  });
 }
 
 - (dispatch_queue_t)dispatchQueue {

@@ -115,22 +115,28 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 }
 
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
-  if (_initialMetadataCallback) {
-    _initialMetadataCallback(initialMetadata);
-  }
+  dispatch_async(_dispatchQueue, ^{
+    if (_initialMetadataCallback) {
+      _initialMetadataCallback(initialMetadata);
+    }
+  });
 }
 
 - (void)receivedRawMessage:(GPBMessage *_Nullable)message {
-  if (_messageCallback) {
-    _messageCallback(message);
-  }
+  dispatch_async(_dispatchQueue, ^{
+    if (_messageCallback) {
+      _messageCallback(message);
+    }
+  });
 }
 
 - (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
                              error:(NSError *_Nullable)error {
-  if (_closeCallback) {
-    _closeCallback(trailingMetadata, error);
-  }
+  dispatch_async(_dispatchQueue, ^{
+    if (_closeCallback) {
+      _closeCallback(trailingMetadata, error);
+    }
+  });
 }
 
 - (dispatch_queue_t)dispatchQueue {

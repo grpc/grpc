@@ -252,30 +252,21 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  id<GRPCResponseHandler> handler = _handler;
-  if ([handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
-    dispatch_async(handler.dispatchQueue, ^{
-      [handler receivedInitialMetadata:initialMetadata];
-    });
+  if (initialMetadata != nil && [_handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+    [_handler receivedInitialMetadata:initialMetadata];
   }
 }
 
 - (void)issueMessage:(id)message {
-  id<GRPCResponseHandler> handler = _handler;
-  if ([handler respondsToSelector:@selector(receivedRawMessage:)]) {
-    dispatch_async(handler.dispatchQueue, ^{
-      [handler receivedRawMessage:message];
-    });
+  if (message != nil && [_handler respondsToSelector:@selector(receivedRawMessage:)]) {
+    [_handler receivedRawMessage:message];
   }
 }
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  id<GRPCResponseHandler> handler = _handler;
   NSDictionary *trailers = _call.responseTrailers;
-  if ([handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-    dispatch_async(handler.dispatchQueue, ^{
-      [handler closedWithTrailingMetadata:trailers error:error];
-    });
+  if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+    [_handler closedWithTrailingMetadata:trailers error:error];
   }
 }
 
