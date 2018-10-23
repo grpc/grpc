@@ -213,9 +213,11 @@ static void chttp2_connector_connect(grpc_connector* con,
   GRPC_CLOSURE_INIT(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(!c->connecting);
   c->connecting = true;
-  grpc_tcp_client_connect(&c->connected, &c->endpoint, args->interested_parties,
-                          args->channel_args, &addr, args->deadline);
+  grpc_closure* closure = &c->connected;
+  grpc_endpoint** ep = &c->endpoint;
   gpr_mu_unlock(&c->mu);
+  grpc_tcp_client_connect(closure, ep, args->interested_parties,
+                          args->channel_args, &addr, args->deadline);
 }
 
 static const grpc_connector_vtable chttp2_connector_vtable = {
