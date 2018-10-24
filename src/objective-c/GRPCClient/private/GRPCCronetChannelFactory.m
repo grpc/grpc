@@ -54,9 +54,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
                                      channelArgs:(NSDictionary * _Nullable)args {
-  // Remove client authority filter since that is not supported
-  args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
-
   grpc_channel_args *channelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);

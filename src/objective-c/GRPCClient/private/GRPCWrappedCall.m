@@ -310,7 +310,9 @@
 }
 
 - (void)dealloc {
-  grpc_call_unref(_call);
+  if (_call) {
+    grpc_call_unref(_call);
+  }
   [_channel unref];
   _channel = nil;
 }
