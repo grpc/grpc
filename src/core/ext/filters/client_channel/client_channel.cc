@@ -2617,6 +2617,7 @@ static void recv_trailing_metadata_ready_for_lb(void* arg, grpc_error* error) {
 // trailing metadata to the LB policy.
 static void maybe_intercept_trailing_metadata_for_lb(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (!batch->recv_trailing_metadata) {
     return;
@@ -2625,7 +2626,7 @@ static void maybe_intercept_trailing_metadata_for_lb(
     calld->recv_trailing_metadata_op_batch = batch;
     GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready_for_lb,
                       recv_trailing_metadata_ready_for_lb, elem,
-                      grpc_schedule_on_exec_ctx);
+                      grpc_combiner_scheduler(chand->combiner));
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &calld->recv_trailing_metadata_ready_for_lb;
   }
