@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
   stream_engine *_cronetEngine;
 }
 
-+ (nullable instancetype)sharedInstance {
++ (instancetype _Nullable)sharedInstance {
   static GRPCCronetChannelFactory *instance;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -41,7 +41,7 @@ NS_ASSUME_NONNULL_BEGIN
   return instance;
 }
 
-- (nullable instancetype)initWithEngine:(stream_engine *)engine {
+- (instancetype _Nullable)initWithEngine:(stream_engine *)engine {
   if (!engine) {
     [NSException raise:NSInvalidArgumentException format:@"Cronet engine is NULL. Set it first."];
     return nil;
@@ -52,8 +52,8 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-- (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *)args {
+- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary * _Nullable)args {
   // Remove client authority filter since that is not supported
   args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
 
@@ -74,14 +74,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation GRPCCronetChannelFactory
 
-+ (nullable instancetype)sharedInstance {
++ (instancetype _Nullable)sharedInstance {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return nil;
 }
 
-- (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSDictionary *)args {
+- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary * _Nullable)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return NULL;

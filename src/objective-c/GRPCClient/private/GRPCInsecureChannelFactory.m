@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @implementation GRPCInsecureChannelFactory
 
-+ (nullable instancetype)sharedInstance {
++ (instancetype _Nullable)sharedInstance {
   static GRPCInsecureChannelFactory *instance;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -34,8 +34,8 @@ NS_ASSUME_NONNULL_BEGIN
   return instance;
 }
 
-- (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSDictionary *)args {
+- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary * _Nullable)args {
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
   grpc_channel *unmanagedChannel =
       grpc_insecure_channel_create(host.UTF8String, coreChannelArgs, NULL);
