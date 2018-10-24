@@ -69,3 +69,6 @@ build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
 #build:tsan --copt=-fno-omit-frame-pointer
 #build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 #build:tsan --copt=-DGRPC_TSAN
+
+# TODO(jtattermusch): align ubsan settings from tools/bazel.rc
+# and grpc_ubsan_on_foundry.sh (master and PRs)
