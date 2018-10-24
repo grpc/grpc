@@ -24,6 +24,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <type_traits>
 
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call_hook.h>
@@ -630,7 +631,11 @@ class CallOpSet : public CallOpSetInterface,
   // object, not across objects.
   CallOpSet(const CallOpSet& other)
       : cq_tag_(this), return_tag_(this), call_(other.call_) {}
+
   CallOpSet& operator=(const CallOpSet& other) {
+    static_assert(std::is_trivially_destructible<decltype(*this)>::value,
+                  "CallOpSet must be trivially destructible");
+
     cq_tag_ = this;
     return_tag_ = this;
     call_ = other.call_;
@@ -682,10 +687,7 @@ class Call final {
  public:
   /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)
-      : call_hook_(call_hook),
-        cq_(cq),
-        call_(call),
-        max_receive_message_size_(-1) {}
+      : Call(call, call_hook, cq, -1) {}
 
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq,
        int max_receive_message_size)
@@ -709,6 +711,10 @@ class Call final {
   grpc_call* call_;
   int max_receive_message_size_;
 };
+
+static_assert(std::is_trivially_destructible<Call>::value,
+              "Call must be trivially destructible");
+
 }  // namespace internal
 }  // namespace grpc
 
