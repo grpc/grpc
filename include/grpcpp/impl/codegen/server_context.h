@@ -290,9 +290,11 @@ class ServerContext {
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
-    rpc_info_ = experimental::ServerRpcInfo(this, method);
-    rpc_info_.RegisterInterceptors(creators);
-    return &rpc_info_;
+    if (creators.size() != 0) {
+      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_->RegisterInterceptors(creators);
+    }
+    return rpc_info_;
   }
 
   CompletionOp* completion_op_;
@@ -317,7 +319,7 @@ class ServerContext {
       pending_ops_;
   bool has_pending_ops_;
 
-  experimental::ServerRpcInfo rpc_info_;
+  experimental::ServerRpcInfo* rpc_info_ = nullptr;
 };
 
 }  // namespace grpc

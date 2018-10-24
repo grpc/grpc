@@ -48,6 +48,12 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
         cancelled_(0),
         done_intercepting_(false) {}
 
+  ~CompletionOp() {
+    if (call_.server_rpc_info()) {
+      call_.server_rpc_info()->Unref();
+    }
+  }
+
   void FillOps(internal::Call* call) override;
   bool FinalizeResult(void** tag, bool* status) override;
 
@@ -210,10 +216,16 @@ ServerContext::~ServerContext() {
   if (completion_op_) {
     completion_op_->Unref();
   }
+  if (rpc_info_) {
+    rpc_info_->Unref();
+  }
 }
 
 void ServerContext::BeginCompletionOp(internal::Call* call) {
   GPR_ASSERT(!completion_op_);
+  if (rpc_info_) {
+    rpc_info_->Ref();
+  }
   completion_op_ = new CompletionOp();
   if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);

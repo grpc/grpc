@@ -59,7 +59,6 @@ class RpcMethodHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    gpr_log(GPR_ERROR, "running handler");
     ResponseType rsp;
     Status status = param.status;
     if (status.ok()) {
@@ -121,7 +120,6 @@ class ClientStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    gpr_log(GPR_ERROR, "running client streaming handler");
     ServerReader<RequestType> reader(param.call, param.server_context);
     ResponseType rsp;
     Status status = CatchingFunctionHandler([this, &param, &reader, &rsp] {
@@ -165,7 +163,6 @@ class ServerStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    gpr_log(GPR_ERROR, "running server streaming handler");
     Status status = param.status;
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
@@ -227,7 +224,6 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
       : func_(func), write_needed_(WriteNeeded) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    gpr_log(GPR_ERROR, "running bidi streaming handler");
     Streamer stream(param.call, param.server_context);
     Status status = CatchingFunctionHandler([this, &param, &stream] {
       return func_(param.server_context, &stream);
@@ -321,7 +317,6 @@ class ErrorMethodHandler : public MethodHandler {
   }
 
   void RunHandler(const HandlerParameter& param) final {
-    gpr_log(GPR_ERROR, "running error handler");
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);

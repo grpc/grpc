@@ -270,10 +270,6 @@ class ServerInterface : public internal::CallHook {
           return false;
         }
       }
-      call_wrapper_ = internal::Call(
-          call_, server_, call_cq_, server_->max_receive_message_size(),
-          context_->set_server_rpc_info(name_,
-                                        *server_->interceptor_creators()));
       /* Set interception point for recv message */
       interceptor_methods_.AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_RECV_MESSAGE);

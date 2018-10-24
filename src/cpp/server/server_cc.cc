@@ -275,7 +275,6 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         global_callbacks_->PreSynchronousRequest(&ctx_);
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
-        gpr_log(GPR_ERROR, "got method %s", method_->name());
         handler->RunHandler(internal::MethodHandler::HandlerParameter(
             &call_, &ctx_, request_, request_status_));
         request_ = nullptr;

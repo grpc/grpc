@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 
+#include <atomic>
 #include <vector>
 
 #include <grpc/impl/codegen/log.h>
@@ -44,8 +45,6 @@ class ServerInterceptorFactoryInterface {
 
 class ServerRpcInfo {
  public:
-  ServerRpcInfo() {}
-
   ~ServerRpcInfo(){};
 
   ServerRpcInfo(const ServerRpcInfo&) = delete;
@@ -67,7 +66,9 @@ class ServerRpcInfo {
 
  private:
   ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
-      : ctx_(ctx), method_(method) {}
+      : ctx_(ctx), method_(method) {
+    ref_.store(1);
+  }
 
   void RegisterInterceptors(
       const std::vector<
@@ -78,8 +79,17 @@ class ServerRpcInfo {
           creator->CreateServerInterceptor(this)));
     }
   }
+
+  void Ref() { ref_++; }
+  void Unref() {
+    if (--ref_ == 0) {
+      delete this;
+    }
+  }
+
   grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
+  std::atomic_int ref_;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 
   friend class internal::InterceptorBatchMethodsImpl;
