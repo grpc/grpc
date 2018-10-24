@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_SECURITY_CONNECTOR_H
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_LOCAL_SECURITY_CONNECTOR_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_LOCAL_SECURITY_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -54,5 +54,5 @@ grpc_security_status grpc_local_channel_security_connector_create(
 grpc_security_status grpc_local_server_security_connector_create(
     grpc_server_credentials* server_creds, grpc_server_security_connector** sc);
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_SECURITY_CONNECTOR_H \
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_LOCAL_SECURITY_CONNECTOR_H \
         */
