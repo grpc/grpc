@@ -107,7 +107,7 @@ class ServerContext {
   /// Return a \a gpr_timespec representation of the server call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client side
   /// by the \a grpc::ClientContext::GetServerInitialMetadata() method.
   ///
@@ -115,13 +115,13 @@ class ServerContext {
   /// to the client (which can happen explicitly, or implicitly when sending a
   /// a response message or status to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
+  /// \param key The metadata key. If \a value is binary data, it must
   /// end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
   void AddInitialMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
+  /// Add the (\a key, \a value) pair to the initial metadata
   /// associated with a server call. These are made available at the client
   /// side by the \a grpc::ClientContext::GetServerTrailingMetadata() method.
   ///
@@ -129,9 +129,9 @@ class ServerContext {
   /// metadata to the client (which happens when the call is finished and a
   /// status is sent to the client).
   ///
-  /// \param meta_key The metadata key. If \a meta_value is binary data,
+  /// \param key The metadata key. If \a value is binary data,
   /// it must end in "-bin".
-  /// \param meta_value The metadata value. If its value is binary, the key name
+  /// \param value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
@@ -177,9 +177,9 @@ class ServerContext {
     return compression_level_;
   }
 
-  /// Set \a algorithm to be the compression algorithm used for the server call.
+  /// Set \a level to be the compression level used for the server call.
   ///
-  /// \param algorithm The compression algorithm used for the server call.
+  /// \param level The compression level used for the server call.
   void set_compression_level(grpc_compression_level level) {
     compression_level_set_ = true;
     compression_level_ = level;
