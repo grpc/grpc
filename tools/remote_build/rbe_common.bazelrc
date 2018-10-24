@@ -70,5 +70,15 @@ build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
 #build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 #build:tsan --copt=-DGRPC_TSAN
 
-# TODO(jtattermusch): align ubsan settings from tools/bazel.rc
-# and grpc_ubsan_on_foundry.sh (master and PRs)
+# undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:ubsan --copt=-gmlt
+# TODO(jtattermusch): use more reasonable test timeout
+build:ubsan --test_timeout=3600
+# TODO: revisit these from bazel.rc:
+#build:ubsan --copt=-fno-omit-frame-pointer
+#build:ubsan --copt=-DGRPC_UBSAN
+#build:ubsan --copt=-DNDEBUG
+#build:ubsan --copt=-fno-sanitize=function,vptr
+# TODO: revisit this from grpc_ubsan_on_foundry.sh:
+#--crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.0/bazel_0.15.0/ubsan:toolchain
