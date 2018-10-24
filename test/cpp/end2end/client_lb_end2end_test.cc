@@ -373,11 +373,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   StartServers(kNumServers);
   auto channel = BuildChannel("");  // test that pick first is the default.
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
-  SetNextResolution(ports);
+  SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
@@ -600,10 +596,7 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   StartServers(kNumServers);
   auto channel = BuildChannel("pick_first");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
+  std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
@@ -733,11 +726,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   StartServers(kNumServers);
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (const auto& server : servers_) {
-    ports.emplace_back(server->port_);
-  }
-  SetNextResolution(ports);
+  SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
   do {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -899,10 +888,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   StartServers(kNumServers);
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
+  std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
@@ -1039,11 +1025,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto channel = BuildChannel("round_robin", args);
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (const auto& server : servers_) {
-    ports.emplace_back(server->port_);
-  }
-  SetNextResolution(ports);
+  SetNextResolution(GetServersPorts());
   // Channel should not become READY, because health checks should be failing.
   gpr_log(GPR_INFO,
           "*** initial state: unknown health check service name for "
@@ -1117,10 +1099,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto channel1 = BuildChannel("round_robin", args);
   auto stub1 = BuildStub(channel1);
-  std::vector<int> ports;
-  for (const auto& server : servers_) {
-    ports.emplace_back(server->port_);
-  }
+  std::vector<int> ports = GetServersPorts();
   SetNextResolution(ports);
   // Create a channel with health checking enabled but inhibited.
   args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);

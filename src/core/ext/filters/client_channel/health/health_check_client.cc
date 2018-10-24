@@ -67,6 +67,8 @@ HealthCheckClient::HealthCheckClient(
   if (grpc_health_check_client_trace.enabled()) {
     gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
   }
+  GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
+                    grpc_schedule_on_exec_ctx);
   gpr_mu_init(&mu_);
   StartCall();
 }
@@ -174,8 +176,6 @@ void HealthCheckClient::StartRetryTimer() {
   }
   // Ref for callback, tracked manually.
   Ref(DEBUG_LOCATION, "health_retry_timer").release();
-  GRPC_CLOSURE_INIT(&retry_timer_callback_, OnRetryTimer, this,
-                    grpc_schedule_on_exec_ctx);
   retry_timer_callback_pending_ = true;
   grpc_timer_init(&retry_timer_, next_try, &retry_timer_callback_);
 }
@@ -491,10 +491,8 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   const bool healthy = DecodeResponse(&recv_message_buffer_, &error);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-  if (error == GRPC_ERROR_NONE) {
-    error = healthy
-                ? GRPC_ERROR_NONE
-                : GRPC_ERROR_CREATE_FROM_STATIC_STRING("health check failed");
+  if (error == GRPC_ERROR_NONE && !healthy) {
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("backend unhealthy");
   }
   health_check_client_->SetHealthStatus(state, error);
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(1));

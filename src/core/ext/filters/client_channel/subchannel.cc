@@ -80,7 +80,6 @@ typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
   grpc_pollset_set* pollset_set;
   grpc_closure* notify;
-  bool inhibit_health_checks;
   grpc_closure closure;
   struct external_state_watcher* next;
   struct external_state_watcher* prev;
@@ -235,10 +234,10 @@ class ConnectedSubchannelStateWatcher
       health_state = GRPC_CHANNEL_CONNECTING;
     }
     // Report initial state.
-    set_subchannel_connectivity_state_locked(c, GRPC_CHANNEL_READY,
-                                             GRPC_ERROR_NONE, "connected");
+    set_subchannel_connectivity_state_locked(
+        c, GRPC_CHANNEL_READY, GRPC_ERROR_NONE, "subchannel_connected");
     grpc_connectivity_state_set(&c->state_and_health_tracker, health_state,
-                                GRPC_ERROR_NONE, "connected");
+                                GRPC_ERROR_NONE, "subchannel_connected");
   }
 
   ~ConnectedSubchannelStateWatcher() {
@@ -320,7 +319,7 @@ class ConnectedSubchannelStateWatcher
     if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
       grpc_connectivity_state_set(&c->state_and_health_tracker,
                                   self->health_state_, GRPC_ERROR_REF(error),
-                                  "connected");
+                                  "health_changed");
     }
     self->health_check_client_->NotifyOnHealthChange(&self->health_state_,
                                                      &self->on_health_changed_);
@@ -784,7 +783,6 @@ void grpc_subchannel_notify_on_state_change(
     w->subchannel = c;
     w->pollset_set = interested_parties;
     w->notify = notify;
-    w->inhibit_health_checks = inhibit_health_checks;
     GRPC_CLOSURE_INIT(&w->closure, on_external_state_watcher_done, w,
                       grpc_schedule_on_exec_ctx);
     if (interested_parties != nullptr) {

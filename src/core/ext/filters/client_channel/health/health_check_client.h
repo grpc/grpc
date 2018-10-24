@@ -142,7 +142,8 @@ class HealthCheckClient
   static void OnRetryTimer(void* arg, grpc_error* error);
 
   void SetHealthStatus(grpc_connectivity_state state, grpc_error* error);
-  void SetHealthStatusLocked(grpc_connectivity_state state, grpc_error* error);
+  void SetHealthStatusLocked(grpc_connectivity_state state,
+                             grpc_error* error);  // Requires holding mu_.
 
   const char* service_name_;  // Do not own.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
