@@ -4517,6 +4517,8 @@ targets:
   cpu_cost: 0.5
   build: test
   language: c++
+  headers:
+  - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/client_interceptors_end2end_test.cc
   deps:

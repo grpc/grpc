@@ -32,6 +32,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -41,28 +42,6 @@
 namespace grpc {
 namespace testing {
 namespace {
-
-class EchoTestServiceStreamingImpl : public EchoTestService::Service {
- public:
-  ~EchoTestServiceStreamingImpl() override {}
-
-  Status BidiStream(
-      ServerContext* context,
-      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    EchoRequest req;
-    EchoResponse resp;
-    auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
-    }
-
-    while (stream->Read(&req)) {
-      resp.set_message(req.message());
-      stream->Write(resp, grpc::WriteOptions());
-    }
-    return Status::OK;
-  }
-};
 
 class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
  protected:
@@ -157,7 +136,6 @@ class HijackingInterceptor : public experimental::Interceptor {
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    // gpr_log(GPR_ERROR, "ran this");
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
@@ -261,7 +239,6 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    // gpr_log(GPR_ERROR, "ran this");
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -329,6 +306,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
+      gpr_log(GPR_ERROR, "hijacked");
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
@@ -345,7 +323,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
-      *map = ctx_.GetServerTrailingMetadata();
+      map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -376,7 +354,6 @@ class LoggingInterceptor : public experimental::Interceptor {
   LoggingInterceptor(experimental::ClientRpcInfo* info) { info_ = info; }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    // gpr_log(GPR_ERROR, "ran this");
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -439,63 +416,6 @@ class LoggingInterceptorFactory
     return new LoggingInterceptor(info);
   }
 };
-
-void MakeCall(const std::shared_ptr<Channel>& channel) {
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  ClientContext ctx;
-  EchoRequest req;
-  req.mutable_param()->set_echo_metadata(true);
-  ctx.AddMetadata("testkey", "testvalue");
-  req.set_message("Hello");
-  EchoResponse resp;
-  Status s = stub->Echo(&ctx, req, &resp);
-  EXPECT_EQ(s.ok(), true);
-  EXPECT_EQ(resp.message(), "Hello");
-}
-
-void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  ClientContext ctx;
-  EchoRequest req;
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  req.mutable_param()->set_echo_metadata(true);
-  ctx.AddMetadata("testkey", "testvalue");
-  req.set_message("Hello");
-  EchoResponse resp;
-  stub->experimental_async()->Echo(&ctx, &req, &resp,
-                                   [&resp, &mu, &done, &cv](Status s) {
-                                     // gpr_log(GPR_ERROR, "got the callback");
-                                     EXPECT_EQ(s.ok(), true);
-                                     EXPECT_EQ(resp.message(), "Hello");
-                                     std::lock_guard<std::mutex> l(mu);
-                                     done = true;
-                                     cv.notify_one();
-                                   });
-  std::unique_lock<std::mutex> l(mu);
-  while (!done) {
-    cv.wait(l);
-  }
-}
-
-void MakeStreamingCall(const std::shared_ptr<Channel>& channel) {
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  ClientContext ctx;
-  EchoRequest req;
-  EchoResponse resp;
-  ctx.AddMetadata("testkey", "testvalue");
-  auto stream = stub->BidiStream(&ctx);
-  for (auto i = 0; i < 10; i++) {
-    req.set_message("Hello" + std::to_string(i));
-    stream->Write(req);
-    stream->Read(&resp);
-    EXPECT_EQ(req.message(), resp.message());
-  }
-  ASSERT_TRUE(stream->WritesDone());
-  Status s = stream->Finish();
-  EXPECT_EQ(s.ok(), true);
-}
 
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
   ChannelArguments args;
@@ -582,9 +502,6 @@ TEST_F(ClientInterceptorsEnd2endTest,
     creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
-  // auto channel = experimental::CreateCustomChannelWithInterceptors(
-  //    server_address_, InsecureChannelCredentials(), args,
-  //    std::move(creators));
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
 
@@ -616,7 +533,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
-TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientInterceptorLoggingTest) {
+TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
   auto creators = std::unique_ptr<std::vector<
@@ -632,7 +549,49 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientInterceptorLoggingTest) {
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeStreamingCall(channel);
+  MakeClientStreamingCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+      new LoggingInterceptorFactory()));
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeServerStreamingCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+      new LoggingInterceptorFactory()));
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeBidiStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }

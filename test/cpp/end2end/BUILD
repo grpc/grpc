@@ -35,6 +35,19 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "interceptors_util",
+    testonly = True,
+    hdrs = ["interceptors_util.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
@@ -124,6 +137,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -495,6 +509,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",

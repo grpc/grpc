@@ -32,37 +32,15 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
-#include "test/cpp/util/string_ref_helper.h"
 
 #include <gtest/gtest.h>
 
 namespace grpc {
 namespace testing {
 namespace {
-
-class EchoTestServiceStreamingImpl : public EchoTestService::Service {
- public:
-  ~EchoTestServiceStreamingImpl() override {}
-
-  Status BidiStream(
-      ServerContext* context,
-      grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-    EchoRequest req;
-    EchoResponse resp;
-    auto client_metadata = context->client_metadata();
-    for (const auto& pair : client_metadata) {
-      context->AddTrailingMetadata(ToString(pair.first), ToString(pair.second));
-    }
-
-    while (stream->Read(&req)) {
-      resp.set_message(req.message());
-      stream->Write(resp, grpc::WriteOptions());
-    }
-    return Status::OK;
-  }
-};
 
 /* This interceptor does nothing. Just keeps a global count on the number of
  * times it was invoked. */
@@ -181,20 +159,7 @@ class LoggingInterceptorFactory
   }
 };
 
-void MakeCall(const std::shared_ptr<Channel>& channel) {
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  ClientContext ctx;
-  EchoRequest req;
-  req.mutable_param()->set_echo_metadata(true);
-  ctx.AddMetadata("testkey", "testvalue");
-  req.set_message("Hello");
-  EchoResponse resp;
-  Status s = stub->Echo(&ctx, req, &resp);
-  EXPECT_EQ(s.ok(), true);
-  EXPECT_EQ(resp.message(), "Hello");
-}
-
-/*void MakeStreamingCall(const std::shared_ptr<Channel>& channel) {
+void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
   EchoRequest req;
@@ -210,7 +175,7 @@ void MakeCall(const std::shared_ptr<Channel>& channel) {
   ASSERT_TRUE(stream->WritesDone());
   Status s = stream->Finish();
   EXPECT_EQ(s.ok(), true);
-}*/
+}
 
 class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
  protected:
@@ -240,7 +205,7 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
 };
 
-TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, ServerInterceptorTest) {
+TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, UnaryTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
   auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
@@ -249,10 +214,9 @@ TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, ServerInterceptorTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
-class ServerInterceptorsEnd2endSyncClientStreamingTest
-    : public ::testing::Test {
+class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
  protected:
-  ServerInterceptorsEnd2endSyncClientStreamingTest() {
+  ServerInterceptorsEnd2endSyncStreamingTest() {
     int port = grpc_pick_unused_port_or_die();
 
     ServerBuilder builder;
@@ -274,16 +238,33 @@ class ServerInterceptorsEnd2endSyncClientStreamingTest
     server_ = builder.BuildAndStart();
   }
   std::string server_address_;
-  TestServiceImpl service_;
+  EchoTestServiceStreamingImpl service_;
   std::unique_ptr<Server> server_;
 };
 
-TEST_F(ServerInterceptorsEnd2endSyncClientStreamingTest,
-       ServerInterceptorTest) {
+TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ClientStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
   auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
-  MakeCall(channel);
+  MakeClientStreamingCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, ServerStreamingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  MakeServerStreamingCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, BidiStreamingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto channel = CreateChannel(server_address_, InsecureChannelCredentials());
+  MakeBidiStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }

@@ -943,6 +943,13 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
         curr_iteration_ + 1));
   }
 
+  // Clears all state
+  void ClearState() {
+    reverse_ = false;
+    ran_hijacking_interceptor_ = false;
+    ClearHookPoints();
+  }
+
   // Prepares for Post_recv operations
   void SetReverse() {
     reverse_ = true;
@@ -1166,14 +1173,14 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   void FillOps(Call* call) override {
-    gpr_log(GPR_ERROR, "filling ops %p", this);
+    // gpr_log(GPR_ERROR, "filling ops %p", this);
     done_intercepting_ = false;
     g_core_codegen_interface->grpc_call_ref(call->call());
     call_ =
         *call;  // It's fine to create a copy of call since it's just pointers
 
     if (RunInterceptors()) {
-      gpr_log(GPR_ERROR, "no interceptors on send path");
+      // gpr_log(GPR_ERROR, "no interceptors on send path");
       ContinueFillOpsAfterInterception();
     } else {
       // After the interceptors are run, ContinueFillOpsAfterInterception will
@@ -1182,12 +1189,12 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    gpr_log(GPR_ERROR, "finalizing result %p", this);
+    // gpr_log(GPR_ERROR, "finalizing result %p", this);
     if (done_intercepting_) {
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
-      gpr_log(GPR_ERROR, "done intercepting");
+      // gpr_log(GPR_ERROR, "done intercepting");
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
@@ -1199,15 +1206,14 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::FinishOp(status);
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
-    gpr_log(GPR_ERROR, "done finish ops");
-
+    // gpr_log(GPR_ERROR, "done finish ops");
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
-      gpr_log(GPR_ERROR, "no interceptors");
+      // gpr_log(GPR_ERROR, "no interceptors");
       return true;
     }
-    gpr_log(GPR_ERROR, "running interceptors");
+    // gpr_log(GPR_ERROR, "running interceptors");
     // Interceptors are going to be run, so we can't return the tag just yet.
     // After the interceptors are run, ContinueFinalizeResultAfterInterception
     return false;
@@ -1245,7 +1251,8 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::AddOp(ops, &nops);
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
-    gpr_log(GPR_ERROR, "going to start call batch %p", this);
+    // gpr_log(GPR_ERROR, "going to start call batch %p with %lu ops", this,
+    // nops);
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
                            call_.call(), ops, nops, cq_tag(), nullptr));
@@ -1255,6 +1262,7 @@ class CallOpSet : public CallOpSetInterface,
   // path
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
+    // gpr_log(GPR_ERROR, "going to start call batch %p for dummy tag", this);
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
                            call_.call(), nullptr, 0, cq_tag(), nullptr));
@@ -1263,18 +1271,21 @@ class CallOpSet : public CallOpSetInterface,
  private:
   // Returns true if no interceptors need to be run
   bool RunInterceptors() {
+    interceptor_methods_.ClearState();
+    interceptor_methods_.SetCallOpSetInterface(this);
+    interceptor_methods_.SetCall(&call_);
     this->Op1::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op2::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op3::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op4::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetInterceptionHookPoint(&interceptor_methods_);
-    interceptor_methods_.SetCallOpSetInterface(this);
-    interceptor_methods_.SetCall(&call_);
     return interceptor_methods_.RunInterceptors();
   }
   // Returns true if no interceptors need to be run
   bool RunInterceptorsPostRecv() {
+    // Call and OpSet had already been set on the set state.
+    // SetReverse also clears previously set hook points
     interceptor_methods_.SetReverse();
     this->Op1::SetFinishInterceptionHookPoint(&interceptor_methods_);
     this->Op2::SetFinishInterceptionHookPoint(&interceptor_methods_);
