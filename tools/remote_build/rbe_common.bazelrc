@@ -55,3 +55,14 @@ build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
 #build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 #build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 #build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+
+# thread sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:tsan --copt=-gmlt
+# TODO(jtattermusch): use more reasonable test timeout
+build:tsan --test_timeout=3600
+build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
+# TODO: revisit these from bazel.rc:
+#build:tsan --copt=-fno-omit-frame-pointer
+#build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
+#build:tsan --copt=-DGRPC_TSAN
