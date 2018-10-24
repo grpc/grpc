@@ -31,6 +31,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -289,6 +290,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       if (join) thread_->join();
     }
+
+    void SetServingStatus(const grpc::string& service, bool serving) {
+      server_->GetHealthCheckService()->SetServingStatus(service, serving);
+    }
   };
 
   void ResetCounters() {
@@ -314,6 +319,17 @@ class ClientLbEnd2endTest : public ::testing::Test {
         grpc_timeout_seconds_to_deadline(timeout_seconds);
     grpc_connectivity_state state;
     while ((state = channel->GetState(false /* try_to_connect */)) ==
+           GRPC_CHANNEL_READY) {
+      if (!channel->WaitForStateChange(state, deadline)) return false;
+    }
+    return true;
+  }
+
+  bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
+    const gpr_timespec deadline =
+        grpc_timeout_seconds_to_deadline(timeout_seconds);
+    grpc_connectivity_state state;
+    while ((state = channel->GetState(true /* try_to_connect */)) !=
            GRPC_CHANNEL_READY) {
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
@@ -359,11 +375,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   StartServers(kNumServers);
   auto channel = BuildChannel("");  // test that pick first is the default.
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
-  SetNextResolution(ports);
+  SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
@@ -586,10 +598,7 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   StartServers(kNumServers);
   auto channel = BuildChannel("pick_first");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
+  std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
@@ -719,11 +728,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   StartServers(kNumServers);
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (const auto& server : servers_) {
-    ports.emplace_back(server->port_);
-  }
-  SetNextResolution(ports);
+  SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
   do {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -885,10 +890,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   StartServers(kNumServers);
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    ports.emplace_back(servers_[i]->port_);
-  }
+  std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
@@ -996,6 +998,125 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // after the subchannel retry delay otherwise (RR's subchannel retried before
   // the server was fully back up).
   WaitForServer(stub, 0, DEBUG_LOCATION);
+}
+
+// If health checking is required by client but health checking service
+// is not running on the server, the channel should be treated as healthy.
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinServersHealthCheckingUnimplementedTreatedAsHealthy) {
+  StartServers(1);  // Single server
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel = BuildChannel("round_robin", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution({servers_[0]->port_});
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
+  EnableDefaultHealthCheckService(true);
+  // Start servers.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel = BuildChannel("round_robin", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  // Channel should not become READY, because health checks should be failing.
+  gpr_log(GPR_INFO,
+          "*** initial state: unknown health check service name for "
+          "all servers");
+  EXPECT_FALSE(WaitForChannelReady(channel.get(), 1));
+  // Now set one of the servers to be healthy.
+  // The channel should become healthy and all requests should go to
+  // the healthy server.
+  gpr_log(GPR_INFO, "*** server 0 healthy");
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  for (int i = 0; i < 10; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  EXPECT_EQ(10, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(0, servers_[2]->service_.request_count());
+  // Now set a second server to be healthy.
+  gpr_log(GPR_INFO, "*** server 2 healthy");
+  servers_[2]->SetServingStatus("health_check_service_name", true);
+  WaitForServer(stub, 2, DEBUG_LOCATION);
+  for (int i = 0; i < 10; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  EXPECT_EQ(5, servers_[0]->service_.request_count());
+  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  EXPECT_EQ(5, servers_[2]->service_.request_count());
+  // Now set the remaining server to be healthy.
+  gpr_log(GPR_INFO, "*** server 1 healthy");
+  servers_[1]->SetServingStatus("health_check_service_name", true);
+  WaitForServer(stub, 1, DEBUG_LOCATION);
+  for (int i = 0; i < 9; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  EXPECT_EQ(3, servers_[0]->service_.request_count());
+  EXPECT_EQ(3, servers_[1]->service_.request_count());
+  EXPECT_EQ(3, servers_[2]->service_.request_count());
+  // Now set one server to be unhealthy again.  Then wait until the
+  // unhealthiness has hit the client.  We know that the client will see
+  // this when we send kNumServers requests and one of the remaining servers
+  // sees two of the requests.
+  gpr_log(GPR_INFO, "*** server 0 unhealthy");
+  servers_[0]->SetServingStatus("health_check_service_name", false);
+  do {
+    ResetCounters();
+    for (int i = 0; i < kNumServers; ++i) {
+      CheckRpcSendOk(stub, DEBUG_LOCATION);
+    }
+  } while (servers_[1]->service_.request_count() != 2 &&
+           servers_[2]->service_.request_count() != 2);
+  // Now set the remaining two servers to be unhealthy.  Make sure the
+  // channel leaves READY state and that RPCs fail.
+  gpr_log(GPR_INFO, "*** all servers unhealthy");
+  servers_[1]->SetServingStatus("health_check_service_name", false);
+  servers_[2]->SetServingStatus("health_check_service_name", false);
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  CheckRpcSendFailure(stub);
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto channel1 = BuildChannel("round_robin", args);
+  auto stub1 = BuildStub(channel1);
+  std::vector<int> ports = GetServersPorts();
+  SetNextResolution(ports);
+  // Create a channel with health checking enabled but inhibited.
+  args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
+  auto channel2 = BuildChannel("round_robin", args);
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  // First channel should not become READY, because health checks should be
+  // failing.
+  EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
+  CheckRpcSendFailure(stub1);
+  // Second channel should be READY.
+  EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
 }
 
 }  // namespace
