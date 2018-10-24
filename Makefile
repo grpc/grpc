@@ -1343,7 +1343,6 @@ h2_sockpair_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_nosec_test
 h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
 h2_sockpair_1byte_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
 h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
-inproc_nosec_test: $(BINDIR)/$(CONFIG)/inproc_nosec_test
 resolver_component_test_unsecure: $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure
 resolver_component_test: $(BINDIR)/$(CONFIG)/resolver_component_test
 resolver_component_tests_runner_invoker_unsecure: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure
@@ -1602,7 +1601,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_nosec_test \
-  $(BINDIR)/$(CONFIG)/inproc_nosec_test \
   $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry \
   $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry \
@@ -23989,26 +23987,6 @@ deps_h2_uds_nosec_test: $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_DEPS),true)
 -include $(H2_UDS_NOSEC_TEST_OBJS:.o=.dep)
-endif
-
-
-INPROC_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/inproc.cc \
-
-INPROC_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_NOSEC_TEST_SRC))))
-
-
-$(BINDIR)/$(CONFIG)/inproc_nosec_test: $(INPROC_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(INPROC_NOSEC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/inproc_nosec_test
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/inproc.o:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_inproc_nosec_test: $(INPROC_NOSEC_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_DEPS),true)
--include $(INPROC_NOSEC_TEST_OBJS:.o=.dep)
 endif
 
 

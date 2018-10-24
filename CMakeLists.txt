@@ -488,7 +488,6 @@ add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
-add_dependencies(buildtests_c inproc_nosec_test)
 add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
@@ -17595,42 +17594,6 @@ target_link_libraries(h2_uds_nosec_test
   endif()
 
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(inproc_nosec_test
-  test/core/end2end/fixtures/inproc.cc
-)
-
-
-target_include_directories(inproc_nosec_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(inproc_nosec_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_nosec_tests
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(inproc_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(inproc_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
