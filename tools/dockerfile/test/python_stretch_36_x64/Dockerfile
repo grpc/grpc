@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:stretch
-
+  
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -62,11 +62,11 @@ RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.
 RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
 
 
-RUN apt-get update && apt-get -t testing install -y python3.6 python3-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
-
-
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
+
+
+RUN apt-get update && apt-get -t testing install -y python3.6 python3-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6

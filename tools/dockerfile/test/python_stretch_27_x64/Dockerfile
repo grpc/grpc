@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:stretch
-
+  
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -57,8 +57,13 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
+# Add Debian 'testing' repository
+RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
+
 
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
+
