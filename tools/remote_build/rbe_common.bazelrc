@@ -56,6 +56,9 @@ build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
 #build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 #build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
+# TODO(jtattermusch): align msan settings from tools/bazel.rc
+# and grpc_msan_on_foundry.sh
+
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:tsan --copt=-gmlt
