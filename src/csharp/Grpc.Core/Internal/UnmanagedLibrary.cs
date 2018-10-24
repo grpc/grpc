@@ -70,7 +70,7 @@ namespace Grpc.Core.Internal
             if (PlatformApis.IsWindows)
             {
                 // See http://stackoverflow.com/questions/10473310 for background on this.
-                if (PlatformApis.Is64Bit)
+                if (PlatformApis.Is64Bit || (PlatformApis.IsWindows && PlatformApis.IsArm))
                 {
                     return Windows.GetProcAddress(this.handle, symbolName);
                 }

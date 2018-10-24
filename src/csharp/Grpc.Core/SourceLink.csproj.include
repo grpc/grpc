@@ -2,9 +2,9 @@
 <Project>
 
   <ItemGroup Label="dotnet pack instructions">
-    <Content Include="$(OutputPath)netstandard1.5\$(PackageId).pdb">
+    <Content Include="$(OutputPath)netstandard2.0\$(PackageId).pdb">
       <Pack>true</Pack>
-      <PackagePath>lib/netstandard1.5</PackagePath>
+      <PackagePath>lib/netstandard2.0</PackagePath>
     </Content>
     <Content Include="$(OutputPath)net45\$(PackageId).pdb">
       <Pack>true</Pack>

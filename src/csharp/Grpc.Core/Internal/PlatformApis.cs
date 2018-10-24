@@ -163,6 +163,20 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Gets a value indicating whether the current architecture is arm based.
+        /// </summary>
+        public static bool IsArm
+        {
+            get
+            {
+                PortableExecutableKinds peKind;
+                ImageFileMachine machine;
+                typeof(object).Module.GetPEKind(out peKind, out machine);
+                return machine == ImageFileMachine.ARM;
+            }
+        }
+
+        /// <summary>
         /// Returns <c>UnityEngine.Application.platform</c> as a string.
         /// See https://docs.unity3d.com/ScriptReference/Application-platform.html for possible values.
         /// Value is obtained via reflection to avoid compile-time dependency on Unity.
