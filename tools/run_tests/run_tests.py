@@ -762,7 +762,7 @@ class PythonLanguage(object):
         if self.args.compiler in [
                 'python2.7', 'python3.5', 'python3.6', 'python3.7'
         ]:
-            return 'stretch_%s' % re.sub(r'\D*', '', self.args.compiler)
+            return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
