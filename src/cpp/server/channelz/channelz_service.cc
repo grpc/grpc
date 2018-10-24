@@ -20,6 +20,9 @@
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
+#include <google/protobuf/text_format.h>
+#include <google/protobuf/util/json_util.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
@@ -30,14 +33,13 @@ Status ChannelzService::GetTopChannels(
     channelz::v1::GetTopChannelsResponse* response) {
   char* json_str = grpc_channelz_get_top_channels(request->start_channel_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::INTERNAL,
-                  "grpc_channelz_get_top_channels returned null");
+    return Status(INTERNAL, "grpc_channelz_get_top_channels returned null");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
@@ -47,14 +49,13 @@ Status ChannelzService::GetServers(
     channelz::v1::GetServersResponse* response) {
   char* json_str = grpc_channelz_get_servers(request->start_server_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::INTERNAL,
-                  "grpc_channelz_get_servers returned null");
+    return Status(INTERNAL, "grpc_channelz_get_servers returned null");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
@@ -65,14 +66,13 @@ Status ChannelzService::GetServerSockets(
   char* json_str = grpc_channelz_get_server_sockets(request->server_id(),
                                                     request->start_socket_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::INTERNAL,
-                  "grpc_channelz_get_server_sockets returned null");
+    return Status(INTERNAL, "grpc_channelz_get_server_sockets returned null");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
@@ -82,13 +82,13 @@ Status ChannelzService::GetChannel(
     channelz::v1::GetChannelResponse* response) {
   char* json_str = grpc_channelz_get_channel(request->channel_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::NOT_FOUND, "No object found for that ChannelId");
+    return Status(NOT_FOUND, "No object found for that ChannelId");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
@@ -98,14 +98,13 @@ Status ChannelzService::GetSubchannel(
     channelz::v1::GetSubchannelResponse* response) {
   char* json_str = grpc_channelz_get_subchannel(request->subchannel_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::NOT_FOUND,
-                  "No object found for that SubchannelId");
+    return Status(NOT_FOUND, "No object found for that SubchannelId");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
@@ -115,13 +114,13 @@ Status ChannelzService::GetSocket(ServerContext* unused,
                                   channelz::v1::GetSocketResponse* response) {
   char* json_str = grpc_channelz_get_socket(request->socket_id());
   if (json_str == nullptr) {
-    return Status(StatusCode::NOT_FOUND, "No object found for that SocketId");
+    return Status(NOT_FOUND, "No object found for that SocketId");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+  google::protobuf::util::Status s =
+      google::protobuf::util::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
-  if (!s.ok()) {
-    return Status(StatusCode::INTERNAL, s.ToString());
+  if (s != google::protobuf::util::Status::OK) {
+    return Status(INTERNAL, s.ToString());
   }
   return Status::OK;
 }
