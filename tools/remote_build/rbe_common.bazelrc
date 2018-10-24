@@ -42,3 +42,16 @@ build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 build --define GRPC_PORT_ISOLATED_RUNTIME=1
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
+
+# address sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:asan --copt=-gmlt
+# TODO(jtattermusch): use more reasonable test timeout
+build:asan --test_timeout=3600
+build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
+# TODO: revisit these from bazel.rc:
+#build:asan --copt=-O0
+#build:asan --copt=-fno-omit-frame-pointer
+#build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
+#build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
+#build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
