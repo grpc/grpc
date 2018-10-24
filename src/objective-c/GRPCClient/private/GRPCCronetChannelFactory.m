@@ -53,14 +53,14 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (nullable grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(nullable NSDictionary *)args {
+                                     channelArgs:(NSDictionary *)args {
   // Remove client authority filter since that is not supported
   args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
 
-  grpc_channel_args *channelArgs = BuildChannelArgs(args);
+  grpc_channel_args *channelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
-  FreeChannelArgs(channelArgs);
+  GRPCFreeChannelArgs(channelArgs);
   return unmanagedChannel;
 }
 

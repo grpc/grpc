@@ -18,6 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "../GRPCCallOptions.h"
+
 @interface GRPCCallOptions ()
 
 /**
