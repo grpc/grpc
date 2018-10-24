@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
+export LANG=en_US.UTF-8
 
-cmake/build/qps_json_driver "$@"
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-if [ "$BQ_RESULT_TABLE" != "" ]
-then
-  tools/run_tests/performance/bq_upload_result.py --bq_result_table="$BQ_RESULT_TABLE"
-fi
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+source tools/internal_ci/helper_scripts/prepare_build_grpclb_interop_rc
+
+tools/run_tests/run_grpclb_interop_tests.py -l all --scenarios_file=tools/run_tests/generated/lb_interop_test_scenarios.json

@@ -82,6 +82,10 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
+static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+  GPR_ASSERT(request == nullptr);
+}
+
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name) {
   grpc_core::ResolverFactory* factory =
@@ -148,6 +152,7 @@ int main(int argc, char** argv) {
   g_combiner = grpc_combiner_create();
   grpc_set_resolver_impl(&test_resolver);
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
   grpc_channel_args* result = (grpc_channel_args*)1;
 
   {

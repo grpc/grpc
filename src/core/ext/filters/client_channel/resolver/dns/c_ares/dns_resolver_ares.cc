@@ -201,7 +201,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request(pending_request_);
+    grpc_cancel_ares_request_locked(pending_request_);
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
@@ -298,6 +298,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   grpc_channel_args* result = nullptr;
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
+  gpr_free(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->lb_addresses_ != nullptr) {
     static const char* args_to_remove[2];
