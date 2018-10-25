@@ -148,7 +148,7 @@ struct grpc_call {
   gpr_arena* arena;
   grpc_call_combiner call_combiner;
   grpc_completion_queue* cq;
-  grpc_polling_entity pollent = {};
+  grpc_polling_entity pollent = grpc_polling_entity();
   grpc_channel* channel;
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   /* parent_call* */ gpr_atm parent_call_atm = 0;
@@ -187,7 +187,7 @@ struct grpc_call {
 
   /* Call data useful used for reporting. Only valid after the call has
    * completed */
-  grpc_call_final_info final_info = {};
+  grpc_call_final_info final_info = grpc_call_final_info();
 
   /* Compression algorithm for *incoming* data */
   grpc_message_compression_algorithm incoming_message_compression_algorithm =
@@ -342,7 +342,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     GPR_ASSERT(args->add_initial_metadata_count <
                MAX_SEND_EXTRA_METADATA_COUNT);
-    for (int i = 0; i < args->add_initial_metadata_count; i++) {
+    for (size_t i = 0; i < args->add_initial_metadata_count; i++) {
       call->send_extra_metadata[i].md = args->add_initial_metadata[i];
       if (grpc_slice_eq(GRPC_MDKEY(args->add_initial_metadata[i]),
                         GRPC_MDSTR_PATH)) {
@@ -1679,7 +1679,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->sent_final_op = true;
         GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
-        call->send_extra_metadata[0] = {};
+        call->send_extra_metadata[0] = grpc_linked_mdelem();
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             call->channel, op->data.send_status_from_server.status);
         grpc_error* status_error =
@@ -1692,7 +1692,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
-          call->send_extra_metadata[1] = {};
+          call->send_extra_metadata[1] = grpc_linked_mdelem();
           call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_slice_ref_internal(

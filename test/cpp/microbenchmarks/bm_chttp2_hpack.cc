@@ -778,8 +778,7 @@ static void free_timeout(void* p) { gpr_free(p); }
 // Benchmark the current on_initial_header implementation
 static void OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
-  grpc_chttp2_incoming_metadata_buffer buffer;
-  grpc_chttp2_incoming_metadata_buffer_init(&buffer, (gpr_arena*)user_data);
+  grpc_chttp2_incoming_metadata_buffer buffer((gpr_arena*)user_data);
   bool seen_error = false;
 
   // Below here is the code we actually care about benchmarking
@@ -822,7 +821,6 @@ static void OnInitialHeader(void* user_data, grpc_mdelem md) {
       GPR_ASSERT(0);
     }
   }
-  grpc_chttp2_incoming_metadata_buffer_destroy(&buffer);
 }
 
 // Benchmark timeout handling
