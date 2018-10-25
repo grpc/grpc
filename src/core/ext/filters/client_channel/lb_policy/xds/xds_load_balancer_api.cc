@@ -20,7 +20,7 @@
 
 #include "pb_decode.h"
 #include "pb_encode.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
 
 #include <grpc/support/alloc.h>
 

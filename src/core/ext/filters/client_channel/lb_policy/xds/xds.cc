@@ -75,11 +75,10 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/load_balancer_api.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
@@ -1483,7 +1482,6 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
         xdslb_policy->lb_call_backoff_.Reset();
         xdslb_policy->StartBalancerCallLocked();
       }
-      [[fallthrough]];
       // Fall through.
     case GRPC_CHANNEL_SHUTDOWN:
     done:
@@ -1861,34 +1859,11 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 // Plugin registration
 //
 
-namespace {
-
-// Only add client_load_reporting filter if the grpclb LB policy is used.
-bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
-                                            void* arg) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-      strcmp(channel_arg->value.string, "grpclb") == 0) {
-    return grpc_channel_stack_builder_append_filter(
-        builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
-  }
-  return true;
-}
-
-}  // namespace
-
 void grpc_lb_policy_xds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::XdsFactory>()));
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_client_load_reporting_filter,
-                                   (void*)&xds_client_load_reporting_filter);
 }
 
 void grpc_lb_policy_xds_shutdown() {}

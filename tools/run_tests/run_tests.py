@@ -759,8 +759,10 @@ class PythonLanguage(object):
             self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
     def python_manager_name(self):
-        if self.args.compiler in ['python3.5', 'python3.6']:
-            return 'pyenv'
+        if self.args.compiler in [
+                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+        ]:
+            return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
@@ -1515,7 +1517,7 @@ else:
     lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-    for bad in ['grpc-node', 'objc', 'sanity']:
+    for bad in ['csharp', 'grpc-node', 'objc', 'sanity']:
         if bad in lang_list:
             lang_list.remove(bad)
 
