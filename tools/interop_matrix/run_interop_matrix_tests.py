@@ -38,7 +38,8 @@ import report_utils
 import upload_test_results
 
 _TEST_TIMEOUT_SECONDS = 60
-_PULL_IMAGE_TIMEOUT_SECONDS = 10 * 60
+_PULL_IMAGE_TIMEOUT_SECONDS = 15 * 60
+_MAX_PARALLEL_DOWNLOADS = 6
 _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
@@ -203,8 +204,8 @@ def _pull_images_for_lang(lang, images):
         # First time we use an image with "docker run", it takes time to unpack
         # the image and later this delay would fail our test cases.
         cmdline = [
-            'gcloud docker -- pull %s && docker run --rm=true %s /bin/true' %
-            (image, image)
+            'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true'
+            % (image, image)
         ]
         spec = jobset.JobSpec(
             cmdline=cmdline,
@@ -212,8 +213,10 @@ def _pull_images_for_lang(lang, images):
             timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
             shell=True)
         download_specs.append(spec)
+    # too many image downloads at once tend to get stuck
+    max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)
     num_failures, resultset = jobset.run(
-        download_specs, newline_on_success=True, maxjobs=args.jobs)
+        download_specs, newline_on_success=True, maxjobs=max_pull_jobs)
     if num_failures:
         jobset.message(
             'FAILED', 'Failed to download some images', do_newline=True)
@@ -229,9 +232,10 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
-    # Fine to ignore return value as failure to download will result in test failure
-    # later anyway.
-    _pull_images_for_lang(lang, images)
+    if not _pull_images_for_lang(lang, images):
+        jobset.message(
+            'FAILED', 'Image download failed. Exiting.', do_newline=True)
+        return 1
 
     total_num_failures = 0
     for release, image in images:
