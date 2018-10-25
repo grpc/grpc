@@ -53,8 +53,8 @@ immediately. Pending RPCs may continue running till the application cancels them
 Channels may enter this state either because the application explicitly requested
 a shutdown or if a non-recoverable error has happened during attempts to connect
 communicate . (As of 6/12/2015, there are no known errors (while connecting or
-communicating) that are classified as non-recoverable)
-Channels that enter this state never leave this state.
+communicating) that are classified as non-recoverable.)  Channels that enter this
+state never leave this state.
 
 The following table lists the legal transitions from one state to another and
 corresponding reasons. Empty cells denote disallowed transitions.
