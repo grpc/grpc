@@ -131,7 +131,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/create_default_thread_pool.cc",
     "src/cpp/server/dynamic_thread_pool.cc",
     "src/cpp/server/health/default_health_check_service.cc",
-    "src/cpp/server/health/health.pb.c",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
     "src/cpp/server/server_builder.cc",
@@ -151,7 +150,6 @@ GRPCXX_HDRS = [
     "src/cpp/common/channel_filter.h",
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/health/default_health_check_service.h",
-    "src/cpp/server/health/health.pb.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
 ]
@@ -1040,6 +1038,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/connector.cc",
+        "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
@@ -1062,6 +1061,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
+        "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
@@ -1089,6 +1089,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "health_proto",
     ],
 )
 
@@ -1198,6 +1199,20 @@ grpc_cc_library(
     deps = [
         "gpr_codegen",
     ],
+)
+
+grpc_cc_library(
+    name = "health_proto",
+    srcs = [
+        "src/core/ext/filters/client_channel/health/health.pb.c",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/health/health.pb.h",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c++",
 )
 
 grpc_cc_library(
@@ -1566,11 +1581,14 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
-        "src/core/lib/security/security_connector/alts_security_connector.cc",
+        "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
+        "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
         "src/core/lib/security/security_connector/load_system_roots_linux.cc",
-        "src/core/lib/security/security_connector/local_security_connector.cc",
+        "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/security/security_connector/security_connector.cc",
+        "src/core/lib/security/security_connector/ssl_utils.cc",
+        "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1597,11 +1615,14 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
-        "src/core/lib/security/security_connector/alts_security_connector.h",
+        "src/core/lib/security/security_connector/alts/alts_security_connector.h",
+        "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
         "src/core/lib/security/security_connector/load_system_roots_linux.h",
-        "src/core/lib/security/security_connector/local_security_connector.h",
+        "src/core/lib/security/security_connector/local/local_security_connector.h",
         "src/core/lib/security/security_connector/security_connector.h",
+        "src/core/lib/security/security_connector/ssl_utils.h",
+        "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -1987,6 +2008,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
+        "health_proto",
     ],
 )
 
@@ -1999,6 +2021,7 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
+        "health_proto",
     ],
 )
 
@@ -2201,7 +2224,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/core/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/channel_filter.cc",
         "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",

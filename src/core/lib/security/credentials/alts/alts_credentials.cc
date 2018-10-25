@@ -28,7 +28,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-#include "src/core/lib/security/security_connector/alts_security_connector.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal:8080"

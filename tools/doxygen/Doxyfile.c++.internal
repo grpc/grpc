@@ -1012,6 +1012,8 @@ include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
+src/core/ext/filters/client_channel/health/health.pb.c \
+src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \
@@ -1208,8 +1210,6 @@ src/cpp/server/dynamic_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/health/default_health_check_service.cc \
 src/cpp/server/health/default_health_check_service.h \
-src/cpp/server/health/health.pb.c \
-src/cpp/server/health/health.pb.h \
 src/cpp/server/health/health_check_service.cc \
 src/cpp/server/health/health_check_service_server_builder_option.cc \
 src/cpp/server/insecure_server_credentials.cc \
@@ -1228,8 +1228,11 @@ src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
 third_party/nanopb/pb.h \
+third_party/nanopb/pb_common.c \
 third_party/nanopb/pb_common.h \
+third_party/nanopb/pb_decode.c \
 third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.c \
 third_party/nanopb/pb_encode.h
 
 # This tag can be used to specify the character encoding of the source files

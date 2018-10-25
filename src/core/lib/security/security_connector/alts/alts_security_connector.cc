@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/security_connector/alts_security_connector.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -33,6 +33,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include "src/core/tsi/transport_security.h"
 
 typedef struct {
   grpc_channel_security_connector base;

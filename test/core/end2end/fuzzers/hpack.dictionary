@@ -34,6 +34,7 @@
 "\x1Egrpc.max_request_message_bytes"
 "\x1Fgrpc.max_response_message_bytes"
 "$/grpc.lb.v1.LoadBalancer/BalanceLoad"
+"\x1C/grpc.health.v1.Health/Watch"
 "\x07deflate"
 "\x04gzip"
 "\x0Bstream/gzip"
