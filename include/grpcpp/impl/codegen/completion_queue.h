@@ -199,7 +199,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \param f [in] Function to execute before calling AsyncNext on this queue.
   /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if read a regular event, false otherwise.
+  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// otherwise.
   /// \param deadline [in] How long to block in wait for an event.
   ///
   /// \return The type of event read.
