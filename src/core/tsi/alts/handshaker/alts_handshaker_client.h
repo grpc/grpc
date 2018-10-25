@@ -122,8 +122,8 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * - interested_parties: set of pollsets interested in this connection.
  * - cb: gRPC provided callbacks passed from TSI handshaker.
  * - is_client: a boolean value indicating if the created handshaker client is
- * used at the client side or not. It returns the created ALTS handshaker client
- * on success, and NULL on failure.
+ * used at the client (is_client = true) or server (is_client = false) side. It
+ * returns the created ALTS handshaker client on success, and NULL on failure.
  */
 alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_channel* channel, const char* handshaker_service_url,

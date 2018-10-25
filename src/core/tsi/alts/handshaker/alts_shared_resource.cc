@@ -63,11 +63,11 @@ void grpc_alts_shared_resource_dedicated_start() {
 
 void grpc_alts_shared_resource_dedicated_shutdown() {
   if (g_alts_resource_dedicated.cq != nullptr) {
-    grpc_completion_queue_shutdown(g_alts_resource_dedicated.cq);
-    g_alts_resource_dedicated.thread.Join();
-    grpc_completion_queue_destroy(g_alts_resource_dedicated.cq);
     grpc_pollset_set_del_pollset(g_alts_resource_dedicated.interested_parties,
                                  grpc_cq_pollset(g_alts_resource_dedicated.cq));
+    grpc_completion_queue_shutdown(g_alts_resource_dedicated.cq);
+    g_alts_resource_dedicated.thread.Join();
     grpc_pollset_set_destroy(g_alts_resource_dedicated.interested_parties);
+    grpc_completion_queue_destroy(g_alts_resource_dedicated.cq);
   }
 }
