@@ -21,23 +21,21 @@ set -ex
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
+# Get latest release of bazel
+# TODO(jtattermusch): replace by open-source installation of bazel
 temp_dir=$(mktemp -d)
 ln -f "${KOKORO_GFILE_DIR}/bazel-latest-release" ${temp_dir}/bazel
 chmod 755 "${KOKORO_GFILE_DIR}/bazel-latest-release"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
-chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instance"
-
-# TODO(adelez): implement size for test targets and change test_timeout back
-"${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
+bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   $@ \
