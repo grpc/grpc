@@ -23,4 +23,8 @@ Run from repository root:
 bazel --bazelrc=tools/remote_build/manual.bazelrc test -c opt //test/...
 ```
 
-TODO: add instructions for running sanitizer builds
+Sanitizer runs (asan, msan, tsan, ubsan):
+```
+# manual run of bazel tests remotely on Foundry with given sanitizer
+bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
+```
