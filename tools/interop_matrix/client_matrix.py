@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Dictionaries used for client matrix testing.
+# Defines languages, runtimes and releases for backward compatibility testing
 
 
 def get_github_repo(lang):
@@ -53,8 +53,7 @@ LANG_RUNTIME_MATRIX = {
     'csharp': ['csharp', 'csharpcoreclr'],
 }
 
-# Dictionary of releases per language.  For each language, we need to provide
-# a release tag pointing to the latest build of the branch.
+# Dictionary of known releases for given language.
 LANG_RELEASE_MATRIX = {
     'cxx': [
         {
