@@ -75,10 +75,12 @@ class LoadBalancingPolicy
     grpc_closure* on_complete;
 
     // Callback set by lb policy to be notified of trailing metadata.
+    // The callback is scheduled on grpc_schedule_on_exec_ctx.
     grpc_closure* recv_trailing_metadata_ready;
     // If this is not nullptr, then the client channel will point it to the
     // call's trailing metadata before invoking recv_trailing_metadata_ready.
     // If this is nullptr, then the callback will still be called.
+    // The lb does not have ownership of the metadata.
     grpc_metadata_batch** recv_trailing_metadata;
 
     /// Will be set to the selected subchannel, or nullptr on failure or when
