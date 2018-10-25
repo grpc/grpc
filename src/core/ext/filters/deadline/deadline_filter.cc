@@ -177,16 +177,12 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                           "done scheduling deadline timer");
 }
 
-void grpc_deadline_state_init(grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline) {
-  grpc_deadline_state* deadline_state =
-      static_cast<grpc_deadline_state*>(elem->call_data);
-  deadline_state->timer_state = GRPC_DEADLINE_STATE_INITIAL;
-  deadline_state->call_stack = call_stack;
-  deadline_state->call_combiner = call_combiner;
-  deadline_state->original_recv_trailing_metadata_ready = nullptr;
+grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
+                                         grpc_call_stack* call_stack,
+                                         grpc_call_combiner* call_combiner,
+                                         grpc_millis deadline)
+    : call_stack(call_stack),
+      call_combiner(call_combiner) {
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
@@ -209,10 +205,22 @@ void grpc_deadline_state_init(grpc_call_element* elem,
   }
 }
 
+grpc_deadline_state::~grpc_deadline_state() {
+  cancel_timer_if_needed(this);
+}
+
+void grpc_deadline_state_init(grpc_call_element* elem,
+                              grpc_call_stack* call_stack,
+                              grpc_call_combiner* call_combiner,
+                              grpc_millis deadline) {
+  new (elem->call_data)
+      grpc_deadline_state(elem, call_stack, call_combiner, deadline);
+}
+
 void grpc_deadline_state_destroy(grpc_call_element* elem) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
-  cancel_timer_if_needed(deadline_state);
+  deadline_state->~grpc_deadline_state();
 }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
@@ -272,8 +280,8 @@ typedef struct server_call_data {
 // Constructor for call_data.  Used for both client and server filters.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
-                           args->deadline);
+  grpc_deadline_state_init(
+      elem, args->call_stack, args->call_combiner, args->deadline);
   return GRPC_ERROR_NONE;
 }
 

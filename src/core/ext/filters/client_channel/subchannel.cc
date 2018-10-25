@@ -162,12 +162,16 @@ struct grpc_subchannel {
 };
 
 struct grpc_subchannel_call {
+  grpc_subchannel_call(grpc_core::ConnectedSubchannel* connection,
+                       const grpc_core::ConnectedSubchannel::CallArgs& args)
+      : connection(connection), deadline(args.deadline) {}
+
   grpc_core::ConnectedSubchannel* connection;
-  grpc_closure* schedule_closure_after_destroy;
+  grpc_closure* schedule_closure_after_destroy = nullptr;
   // state needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata;
-  grpc_metadata_batch* recv_trailing_metadata;
+  grpc_metadata_batch* recv_trailing_metadata = nullptr;
   grpc_millis deadline;
 };
 
@@ -905,6 +909,7 @@ static void subchannel_call_destroy(void* call, grpc_error* error) {
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
   connection->Unref(DEBUG_LOCATION, "subchannel_call");
+  c->~grpc_subchannel_call();
 }
 
 void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
@@ -1102,17 +1107,13 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   const size_t allocation_size =
       GetInitialCallSizeEstimate(args.parent_data_size);
-  *call = static_cast<grpc_subchannel_call*>(
-      gpr_arena_alloc(args.arena, allocation_size));
+  *call = new (gpr_arena_alloc(args.arena, allocation_size))
+      grpc_subchannel_call(this, args);
+
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
-  (*call)->connection = this;
-  (*call)->deadline = args.deadline;
-  (*call)->schedule_closure_after_destroy = nullptr;
-  (*call)->original_recv_trailing_metadata = nullptr;
-  (*call)->recv_trailing_metadata = nullptr;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */

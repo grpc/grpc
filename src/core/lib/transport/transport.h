@@ -121,7 +121,16 @@ typedef struct grpc_transport_stream_op_batch_payload
 
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
-typedef struct grpc_transport_stream_op_batch {
+struct grpc_transport_stream_op_batch {
+  grpc_transport_stream_op_batch()
+      : send_initial_metadata(false),
+        send_trailing_metadata(false),
+        send_message(false),
+        recv_initial_metadata(false),
+        recv_message(false),
+        recv_trailing_metadata(false),
+        cancel_stream(false) {}
+
   /** Should be scheduled when all of the non-recv operations in the batch
       are complete.
 
@@ -131,10 +140,10 @@ typedef struct grpc_transport_stream_op_batch {
       scheduled as soon as the non-recv ops are complete, regardless of
       whether or not the recv ops are complete.  If a batch contains
       only recv ops, on_complete can be null. */
-  grpc_closure* on_complete;
+  grpc_closure* on_complete = nullptr;
 
   /** Values for the stream op (fields set are determined by flags above) */
-  grpc_transport_stream_op_batch_payload* payload;
+  grpc_transport_stream_op_batch_payload* payload = nullptr;
 
   /** Send initial metadata to the peer, from the provided metadata batch. */
   bool send_initial_metadata : 1;
@@ -163,7 +172,7 @@ typedef struct grpc_transport_stream_op_batch {
    * current handler of the op */
 
   grpc_handler_private_op_data handler_private;
-} grpc_transport_stream_op_batch;
+};
 
 struct grpc_transport_stream_op_batch_payload {
   struct {
