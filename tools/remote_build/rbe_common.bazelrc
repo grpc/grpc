@@ -82,3 +82,7 @@ build:ubsan --test_timeout=3600
 #build:ubsan --copt=-fno-sanitize=function,vptr
 # TODO: revisit this from grpc_ubsan_on_foundry.sh:
 #--crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.0/bazel_0.15.0/ubsan:toolchain
+# TODO(jtattermusch): remove this once Foundry adds the env to the docker image.
+# ubsan needs symbolizer to work properly, otherwise the suppression file doesn't work
+# and we get test failures.
+build:ubsan --action_env=UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
