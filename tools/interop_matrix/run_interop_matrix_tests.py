@@ -203,9 +203,10 @@ def _pull_images_for_lang(lang, images):
         # First time we use an image with "docker run", it takes time to unpack
         # the image and later this delay would fail our test cases.
         cmdline = [
-            'gcloud docker -- pull %s && docker run --rm=true %s /bin/true' %
+            'time gcloud docker -- pull %s && time docker run --rm=true %s /bin/true' %
             (image, image)
         ]
+        print(cmdline)
         spec = jobset.JobSpec(
             cmdline=cmdline,
             shortname='pull_image_%s' % (image),
