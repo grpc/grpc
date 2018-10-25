@@ -213,14 +213,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       EchoResponse* response = nullptr, int timeout_ms = 1000,
-      Status* result = nullptr, bool wait_for_ready = false) {
+      Status* result = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
-    if (wait_for_ready) context.set_wait_for_ready(true);
     Status status = stub->Echo(&context, request, response);
     if (result != nullptr) *result = status;
     if (local_response) delete response;
@@ -229,11 +228,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void CheckRpcSendOk(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      const grpc_core::DebugLocation& location, bool wait_for_ready = false) {
+      const grpc_core::DebugLocation& location) {
     EchoResponse response;
     Status status;
-    const bool success =
-        SendRpc(stub, &response, 2000, &status, wait_for_ready);
+    const bool success = SendRpc(stub, &response, 2000, &status);
     ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
                          << "\n"
                          << "Error: " << status.error_message() << " "
@@ -308,7 +306,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       if (ignore_failure) {
         SendRpc(stub);
       } else {
-        CheckRpcSendOk(stub, location, true);
+        CheckRpcSendOk(stub, location);
       }
     } while (servers_[server_idx]->service_.request_count() == 0);
     ResetCounters();
@@ -520,7 +518,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   do {
     channel_state = channel->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
-  ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
   servers_[0]->service_.ResetCounters();
 
   // Next update introduces servers_[1], making the channel recover.
@@ -837,7 +835,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   do {
     channel_state = channel->GetState(true /* try to connect */);
   } while (channel_state == GRPC_CHANNEL_READY);
-  ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
   servers_[0]->service_.ResetCounters();
 
   // Next update introduces servers_[1], making the channel recover.
@@ -846,7 +844,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   channel_state = channel->GetState(false /* try to connect */);
-  ASSERT_EQ(channel_state, GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state == GRPC_CHANNEL_READY);
 
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
@@ -956,7 +954,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     if (SendRpc(stub)) break;
     now = gpr_now(GPR_CLOCK_MONOTONIC);
   }
-  ASSERT_GT(gpr_time_cmp(deadline, now), 0);
+  GPR_ASSERT(gpr_time_cmp(deadline, now) > 0);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
