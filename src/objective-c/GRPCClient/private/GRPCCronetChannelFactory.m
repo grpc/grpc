@@ -52,8 +52,8 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary * _Nullable)args {
+- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *_Nullable)args {
   grpc_channel_args *channelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
@@ -77,8 +77,8 @@ NS_ASSUME_NONNULL_BEGIN
   return nil;
 }
 
-- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary * _Nullable)args {
+- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *_Nullable)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return NULL;

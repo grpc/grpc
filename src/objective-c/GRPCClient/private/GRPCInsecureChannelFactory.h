@@ -25,8 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (instancetype _Nullable)sharedInstance;
 
-- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary * _Nullable)args;
+- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *_Nullable)args;
 
 - (instancetype _Nullable)init NS_UNAVAILABLE;
 

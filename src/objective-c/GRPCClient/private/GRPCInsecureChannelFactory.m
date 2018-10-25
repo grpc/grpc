@@ -34,8 +34,8 @@ NS_ASSUME_NONNULL_BEGIN
   return instance;
 }
 
-- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary * _Nullable)args {
+- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *_Nullable)args {
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
   grpc_channel *unmanagedChannel =
       grpc_insecure_channel_create(host.UTF8String, coreChannelArgs, NULL);

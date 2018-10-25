@@ -29,17 +29,17 @@ NS_ASSUME_NONNULL_BEGIN
   grpc_channel_credentials *_channelCreds;
 }
 
-+ (instancetype _Nullable)factoryWithPEMRootCertificates:(NSString * _Nullable)rootCerts
-                                             privateKey:(NSString * _Nullable)privateKey
-                                              certChain:(NSString * _Nullable)certChain
-                                                  error:(NSError **)errorPtr {
++ (instancetype _Nullable)factoryWithPEMRootCertificates:(NSString *_Nullable)rootCerts
+                                              privateKey:(NSString *_Nullable)privateKey
+                                               certChain:(NSString *_Nullable)certChain
+                                                   error:(NSError **)errorPtr {
   return [[self alloc] initWithPEMRootCerts:rootCerts
                                  privateKey:privateKey
                                   certChain:certChain
                                       error:errorPtr];
 }
 
-- (NSData * _Nullable)nullTerminatedDataWithString:(NSString * _Nullable)string {
+- (NSData *_Nullable)nullTerminatedDataWithString:(NSString *_Nullable)string {
   // dataUsingEncoding: does not return a null-terminated string.
   NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
   if (data == nil) {
@@ -50,10 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
   return nullTerminated;
 }
 
-- (instancetype _Nullable)initWithPEMRootCerts:(NSString * _Nullable)rootCerts
-                                   privateKey:(NSString * _Nullable)privateKey
-                                    certChain:(NSString * _Nullable)certChain
-                                        error:(NSError **)errorPtr {
+- (instancetype _Nullable)initWithPEMRootCerts:(NSString *_Nullable)rootCerts
+                                    privateKey:(NSString *_Nullable)privateKey
+                                     certChain:(NSString *_Nullable)certChain
+                                         error:(NSError **)errorPtr {
   static NSData *defaultRootsASCII;
   static NSError *defaultRootsError;
   static dispatch_once_t loading;
@@ -116,8 +116,8 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-- (grpc_channel * _Nullable)createChannelWithHost:(NSString *)host
-                                      channelArgs:(NSDictionary * _Nullable)args {
+- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *_Nullable)args {
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
   grpc_channel *unmanagedChannel =
       grpc_secure_channel_create(_channelCreds, host.UTF8String, coreChannelArgs, NULL);
