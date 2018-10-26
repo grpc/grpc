@@ -478,7 +478,8 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
 
 static void init_transport(grpc_chttp2_transport* t,
                            const grpc_channel_args* channel_args,
-                           grpc_endpoint* ep, bool is_client) {
+                           grpc_endpoint* ep, bool is_client,
+                           grpc_resource_user* resource_user) {
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -491,6 +492,7 @@ static void init_transport(grpc_chttp2_transport* t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
+  t->resource_user = resource_user;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -778,6 +780,10 @@ static void destroy_stream_locked(void* sp, grpc_error* error) {
 
   s->flow_control.Destroy();
 
+  if (t->resource_user != nullptr) {
+    grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
+  }
+
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
 
   GRPC_CLOSURE_SCHED(s->destroy_stream_arg, GRPC_ERROR_NONE);
@@ -816,7 +822,21 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   if (t->channel_callback.accept_stream == nullptr) {
     return nullptr;
   }
-  grpc_chttp2_stream* accepting;
+  // Don't accept the stream if memory quota doesn't allow. Note that we should
+  // simply refuse the stream here instead of canceling the stream after it's
+  // accepted since the latter will create the call which costs much memory.
+  if (t->resource_user != nullptr &&
+      !grpc_resource_user_safe_alloc(t->resource_user,
+                                     GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
+    gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
+    grpc_slice_buffer_add(
+        &t->qbuf,
+        grpc_chttp2_rst_stream_create(
+            id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr));
+    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+    return nullptr;
+  }
+  grpc_chttp2_stream* accepting = nullptr;
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->channel_callback.accept_stream(t->channel_callback.accept_stream_user_data,
@@ -3185,10 +3205,11 @@ intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
 }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
+    grpc_resource_user* resource_user) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(
       gpr_zalloc(sizeof(grpc_chttp2_transport)));
-  init_transport(t, channel_args, ep, is_client);
+  init_transport(t, channel_args, ep, is_client, resource_user);
   return &t->base;
 }
 

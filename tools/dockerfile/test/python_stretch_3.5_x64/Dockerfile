@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:stretch
-
+  
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -53,51 +53,20 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 RUN apt-get update && apt-get install -y python-pip && apt-get clean
 RUN pip install --upgrade google-api-python-client oauth2client
 
-#====================
-# Python dependencies
+# Install Python 2.7
+RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
-
-# Install dependencies for pyenv
-RUN apt-get update && apt-get install -y \
-  libbz2-dev \
-  libncurses5-dev \
-  libncursesw5-dev \
-  libreadline-dev \
-  libsqlite3-dev \
-  libssl-dev \
-  llvm \
-  mercurial \
-  zlib1g-dev && apt-get clean
-
-# Install Pyenv and dev Python versions 3.{5,6,7}
-RUN curl -L https://raw.githubusercontent.com/yyuu/pyenv-installer/master/bin/pyenv-installer | bash
-ENV PATH /root/.pyenv/bin:$PATH
-RUN eval "$(pyenv init -)"
-RUN eval "$(pyenv virtualenv-init -)"
-RUN pyenv update
-RUN pyenv install 3.5-dev
-RUN pyenv install 3.6-dev
-RUN pyenv install 3.7-dev
-RUN pyenv install pypy-5.3.1
-RUN pyenv local 3.5-dev 3.6-dev 3.7-dev pypy-5.3.1
-
-# Install pip and virtualenv for Python 3.5
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
-RUN python3.5 -m pip install virtualenv
+# Add Debian 'testing' repository
+RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
 
 
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
+
+
+RUN apt-get update && apt-get install -y python3.5 python3-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5

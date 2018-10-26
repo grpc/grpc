@@ -1189,7 +1189,6 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    gpr_log(GPR_ERROR, "finalizing result");
     if (done_intercepting_) {
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were

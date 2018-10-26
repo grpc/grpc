@@ -92,6 +92,7 @@ END2END_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
     ),
     "inproc": _fixture_options(
+        secure = True,
         fullstack = False,
         dns_resolver = False,
         name_resolution = False,
@@ -99,6 +100,55 @@ END2END_FIXTURES = {
         is_http2 = False,
         supports_write_buffering = False,
         client_channel = False,
+    ),
+}
+
+# maps fixture name to whether it requires the security library
+END2END_NOSEC_FIXTURES = {
+    "h2_compress": _fixture_options(secure = False),
+    "h2_census": _fixture_options(secure = False),
+    # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
+    # decided how the load reporting service should be enabled.
+    #'h2_load_reporting': _fixture_options(),
+    "h2_fakesec": _fixture_options(),
+    "h2_fd": _fixture_options(
+        dns_resolver = False,
+        fullstack = False,
+        client_channel = False,
+        secure = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_full": _fixture_options(secure = False),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"]),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True),
+    "h2_full+workarounds": _fixture_options(secure = False),
+    "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
+    "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
+    "h2_sockpair_1byte": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        secure = False,
+    ),
+    "h2_sockpair": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        secure = False,
+    ),
+    "h2_sockpair+trace": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        tracing = True,
+        secure = False,
+        client_channel = False,
+    ),
+    "h2_ssl": _fixture_options(secure = False),
+    "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
+    "h2_uds": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+        secure = False,
     ),
 }
 
@@ -353,6 +403,60 @@ def grpc_end2end_tests():
                     srcs = ["end2end_test.sh"],
                     args = [
                         "$(location %s_test)" % f,
+                        t,
+                        poller,
+                    ],
+                )
+
+def grpc_end2end_nosec_tests():
+    grpc_cc_library(
+        name = "end2end_nosec_tests",
+        srcs = ["end2end_nosec_tests.cc", "end2end_test_utils.cc"] + [
+            "tests/%s.cc" % t
+            for t in sorted(END2END_TESTS.keys())
+            if not END2END_TESTS[t].secure
+        ],
+        hdrs = [
+            "tests/cancel_test_helpers.h",
+            "end2end_tests.h",
+        ],
+        language = "C++",
+        deps = [
+            ":cq_verifier",
+            ":ssl_test_data",
+            ":http_proxy",
+            ":proxy",
+        ],
+    )
+
+    for f, fopt in END2END_NOSEC_FIXTURES.items():
+        if fopt.secure:
+            continue
+        grpc_cc_binary(
+            name = "%s_nosec_test" % f,
+            srcs = ["fixtures/%s.cc" % f],
+            language = "C++",
+            deps = [
+                ":end2end_nosec_tests",
+                "//test/core/util:grpc_test_util_unsecure",
+                "//:grpc_unsecure",
+                "//test/core/util:gpr_test_util",
+                "//:gpr",
+            ],
+        )
+        for t, topt in END2END_TESTS.items():
+            #print(_compatible(fopt, topt), f, t, fopt, topt)
+            if not _compatible(fopt, topt):
+                continue
+            if topt.secure:
+                continue
+            for poller in POLLERS:
+                native.sh_test(
+                    name = "%s_nosec_test@%s@poller=%s" % (f, t, poller),
+                    data = [":%s_nosec_test" % f],
+                    srcs = ["end2end_test.sh"],
+                    args = [
+                        "$(location %s_nosec_test)" % f,
                         t,
                         poller,
                     ],

@@ -40,8 +40,10 @@ namespace grpc {
 class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp()
-      : has_tag_(false),
+  // must ref the call before calling constructor and after deleting this
+  CompletionOp(internal::Call* call)
+      : call_(*call),
+        has_tag_(false),
         tag_(nullptr),
         refs_(2),
         finalized_(false),
@@ -55,6 +57,21 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   }
 
   void FillOps(internal::Call* call) override;
+
+  // This should always be arena allocated in the call, so override delete.
+  // But this class is not trivially destructible, so must actually call delete
+  // before allowing the arena to be freed
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CompletionOp));
+  }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -92,7 +109,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
       std::unique_lock<std::mutex> lock(mu_);
       if (--refs_ == 0) {
         lock.unlock();
+        grpc_call* call = call_.call();
         delete this;
+        grpc_call_unref(call);
       }
       return;
     }
@@ -108,6 +127,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
+  internal::Call call_;
   bool has_tag_;
   void* tag_;
   std::mutex mu_;
@@ -115,7 +135,6 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   bool finalized_;
   int cancelled_;
   bool done_intercepting_;
-  internal::Call call_;
   internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
 
@@ -123,7 +142,9 @@ void ServerContext::CompletionOp::Unref() {
   std::unique_lock<std::mutex> lock(mu_);
   if (--refs_ == 0) {
     lock.unlock();
+    grpc_call* call = call_.call();
     delete this;
+    grpc_call_unref(call);
   }
 }
 
@@ -133,7 +154,6 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   ops.data.recv_close_on_server.cancelled = &cancelled_;
   ops.flags = 0;
   ops.reserved = nullptr;
-  call_ = *call;
   interceptor_methods_.SetCall(&call_);
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
@@ -153,7 +173,9 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
     }
     if (--refs_ == 0) {
       lock.unlock();
+      grpc_call* call = call_.call();
       delete this;
+      grpc_call_unref(call);
     }
     return ret;
   }
@@ -175,7 +197,9 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
     lock.lock();
     if (--refs_ == 0) {
       lock.unlock();
+      grpc_call* call = call_.call();
       delete this;
+      grpc_call_unref(call);
     }
     return ret;
   }
@@ -226,7 +250,10 @@ void ServerContext::BeginCompletionOp(internal::Call* call) {
   if (rpc_info_) {
     rpc_info_->Ref();
   }
-  completion_op_ = new CompletionOp();
+  grpc_call_ref(call->call());
+  completion_op_ =
+      new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
+          CompletionOp(call);
   if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }

@@ -102,8 +102,8 @@ class SubchannelData {
   // ProcessConnectivityChangeLocked()).
   grpc_connectivity_state CheckConnectivityStateLocked(grpc_error** error) {
     GPR_ASSERT(!connectivity_notification_pending_);
-    pending_connectivity_state_unsafe_ =
-        grpc_subchannel_check_connectivity(subchannel(), error);
+    pending_connectivity_state_unsafe_ = grpc_subchannel_check_connectivity(
+        subchannel(), error, subchannel_list_->inhibit_health_checking());
     UpdateConnectedSubchannelLocked();
     return pending_connectivity_state_unsafe_;
   }
@@ -216,6 +216,7 @@ class SubchannelList
   // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
   TraceFlag* tracer() const { return tracer_; }
+  bool inhibit_health_checking() const { return inhibit_health_checking_; }
 
   // Resets connection backoff of all subchannels.
   // TODO(roth): We will probably need to rethink this as part of moving
@@ -253,6 +254,8 @@ class SubchannelList
   LoadBalancingPolicy* policy_;
 
   TraceFlag* tracer_;
+
+  bool inhibit_health_checking_;
 
   grpc_combiner* combiner_;
 
@@ -340,7 +343,8 @@ void SubchannelData<SubchannelListType,
   subchannel_list()->Ref(DEBUG_LOCATION, "connectivity_watch").release();
   grpc_subchannel_notify_on_state_change(
       subchannel_, subchannel_list_->policy()->interested_parties(),
-      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_);
+      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_,
+      subchannel_list_->inhibit_health_checking());
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -359,7 +363,8 @@ void SubchannelData<SubchannelListType,
   GPR_ASSERT(connectivity_notification_pending_);
   grpc_subchannel_notify_on_state_change(
       subchannel_, subchannel_list_->policy()->interested_parties(),
-      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_);
+      &pending_connectivity_state_unsafe_, &connectivity_changed_closure_,
+      subchannel_list_->inhibit_health_checking());
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -390,8 +395,9 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
             subchannel_, reason);
   }
   GPR_ASSERT(connectivity_notification_pending_);
-  grpc_subchannel_notify_on_state_change(subchannel_, nullptr, nullptr,
-                                         &connectivity_changed_closure_);
+  grpc_subchannel_notify_on_state_change(
+      subchannel_, nullptr, nullptr, &connectivity_changed_closure_,
+      subchannel_list_->inhibit_health_checking());
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -499,8 +505,13 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
   subchannels_.reserve(addresses->num_addresses);
   // We need to remove the LB addresses in order to be able to compare the
   // subchannel keys of subchannels from a different batch of addresses.
+  // We also remove the inhibit-health-checking arg, since we are
+  // handling that here.
+  inhibit_health_checking_ = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
   static const char* keys_to_remove[] = {GRPC_ARG_SUBCHANNEL_ADDRESS,
-                                         GRPC_ARG_LB_ADDRESSES};
+                                         GRPC_ARG_LB_ADDRESSES,
+                                         GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
   grpc_subchannel_args sc_args;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
