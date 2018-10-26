@@ -43,6 +43,7 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "test/core/util/test_config.h"
 
+using grpc_core::internal::grpc_flush_cached_google_default_credentials;
 using grpc_core::internal::set_gce_tenancy_checker_for_testing;
 
 /* -- Mock channel credentials. -- */

@@ -255,9 +255,6 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
   g_gce_tenancy_checker = checker;
 }
 
-}  // namespace internal
-}  // namespace grpc_core
-
 void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
@@ -265,6 +262,9 @@ void grpc_flush_cached_google_default_credentials(void) {
   g_compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
 }
+
+}  // namespace internal
+}  // namespace grpc_core
 
 /* -- Well known credentials path. -- */
 
