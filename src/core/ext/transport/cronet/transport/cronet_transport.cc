@@ -112,7 +112,9 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
    http://www.catb.org/esr/structure-packing/#_structure_reordering: */
 struct read_state {
   read_state(gpr_arena* arena)
-      : trailing_metadata(arena), initial_metadata(arena) {}
+      : trailing_metadata(arena), initial_metadata(arena) {
+    grpc_slice_buffer_init(&read_slice_buffer);
+  }
 
   /* vars to store data coming from server */
   char* read_buffer = nullptr;
@@ -127,7 +129,7 @@ struct read_state {
 
   /* vars for holding data destined for the application */
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
-  grpc_slice_buffer read_slice_buffer = {};
+  grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
   grpc_chttp2_incoming_metadata_buffer trailing_metadata;
@@ -168,7 +170,7 @@ struct op_state {
 struct op_and_state {
   op_and_state(gpr_arena* arena) : state(arena) {}
 
-  grpc_transport_stream_op_batch op = {};
+  grpc_transport_stream_op_batch op = grpc_transport_stream_op_batch();
   struct op_state state;
   bool done = false;
   struct stream_obj* s = nullptr; /* Pointer back to the stream object */
@@ -191,14 +193,15 @@ struct stream_obj {
   grpc_cronet_transport* curr_ct;
   grpc_stream* curr_gs;
   bidirectional_stream* cbs = nullptr;
-  bidirectional_stream_header_array header_array = {};
+  bidirectional_stream_header_array header_array =
+      bidirectional_stream_header_array();
 
   /* Stream level state. Some state will be tracked both at stream and stream_op
    * level */
   struct op_state state;
 
   /* OP storage */
-  struct op_storage storage = {};
+  struct op_storage storage = op_storage();
 
   /* Mutex to protect storage */
   gpr_mu mu;

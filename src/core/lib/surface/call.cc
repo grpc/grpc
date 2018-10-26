@@ -171,7 +171,8 @@ struct grpc_call {
   gpr_atm received_final_op_atm = 0;
 
   batch_control* active_batches[MAX_CONCURRENT_BATCHES] = {};
-  grpc_transport_stream_op_batch_payload stream_op_payload = {};
+  grpc_transport_stream_op_batch_payload stream_op_payload =
+      grpc_transport_stream_op_batch_payload();
 
   /* first idx: is_receiving, second idx: is_trailing */
   grpc_metadata_batch metadata_batch[2][2] = {};

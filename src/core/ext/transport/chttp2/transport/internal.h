@@ -382,7 +382,7 @@ struct grpc_chttp2_transport {
   uint32_t last_new_stream_id = 0;
 
   /** ping queues for various ping insertion points */
-  grpc_chttp2_ping_queue ping_queue = {};
+  grpc_chttp2_ping_queue ping_queue = grpc_chttp2_ping_queue();
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr = 0; /* unique id for pings */
@@ -417,7 +417,8 @@ struct grpc_chttp2_transport {
   int64_t initial_window_update = 0;
 
   /* deframing */
-  grpc_chttp2_deframe_transport_state deframe_state = {};
+  grpc_chttp2_deframe_transport_state deframe_state =
+      grpc_chttp2_deframe_transport_state();
   uint8_t incoming_frame_type = 0;
   uint8_t incoming_frame_flags = 0;
   uint8_t header_eof = 0;
@@ -444,7 +445,7 @@ struct grpc_chttp2_transport {
   grpc_error* close_transport_on_writes_finished = GRPC_ERROR_NONE;
 
   /* a list of closures to run after writes are finished */
-  grpc_closure_list run_after_write = {};
+  grpc_closure_list run_after_write = grpc_closure_list();
 
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */
@@ -534,7 +535,7 @@ struct grpc_chttp2_stream {
   grpc_closure* recv_trailing_metadata_finished = nullptr;
 
   grpc_transport_stream_stats* collecting_stats = nullptr;
-  grpc_transport_stream_stats stats = {};
+  grpc_transport_stream_stats stats = grpc_transport_stream_stats();
 
   /** Is this stream closed for writing. */
   bool write_closed = false;
