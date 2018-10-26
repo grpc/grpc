@@ -559,7 +559,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   EXPECT_EQ("", recv_status.error_message());
 
   // Make sure all 20 dummy interceptors were run
-  // EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
   cq->Shutdown();
@@ -567,6 +567,49 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   bool ignored_ok;
   while (cq->Next(&ignored_tag, &ignored_ok))
     ;
+  grpc_recycle_unused_port(port);
+}
+
+class ServerInterceptorsSyncUnimplementedEnd2endTest : public ::testing::Test {
+};
+
+TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
+  DummyInterceptor::Reset();
+  int port = grpc_pick_unused_port_or_die();
+  string server_address = "localhost:" + std::to_string(port);
+  ServerBuilder builder;
+  TestServiceImpl service;
+  builder.RegisterService(&service);
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      creators;
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  builder.experimental().SetInterceptorCreators(std::move(creators));
+  auto server = builder.BuildAndStart();
+
+  ChannelArguments args;
+  std::shared_ptr<Channel> channel =
+      CreateChannel(server_address, InsecureChannelCredentials());
+  std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
+  stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
+  EchoRequest send_request;
+  EchoResponse recv_response;
+
+  ClientContext cli_ctx;
+  send_request.set_message("Hello");
+  Status recv_status =
+      stub->Unimplemented(&cli_ctx, send_request, &recv_response);
+
+  EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
+  EXPECT_EQ("", recv_status.error_message());
+
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+
+  server->Shutdown();
   grpc_recycle_unused_port(port);
 }
 
