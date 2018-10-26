@@ -132,10 +132,13 @@ class Server::UnimplementedAsyncResponse final
   ~UnimplementedAsyncResponse() { delete request_; }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    internal::CallOpSet<
-        internal::CallOpSendInitialMetadata,
-        internal::CallOpServerSendStatus>::FinalizeResult(tag, status);
-    delete this;
+    if (internal::CallOpSet<
+            internal::CallOpSendInitialMetadata,
+            internal::CallOpServerSendStatus>::FinalizeResult(tag, status)) {
+      delete this;
+    } else {
+      // The tag was swallowed due to interception. We will see it again.
+    }
     return false;
   }
 
@@ -755,7 +758,6 @@ ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
   /* Set up interception state partially for the receive ops. call_wrapper_ is
    * not filled at this point, but it will be filled before the interceptors are
    * run. */
-  gpr_log(GPR_ERROR, "Created base async request");
   interceptor_methods_.SetCall(&call_wrapper_);
   interceptor_methods_.SetReverse();
   call_cq_->RegisterAvalanching();  // This op will trigger more ops
@@ -767,9 +769,7 @@ ServerInterface::BaseAsyncRequest::~BaseAsyncRequest() {
 
 bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
-  gpr_log(GPR_ERROR, "in finalize result");
   if (done_intercepting_) {
-    gpr_log(GPR_ERROR, "done running interceptors");
     *tag = tag_;
     if (delete_on_finalize_) {
       delete this;
@@ -788,7 +788,6 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   stream_->BindCall(&call_wrapper_);
 
   if (*status && call_ && call_wrapper_.server_rpc_info()) {
-    gpr_log(GPR_ERROR, "here");
     done_intercepting_ = true;
     // Set interception point for RECV INITIAL METADATA
     interceptor_methods_.AddInterceptionHookPoint(
@@ -803,7 +802,6 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
       // There were interceptors to be run, so
       // ContinueFinalizeResultAfterInterception will be run when interceptors
       // are done.
-      gpr_log(GPR_ERROR, "don't return this tag");
       return false;
     }
   }
@@ -819,7 +817,6 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
 void ServerInterface::BaseAsyncRequest::
     ContinueFinalizeResultAfterInterception() {
-  gpr_log(GPR_ERROR, "continue finalize result");
   context_->BeginCompletionOp(&call_wrapper_);
   // Queue a tag which will be returned immediately
   grpc_core::ExecCtx exec_ctx;

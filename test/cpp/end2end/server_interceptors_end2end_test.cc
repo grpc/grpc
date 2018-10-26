@@ -425,6 +425,151 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   grpc_recycle_unused_port(port);
 }
 
+TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
+  DummyInterceptor::Reset();
+  int port = grpc_pick_unused_port_or_die();
+  string server_address = "localhost:" + std::to_string(port);
+  ServerBuilder builder;
+  AsyncGenericService service;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterAsyncGenericService(&service);
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      creators;
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  builder.experimental().SetInterceptorCreators(std::move(creators));
+  auto cq = builder.AddCompletionQueue();
+  auto server = builder.BuildAndStart();
+
+  ChannelArguments args;
+  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  GenericStub generic_stub(channel);
+
+  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  GenericServerContext srv_ctx;
+  GenericServerAsyncReaderWriter stream(&srv_ctx);
+
+  // The string needs to be long enough to test heap-based slice.
+  send_request.set_message("Hello");
+  cli_ctx.AddMetadata("testkey", "testvalue");
+
+  std::unique_ptr<GenericClientAsyncReaderWriter> call =
+      generic_stub.PrepareCall(&cli_ctx, kMethodName, cq.get());
+  call->StartCall(tag(1));
+  Verifier().Expect(1, true).Verify(cq.get());
+  std::unique_ptr<ByteBuffer> send_buffer =
+      SerializeToByteBuffer(&send_request);
+  call->Write(*send_buffer, tag(2));
+  // Send ByteBuffer can be destroyed after calling Write.
+  send_buffer.reset();
+  Verifier().Expect(2, true).Verify(cq.get());
+  call->WritesDone(tag(3));
+  Verifier().Expect(3, true).Verify(cq.get());
+
+  service.RequestCall(&srv_ctx, &stream, cq.get(), cq.get(), tag(4));
+
+  Verifier().Expect(4, true).Verify(cq.get());
+  EXPECT_EQ(kMethodName, srv_ctx.method());
+  EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
+  srv_ctx.AddTrailingMetadata("testkey", "testvalue");
+
+  ByteBuffer recv_buffer;
+  stream.Read(&recv_buffer, tag(5));
+  Verifier().Expect(5, true).Verify(cq.get());
+  EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  send_buffer = SerializeToByteBuffer(&send_response);
+  stream.Write(*send_buffer, tag(6));
+  send_buffer.reset();
+  Verifier().Expect(6, true).Verify(cq.get());
+
+  stream.Finish(Status::OK, tag(7));
+  Verifier().Expect(7, true).Verify(cq.get());
+
+  recv_buffer.Clear();
+  call->Read(&recv_buffer, tag(8));
+  Verifier().Expect(8, true).Verify(cq.get());
+  EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
+
+  call->Finish(&recv_status, tag(9));
+  Verifier().Expect(9, true).Verify(cq.get());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
+                            "testvalue"));
+
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+
+  server->Shutdown();
+  cq->Shutdown();
+  void* ignored_tag;
+  bool ignored_ok;
+  while (cq->Next(&ignored_tag, &ignored_ok))
+    ;
+  grpc_recycle_unused_port(port);
+}
+
+TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
+  DummyInterceptor::Reset();
+  int port = grpc_pick_unused_port_or_die();
+  string server_address = "localhost:" + std::to_string(port);
+  ServerBuilder builder;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      creators;
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  builder.experimental().SetInterceptorCreators(std::move(creators));
+  auto cq = builder.AddCompletionQueue();
+  auto server = builder.BuildAndStart();
+
+  ChannelArguments args;
+  std::shared_ptr<Channel> channel =
+      CreateChannel(server_address, InsecureChannelCredentials());
+  std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
+  stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
+  EchoRequest send_request;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  send_request.set_message("Hello");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub->AsyncUnimplemented(&cli_ctx, send_request, cq.get()));
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+  Verifier().Expect(4, true).Verify(cq.get());
+
+  EXPECT_EQ(StatusCode::UNIMPLEMENTED, recv_status.error_code());
+  EXPECT_EQ("", recv_status.error_message());
+
+  // Make sure all 20 dummy interceptors were run
+  // EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+
+  server->Shutdown();
+  cq->Shutdown();
+  void* ignored_tag;
+  bool ignored_ok;
+  while (cq->Next(&ignored_tag, &ignored_ok))
+    ;
+  grpc_recycle_unused_port(port);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

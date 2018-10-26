@@ -184,7 +184,6 @@ class ServerInterface : public internal::CallHook {
                            const char* name);
 
     virtual bool FinalizeResult(void** tag, bool* status) override {
-      gpr_log(GPR_ERROR, "finalize registeredasyncrequest");
       /* If we are done intercepting, then there is nothing more for us to do */
       if (done_intercepting_) {
         return BaseAsyncRequest::FinalizeResult(tag, status);
@@ -238,7 +237,6 @@ class ServerInterface : public internal::CallHook {
           notification_cq_(notification_cq),
           tag_(tag),
           request_(request) {
-      gpr_log(GPR_ERROR, "new payload request");
       IssueRequest(registered_method->server_tag(), payload_.bbuf_ptr(),
                    notification_cq);
     }
@@ -248,7 +246,6 @@ class ServerInterface : public internal::CallHook {
     }
 
     bool FinalizeResult(void** tag, bool* status) override {
-      gpr_log(GPR_ERROR, "finalize PayloadAsyncRequest");
       /* If we are done intercepting, then there is nothing more for us to do */
       if (done_intercepting_) {
         return RegisteredAsyncRequest::FinalizeResult(tag, status);
@@ -313,7 +310,6 @@ class ServerInterface : public internal::CallHook {
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
     GPR_CODEGEN_ASSERT(method);
-    gpr_log(GPR_ERROR, "request async method with payload");
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -324,7 +320,6 @@ class ServerInterface : public internal::CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag) {
     GPR_CODEGEN_ASSERT(method);
-    gpr_log(GPR_ERROR, "request async method with no payload");
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }
@@ -334,7 +329,6 @@ class ServerInterface : public internal::CallHook {
                                CompletionQueue* call_cq,
                                ServerCompletionQueue* notification_cq,
                                void* tag) {
-    gpr_log(GPR_ERROR, "request async generic call");
     new GenericAsyncRequest(this, context, stream, call_cq, notification_cq,
                             tag, true);
   }
