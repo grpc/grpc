@@ -5461,6 +5461,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
     include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -5475,6 +5476,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6048,6 +6050,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
     include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6062,6 +6065,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6445,6 +6449,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
     include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6459,6 +6464,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6606,6 +6612,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
     include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6620,6 +6627,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6939,6 +6947,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
     include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6953,6 +6962,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
