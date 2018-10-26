@@ -64,6 +64,7 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
         *ok = ev.success != 0;
         *tag = cq_tag;
         if (cq_tag->FinalizeResult(tag, ok)) {
+          gpr_log(GPR_ERROR, "alright got tag %p", *tag);
           return GOT_EVENT;
         }
         break;

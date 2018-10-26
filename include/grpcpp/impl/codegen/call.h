@@ -1189,13 +1189,14 @@ class CallOpSet : public CallOpSetInterface,
   }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    // gpr_log(GPR_ERROR, "finalizing result %p", this);
+    gpr_log(GPR_ERROR, "finalizing result");
     if (done_intercepting_) {
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
       // gpr_log(GPR_ERROR, "done intercepting");
       *tag = return_tag_;
+      *status = saved_status_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;
     }
@@ -1206,6 +1207,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::FinishOp(status);
     this->Op5::FinishOp(status);
     this->Op6::FinishOp(status);
+    saved_status_ = *status;
     // gpr_log(GPR_ERROR, "done finish ops");
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
@@ -1301,6 +1303,7 @@ class CallOpSet : public CallOpSetInterface,
   Call call_;
   bool done_intercepting_ = false;
   InterceptorBatchMethodsImpl interceptor_methods_;
+  bool saved_status_;
 };
 
 }  // namespace internal

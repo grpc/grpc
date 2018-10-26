@@ -269,6 +269,162 @@ TEST_F(ServerInterceptorsEnd2endSyncStreamingTest, BidiStreamingTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
+class ServerInterceptorsAsyncEnd2endTest : public ::testing::Test {};
+
+TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
+  DummyInterceptor::Reset();
+  int port = grpc_pick_unused_port_or_die();
+  string server_address = "localhost:" + std::to_string(port);
+  ServerBuilder builder;
+  EchoTestService::AsyncService service;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(
+      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+          new LoggingInterceptorFactory()));
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  builder.experimental().SetInterceptorCreators(std::move(creators));
+  auto cq = builder.AddCompletionQueue();
+  auto server = builder.BuildAndStart();
+
+  ChannelArguments args;
+  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncResponseWriter<EchoResponse> response_writer(&srv_ctx);
+
+  send_request.set_message("Hello");
+  cli_ctx.AddMetadata("testkey", "testvalue");
+  std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
+      stub->AsyncEcho(&cli_ctx, send_request, cq.get()));
+
+  service.RequestEcho(&srv_ctx, &recv_request, &response_writer, cq.get(),
+                      cq.get(), tag(2));
+
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
+
+  Verifier().Expect(2, true).Verify(cq.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
+  srv_ctx.AddTrailingMetadata("testkey", "testvalue");
+
+  send_response.set_message(recv_request.message());
+  response_writer.Finish(send_response, Status::OK, tag(3));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
+
+  EXPECT_EQ(send_response.message(), recv_response.message());
+  EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
+                            "testvalue"));
+
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+
+  server->Shutdown();
+  cq->Shutdown();
+  void* ignored_tag;
+  bool ignored_ok;
+  while (cq->Next(&ignored_tag, &ignored_ok))
+    ;
+  grpc_recycle_unused_port(port);
+}
+
+TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
+  DummyInterceptor::Reset();
+  int port = grpc_pick_unused_port_or_die();
+  string server_address = "localhost:" + std::to_string(port);
+  ServerBuilder builder;
+  EchoTestService::AsyncService service;
+  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  builder.RegisterService(&service);
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(
+      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+          new LoggingInterceptorFactory()));
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  builder.experimental().SetInterceptorCreators(std::move(creators));
+  auto cq = builder.AddCompletionQueue();
+  auto server = builder.BuildAndStart();
+
+  ChannelArguments args;
+  auto channel = CreateChannel(server_address, InsecureChannelCredentials());
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+
+  EchoRequest send_request;
+  EchoRequest recv_request;
+  EchoResponse send_response;
+  EchoResponse recv_response;
+  Status recv_status;
+
+  ClientContext cli_ctx;
+  ServerContext srv_ctx;
+  grpc::ServerAsyncReaderWriter<EchoResponse, EchoRequest> srv_stream(&srv_ctx);
+
+  send_request.set_message("Hello");
+  cli_ctx.AddMetadata("testkey", "testvalue");
+  std::unique_ptr<ClientAsyncReaderWriter<EchoRequest, EchoResponse>>
+      cli_stream(stub->AsyncBidiStream(&cli_ctx, cq.get(), tag(1)));
+
+  service.RequestBidiStream(&srv_ctx, &srv_stream, cq.get(), cq.get(), tag(2));
+
+  Verifier().Expect(1, true).Expect(2, true).Verify(cq.get());
+
+  EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
+  srv_ctx.AddTrailingMetadata("testkey", "testvalue");
+
+  cli_stream->Write(send_request, tag(3));
+  srv_stream.Read(&recv_request, tag(4));
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq.get());
+  EXPECT_EQ(send_request.message(), recv_request.message());
+
+  send_response.set_message(recv_request.message());
+  srv_stream.Write(send_response, tag(5));
+  cli_stream->Read(&recv_response, tag(6));
+  Verifier().Expect(5, true).Expect(6, true).Verify(cq.get());
+  EXPECT_EQ(send_response.message(), recv_response.message());
+
+  cli_stream->WritesDone(tag(7));
+  srv_stream.Read(&recv_request, tag(8));
+  Verifier().Expect(7, true).Expect(8, false).Verify(cq.get());
+
+  srv_stream.Finish(Status::OK, tag(9));
+  cli_stream->Finish(&recv_status, tag(10));
+  Verifier().Expect(9, true).Expect(10, true).Verify(cq.get());
+
+  EXPECT_TRUE(recv_status.ok());
+  EXPECT_TRUE(CheckMetadata(cli_ctx.GetServerTrailingMetadata(), "testkey",
+                            "testvalue"));
+
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+
+  server->Shutdown();
+  cq->Shutdown();
+  void* ignored_tag;
+  bool ignored_ok;
+  while (cq->Next(&ignored_tag, &ignored_ok))
+    ;
+  grpc_recycle_unused_port(port);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
