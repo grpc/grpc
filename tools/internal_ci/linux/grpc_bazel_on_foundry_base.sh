@@ -35,6 +35,12 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# to get "bazel" link for kokoro build, we need to generate
+# invocation UUID, set an env var for bazel to pick it up
+#  and upload "bazel_invocation_ids" file as artifact.
+export BAZEL_INTERNAL_INVOCATION_ID="$(uuidgen)"
+echo "${BAZEL_INTERNAL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
+
 bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
