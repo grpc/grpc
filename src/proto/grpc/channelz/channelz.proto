@@ -424,6 +424,8 @@ service Channelz {
   rpc GetTopChannels(GetTopChannelsRequest) returns (GetTopChannelsResponse);
   // Gets all servers that exist in the process.
   rpc GetServers(GetServersRequest) returns (GetServersResponse);
+  // Returns a single Server, or else a NOT_FOUND code.
+  rpc GetServer(GetServerRequest) returns (GetServerResponse);
   // Gets all server sockets that exist in the process.
   rpc GetServerSockets(GetServerSocketsRequest) returns (GetServerSocketsResponse);
   // Returns a single Channel, or else a NOT_FOUND code.
@@ -464,6 +466,17 @@ message GetServersResponse {
   // more servers will only return more if they are created after this RPC
   // completes.
   bool end = 2;
+}
+
+message GetServerRequest {
+  // server_id is the identifier of the specific server to get.
+  int64 server_id = 1;
+}
+
+message GetServerResponse {
+  // The Server that corresponds to the requested server_id.  This field
+  // should be set.
+  Server server = 1;
 }
 
 message GetServerSocketsRequest {
