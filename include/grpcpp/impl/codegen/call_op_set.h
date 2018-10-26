@@ -772,8 +772,8 @@ class CallOpSet : public CallOpSetInterface,
  public:
   CallOpSet() : cq_tag_(this), return_tag_(this) {}
   // The copy constructor and assignment operator reset the value of
-  // cq_tag_ and return_tag_ since those are only meaningful on a specific
-  // object, not across objects.
+  // cq_tag_, return_tag_, done_intercepting_ and interceptor_methods_ since
+  // those are only meaningful on a specific object, not across objects.
   CallOpSet(const CallOpSet& other)
       : cq_tag_(this),
         return_tag_(this),
