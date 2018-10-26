@@ -119,6 +119,7 @@ static void test_no_op(void) {
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(NULL, NULL, &s));
   grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void test_no_op_with_start(void) {
@@ -128,6 +129,7 @@ static void test_no_op_with_start(void) {
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
   grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void test_no_op_with_port(void) {
@@ -147,6 +149,7 @@ static void test_no_op_with_port(void) {
              port > 0);
 
   grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void test_no_op_with_port_and_start(void) {
@@ -168,6 +171,7 @@ static void test_no_op_with_port_and_start(void) {
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
 
   grpc_tcp_server_unref(s);
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 static void connect_cb(uv_connect_t* req, int status) {
@@ -273,7 +277,7 @@ static void test_connect(unsigned n) {
   GPR_ASSERT(weak_ref.server != NULL);
 
   grpc_tcp_server_unref(s);
-
+  grpc_core::ExecCtx::Get()->Flush();
   /* Weak ref lost. */
   GPR_ASSERT(weak_ref.server == NULL);
 }
@@ -284,25 +288,27 @@ static void destroy_pollset(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_core::ExecCtx exec_ctx;
   grpc_test_init(argc, argv);
   grpc_init();
-  g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
-  grpc_pollset_init(g_pollset, &g_mu);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    g_pollset = static_cast<grpc_pollset*>(gpr_malloc(grpc_pollset_size()));
+    grpc_pollset_init(g_pollset, &g_mu);
 
-  test_no_op();
-  test_no_op_with_start();
-  test_no_op_with_port();
-  test_no_op_with_port_and_start();
-  test_connect(1);
-  test_connect(10);
+    test_no_op();
+    test_no_op_with_start();
+    test_no_op_with_port();
+    test_no_op_with_port_and_start();
+    test_connect(1);
+    test_connect(10);
 
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(g_pollset, &destroyed);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(g_pollset, &destroyed);
 
+    gpr_free(g_pollset);
+  }
   grpc_shutdown();
-  gpr_free(g_pollset);
   return 0;
 }
 

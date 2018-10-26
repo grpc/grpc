@@ -281,13 +281,16 @@ typedef enum {
 
 struct grpc_chttp2_transport {
   grpc_chttp2_transport(const grpc_channel_args* channel_args,
-                        grpc_endpoint* ep, bool is_client);
+                        grpc_endpoint* ep, bool is_client,
+                        grpc_resource_user* resource_user);
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
   gpr_refcount refs;
   grpc_endpoint* ep;
   char* peer_string;
+
+  grpc_resource_user* resource_user;
 
   grpc_combiner* combiner;
 

@@ -122,8 +122,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// Read from the queue, blocking until an event is available or the queue is
   /// shutting down.
   ///
-  /// \param tag[out] Updated to point to the read event's tag.
-  /// \param ok[out] true if read a successful event, false otherwise.
+  /// \param tag [out] Updated to point to the read event's tag.
+  /// \param ok [out] true if read a successful event, false otherwise.
   ///
   /// Note that each tag sent to the completion queue (through RPC operations
   /// or alarms) will be delivered out of the completion queue by a call to
@@ -178,10 +178,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag[out] Upon sucess, updated to point to the event's tag.
-  /// \param ok[out] Upon sucess, true if a successful event, false otherwise
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
-  /// \param deadline[in] How long to block in wait for an event.
+  /// \param deadline [in] How long to block in wait for an event.
   ///
   /// \return The type of event read.
   template <typename T>
@@ -197,10 +197,11 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param F[in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag[out] Upon sucess, updated to point to the event's tag.
-  /// \param ok[out] Upon sucess, true if read a regular event, false otherwise.
-  /// \param deadline[in] How long to block in wait for an event.
+  /// \param f [in] Function to execute before calling AsyncNext on this queue.
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// otherwise.
+  /// \param deadline [in] How long to block in wait for an event.
   ///
   /// \return The type of event read.
   template <typename T, typename F>
@@ -376,7 +377,7 @@ class ServerCompletionQueue : public CompletionQueue {
   ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
-  /// \param is_frequently_polled Informs the GRPC library about whether the
+  /// \param polling_type Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
   /// frequently polled.

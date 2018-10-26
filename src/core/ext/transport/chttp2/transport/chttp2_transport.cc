@@ -478,9 +478,11 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
 }
 
 grpc_chttp2_transport::grpc_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client)
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
+    grpc_resource_user* resource_user)
     : ep(ep),
       peer_string(grpc_endpoint_get_peer(ep)),
+      resource_user(resource_user),
       combiner(grpc_combiner_create()),
       is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
@@ -741,6 +743,10 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   flow_control.Destroy();
 
+  if (t->resource_user != nullptr) {
+    grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
+  }
+
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
   GRPC_CLOSURE_SCHED(destroy_stream_arg, GRPC_ERROR_NONE);
 }
@@ -793,7 +799,21 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   if (t->channel_callback.accept_stream == nullptr) {
     return nullptr;
   }
-  grpc_chttp2_stream* accepting;
+  // Don't accept the stream if memory quota doesn't allow. Note that we should
+  // simply refuse the stream here instead of canceling the stream after it's
+  // accepted since the latter will create the call which costs much memory.
+  if (t->resource_user != nullptr &&
+      !grpc_resource_user_safe_alloc(t->resource_user,
+                                     GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
+    gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
+    grpc_slice_buffer_add(
+        &t->qbuf,
+        grpc_chttp2_rst_stream_create(
+            id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr));
+    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+    return nullptr;
+  }
+  grpc_chttp2_stream* accepting = nullptr;
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->channel_callback.accept_stream(t->channel_callback.accept_stream_user_data,
@@ -3162,9 +3182,10 @@ intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
 }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
+    grpc_resource_user* resource_user) {
   auto t = new (gpr_malloc(sizeof(grpc_chttp2_transport)))
-      grpc_chttp2_transport(channel_args, ep, is_client);
+      grpc_chttp2_transport(channel_args, ep, is_client, resource_user);
   return &t->base;
 }
 
