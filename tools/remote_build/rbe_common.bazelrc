@@ -56,8 +56,18 @@ build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
 #build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 #build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
-# TODO(jtattermusch): align msan settings from tools/bazel.rc
-# and grpc_msan_on_foundry.sh
+# memory sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:msan --copt=-gmlt
+# TODO(jtattermusch): use more reasonable test timeout
+build:msan --test_timeout=3600
+build:msan --cxxopt=--stdlib=libc++
+# TODO(jtattermusch): setting LD_LIBRARY_PATH is necessary
+# to avoid "libc++.so.1: cannot open shared object file"
+build:msan --action_env=LD_LIBRARY_PATH=/usr/local/lib
+build:msan --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain
+# override the config-agnostic crosstool_top
+build:msan --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/msan:toolchain
 
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
