@@ -24,7 +24,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>

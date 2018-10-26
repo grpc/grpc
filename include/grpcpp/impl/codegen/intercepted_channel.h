@@ -27,6 +27,10 @@ namespace internal {
 
 class InterceptorBatchMethodsImpl;
 
+/// An InterceptedChannel is available to client Interceptors. An
+/// InterceptedChannel is unique to an interceptor, and when an RPC is started
+/// on this channel, only those interceptors that come after this interceptor
+/// see the RPC.
 class InterceptedChannel : public ChannelInterface {
  public:
   virtual ~InterceptedChannel() { channel_ = nullptr; }

@@ -92,7 +92,6 @@ class LoggingInterceptor : public experimental::Interceptor {
   LoggingInterceptor(experimental::ServerRpcInfo* info) { info_ = info; }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    // gpr_log(GPR_ERROR, "ran this");
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();

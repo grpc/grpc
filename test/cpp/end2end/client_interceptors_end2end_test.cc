@@ -306,7 +306,6 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_INITIAL_METADATA)) {
-      gpr_log(GPR_ERROR, "hijacked");
       auto* map = methods->GetRecvInitialMetadata();
       // Got nothing better to do here at the moment
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));

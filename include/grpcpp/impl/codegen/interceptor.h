@@ -26,10 +26,6 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 
-// struct grpc_byte_buffer;
-// struct grpc_status_code;
-// struct grpc_metadata;
-
 namespace grpc {
 
 class Status;
