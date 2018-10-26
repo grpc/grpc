@@ -377,10 +377,9 @@ class ServerCompletionQueue : public CompletionQueue {
   ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
-  /// \param polling_type Informs the GRPC library about whether the
-  /// server completion queue would be actively polled (by calling Next() or
-  /// AsyncNext()). By default all server completion queues are assumed to be
-  /// frequently polled.
+  /// \param polling_type Informs the GRPC library about the type of polling
+  /// allowed on this completion queue. See grpc_cq_polling_type's description
+  /// in grpc_types.h for more details.
   ServerCompletionQueue(grpc_cq_polling_type polling_type)
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type, nullptr}),
