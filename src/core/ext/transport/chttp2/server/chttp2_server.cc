@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -114,9 +115,16 @@ static void on_handshake_done(void* arg, grpc_error* error) {
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(args->user_data);
   gpr_mu_lock(&connection_state->svr_state->mu);
+  grpc_resource_user* resource_user = grpc_server_get_default_resource_user(
+      connection_state->svr_state->server);
   if (error != GRPC_ERROR_NONE || connection_state->svr_state->shutdown) {
     const char* error_str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
+    grpc_resource_user* resource_user = grpc_server_get_default_resource_user(
+        connection_state->svr_state->server);
+    if (resource_user != nullptr) {
+      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+    }
     if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
       // We were shut down after handshaking completed successfully, so
       // destroy the endpoint here.
@@ -134,13 +142,14 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
     // code, so we can just clean up here without creating a transport.
+    // TODO(juanlishen): Do we need to free the memory to resource user?
     if (args->endpoint != nullptr) {
-      grpc_transport* transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, false);
+      grpc_transport* transport = grpc_create_chttp2_transport(
+          args->args, args->endpoint, false, resource_user);
       grpc_server_setup_transport(
           connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args,
-          grpc_chttp2_transport_get_socket_uuid(transport));
+          grpc_chttp2_transport_get_socket_uuid(transport), resource_user);
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
       connection_state->transport =
@@ -177,6 +186,20 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   server_state* state = static_cast<server_state*>(arg);
   gpr_mu_lock(&state->mu);
   if (state->shutdown) {
+    gpr_mu_unlock(&state->mu);
+    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
+    grpc_endpoint_destroy(tcp);
+    gpr_free(acceptor);
+    return;
+  }
+  grpc_resource_user* resource_user =
+      grpc_server_get_default_resource_user(state->server);
+  if (resource_user != nullptr &&
+      !grpc_resource_user_safe_alloc(resource_user,
+                                     GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
+    gpr_log(
+        GPR_ERROR,
+        "Memory quota exhausted, rejecting the connection, no handshaking.");
     gpr_mu_unlock(&state->mu);
     grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
     grpc_endpoint_destroy(tcp);

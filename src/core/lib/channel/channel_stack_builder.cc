@@ -40,6 +40,7 @@ struct grpc_channel_stack_builder {
   // various set/get-able parameters
   grpc_channel_args* args;
   grpc_transport* transport;
+  grpc_resource_user* resource_user;
   char* target;
   const char* name;
 };
@@ -157,6 +158,11 @@ void grpc_channel_stack_builder_set_channel_arguments(
   builder->args = grpc_channel_args_copy(args);
 }
 
+const grpc_channel_args* grpc_channel_stack_builder_get_channel_arguments(
+    grpc_channel_stack_builder* builder) {
+  return builder->args;
+}
+
 void grpc_channel_stack_builder_set_transport(
     grpc_channel_stack_builder* builder, grpc_transport* transport) {
   GPR_ASSERT(builder->transport == nullptr);
@@ -168,9 +174,15 @@ grpc_transport* grpc_channel_stack_builder_get_transport(
   return builder->transport;
 }
 
-const grpc_channel_args* grpc_channel_stack_builder_get_channel_arguments(
+void grpc_channel_stack_builder_set_resource_user(
+    grpc_channel_stack_builder* builder, grpc_resource_user* resource_user) {
+  GPR_ASSERT(builder->resource_user == nullptr);
+  builder->resource_user = resource_user;
+}
+
+grpc_resource_user* grpc_channel_stack_builder_get_resource_user(
     grpc_channel_stack_builder* builder) {
-  return builder->args;
+  return builder->resource_user;
 }
 
 bool grpc_channel_stack_builder_append_filter(
