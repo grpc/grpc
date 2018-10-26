@@ -1078,7 +1078,8 @@ struct call_data {
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error = GRPC_ERROR_NONE;
 
-  grpc_core::LoadBalancingPolicy::PickState pick = {};
+  grpc_core::LoadBalancingPolicy::PickState pick =
+      grpc_core::LoadBalancingPolicy::PickState();
   grpc_closure pick_closure;
   grpc_closure pick_cancel_closure;
 
