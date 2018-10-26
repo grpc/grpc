@@ -50,6 +50,6 @@ find examples/python \
   -iname "*.py" \
   -not -name "*_pb2.py" \
   -not -name "*_pb2_grpc.py" \
-  | xargs pylint --rcfile=.pylintrc-tests -rn
+  | xargs $PYTHON -m pylint --rcfile=.pylintrc-tests -rn
 
 exit $EXIT
