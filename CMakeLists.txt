@@ -2895,7 +2895,6 @@ add_library(grpc++
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -3114,7 +3113,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_wrapper.h
+  include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -3263,7 +3262,6 @@ add_library(grpc++_cronet
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -3693,7 +3691,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_wrapper.h
+  include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4013,7 +4011,6 @@ add_library(grpc++_test_util
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
   test/cpp/util/test_credentials_provider.cc
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4106,7 +4103,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_wrapper.h
+  include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4201,7 +4198,6 @@ add_library(grpc++_test_util_unsecure
   test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4291,7 +4287,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_wrapper.h
+  include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4402,7 +4398,6 @@ add_library(grpc++_unsecure
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4620,7 +4615,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_wrapper.h
+  include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -12626,7 +12621,6 @@ add_executable(codegen_test_minimal
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
-  src/cpp/codegen/call_wrapper.cc
   src/cpp/codegen/codegen_init.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

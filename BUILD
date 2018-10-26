@@ -2065,7 +2065,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/byte_buffer.h",
         "include/grpcpp/impl/codegen/call.h",
         "include/grpcpp/impl/codegen/call_hook.h",
-        "include/grpcpp/impl/codegen/call_wrapper.h",
+        "include/grpcpp/impl/codegen/call_op_set.h",
         "include/grpcpp/impl/codegen/callback_common.h",
         "include/grpcpp/impl/codegen/channel_interface.h",
         "include/grpcpp/impl/codegen/client_callback.h",
@@ -2107,7 +2107,6 @@ grpc_cc_library(
     name = "grpc++_codegen_base_src",
     srcs = [
         "src/cpp/codegen/codegen_init.cc",
-        "src/cpp/codegen/call_wrapper.cc",
     ],
     language = "c++",
     deps = [

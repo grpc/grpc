@@ -20,7 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpcpp/impl/codegen/call_wrapper.h>
+#include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
