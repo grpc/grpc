@@ -45,14 +45,12 @@ class InterceptedChannel : public ChannelInterface {
   InterceptedChannel(ChannelInterface* channel, int pos)
       : channel_(channel), interceptor_pos_(pos) {}
 
-  internal::Call CreateCall(const internal::RpcMethod& method,
-                            ClientContext* context,
-                            CompletionQueue* cq) override {
+  Call CreateCall(const RpcMethod& method, ClientContext* context,
+                  CompletionQueue* cq) override {
     return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override {
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override {
     return channel_->PerformOpsOnCall(ops, call);
   }
   void* RegisterMethod(const char* method) override {

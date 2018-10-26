@@ -55,19 +55,17 @@ class ServerRpcInfo {
   const char* method() { return method_; }
   grpc::ServerContext* server_context() { return ctx_; }
 
- public:
-  // Runs interceptor at pos \a pos.
-  void RunInterceptor(
-      experimental::InterceptorBatchMethods* interceptor_methods,
-      unsigned int pos) {
-    GPR_CODEGEN_ASSERT(pos < interceptors_.size());
-    interceptors_[pos]->Intercept(interceptor_methods);
-  }
-
  private:
   ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
       : ctx_(ctx), method_(method) {
     ref_.store(1);
+  }
+
+  // Runs interceptor at pos \a pos.
+  void RunInterceptor(
+      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
+    GPR_CODEGEN_ASSERT(pos < interceptors_.size());
+    interceptors_[pos]->Intercept(interceptor_methods);
   }
 
   void RegisterInterceptors(

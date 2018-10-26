@@ -122,9 +122,14 @@ class ChannelInterface {
                                        CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
+
+  // EXPERIMENTAL
   // This is needed to keep codegen_test_minimal happy. InterceptedChannel needs
   // to make use of this but can't directly call Channel's implementation
   // because of the test.
+  // Returns an empty Call object (rather than being pure) since this is a new
+  // method and adding a new pure method to an interface would be a breaking
+  // change (even though this is private and non-API)
   virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                             ClientContext* context,
                                             CompletionQueue* cq,

@@ -55,8 +55,6 @@ class InternalInterceptorBatchMethods
   virtual void SetRecvStatus(Status* status) = 0;
 
   virtual void SetRecvTrailingMetadata(internal::MetadataMap* map) = 0;
-
-  virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
 };
 
 class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {

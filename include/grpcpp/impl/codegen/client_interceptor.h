@@ -55,17 +55,16 @@ class ClientRpcInfo {
 
   // Getter methods
   const char* method() { return method_; }
-  Channel* channel() { return channel_; }
+  ChannelInterface* channel() { return channel_; }
   grpc::ClientContext* client_context() { return ctx_; }
 
  private:
   ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                grpc::Channel* channel)
+                grpc::ChannelInterface* channel)
       : ctx_(ctx), method_(method), channel_(channel) {}
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
-      experimental::InterceptorBatchMethods* interceptor_methods,
-      unsigned int pos) {
+      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
     GPR_CODEGEN_ASSERT(pos < interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
@@ -83,7 +82,7 @@ class ClientRpcInfo {
 
   grpc::ClientContext* ctx_ = nullptr;
   const char* method_ = nullptr;
-  grpc::Channel* channel_ = nullptr;
+  grpc::ChannelInterface* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;
   int hijacked_interceptor_ = false;
