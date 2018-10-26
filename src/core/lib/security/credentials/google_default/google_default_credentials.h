@@ -45,6 +45,7 @@ typedef struct {
   grpc_channel_credentials* ssl_creds;
 } grpc_google_default_channel_credentials;
 
+// TEST-ONLY. Reset the internal global state.
 void grpc_flush_cached_google_default_credentials(void);
 
 namespace grpc_core {
