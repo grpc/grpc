@@ -65,6 +65,7 @@ This repository contains source code for gRPC libraries for multiple languages w
 
 Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
 
+_________________________________________________________________
 | Language                | Source                              |
 |-------------------------|-------------------------------------|
 | Shared C [core library] | [src/core](src/core)                |
@@ -74,7 +75,9 @@ Libraries in different languages may be in different states of development. We a
 | PHP                     | [src/php](src/php)                  |
 | C#                      | [src/csharp](src/csharp)            |
 | Objective-C             | [src/objective-c](src/objective-c)  |
+-----------------------------------------------------------------
 
+__________________________________________________________________________________
 | Language                | Source repo                                          |
 |-------------------------|------------------------------------------------------|
 | Java                    | [grpc-java](http://github.com/grpc/grpc-java)        |
@@ -82,4 +85,4 @@ Libraries in different languages may be in different states of development. We a
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
-
+----------------------------------------------------------------------------------
