@@ -179,7 +179,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::unique_ptr< ::grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<::grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class TestServiceImplDupPkg
@@ -215,6 +215,53 @@ void TestScenario::Log() const {
   out << *this;
   gpr_log(GPR_DEBUG, "%s", out.str().c_str());
 }
+
+/* This interceptor does nothing. Just keeps a global count on the number of
+ * times it was invoked. */
+class DummyInterceptor : public experimental::Interceptor {
+ public:
+  DummyInterceptor(experimental::ClientRpcInfo* info) {}
+
+  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+      num_times_run_++;
+    } else if (methods->QueryInterceptionHookPoint(
+                   experimental::InterceptionHookPoints::
+                       POST_RECV_INITIAL_METADATA)) {
+      num_times_run_reverse_++;
+    }
+    methods->Proceed();
+  }
+
+  static void Reset() {
+    num_times_run_.store(0);
+    num_times_run_reverse_.store(0);
+  }
+
+  static int GetNumTimesRun() {
+    EXPECT_EQ(num_times_run_.load(), num_times_run_reverse_.load());
+    return num_times_run_.load();
+  }
+
+  static const int kNumInterceptorsRegistered = 5;
+
+ private:
+  static std::atomic<int> num_times_run_;
+  static std::atomic<int> num_times_run_reverse_;
+};
+
+std::atomic<int> DummyInterceptor::num_times_run_;
+std::atomic<int> DummyInterceptor::num_times_run_reverse_;
+
+class DummyInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new DummyInterceptor(info);
+  }
+};
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
@@ -291,11 +338,21 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
 
+    auto creators = std::unique_ptr<std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+        new std::vector<std::unique_ptr<
+            experimental::ClientInterceptorFactoryInterface>>());
+    // Add dummy interceptors
+    for (auto i = 0; i < DummyInterceptor::kNumInterceptorsRegistered; i++) {
+      creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+          new DummyInterceptorFactory()));
+    }
     if (!GetParam().inproc) {
-      channel_ =
-          CreateCustomChannel(server_address_.str(), channel_creds, args);
+      channel_ = CreateCustomChannelWithInterceptors(
+          server_address_.str(), channel_creds, args, std::move(creators));
     } else {
-      channel_ = server_->InProcessChannel(args);
+      channel_ = server_->experimental().InProcessChannelWithInterceptors(
+          args, std::move(creators));
     }
   }
 
