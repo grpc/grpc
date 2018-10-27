@@ -49,12 +49,6 @@ build:asan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:asan --test_timeout=3600
 build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
-# TODO: revisit these from bazel.rc:
-#build:asan --copt=-O0
-#build:asan --copt=-fno-omit-frame-pointer
-#build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
-#build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
-#build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -62,7 +56,7 @@ build:msan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:msan --test_timeout=3600
 build:msan --cxxopt=--stdlib=libc++
-# TODO(jtattermusch): setting LD_LIBRARY_PATH is necessary
+# setting LD_LIBRARY_PATH is necessary
 # to avoid "libc++.so.1: cannot open shared object file"
 build:msan --action_env=LD_LIBRARY_PATH=/usr/local/lib
 build:msan --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain
@@ -75,23 +69,14 @@ build:tsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:tsan --test_timeout=3600
 build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
-# TODO: revisit these from bazel.rc:
-#build:tsan --copt=-fno-omit-frame-pointer
-#build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
-#build:tsan --copt=-DGRPC_TSAN
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:ubsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:ubsan --test_timeout=3600
-# TODO: revisit these from bazel.rc:
-#build:ubsan --copt=-fno-omit-frame-pointer
-#build:ubsan --copt=-DGRPC_UBSAN
-#build:ubsan --copt=-DNDEBUG
-#build:ubsan --copt=-fno-sanitize=function,vptr
-# TODO: revisit this from grpc_ubsan_on_foundry.sh:
-#--crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.0/bazel_0.15.0/ubsan:toolchain
+# override the config-agnostic crosstool_top
+--crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.0/bazel_0.16.1/ubsan:toolchain
 # TODO(jtattermusch): remove this once Foundry adds the env to the docker image.
 # ubsan needs symbolizer to work properly, otherwise the suppression file doesn't work
 # and we get test failures.

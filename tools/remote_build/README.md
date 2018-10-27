@@ -28,3 +28,6 @@ Sanitizer runs (asan, msan, tsan, ubsan):
 # manual run of bazel tests remotely on Foundry with given sanitizer
 bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
 ```
+
+Available command line options can be found in
+[Bazel command line reference](https://docs.bazel.build/versions/master/command-line-reference.html)
