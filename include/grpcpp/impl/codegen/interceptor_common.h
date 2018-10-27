@@ -275,8 +275,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
   void ProceedClient() {
     auto* rpc_info = call_->client_rpc_info();
     if (rpc_info->hijacked_ && !reverse_ &&
-        static_cast<size_t>(current_interceptor_index_) ==
-            rpc_info->hijacked_interceptor_ &&
+        current_interceptor_index_ == rpc_info->hijacked_interceptor_ &&
         !ran_hijacking_interceptor_) {
       // We now need to provide hijacked recv ops to this interceptor
       ClearHookPoints();
@@ -288,11 +287,9 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     if (!reverse_) {
       current_interceptor_index_++;
       // We are going down the stack of interceptors
-      if (static_cast<size_t>(current_interceptor_index_) <
-          rpc_info->interceptors_.size()) {
+      if (current_interceptor_index_ < rpc_info->interceptors_.size()) {
         if (rpc_info->hijacked_ &&
-            static_cast<size_t>(current_interceptor_index_) >
-                rpc_info->hijacked_interceptor_) {
+            current_interceptor_index_ > rpc_info->hijacked_interceptor_) {
           // This is a hijacked RPC and we are done with hijacking
           ops_->ContinueFillOpsAfterInterception();
         } else {
@@ -303,10 +300,10 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
         ops_->ContinueFillOpsAfterInterception();
       }
     } else {
-      current_interceptor_index_--;
       // We are going up the stack of interceptors
-      if (current_interceptor_index_ >= 0) {
+      if (current_interceptor_index_ > 0) {
         // Continue running interceptors
+        current_interceptor_index_--;
         rpc_info->RunInterceptor(this, current_interceptor_index_);
       } else {
         // we are done running all the interceptors without any hijacking
@@ -319,17 +316,16 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     auto* rpc_info = call_->server_rpc_info();
     if (!reverse_) {
       current_interceptor_index_++;
-      if (static_cast<size_t>(current_interceptor_index_) <
-          rpc_info->interceptors_.size()) {
+      if (current_interceptor_index_ < rpc_info->interceptors_.size()) {
         return rpc_info->RunInterceptor(this, current_interceptor_index_);
       } else if (ops_) {
         return ops_->ContinueFillOpsAfterInterception();
       }
     } else {
-      current_interceptor_index_--;
       // We are going up the stack of interceptors
-      if (current_interceptor_index_ >= 0) {
+      if (current_interceptor_index_ > 0) {
         // Continue running interceptors
+        current_interceptor_index_--;
         return rpc_info->RunInterceptor(this, current_interceptor_index_);
       } else if (ops_) {
         return ops_->ContinueFinalizeResultAfterInterception();
@@ -353,11 +349,11 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
                  experimental::InterceptionHookPoints::NUM_INTERCEPTION_HOOKS)>
       hooks_;
 
-  long current_interceptor_index_ = 0;  // Current iterator
+  size_t current_interceptor_index_ = 0;  // Current iterator
   bool reverse_ = false;
   bool ran_hijacking_interceptor_ = false;
-  Call* call_ =
-      nullptr;  // The Call object is present along with CallOpSet object
+  Call* call_ = nullptr;  // The Call object is present along with CallOpSet
+                          // object/callback
   CallOpSetInterface* ops_ = nullptr;
   std::function<void(void)> callback_;
 
