@@ -102,7 +102,7 @@ def grpc_deps():
         native.http_archive(
             name = "boringssl",
             # on the chromium-stable-with-bazel branch
-            url = "https://boringssl.googlesource.com/boringssl/+archive/dcd3e6e6ecddf059adb48fca45bc7346a108bdd9.tar.gz",
+            url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
         )
 
     if "com_github_madler_zlib" not in native.existing_rules():
