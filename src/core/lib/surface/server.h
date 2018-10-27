@@ -47,8 +47,7 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
 void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args,
-                                 intptr_t socket_uuid,
-                                 grpc_resource_user* resource_user = nullptr);
+                                 intptr_t socket_uuid);
 
 /* fills in the uuids of all sockets used for connections on this server */
 void grpc_server_populate_server_sockets(
@@ -63,8 +62,6 @@ grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
     grpc_server* server);
 
 const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server);
-
-grpc_resource_user* grpc_server_get_default_resource_user(grpc_server* server);
 
 int grpc_server_has_open_connections(grpc_server* server);
 

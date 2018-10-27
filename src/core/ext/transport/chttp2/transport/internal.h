@@ -285,8 +285,6 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   char* peer_string;
 
-  grpc_resource_user* resource_user;
-
   grpc_combiner* combiner;
 
   grpc_closure* notify_on_receive_settings;
