@@ -85,7 +85,7 @@ class ClientRpcInfo {
   grpc::ChannelInterface* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
   bool hijacked_ = false;
-  size_t hijacked_interceptor_ = false;
+  size_t hijacked_interceptor_ = 0;
 
   friend class internal::InterceptorBatchMethodsImpl;
   friend class grpc::ClientContext;
