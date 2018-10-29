@@ -274,8 +274,14 @@ class BuildExt(build_ext.build_ext):
             extra_defines = [
                 'EXTRA_DEFINES="GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1"'
             ]
+            # Ensure the BoringSSL are built instead of using system provided
+            #   libraries. It prevents dependency issues while distributing to
+            #   Mac users who use MacPorts to manage their libraries.
+            env = os.environ.copy()
+            env['HAS_SYSTEM_OPENSSL_ALPN'] = '0'
             make_process = subprocess.Popen(
                 ['make'] + extra_defines + targets,
+                env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             make_out, make_err = make_process.communicate()
