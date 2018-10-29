@@ -363,7 +363,8 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, false)) {
     state->channelz_listen_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
+            *port_num);
     socket_uuid = state->channelz_listen_socket->uuid();
   }
 

@@ -268,10 +268,13 @@ class SocketNode : public BaseNode {
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode();
+  ListenSocketNode(int port);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
+
+ private:
+  int port_;
 };
 
 // Creation functions
