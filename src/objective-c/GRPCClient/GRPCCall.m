@@ -391,7 +391,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
                   callSafety:(GRPCCallSafety)safety
               requestsWriter:(GRXWriter *)requestWriter
                  callOptions:(GRPCCallOptions *)callOptions {
-  if (host.length == 0 || path.length == 0) {
+  // Purposely using pointer rather than length ([host length] == 0) for backwards compatibility.
+  if (!host || !path) {
     [NSException raise:NSInvalidArgumentException
                 format:@"Neither host nor path can be nil or empty."];
   }
