@@ -21,13 +21,13 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
-#include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 
 namespace grpc {
 
+class ChannelInterface;
 class Status;
 
 namespace experimental {
