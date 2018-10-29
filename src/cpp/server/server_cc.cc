@@ -256,7 +256,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         // Set interception point for RECV MESSAGE
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
-        request_ = handler->Deserialize(request_payload_, &request_status_);
+        request_ = handler->Deserialize(call_.call(), request_payload_,
+                                        &request_status_);
 
         request_payload_ = nullptr;
         interceptor_methods_.AddInterceptionHookPoint(

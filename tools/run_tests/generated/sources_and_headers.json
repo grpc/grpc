@@ -4724,6 +4724,28 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/interceptors_util.h", 
+      "test/cpp/end2end/server_interceptors_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
