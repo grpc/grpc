@@ -782,7 +782,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _callOptions = callOptions;
   }
 
-  NSAssert(_callOptions.authTokenProvider != nil || _callOptions.oauth2AccessToken != nil,
+  NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
            @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
   if (_callOptions.authTokenProvider != nil) {
     @synchronized(self) {
