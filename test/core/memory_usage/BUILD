@@ -48,7 +48,7 @@ grpc_cc_binary(
 )
 
 grpc_cc_test(
-    name = "memory_profile_test",
+    name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
     language = "C++",
     data = [
