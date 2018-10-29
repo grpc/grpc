@@ -373,7 +373,7 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
     // allocated host's ownership is passed to ListenSocketNode.
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            host, *port_num);
+            grpc_core::UniquePtr<char>(host), *port_num);
     gpr_free(port);
     socket_uuid = state->channelz_listen_socket->uuid();
   }

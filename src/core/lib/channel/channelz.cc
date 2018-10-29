@@ -374,10 +374,8 @@ grpc_json* SocketNode::RenderJson() {
   return top_level_json;
 }
 
-ListenSocketNode::ListenSocketNode(char* host, int port)
-    : BaseNode(EntityType::kSocket),
-      host_(UniquePtr<char>(host)),
-      port_(port) {}
+ListenSocketNode::ListenSocketNode(UniquePtr<char> host, int port)
+    : BaseNode(EntityType::kSocket), host_(std::move(host)), port_(port) {}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object
