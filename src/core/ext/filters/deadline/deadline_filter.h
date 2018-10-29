@@ -61,14 +61,6 @@ struct grpc_deadline_state {
 // elem->call_data is a grpc_deadline_state.
 //
 
-// assumes elem->call_data is zero'd
-void grpc_deadline_state_init(grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline);
-
-void grpc_deadline_state_destroy(grpc_call_element* elem);
-
 // Cancels the existing timer and starts a new one with new_deadline.
 //
 // Note: It is generally safe to call this with an earlier deadline
