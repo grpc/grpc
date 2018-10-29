@@ -45,6 +45,7 @@
 
 static void on_read(void* user_data, grpc_error* error);
 
+namespace {
 struct secure_endpoint {
   secure_endpoint(const grpc_endpoint_vtable* vtable,
                   tsi_frame_protector* protector,
@@ -99,6 +100,7 @@ struct secure_endpoint {
 
   gpr_refcount ref;
 };
+}  // namespace
 
 grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 

@@ -938,6 +938,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
 //   (census filter is on top of this one)
 // - add census stats for retries
 
+namespace {
 struct call_data;
 
 // State used for starting a retryable batch on a subchannel call.
@@ -1146,6 +1147,7 @@ struct call_data {
   grpc_linked_mdelem* send_trailing_metadata_storage = nullptr;
   grpc_metadata_batch send_trailing_metadata;
 };
+}  // namespace
 
 // Forward declarations.
 static void retry_commit(grpc_call_element* elem,
@@ -1696,6 +1698,7 @@ static bool maybe_retry(grpc_call_element* elem,
 // subchannel_batch_data
 //
 
+namespace {
 subchannel_batch_data::subchannel_batch_data(grpc_call_element* elem,
                                              call_data* calld,
                                              int refcount, bool set_on_complete)
@@ -1736,6 +1739,7 @@ void subchannel_batch_data::destroy() {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   GRPC_CALL_STACK_UNREF(calld->owning_call, "batch_data");
 }
+}  // namespace
 
 // Creates a subchannel_batch_data object on the call's arena with the
 // specified refcount.  If set_on_complete is true, the batch's
