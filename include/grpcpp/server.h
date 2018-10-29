@@ -191,8 +191,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server() override { return server_; };
 
  private:
-  const std::vector<
-      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() override {
     return &interceptor_creators_;
   }
