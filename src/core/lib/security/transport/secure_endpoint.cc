@@ -43,7 +43,6 @@
 
 #define STAGING_BUFFER_SIZE 8192
 
-
 static void on_read(void* user_data, grpc_error* error);
 
 namespace {
@@ -105,9 +104,7 @@ struct secure_endpoint {
 
 grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 
-static void destroy(secure_endpoint* ep) {
-  grpc_core::Delete(ep);
-}
+static void destroy(secure_endpoint* ep) { grpc_core::Delete(ep); }
 
 #ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(ep, reason) \

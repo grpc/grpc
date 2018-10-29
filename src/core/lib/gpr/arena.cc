@@ -20,8 +20,8 @@
 
 #include "src/core/lib/gpr/arena.h"
 
-#include <new>
 #include <string.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>

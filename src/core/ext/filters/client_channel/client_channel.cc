@@ -947,8 +947,8 @@ struct call_data;
 // We allocate one struct on the arena for each attempt at starting a
 // batch on a given subchannel call.
 struct subchannel_batch_data {
-  subchannel_batch_data(grpc_call_element* elem, call_data* calld,
-                        int refcount, bool set_on_complete);
+  subchannel_batch_data(grpc_call_element* elem, call_data* calld, int refcount,
+                        bool set_on_complete);
   // All dtor code must be added in `destroy`. This is because we may
   // call closures of batches after they are unrefed, and msan would complain
   // about accessing this class after calling dtor.
@@ -1700,8 +1700,8 @@ static bool maybe_retry(grpc_call_element* elem,
 
 namespace {
 subchannel_batch_data::subchannel_batch_data(grpc_call_element* elem,
-                                             call_data* calld,
-                                             int refcount, bool set_on_complete)
+                                             call_data* calld, int refcount,
+                                             bool set_on_complete)
     : elem(elem),
       subchannel_call(GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call,
                                                "batch_data_create")) {

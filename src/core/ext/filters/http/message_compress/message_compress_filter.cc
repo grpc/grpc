@@ -60,12 +60,10 @@ struct call_data {
                       start_send_message_batch, elem,
                       grpc_schedule_on_exec_ctx);
     grpc_slice_buffer_init(&slices);
-    GRPC_CLOSURE_INIT(&send_message_on_complete,
-                      ::send_message_on_complete, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&on_send_message_next_done,
-                      ::on_send_message_next_done, elem,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&send_message_on_complete, ::send_message_on_complete,
+                      elem, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_send_message_next_done, ::on_send_message_next_done,
+                      elem, grpc_schedule_on_exec_ctx);
   }
 
   ~call_data() {

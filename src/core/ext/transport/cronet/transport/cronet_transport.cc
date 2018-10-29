@@ -1358,8 +1358,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
 */
 
 inline stream_obj::stream_obj(grpc_transport* gt, grpc_stream* gs,
-                              grpc_stream_refcount* refcount,
-                              gpr_arena* arena)
+                              grpc_stream_refcount* refcount, gpr_arena* arena)
     : arena(arena),
       curr_ct(reinterpret_cast<grpc_cronet_transport*>(gt)),
       curr_gs(gs),

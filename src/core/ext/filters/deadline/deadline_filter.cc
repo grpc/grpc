@@ -155,9 +155,7 @@ static void inject_recv_trailing_metadata_ready(
 struct start_timer_after_init_state {
   start_timer_after_init_state(grpc_call_element* elem, grpc_millis deadline)
       : elem(elem), deadline(deadline) {}
-  ~start_timer_after_init_state() {
-    start_timer_if_needed(elem, deadline);
-  }
+  ~start_timer_after_init_state() { start_timer_if_needed(elem, deadline); }
 
   bool in_call_combiner = false;
   grpc_call_element* elem;
@@ -187,8 +185,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
                                          grpc_call_stack* call_stack,
                                          grpc_call_combiner* call_combiner,
                                          grpc_millis deadline)
-    : call_stack(call_stack),
-      call_combiner(call_combiner) {
+    : call_stack(call_stack), call_combiner(call_combiner) {
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
@@ -207,9 +204,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
   }
 }
 
-void grpc_deadline_state::destroy() {
-  cancel_timer_if_needed(this);
-}
+void grpc_deadline_state::destroy() { cancel_timer_if_needed(this); }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline) {

@@ -613,9 +613,11 @@ struct grpc_chttp2_stream {
   size_t sending_bytes = 0;
 
   /* Stream compression method to be used. */
-  grpc_stream_compression_method stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
+  grpc_stream_compression_method stream_compression_method =
+      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
   /* Stream decompression method to be used. */
-  grpc_stream_compression_method stream_decompression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
+  grpc_stream_compression_method stream_decompression_method =
+      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
   /** Stream compression decompress context */
   grpc_stream_compression_context* stream_decompression_ctx = nullptr;
   /** Stream compression compress context */
