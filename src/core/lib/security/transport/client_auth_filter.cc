@@ -48,7 +48,12 @@ struct call_data {
         owning_call(args.call_stack),
         call_combiner(args.call_combiner) {}
 
-  ~call_data() {
+  // This method is technically the dtor of this class. However, since
+  // `get_request_metadata_cancel_closure` can run in parallel to
+  // `destroy_call_elem`, we cannot call the dtor in them. Otherwise,
+  // fields will be accessed after calling dtor, and msan correctly complains
+  // that the memory is not initialized.
+  void destroy() {
     grpc_credentials_mdelem_array_destroy(&md_array);
     grpc_call_credentials_unref(creds);
     grpc_slice_unref_internal(host);
@@ -362,7 +367,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->~call_data();
+  calld->destroy();
 }
 
 /* Constructor for channel_data */
