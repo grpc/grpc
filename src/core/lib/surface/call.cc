@@ -171,8 +171,7 @@ struct grpc_call {
   gpr_atm received_final_op_atm = 0;
 
   batch_control* active_batches[MAX_CONCURRENT_BATCHES] = {};
-  grpc_transport_stream_op_batch_payload stream_op_payload =
-      grpc_transport_stream_op_batch_payload();
+  grpc_transport_stream_op_batch_payload stream_op_payload;
 
   /* first idx: is_receiving, second idx: is_trailing */
   grpc_metadata_batch metadata_batch[2][2] = {};
@@ -188,7 +187,7 @@ struct grpc_call {
 
   /* Call data useful used for reporting. Only valid after the call has
    * completed */
-  grpc_call_final_info final_info = grpc_call_final_info();
+  grpc_call_final_info final_info;
 
   /* Compression algorithm for *incoming* data */
   grpc_message_compression_algorithm incoming_message_compression_algorithm =
@@ -1680,7 +1679,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->sent_final_op = true;
         GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
-        call->send_extra_metadata[0] = grpc_linked_mdelem();
         call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
             call->channel, op->data.send_status_from_server.status);
         grpc_error* status_error =
@@ -1693,7 +1691,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                       static_cast<intptr_t>(
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
-          call->send_extra_metadata[1] = grpc_linked_mdelem();
           call->send_extra_metadata[1].md = grpc_mdelem_from_slices(
               GRPC_MDSTR_GRPC_MESSAGE,
               grpc_slice_ref_internal(

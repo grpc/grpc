@@ -103,8 +103,8 @@ const char* grpc_chttp2_initiate_write_reason_string(
     grpc_chttp2_initiate_write_reason reason);
 
 typedef struct {
-  grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT];
-  uint64_t inflight_id;
+  grpc_closure_list lists[GRPC_CHTTP2_PCL_COUNT] = {};
+  uint64_t inflight_id = 0;
 } grpc_chttp2_ping_queue;
 
 typedef struct {
@@ -417,8 +417,7 @@ struct grpc_chttp2_transport {
   int64_t initial_window_update = 0;
 
   /* deframing */
-  grpc_chttp2_deframe_transport_state deframe_state =
-      grpc_chttp2_deframe_transport_state();
+  grpc_chttp2_deframe_transport_state deframe_state = GRPC_DTS_CLIENT_PREFIX_0;
   uint8_t incoming_frame_type = 0;
   uint8_t incoming_frame_flags = 0;
   uint8_t header_eof = 0;
@@ -445,7 +444,7 @@ struct grpc_chttp2_transport {
   grpc_error* close_transport_on_writes_finished = GRPC_ERROR_NONE;
 
   /* a list of closures to run after writes are finished */
-  grpc_closure_list run_after_write = grpc_closure_list();
+  grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
 
   /* buffer pool state */
   /** have we scheduled a benign cleanup? */

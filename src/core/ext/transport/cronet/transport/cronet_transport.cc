@@ -170,7 +170,7 @@ struct op_state {
 struct op_and_state {
   op_and_state(gpr_arena* arena) : state(arena) {}
 
-  grpc_transport_stream_op_batch op = grpc_transport_stream_op_batch();
+  grpc_transport_stream_op_batch op;
   struct op_state state;
   bool done = false;
   struct stream_obj* s = nullptr; /* Pointer back to the stream object */
@@ -194,14 +194,14 @@ struct stream_obj {
   grpc_stream* curr_gs;
   bidirectional_stream* cbs = nullptr;
   bidirectional_stream_header_array header_array =
-      bidirectional_stream_header_array();
+      bidirectional_stream_header_array();  // Zero-initialize the structure.
 
   /* Stream level state. Some state will be tracked both at stream and stream_op
    * level */
   struct op_state state;
 
   /* OP storage */
-  struct op_storage storage = op_storage();
+  struct op_storage storage;
 
   /* Mutex to protect storage */
   gpr_mu mu;

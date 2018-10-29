@@ -41,9 +41,11 @@ struct grpc_auth_property_array {
 };
 
 struct grpc_auth_context {
+  grpc_auth_context() { gpr_ref_init(&refcount, 0); }
+
   struct grpc_auth_context* chained = nullptr;
   grpc_auth_property_array properties;
-  gpr_refcount refcount = gpr_refcount();
+  gpr_refcount refcount;
   const char* peer_identity_property_name = nullptr;
   grpc_pollset* pollset = nullptr;
 };

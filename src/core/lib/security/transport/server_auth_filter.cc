@@ -80,7 +80,7 @@ struct call_data {
   grpc_closure* original_recv_trailing_metadata_ready;
   grpc_error* recv_trailing_metadata_error;
   bool seen_recv_trailing_metadata_ready = false;
-  grpc_metadata_array md = grpc_metadata_array();
+  grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
   grpc_closure cancel_closure;

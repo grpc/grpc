@@ -72,9 +72,10 @@ struct call_data {
      pollset_set so that work can progress when this call wants work to progress
   */
   grpc_polling_entity* pollent = nullptr;
-  grpc_credentials_mdelem_array md_array = grpc_credentials_mdelem_array();
+  grpc_credentials_mdelem_array md_array;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT] = {};
-  grpc_auth_metadata_context auth_md_context = grpc_auth_metadata_context();
+  grpc_auth_metadata_context auth_md_context =
+      grpc_auth_metadata_context();  // Zero-initialize the C struct.
   grpc_closure async_result_closure;
   grpc_closure check_call_host_cancel_closure;
   grpc_closure get_request_metadata_cancel_closure;
