@@ -178,7 +178,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     // The intercepted channel starts from the interceptor just after the
     // current interceptor
     return std::unique_ptr<ChannelInterface>(new InterceptedChannel(
-        info->channel(), current_interceptor_index_ + 1));
+        info->channel(), static_cast<int>(current_interceptor_index_ + 1)));
   }
 
   // Clears all state

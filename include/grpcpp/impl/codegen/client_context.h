@@ -410,7 +410,7 @@ class ClientContext {
           creators,
       size_t interceptor_pos) {
     rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
-    rpc_info_.RegisterInterceptors(creators, interceptor_pos);
+    rpc_info_.RegisterInterceptors(creators, static_cast<int>(interceptor_pos));
     return &rpc_info_;
   }
 
