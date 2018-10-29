@@ -276,7 +276,7 @@ class BuildExt(build_ext.build_ext):
             ]
             # Ensure the BoringSSL are built instead of using system provided
             #   libraries. It prevents dependency issues while distributing to
-            #   Mac users who use MacPorts to manage their libraries.
+            #   Mac users who use MacPorts to manage their libraries. #17002
             env = os.environ.copy()
             env['HAS_SYSTEM_OPENSSL_ALPN'] = '0'
             make_process = subprocess.Popen(
