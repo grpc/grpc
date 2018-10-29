@@ -205,7 +205,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
   }
 }
 
-grpc_deadline_state::~grpc_deadline_state() {
+void grpc_deadline_state::destroy() {
   cancel_timer_if_needed(this);
 }
 
@@ -220,7 +220,7 @@ void grpc_deadline_state_init(grpc_call_element* elem,
 void grpc_deadline_state_destroy(grpc_call_element* elem) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
-  deadline_state->~grpc_deadline_state();
+  deadline_state->destroy();
 }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
