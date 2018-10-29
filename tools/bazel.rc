@@ -18,16 +18,13 @@ build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
 build:msan --strip=never
-build:msan --copt=-fsanitize-coverage=edge
 build:msan --copt=-fsanitize=memory
 build:msan --copt=-O0
 build:msan --copt=-fsanitize-memory-track-origins
 build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --copt=-fno-omit-frame-pointer
-build:msan --copt=-fPIE
 build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:msan --linkopt=-fsanitize=memory
-build:msan --linkopt=-fPIE
 build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 
 build:tsan --strip=never

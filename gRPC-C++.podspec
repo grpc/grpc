@@ -69,6 +69,9 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = 'Interface', 'Implementation'
 
+  # Certificates, to be able to establish TLS connections:
+  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+
   s.header_mappings_dir = 'include/grpcpp'
 
   s.subspec 'Interface' do |ss|
@@ -128,6 +131,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/byte_buffer.h',
                       'include/grpcpp/impl/codegen/call.h',
                       'include/grpcpp/impl/codegen/call_hook.h',
+                      'include/grpcpp/impl/codegen/call_op_set.h',
+                      'include/grpcpp/impl/codegen/call_op_set_interface.h',
                       'include/grpcpp/impl/codegen/callback_common.h',
                       'include/grpcpp/impl/codegen/channel_interface.h',
                       'include/grpcpp/impl/codegen/client_callback.h',
@@ -140,7 +145,9 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
                       'include/grpcpp/impl/codegen/grpc_library.h',
+                      'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
+                      'include/grpcpp/impl/codegen/interceptor_common.h',
                       'include/grpcpp/impl/codegen/metadata_map.h',
                       'include/grpcpp/impl/codegen/method_handler_impl.h',
                       'include/grpcpp/impl/codegen/rpc_method.h',
@@ -148,6 +155,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/security/auth_context.h',
                       'include/grpcpp/impl/codegen/serialization_traits.h',
                       'include/grpcpp/impl/codegen/server_context.h',
+                      'include/grpcpp/impl/codegen/server_interceptor.h',
                       'include/grpcpp/impl/codegen/server_interface.h',
                       'include/grpcpp/impl/codegen/service_type.h',
                       'include/grpcpp/impl/codegen/slice.h',

@@ -13,5 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=asan
 

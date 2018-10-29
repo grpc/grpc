@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 #define GRPCPP_IMPL_CODEGEN_METADATA_MAP_H
 
+#include <map>
+
 #include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/slice.h>
 
