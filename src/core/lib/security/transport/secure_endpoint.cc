@@ -33,6 +33,7 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
@@ -105,8 +106,7 @@ struct secure_endpoint {
 grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 
 static void destroy(secure_endpoint* ep) {
-  ep->~secure_endpoint();
-  gpr_free(ep);
+  grpc_core::Delete(ep);
 }
 
 #ifndef NDEBUG
@@ -435,8 +435,8 @@ grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_endpoint* transport, grpc_slice* leftover_slices,
     size_t leftover_nslices) {
-  secure_endpoint* ep = new (gpr_malloc(sizeof(secure_endpoint)))
-      secure_endpoint(&vtable, protector, zero_copy_protector, transport,
-                      leftover_slices, leftover_nslices);
+  secure_endpoint* ep = grpc_core::New<secure_endpoint>(
+      &vtable, protector, zero_copy_protector, transport, leftover_slices,
+      leftover_nslices);
   return &ep->base;
 }

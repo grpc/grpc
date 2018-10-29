@@ -1109,7 +1109,6 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       GetInitialCallSizeEstimate(args.parent_data_size);
   *call = new (gpr_arena_alloc(args.arena, allocation_size))
       grpc_subchannel_call(this, args);
-
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");
