@@ -124,7 +124,7 @@ struct read_state {
   int length_field = 0;
   bool compressed = 0;
   char grpc_header_bytes[GRPC_HEADER_SIZE_IN_BYTES] = {};
-  char* payload_field = 0;
+  char* payload_field = nullptr;
   bool read_stream_closed = 0;
 
   /* vars for holding data destined for the application */
@@ -329,8 +329,6 @@ static void add_to_storage(struct stream_obj* s,
   in remove_from_storage */
   struct op_and_state* new_op = static_cast<struct op_and_state*>(
       gpr_malloc(sizeof(struct op_and_state)));
-  memcpy(&new_op->op, op, sizeof(grpc_transport_stream_op_batch));
-  memset(&new_op->state, 0, sizeof(new_op->state));
   new_op->s = s;
   new_op->done = false;
   gpr_mu_lock(&s->mu);
@@ -553,8 +551,6 @@ static void on_response_headers_received(
   }
 
   gpr_mu_lock(&s->mu);
-  memset(&s->state.rs.initial_metadata, 0,
-         sizeof(s->state.rs.initial_metadata));
   convert_cronet_array_to_metadata(headers, &s->state.rs.initial_metadata);
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
   if (!(s->state.state_op_done[OP_CANCEL_ERROR] ||
@@ -645,8 +641,6 @@ static void on_response_trailers_received(
   stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   grpc_cronet_transport* t = s->curr_ct;
   gpr_mu_lock(&s->mu);
-  memset(&s->state.rs.trailing_metadata, 0,
-         sizeof(s->state.rs.trailing_metadata));
   s->state.rs.trailing_metadata_valid = false;
   convert_cronet_array_to_metadata(trailers, &s->state.rs.trailing_metadata);
   if (trailers->count > 0) {
