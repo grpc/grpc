@@ -5456,6 +5456,22 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_interceptors_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/interceptors_util.h
+  src:
+  - test/cpp/end2end/server_interceptors_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_request_call_test
   gtest: true
   build: test
