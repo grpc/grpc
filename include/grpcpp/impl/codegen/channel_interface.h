@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -51,6 +52,7 @@ template <class W, class R>
 class ClientAsyncReaderWriterFactory;
 template <class R>
 class ClientAsyncResponseReaderFactory;
+class InterceptedChannel;
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
@@ -108,6 +110,7 @@ class ChannelInterface {
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
+  friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ClientContext* context,
                                     CompletionQueue* cq) = 0;
@@ -119,6 +122,20 @@ class ChannelInterface {
                                        CompletionQueue* cq, void* tag) = 0;
   virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline) = 0;
+
+  // EXPERIMENTAL
+  // This is needed to keep codegen_test_minimal happy. InterceptedChannel needs
+  // to make use of this but can't directly call Channel's implementation
+  // because of the test.
+  // Returns an empty Call object (rather than being pure) since this is a new
+  // method and adding a new pure method to an interface would be a breaking
+  // change (even though this is private and non-API)
+  virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
+                                            ClientContext* context,
+                                            CompletionQueue* cq,
+                                            int interceptor_pos) {
+    return internal::Call();
+  }
 
   // EXPERIMENTAL
   // A method to get the callbackable completion queue associated with this

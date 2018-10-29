@@ -16,9 +16,10 @@
  *
  */
 
-#ifndef GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
-#define GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
+#ifndef GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
+#define GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H
 
+#include <atomic>
 #include <vector>
 
 #include <grpc/impl/codegen/log.h>
@@ -27,41 +28,39 @@
 
 namespace grpc {
 
-class ClientContext;
-class Channel;
+class ServerContext;
 
 namespace internal {
 class InterceptorBatchMethodsImpl;
 }
 
 namespace experimental {
-class ClientRpcInfo;
+class ServerRpcInfo;
 
-class ClientInterceptorFactoryInterface {
+class ServerInterceptorFactoryInterface {
  public:
-  virtual ~ClientInterceptorFactoryInterface() {}
-  virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+  virtual ~ServerInterceptorFactoryInterface() {}
+  virtual Interceptor* CreateServerInterceptor(ServerRpcInfo* info) = 0;
 };
 
-class ClientRpcInfo {
+class ServerRpcInfo {
  public:
-  ClientRpcInfo() {}
+  ~ServerRpcInfo(){};
 
-  ~ClientRpcInfo(){};
-
-  ClientRpcInfo(const ClientRpcInfo&) = delete;
-  ClientRpcInfo(ClientRpcInfo&&) = default;
-  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
+  ServerRpcInfo(const ServerRpcInfo&) = delete;
+  ServerRpcInfo(ServerRpcInfo&&) = default;
+  ServerRpcInfo& operator=(ServerRpcInfo&&) = default;
 
   // Getter methods
   const char* method() { return method_; }
-  ChannelInterface* channel() { return channel_; }
-  grpc::ClientContext* client_context() { return ctx_; }
+  grpc::ServerContext* server_context() { return ctx_; }
 
  private:
-  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                grpc::ChannelInterface* channel)
-      : ctx_(ctx), method_(method), channel_(channel) {}
+  ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
+      : ctx_(ctx), method_(method) {
+    ref_.store(1);
+  }
+
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
@@ -70,28 +69,32 @@ class ClientRpcInfo {
   }
 
   void RegisterInterceptors(
-      const std::vector<std::unique_ptr<
-          experimental::ClientInterceptorFactoryInterface>>& creators,
-      int interceptor_pos) {
-    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
-         ++it) {
+      const std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
+    for (const auto& creator : creators) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          (*it)->CreateClientInterceptor(this)));
+          creator->CreateServerInterceptor(this)));
     }
   }
 
-  grpc::ClientContext* ctx_ = nullptr;
+  void Ref() { ref_++; }
+  void Unref() {
+    if (--ref_ == 0) {
+      delete this;
+    }
+  }
+
+  grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
-  grpc::ChannelInterface* channel_ = nullptr;
+  std::atomic_int ref_;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
-  bool hijacked_ = false;
-  size_t hijacked_interceptor_ = 0;
 
   friend class internal::InterceptorBatchMethodsImpl;
-  friend class grpc::ClientContext;
+  friend class grpc::ServerContext;
 };
 
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
+#endif  // GRPCPP_IMPL_CODEGEN_SERVER_INTERCEPTOR_H

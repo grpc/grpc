@@ -3394,6 +3394,28 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -4694,6 +4716,28 @@
     "name": "server_early_return_test", 
     "src": [
       "test/cpp/end2end/server_early_return_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/interceptors_util.h", 
+      "test/cpp/end2end/server_interceptors_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -11154,6 +11198,8 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
@@ -11166,7 +11212,9 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
@@ -11174,6 +11222,7 @@
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 
@@ -11224,6 +11273,8 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
@@ -11236,7 +11287,9 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
@@ -11244,6 +11297,7 @@
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 

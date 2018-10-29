@@ -143,7 +143,6 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
     // code, so we can just clean up here without creating a transport.
-    // TODO(juanlishen): Do we need to free the memory to resource user?
     if (args->endpoint != nullptr) {
       grpc_transport* transport = grpc_create_chttp2_transport(
           args->args, args->endpoint, false, resource_user);
@@ -169,6 +168,11 @@ static void on_handshake_done(void* arg, grpc_error* error) {
                         connection_state, grpc_schedule_on_exec_ctx);
       grpc_timer_init(&connection_state->timer, connection_state->deadline,
                       &connection_state->on_timeout);
+    } else {
+      if (resource_user != nullptr) {
+        grpc_resource_user_free(resource_user,
+                                GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+      }
     }
   }
   grpc_handshake_manager_pending_list_remove(
