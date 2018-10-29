@@ -33,6 +33,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/rpc_method.h>
@@ -57,9 +58,8 @@ Channel::Channel(
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
         interceptor_creators)
     : host_(host), c_channel_(channel) {
-  auto* vector = interceptor_creators.release();
-  if (vector != nullptr) {
-    interceptor_creators_ = std::move(*vector);
+  if (interceptor_creators != nullptr) {
+    interceptor_creators_ = std::move(*interceptor_creators);
   }
   g_gli_initializer.summon();
 }
@@ -112,9 +112,10 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 }  // namespace experimental
 
-internal::Call Channel::CreateCall(const internal::RpcMethod& method,
-                                   ClientContext* context,
-                                   CompletionQueue* cq) {
+internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
+                                           ClientContext* context,
+                                           CompletionQueue* cq,
+                                           int interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -147,17 +148,22 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   }
   grpc_census_call_set_context(c_call, context->census_context());
   context->set_call(c_call, shared_from_this());
-  return internal::Call(c_call, this, cq);
+
+  auto* info = context->set_client_rpc_info(
+      method.name(), this, interceptor_creators_, interceptor_pos);
+  return internal::Call(c_call, this, cq, info);
+}
+
+internal::Call Channel::CreateCall(const internal::RpcMethod& method,
+                                   ClientContext* context,
+                                   CompletionQueue* cq) {
+  return CreateCallInternal(method, context, cq, 0);
 }
 
 void Channel::PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                internal::Call* call) {
-  static const size_t MAX_OPS = 8;
-  size_t nops = 0;
-  grpc_op cops[MAX_OPS];
-  ops->FillOps(call->call(), cops, &nops);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), cops, nops,
-                                                   ops->cq_tag(), nullptr));
+  ops->FillOps(
+      call);  // Make a copy of call. It's fine since Call just has pointers
 }
 
 void* Channel::RegisterMethod(const char* method) {

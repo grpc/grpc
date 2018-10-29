@@ -584,6 +584,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
 endif()
 add_dependencies(buildtests_cxx client_crash_test_server)
+add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
@@ -3112,6 +3113,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -3124,7 +3127,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -3132,6 +3137,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -3687,6 +3693,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -3699,7 +3707,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -3707,6 +3717,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4096,6 +4107,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4108,7 +4121,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4116,6 +4131,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4277,6 +4293,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4289,7 +4307,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4297,6 +4317,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4602,6 +4623,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4614,7 +4637,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
@@ -4622,6 +4647,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -12390,6 +12416,47 @@ target_include_directories(client_crash_test_server
 )
 
 target_link_libraries(client_crash_test_server
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(client_interceptors_end2end_test
+  test/cpp/end2end/client_interceptors_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_interceptors_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util

@@ -174,7 +174,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-         grpc_resource_quota* server_rq = nullptr);
+         grpc_resource_quota* server_rq = nullptr,
+         std::vector<
+             std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+             interceptor_creators = std::vector<std::unique_ptr<
+                 experimental::ServerInterceptorFactoryInterface>>());
 
   /// Start the server.
   ///
@@ -187,6 +191,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server() override { return server_; };
 
  private:
+  const std::vector<
+      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
+  interceptor_creators() override {
+    return &interceptor_creators_;
+  }
+
   friend class AsyncGenericService;
   friend class ServerBuilder;
   friend class ServerInitializer;
@@ -251,6 +261,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;
+
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      interceptor_creators_;
 };
 
 }  // namespace grpc

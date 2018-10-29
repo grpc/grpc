@@ -26,11 +26,13 @@
 #include <grpc/impl/codegen/compression_types.h>
 
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -285,6 +287,18 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
+  experimental::ServerRpcInfo* set_server_rpc_info(
+      const char* method,
+      const std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
+          creators) {
+    if (creators.size() != 0) {
+      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_->RegisterInterceptors(creators);
+    }
+    return rpc_info_;
+  }
+
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
@@ -306,6 +320,8 @@ class ServerContext {
                       internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_;
+
+  experimental::ServerRpcInfo* rpc_info_ = nullptr;
 };
 
 }  // namespace grpc
