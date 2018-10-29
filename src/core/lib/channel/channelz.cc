@@ -374,8 +374,10 @@ grpc_json* SocketNode::RenderJson() {
   return top_level_json;
 }
 
-ListenSocketNode::ListenSocketNode(int port)
-    : BaseNode(EntityType::kSocket), port_(port) {}
+ListenSocketNode::ListenSocketNode(char* host, int port)
+    : BaseNode(EntityType::kSocket),
+      host_(UniquePtr<char>(host)),
+      port_(port) {}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -402,7 +404,7 @@ grpc_json* ListenSocketNode::RenderJson() {
   json_iterator =
       grpc_json_add_number_string_child(json, json_iterator, "port", port_);
   json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
-                                         "127.0 0.1", GRPC_JSON_STRING, false);
+                                         host_.get(), GRPC_JSON_STRING, false);
 
   return top_level_json;
 }

@@ -268,12 +268,14 @@ class SocketNode : public BaseNode {
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode(int port);
+  // ListenSocketNode takes ownership of host.
+  ListenSocketNode(char* host, int port);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
 
  private:
+  UniquePtr<char> host_;
   int port_;
 };
 

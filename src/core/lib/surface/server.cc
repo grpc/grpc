@@ -1248,7 +1248,6 @@ void grpc_server_populate_listen_sockets(
     grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
   gpr_mu_lock(&server->mu_global);
   for (listener* l = server->listeners; l != nullptr; l = l->next) {
-    gpr_log(GPR_ERROR, "here");
     listen_sockets->push_back(l->socket_uuid);
   }
   gpr_mu_unlock(&server->mu_global);
