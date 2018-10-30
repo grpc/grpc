@@ -37,33 +37,34 @@ enum init_strategy {
   ZERO_INIT,      // Initialize arena blocks with 0.
   NON_ZERO_INIT,  // Initialize arena blocks with a non-zero value.
 };
+
+gpr_once g_init_strategy_once = GPR_ONCE_INIT;
+init_strategy g_init_strategy = NO_INIT;
 }  // namespace
 
-static init_strategy get_init_strategy() {
-  const static init_strategy s = [] {
-    char* str = gpr_getenv("GRPC_ARENA_INIT_STRATEGY");
-    init_strategy s;
-    if (str == nullptr) {
-      s = NO_INIT;
-    } else if (strcmp(str, "zero_init") == 0) {
-      s = ZERO_INIT;
-    } else if (strcmp(str, "non_zero_init") == 0) {
-      s = NON_ZERO_INIT;
-    } else {
-      s = NO_INIT;
-    }
-    gpr_free(str);
-    return s;
-  }();
+static void set_strategy_from_env() {
+  char* str = gpr_getenv("GRPC_ARENA_INIT_STRATEGY");
+  if (str == nullptr) {
+    g_init_strategy = NO_INIT;
+  } else if (strcmp(str, "zero_init") == 0) {
+    g_init_strategy = ZERO_INIT;
+  } else if (strcmp(str, "non_zero_init") == 0) {
+    g_init_strategy = NON_ZERO_INIT;
+  } else {
+    g_init_strategy = NO_INIT;
+  }
+  gpr_free(str);
+}
 
-  return s;
+static init_strategy get_init_strategy() {
+  return g_init_strategy;
 }
 
 static void* gpr_arena_alloc_maybe_init(size_t size) {
   void* mem = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
-  const init_strategy init = get_init_strategy();
-  if (GPR_UNLIKELY(init != NO_INIT)) {
-    if (init == ZERO_INIT) {
+  gpr_once_init(&g_init_strategy_once, set_strategy_from_env);
+  if (GPR_UNLIKELY(g_init_strategy != NO_INIT)) {
+    if (g_init_strategy == ZERO_INIT) {
       memset(mem, 0, size);
     } else {  // NON_ZERO_INIT.
       memset(mem, 0xFE, size);
