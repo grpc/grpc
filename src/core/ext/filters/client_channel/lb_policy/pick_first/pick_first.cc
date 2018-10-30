@@ -46,7 +46,8 @@ class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(const Args& args);
 
-  void UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -159,7 +160,7 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
-  UpdateLocked(*args.args);
+  UpdateLocked(*args.args, args.lb_config);
   grpc_subchannel_index_ref();
 }
 
@@ -333,7 +334,9 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
-void PickFirst::UpdateLocked(const grpc_channel_args& args) {
+// TODO(juanlishen): Use lb_config to configure LB policy.
+void PickFirst::UpdateLocked(const grpc_channel_args& args,
+                             grpc_json* lb_config) {
   AutoChildRefsUpdater guard(this);
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {

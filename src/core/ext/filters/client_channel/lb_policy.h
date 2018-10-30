@@ -58,6 +58,8 @@ class LoadBalancingPolicy
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_LB_ADDRESSES channel arg.
     grpc_channel_args* args = nullptr;
+    /// Load balancing config from the resolver.
+    grpc_json* lb_config = nullptr;
   };
 
   /// State used for an LB pick.
@@ -92,10 +94,11 @@ class LoadBalancingPolicy
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
-  /// Updates the policy with a new set of \a args from the resolver.
-  /// Note that the LB policy gets the set of addresses from the
+  /// Updates the policy with a new set of \a args and a new \a lb_config from
+  /// the resolver. Note that the LB policy gets the set of addresses from the
   /// GRPC_ARG_LB_ADDRESSES channel arg.
-  virtual void UpdateLocked(const grpc_channel_args& args) GRPC_ABSTRACT;
+  virtual void UpdateLocked(const grpc_channel_args& args,
+                            grpc_json* lb_config) GRPC_ABSTRACT;
 
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.

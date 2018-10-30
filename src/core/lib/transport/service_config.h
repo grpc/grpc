@@ -69,6 +69,11 @@ class ServiceConfig {
   template <typename T>
   void ParseGlobalParams(ProcessJson<T> process_json, T* arg) const;
 
+  /// Gets the LB policy config from \a service_config.
+  /// Returns NULL if no LB policy config was specified.
+  /// Caller does NOT take ownership.
+  grpc_json* GetLoadBalancingConfig() const;
+
   /// Gets the LB policy name from \a service_config.
   /// Returns NULL if no LB policy name was specified.
   /// Caller does NOT take ownership.
@@ -93,6 +98,11 @@ class ServiceConfig {
   template <typename T>
   static RefCountedPtr<T> MethodConfigTableLookup(
       const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path);
+
+  /// Gets the LB policy config content from \a lb_config.
+  /// Returns NULL if no LB policy config was specified.
+  /// Caller does NOT take ownership.
+  static grpc_json* GetPolicyFromLoadBalancingConfig(grpc_json* lb_config);
 
  private:
   // So New() can call our private ctor.

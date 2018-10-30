@@ -57,7 +57,8 @@ class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
 
-  void UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -232,7 +233,7 @@ RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "round_robin");
-  UpdateLocked(*args.args);
+  UpdateLocked(*args.args, args.lb_config);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels());
@@ -664,7 +665,9 @@ void RoundRobin::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
                                                  notify);
 }
 
-void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
+// TODO(juanlishen): Use lb_config to configure LB policy.
+void RoundRobin::UpdateLocked(const grpc_channel_args& args,
+                              grpc_json* lb_config) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   AutoChildRefsUpdater guard(this);
   if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
