@@ -1053,7 +1053,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
-        "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1077,12 +1076,12 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
-        "src/core/ext/filters/client_channel/uri_parser.h",
     ],
     language = "c++",
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_uri",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "inlined_vector",
@@ -1090,6 +1089,20 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "health_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_uri",
+    srcs = [
+        "src/core/ext/uri/uri_parser.cc",
+    ],
+    hdrs = [
+        "src/core/ext/uri/uri_parser.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
     ],
 )
 
@@ -1693,6 +1706,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_uri",
         "grpc_http_filters",
         "grpc_transport_chttp2_alpn",
     ],

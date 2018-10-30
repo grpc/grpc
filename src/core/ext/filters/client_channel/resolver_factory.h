@@ -24,7 +24,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/ext/uri/uri_parser.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"

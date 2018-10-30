@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
+#include "src/core/ext/uri/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"

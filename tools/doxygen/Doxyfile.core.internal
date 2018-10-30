@@ -962,8 +962,6 @@ src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \
 src/core/ext/filters/client_channel/subchannel_index.h \
-src/core/ext/filters/client_channel/uri_parser.cc \
-src/core/ext/filters/client_channel/uri_parser.h \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1049,6 +1047,8 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/uri/uri_parser.cc \
+src/core/ext/uri/uri_parser.h \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \

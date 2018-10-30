@@ -23,7 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/ext/uri/uri_parser.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 bool squelch = true;

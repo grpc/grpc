@@ -588,7 +588,6 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
-  - src/core/ext/filters/client_channel/uri_parser.h
   src:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -612,12 +611,12 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
-  - src/core/ext/filters/client_channel/uri_parser.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base
   - grpc_deadline_filter
   - health_proto
+  - grpc_uri
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -1007,6 +1006,7 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - grpc_http_filters
+  - grpc_uri
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -1096,6 +1096,13 @@ filegroups:
   - src/core/ext/transport/inproc/inproc_transport.h
   uses:
   - grpc_base_headers
+- name: grpc_uri
+  headers:
+  - src/core/ext/uri/uri_parser.h
+  src:
+  - src/core/ext/uri/uri_parser.cc
+  uses:
+  - grpc_base
 - name: grpc_workaround_cronet_compression_filter
   headers:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
