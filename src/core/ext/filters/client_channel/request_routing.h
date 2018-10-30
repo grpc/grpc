@@ -123,12 +123,12 @@ class RequestRouter {
  private:
   using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
 
+  class ReresolutionRequestHandler;
   class LbConnectivityWatcher;
 
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   const char* GetLbPolicyNameFromResolverResultLocked();
-  static void OnRequestReresolutionLocked(void* arg, grpc_error* error);
   static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);

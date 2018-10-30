@@ -64,19 +64,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-// FIXME: make this a class?
-struct ReresolutionRequestArgs {
-  RequestRouter* request_router;
-  // LB policy address. Used for logging only; no ref held, so not
-  // safe to dereference (may be deleted at any time).
-  LoadBalancingPolicy* lb_policy;
-  grpc_closure closure;
-};
-
-}  // namespace
-
 //
 // RequestRouter::Request::ResolverResultWaiter
 //
@@ -224,63 +211,6 @@ class RequestRouter::Request::ResolverResultWaiter {
 };
 
 //
-// RequestRouter::LbConnectivityWatcher
-//
-
-class RequestRouter::LbConnectivityWatcher {
- public:
-  LbConnectivityWatcher(RequestRouter* request_router,
-                        grpc_connectivity_state state,
-                        LoadBalancingPolicy* lb_policy,
-                        grpc_channel_stack* owning_stack,
-                        grpc_combiner* combiner)
-    : request_router_(request_router), state_(state), lb_policy_(lb_policy),
-      owning_stack_(owning_stack) {
-    GRPC_CHANNEL_STACK_REF(owning_stack_, "LbConnectivityWatcher");
-    GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
-                      grpc_combiner_scheduler(combiner));
-    lb_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
-  }
-
-  ~LbConnectivityWatcher() {
-    GRPC_CHANNEL_STACK_UNREF(owning_stack_, "LbConnectivityWatcher");
-  }
-
- private:
-  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
-    LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
-    // If the notification is not for the current policy, we're stale,
-    // so delete ourselves.
-    if (self->lb_policy_ == self->request_router_->lb_policy_.get()) {
-      Delete(self);
-      return;
-    }
-    // Otherwise, process notification.
-    if (self->request_router_->tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: lb_policy=%p state changed to %s",
-              self->request_router_, self->lb_policy_,
-              grpc_connectivity_state_name(self->state_));
-    }
-    self->request_router_->SetConnectivityStateLocked(
-        self->state_, GRPC_ERROR_REF(error), "lb_changed");
-    // If shutting down, terminate watch.
-    if (self->state_ == GRPC_CHANNEL_SHUTDOWN) {
-      Delete(self);
-      return;
-    }
-    // Renew watch.
-    self->lb_policy_->NotifyOnStateChangeLocked(&self->state_,
-                                                &self->on_changed_);
-  }
-
-  RequestRouter* request_router_;
-  grpc_connectivity_state state_;
-  LoadBalancingPolicy* lb_policy_;
-  grpc_channel_stack* owning_stack_;
-  grpc_closure on_changed_;
-};
-
-//
 // RequestRouter::Request
 //
 
@@ -398,6 +328,114 @@ RequestRouter::Request::State* RequestRouter::Request::AddState(
   state.request_router = request_router;
   return &state;
 }
+
+//
+// RequestRouter::LbConnectivityWatcher
+//
+
+class RequestRouter::LbConnectivityWatcher {
+ public:
+  LbConnectivityWatcher(RequestRouter* request_router,
+                        grpc_connectivity_state state,
+                        LoadBalancingPolicy* lb_policy,
+                        grpc_channel_stack* owning_stack,
+                        grpc_combiner* combiner)
+    : request_router_(request_router), state_(state), lb_policy_(lb_policy),
+      owning_stack_(owning_stack) {
+    GRPC_CHANNEL_STACK_REF(owning_stack_, "LbConnectivityWatcher");
+    GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
+                      grpc_combiner_scheduler(combiner));
+    lb_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
+  }
+
+  ~LbConnectivityWatcher() {
+    GRPC_CHANNEL_STACK_UNREF(owning_stack_, "LbConnectivityWatcher");
+  }
+
+ private:
+  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
+    LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
+    // If the notification is not for the current policy, we're stale,
+    // so delete ourselves.
+    if (self->lb_policy_ == self->request_router_->lb_policy_.get()) {
+      Delete(self);
+      return;
+    }
+    // Otherwise, process notification.
+    if (self->request_router_->tracer_->enabled()) {
+      gpr_log(GPR_INFO, "request_router=%p: lb_policy=%p state changed to %s",
+              self->request_router_, self->lb_policy_,
+              grpc_connectivity_state_name(self->state_));
+    }
+    self->request_router_->SetConnectivityStateLocked(
+        self->state_, GRPC_ERROR_REF(error), "lb_changed");
+    // If shutting down, terminate watch.
+    if (self->state_ == GRPC_CHANNEL_SHUTDOWN) {
+      Delete(self);
+      return;
+    }
+    // Renew watch.
+    self->lb_policy_->NotifyOnStateChangeLocked(&self->state_,
+                                                &self->on_changed_);
+  }
+
+  RequestRouter* request_router_;
+  grpc_connectivity_state state_;
+  // LB policy address. No ref held, so not safe to dereference unless
+  // it happens to match request_router->lb_policy_.
+  LoadBalancingPolicy* lb_policy_;
+  grpc_channel_stack* owning_stack_;
+  grpc_closure on_changed_;
+};
+
+//
+// RequestRounter::ReresolutionRequestHandler
+//
+
+class RequestRouter::ReresolutionRequestHandler {
+ public:
+  ReresolutionRequestHandler(RequestRouter* request_router,
+                             LoadBalancingPolicy* lb_policy,
+                             grpc_channel_stack* owning_stack,
+                             grpc_combiner* combiner)
+    : request_router_(request_router), lb_policy_(lb_policy),
+      owning_stack_(owning_stack) {
+    GRPC_CHANNEL_STACK_REF(owning_stack_, "ReresolutionRequestHandler");
+    GRPC_CLOSURE_INIT(&closure_, &OnRequestReresolutionLocked, this,
+                      grpc_combiner_scheduler(combiner));
+    lb_policy_->SetReresolutionClosureLocked(&closure_);
+  }
+
+ private:
+  static void OnRequestReresolutionLocked(void* arg, grpc_error* error) {
+    ReresolutionRequestHandler* self =
+        static_cast<ReresolutionRequestHandler*>(arg);
+    RequestRouter* request_router = self->request_router_;
+    // If this invocation is for a stale LB policy, treat it as an LB shutdown
+    // signal.
+    if (self->lb_policy_ != request_router->lb_policy_.get() ||
+        error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
+      GRPC_CHANNEL_STACK_UNREF(request_router->owning_stack_,
+                               "ReresolutionRequestHandler");
+      Delete(self);
+      return;
+    }
+    if (request_router->tracer_->enabled()) {
+      gpr_log(GPR_INFO, "request_router=%p: started name re-resolving",
+              request_router);
+    }
+    request_router->resolver_->RequestReresolutionLocked();
+    // Give back the closure to the LB policy.
+    self->lb_policy_->SetReresolutionClosureLocked(&self->closure_);
+  }
+
+  RequestRouter* request_router_;
+  // LB policy address. No ref held, so not safe to dereference unless
+  // it happens to match request_router->lb_policy_.
+  LoadBalancingPolicy* lb_policy_;
+  grpc_channel_stack* owning_stack_;
+  grpc_closure closure_;
+};
 
 //
 // RequestRouter
@@ -556,26 +594,6 @@ const char* RequestRouter::GetLbPolicyNameFromResolverResultLocked() {
   return lb_policy_name;
 }
 
-void RequestRouter::OnRequestReresolutionLocked(void* arg, grpc_error* error) {
-  ReresolutionRequestArgs* args = static_cast<ReresolutionRequestArgs*>(arg);
-  RequestRouter* request_router = args->request_router;
-  // If this invocation is for a stale LB policy, treat it as an LB shutdown
-  // signal.
-  if (args->lb_policy != request_router->lb_policy_.get() ||
-      error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
-    GRPC_CHANNEL_STACK_UNREF(request_router->owning_stack_, "re-resolution");
-    Delete(args);
-    return;
-  }
-  if (request_router->tracer_->enabled()) {
-    gpr_log(GPR_INFO, "request_router=%p: started name re-resolving",
-            request_router);
-  }
-  request_router->resolver_->RequestReresolutionLocked();
-  // Give back the closure to the LB policy.
-  request_router->lb_policy_->SetReresolutionClosureLocked(&args->closure);
-}
-
 // Creates a new LB policy, replacing any previous one.
 // If the new policy is created successfully, sets *connectivity_state and
 // *connectivity_error to its initial connectivity state; otherwise,
@@ -620,14 +638,10 @@ void RequestRouter::CreateNewLbPolicyLocked(
     lb_policy_ = std::move(new_lb_policy);
     grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
                                      interested_parties_);
-    // Set up re-resolution callback.
-    ReresolutionRequestArgs* args = New<ReresolutionRequestArgs>();
-    args->request_router = this;
-    args->lb_policy = lb_policy_.get();
-    GRPC_CLOSURE_INIT(&args->closure, &OnRequestReresolutionLocked, args,
-                      grpc_combiner_scheduler(combiner_));
-    GRPC_CHANNEL_STACK_REF(owning_stack_, "re-resolution");
-    lb_policy_->SetReresolutionClosureLocked(&args->closure);
+    // Create re-resolution request handler for the new LB policy.  It
+    // will delete itself when no longer needed.
+    New<ReresolutionRequestHandler>(this, lb_policy_.get(), owning_stack_,
+                                    combiner_);
     // Get the new LB policy's initial connectivity state and start a
     // connectivity watch.
     GRPC_ERROR_UNREF(*connectivity_error);
