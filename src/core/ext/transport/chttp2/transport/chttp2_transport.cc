@@ -396,7 +396,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   }
   if (channelz_enabled) {
     t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            (t->peer_string));
   }
   return enable_bdp;
 }
