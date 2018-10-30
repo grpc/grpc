@@ -174,7 +174,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
          std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
-         grpc_resource_quota* server_rq = nullptr);
+         grpc_resource_quota* server_rq = nullptr,
+         std::vector<
+             std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+             interceptor_creators = std::vector<std::unique_ptr<
+                 experimental::ServerInterceptorFactoryInterface>>());
 
   /// Start the server.
   ///
@@ -187,6 +191,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server() override { return server_; };
 
  private:
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
+  interceptor_creators() override {
+    return &interceptor_creators_;
+  }
+
   friend class AsyncGenericService;
   friend class ServerBuilder;
   friend class ServerInitializer;
@@ -215,6 +224,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   };
 
   ServerInitializer* initializer();
+
+  // A vector of interceptor factory objects.
+  // This should be destroyed after health_check_service_ and this requirement
+  // is satisfied by declaring interceptor_creators_ before
+  // health_check_service_. (C++ mandates that member objects be destroyed in
+  // the reverse order of initialization.)
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      interceptor_creators_;
 
   const int max_receive_message_size_;
 

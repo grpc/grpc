@@ -32,16 +32,16 @@ namespace grpc {
 namespace internal {
 
 /// An exception-safe way of invoking a user-specified callback function
-template <class Func, class Arg>
-void CatchingCallback(Func&& func, Arg&& arg) {
+template <class Func, class... Args>
+void CatchingCallback(Func&& func, Args&&... args) {
 #if GRPC_ALLOW_EXCEPTIONS
   try {
-    func(arg);
+    func(std::forward<Args>(args)...);
   } catch (...) {
     // nothing to return or change here, just don't crash the library
   }
 #else   // GRPC_ALLOW_EXCEPTIONS
-  func(arg);
+  func(std::forward<Args>(args)...);
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
@@ -94,7 +94,10 @@ class CallbackWithStatusTag
   void Run(bool ok) {
     void* ignored = ops_;
 
-    GPR_CODEGEN_ASSERT(ops_->FinalizeResult(&ignored, &ok));
+    if (!ops_->FinalizeResult(&ignored, &ok)) {
+      // The tag was swallowed
+      return;
+    }
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     // Last use of func_ or status_, so ok to move them out

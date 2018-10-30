@@ -93,6 +93,7 @@ git submodule update --init
 # Store intermediate build files of ObjC tests into /tmpfs
 mkdir /tmpfs/Build-ios-binary-size
 ln -s /tmpfs/Build-ios-binary-size src/objective-c/examples/Sample/Build
-mkdir /tmpfs/DerivedData
+mkdir -p /tmpfs/DerivedData
 rm -rf ~/Library/Developer/Xcode/DerivedData
+mkdir -p ~/Library/Developer/Xcode
 ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData

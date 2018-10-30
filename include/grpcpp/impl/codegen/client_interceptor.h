@@ -19,23 +19,75 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
 
+#include <vector>
+
 #include <grpcpp/impl/codegen/interceptor.h>
+#include <grpcpp/impl/codegen/string_ref.h>
 
 namespace grpc {
+
+class ClientContext;
+class Channel;
+
+namespace internal {
+class InterceptorBatchMethodsImpl;
+}
+
 namespace experimental {
-class ClientInterceptor {
- public:
-  virtual ~ClientInterceptor() {}
-
-  virtual void Intercept(InterceptorBatchMethods* methods) = 0;
-};
-
-class ClientRpcInfo {};
+class ClientRpcInfo;
 
 class ClientInterceptorFactoryInterface {
  public:
   virtual ~ClientInterceptorFactoryInterface() {}
-  virtual ClientInterceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+  virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+};
+
+class ClientRpcInfo {
+ public:
+  ClientRpcInfo() {}
+
+  ~ClientRpcInfo(){};
+
+  ClientRpcInfo(const ClientRpcInfo&) = delete;
+  ClientRpcInfo(ClientRpcInfo&&) = default;
+  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
+
+  // Getter methods
+  const char* method() { return method_; }
+  ChannelInterface* channel() { return channel_; }
+  grpc::ClientContext* client_context() { return ctx_; }
+
+ private:
+  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
+                grpc::ChannelInterface* channel)
+      : ctx_(ctx), method_(method), channel_(channel) {}
+  // Runs interceptor at pos \a pos.
+  void RunInterceptor(
+      experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
+    GPR_CODEGEN_ASSERT(pos < interceptors_.size());
+    interceptors_[pos]->Intercept(interceptor_methods);
+  }
+
+  void RegisterInterceptors(
+      const std::vector<std::unique_ptr<
+          experimental::ClientInterceptorFactoryInterface>>& creators,
+      int interceptor_pos) {
+    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
+         ++it) {
+      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
+          (*it)->CreateClientInterceptor(this)));
+    }
+  }
+
+  grpc::ClientContext* ctx_ = nullptr;
+  const char* method_ = nullptr;
+  grpc::ChannelInterface* channel_ = nullptr;
+  std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
+  bool hijacked_ = false;
+  size_t hijacked_interceptor_ = 0;
+
+  friend class internal::InterceptorBatchMethodsImpl;
+  friend class grpc::ClientContext;
 };
 
 }  // namespace experimental

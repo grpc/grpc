@@ -222,6 +222,24 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
   return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
 }
 
+char* grpc_channelz_get_server(intptr_t server_id) {
+  grpc_core::channelz::BaseNode* server_node =
+      grpc_core::channelz::ChannelzRegistry::Get(server_id);
+  if (server_node == nullptr ||
+      server_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kServer) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* channel_json = server_node->RenderJson();
+  channel_json->key = "server";
+  grpc_json_link_child(json, channel_json, nullptr);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
+
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id) {
   grpc_core::channelz::BaseNode* base_node =

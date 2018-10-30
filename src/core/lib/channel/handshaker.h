@@ -56,7 +56,6 @@ typedef struct grpc_handshaker grpc_handshaker;
 /// For the on_handshake_done callback, all members are input arguments,
 /// which the callback takes ownership of.
 typedef struct {
-  grpc_pollset_set* interested_parties;
   grpc_endpoint* endpoint;
   grpc_channel_args* args;
   grpc_slice_buffer* read_buffer;
@@ -132,8 +131,6 @@ void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
                                      grpc_error* why);
 
 /// Invokes handshakers in the order they were added.
-/// \a interested_parties may be non-nullptr to provide a pollset_set that
-/// may be used during handshaking. Ownership is not taken.
 /// Takes ownership of \a endpoint, and then passes that ownership to
 /// the \a on_handshake_done callback.
 /// Does NOT take ownership of \a channel_args.  Instead, makes a copy before
@@ -145,11 +142,13 @@ void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
 /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
 /// the necessary clean-up.  Otherwise, the callback takes ownership of
 /// the arguments.
-void grpc_handshake_manager_do_handshake(
-    grpc_handshake_manager* mgr, grpc_pollset_set* interested_parties,
-    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func on_handshake_done, void* user_data);
+void grpc_handshake_manager_do_handshake(grpc_handshake_manager* mgr,
+                                         grpc_endpoint* endpoint,
+                                         const grpc_channel_args* channel_args,
+                                         grpc_millis deadline,
+                                         grpc_tcp_server_acceptor* acceptor,
+                                         grpc_iomgr_cb_func on_handshake_done,
+                                         void* user_data);
 
 /// Add \a mgr to the server side list of all pending handshake managers, the
 /// list starts with \a *head.

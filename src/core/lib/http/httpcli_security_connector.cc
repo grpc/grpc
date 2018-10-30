@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -194,9 +195,8 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_handshakers_add(HANDSHAKER_CLIENT, &args,
                        nullptr /* interested_parties */, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, nullptr /* interested_parties */, tcp,
-      nullptr /* channel_args */, deadline, nullptr /* acceptor */,
-      on_handshake_done, c /* user_data */);
+      c->handshake_mgr, tcp, nullptr /* channel_args */, deadline,
+      nullptr /* acceptor */, on_handshake_done, c /* user_data */);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

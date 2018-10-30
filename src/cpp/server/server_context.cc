@@ -40,14 +40,38 @@ namespace grpc {
 class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp()
-      : has_tag_(false),
+  // must ref the call before calling constructor and after deleting this
+  CompletionOp(internal::Call* call)
+      : call_(*call),
+        has_tag_(false),
         tag_(nullptr),
         refs_(2),
         finalized_(false),
-        cancelled_(0) {}
+        cancelled_(0),
+        done_intercepting_(false) {}
 
-  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override;
+  ~CompletionOp() {
+    if (call_.server_rpc_info()) {
+      call_.server_rpc_info()->Unref();
+    }
+  }
+
+  void FillOps(internal::Call* call) override;
+
+  // This should always be arena allocated in the call, so override delete.
+  // But this class is not trivially destructible, so must actually call delete
+  // before allowing the arena to be freed
+  static void operator delete(void* ptr, std::size_t size) {
+    assert(size == sizeof(CompletionOp));
+  }
+
+  // This operator should never be called as the memory should be freed as part
+  // of the arena destruction. It only exists to provide a matching operator
+  // delete to the operator new so that some compilers will not complain (see
+  // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
+  // there are no tests catching the compiler warning.
+  static void operator delete(void*, void*) { assert(0); }
+
   bool FinalizeResult(void** tag, bool* status) override;
 
   bool CheckCancelled(CompletionQueue* cq) {
@@ -66,51 +90,121 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
 
   void Unref();
 
+  // This will be called while interceptors are run if the RPC is a hijacked
+  // RPC. This should set hijacking state for each of the ops.
+  void SetHijackingState() override {
+    /* Servers don't allow hijacking */
+    GPR_CODEGEN_ASSERT(false);
+  }
+
+  /* Should be called after interceptors are done running */
+  void ContinueFillOpsAfterInterception() override {}
+
+  /* Should be called after interceptors are done running on the finalize result
+   * path */
+  void ContinueFinalizeResultAfterInterception() override {
+    done_intercepting_ = true;
+    if (!has_tag_) {
+      /* We don't have a tag to return. */
+      std::unique_lock<std::mutex> lock(mu_);
+      if (--refs_ == 0) {
+        lock.unlock();
+        grpc_call* call = call_.call();
+        delete this;
+        grpc_call_unref(call);
+      }
+      return;
+    }
+    /* Start a dummy op so that we can return the tag */
+    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
+                       g_core_codegen_interface->grpc_call_start_batch(
+                           call_.call(), nullptr, 0, this, nullptr));
+  }
+
  private:
   bool CheckCancelledNoPluck() {
     std::lock_guard<std::mutex> g(mu_);
     return finalized_ ? (cancelled_ != 0) : false;
   }
 
+  internal::Call call_;
   bool has_tag_;
   void* tag_;
   std::mutex mu_;
   int refs_;
   bool finalized_;
   int cancelled_;
+  bool done_intercepting_;
+  internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
 
 void ServerContext::CompletionOp::Unref() {
   std::unique_lock<std::mutex> lock(mu_);
   if (--refs_ == 0) {
     lock.unlock();
+    grpc_call* call = call_.call();
     delete this;
+    grpc_call_unref(call);
   }
 }
 
-void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
-                                          size_t* nops) {
-  ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  ops->data.recv_close_on_server.cancelled = &cancelled_;
-  ops->flags = 0;
-  ops->reserved = nullptr;
-  *nops = 1;
+void ServerContext::CompletionOp::FillOps(internal::Call* call) {
+  grpc_op ops;
+  ops.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  ops.data.recv_close_on_server.cancelled = &cancelled_;
+  ops.flags = 0;
+  ops.reserved = nullptr;
+  interceptor_methods_.SetCall(&call_);
+  interceptor_methods_.SetReverse();
+  interceptor_methods_.SetCallOpSetInterface(this);
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_call_start_batch(call->call(), &ops, 1, this, nullptr));
+  /* No interceptors to run here */
 }
 
 bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
-  std::unique_lock<std::mutex> lock(mu_);
-  finalized_ = true;
   bool ret = false;
-  if (has_tag_) {
-    *tag = tag_;
-    ret = true;
+  std::unique_lock<std::mutex> lock(mu_);
+  if (done_intercepting_) {
+    /* We are done intercepting. */
+    if (has_tag_) {
+      *tag = tag_;
+      ret = true;
+    }
+    if (--refs_ == 0) {
+      lock.unlock();
+      grpc_call* call = call_.call();
+      delete this;
+      grpc_call_unref(call);
+    }
+    return ret;
   }
+  finalized_ = true;
+
   if (!*status) cancelled_ = 1;
-  if (--refs_ == 0) {
-    lock.unlock();
-    delete this;
+  /* Release the lock since we are going to be running through interceptors now
+   */
+  lock.unlock();
+  /* Add interception point and run through interceptors */
+  interceptor_methods_.AddInterceptionHookPoint(
+      experimental::InterceptionHookPoints::POST_RECV_CLOSE);
+  if (interceptor_methods_.RunInterceptors()) {
+    /* No interceptors were run */
+    if (has_tag_) {
+      *tag = tag_;
+      ret = true;
+    }
+    lock.lock();
+    if (--refs_ == 0) {
+      lock.unlock();
+      grpc_call* call = call_.call();
+      delete this;
+      grpc_call_unref(call);
+    }
+    return ret;
   }
-  return ret;
+  /* There are interceptors to be run. Return false for now */
+  return false;
 }
 
 // ServerContext body
@@ -146,11 +240,20 @@ ServerContext::~ServerContext() {
   if (completion_op_) {
     completion_op_->Unref();
   }
+  if (rpc_info_) {
+    rpc_info_->Unref();
+  }
 }
 
 void ServerContext::BeginCompletionOp(internal::Call* call) {
   GPR_ASSERT(!completion_op_);
-  completion_op_ = new CompletionOp();
+  if (rpc_info_) {
+    rpc_info_->Ref();
+  }
+  grpc_call_ref(call->call());
+  completion_op_ =
+      new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
+          CompletionOp(call);
   if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }

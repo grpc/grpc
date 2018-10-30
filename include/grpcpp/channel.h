@@ -20,6 +20,7 @@
 #define GRPCPP_CHANNEL_H
 
 #include <memory>
+#include <mutex>
 
 #include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
@@ -67,6 +68,7 @@ class Channel final : public ChannelInterface,
       std::unique_ptr<std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
           interceptor_creators);
+  friend class internal::InterceptedChannel;
   Channel(const grpc::string& host, grpc_channel* c_channel,
           std::unique_ptr<std::vector<
               std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
@@ -86,6 +88,10 @@ class Channel final : public ChannelInterface,
                               gpr_timespec deadline) override;
 
   CompletionQueue* CallbackCQ() override;
+
+  internal::Call CreateCallInternal(const internal::RpcMethod& method,
+                                    ClientContext* context, CompletionQueue* cq,
+                                    int interceptor_pos) override;
 
   const grpc::string host_;
   grpc_channel* const c_channel_;  // owned

@@ -92,6 +92,7 @@ END2END_FIXTURES = {
         _platforms = ["linux", "mac", "posix"],
     ),
     "inproc": _fixture_options(
+        secure = True,
         fullstack = False,
         dns_resolver = False,
         name_resolution = False,
