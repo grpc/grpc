@@ -14,7 +14,7 @@ GRPC_LOCAL_SRC = '../../..'
     pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
     pod 'gRPC-C++',       :path => GRPC_LOCAL_SRC
-    pod 'BoringSSL',      :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+    pod 'BoringSSL-GRPC',      :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
   end
 end
 

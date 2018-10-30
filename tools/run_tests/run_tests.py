@@ -308,6 +308,13 @@ class CLanguage(object):
 
     def test_specs(self):
         out = []
+        if self.platform == 'mac' and self.test_lang == 'c++':
+            out.append(
+                self.config.job_spec(
+                    ['test/cpp/cocoapods/run_tests.sh'],
+                    timeout_seconds=10 * 60,
+                    shortname='cpp-ios-test',
+                    cpu_cost=1e6))
         binaries = get_c_tests(self.args.travis, self.test_lang)
         for target in binaries:
             if self._use_cmake and target.get('boringssl', False):
