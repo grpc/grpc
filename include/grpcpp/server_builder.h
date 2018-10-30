@@ -28,6 +28,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/config.h>
@@ -212,6 +213,29 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
+  /// NOTE: class experimental_type is not part of the public API of this class.
+  /// TODO(yashykt): Integrate into public API when this is no longer
+  /// experimental.
+  class experimental_type {
+   public:
+    explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
+
+    void SetInterceptorCreators(
+        std::vector<
+            std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+            interceptor_creators) {
+      builder_->interceptor_creators_ = std::move(interceptor_creators);
+    }
+
+   private:
+    ServerBuilder* builder_;
+  };
+
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
+
  protected:
   /// Experimental, to be deprecated
   struct Port {
@@ -297,6 +321,8 @@ class ServerBuilder {
     grpc_compression_algorithm algorithm;
   } maybe_default_compression_algorithm_;
   uint32_t enabled_compression_algorithms_bitset_;
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      interceptor_creators_;
 };
 
 }  // namespace grpc

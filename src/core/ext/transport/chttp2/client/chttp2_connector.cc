@@ -212,9 +212,17 @@ static void chttp2_connector_connect(grpc_connector* con,
   GRPC_CLOSURE_INIT(&c->connected, connected, c, grpc_schedule_on_exec_ctx);
   GPR_ASSERT(!c->connecting);
   c->connecting = true;
-  grpc_tcp_client_connect(&c->connected, &c->endpoint, args->interested_parties,
-                          args->channel_args, &addr, args->deadline);
+  grpc_closure* closure = &c->connected;
+  grpc_endpoint** ep = &c->endpoint;
   gpr_mu_unlock(&c->mu);
+  // In some implementations, the closure can be flushed before
+  // grpc_tcp_client_connect and since the closure requires access to c->mu,
+  // this can result in a deadlock. Refer
+  // https://github.com/grpc/grpc/issues/16427
+  // grpc_tcp_client_connect would fill c->endpoint with proper contents and we
+  // make sure that we would still exist at that point by taking a ref.
+  grpc_tcp_client_connect(closure, ep, args->interested_parties,
+                          args->channel_args, &addr, args->deadline);
 }
 
 static const grpc_connector_vtable chttp2_connector_vtable = {

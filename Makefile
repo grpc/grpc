@@ -1164,6 +1164,7 @@ client_callback_end2end_test: $(BINDIR)/$(CONFIG)/client_callback_end2end_test
 client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
+client_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test
 client_lb_end2end_test: $(BINDIR)/$(CONFIG)/client_lb_end2end_test
 codegen_test_full: $(BINDIR)/$(CONFIG)/codegen_test_full
 codegen_test_minimal: $(BINDIR)/$(CONFIG)/codegen_test_minimal
@@ -1229,6 +1230,7 @@ server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
+server_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
@@ -1667,6 +1669,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
+  $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
@@ -1725,6 +1728,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
+  $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
@@ -1848,6 +1852,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
+  $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
@@ -1906,6 +1911,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
+  $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
@@ -2306,6 +2312,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/client_channel_stress_test || ( echo test client_channel_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_crash_test || ( echo test client_crash_test failed ; exit 1 )
+	$(E) "[RUN]     Testing client_interceptors_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test || ( echo test client_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_lb_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_lb_end2end_test || ( echo test client_lb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_full"
@@ -2396,6 +2404,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_early_return_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_early_return_test || ( echo test server_early_return_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_interceptors_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test || ( echo test server_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_request_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
@@ -5455,6 +5465,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -5467,7 +5479,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -5475,6 +5489,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
     include/grpcpp/impl/codegen/slice.h \
@@ -6039,6 +6054,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6051,7 +6068,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6059,6 +6078,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
     include/grpcpp/impl/codegen/slice.h \
@@ -6433,6 +6453,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6445,7 +6467,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6453,6 +6477,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
     include/grpcpp/impl/codegen/slice.h \
@@ -6591,6 +6616,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6603,7 +6630,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6611,6 +6640,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
     include/grpcpp/impl/codegen/slice.h \
@@ -6921,6 +6951,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/call_op_set.h \
+    include/grpcpp/impl/codegen/call_op_set_interface.h \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
@@ -6933,7 +6965,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
     include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
+    include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
@@ -6941,6 +6975,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
     include/grpcpp/impl/codegen/slice.h \
@@ -17279,6 +17314,49 @@ endif
 endif
 
 
+CLIENT_INTERCEPTORS_END2END_TEST_SRC = \
+    test/cpp/end2end/client_interceptors_end2end_test.cc \
+
+CLIENT_INTERCEPTORS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_INTERCEPTORS_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/client_interceptors_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/client_interceptors_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/client_interceptors_end2end_test: $(PROTOBUF_DEP) $(CLIENT_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_interceptors_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_interceptors_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_client_interceptors_end2end_test: $(CLIENT_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CLIENT_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CLIENT_LB_END2END_TEST_SRC = \
     test/cpp/end2end/client_lb_end2end_test.cc \
 
@@ -20060,6 +20138,49 @@ deps_server_early_return_test: $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_INTERCEPTORS_END2END_TEST_SRC = \
+    test/cpp/end2end/server_interceptors_end2end_test.cc \
+
+SERVER_INTERCEPTORS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_INTERCEPTORS_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: $(PROTOBUF_DEP) $(SERVER_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_interceptors_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_interceptors_end2end_test: $(SERVER_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 

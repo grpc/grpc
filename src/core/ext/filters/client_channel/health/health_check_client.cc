@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 
@@ -298,6 +299,11 @@ HealthCheckClient::CallState::~CallState() {
             health_check_client_.get(), this);
   }
   if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
+  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+    if (context_[i].destroy != nullptr) {
+      context_[i].destroy(context_[i].value);
+    }
+  }
   // Unset the call combiner cancellation closure.  This has the
   // effect of scheduling the previously set cancellation closure, if
   // any, so that it can release any internal references it may be
@@ -345,6 +351,7 @@ void HealthCheckClient::CallState::StartCall() {
   }
   // Initialize payload and batch.
   memset(&batch_, 0, sizeof(batch_));
+  payload_.context = context_;
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
   Ref(DEBUG_LOCATION, "on_complete").release();
