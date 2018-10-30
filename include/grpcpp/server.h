@@ -191,8 +191,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server() override { return server_; };
 
  private:
-  const std::vector<
-      std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() override {
     return &interceptor_creators_;
   }
@@ -228,6 +227,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   CompletionQueue* CallbackCQ() override;
 
   ServerInitializer* initializer();
+
+  // A vector of interceptor factory objects.
+  // This should be destroyed after health_check_service_ and this requirement
+  // is satisfied by declaring interceptor_creators_ before
+  // health_check_service_. (C++ mandates that member objects be destroyed in
+  // the reverse order of initialization.)
+  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+      interceptor_creators_;
 
   const int max_receive_message_size_;
 
@@ -267,9 +274,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;
-
-  std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
-      interceptor_creators_;
 
   // callback_cq_ references the callbackable completion queue associated
   // with this server (if any). It is set on the first call to CallbackCQ().

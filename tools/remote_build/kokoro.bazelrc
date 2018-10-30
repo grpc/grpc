@@ -36,5 +36,3 @@ build --test_env=USER=anon
 build --jobs=200
 build --test_output=errors
 build --keep_going=true
-build --remote_accept_cached=true
-build --remote_local_fallback=true

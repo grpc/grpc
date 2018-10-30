@@ -333,7 +333,12 @@ class ServerInterface : public internal::CallHook {
   }
 
  private:
-  virtual const std::vector<
+  // EXPERIMENTAL
+  // Getter method for the vector of interceptor factory objects.
+  // Returns a nullptr (rather than being pure) since this is a new method and
+  // adding a new pure method to an interface would be a breaking change (even
+  // though this is private and non-API)
+  virtual std::vector<
       std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() {
     return nullptr;
