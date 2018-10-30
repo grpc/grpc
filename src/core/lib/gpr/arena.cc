@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace {
 enum init_strategy {
@@ -85,7 +86,7 @@ struct gpr_arena {
   ~gpr_arena() {
     gpr_mu_destroy(&mu);
     for (size_t i = 0; i < num_ptrs; ++i) {
-      gpr_free(ptrs[i]);
+      gpr_free_aligned(ptrs[i]);
     }
     gpr_free(ptrs);
   }
@@ -96,12 +97,11 @@ struct gpr_arena {
 };
 
 gpr_arena* gpr_arena_create(size_t ignored_initial_size) {
-  return new (gpr_malloc(sizeof(gpr_arena))) gpr_arena();
+  return grpc_core::New<gpr_arena>();
 }
 
 size_t gpr_arena_destroy(gpr_arena* arena) {
-  arena->~gpr_arena();
-  gpr_free(arena);
+  grpc_core::Delete(arena);
   return 1;  // Value doesn't matter, since it won't be used.
 }
 
