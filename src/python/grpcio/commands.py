@@ -281,7 +281,7 @@ class BuildExt(build_ext.build_ext):
             env['HAS_SYSTEM_OPENSSL_ALPN'] = '0'
             make_process = subprocess.Popen(
                 ['make'] + extra_defines + targets,
-                env=env,
+                # env=env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             make_out, make_err = make_process.communicate()
