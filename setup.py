@@ -57,11 +57,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
+import _parallel_compile_patch
 import _spawn_patch
 import commands
 import grpc_core_dependencies
 import grpc_version
 
+_parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
 LICENSE = 'Apache License 2.0'

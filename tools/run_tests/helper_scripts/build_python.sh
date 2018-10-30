@@ -114,6 +114,10 @@ export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
+# Allow build_ext to build C/C++ files in parallel
+# by enabling a monkeypatch. It speeds up the build a lot.
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=4
+
 # If ccache is available on Linux, use it.
 if [ "$(is_linux)" ]; then
   # We're not on Darwin (Mac OS X)
