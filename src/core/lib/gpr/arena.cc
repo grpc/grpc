@@ -56,9 +56,7 @@ static void set_strategy_from_env() {
   gpr_free(str);
 }
 
-static init_strategy get_init_strategy() {
-  return g_init_strategy;
-}
+static init_strategy get_init_strategy() { return g_init_strategy; }
 
 static void* gpr_arena_alloc_maybe_init(size_t size) {
   void* mem = gpr_malloc_aligned(size, GPR_MAX_ALIGNMENT);
@@ -74,8 +72,7 @@ static void* gpr_arena_alloc_maybe_init(size_t size) {
 }
 
 void gpr_arena_init() {
-  // Simply call the method to cache the value.
-  get_init_strategy();
+  gpr_once_init(&g_init_strategy_once, set_strategy_from_env);
 }
 
 // Uncomment this to use a simple arena that simply allocates the
