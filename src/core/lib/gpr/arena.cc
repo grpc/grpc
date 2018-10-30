@@ -78,7 +78,6 @@ void gpr_arena_init() {
 // effectively eliminates the efficiency gain of using an arena, but it
 // may be useful for debugging purposes.
 //#define SIMPLE_ARENA_FOR_DEBUGGING
-
 #ifdef SIMPLE_ARENA_FOR_DEBUGGING
 
 struct gpr_arena {
