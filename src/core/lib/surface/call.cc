@@ -148,7 +148,7 @@ struct grpc_call {
   gpr_arena* arena;
   grpc_call_combiner call_combiner;
   grpc_completion_queue* cq;
-  grpc_polling_entity pollent = grpc_polling_entity();
+  grpc_polling_entity pollent;
   grpc_channel* channel;
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   /* parent_call* */ gpr_atm parent_call_atm = 0;
