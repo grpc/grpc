@@ -278,7 +278,7 @@ class BuildExt(build_ext.build_ext):
             #   libraries. It prevents dependency issues while distributing to
             #   Mac users who use MacPorts to manage their libraries. #17002
             mod_env = dict(os.environ)
-            mod_env['HAS_SYSTEM_OPENSSL_ALPN'] = '0'
+            mod_env['REQUIRE_CUSTOM_LIBRARIES_opt'] = '1'
             make_process = subprocess.Popen(
                 ['make'] + extra_defines + targets,
                 env=mod_env,
