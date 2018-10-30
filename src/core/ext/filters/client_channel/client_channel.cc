@@ -3343,19 +3343,6 @@ const grpc_channel_filter grpc_client_channel_filter = {
     "client-channel",
 };
 
-static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
-  channel_data* chand = static_cast<channel_data*>(arg);
-  if (chand->lb_policy != nullptr) {
-    chand->lb_policy->ExitIdleLocked();
-  } else {
-    chand->exit_idle_when_lb_policy_arrives = true;
-    if (!chand->started_resolving && chand->resolver != nullptr) {
-      start_resolving_locked(chand);
-    }
-  }
-  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "try_to_connect");
-}
-
 void grpc_client_channel_set_channelz_node(
     grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -3371,6 +3358,19 @@ void grpc_client_channel_populate_child_refs(
     chand->lb_policy->FillChildRefsForChannelz(child_subchannels,
                                                child_channels);
   }
+}
+
+static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
+  channel_data* chand = static_cast<channel_data*>(arg);
+  if (chand->lb_policy != nullptr) {
+    chand->lb_policy->ExitIdleLocked();
+  } else {
+    chand->exit_idle_when_lb_policy_arrives = true;
+    if (!chand->started_resolving && chand->resolver != nullptr) {
+      start_resolving_locked(chand);
+    }
+  }
+  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "try_to_connect");
 }
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
@@ -3422,19 +3422,19 @@ static void external_connectivity_watcher_list_append(
 }
 
 static void external_connectivity_watcher_list_remove(
-    channel_data* chand, external_connectivity_watcher* too_remove) {
+    channel_data* chand, external_connectivity_watcher* to_remove) {
   GPR_ASSERT(
-      lookup_external_connectivity_watcher(chand, too_remove->on_complete));
+      lookup_external_connectivity_watcher(chand, to_remove->on_complete));
   gpr_mu_lock(&chand->external_connectivity_watcher_list_mu);
-  if (too_remove == chand->external_connectivity_watcher_list_head) {
-    chand->external_connectivity_watcher_list_head = too_remove->next;
+  if (to_remove == chand->external_connectivity_watcher_list_head) {
+    chand->external_connectivity_watcher_list_head = to_remove->next;
     gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
     return;
   }
   external_connectivity_watcher* w =
       chand->external_connectivity_watcher_list_head;
   while (w != nullptr) {
-    if (w->next == too_remove) {
+    if (w->next == to_remove) {
       w->next = w->next->next;
       gpr_mu_unlock(&chand->external_connectivity_watcher_list_mu);
       return;

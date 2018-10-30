@@ -73,6 +73,9 @@ class RequestRouter {
     static void LbPickDoneLocked(void* arg, grpc_error* error);
     static void LbPickCancelLocked(void* arg, grpc_error* error);
 
+// FIXME: if we remove State struct and require a new Request object to
+// be allocated (presumably on the arena) at each level in the routing
+// hierarchy, then how do we handle interested_parties?
     void MaybeAddCallToInterestedPartiesLocked(State* state);
     void MaybeRemoveCallFromInterestedPartiesLocked(State* state);
 
@@ -94,16 +97,21 @@ class RequestRouter {
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
                 channelz::ClientChannelNode* channelz_node,
-                grpc_closure* on_resolver_result, bool request_service_config);
+                grpc_closure* on_resolver_result, bool request_service_config,
+                const char* target_uri, grpc_channel_args* args,
+                grpc_error** error);
 
   ~RequestRouter();
 
-// FIXME: avoid two-phase initialization somehow
-  grpc_error* Init(const char* target_uri, grpc_channel_args* args);
-
-  void RouteCall(Request* request);
+  void RouteCallLocked(Request* request);
 
   void Shutdown(grpc_error* error);
+
+  void ExitIdleLocked();
+
+  grpc_connectivity_state GetConnectivityState();
+  void NotifyOnConnectivityStateChange(grpc_connectivity_state* state,
+                                       grpc_closure* closure);
 
   // Only valid during the call to on_resolver_result.
   grpc_channel_args* resolver_result() const { return resolver_result_; }
@@ -144,7 +152,6 @@ class RequestRouter {
 // FIXME: should this take a ref?
   channelz::ClientChannelNode* channelz_node_;
   grpc_closure* on_resolver_result_;
-  bool request_service_config_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
