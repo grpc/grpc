@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
@@ -38,6 +39,7 @@
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/parser.h"
@@ -395,9 +397,23 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
+    // pick out just the host port (maybe trims off scheme prefix).
+    grpc_uri* uri = grpc_uri_parse(t->peer_string, false);
+    GPR_ASSERT(uri != nullptr);
+    const char* host_port = uri->path;
+    if (*host_port == '/') ++host_port;
+    char* host;
+    char* port;
+    GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+    int port_num = -1;
+    if (port != nullptr) {
+      port_num = atoi(port);
+    }
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            (t->peer_string));
+            grpc_core::UniquePtr<char>(host), port_num);
+    grpc_uri_destroy(uri);
+    gpr_free(port);
   }
   return enable_bdp;
 }

@@ -232,7 +232,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(const char* remote_peer_string);
+  SocketNode(UniquePtr<char> remote_host, int remote_port);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;

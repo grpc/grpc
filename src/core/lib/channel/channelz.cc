@@ -30,7 +30,6 @@
 
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -278,20 +277,10 @@ grpc_json* ServerNode::RenderJson() {
   return top_level_json;
 }
 
-SocketNode::SocketNode(const char* remote_peer_string)
-    : BaseNode(EntityType::kSocket) {
-  const char* ipv6_prefix = "ipv6:";
-  const int ipv6_prefix_len = 5;
-  char* host;
-  char* port;
-  int offset = (strncmp(remote_peer_string, ipv6_prefix, ipv6_prefix_len) == 0)
-                   ? ipv6_prefix_len
-                   : 0;
-  GPR_ASSERT(gpr_split_host_port(remote_peer_string + offset, &host, &port));
-  remote_host_ = UniquePtr<char>(host);
-  remote_port_ = atoi(port);
-  gpr_free(port);
-}
+SocketNode::SocketNode(UniquePtr<char> remote_host, int remote_port)
+    : BaseNode(EntityType::kSocket),
+      remote_host_(std::move(remote_host)),
+      remote_port_(remote_port) {}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));

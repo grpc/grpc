@@ -29,6 +29,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -238,7 +239,6 @@ static void test_channelz(grpc_end2end_test_config config) {
 
   json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
-  gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
@@ -250,7 +250,6 @@ static void test_channelz(grpc_end2end_test_config config) {
 
   json = channelz_server->RenderJsonString();
   GPR_ASSERT(json != nullptr);
-  gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
@@ -263,6 +262,8 @@ static void test_channelz(grpc_end2end_test_config config) {
   json = channelz_server->RenderServerSockets(0);
   GPR_ASSERT(nullptr != strstr(json, "\"socketRef\":"));
   gpr_free(json);
+
+  grpc_core::channelz::ChannelzRegistry::LogAllEntities();
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -292,7 +293,6 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
 
   char* json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
-  gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Channel created\""));
   GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
@@ -300,7 +300,6 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
 
   json = channelz_server->RenderJsonString();
   GPR_ASSERT(json != nullptr);
-  gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Server created\""));
   GPR_ASSERT(nullptr != strstr(json, "\"severity\":\"CT_INFO\""));
