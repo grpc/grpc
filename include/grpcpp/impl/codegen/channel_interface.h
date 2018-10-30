@@ -133,7 +133,7 @@ class ChannelInterface {
   virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                             ClientContext* context,
                                             CompletionQueue* cq,
-                                            int interceptor_pos) {
+                                            size_t interceptor_pos) {
     return internal::Call();
   }
 

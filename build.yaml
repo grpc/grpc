@@ -1261,6 +1261,7 @@ filegroups:
 - name: grpc++_codegen_base_src
   language: c++
   src:
+  - src/cpp/codegen/client_interceptor.cc
   - src/cpp/codegen/codegen_init.cc
   uses:
   - grpc++_codegen_base

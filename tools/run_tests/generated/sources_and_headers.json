@@ -11298,6 +11298,7 @@
     "language": "c++", 
     "name": "grpc++_codegen_base_src", 
     "src": [
+      "src/cpp/codegen/client_interceptor.cc", 
       "src/cpp/codegen/codegen_init.cc"
     ], 
     "third_party": false, 

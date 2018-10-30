@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_INTERCEPTOR_H
 
+#include <memory>
 #include <vector>
 
 #include <grpc/impl/codegen/log.h>
@@ -42,7 +43,14 @@ class ClientInterceptorFactoryInterface {
   virtual ~ClientInterceptorFactoryInterface() {}
   virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
 };
+}  // namespace experimental
 
+namespace internal {
+extern experimental::ClientInterceptorFactoryInterface*
+    g_global_client_interceptor_factory;
+}
+
+namespace experimental {
 class ClientRpcInfo {
  public:
   ClientRpcInfo() {}
@@ -72,11 +80,20 @@ class ClientRpcInfo {
   void RegisterInterceptors(
       const std::vector<std::unique_ptr<
           experimental::ClientInterceptorFactoryInterface>>& creators,
-      int interceptor_pos) {
+      size_t interceptor_pos) {
+    if (interceptor_pos > creators.size()) {
+      // No interceptors to register
+      return;
+    }
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
           (*it)->CreateClientInterceptor(this)));
+    }
+    if (internal::g_global_client_interceptor_factory != nullptr) {
+      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
+          internal::g_global_client_interceptor_factory
+              ->CreateClientInterceptor(this)));
     }
   }
 
@@ -90,6 +107,14 @@ class ClientRpcInfo {
   friend class internal::InterceptorBatchMethodsImpl;
   friend class grpc::ClientContext;
 };
+
+// DO NOT USE THIS
+// Registers a global client interceptor factory object. This should be
+// registered before any channels are created. The application is responsible
+// for maintaining the life of the object while gRPC is used. It is unsafe to
+// try to register if gRPC operations have already started.
+void RegisterGlobalClientInterceptorFactory(
+    ClientInterceptorFactoryInterface* factory);
 
 }  // namespace experimental
 }  // namespace grpc

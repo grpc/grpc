@@ -2109,6 +2109,7 @@ grpc_cc_library(
     name = "grpc++_codegen_base_src",
     srcs = [
         "src/cpp/codegen/codegen_init.cc",
+        "src/cpp/codegen/client_interceptor.cc",
     ],
     language = "c++",
     deps = [
