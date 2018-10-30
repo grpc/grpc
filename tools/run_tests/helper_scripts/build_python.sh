@@ -80,6 +80,8 @@ function toolchain() {
   fi
 }
 
+# TODO(jtattermusch): this adds dependency on grealpath on mac
+# (brew install coreutils) for little reason.
 # Command to invoke the linux command `realpath` or equivalent.
 function script_realpath() {
   # Find `realpath`
