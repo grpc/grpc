@@ -400,7 +400,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     char* host = nullptr;
     int port_num = -1;
     // try to pick out just the host port (maybe trims off scheme prefix).
-    grpc_uri* uri = grpc_uri_parse(t->peer_string, false);
+    grpc_uri* uri = grpc_uri_parse(t->peer_string, true);
     // if peer string was a valid URI, we can use our lib to do the trimming.
     if (uri != nullptr) {
       const char* host_port = uri->path;
