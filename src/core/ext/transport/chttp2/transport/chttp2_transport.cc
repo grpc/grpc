@@ -397,23 +397,29 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
-    // pick out just the host port (maybe trims off scheme prefix).
-    grpc_uri* uri = grpc_uri_parse(t->peer_string, false);
-    GPR_ASSERT(uri != nullptr);
-    const char* host_port = uri->path;
-    if (*host_port == '/') ++host_port;
-    char* host;
-    char* port;
-    GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+    char* host = nullptr;
     int port_num = -1;
-    if (port != nullptr) {
-      port_num = atoi(port);
+    // try to pick out just the host port (maybe trims off scheme prefix).
+    grpc_uri* uri = grpc_uri_parse(t->peer_string, false);
+    // if peer string was a valid URI, we can use our lib to do the trimming.
+    if (uri != nullptr) {
+      const char* host_port = uri->path;
+      if (*host_port == '/') ++host_port;
+      char* port;
+      GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+      if (port != nullptr) {
+        port_num = atoi(port);
+      }
+      gpr_free(port);
+    } else {
+      // if peer string is not a valid URI, just use the entire string to
+      // surface that info.
+      host = gpr_strdup(t->peer_string);
     }
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(host), port_num);
     grpc_uri_destroy(uri);
-    gpr_free(port);
   }
   return enable_bdp;
 }
