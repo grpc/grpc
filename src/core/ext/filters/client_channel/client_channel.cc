@@ -950,8 +950,10 @@ struct subchannel_batch_data {
   subchannel_batch_data(grpc_call_element* elem, call_data* calld, int refcount,
                         bool set_on_complete);
   // All dtor code must be added in `destroy`. This is because we may
-  // call closures of batches after they are unrefed, and msan would complain
-  // about accessing this class after calling dtor.
+  // call closuresin `subchannel_batch_data` after they are unrefed by
+  // `batch_data_unref`, and msan would complain about accessing this class
+  // after calling dtor. As a result we cannot call the `dtor` in
+  // `batch_data_unref`.
   ~subchannel_batch_data() { destroy(); }
   void destroy();
 
@@ -1052,14 +1054,9 @@ struct call_data {
 
   ~call_data() {
     grpc_slice_unref_internal(path);
-    retry_throttle_data.reset();
-    method_params.reset();
     GRPC_ERROR_UNREF(cancel_error);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
       GPR_ASSERT(pending_batches[i].batch == nullptr);
-    }
-    if (GPR_LIKELY(pick.connected_subchannel != nullptr)) {
-      pick.connected_subchannel.reset();
     }
     for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
       if (pick.subchannel_call_context[i].value != nullptr) {
