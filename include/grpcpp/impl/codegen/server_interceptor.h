@@ -22,7 +22,6 @@
 #include <atomic>
 #include <vector>
 
-#include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/interceptor.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
