@@ -52,23 +52,22 @@ grpc_json* ServiceConfig::GetLoadBalancingConfig() const {
   if (json_tree_->type != GRPC_JSON_OBJECT || json_tree_->key != nullptr) {
     return nullptr;
   }
-  grpc_json* lb_policy_config = nullptr;
+  grpc_json* lb_config = nullptr;
   for (grpc_json* field = json_tree_->child; field != nullptr;
        field = field->next) {
     if (field->key == nullptr) return nullptr;
     if (strcmp(field->key, "loadBalancingConfig") == 0) {
-      if (lb_policy_config != nullptr) return nullptr;  // Duplicate.
+      if (lb_config != nullptr) return nullptr;  // Duplicate.
       if (field->type != GRPC_JSON_OBJECT) return nullptr;
-      lb_policy_config = field;
+      lb_config = field;
     }
   }
-
-  return lb_policy_config;
+  return lb_config;
 }
 
 grpc_json* ServiceConfig::GetPolicyFromLoadBalancingConfig(
     grpc_json* lb_config) {
-  if (lb_config->type != GRPC_JSON_OBJECT ||
+  if (lb_config->type != GRPC_JSON_OBJECT || lb_config->key == nullptr ||
       strcmp(lb_config->key, "loadBalancingConfig") != 0) {
     return nullptr;
   }
@@ -83,6 +82,7 @@ grpc_json* ServiceConfig::GetPolicyFromLoadBalancingConfig(
       policy = field;
     }
   }
+  if (policy == nullptr) return nullptr;
   // Find the specific policy content since the policy object is of type
   // "oneof".
   grpc_json* policy_content = nullptr;
