@@ -21,16 +21,26 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
 class RequestRouter {
  public:
-
-// FIXME: combine this with LoadBalancingPolicy::PickState somehow?
   class Request {
    public:
     Request(grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
@@ -47,8 +57,6 @@ class RequestRouter {
     }
 
     const LoadBalancingPolicy::PickState* pick() const { return &pick_; }
-
-    GRPC_ABSTRACT_BASE_CLASS
 
    private:
     friend class RequestRouter;
@@ -134,7 +142,6 @@ class RequestRouter {
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(TraceStringVector* trace_strings)
       const;
-
   void CreateNewLbPolicyLocked(const char* lb_policy_name,
                                grpc_connectivity_state* connectivity_state,
                                grpc_error** connectivity_error,
