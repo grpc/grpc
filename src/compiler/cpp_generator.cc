@@ -701,7 +701,7 @@ void PrintHeaderServerMethodSync(grpc_generator::Printer* printer,
   printer->Print(method->GetTrailingComments("//").c_str());
 }
 
-// Helper generator. Disabled the sync API for Request and Response, then adds
+// Helper generator. Disables the sync API for Request and Response, then adds
 // in an async API for RealRequest and RealResponse types. This is to be used
 // to generate async and raw async APIs.
 void PrintHeaderServerAsyncMethodsHelper(
@@ -830,7 +830,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
   printer->Print(*vars, "};\n");
 }
 
-// Helper generator. Disabled the sync API for Request and Response, then adds
+// Helper generator. Disables the sync API for Request and Response, then adds
 // in a callback API for RealRequest and RealResponse types. This is to be used
 // to generate callback and raw callback APIs.
 void PrintHeaderServerCallbackMethodsHelper(

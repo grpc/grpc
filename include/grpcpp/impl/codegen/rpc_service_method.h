@@ -40,6 +40,14 @@ class MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
+    /// Constructor for HandlerParameter
+    ///
+    /// \param c : the gRPC Call structure for this server call
+    /// \param context : the ServerContext structure for this server call
+    /// \param req : the request payload, if appropriate for this RPC
+    /// \param req_status : the request status after any interceptors have run
+    /// \param renew : used only by the callback API. It is a function
+    ///        called by the RPC Controller to request another RPC
     HandlerParameter(Call* c, ServerContext* context, void* req,
                      Status req_status, std::function<void()> renew)
         : call(c),
@@ -120,7 +128,7 @@ class RpcServiceMethod : public RpcMethod {
   const char* TypeToString(RpcServiceMethod::ApiType type) {
     switch (type) {
       case ApiType::SYNC:
-        return "unset";
+        return "sync";
       case ApiType::ASYNC:
         return "async";
       case ApiType::RAW:

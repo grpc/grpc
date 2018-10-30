@@ -292,6 +292,7 @@ class ServerContext {
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
 
   void Clear();
+
   void Setup(gpr_timespec deadline);
 
   uint32_t initial_metadata_flags() const { return 0; }
