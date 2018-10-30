@@ -75,14 +75,6 @@ struct ReresolutionRequestArgs {
   grpc_closure closure;
 };
 
-// FIXME: make this a class?
-struct LbConnectivityWatchState {
-  RequestRouter* request_router;
-  grpc_closure on_changed;
-  grpc_connectivity_state state;
-  LoadBalancingPolicy* lb_policy;
-};
-
 }  // namespace
 
 //
@@ -229,6 +221,63 @@ class RequestRouter::Request::ResolverResultWaiter {
   grpc_closure done_closure_;
   grpc_closure cancel_closure_;
   bool finished_ = false;
+};
+
+//
+// RequestRouter::LbConnectivityWatcher
+//
+
+class RequestRouter::LbConnectivityWatcher {
+ public:
+  LbConnectivityWatcher(RequestRouter* request_router,
+                        grpc_connectivity_state state,
+                        LoadBalancingPolicy* lb_policy,
+                        grpc_channel_stack* owning_stack,
+                        grpc_combiner* combiner)
+    : request_router_(request_router), state_(state), lb_policy_(lb_policy),
+      owning_stack_(owning_stack) {
+    GRPC_CHANNEL_STACK_REF(owning_stack_, "LbConnectivityWatcher");
+    GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
+                      grpc_combiner_scheduler(combiner));
+    lb_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
+  }
+
+  ~LbConnectivityWatcher() {
+    GRPC_CHANNEL_STACK_UNREF(owning_stack_, "LbConnectivityWatcher");
+  }
+
+ private:
+  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
+    LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
+    // If the notification is not for the current policy, we're stale,
+    // so delete ourselves.
+    if (self->lb_policy_ == self->request_router_->lb_policy_.get()) {
+      Delete(self);
+      return;
+    }
+    // Otherwise, process notification.
+    if (self->request_router_->tracer_->enabled()) {
+      gpr_log(GPR_INFO, "request_router=%p: lb_policy=%p state changed to %s",
+              self->request_router_, self->lb_policy_,
+              grpc_connectivity_state_name(self->state_));
+    }
+    self->request_router_->SetConnectivityStateLocked(
+        self->state_, GRPC_ERROR_REF(error), "lb_changed");
+    // If shutting down, terminate watch.
+    if (self->state_ == GRPC_CHANNEL_SHUTDOWN) {
+      Delete(self);
+      return;
+    }
+    // Renew watch.
+    self->lb_policy_->NotifyOnStateChangeLocked(&self->state_,
+                                                &self->on_changed_);
+  }
+
+  RequestRouter* request_router_;
+  grpc_connectivity_state state_;
+  LoadBalancingPolicy* lb_policy_;
+  grpc_channel_stack* owning_stack_;
+  grpc_closure on_changed_;
 };
 
 //
@@ -426,39 +475,6 @@ void RequestRouter::SetConnectivityStateLocked(grpc_connectivity_state state,
   grpc_connectivity_state_set(&state_tracker_, state, error, reason);
 }
 
-void RequestRouter::OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
-  LbConnectivityWatchState* w = static_cast<LbConnectivityWatchState*>(arg);
-  // Check if the notification is for the current LB policy.
-  if (w->lb_policy == w->request_router->lb_policy_.get()) {
-    if (w->request_router->tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: lb_policy=%p state changed to %s",
-              w->request_router, w->lb_policy,
-              grpc_connectivity_state_name(w->state));
-    }
-    w->request_router->SetConnectivityStateLocked(
-        w->state, GRPC_ERROR_REF(error), "lb_changed");
-    if (w->state != GRPC_CHANNEL_SHUTDOWN) {
-      w->request_router->WatchLbPolicyLocked(w->state);
-    }
-  }
-// FIXME: don't free every time!  reuse the same object unless we've
-// switched LB policies
-  GRPC_CHANNEL_STACK_UNREF(w->request_router->owning_stack_, "watch_lb_policy");
-  Delete(w);
-}
-
-void RequestRouter::WatchLbPolicyLocked(grpc_connectivity_state current_state) {
-  LbConnectivityWatchState* w = New<LbConnectivityWatchState>();
-  GRPC_CHANNEL_STACK_REF(owning_stack_, "watch_lb_policy");
-  w->request_router = this;
-  GRPC_CLOSURE_INIT(&w->on_changed,
-                    &RequestRouter::OnLbPolicyStateChangedLocked, w,
-                    grpc_combiner_scheduler(combiner_));
-  w->state = current_state;
-  w->lb_policy = lb_policy_.get();
-  lb_policy_->NotifyOnStateChangeLocked(&w->state, &w->on_changed);
-}
-
 void RequestRouter::StartResolvingLocked() {
   if (tracer_->enabled()) {
     gpr_log(GPR_INFO, "request_router=%p: starting name resolution", this);
@@ -621,7 +637,9 @@ void RequestRouter::CreateNewLbPolicyLocked(
       lb_policy_->ExitIdleLocked();
       exit_idle_when_lb_policy_arrives_ = false;
     }
-    WatchLbPolicyLocked(*connectivity_state);
+    // Create new watcher.  It will delete itself when done.
+    New<LbConnectivityWatcher>(this, *connectivity_state, lb_policy_.get(),
+                               owning_stack_, combiner_);
   }
 }
 

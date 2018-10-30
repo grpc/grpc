@@ -123,6 +123,8 @@ class RequestRouter {
  private:
   using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
 
+  class LbConnectivityWatcher;
+
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   const char* GetLbPolicyNameFromResolverResultLocked();
@@ -137,8 +139,6 @@ class RequestRouter {
                                grpc_connectivity_state* connectivity_state,
                                grpc_error** connectivity_error,
                                TraceStringVector* trace_strings);
-  void WatchLbPolicyLocked(grpc_connectivity_state current_state);
-  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error);
 
   void SetConnectivityStateLocked(grpc_connectivity_state state,
                                   grpc_error* error, const char* reason);
