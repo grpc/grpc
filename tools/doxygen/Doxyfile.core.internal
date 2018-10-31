@@ -1047,8 +1047,6 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
-src/core/ext/uri/uri_parser.cc \
-src/core/ext/uri/uri_parser.h \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
@@ -1478,6 +1476,8 @@ src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
+src/core/lib/uri/uri_parser.cc \
+src/core/lib/uri/uri_parser.h \
 src/core/plugin_registry/grpc_plugin_registry.cc \
 src/core/tsi/README.md \
 src/core/tsi/alts/crypt/aes_gcm.cc \

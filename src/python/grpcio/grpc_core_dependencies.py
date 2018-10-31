@@ -237,7 +237,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/http/http_filters_plugin.cc',
     'src/core/ext/filters/http/message_compress/message_compress_filter.cc',
     'src/core/ext/filters/http/server/http_server_filter.cc',
-    'src/core/ext/uri/uri_parser.cc',
+    'src/core/lib/uri/uri_parser.cc',
     'src/core/lib/http/httpcli_security_connector.cc',
     'src/core/lib/security/context/security_context.cc',
     'src/core/lib/security/credentials/alts/alts_credentials.cc',

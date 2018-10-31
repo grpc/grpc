@@ -1095,10 +1095,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_uri",
     srcs = [
-        "src/core/ext/uri/uri_parser.cc",
+        "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
-        "src/core/ext/uri/uri_parser.h",
+        "src/core/lib/uri/uri_parser.h",
     ],
     language = "c++",
     deps = [

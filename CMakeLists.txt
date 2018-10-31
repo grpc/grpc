@@ -1154,7 +1154,7 @@ add_library(grpc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1578,7 +1578,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1977,7 +1977,7 @@ add_library(grpc_test_util
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2296,7 +2296,7 @@ add_library(grpc_test_util_unsecure
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2596,7 +2596,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -3448,7 +3448,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/uri/uri_parser.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc

@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
-#include "src/core/ext/uri/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
@@ -55,6 +54,7 @@
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu

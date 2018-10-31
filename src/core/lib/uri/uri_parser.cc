@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/uri/uri_parser.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #include <string.h>
 

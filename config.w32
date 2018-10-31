@@ -238,7 +238,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\http\\http_filters_plugin.cc " +
     "src\\core\\ext\\filters\\http\\message_compress\\message_compress_filter.cc " +
     "src\\core\\ext\\filters\\http\\server\\http_server_filter.cc " +
-    "src\\core\\ext\\uri\\uri_parser.cc " +
+    "src\\core\\lib\\uri\\uri_parser.cc " +
     "src\\core\\lib\\http\\httpcli_security_connector.cc " +
     "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
@@ -714,7 +714,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\secure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\uri");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");
@@ -750,6 +749,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\slice");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\transport");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\uri");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\plugin_registry");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts");

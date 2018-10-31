@@ -1098,9 +1098,9 @@ filegroups:
   - grpc_base_headers
 - name: grpc_uri
   headers:
-  - src/core/ext/uri/uri_parser.h
+  - src/core/lib/uri/uri_parser.h
   src:
-  - src/core/ext/uri/uri_parser.cc
+  - src/core/lib/uri/uri_parser.cc
   uses:
   - grpc_base
 - name: grpc_workaround_cronet_compression_filter

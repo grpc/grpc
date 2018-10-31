@@ -10997,14 +10997,14 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/ext/uri/uri_parser.h"
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_uri", 
     "src": [
-      "src/core/ext/uri/uri_parser.cc", 
-      "src/core/ext/uri/uri_parser.h"
+      "src/core/lib/uri/uri_parser.cc", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
