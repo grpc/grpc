@@ -908,6 +908,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   // longer be any need to explicitly reset these smart pointer data members.
   chand->info_lb_policy_name.reset();
   chand->info_service_config_json.reset();
+  chand->service_config.reset();
   chand->retry_throttle_data.reset();
   chand->method_params_table.reset();
   grpc_client_channel_stop_backup_polling(chand->interested_parties);
