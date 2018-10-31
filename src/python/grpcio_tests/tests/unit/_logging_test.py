@@ -21,7 +21,9 @@ import grpc
 import functools
 import sys
 
+
 def patch_stderr(f):
+
     @functools.wraps(f)
     def _impl(*args, **kwargs):
         old_stderr = sys.stderr
@@ -30,7 +32,9 @@ def patch_stderr(f):
             f(args, kwargs)
         finally:
             sys.stderr = old_stderr
+
     return _impl
+
 
 class LoggingTest(unittest.TestCase):
 
@@ -43,9 +47,11 @@ class LoggingTest(unittest.TestCase):
             reload_module(logging)
             logging.basicConfig()
             reload_module(grpc)
-            self.assertFalse("No handlers could be found" in sys.stderr.getvalue())
+            self.assertFalse(
+                "No handlers could be found" in sys.stderr.getvalue())
         finally:
             reload_module(logging)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
