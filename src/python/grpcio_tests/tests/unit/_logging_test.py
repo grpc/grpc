@@ -21,21 +21,30 @@ import grpc
 import functools
 import sys
 
+def patch_stderr(f):
+    @functools.wraps(f)
+    def _impl(*args, **kwargs):
+        old_stderr = sys.stderr
+        sys.stderr = six.StringIO()
+        try:
+            f(args, kwargs)
+        finally:
+            sys.stderr = old_stderr
+    return _impl
+
 class LoggingTest(unittest.TestCase):
 
     def test_logger_not_occupied(self):
         self.assertEqual(0, len(logging.getLogger().handlers))
 
+    @patch_stderr
     def test_handler_found(self):
-        old_stderr = sys.stderr
-        sys.stderr = six.StringIO()
         try:
             reload_module(logging)
             logging.basicConfig()
             reload_module(grpc)
             self.assertFalse("No handlers could be found" in sys.stderr.getvalue())
         finally:
-            sys.stderr = old_stderr
             reload_module(logging)
 
 if __name__ == '__main__':
