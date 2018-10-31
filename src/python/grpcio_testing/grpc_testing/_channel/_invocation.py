@@ -18,7 +18,6 @@ import threading
 import grpc
 
 _NOT_YET_OBSERVED = object()
-logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
