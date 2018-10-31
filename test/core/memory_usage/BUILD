@@ -20,7 +20,7 @@ licenses(["notice"])  # Apache v2
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-cc_library(
+grpc_cc_library(
     name = "client",
     testonly = 1,
     srcs = ["client.cc"],
@@ -32,11 +32,10 @@ cc_library(
     ],
 )
 
-cc_library(
+grpc_cc_library(
     name = "server",
     testonly = 1,
     srcs = ["server.cc"],
-    copts = ["-Wno-implicit-fallthrough"],
     deps = [
         "//:gpr",
         "//:grpc",
