@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -366,8 +367,14 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
 
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, false)) {
+    char* host;
+    char* port;
+    gpr_split_host_port(addr, &host, &port);
+    // allocated host's ownership is passed to ListenSocketNode.
     state->channelz_listen_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
+            grpc_core::UniquePtr<char>(host), *port_num);
+    gpr_free(port);
     socket_uuid = state->channelz_listen_socket->uuid();
   }
 

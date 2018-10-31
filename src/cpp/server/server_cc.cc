@@ -256,7 +256,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         // Set interception point for RECV MESSAGE
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
-        request_ = handler->Deserialize(request_payload_, &request_status_);
+        request_ = handler->Deserialize(call_.call(), request_payload_,
+                                        &request_status_);
 
         request_payload_ = nullptr;
         interceptor_methods_.AddInterceptionHookPoint(
@@ -446,7 +447,8 @@ Server::Server(
     std::vector<
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
         interceptor_creators)
-    : max_receive_message_size_(max_receive_message_size),
+    : interceptor_creators_(std::move(interceptor_creators)),
+      max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),
@@ -454,8 +456,7 @@ Server::Server(
       has_generic_service_(false),
       server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
-      health_check_service_disabled_(false),
-      interceptor_creators_(std::move(interceptor_creators)) {
+      health_check_service_disabled_(false) {
   g_gli_initializer.summon();
   gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   global_callbacks_ = g_callbacks;

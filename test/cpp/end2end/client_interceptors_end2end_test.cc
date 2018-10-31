@@ -152,7 +152,9 @@ class HijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSendMessage();
       auto copied_buffer = *buffer;
-      SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
+      EXPECT_TRUE(
+          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+              .ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -255,7 +257,9 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSendMessage();
       auto copied_buffer = *buffer;
-      SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
+      EXPECT_TRUE(
+          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+              .ok());
       EXPECT_EQ(req.message(), "Hello");
       req_ = req;
       stub_ = grpc::testing::EchoTestService::NewStub(
@@ -367,7 +371,9 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSendMessage();
       auto copied_buffer = *buffer;
-      SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
+      EXPECT_TRUE(
+          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+              .ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(

@@ -204,6 +204,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.15.0': None
         },
+        {
+            'v1.16.1': None
+        },
     ],
     'python': [
         {
