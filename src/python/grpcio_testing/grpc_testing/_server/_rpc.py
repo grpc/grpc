@@ -18,8 +18,8 @@ import threading
 import grpc
 from grpc_testing import _common
 
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
-
 
 class Rpc(object):
 
