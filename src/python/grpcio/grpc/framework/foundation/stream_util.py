@@ -20,6 +20,7 @@ from grpc.framework.foundation import stream
 
 _NO_VALUE = object()
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addHandler(NullHandler())
 
 
 class TransformingConsumer(stream.Consumer):

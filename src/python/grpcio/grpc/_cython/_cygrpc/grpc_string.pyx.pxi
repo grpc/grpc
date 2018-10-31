@@ -15,6 +15,7 @@
 import logging
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addHandler(logging.NullHandler())
 
 # This function will ascii encode unicode string inputs if neccesary.
 # In Python3, unicode strings are the default str type.

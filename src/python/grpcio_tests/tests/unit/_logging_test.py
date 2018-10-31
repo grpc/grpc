@@ -19,6 +19,7 @@ import grpc
 import logging
 
 class LoggingTest(unittest.TestCase):
+
   def test_logger_not_occupied(self):
     self.assertEqual(0, len(logging.getLogger().handlers))
 
