@@ -35,6 +35,13 @@ alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker);
 
+void alts_tsi_handshaker_set_client_vtable_for_testing(
+    alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable);
+
+alts_handshaker_client_vtable*
+alts_tsi_handshaker_get_client_vtable_for_testing(
+    alts_tsi_handshaker* handshaker);
+
 bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker);
 

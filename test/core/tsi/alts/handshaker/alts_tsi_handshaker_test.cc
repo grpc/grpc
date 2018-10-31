@@ -53,7 +53,7 @@ using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
-
+using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
 static bool should_handshaker_client_api_succeed = true;
 
 /* ALTS mock notification. */
@@ -391,9 +391,7 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
                              nullptr, &handshaker);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
-      alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
-  alts_handshaker_client_set_vtable_for_testing(client, &vtable);
+  alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
   grpc_alts_credentials_options_destroy(options);
   return handshaker;
 }
@@ -461,7 +459,6 @@ static void check_handshaker_next_success() {
 }
 
 static void check_handshaker_next_with_shutdown() {
-  /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client*/);
   /* next(success) -- shutdown(success) -- next (fail) */
   GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
@@ -542,11 +539,16 @@ static void on_failed_grpc_call_cb(tsi_result status, void* user_data,
 }
 
 static void check_handle_response_invalid_input() {
+  /* Initialization. */
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
   /**
    * Create a handshaker at the client side, for which internal mock client is
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
@@ -579,6 +581,8 @@ static void check_handle_response_invalid_input() {
   /* Cleanup. */
   grpc_slice_unref(slice);
   tsi_handshaker_destroy(handshaker);
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 static void on_invalid_resp_cb(tsi_result status, void* user_data,
@@ -593,11 +597,16 @@ static void on_invalid_resp_cb(tsi_result status, void* user_data,
 }
 
 static void check_handle_response_invalid_resp() {
+  /* Initialization. */
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
   /**
    * Create a handshaker at the client side, for which internal mock client is
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -610,6 +619,8 @@ static void check_handle_response_invalid_resp() {
   alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 static void check_handle_response_success(void* unused) {
@@ -639,11 +650,16 @@ static void on_failed_resp_cb(tsi_result status, void* user_data,
 }
 
 static void check_handle_response_failure() {
+  /* Initialization. */
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
   /**
    * Create a handshaker at the client side, for which internal mock client is
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -656,6 +672,8 @@ static void check_handle_response_failure() {
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 static void on_shutdown_resp_cb(tsi_result status, void* user_data,
@@ -670,7 +688,12 @@ static void on_shutdown_resp_cb(tsi_result status, void* user_data,
 }
 
 static void check_handle_response_after_shutdown() {
+  /* Initialization. */
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -684,6 +707,8 @@ static void check_handle_response_after_shutdown() {
   alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 void check_handshaker_next_fails_after_shutdown() {

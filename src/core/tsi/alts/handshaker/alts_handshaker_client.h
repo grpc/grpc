@@ -116,46 +116,29 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
 /**
  * This method creates an ALTS handshaker client.
  *
+ * - handshaker: ALTS TSI handshaker to which the created handshaker client
+ * belongs to.
  * - channel: grpc channel to ALTS handshaker service.
  * - handshaker_service_url: address of ALTS handshaker service in the format of
  *   "host:port".
  * - interested_parties: set of pollsets interested in this connection.
- * - cb: gRPC provided callbacks passed from TSI handshaker.
+ * - options: ALTS credentials options containing information passed from TSI
+ *   caller (e.g., rpc protocol versions)
+ * - target_name: the name of the endpoint that the channel is connecting to,
+ *   and will be used for secure naming check
+ * - grpc_cb: gRPC provided callbacks passed from TSI handshaker.
+ * - cb: callback to be executed when tsi_handshaker_next API compltes.
+ * - user_data: argument passed to cb.
  * - is_client: a boolean value indicating if the created handshaker client is
  * used at the client (is_client = true) or server (is_client = false) side. It
  * returns the created ALTS handshaker client on success, and NULL on failure.
  */
 alts_handshaker_client* alts_grpc_handshaker_client_create(
-    grpc_channel* channel, const char* handshaker_service_url,
-    grpc_pollset_set* interested_parties, grpc_iomgr_cb_func cb,
-    bool is_client);
-
-/**
- * This method returns a boolean value indicating whether or not an ALTS
- * handshaker client has been initialized.
- *
- * - client: an ALTS handshaker client instance.
- */
-bool alts_handshaker_client_is_initialized(alts_handshaker_client* client);
-
-/**
- * This method initializes an ALTS handshaker client.
- *
- * - client: an ALTS handshaker client instance.
- * - handshaker: an ALTS TSI handshaker instance. The onwership is not
- *   transferred.
- * - cb: callback function to be called when handling data received from ALTS
- *   handshaker service.
- * - user_data: argument to callback function.
- * - options: ALTS credentials options.
- * - target_name: name of endpoint used for secure naming check.
- */
-void alts_handshaker_client_init(alts_handshaker_client* client,
-                                 alts_tsi_handshaker* handshaker,
-                                 tsi_handshaker_on_next_done_cb cb,
-                                 void* user_data,
-                                 grpc_alts_credentials_options* options,
-                                 grpc_slice target_name);
+    alts_tsi_handshaker* handshaker, grpc_channel* channel,
+    const char* handshaker_service_url, grpc_pollset_set* interested_parties,
+    grpc_alts_credentials_options* options, grpc_slice target_name,
+    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, bool is_client);
 
 /**
  * This method handles handshaker response returned from ALTS handshaker
