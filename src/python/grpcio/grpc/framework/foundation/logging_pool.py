@@ -18,6 +18,7 @@ import logging
 from concurrent import futures
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addHandler(logging.NullHandler())
 
 
 def _wrap(behavior):

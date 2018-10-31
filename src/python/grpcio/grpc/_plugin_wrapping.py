@@ -21,6 +21,7 @@ from grpc import _common
 from grpc._cython import cygrpc
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addHandler(logging.NullHandler())
 
 
 class _AuthMetadataContext(
