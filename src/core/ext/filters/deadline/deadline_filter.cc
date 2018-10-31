@@ -204,7 +204,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
   }
 }
 
-void grpc_deadline_state::destroy() { cancel_timer_if_needed(this); }
+grpc_deadline_state::~grpc_deadline_state() { cancel_timer_if_needed(this); }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline) {
@@ -274,7 +274,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               grpc_closure* ignored) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
-  deadline_state->destroy();
+  deadline_state->~grpc_deadline_state();
 }
 
 // Method for starting a call op for client filter.

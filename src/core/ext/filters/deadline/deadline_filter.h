@@ -33,14 +33,7 @@ enum grpc_deadline_timer_state {
 struct grpc_deadline_state {
   grpc_deadline_state(grpc_call_element* elem, grpc_call_stack* call_stack,
                       grpc_call_combiner* call_combiner, grpc_millis deadline);
-
-  // `destroy` is technically the dtor and all dtor code must be added to
-  // `destroy`. Since `grpc_deadline_state` is a property in client channel
-  // as well, we cannot call the dtor directly upon destroying the deadline
-  // filter call data. Otherwise, msan correctly complains about accessing
-  // this object after calling its dtor.
-  ~grpc_deadline_state() { destroy(); }
-  void destroy();
+  ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
