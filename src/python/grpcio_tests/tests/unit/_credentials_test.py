@@ -13,7 +13,6 @@
 # limitations under the License.
 """Tests of credentials."""
 
-
 import unittest
 import logging
 
