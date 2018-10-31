@@ -141,6 +141,9 @@ class CallbackWithSuccessTag
   // that are detected before the operations are internally processed.
   void force_run(bool ok) { Run(ok); }
 
+  /// check if this tag has ever been set
+  operator bool() const { return call_ != nullptr; }
+
  private:
   grpc_call* call_;
   std::function<void(bool)> func_;
@@ -153,13 +156,19 @@ class CallbackWithSuccessTag
   void Run(bool ok) {
     void* ignored = ops_;
     bool new_ok = ok;
-    GPR_CODEGEN_ASSERT(ops_->FinalizeResult(&ignored, &new_ok));
+    // Allow a "false" return value from FinalizeResult to silence the
+    // callback, just as it silences a CQ tag in the async cases
+    bool do_callback = ops_->FinalizeResult(&ignored, &new_ok);
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
-    // Last use of func_, so ok to move it out for rvalue call above
-    auto func = std::move(func_);
-    func_ = nullptr;  // reset to clear this out for sure
-    CatchingCallback(std::move(func), ok);
+    if (do_callback) {
+      // Last use of func_, so ok to move it out for rvalue call above
+      auto func = std::move(func_);
+      func_ = nullptr;  // reset to clear this out for sure
+      CatchingCallback(std::move(func), ok);
+    } else {
+      func_ = nullptr;  // reset to clear this out for sure
+    }
     g_core_codegen_interface->grpc_call_unref(call_);
   }
 };

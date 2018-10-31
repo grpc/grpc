@@ -27,6 +27,7 @@
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
+#include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
@@ -139,7 +140,7 @@ class ServerContext {
   /// must end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// IsCancelled is always safe to call when using sync API.
+  /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
   /// the AsyncNotifyWhenDone tag has been delivered.
   bool IsCancelled() const;
@@ -281,7 +282,7 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call);
+  void BeginCompletionOp(internal::Call* call, bool callback);
   /// Return the tag queued by BeginCompletionOp()
   internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -312,6 +313,7 @@ class ServerContext {
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
+  internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
   grpc_call* call_;

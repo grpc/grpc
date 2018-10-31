@@ -45,10 +45,17 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
       : call_(*call),
         has_tag_(false),
         tag_(nullptr),
+        cq_tag_(this),
         refs_(2),
         finalized_(false),
         cancelled_(0),
         done_intercepting_(false) {}
+
+  // CompletionOp isn't copyable or movable
+  CompletionOp(const CompletionOp&) = delete;
+  CompletionOp& operator=(const CompletionOp&) = delete;
+  CompletionOp(CompletionOp&&) = delete;
+  CompletionOp& operator=(CompletionOp&&) = delete;
 
   ~CompletionOp() {
     if (call_.server_rpc_info()) {
@@ -85,8 +92,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
-  /// TODO(vjpai): Allow override of cq_tag if appropriate for callback API
-  void* cq_tag() override { return this; }
+  void set_cq_tag(void* cq_tag) { cq_tag_ = cq_tag; }
+
+  void* cq_tag() override { return cq_tag_; }
 
   void Unref();
 
@@ -130,6 +138,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   internal::Call call_;
   bool has_tag_;
   void* tag_;
+  void* cq_tag_;
   std::mutex mu_;
   int refs_;
   bool finalized_;
@@ -158,7 +167,7 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), &ops, 1, this, nullptr));
+             grpc_call_start_batch(call->call(), &ops, 1, cq_tag_, nullptr));
   /* No interceptors to run here */
 }
 
@@ -251,7 +260,7 @@ void ServerContext::Clear() {
   // either called from destructor or just before Setup
 }
 
-void ServerContext::BeginCompletionOp(internal::Call* call) {
+void ServerContext::BeginCompletionOp(internal::Call* call, bool callback) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
@@ -260,7 +269,11 @@ void ServerContext::BeginCompletionOp(internal::Call* call) {
   completion_op_ =
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
           CompletionOp(call);
-  if (has_notify_when_done_tag_) {
+  if (callback) {
+    completion_tag_ =
+        internal::CallbackWithSuccessTag(call->call(), nullptr, completion_op_);
+    completion_op_->set_cq_tag(&completion_tag_);
+  } else if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
   call->PerformOps(completion_op_);
@@ -289,12 +302,15 @@ void ServerContext::TryCancel() const {
 }
 
 bool ServerContext::IsCancelled() const {
-  if (has_notify_when_done_tag_) {
-    // when using async API, but the result is only valid
+  if (completion_tag_) {
+    // When using callback API, this result is always valid.
+    return completion_op_->CheckCancelledAsync();
+  } else if (completion_tag_ || has_notify_when_done_tag_) {
+    // When using async API, the result is only valid
     // if the tag has already been delivered at the completion queue
     return completion_op_ && completion_op_->CheckCancelledAsync();
   } else {
-    // when using sync API
+    // when using sync API, the result is always valid
     return completion_op_ && completion_op_->CheckCancelled(cq_);
   }
 }
