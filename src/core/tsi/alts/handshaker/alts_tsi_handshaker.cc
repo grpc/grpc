@@ -51,6 +51,7 @@ struct alts_tsi_handshaker {
   bool is_client;
   bool has_sent_start_message;
   bool has_created_handshaker_client;
+  bool use_dedicated_cq;
   char* handshaker_service_url;
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
@@ -287,15 +288,15 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   tsi_result ok = TSI_OK;
-  const bool use_dedicated_cq = handshaker->interested_parties == nullptr;
   if (!handshaker->has_created_handshaker_client) {
-    init_shared_resources(handshaker->handshaker_service_url, use_dedicated_cq);
-    if (use_dedicated_cq) {
+    init_shared_resources(handshaker->handshaker_service_url,
+                          handshaker->use_dedicated_cq);
+    if (handshaker->use_dedicated_cq) {
       handshaker->interested_parties =
           grpc_alts_get_shared_resource_dedicated()->interested_parties;
       GPR_ASSERT(handshaker->interested_parties != nullptr);
     }
-    grpc_iomgr_cb_func grpc_cb = use_dedicated_cq
+    grpc_iomgr_cb_func grpc_cb = handshaker->use_dedicated_cq
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
     handshaker->client = alts_grpc_handshaker_client_create(
@@ -309,7 +310,8 @@ static tsi_result handshaker_next(
     }
     handshaker->has_created_handshaker_client = true;
   }
-  if (use_dedicated_cq && handshaker->client_vtable_for_testing == nullptr) {
+  if (handshaker->use_dedicated_cq &&
+      handshaker->client_vtable_for_testing == nullptr) {
     GPR_ASSERT(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
                                 handshaker->client));
   }
@@ -398,9 +400,9 @@ tsi_result alts_tsi_handshaker_create(
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
-  bool use_dedicated_cq = interested_parties == nullptr;
   alts_tsi_handshaker* handshaker =
       static_cast<alts_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
+  handshaker->use_dedicated_cq = interested_parties == nullptr;
   handshaker->client = nullptr;
   handshaker->is_client = is_client;
   handshaker->has_sent_start_message = false;
@@ -411,8 +413,9 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->has_created_handshaker_client = false;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
   handshaker->options = grpc_alts_credentials_options_copy(options);
-  handshaker->base.vtable =
-      use_dedicated_cq ? &handshaker_vtable_dedicated : &handshaker_vtable;
+  handshaker->base.vtable = handshaker->use_dedicated_cq
+                                ? &handshaker_vtable_dedicated
+                                : &handshaker_vtable;
   *self = &handshaker->base;
   return TSI_OK;
 }
