@@ -14,6 +14,7 @@
 """Test of gRPC Python's application-layer API."""
 
 import unittest
+import logging
 
 import six
 
