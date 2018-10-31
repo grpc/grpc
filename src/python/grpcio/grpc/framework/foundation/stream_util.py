@@ -19,7 +19,6 @@ import threading
 from grpc.framework.foundation import stream
 
 _NO_VALUE = object()
-logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 

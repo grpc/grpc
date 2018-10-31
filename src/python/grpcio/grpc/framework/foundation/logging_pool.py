@@ -17,7 +17,6 @@ import logging
 
 from concurrent import futures
 
-logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
