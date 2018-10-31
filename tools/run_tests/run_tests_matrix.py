@@ -237,7 +237,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['objc'],
         configs=['dbg', 'opt'],
         platforms=['macos'],
-        labels=['basictests', 'multilang'],
+        labels=['multilang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
         timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
