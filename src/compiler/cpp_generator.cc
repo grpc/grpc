@@ -926,8 +926,11 @@ void PrintHeaderServerMethodCallback(
         "Method$(context, request, response, controller);\n"
         "             }, this));\n");
   } else if (ClientOnlyStreaming(method)) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   } else if (ServerOnlyStreaming(method)) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   } else if (method->BidiStreaming()) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,
@@ -975,8 +978,11 @@ void PrintHeaderServerMethodRawCallback(
         "Method$(context, request, response, controller);\n"
         "             }, this));\n");
   } else if (ClientOnlyStreaming(method)) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   } else if (ServerOnlyStreaming(method)) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   } else if (method->BidiStreaming()) {
+    // TODO(vjpai): Add in code generation for all streaming methods
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,

@@ -46,21 +46,22 @@ class MethodHandler {
     /// \param context : the ServerContext structure for this server call
     /// \param req : the request payload, if appropriate for this RPC
     /// \param req_status : the request status after any interceptors have run
-    /// \param renew : used only by the callback API. It is a function
-    ///        called by the RPC Controller to request another RPC
+    /// \param rpc_requester : used only by the callback API. It is a function
+    ///        called by the RPC Controller to request another RPC (and also
+    ///        to set up the state required to make that request possible)
     HandlerParameter(Call* c, ServerContext* context, void* req,
-                     Status req_status, std::function<void()> renew)
+                     Status req_status, std::function<void()> requester)
         : call(c),
           server_context(context),
           request(req),
           status(req_status),
-          renewer(std::move(renew)) {}
+          call_requester(std::move(requester)) {}
     ~HandlerParameter() {}
     Call* call;
     ServerContext* server_context;
     void* request;
     Status status;
-    std::function<void()> renewer;
+    std::function<void()> call_requester;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 

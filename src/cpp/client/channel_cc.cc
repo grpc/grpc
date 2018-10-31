@@ -225,7 +225,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   static void Run(grpc_experimental_completion_queue_functor* cb, int) {
     auto* callback = static_cast<ShutdownCallback*>(cb);
     delete callback->cq_;
-    grpc_core::Delete(callback);
+    delete callback;
   }
 
  private:
@@ -238,7 +238,7 @@ CompletionQueue* Channel::CallbackCQ() {
   // if there is no explicit per-channel CQ registered
   std::lock_guard<std::mutex> l(mu_);
   if (callback_cq_ == nullptr) {
-    auto* shutdown_callback = grpc_core::New<ShutdownCallback>();
+    auto* shutdown_callback = new ShutdownCallback;
     callback_cq_ = new CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});

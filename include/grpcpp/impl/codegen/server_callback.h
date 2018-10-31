@@ -48,7 +48,6 @@ class ServerCallbackRpcController {
   // The method handler must call this function when it is done so that
   // the library knows to free its resources
   virtual void Finish(Status s) = 0;
-  virtual void FinishWithError(Status s) = 0;
 
   // Allow the method handler to push out the initial metadata before
   // the response and status are ready
@@ -75,7 +74,8 @@ class CallbackUnaryHandler : public MethodHandler {
         param.call->call(), sizeof(ServerCallbackRpcControllerImpl)))
         ServerCallbackRpcControllerImpl(
             param.server_context, param.call,
-            static_cast<RequestType*>(param.request), std::move(param.renewer));
+            static_cast<RequestType*>(param.request),
+            std::move(param.call_requester));
     Status status = param.status;
 
     if (status.ok()) {
@@ -112,14 +112,38 @@ class CallbackUnaryHandler : public MethodHandler {
   // The implementation class of ServerCallbackRpcController is a private member
   // of CallbackUnaryHandler since it is never exposed anywhere, and this allows
   // it to take advantage of CallbackUnaryHandler's friendships.
-
   class ServerCallbackRpcControllerImpl
       : public experimental::ServerCallbackRpcController {
    public:
-    void Finish(Status s) override { FinishInternal(std::move(s), false); }
-
-    void FinishWithError(Status s) override {
-      FinishInternal(std::move(s), true);
+    void Finish(Status s) override {
+      finish_tag_ = CallbackWithSuccessTag(
+          call_.call(),
+          [this](bool) {
+            grpc_call* call = call_.call();
+            auto call_requester = std::move(call_requester_);
+            this->~ServerCallbackRpcControllerImpl();  // explicitly call
+                                                       // destructor
+            g_core_codegen_interface->grpc_call_unref(call);
+            call_requester();
+          },
+          &finish_buf_);
+      if (!ctx_->sent_initial_metadata_) {
+        finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
+                                        ctx_->initial_metadata_flags());
+        if (ctx_->compression_level_set()) {
+          finish_buf_.set_compression_level(ctx_->compression_level());
+        }
+        ctx_->sent_initial_metadata_ = true;
+      }
+      // The response is dropped if the status is not OK.
+      if (s.ok()) {
+        finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
+                                     finish_buf_.SendMessage(resp_));
+      } else {
+        finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, s);
+      }
+      finish_buf_.set_core_cq_tag(&finish_tag_);
+      call_.PerformOps(&finish_buf_);
     }
 
     void SendInitialMetadata(std::function<void(bool)> f) override {
@@ -133,7 +157,7 @@ class CallbackUnaryHandler : public MethodHandler {
         meta_buf_.set_compression_level(ctx_->compression_level());
       }
       ctx_->sent_initial_metadata_ = true;
-      meta_buf_.set_cq_tag(&meta_tag_);
+      meta_buf_.set_core_cq_tag(&meta_tag_);
       call_.PerformOps(&meta_buf_);
     }
 
@@ -143,41 +167,13 @@ class CallbackUnaryHandler : public MethodHandler {
 
     ServerCallbackRpcControllerImpl(ServerContext* ctx, Call* call,
                                     RequestType* req,
-                                    std::function<void()> renewer)
-        : ctx_(ctx), call_(*call), req_(req), renewer_(std::move(renewer)) {}
+                                    std::function<void()> call_requester)
+        : ctx_(ctx),
+          call_(*call),
+          req_(req),
+          call_requester_(std::move(call_requester)) {}
 
     ~ServerCallbackRpcControllerImpl() { req_->~RequestType(); }
-
-    void FinishInternal(Status s, bool allow_error) {
-      finish_tag_ = CallbackWithSuccessTag(
-          call_.call(),
-          [this](bool) {
-            grpc_call* call = call_.call();
-            auto renewer = std::move(renewer_);
-            this->~ServerCallbackRpcControllerImpl();  // explicitly call
-                                                       // destructor
-            g_core_codegen_interface->grpc_call_unref(call);
-            renewer();
-          },
-          &finish_buf_);
-      if (!ctx_->sent_initial_metadata_) {
-        finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
-                                        ctx_->initial_metadata_flags());
-        if (ctx_->compression_level_set()) {
-          finish_buf_.set_compression_level(ctx_->compression_level());
-        }
-        ctx_->sent_initial_metadata_ = true;
-      }
-      // The response may be dropped if the status is not OK.
-      if (allow_error || s.ok()) {
-        finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_buf_.SendMessage(resp_));
-      } else {
-        finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      }
-      finish_buf_.set_cq_tag(&finish_tag_);
-      call_.PerformOps(&finish_buf_);
-    }
 
     RequestType* request() { return req_; }
     ResponseType* response() { return &resp_; }
@@ -193,7 +189,7 @@ class CallbackUnaryHandler : public MethodHandler {
     Call call_;
     RequestType* req_;
     ResponseType resp_;
-    std::function<void()> renewer_;
+    std::function<void()> call_requester_;
   };
 };
 

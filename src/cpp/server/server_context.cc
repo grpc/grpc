@@ -45,7 +45,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
       : call_(*call),
         has_tag_(false),
         tag_(nullptr),
-        cq_tag_(this),
+        core_cq_tag_(this),
         refs_(2),
         finalized_(false),
         cancelled_(0),
@@ -92,9 +92,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
-  void set_cq_tag(void* cq_tag) { cq_tag_ = cq_tag; }
+  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
 
-  void* cq_tag() override { return cq_tag_; }
+  void* core_cq_tag() override { return core_cq_tag_; }
 
   void Unref();
 
@@ -138,7 +138,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   internal::Call call_;
   bool has_tag_;
   void* tag_;
-  void* cq_tag_;
+  void* core_cq_tag_;
   std::mutex mu_;
   int refs_;
   bool finalized_;
@@ -166,8 +166,8 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetCall(&call_);
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), &ops, 1, cq_tag_, nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), &ops, 1,
+                                                   core_cq_tag_, nullptr));
   /* No interceptors to run here */
 }
 
@@ -272,7 +272,7 @@ void ServerContext::BeginCompletionOp(internal::Call* call, bool callback) {
   if (callback) {
     completion_tag_ =
         internal::CallbackWithSuccessTag(call->call(), nullptr, completion_op_);
-    completion_op_->set_cq_tag(&completion_tag_);
+    completion_op_->set_core_cq_tag(&completion_tag_);
   } else if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
@@ -305,7 +305,7 @@ bool ServerContext::IsCancelled() const {
   if (completion_tag_) {
     // When using callback API, this result is always valid.
     return completion_op_->CheckCancelledAsync();
-  } else if (completion_tag_ || has_notify_when_done_tag_) {
+  } else if (has_notify_when_done_tag_) {
     // When using async API, the result is only valid
     // if the tag has already been delivered at the completion queue
     return completion_op_ && completion_op_->CheckCancelledAsync();
