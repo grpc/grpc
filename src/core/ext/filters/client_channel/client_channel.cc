@@ -970,6 +970,18 @@ struct subchannel_batch_data {
 // Retry state associated with a subchannel call.
 // Stored in the parent_data of the subchannel call object.
 struct subchannel_call_retry_state {
+  subchannel_call_retry_state(grpc_call_context_element* context)
+      : batch_payload(context),
+        started_send_initial_metadata(false),
+        completed_send_initial_metadata(false),
+        started_send_trailing_metadata(false),
+        completed_send_trailing_metadata(false),
+        started_recv_initial_metadata(false),
+        completed_recv_initial_metadata(false),
+        started_recv_trailing_metadata(false),
+        completed_recv_trailing_metadata(false),
+        retry_dispatched(false) {}
+
   // subchannel_batch_data.batch.payload points to this.
   grpc_transport_stream_op_batch_payload batch_payload;
   // For send_initial_metadata.
@@ -988,7 +1000,7 @@ struct subchannel_call_retry_state {
   // For intercepting recv_initial_metadata.
   grpc_metadata_batch recv_initial_metadata;
   grpc_closure recv_initial_metadata_ready;
-  bool trailing_metadata_available;
+  bool trailing_metadata_available = false;
   // For intercepting recv_message.
   grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_message;
@@ -998,10 +1010,10 @@ struct subchannel_call_retry_state {
   grpc_closure recv_trailing_metadata_ready;
   // These fields indicate which ops have been started and completed on
   // this subchannel call.
-  size_t started_send_message_count;
-  size_t completed_send_message_count;
-  size_t started_recv_message_count;
-  size_t completed_recv_message_count;
+  size_t started_send_message_count = 0;
+  size_t completed_send_message_count = 0;
+  size_t started_recv_message_count = 0;
+  size_t completed_recv_message_count = 0;
   bool started_send_initial_metadata : 1;
   bool completed_send_initial_metadata : 1;
   bool started_send_trailing_metadata : 1;
@@ -1012,11 +1024,11 @@ struct subchannel_call_retry_state {
   bool completed_recv_trailing_metadata : 1;
   // State for callback processing.
   bool retry_dispatched : 1;
-  subchannel_batch_data* recv_initial_metadata_ready_deferred_batch;
-  grpc_error* recv_initial_metadata_error;
-  subchannel_batch_data* recv_message_ready_deferred_batch;
-  grpc_error* recv_message_error;
-  subchannel_batch_data* recv_trailing_metadata_internal_batch;
+  subchannel_batch_data* recv_initial_metadata_ready_deferred_batch = nullptr;
+  grpc_error* recv_initial_metadata_error = GRPC_ERROR_NONE;
+  subchannel_batch_data* recv_message_ready_deferred_batch = nullptr;
+  grpc_error* recv_message_error = GRPC_ERROR_NONE;
+  subchannel_batch_data* recv_trailing_metadata_internal_batch = nullptr;
 };
 
 // Pending batches stored in call data.
@@ -2777,10 +2789,9 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       channelz_subchannel->RecordCallStarted();
     }
     if (parent_data_size > 0) {
-      subchannel_call_retry_state* retry_state =
-          new (grpc_connected_subchannel_call_get_parent_data(
-              calld->subchannel_call)) subchannel_call_retry_state();
-      retry_state->batch_payload.context = calld->pick.subchannel_call_context;
+      new (grpc_connected_subchannel_call_get_parent_data(
+          calld->subchannel_call))
+          subchannel_call_retry_state(calld->pick.subchannel_call_context);
     }
     pending_batches_resume(elem);
   }

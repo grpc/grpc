@@ -128,10 +128,10 @@ struct grpc_call {
       : arena(arena),
         cq(args.cq),
         channel(args.channel),
-        is_client(args.server_transport_data == nullptr) {
+        is_client(args.server_transport_data == nullptr),
+        stream_op_payload(context) {
     gpr_ref_init(&ext_ref, 1);
     grpc_call_combiner_init(&call_combiner);
-    stream_op_payload.context = context;
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
         metadata_batch[i][j].deadline = GRPC_MILLIS_INF_FUTURE;
