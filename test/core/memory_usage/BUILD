@@ -18,8 +18,6 @@ grpc_package(name = "test/core/memory_usage")
 
 licenses(["notice"])  # Apache v2
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
-
 grpc_cc_library(
     name = "client",
     testonly = 1,
