@@ -72,22 +72,21 @@ namespace grpc_core {
 // Used only for the first call on an idle channel.
 class RequestRouter::Request::ResolverResultWaiter {
  public:
-  explicit ResolverResultWaiter(State* state)
-      : request_router_(state->request_router), state_(state) {
+  explicit ResolverResultWaiter(Request* request)
+      : request_router_(request->request_router_), request_(request) {
     if (request_router_->tracer_->enabled()) {
       gpr_log(GPR_INFO,
               "request_router=%p request=%p: deferring pick pending resolver "
-              "result", request_router_, state->request);
+              "result", request_router_, request);
     }
     // Add closure to be run when a resolver result is available.
-    GRPC_CLOSURE_INIT(&done_closure_, &ResolverResultWaiter::DoneLocked, this,
+    GRPC_CLOSURE_INIT(&done_closure_, &DoneLocked, this,
                       grpc_combiner_scheduler(request_router_->combiner_));
     AddToWaitingList();
     // Set cancellation closure, so that we abort if the call is cancelled.
-    GRPC_CLOSURE_INIT(&cancel_closure_, &ResolverResultWaiter::CancelLocked,
-                      this,
+    GRPC_CLOSURE_INIT(&cancel_closure_, &CancelLocked, this,
                       grpc_combiner_scheduler(request_router_->combiner_));
-    grpc_call_combiner_set_notify_on_cancel(state_->request->call_combiner_,
+    grpc_call_combiner_set_notify_on_cancel(request->call_combiner_,
                                             &cancel_closure_);
   }
 
@@ -117,7 +116,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       return;
     }
     // Otherwise, process the resolver result.
-    Request* request = self->state_->request;
+    Request* request = self->request_;
     if (error != GRPC_ERROR_NONE) {
       if (request_router->tracer_->enabled()) {
         gpr_log(GPR_INFO,
@@ -167,7 +166,7 @@ class RequestRouter::Request::ResolverResultWaiter {
                 "request_router=%p request=%p: resolver returned, doing LB "
                 "pick", request_router, request);
       }
-      request->ProcessServiceConfigAndStartLbPickLocked(self->state_);
+      request->ProcessServiceConfigAndStartLbPickLocked();
     }
     self->finished_ = true;
   }
@@ -183,7 +182,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       Delete(self);
       return;
     }
-    Request* request = self->state_->request;
+    Request* request = self->request_;
     // If we are being cancelled, immediately invoke on_route_done_
     // to propagate the error back to the caller.
     if (error != GRPC_ERROR_NONE) {
@@ -204,7 +203,7 @@ class RequestRouter::Request::ResolverResultWaiter {
   }
 
   RequestRouter* request_router_;
-  State* state_;
+  Request* request_;
   grpc_closure done_closure_;
   grpc_closure cancel_closure_;
   bool finished_ = false;
@@ -215,57 +214,51 @@ class RequestRouter::Request::ResolverResultWaiter {
 //
 
 // Invoked once resolver results are available.
-void RequestRouter::Request::ProcessServiceConfigAndStartLbPickLocked(
-    State* state) {
+void RequestRouter::Request::ProcessServiceConfigAndStartLbPickLocked() {
   // Get service config data if needed.
   if (on_service_config_ != nullptr) {
     GRPC_CLOSURE_RUN(on_service_config_, GRPC_ERROR_NONE);
   }
   // Start LB pick.
-  StartLbPickLocked(state);
+  StartLbPickLocked();
 }
 
-void RequestRouter::Request::MaybeAddCallToInterestedPartiesLocked(
-    State* state) {
-  if (!pollent_added_to_interested_parties_ &&
-      !state->pollent_added_to_interested_parties) {
+void RequestRouter::Request::MaybeAddCallToInterestedPartiesLocked() {
+  if (!pollent_added_to_interested_parties_) {
     pollent_added_to_interested_parties_ = true;
-    state->pollent_added_to_interested_parties = true;
     grpc_polling_entity_add_to_pollset_set(
-        pollent_, state->request_router->interested_parties_);
+        pollent_, request_router_->interested_parties_);
   }
 }
 
-void RequestRouter::Request::MaybeRemoveCallFromInterestedPartiesLocked(
-    State* state) {
-  if (state->pollent_added_to_interested_parties) {
+void RequestRouter::Request::MaybeRemoveCallFromInterestedPartiesLocked() {
+  if (pollent_added_to_interested_parties_) {
     pollent_added_to_interested_parties_ = false;
-    state->pollent_added_to_interested_parties = false;
     grpc_polling_entity_del_from_pollset_set(
-        pollent_, state->request_router->interested_parties_);
+        pollent_, request_router_->interested_parties_);
   }
 }
 
 // Starts a pick on the LB policy.
-void RequestRouter::Request::StartLbPickLocked(State* state) {
-  RequestRouter* request_router = state->request_router;
-  if (request_router->tracer_->enabled()) {
+void RequestRouter::Request::StartLbPickLocked() {
+  if (request_router_->tracer_->enabled()) {
     gpr_log(GPR_INFO,
             "request_router=%p request=%p: starting pick on lb_policy=%p",
-            request_router, this, request_router->lb_policy_.get());
+            request_router_, this, request_router_->lb_policy_.get());
   }
-  GRPC_CLOSURE_INIT(&state->on_pick_done, &Request::LbPickDoneLocked, state,
-                    grpc_combiner_scheduler(request_router->combiner_));
-  pick_.on_complete = &state->on_pick_done;
+  GRPC_CLOSURE_INIT(&on_pick_done_, &LbPickDoneLocked, this,
+                    grpc_combiner_scheduler(request_router_->combiner_));
+  pick_.on_complete = &on_pick_done_;
   GRPC_CALL_STACK_REF(owning_call_, "pick_callback");
   grpc_error* error = GRPC_ERROR_NONE;
-  const bool pick_done = request_router->lb_policy_->PickLocked(&pick_, &error);
+  const bool pick_done = request_router_->lb_policy_->PickLocked(&pick_,
+                                                                 &error);
   if (pick_done) {
     // Pick completed synchronously.
-    if (request_router->tracer_->enabled()) {
+    if (request_router_->tracer_->enabled()) {
       gpr_log(GPR_INFO,
               "request_router=%p request=%p: pick completed synchronously",
-              request_router, this);
+              request_router_, this);
     }
     GRPC_CLOSURE_RUN(on_route_done_, error);
     GRPC_CALL_STACK_UNREF(owning_call_, "pick_callback");
@@ -274,37 +267,35 @@ void RequestRouter::Request::StartLbPickLocked(State* state) {
     // Add the request's polling entity to the request_router's
     // interested_parties, so that the I/O of the LB policy can be done
     // under it.  It will be removed in LbPickDoneLocked().
-    MaybeAddCallToInterestedPartiesLocked(state);
+    MaybeAddCallToInterestedPartiesLocked();
     // Request notification on call cancellation.
     GRPC_CALL_STACK_REF(owning_call_, "pick_callback_cancel");
-    GRPC_CLOSURE_INIT(&state->on_cancel, &Request::LbPickCancelLocked, state,
-                      grpc_combiner_scheduler(request_router->combiner_));
-    grpc_call_combiner_set_notify_on_cancel(call_combiner_, &state->on_cancel);
+    GRPC_CLOSURE_INIT(&on_cancel_, &LbPickCancelLocked, this,
+                      grpc_combiner_scheduler(request_router_->combiner_));
+    grpc_call_combiner_set_notify_on_cancel(call_combiner_, &on_cancel_);
   }
 }
 
 // Callback invoked by LoadBalancingPolicy::PickLocked() for async picks.
 // Unrefs the LB policy and invokes on_route_done_.
 void RequestRouter::Request::LbPickDoneLocked(void* arg, grpc_error* error) {
-  State* state = static_cast<State*>(arg);
-  Request* request = state->request;
-  RequestRouter* request_router = state->request_router;
+  Request* self = static_cast<Request*>(arg);
+  RequestRouter* request_router = self->request_router_;
   if (request_router->tracer_->enabled()) {
     gpr_log(GPR_INFO,
             "request_router=%p request=%p: pick completed asynchronously",
-            request_router, request);
+            request_router, self);
   }
-  request->MaybeRemoveCallFromInterestedPartiesLocked(state);
-  GRPC_CLOSURE_RUN(request->on_route_done_, GRPC_ERROR_REF(error));
-  GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback");
+  self->MaybeRemoveCallFromInterestedPartiesLocked();
+  GRPC_CLOSURE_RUN(self->on_route_done_, GRPC_ERROR_REF(error));
+  GRPC_CALL_STACK_UNREF(self->owning_call_, "pick_callback");
 }
 
 // Note: This runs under the client_channel combiner, but will NOT be
 // holding the call combiner.
 void RequestRouter::Request::LbPickCancelLocked(void* arg, grpc_error* error) {
-  State* state = static_cast<State*>(arg);
-  Request* request = state->request;
-  RequestRouter* request_router = state->request_router;
+  Request* self = static_cast<Request*>(arg);
+  RequestRouter* request_router = self->request_router_;
   // Note: request_router->lb_policy_ may have changed since we started our
   // pick, in which case we will be cancelling the pick on a policy other than
   // the one we started it on.  However, this will just be a no-op.
@@ -312,21 +303,12 @@ void RequestRouter::Request::LbPickCancelLocked(void* arg, grpc_error* error) {
     if (request_router->tracer_->enabled()) {
       gpr_log(GPR_INFO,
               "request_router=%p request=%p: cancelling pick from LB policy %p",
-              request_router, request, request_router->lb_policy_.get());
+              request_router, self, request_router->lb_policy_.get());
     }
-    request_router->lb_policy_->CancelPickLocked(&request->pick_,
+    request_router->lb_policy_->CancelPickLocked(&self->pick_,
                                                  GRPC_ERROR_REF(error));
   }
-  GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
-}
-
-RequestRouter::Request::State* RequestRouter::Request::AddState(
-    RequestRouter* request_router) {
-  state_.emplace_back();
-  State& state = state_[state_.size() - 1];
-  state.request = this;
-  state.request_router = request_router;
-  return &state;
+  GRPC_CALL_STACK_UNREF(self->owning_call_, "pick_callback_cancel");
 }
 
 //
@@ -801,11 +783,11 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
 
 void RequestRouter::RouteCallLocked(Request* request) {
   GPR_ASSERT(request->pick_.connected_subchannel == nullptr);
-  Request::State* state = request->AddState(this);
+  request->request_router_ = this;
   if (lb_policy_ != nullptr) {
     // We already have resolver results, so process the service config
     // and start an LB pick.
-    request->ProcessServiceConfigAndStartLbPickLocked(state);
+    request->ProcessServiceConfigAndStartLbPickLocked();
   } else if (resolver_ == nullptr) {
     GRPC_CLOSURE_RUN(request->on_route_done_,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
@@ -815,11 +797,12 @@ void RequestRouter::RouteCallLocked(Request* request) {
       StartResolvingLocked();
     }
     // Create a new waiter, which will delete itself when done.
-    New<Request::ResolverResultWaiter>(state);
+// FIXME: move into Request object
+    New<Request::ResolverResultWaiter>(request);
     // Add the request's polling entity to the request_router's
     // interested_parties, so that the I/O of the resolver can be done
     // under it.  It will be removed in LbPickDoneLocked().
-    request->MaybeAddCallToInterestedPartiesLocked(state);
+    request->MaybeAddCallToInterestedPartiesLocked();
   }
 }
 

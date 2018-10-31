@@ -56,6 +56,7 @@ class RequestRouter {
       pick_.initial_metadata_flags = send_initial_metadata_flags;
     }
 
+// FIXME: pass this in from caller
     const LoadBalancingPolicy::PickState* pick() const { return &pick_; }
 
    private:
@@ -63,29 +64,13 @@ class RequestRouter {
 
     class ResolverResultWaiter;
 
-    // Internal state, one per (request, request_router) pair.
-    struct State {
-      grpc_closure on_pick_done;
-      grpc_closure on_cancel;
-      Request* request;
-      RequestRouter* request_router;
-      bool pollent_added_to_interested_parties = false;
-    };
-
-    State* AddState(RequestRouter* request_router);
-
-    void ProcessServiceConfigAndStartLbPickLocked(State* state);
-
-    void StartLbPickLocked(State* state);
-
+    void ProcessServiceConfigAndStartLbPickLocked();
+    void StartLbPickLocked();
     static void LbPickDoneLocked(void* arg, grpc_error* error);
     static void LbPickCancelLocked(void* arg, grpc_error* error);
 
-// FIXME: if we remove State struct and require a new Request object to
-// be allocated (presumably on the arena) at each level in the routing
-// hierarchy, then how do we handle interested_parties?
-    void MaybeAddCallToInterestedPartiesLocked(State* state);
-    void MaybeRemoveCallFromInterestedPartiesLocked(State* state);
+    void MaybeAddCallToInterestedPartiesLocked();
+    void MaybeRemoveCallFromInterestedPartiesLocked();
 
     // Populated by caller.
     grpc_call_stack* owning_call_;
@@ -96,9 +81,10 @@ class RequestRouter {
     LoadBalancingPolicy::PickState pick_;
 
     // Internal state.
-// FIXME: should we allocate these on the arena instead?
-    InlinedVector<State, 1> state_;
+    RequestRouter* request_router_ = nullptr;
     bool pollent_added_to_interested_parties_ = false;
+    grpc_closure on_pick_done_;
+    grpc_closure on_cancel_;
   };
 
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
