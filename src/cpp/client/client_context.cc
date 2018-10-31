@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -110,6 +111,9 @@ void ClientContext::set_compression_algorithm(
 void ClientContext::TryCancel() {
   std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
+    // for(size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
+    // rpc_info_.RunInterceptor(, 0);
+    //}
     grpc_call_cancel(call_, nullptr);
   } else {
     call_canceled_ = true;

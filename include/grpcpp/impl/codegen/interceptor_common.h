@@ -19,7 +19,12 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 
+#include <functional>
+
+#include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
+#include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -27,37 +32,8 @@
 namespace grpc {
 namespace internal {
 
-/// Internal methods for setting the state
-class InternalInterceptorBatchMethods
+class InterceptorBatchMethodsImpl
     : public experimental::InterceptorBatchMethods {
- public:
-  virtual ~InternalInterceptorBatchMethods() {}
-
-  virtual void AddInterceptionHookPoint(
-      experimental::InterceptionHookPoints type) = 0;
-
-  virtual void SetSendMessage(ByteBuffer* buf) = 0;
-
-  virtual void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) = 0;
-
-  virtual void SetSendStatus(grpc_status_code* code,
-                             grpc::string* error_details,
-                             grpc::string* error_message) = 0;
-
-  virtual void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) = 0;
-
-  virtual void SetRecvMessage(void* message) = 0;
-
-  virtual void SetRecvInitialMetadata(MetadataMap* map) = 0;
-
-  virtual void SetRecvStatus(Status* status) = 0;
-
-  virtual void SetRecvTrailingMetadata(MetadataMap* map) = 0;
-};
-
-class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
  public:
   InterceptorBatchMethodsImpl() {
     for (auto i = static_cast<experimental::InterceptionHookPoints>(0);
@@ -75,7 +51,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     return hooks_[static_cast<size_t>(type)];
   }
 
-  void Proceed() override { /* fill this */
+  void Proceed() override {
     if (call_->client_rpc_info() != nullptr) {
       return ProceedClient();
     }
@@ -98,8 +74,7 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     rpc_info->RunInterceptor(this, current_interceptor_index_);
   }
 
-  void AddInterceptionHookPoint(
-      experimental::InterceptionHookPoints type) override {
+  void AddInterceptionHookPoint(experimental::InterceptionHookPoints type) {
     hooks_[static_cast<size_t>(type)] = true;
   }
 
@@ -139,38 +114,38 @@ class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
+  void SetSendMessage(ByteBuffer* buf) { send_message_ = buf; }
 
   void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) override {
+      std::multimap<grpc::string, grpc::string>* metadata) {
     send_initial_metadata_ = metadata;
   }
 
   void SetSendStatus(grpc_status_code* code, grpc::string* error_details,
-                     grpc::string* error_message) override {
+                     grpc::string* error_message) {
     code_ = code;
     error_details_ = error_details;
     error_message_ = error_message;
   }
 
   void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) override {
+      std::multimap<grpc::string, grpc::string>* metadata) {
     send_trailing_metadata_ = metadata;
   }
 
-  void SetRecvMessage(void* message) override { recv_message_ = message; }
+  void SetRecvMessage(void* message) { recv_message_ = message; }
 
-  void SetRecvInitialMetadata(MetadataMap* map) override {
+  void SetRecvInitialMetadata(MetadataMap* map) {
     recv_initial_metadata_ = map;
   }
 
-  void SetRecvStatus(Status* status) override { recv_status_ = status; }
+  void SetRecvStatus(Status* status) { recv_status_ = status; }
 
-  void SetRecvTrailingMetadata(MetadataMap* map) override {
+  void SetRecvTrailingMetadata(MetadataMap* map) {
     recv_trailing_metadata_ = map;
   }
 
-  std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
+  std::unique_ptr<ChannelInterface> GetInterceptedChannel() {
     auto* info = call_->client_rpc_info();
     if (info == nullptr) {
       return std::unique_ptr<ChannelInterface>(nullptr);

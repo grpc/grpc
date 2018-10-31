@@ -56,6 +56,9 @@ enum class InterceptionHookPoints {
   POST_RECV_MESSAGE,
   POST_RECV_STATUS /* client only */,
   POST_RECV_CLOSE /* server only */,
+  /* This is a special hook point available to both clients and servers. It is
+     illegal for an interceptor to block/delay this operation */
+  PRE_SEND_CANCEL,
   NUM_INTERCEPTION_HOOKS
 };
 
@@ -66,7 +69,9 @@ class InterceptorBatchMethods {
   // of type \a type
   virtual bool QueryInterceptionHookPoint(InterceptionHookPoints type) = 0;
   // Calling this will signal that the interceptor is done intercepting the
-  // current batch of the RPC
+  // current batch of the RPC.
+  // Proceed is a no-op if the batch contains PRE_SEND_CANCEL. Simply returning
+  // from the Intercept method does the job of continuing the RPC.
   virtual void Proceed() = 0;
   // Calling this indicates that the interceptor has hijacked the RPC (only
   // valid if the batch contains send_initial_metadata on the client side)
