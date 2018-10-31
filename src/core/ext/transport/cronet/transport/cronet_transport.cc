@@ -1374,7 +1374,6 @@ inline stream_obj::~stream_obj() {
   /* Clean up read_slice_buffer in case there is unread data. */
   grpc_slice_buffer_destroy_internal(&state.rs.read_slice_buffer);
   GRPC_ERROR_UNREF(state.cancel_error);
-  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
@@ -1424,6 +1423,7 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                            grpc_closure* then_schedule_closure) {
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   s->~stream_obj();
+  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static void destroy_transport(grpc_transport* gt) {}
