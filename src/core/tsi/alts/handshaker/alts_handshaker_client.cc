@@ -401,7 +401,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, grpc_slice target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, bool is_client) {
+    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
+    bool is_client) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
     return nullptr;
@@ -431,14 +432,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
                 GRPC_MILLIS_INF_FUTURE, nullptr);
-  alts_handshaker_client_vtable* client_vtable_for_testing =
-      grpc_core::internal::alts_tsi_handshaker_get_client_vtable_for_testing(
-          handshaker);
-  client->base.vtable = strcmp(handshaker_service_url,
-                               ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) == 0 &&
-                                client_vtable_for_testing != nullptr
-                            ? client_vtable_for_testing
-                            : &vtable;
+  client->base.vtable =
+      vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
                     client, grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);

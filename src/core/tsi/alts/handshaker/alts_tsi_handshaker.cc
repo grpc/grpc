@@ -266,7 +266,6 @@ static void on_handshaker_service_resp_recv_dedicated(void* arg,
                                                       grpc_error* error) {
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
-  GPR_ASSERT(grpc_cq_begin_op(resource->cq, arg));
   grpc_cq_end_op(resource->cq, arg, GRPC_ERROR_NONE,
                  [](void* done_arg, grpc_cq_completion* storage) {}, nullptr,
                  &resource->storage);
@@ -288,8 +287,8 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   tsi_result ok = TSI_OK;
+  const bool use_dedicated_cq = handshaker->interested_parties == nullptr;
   if (!handshaker->has_created_handshaker_client) {
-    bool use_dedicated_cq = handshaker->interested_parties == nullptr;
     init_shared_resources(handshaker->handshaker_service_url, use_dedicated_cq);
     if (use_dedicated_cq) {
       handshaker->interested_parties =
@@ -299,13 +298,20 @@ static tsi_result handshaker_next(
     grpc_iomgr_cb_func grpc_cb = use_dedicated_cq
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
-    alts_handshaker_client* client = alts_grpc_handshaker_client_create(
+    handshaker->client = alts_grpc_handshaker_client_create(
         handshaker, g_shared_resources->channel,
         handshaker->handshaker_service_url, handshaker->interested_parties,
         handshaker->options, handshaker->target_name, grpc_cb, cb, user_data,
-        handshaker->is_client);
-    handshaker->client = client;
+        handshaker->client_vtable_for_testing, handshaker->is_client);
+    if (handshaker->client == nullptr) {
+      gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
+      return TSI_FAILED_PRECONDITION;
+    }
     handshaker->has_created_handshaker_client = true;
+  }
+  if (use_dedicated_cq && handshaker->client_vtable_for_testing == nullptr) {
+    GPR_ASSERT(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
+                                handshaker->client));
   }
   grpc_slice slice = (received_bytes == nullptr || received_bytes_size == 0)
                          ? grpc_empty_slice()
@@ -441,15 +447,6 @@ void alts_tsi_handshaker_set_client_vtable_for_testing(
     alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
   GPR_ASSERT(handshaker != nullptr);
   handshaker->client_vtable_for_testing = vtable;
-}
-
-alts_handshaker_client_vtable*
-alts_tsi_handshaker_get_client_vtable_for_testing(
-    alts_tsi_handshaker* handshaker) {
-  if (handshaker == nullptr) {
-    return nullptr;
-  }
-  return handshaker->client_vtable_for_testing;
 }
 
 bool alts_tsi_handshaker_get_is_client_for_testing(

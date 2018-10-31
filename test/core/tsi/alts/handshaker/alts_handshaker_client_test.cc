@@ -98,7 +98,6 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
     ok &= (op->data.send_initial_metadata.count == 0);
     op++;
     GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
-
     ok &= (op->op == GRPC_OP_RECV_INITIAL_METADATA);
     ok &= (op->data.recv_initial_metadata.recv_initial_metadata ==
            alts_handshaker_client_get_initial_metadata_for_testing(c));
@@ -110,13 +109,11 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
          alts_handshaker_client_get_send_buffer_for_testing(c));
   op++;
   GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
-
   ok &= (op->op == GRPC_OP_RECV_MESSAGE);
   ok &= (op->data.recv_message.recv_message ==
          alts_handshaker_client_get_recv_buffer_addr_for_testing(c));
   op++;
   GPR_ASSERT((size_t)(op - start_op) <= kHandshakerClientOpNum);
-
   return ok;
 }
 
@@ -297,13 +294,12 @@ static alts_handshaker_client_test_config* create_config() {
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, false);
-
+      nullptr, nullptr, nullptr, nullptr, false);
   config->client = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, nullptr, nullptr, true);
+      nullptr, nullptr, nullptr, nullptr, true);
   GPR_ASSERT(config->client != nullptr);
   GPR_ASSERT(config->server != nullptr);
   grpc_alts_credentials_options_destroy(client_options);
@@ -328,29 +324,23 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
 static void schedule_request_invalid_arg_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-
   /* Tests. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     check_must_not_be_called);
   /* Check client_start. */
   GPR_ASSERT(alts_handshaker_client_start_client(nullptr) ==
              TSI_INVALID_ARGUMENT);
-
   /* Check server_start. */
   GPR_ASSERT(alts_handshaker_client_start_server(config->server, nullptr) ==
              TSI_INVALID_ARGUMENT);
   GPR_ASSERT(alts_handshaker_client_start_server(nullptr, &config->out_frame) ==
              TSI_INVALID_ARGUMENT);
-
   /* Check next. */
   GPR_ASSERT(alts_handshaker_client_next(config->client, nullptr) ==
              TSI_INVALID_ARGUMENT);
   GPR_ASSERT(alts_handshaker_client_next(nullptr, &config->out_frame) ==
              TSI_INVALID_ARGUMENT);
-
   /* Check shutdown. */
   alts_handshaker_client_shutdown(nullptr);
-
   /* Cleanup. */
   destroy_config(config);
 }
@@ -358,24 +348,20 @@ static void schedule_request_invalid_arg_test() {
 static void schedule_request_success_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-
   /* Check client_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, check_client_start_success);
   GPR_ASSERT(alts_handshaker_client_start_client(config->client) == TSI_OK);
-
   /* Check server_start success. */
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->server, check_server_start_success);
   GPR_ASSERT(alts_handshaker_client_start_server(config->server,
                                                  &config->out_frame) == TSI_OK);
-
   /* Check client next success. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_next_success);
   GPR_ASSERT(alts_handshaker_client_next(config->client, &config->out_frame) ==
              TSI_OK);
-
   /* Check server next success. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                      check_next_success);
@@ -388,27 +374,22 @@ static void schedule_request_success_test() {
 static void schedule_request_grpc_call_failure_test() {
   /* Initialization. */
   alts_handshaker_client_test_config* config = create_config();
-
   /* Check client_start failure. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                      check_grpc_call_failure);
   GPR_ASSERT(alts_handshaker_client_start_client(config->client) ==
              TSI_INTERNAL_ERROR);
-
   /* Check server_start failure. */
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                      check_grpc_call_failure);
   GPR_ASSERT(alts_handshaker_client_start_server(
                  config->server, &config->out_frame) == TSI_INTERNAL_ERROR);
-
   /* Check client next failure. */
   GPR_ASSERT(alts_handshaker_client_next(config->client, &config->out_frame) ==
              TSI_INTERNAL_ERROR);
-
   /* Check server next failure. */
   GPR_ASSERT(alts_handshaker_client_next(config->server, &config->out_frame) ==
              TSI_INTERNAL_ERROR);
-
   /* Cleanup. */
   destroy_config(config);
 }
@@ -417,12 +398,10 @@ int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();
-
   /* Tests. */
   schedule_request_invalid_arg_test();
   schedule_request_success_test();
   schedule_request_grpc_call_failure_test();
-
   /* Cleanup. */
   grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();

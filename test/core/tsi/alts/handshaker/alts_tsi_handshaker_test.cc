@@ -553,7 +553,6 @@ static void check_handle_response_invalid_input() {
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
   grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr handshaker. */
@@ -566,18 +565,15 @@ static void check_handle_response_invalid_input() {
                                                 on_invalid_input_cb, nullptr,
                                                 nullptr, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-
   /* Check failed grpc call made to handshaker service. */
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
       GRPC_STATUS_UNKNOWN);
   alts_handshaker_client_handle_response(client, true);
-
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_failed_grpc_call_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, false);
-
   /* Cleanup. */
   grpc_slice_unref(slice);
   tsi_handshaker_destroy(handshaker);
@@ -698,6 +694,10 @@ static void check_handle_response_after_shutdown() {
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
+  grpc_byte_buffer** recv_buffer_ptr =
+      alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
+  grpc_byte_buffer_destroy(*recv_buffer_ptr);
+
   /* Tests. */
   tsi_handshaker_shutdown(handshaker);
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(CLIENT_START);
@@ -746,21 +746,18 @@ int main(int argc, char** argv) {
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();
-
   /* Tests. */
   should_handshaker_client_api_succeed = true;
   check_handshaker_success();
   check_handshaker_next_invalid_input();
   check_handshaker_next_fails_after_shutdown();
   check_handle_response_after_shutdown();
-
   should_handshaker_client_api_succeed = false;
   check_handshaker_shutdown_invalid_input();
   check_handshaker_next_failure();
   check_handle_response_invalid_input();
   check_handle_response_invalid_resp();
   check_handle_response_failure();
-
   /* Cleanup. */
   grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();
