@@ -15,15 +15,28 @@
 
 import unittest
 import six
-import grpc
+from six.moves import reload_module
 import logging
-
+import grpc
+import functools
+import sys
 
 class LoggingTest(unittest.TestCase):
 
     def test_logger_not_occupied(self):
         self.assertEqual(0, len(logging.getLogger().handlers))
 
+    def test_handler_found(self):
+        old_stderr = sys.stderr
+        sys.stderr = six.StringIO()
+        try:
+            reload_module(logging)
+            logging.basicConfig()
+            reload_module(grpc)
+            self.assertFalse("No handlers could be found" in sys.stderr.getvalue())
+        finally:
+            sys.stderr = old_stderr
+            reload_module(logging)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
