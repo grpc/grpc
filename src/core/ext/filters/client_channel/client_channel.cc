@@ -950,10 +950,11 @@ struct subchannel_batch_data {
   subchannel_batch_data(grpc_call_element* elem, call_data* calld, int refcount,
                         bool set_on_complete);
   // All dtor code must be added in `destroy`. This is because we may
-  // call closuresin `subchannel_batch_data` after they are unrefed by
+  // call closures in `subchannel_batch_data` after they are unrefed by
   // `batch_data_unref`, and msan would complain about accessing this class
   // after calling dtor. As a result we cannot call the `dtor` in
   // `batch_data_unref`.
+  // TODO(soheil): We should try to call the dtor in `batch_data_unref`.
   ~subchannel_batch_data() { destroy(); }
   void destroy();
 
@@ -970,7 +971,7 @@ struct subchannel_batch_data {
 // Retry state associated with a subchannel call.
 // Stored in the parent_data of the subchannel call object.
 struct subchannel_call_retry_state {
-  subchannel_call_retry_state(grpc_call_context_element* context)
+  explicit subchannel_call_retry_state(grpc_call_context_element* context)
       : batch_payload(context),
         started_send_initial_metadata(false),
         completed_send_initial_metadata(false),
@@ -1065,6 +1066,10 @@ struct call_data {
         last_attempt_got_server_pushback(false) {}
 
   ~call_data() {
+    if (GPR_LIKELY(subchannel_call != nullptr)) {
+      GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call,
+                                 "client_channel_destroy_call");
+    }
     grpc_slice_unref_internal(path);
     GRPC_ERROR_UNREF(cancel_error);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
@@ -3345,8 +3350,6 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
     grpc_subchannel_call_set_cleanup_closure(calld->subchannel_call,
                                              then_schedule_closure);
     then_schedule_closure = nullptr;
-    GRPC_SUBCHANNEL_CALL_UNREF(calld->subchannel_call,
-                               "client_channel_destroy_call");
   }
   calld->~call_data();
   GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);

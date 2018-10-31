@@ -175,7 +175,8 @@ struct grpc_transport_stream_op_batch {
 };
 
 struct grpc_transport_stream_op_batch_payload {
-  grpc_transport_stream_op_batch_payload(grpc_call_context_element* context)
+  explicit grpc_transport_stream_op_batch_payload(
+      grpc_call_context_element* context)
       : context(context) {}
   ~grpc_transport_stream_op_batch_payload() {
     // We don't really own `send_message`, so release ownership and let the
