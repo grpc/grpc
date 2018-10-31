@@ -15,6 +15,7 @@
 
 import pickle
 import unittest
+import logging
 
 import grpc
 from grpc import _channel
