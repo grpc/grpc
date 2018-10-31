@@ -16,6 +16,7 @@
 import argparse
 import threading
 import time
+import logging
 
 import grpc
 
@@ -161,6 +162,7 @@ def infinite_request_iterator():
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     parser = argparse.ArgumentParser()
     parser.add_argument('scenario', type=str)
     parser.add_argument(

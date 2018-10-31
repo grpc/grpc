@@ -13,7 +13,9 @@
 # limitations under the License.
 """Tests of credentials."""
 
+
 import unittest
+import logging
 
 import grpc
 
@@ -54,4 +56,5 @@ class CredentialsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)
