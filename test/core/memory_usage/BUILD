@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/memory_usage")
 
 licenses(["notice"])  # Apache v2
 
-grpc_cc_binary(
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+
+cc_library(
     name = "client",
     testonly = 1,
     srcs = ["client.cc"],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -31,11 +32,11 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
+cc_library(
     name = "server",
     testonly = 1,
     srcs = ["server.cc"],
-    language = "C++",
+    copts = ["-Wno-implicit-fallthrough"],
     deps = [
         "//:gpr",
         "//:grpc",
