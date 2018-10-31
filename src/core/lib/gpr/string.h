@@ -41,6 +41,9 @@ char* gpr_dump(const char* buf, size_t len, uint32_t flags);
 int gpr_parse_bytes_to_uint32(const char* data, size_t length,
                               uint32_t* result);
 
+/* returns allocated string with the base64 encoding of in */
+char* gpr_string_base64_encode(const char* in);
+
 /* Minimum buffer size for calling ltoa */
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
 

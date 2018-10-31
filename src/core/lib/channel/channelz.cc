@@ -277,10 +277,65 @@ grpc_json* ServerNode::RenderJson() {
   return top_level_json;
 }
 
-SocketNode::SocketNode(UniquePtr<char> remote_host, int remote_port)
+SocketAddress::SocketAddress() : type_(AddressType::kUnset), port_(-1) {}
+
+SocketAddress::SocketAddress(SocketAddress&& other) {
+  type_ = other.type_;
+  port_ = other.port_;
+  blob_.reset((other.blob_.release()));
+}
+
+void SocketAddress::PopulateJson(const char* name, grpc_json* json) {
+  if (type_ == AddressType::kUnset) {
+    return;
+  }
+  grpc_json* json_iterator = nullptr;
+  json_iterator = grpc_json_create_child(json_iterator, json, name, nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  switch (type_) {
+    case AddressType::kTcpAddress:
+      json_iterator =
+          grpc_json_create_child(json_iterator, json, "tcpip_address", nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      json = json_iterator;
+      json_iterator = nullptr;
+      json_iterator =
+          grpc_json_add_number_string_child(json, json_iterator, "port", port_);
+      json_iterator =
+          grpc_json_create_child(json_iterator, json, "ip_address", blob_.get(),
+                                 GRPC_JSON_STRING, false);
+      break;
+    case AddressType::kUdsAddress:
+      json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
+                                             nullptr, GRPC_JSON_OBJECT, false);
+      json = json_iterator;
+      json_iterator = nullptr;
+      json_iterator =
+          grpc_json_create_child(json_iterator, json, "filename", blob_.get(),
+                                 GRPC_JSON_STRING, false);
+      break;
+    case AddressType::kDirectChannelAddress:
+      json_iterator =
+          grpc_json_create_child(json_iterator, json, "other_address", nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      json = json_iterator;
+      json_iterator = nullptr;
+      json_iterator = grpc_json_create_child(
+          json_iterator, json, "name", blob_.get(), GRPC_JSON_STRING, false);
+      break;
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(GPR_ASSERT(0));
+      break;
+  }
+}
+
+SocketNode::SocketNode(SocketAddress local, SocketAddress remote)
     : BaseNode(EntityType::kSocket),
-      remote_host_(std::move(remote_host)),
-      remote_port_(remote_port) {}
+      local_(std::move(local)),
+      remote_(std::move(remote)) {}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
@@ -319,20 +374,8 @@ grpc_json* SocketNode::RenderJson() {
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
   json = top_level_json;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "remote", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
-                                         nullptr, GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator, "port",
-                                                    remote_port_);
-  json_iterator =
-      grpc_json_create_child(json_iterator, json, "ip_address",
-                             remote_host_.get(), GRPC_JSON_STRING, false);
+  remote_.PopulateJson("remote", json);
+  local_.PopulateJson("local", json);
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;

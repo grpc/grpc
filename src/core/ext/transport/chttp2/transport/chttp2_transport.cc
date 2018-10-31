@@ -397,11 +397,14 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
+    grpc_core::channelz::SocketAddress remote;
+    grpc_core::channelz::SocketAddress local;
     char* host = nullptr;
     int port_num = -1;
     // try to pick out just the host port (maybe trims off scheme prefix).
     grpc_uri* uri = grpc_uri_parse(t->peer_string, true);
     // if peer string was a valid URI, we can use our lib to do the trimming.
+    // TODO(ncteisen): handle UDS address.
     if (uri != nullptr) {
       const char* host_port = uri->path;
       if (*host_port == '/') ++host_port;
@@ -410,15 +413,22 @@ static bool read_channel_args(grpc_chttp2_transport* t,
       if (port != nullptr) {
         port_num = atoi(port);
       }
+      remote.set_blob(gpr_string_base64_encode(host));
+      remote.set_port(port_num);
+      remote.set_type(
+          grpc_core::channelz::SocketAddress::AddressType::kTcpAddress);
+      gpr_free(host);
       gpr_free(port);
     } else {
       // if peer string is not a valid URI, just use the entire string to
       // surface that info.
-      host = gpr_strdup(t->peer_string);
+      remote.set_blob(gpr_strdup(t->peer_string));
+      remote.set_type(grpc_core::channelz::SocketAddress::AddressType::
+                          kDirectChannelAddress);
     }
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            grpc_core::UniquePtr<char>(host), port_num);
+            std::move(local), std::move(remote));
     grpc_uri_destroy(uri);
   }
   return enable_bdp;
