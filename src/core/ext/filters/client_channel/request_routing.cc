@@ -213,11 +213,37 @@ class RequestRouter::Request::ResolverResultWaiter {
 // RequestRouter::Request
 //
 
+RequestRouter::Request::Request(
+    grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
+    grpc_polling_entity* pollent, grpc_metadata_batch* send_initial_metadata,
+    uint32_t* send_initial_metadata_flags, grpc_closure* on_service_config,
+    grpc_closure* on_route_done)
+    : owning_call_(owning_call), call_combiner_(call_combiner),
+      pollent_(pollent), on_service_config_(on_service_config),
+      on_route_done_(on_route_done) {
+  pick_.initial_metadata = send_initial_metadata;
+  pick_.initial_metadata_flags = send_initial_metadata_flags;
+}
+
+RequestRouter::Request::~Request() {
+  if (pick_.connected_subchannel != nullptr) {
+    pick_.connected_subchannel.reset();
+  }
+  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+    if (pick_.subchannel_call_context[i].destroy != nullptr) {
+      pick_.subchannel_call_context[i].destroy(
+          pick_.subchannel_call_context[i].value);
+    }
+  }
+}
+
+
 // Invoked once resolver results are available.
 void RequestRouter::Request::ProcessServiceConfigAndStartLbPickLocked() {
   // Get service config data if needed.
   if (on_service_config_ != nullptr) {
     GRPC_CLOSURE_RUN(on_service_config_, GRPC_ERROR_NONE);
+// FIXME: fail call if in transient failure
   }
   // Start LB pick.
   StartLbPickLocked();
@@ -427,13 +453,12 @@ RequestRouter::RequestRouter(
     grpc_channel_stack* owning_stack, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     grpc_pollset_set* interested_parties, TraceFlag* tracer,
-    channelz::ClientChannelNode* channelz_node,
     grpc_closure* on_resolver_result, bool request_service_config,
-    const char* target_uri, grpc_channel_args* args, grpc_error** error)
+    const char* target_uri, const grpc_channel_args* args, grpc_error** error)
     : owning_stack_(owning_stack), combiner_(combiner),
       client_channel_factory_(client_channel_factory),
       interested_parties_(interested_parties), tracer_(tracer),
-      channelz_node_(channelz_node), on_resolver_result_(on_resolver_result) {
+      on_resolver_result_(on_resolver_result) {
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
                     grpc_combiner_scheduler(combiner));
@@ -473,6 +498,27 @@ RequestRouter::~RequestRouter() {
   grpc_connectivity_state_destroy(&state_tracker_);
 }
 
+namespace {
+
+const char* GetChannelConnectivityStateChangeString(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Channel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Channel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Channel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Channel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Channel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
+}  // namespace
+
 void RequestRouter::SetConnectivityStateLocked(grpc_connectivity_state state,
                                                grpc_error* error,
                                                const char* reason) {
@@ -491,6 +537,12 @@ void RequestRouter::SetConnectivityStateLocked(grpc_connectivity_state state,
   if (tracer_->enabled()) {
     gpr_log(GPR_INFO, "request_router=%p: setting connectivity state to %s",
             this, grpc_connectivity_state_name(state));
+  }
+  if (channelz_node_ != nullptr) {
+    channelz_node_->AddTraceEvent(
+        channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            GetChannelConnectivityStateChangeString(state)));
   }
   grpc_connectivity_state_set(&state_tracker_, state, error, reason);
 }
@@ -795,6 +847,8 @@ void RequestRouter::RouteCallLocked(Request* request) {
     // We do not yet have an LB policy, so wait for a resolver result.
     if (!started_resolving_) {
       StartResolvingLocked();
+    } else {
+// FIXME: fail call if in transient failure
     }
     // Create a new waiter, which will delete itself when done.
 // FIXME: move into Request object
@@ -806,7 +860,7 @@ void RequestRouter::RouteCallLocked(Request* request) {
   }
 }
 
-void RequestRouter::Shutdown(grpc_error* error) {
+void RequestRouter::ShutdownLocked(grpc_error* error) {
   if (resolver_ != nullptr) {
     SetConnectivityStateLocked(GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
                                "disconnect");
@@ -829,6 +883,12 @@ grpc_connectivity_state RequestRouter::GetConnectivityState() {
   return grpc_connectivity_state_check(&state_tracker_);
 }
 
+void RequestRouter::NotifyOnConnectivityStateChange(
+    grpc_connectivity_state* state, grpc_closure* closure) {
+  grpc_connectivity_state_notify_on_state_change(&state_tracker_, state,
+                                                 closure);
+}
+
 void RequestRouter::ExitIdleLocked() {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
@@ -837,6 +897,16 @@ void RequestRouter::ExitIdleLocked() {
     if (!started_resolving_ && resolver_ != nullptr) {
       StartResolvingLocked();
     }
+  }
+}
+
+void RequestRouter::ResetConnectionBackoffLocked() {
+  if (resolver_ != nullptr) {
+    resolver_->ResetBackoffLocked();
+    resolver_->RequestReresolutionLocked();
+  }
+  if (lb_policy_ != nullptr) {
+    lb_policy_->ResetBackoffLocked();
   }
 }
 

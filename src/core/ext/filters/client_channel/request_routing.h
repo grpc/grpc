@@ -47,17 +47,12 @@ class RequestRouter {
             grpc_polling_entity* pollent,
             grpc_metadata_batch* send_initial_metadata,
             uint32_t* send_initial_metadata_flags,
-            grpc_closure* on_service_config, grpc_closure* on_route_done)
-        : owning_call_(owning_call), call_combiner_(call_combiner),
-          pollent_(pollent),
-          on_service_config_(on_service_config),
-          on_route_done_(on_route_done) {
-      pick_.initial_metadata = send_initial_metadata;
-      pick_.initial_metadata_flags = send_initial_metadata_flags;
-    }
+            grpc_closure* on_service_config, grpc_closure* on_route_done);
+
+    ~Request();
 
 // FIXME: pass this in from caller
-    const LoadBalancingPolicy::PickState* pick() const { return &pick_; }
+    LoadBalancingPolicy::PickState* pick() { return &pick_; }
 
    private:
     friend class RequestRouter;
@@ -90,18 +85,22 @@ class RequestRouter {
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
-                channelz::ClientChannelNode* channelz_node,
                 grpc_closure* on_resolver_result, bool request_service_config,
-                const char* target_uri, grpc_channel_args* args,
+                const char* target_uri, const grpc_channel_args* args,
                 grpc_error** error);
 
   ~RequestRouter();
 
+  void set_channelz_node(channelz::ClientChannelNode* channelz_node) {
+    channelz_node_ = channelz_node;
+  }
+
   void RouteCallLocked(Request* request);
 
-  void Shutdown(grpc_error* error);
+  void ShutdownLocked(grpc_error* error);
 
   void ExitIdleLocked();
+  void ResetConnectionBackoffLocked();
 
   grpc_connectivity_state GetConnectivityState();
   void NotifyOnConnectivityStateChange(grpc_connectivity_state* state,
@@ -110,6 +109,9 @@ class RequestRouter {
   // Only valid during the call to on_resolver_result.
   grpc_channel_args* resolver_result() const { return resolver_result_; }
 
+  LoadBalancingPolicy* lb_policy() const { return lb_policy_.get(); }
+
+// FIXME: remove?
   const char* lb_policy_name() const {
     return lb_policy_ == nullptr ? nullptr : lb_policy_->name();
   }
@@ -142,12 +144,12 @@ class RequestRouter {
   grpc_client_channel_factory* client_channel_factory_;
   grpc_pollset_set* interested_parties_;
   TraceFlag* tracer_;
-// FIXME: should this take a ref?
-  channelz::ClientChannelNode* channelz_node_;
-  grpc_closure* on_resolver_result_;
+
+  channelz::ClientChannelNode* channelz_node_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
+  grpc_closure* on_resolver_result_;
   bool started_resolving_ = false;
   grpc_channel_args* resolver_result_ = nullptr;
   bool previous_resolution_contained_addresses_ = false;
