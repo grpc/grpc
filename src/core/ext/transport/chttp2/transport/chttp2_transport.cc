@@ -38,7 +38,6 @@
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/parser.h"
@@ -397,39 +396,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
-    grpc_core::channelz::SocketAddress remote;
-    grpc_core::channelz::SocketAddress local;
-    char* host = nullptr;
-    int port_num = -1;
-    // try to pick out just the host port (maybe trims off scheme prefix).
-    grpc_uri* uri = grpc_uri_parse(t->peer_string, true);
-    // if peer string was a valid URI, we can use our lib to do the trimming.
-    // TODO(ncteisen): handle UDS address.
-    if (uri != nullptr) {
-      const char* host_port = uri->path;
-      if (*host_port == '/') ++host_port;
-      char* port;
-      GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
-      if (port != nullptr) {
-        port_num = atoi(port);
-      }
-      remote.set_blob(gpr_string_base64_encode(host));
-      remote.set_port(port_num);
-      remote.set_type(
-          grpc_core::channelz::SocketAddress::AddressType::kTcpAddress);
-      gpr_free(host);
-      gpr_free(port);
-    } else {
-      // if peer string is not a valid URI, just use the entire string to
-      // surface that info.
-      remote.set_blob(gpr_strdup(t->peer_string));
-      remote.set_type(grpc_core::channelz::SocketAddress::AddressType::
-                          kDirectChannelAddress);
-    }
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::move(local), std::move(remote));
-    grpc_uri_destroy(uri);
+            grpc_core::UniquePtr<char>(),
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
   }
   return enable_bdp;
 }

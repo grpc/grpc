@@ -229,45 +229,10 @@ class ServerNode : public BaseNode {
   ChannelTrace trace_;
 };
 
-// helper class for holding and rendering the information about a particular
-// socket's address
-class SocketAddress {
- public:
-  enum class AddressType {
-    kUnset,
-    kTcpAddress,
-    kUdsAddress,
-    kDirectChannelAddress,
-  };
-
-  SocketAddress();
-  SocketAddress(SocketAddress&& other);
-
-  void PopulateJson(const char* name, grpc_json* json);
-
-  void set_blob(char* blob) { blob_.reset(blob); }
-  void set_port(int port) { port_ = port; }
-  void set_type(AddressType type) { type_ = type; }
-
-  const char* blob_view() { return blob_.get(); }
-  int port() { return port_; }
-  AddressType type() { return type_; }
-
- private:
-  AddressType type_;
-  // this holds different information for different address types:
-  // kTcpAddress = host
-  // kUdsAddress = filename
-  // kDirectChannelAddress = name (which is fd num)
-  UniquePtr<char> blob_;
-  // used for kTcpAddress, otherwise -1
-  int port_;
-};
-
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(SocketAddress local, SocketAddress remote);
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -297,23 +262,21 @@ class SocketNode : public BaseNode {
   gpr_atm last_remote_stream_created_millis_ = 0;
   gpr_atm last_message_sent_millis_ = 0;
   gpr_atm last_message_received_millis_ = 0;
-  SocketAddress local_;
-  SocketAddress remote_;
+  UniquePtr<char> local_;
+  UniquePtr<char> remote_;
 };
 
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
   // ListenSocketNode takes ownership of host.
-  // TODO(ncteisen): use SocketAddress to support more address types.
-  ListenSocketNode(UniquePtr<char> host, int port);
+  ListenSocketNode(UniquePtr<char> local_addr);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
 
  private:
-  UniquePtr<char> host_;
-  int port_;
+  UniquePtr<char> local_addr_;
 };
 
 // Creation functions
