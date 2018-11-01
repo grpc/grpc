@@ -143,9 +143,7 @@ static NSMutableDictionary *gHostCache;
 
   GRPCCallOptions *callOptions = nil;
   @synchronized(gHostCache) {
-    if ([gHostCache objectForKey:host]) {
-      callOptions = [gHostCache[host] callOptions];
-    }
+    callOptions = [gHostCache[host] callOptions];
   }
   if (callOptions == nil) {
     callOptions = [[GRPCCallOptions alloc] init];
