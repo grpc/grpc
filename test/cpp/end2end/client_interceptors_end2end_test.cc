@@ -43,44 +43,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsStreamingEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  EchoTestServiceStreamingImpl service_;
-  std::unique_ptr<Server> server_;
-};
-
-class ClientInterceptorsEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
-};
-
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
@@ -377,6 +339,25 @@ class LoggingInterceptorFactory
   }
 };
 
+class ClientInterceptorsEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
@@ -492,6 +473,25 @@ TEST_F(ClientInterceptorsEnd2endTest,
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
+
+class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsStreamingEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  EchoTestServiceStreamingImpl service_;
+  std::unique_ptr<Server> server_;
+};
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;

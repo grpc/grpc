@@ -23,6 +23,7 @@ namespace testing {
 
 std::atomic<int> DummyInterceptor::num_times_run_;
 std::atomic<int> DummyInterceptor::num_times_run_reverse_;
+std::atomic<int> DummyInterceptor::num_times_cancel_;
 
 void MakeCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);

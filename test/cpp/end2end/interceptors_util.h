@@ -41,6 +41,9 @@ class DummyInterceptor : public experimental::Interceptor {
                    experimental::InterceptionHookPoints::
                        POST_RECV_INITIAL_METADATA)) {
       num_times_run_reverse_++;
+    } else if (methods->QueryInterceptionHookPoint(
+                   experimental::InterceptionHookPoints::PRE_SEND_CANCEL)) {
+      num_times_cancel_++;
     }
     methods->Proceed();
   }
@@ -48,6 +51,7 @@ class DummyInterceptor : public experimental::Interceptor {
   static void Reset() {
     num_times_run_.store(0);
     num_times_run_reverse_.store(0);
+    num_times_cancel_.store(0);
   }
 
   static int GetNumTimesRun() {
@@ -55,9 +59,12 @@ class DummyInterceptor : public experimental::Interceptor {
     return num_times_run_.load();
   }
 
+  static int GetNumTimesCancel() { return num_times_cancel_.load(); }
+
  private:
   static std::atomic<int> num_times_run_;
   static std::atomic<int> num_times_run_reverse_;
+  static std::atomic<int> num_times_cancel_;
 };
 
 class DummyInterceptorFactory

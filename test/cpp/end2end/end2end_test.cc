@@ -40,6 +40,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -179,7 +180,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::unique_ptr< ::grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<::grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class TestServiceImplDupPkg
@@ -194,9 +195,14 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool proxy, bool inproc_stub, const grpc::string& creds_type)
-      : use_proxy(proxy), inproc(inproc_stub), credentials_type(creds_type) {}
+  TestScenario(bool interceptors, bool proxy, bool inproc_stub,
+               const grpc::string& creds_type)
+      : use_interceptors(interceptors),
+        use_proxy(proxy),
+        inproc(inproc_stub),
+        credentials_type(creds_type) {}
   void Log() const;
+  bool use_interceptors;
   bool use_proxy;
   bool inproc;
   const grpc::string credentials_type;
@@ -259,6 +265,16 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
         GetParam().credentials_type);
     if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
+    }
+    if (GetParam().use_interceptors) {
+      std::vector<
+          std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
+          creators;
+      // Add 20 dummy server interceptors
+      for (auto i = 0; i < 20; i++) {
+        creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+            new DummyInterceptorFactory()));
+      }
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
@@ -1802,13 +1818,16 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
   GPR_ASSERT(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
-    scenarios.emplace_back(false, false, cred);
+    scenarios.emplace_back(false, false, false, cred);
+    scenarios.emplace_back(true, false, false, cred);
     if (use_proxy) {
-      scenarios.emplace_back(true, false, cred);
+      scenarios.emplace_back(false, true, false, cred);
+      scenarios.emplace_back(true, true, false, cred);
     }
   }
   if (test_inproc && insec_ok()) {
-    scenarios.emplace_back(false, true, kInsecureCredentialsType);
+    scenarios.emplace_back(false, false, true, kInsecureCredentialsType);
+    scenarios.emplace_back(true, false, true, kInsecureCredentialsType);
   }
   return scenarios;
 }

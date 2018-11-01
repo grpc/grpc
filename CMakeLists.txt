@@ -12888,6 +12888,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
+  test/cpp/end2end/interceptor_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
