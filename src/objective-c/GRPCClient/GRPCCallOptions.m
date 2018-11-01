@@ -146,7 +146,7 @@ static const NSUInteger kDefaultChannelID = 0;
                               channelID:(NSUInteger)channelID {
   if ((self = [super init])) {
     _serverAuthority = [serverAuthority copy];
-    _timeout = timeout;
+    _timeout = timeout < 0 ? 0 : timeout;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
     _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
@@ -154,11 +154,11 @@ static const NSUInteger kDefaultChannelID = 0;
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
     _retryEnabled = retryEnabled;
-    _keepaliveInterval = keepaliveInterval;
-    _keepaliveTimeout = keepaliveTimeout;
-    _connectMinTimeout = connectMinTimeout;
-    _connectInitialBackoff = connectInitialBackoff;
-    _connectMaxBackoff = connectMaxBackoff;
+    _keepaliveInterval = keepaliveInterval < 0 ? 0 : keepaliveInterval;
+    _keepaliveTimeout = keepaliveTimeout < 0 ? 0 : keepaliveTimeout;
+    _connectMinTimeout = connectMinTimeout < 0 ? 0 : connectMinTimeout;
+    _connectInitialBackoff = connectInitialBackoff < 0 ? 0 : connectInitialBackoff;
+    _connectMaxBackoff = connectMaxBackoff < 0 ? 0 : connectMaxBackoff;
     _additionalChannelArgs =
         [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
