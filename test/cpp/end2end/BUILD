@@ -38,6 +38,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
+    srcs = ["interceptors_util.cc"],
     hdrs = ["interceptors_util.h"],
     external_deps = [
         "gtest",

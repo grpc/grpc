@@ -81,51 +81,6 @@ class ClientInterceptorsEnd2endTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
 };
 
-/* This interceptor does nothing. Just keeps a global count on the number of
- * times it was invoked. */
-class DummyInterceptor : public experimental::Interceptor {
- public:
-  DummyInterceptor(experimental::ClientRpcInfo* info) {}
-
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      num_times_run_++;
-    } else if (methods->QueryInterceptionHookPoint(
-                   experimental::InterceptionHookPoints::
-                       POST_RECV_INITIAL_METADATA)) {
-      num_times_run_reverse_++;
-    }
-    methods->Proceed();
-  }
-
-  static void Reset() {
-    num_times_run_.store(0);
-    num_times_run_reverse_.store(0);
-  }
-
-  static int GetNumTimesRun() {
-    EXPECT_EQ(num_times_run_.load(), num_times_run_reverse_.load());
-    return num_times_run_.load();
-  }
-
- private:
-  static std::atomic<int> num_times_run_;
-  static std::atomic<int> num_times_run_reverse_;
-};
-
-std::atomic<int> DummyInterceptor::num_times_run_;
-std::atomic<int> DummyInterceptor::num_times_run_reverse_;
-
-class DummyInterceptorFactory
-    : public experimental::ClientInterceptorFactoryInterface {
- public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
-    return new DummyInterceptor(info);
-  }
-};
-
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
