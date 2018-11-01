@@ -39,36 +39,6 @@ PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
 PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
 CYTHON_STEM = os.path.join(PYTHON_STEM, 'grpc', '_cython')
 
-CONF_PY_ADDENDUM = """
-extensions.append('sphinx.ext.napoleon')
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_special_with_doc = True
-
-html_theme = 'sphinx_rtd_theme'
-copyright = "2016, The gRPC Authors"
-"""
-
-API_GLOSSARY = """
-
-Glossary
-================
-
-.. glossary::
-
-  metadatum
-    A key-value pair included in the HTTP header.  It is a 
-    2-tuple where the first entry is the key and the
-    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
-    and must be a valid HTTP header name.  The metadata value can be
-    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
-    the key must end with '-bin', i.e.
-    ``('binary-metadata-bin', b'\\x00\\xFF')``
-
-  metadata
-    A sequence of metadatum.
-"""
-
 
 class CommandError(Exception):
     """Simple exception class for GRPC custom commands."""
@@ -124,25 +94,14 @@ class SphinxDocumentation(setuptools.Command):
     def run(self):
         # We import here to ensure that setup.py has had a chance to install the
         # relevant package eggs first.
-        import sphinx
-        import sphinx.apidoc
-        metadata = self.distribution.metadata
-        src_dir = os.path.join(PYTHON_STEM, 'grpc')
-        sys.path.append(src_dir)
-        sphinx.apidoc.main([
-            '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
-            '-V', metadata.version, '-R', metadata.version, '-o',
-            os.path.join('doc', 'src'), src_dir
-        ])
-        conf_filepath = os.path.join('doc', 'src', 'conf.py')
-        with open(conf_filepath, 'a') as conf_file:
-            conf_file.write(CONF_PY_ADDENDUM)
-        glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
-        with open(glossary_filepath, 'a') as glossary_filepath:
-            glossary_filepath.write(API_GLOSSARY)
-        sphinx.main(
-            ['', os.path.join('doc', 'src'),
-             os.path.join('doc', 'build')])
+        import sphinx.cmd.build
+        source_dir = os.path.join(GRPC_STEM, 'doc', 'python', 'sphinx')
+        target_dir = os.path.join(GRPC_STEM, 'doc', 'build')
+        exit_code = sphinx.cmd.build.build_main(
+            ['-b', 'html', '-W', '--keep-going', source_dir, target_dir])
+        if exit_code is not 0:
+            raise CommandError(
+                "Documentation generation has warnings or errors")
 
 
 class BuildProjectMetadata(setuptools.Command):

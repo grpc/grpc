@@ -48,11 +48,13 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         Returns:
             bool:
             Returns True if the computation was canceled.
+
             Returns False under all other circumstances, for example:
+
             1. computation has begun and could not be canceled.
             2. computation has finished
             3. computation is scheduled for execution and it is impossible
-              to determine its state without blocking.
+                to determine its state without blocking.
         """
         raise NotImplementedError()
 
@@ -66,7 +68,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
             bool:
             Returns True if the computation was cancelled before its result became
             available.
-            False under all other circumstances, for example:
+
+            Returns False under all other circumstances, for example:
+
             1. computation was not cancelled.
             2. computation's result is available.
         """
@@ -79,9 +83,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         This method does not block.
 
         Returns:
-            bool:
             Returns True if the computation is scheduled for execution or
             currently executing.
+
             Returns False if the computation already executed or was cancelled.
         """
         raise NotImplementedError()
@@ -210,7 +214,33 @@ class ChannelConnectivity(enum.Enum):
 
 @enum.unique
 class StatusCode(enum.Enum):
-    """Mirrors grpc_status_code in the gRPC Core."""
+    """Mirrors grpc_status_code in the gRPC Core.
+
+    Attributes:
+      OK: Not an error; returned on success
+      CANCELLED: The operation was cancelled (typically by the caller).
+      UNKNOWN: Unknown error.
+      INVALID_ARGUMENT: Client specified an invalid argument.
+      DEADLINE_EXCEEDED: Deadline expired before operation could complete.
+      NOT_FOUND: Some requested entity (e.g., file or directory) was not found.
+      ALREADY_EXISTS: Some entity that we attempted to create (e.g., file or directory)
+        already exists.
+      PERMISSION_DENIED: The caller does not have permission to execute the specified
+        operation.
+      UNAUTHENTICATED: The request does not have valid authentication credentials for the
+        operation.
+      RESOURCE_EXHAUSTED: Some resource has been exhausted, perhaps a per-user quota, or
+        perhaps the entire file system is out of space.
+      FAILED_PRECONDITION: Operation was rejected because the system is not in a state
+        required for the operation's execution.
+      ABORTED: The operation was aborted, typically due to a concurrency issue
+        like sequencer check failures, transaction aborts, etc.
+      UNIMPLEMENTED: Operation is not implemented or not supported/enabled in this service.
+      INTERNAL: Internal errors.  Means some invariants expected by underlying
+        system has been broken.
+      UNAVAILABLE: The service is currently unavailable.
+      DATA_LOSS: Unrecoverable data loss or corruption.
+    """
     OK = (_cygrpc.StatusCode.ok, 'ok')
     CANCELLED = (_cygrpc.StatusCode.cancelled, 'cancelled')
     UNKNOWN = (_cygrpc.StatusCode.unknown, 'unknown')
@@ -450,8 +480,7 @@ class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
             actual RPC on the underlying Channel. It is the interceptor's
             responsibility to call it if it decides to move the RPC forward.
             The interceptor can use
-            `response_future = continuation(client_call_details,
-                                            request_iterator)`
+            `response_future = continuation(client_call_details, request_iterator)`
             to continue with the RPC. `continuation` returns an object that is
             both a Call for the RPC and a Future. In the event of RPC completion,
             the return Call-Future's result value will be the response message
@@ -462,11 +491,11 @@ class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
           request_iterator: An iterator that yields request values for the RPC.
 
         Returns:
-            An object that is both a Call for the RPC and a Future.
-            In the event of RPC completion, the return Call-Future's
-            result value will be the response message of the RPC.
-            Should the event terminate with non-OK status, the returned
-            Call-Future's exception value will be an RpcError.
+          An object that is both a Call for the RPC and a Future.
+          In the event of RPC completion, the return Call-Future's
+          result value will be the response message of the RPC.
+          Should the event terminate with non-OK status, the returned
+          Call-Future's exception value will be an RpcError.
         """
         raise NotImplementedError()
 
@@ -482,13 +511,13 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
                                 request_iterator):
         """Intercepts a stream-stream invocation.
 
+        Args:
           continuation: A function that proceeds with the invocation by
             executing the next interceptor in chain or invoking the
             actual RPC on the underlying Channel. It is the interceptor's
             responsibility to call it if it decides to move the RPC forward.
             The interceptor can use
-            `response_iterator = continuation(client_call_details,
-                                              request_iterator)`
+            `response_iterator = continuation(client_call_details, request_iterator)`
             to continue with the RPC. `continuation` returns an object that is
             both a Call for the RPC and an iterator for response values.
             Drawing response values from the returned Call-iterator may
@@ -499,10 +528,10 @@ class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
           request_iterator: An iterator that yields request values for the RPC.
 
         Returns:
-            An object that is both a Call for the RPC and an iterator of
-            response values. Drawing response values from the returned
-            Call-iterator may raise RpcError indicating termination of
-            the RPC with non-OK status.
+          An object that is both a Call for the RPC and an iterator of
+          response values. Drawing response values from the returned
+          Call-iterator may raise RpcError indicating termination of
+          the RPC with non-OK status.
         """
         raise NotImplementedError()
 
@@ -972,8 +1001,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """Gets one or more peer identity(s).
 
         Equivalent to
-        servicer_context.auth_context().get(
-            servicer_context.peer_identity_key())
+        servicer_context.auth_context().get(servicer_context.peer_identity_key())
 
         Returns:
           An iterable of the identities, or None if the call is not
