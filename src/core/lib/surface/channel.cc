@@ -108,7 +108,8 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->resource_user = resource_user;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
-  size_t channel_tracer_max_memory = 0;  // default to off
+  size_t channel_tracer_max_memory =
+      GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT;
   bool internal_channel = false;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
@@ -147,7 +148,6 @@ grpc_channel* grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)) {
-      GPR_ASSERT(channel_tracer_max_memory == 0);
       const grpc_integer_options options = {
           GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
       channel_tracer_max_memory =
