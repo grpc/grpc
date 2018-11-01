@@ -288,44 +288,38 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
                                          GRPC_JSON_OBJECT, false);
   json = json_iterator;
   json_iterator = nullptr;
-  int port_num = -1;
   grpc_uri* uri = grpc_uri_parse(addr_str, true);
-  if (uri != nullptr && (strcmp(uri->scheme, "fd") != 0)) {
+  if ((uri != nullptr) && ((strcmp(uri->scheme, "ipv4") == 0) ||
+                           (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    if (strcmp(uri->scheme, "unix") == 0) {
-      json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
-                                             nullptr, GRPC_JSON_OBJECT, false);
-      json = json_iterator;
-      json_iterator = nullptr;
-      json_iterator =
-          grpc_json_create_child(json_iterator, json, "filename",
-                                 gpr_strdup(host_port), GRPC_JSON_STRING, true);
-    } else {
-      char* host = nullptr;
-      char* port = nullptr;
-      if (strcmp(uri->scheme, "localhost") == 0) {
-        host = gpr_strdup("::1");
-        port_num = atoi(uri->path);
-      } else {
-        GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
-        if (port != nullptr) {
-          port_num = atoi(port);
-        }
-      }
-      char* b64_host = grpc_base64_encode(host, strlen(host), false, false);
-      json_iterator =
-          grpc_json_create_child(json_iterator, json, "tcpip_address", nullptr,
-                                 GRPC_JSON_OBJECT, false);
-      json = json_iterator;
-      json_iterator = nullptr;
-      json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                        "port", port_num);
-      json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
-                                             b64_host, GRPC_JSON_STRING, true);
-      gpr_free(host);
-      gpr_free(port);
+    char* host = nullptr;
+    char* port = nullptr;
+    GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+    int port_num = -1;
+    if (port != nullptr) {
+      port_num = atoi(port);
     }
+    char* b64_host = grpc_base64_encode(host, strlen(host), false, false);
+    json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    json = json_iterator;
+    json_iterator = nullptr;
+    json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                      "port", port_num);
+    json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
+                                           b64_host, GRPC_JSON_STRING, true);
+    gpr_free(host);
+    gpr_free(port);
+
+  } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
+    json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    json = json_iterator;
+    json_iterator = nullptr;
+    json_iterator =
+        grpc_json_create_child(json_iterator, json, "filename",
+                               gpr_strdup(uri->path), GRPC_JSON_STRING, true);
   } else {
     json_iterator = grpc_json_create_child(json_iterator, json, "other_address",
                                            nullptr, GRPC_JSON_OBJECT, false);

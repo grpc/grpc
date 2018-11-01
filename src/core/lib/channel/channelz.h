@@ -270,7 +270,7 @@ class SocketNode : public BaseNode {
 class ListenSocketNode : public BaseNode {
  public:
   // ListenSocketNode takes ownership of host.
-  ListenSocketNode(UniquePtr<char> local_addr);
+  explicit ListenSocketNode(UniquePtr<char> local_addr);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
