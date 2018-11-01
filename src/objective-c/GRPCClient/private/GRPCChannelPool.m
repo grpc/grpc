@@ -147,7 +147,9 @@ extern const char *kCFStreamVarName;
 }
 
 - (BOOL)isEqual:(id)object {
-  NSAssert([object isKindOfClass:[GRPCChannelConfiguration class]], @"Illegal :isEqual");
+  if (![object isKindOfClass:[GRPCChannelConfiguration class]]) {
+    return NO;
+  }
   GRPCChannelConfiguration *obj = (GRPCChannelConfiguration *)object;
   if (!(obj.host == _host || [obj.host isEqualToString:_host])) return NO;
   if (!(obj.callOptions == _callOptions || [obj.callOptions hasChannelOptionsEqualTo:_callOptions]))
@@ -207,13 +209,16 @@ extern const char *kCFStreamVarName;
 
 - (void)removeChannel:(GRPCChannel *)channel {
   @synchronized(self) {
+    __block GRPCChannelConfiguration *keyToDelete = nil;
     [_channelPool
         enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration *_Nonnull key,
                                             GRPCChannel *_Nonnull obj, BOOL *_Nonnull stop) {
           if (obj == channel) {
-            [self->_channelPool removeObjectForKey:key];
+            keyToDelete = key;
+            *stop = YES;
           }
         }];
+    [self->_channelPool removeObjectForKey:keyToDelete];
   }
 }
 
