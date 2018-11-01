@@ -263,8 +263,6 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr != strstr(json, "\"socketRef\":"));
   gpr_free(json);
 
-  grpc_core::channelz::ChannelzRegistry::LogAllEntities();
-
   end_test(&f);
   config.tear_down_data(&f);
 }
