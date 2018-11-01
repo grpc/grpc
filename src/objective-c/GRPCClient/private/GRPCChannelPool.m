@@ -190,7 +190,7 @@ extern const char *kCFStreamVarName;
 }
 
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration {
-  __block GRPCChannel *channel;
+  GRPCChannel *channel;
   @synchronized(self) {
     if ([_channelPool objectForKey:configuration]) {
       channel = _channelPool[configuration];

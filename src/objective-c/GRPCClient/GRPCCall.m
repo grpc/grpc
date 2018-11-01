@@ -564,7 +564,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 
   NSMutableDictionary *headers = _requestHeaders;
-  __block NSString *fetchedOauth2AccessToken;
+  NSString *fetchedOauth2AccessToken;
   @synchronized(self) {
     fetchedOauth2AccessToken = _fetchedOauth2AccessToken;
   }

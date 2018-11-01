@@ -141,7 +141,7 @@ static NSMutableDictionary *gHostCache;
     host = [hostURL.host stringByAppendingString:@":443"];
   }
 
-  __block GRPCCallOptions *callOptions = nil;
+  GRPCCallOptions *callOptions = nil;
   @synchronized(gHostCache) {
     if ([gHostCache objectForKey:host]) {
       callOptions = [gHostCache[host] callOptions];
