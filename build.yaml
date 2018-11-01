@@ -4668,7 +4668,7 @@ targets:
   - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/end2end_test.cc
-  - test/cpp/end2end/interceptor_util.cc
+  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util

@@ -426,6 +426,8 @@ class ClientContext {
 
   grpc::string authority() { return authority_; }
 
+  void SendCancelToInterceptors();
+
   bool initial_metadata_received_;
   bool wait_for_ready_;
   bool wait_for_ready_explicitly_set_;

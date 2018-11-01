@@ -3609,7 +3609,7 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc", 
-      "test/cpp/end2end/interceptor_util.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
