@@ -9648,7 +9648,8 @@
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9805,7 +9806,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9956,7 +9958,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10011,7 +10014,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
-      "grpc_uri", 
       "health_proto"
     ], 
     "headers": [
@@ -10721,8 +10723,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_http_filters", 
-      "grpc_transport_chttp2_alpn", 
-      "grpc_uri"
+      "grpc_transport_chttp2_alpn"
     ], 
     "headers": [
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
@@ -10987,24 +10988,6 @@
     "name": "grpc_transport_inproc_headers", 
     "src": [
       "src/core/ext/transport/inproc/inproc_transport.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/lib/uri/uri_parser.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_uri", 
-    "src": [
-      "src/core/lib/uri/uri_parser.cc", 
-      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -820,6 +820,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
+        "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
         "src/core/lib/avl/avl.h",
@@ -954,6 +955,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
         "zlib",
@@ -1081,7 +1083,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_uri",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "inlined_vector",
@@ -1089,20 +1090,6 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "health_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_uri",
-    srcs = [
-        "src/core/lib/uri/uri_parser.cc",
-    ],
-    hdrs = [
-        "src/core/lib/uri/uri_parser.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
     ],
 )
 
@@ -1706,7 +1693,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_uri",
         "grpc_http_filters",
         "grpc_transport_chttp2_alpn",
     ],

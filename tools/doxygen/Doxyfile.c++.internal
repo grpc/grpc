@@ -1181,6 +1181,7 @@ src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_impl.h \
+src/core/lib/uri/uri_parser.h \
 src/cpp/README.md \
 src/cpp/client/channel_cc.cc \
 src/cpp/client/client_context.cc \

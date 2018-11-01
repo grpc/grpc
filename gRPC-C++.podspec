@@ -274,7 +274,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
-                      'src/core/lib/uri/uri_parser.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
                       'src/core/lib/security/context/security_context.h',
@@ -502,6 +501,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
                       'src/core/lib/transport/transport_impl.h',
+                      'src/core/lib/uri/uri_parser.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
@@ -693,6 +693,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
+                              'src/core/lib/uri/uri_parser.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/filters/client_channel/health/health.pb.h'

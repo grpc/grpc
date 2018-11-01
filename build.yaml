@@ -382,6 +382,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
+  - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
   filegroups:
@@ -538,6 +539,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
+  - src/core/lib/uri/uri_parser.h
   deps:
   - gpr
   uses:
@@ -616,7 +618,6 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - health_proto
-  - grpc_uri
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -1006,7 +1007,6 @@ filegroups:
   - grpc_base
   - grpc_transport_chttp2_alpn
   - grpc_http_filters
-  - grpc_uri
 - name: grpc_transport_chttp2_alpn
   headers:
   - src/core/ext/transport/chttp2/alpn/alpn.h
@@ -1096,13 +1096,6 @@ filegroups:
   - src/core/ext/transport/inproc/inproc_transport.h
   uses:
   - grpc_base_headers
-- name: grpc_uri
-  headers:
-  - src/core/lib/uri/uri_parser.h
-  src:
-  - src/core/lib/uri/uri_parser.cc
-  uses:
-  - grpc_base
 - name: grpc_workaround_cronet_compression_filter
   headers:
   - src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h
