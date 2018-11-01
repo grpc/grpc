@@ -385,8 +385,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                  callOptions:(GRPCCallOptions *)callOptions {
   // Purposely using pointer rather than length ([host length] == 0) for backwards compatibility.
   if (!host || !path) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"Neither host nor path can be nil or empty."];
+    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
   }
   if (safety > GRPCCallSafetyCacheableRequest) {
     [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
