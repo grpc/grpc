@@ -665,7 +665,6 @@ void RoundRobin::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
                                                  notify);
 }
 
-// TODO(juanlishen): Use lb_config to configure LB policy.
 void RoundRobin::UpdateLocked(const grpc_channel_args& args,
                               grpc_json* lb_config) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);

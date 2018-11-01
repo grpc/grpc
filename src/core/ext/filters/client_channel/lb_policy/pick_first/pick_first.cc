@@ -334,7 +334,6 @@ void PickFirst::UpdateChildRefsLocked() {
   child_subchannels_ = std::move(cs);
 }
 
-// TODO(juanlishen): Use lb_config to configure LB policy.
 void PickFirst::UpdateLocked(const grpc_channel_args& args,
                              grpc_json* lb_config) {
   AutoChildRefsUpdater guard(this);
