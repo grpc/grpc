@@ -15,6 +15,7 @@
 
 import threading
 import unittest
+import logging
 
 import grpc
 from tests.unit.framework.common import test_constants
@@ -85,4 +86,5 @@ class ChannelReadyFutureTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)
