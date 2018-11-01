@@ -66,6 +66,12 @@ static GRPCChannelPool *gChannelPool;
   BOOL _disconnected;
   dispatch_queue_t _dispatchQueue;
   dispatch_queue_t _timerQueue;
+
+  /**
+   * Date and time when last timer is scheduled. When a timer is fired, if
+   * _lastDispatch + _destroyDelay < now, it can be determined that another timer is scheduled after
+   * schedule of the current timer, hence the current one should be discarded.
+   */
   NSDate *_lastDispatch;
 }
 
@@ -107,11 +113,12 @@ static GRPCChannelPool *gChannelPool;
     if (!self->_disconnected) {
       self->_refCount--;
       if (self->_refCount == 0) {
-        self->_lastDispatch = [NSDate date];
+        NSDate *now = [NSDate date];
+        self->_lastDispatch = now;
         dispatch_time_t delay =
             dispatch_time(DISPATCH_TIME_NOW, (int64_t)self->_destroyDelay * NSEC_PER_SEC);
         dispatch_after(delay, self->_timerQueue, ^{
-          [self timerFire];
+          [self timerFireWithScheduleDate:now];
         });
       }
     }
@@ -129,10 +136,9 @@ static GRPCChannelPool *gChannelPool;
   });
 }
 
-- (void)timerFire {
+- (void)timerFireWithScheduleDate:(NSDate *)scheduleDate {
   dispatch_async(_dispatchQueue, ^{
-    if (self->_disconnected || self->_lastDispatch == nil ||
-        -[self->_lastDispatch timeIntervalSinceNow] < -self->_destroyDelay) {
+    if (self->_disconnected || self->_lastDispatch != scheduleDate) {
       return;
     }
     self->_lastDispatch = nil;
