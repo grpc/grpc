@@ -275,6 +275,12 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 }
 
 void ServerContext::TryCancel() const {
+  internal::CancelInterceptorBatchMethods cancel_methods;
+  if (rpc_info_) {
+    for (size_t i = 0; i < rpc_info_->interceptors_.size(); i++) {
+      rpc_info_->RunInterceptor(&cancel_methods, i);
+    }
+  }
   grpc_call_error err = grpc_call_cancel_with_status(
       call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {

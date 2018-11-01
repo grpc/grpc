@@ -111,9 +111,10 @@ void ClientContext::set_compression_algorithm(
 void ClientContext::TryCancel() {
   std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
-    // for(size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
-    // rpc_info_.RunInterceptor(, 0);
-    //}
+    internal::CancelInterceptorBatchMethods cancel_methods;
+    for (size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
+      rpc_info_.RunInterceptor(&cancel_methods, i);
+    }
     grpc_call_cancel(call_, nullptr);
   } else {
     call_canceled_ = true;
