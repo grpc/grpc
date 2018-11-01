@@ -29,7 +29,7 @@ def patch_stderr(f):
         old_stderr = sys.stderr
         sys.stderr = six.StringIO()
         try:
-            f(args, kwargs)
+            f(*args, **kwargs)
         finally:
             sys.stderr = old_stderr
 
