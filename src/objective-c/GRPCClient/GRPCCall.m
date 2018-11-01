@@ -167,13 +167,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
     id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
       dispatch_async(self->_dispatchQueue, ^{
         if (self->_handler) {
-          NSDictionary *headers = nil;
           if (!self->_initialMetadataPublished) {
-            headers = self->_call.responseHeaders;
             self->_initialMetadataPublished = YES;
-          }
-          if (headers) {
-            [self issueInitialMetadata:headers];
+            [self issueInitialMetadata:self->_call.responseHeaders];
           }
           if (value) {
             [self issueMessage:value];
@@ -184,13 +180,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
         completionHandler:^(NSError *errorOrNil) {
           dispatch_async(self->_dispatchQueue, ^{
             if (self->_handler) {
-              NSDictionary *headers = nil;
               if (!self->_initialMetadataPublished) {
-                headers = self->_call.responseHeaders;
                 self->_initialMetadataPublished = YES;
-              }
-              if (headers) {
-                [self issueInitialMetadata:headers];
+                [self issueInitialMetadata:self->_call.responseHeaders];
               }
               [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
 
