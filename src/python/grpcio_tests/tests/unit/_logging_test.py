@@ -58,7 +58,8 @@ class LoggingTest(unittest.TestCase):
             intended_stream = six.StringIO()
             logging.basicConfig(stream=intended_stream)
             self.assertEqual(1, len(logging.getLogger().handlers))
-            self.assertTrue(logging.getLogger().handlers[0].stream is intended_stream)
+            self.assertTrue(
+                logging.getLogger().handlers[0].stream is intended_stream)
         finally:
             reload_module(logging)
 
