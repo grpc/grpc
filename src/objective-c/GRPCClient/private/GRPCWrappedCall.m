@@ -257,8 +257,13 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
     _channel = [GRPCChannel channelWithHost:host callOptions:callOptions];
+    if (_channel == nil) {
+      NSLog(@"Failed to get a channel for the host.");
+      return nil;
+    }
     _call = [_channel unmanagedCallWithPath:path completionQueue:_queue callOptions:callOptions];
     if (_call == NULL) {
+      NSLog(@"Failed to create a call.");
       return nil;
     }
   }
