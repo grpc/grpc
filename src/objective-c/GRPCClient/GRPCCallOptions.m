@@ -203,12 +203,13 @@ static const NSUInteger kDefaultChannelID = 0;
 
 - (nonnull id)mutableCopyWithZone:(NSZone *)zone {
   GRPCMutableCallOptions *newOptions = [[GRPCMutableCallOptions allocWithZone:zone]
-      initWithServerAuthority:_serverAuthority
+      initWithServerAuthority:[_serverAuthority copy]
                       timeout:_timeout
-            oauth2AccessToken:_oauth2AccessToken
+            oauth2AccessToken:[_oauth2AccessToken copy]
             authTokenProvider:_authTokenProvider
-              initialMetadata:_initialMetadata
-              userAgentPrefix:_userAgentPrefix
+              initialMetadata:[[NSDictionary alloc] initWithDictionary:_initialMetadata
+                                                             copyItems:YES]
+              userAgentPrefix:[_userAgentPrefix copy]
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
@@ -217,14 +218,15 @@ static const NSUInteger kDefaultChannelID = 0;
             connectMinTimeout:_connectMinTimeout
         connectInitialBackoff:_connectInitialBackoff
             connectMaxBackoff:_connectMaxBackoff
-        additionalChannelArgs:[_additionalChannelArgs copy]
-          PEMRootCertificates:_PEMRootCertificates
-                PEMPrivateKey:_PEMPrivateKey
-                 PEMCertChain:_PEMCertChain
+        additionalChannelArgs:[[NSDictionary alloc] initWithDictionary:_additionalChannelArgs
+                                                             copyItems:YES]
+          PEMRootCertificates:[_PEMRootCertificates copy]
+                PEMPrivateKey:[_PEMPrivateKey copy]
+                 PEMCertChain:[_PEMCertChain copy]
                 transportType:_transportType
-             hostNameOverride:_hostNameOverride
+             hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
-            channelPoolDomain:_channelPoolDomain
+            channelPoolDomain:[_channelPoolDomain copy]
                     channelID:_channelID];
   return newOptions;
 }
