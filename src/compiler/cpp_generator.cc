@@ -1302,7 +1302,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Print("typedef ");
 
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["method_name"] = service->method(i).get()->name();
+    (*vars)["method_name"] = service->method(i)->name();
     printer->Print(*vars, "WithAsyncMethod_$method_name$<");
   }
   printer->Print("Service");
@@ -1320,7 +1320,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Print("typedef ");
 
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["method_name"] = service->method(i).get()->name();
+    (*vars)["method_name"] = service->method(i)->name();
     printer->Print(*vars, "ExperimentalWithCallbackMethod_$method_name$<");
   }
   printer->Print("Service");
@@ -1356,7 +1356,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
   printer->Print("typedef ");
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["method_name"] = service->method(i).get()->name();
+    (*vars)["method_name"] = service->method(i)->name();
     if (service->method(i)->NoStreaming()) {
       printer->Print(*vars, "WithStreamedUnaryMethod_$method_name$<");
     }
@@ -1378,7 +1378,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
   printer->Print("typedef ");
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["method_name"] = service->method(i).get()->name();
+    (*vars)["method_name"] = service->method(i)->name();
     auto method = service->method(i);
     if (ServerOnlyStreaming(method.get())) {
       printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
@@ -1396,7 +1396,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   // Server side - typedef for controlled both unary and server-side streaming
   printer->Print("typedef ");
   for (int i = 0; i < service->method_count(); ++i) {
-    (*vars)["method_name"] = service->method(i).get()->name();
+    (*vars)["method_name"] = service->method(i)->name();
     auto method = service->method(i);
     if (ServerOnlyStreaming(method.get())) {
       printer->Print(*vars, "WithSplitStreamingMethod_$method_name$<");
@@ -1767,7 +1767,7 @@ void PrintSourceService(grpc_generator::Printer* printer,
     printer->Print(*vars,
                    "static const char* $prefix$$Service$_method_names[] = {\n");
     for (int i = 0; i < service->method_count(); ++i) {
-      (*vars)["Method"] = service->method(i).get()->name();
+      (*vars)["Method"] = service->method(i)->name();
       printer->Print(*vars, "  \"/$Package$$Service$/$Method$\",\n");
     }
     printer->Print(*vars, "};\n\n");
