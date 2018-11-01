@@ -396,6 +396,8 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
+    // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
+    // it in here, so SocketNode knows its own address.
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(),
