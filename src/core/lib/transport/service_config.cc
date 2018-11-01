@@ -48,54 +48,6 @@ ServiceConfig::ServiceConfig(UniquePtr<char> json_string, grpc_json* json_tree)
 
 ServiceConfig::~ServiceConfig() { grpc_json_destroy(json_tree_); }
 
-grpc_json* ServiceConfig::GetLoadBalancingConfig() const {
-  if (json_tree_->type != GRPC_JSON_OBJECT || json_tree_->key != nullptr) {
-    return nullptr;
-  }
-  grpc_json* lb_config = nullptr;
-  for (grpc_json* field = json_tree_->child; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return nullptr;
-    if (strcmp(field->key, "loadBalancingConfig") == 0) {
-      if (lb_config != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_OBJECT) return nullptr;
-      lb_config = field;
-    }
-  }
-  return lb_config;
-}
-
-grpc_json* ServiceConfig::GetPolicyFromLoadBalancingConfig(
-    grpc_json* lb_config) {
-  if (lb_config->type != GRPC_JSON_OBJECT || lb_config->key == nullptr ||
-      strcmp(lb_config->key, "loadBalancingConfig") != 0) {
-    return nullptr;
-  }
-  // Find the policy object.
-  grpc_json* policy = nullptr;
-  for (grpc_json* field = lb_config->child; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return nullptr;
-    if (strcmp(field->key, "policy") == 0) {
-      if (policy != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_OBJECT) return nullptr;
-      policy = field;
-    }
-  }
-  if (policy == nullptr) return nullptr;
-  // Find the specific policy content since the policy object is of type
-  // "oneof".
-  grpc_json* policy_content = nullptr;
-  for (grpc_json* field = policy->child; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return nullptr;
-    if (policy_content != nullptr) return nullptr;  // Violate "oneof" type.
-    if (field->type != GRPC_JSON_OBJECT) return nullptr;
-    policy_content = field;
-  }
-  return policy_content;
-}
-
 const char* ServiceConfig::GetLoadBalancingPolicyName() const {
   if (json_tree_->type != GRPC_JSON_OBJECT || json_tree_->key != nullptr) {
     return nullptr;
