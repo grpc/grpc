@@ -36,32 +36,38 @@ def patch_stderr(f):
     return _impl
 
 
+def isolated_logging(f):
+
+    @functools.wraps(f)
+    def _impl(*args, **kwargs):
+        reload_module(logging)
+        reload_module(grpc)
+        try:
+            f(*args, **kwargs)
+        finally:
+            reload_module(logging)
+
+    return _impl
+
+
 class LoggingTest(unittest.TestCase):
 
+    @isolated_logging
     def test_logger_not_occupied(self):
         self.assertEqual(0, len(logging.getLogger().handlers))
 
     @patch_stderr
+    @isolated_logging
     def test_handler_found(self):
-        try:
-            reload_module(logging)
-            reload_module(grpc)
-            self.assertFalse(
-                "No handlers could be found" in sys.stderr.getvalue())
-        finally:
-            reload_module(logging)
+        self.assertEqual(0, len(sys.stderr.getvalue()))
 
+    @isolated_logging
     def test_can_configure_logger(self):
-        reload_module(logging)
-        reload_module(grpc)
-        try:
-            intended_stream = six.StringIO()
-            logging.basicConfig(stream=intended_stream)
-            self.assertEqual(1, len(logging.getLogger().handlers))
-            self.assertTrue(
-                logging.getLogger().handlers[0].stream is intended_stream)
-        finally:
-            reload_module(logging)
+        intended_stream = six.StringIO()
+        logging.basicConfig(stream=intended_stream)
+        self.assertEqual(1, len(logging.getLogger().handlers))
+        self.assertTrue(
+            logging.getLogger().handlers[0].stream is intended_stream)
 
 
 if __name__ == '__main__':
