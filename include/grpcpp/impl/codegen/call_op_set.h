@@ -770,19 +770,19 @@ class CallOpSet : public CallOpSetInterface,
                   public Op5,
                   public Op6 {
  public:
-  CallOpSet() : cq_tag_(this), return_tag_(this) {}
+  CallOpSet() : core_cq_tag_(this), return_tag_(this) {}
   // The copy constructor and assignment operator reset the value of
-  // cq_tag_, return_tag_, done_intercepting_ and interceptor_methods_ since
-  // those are only meaningful on a specific object, not across objects.
+  // core_cq_tag_, return_tag_, done_intercepting_ and interceptor_methods_
+  // since those are only meaningful on a specific object, not across objects.
   CallOpSet(const CallOpSet& other)
-      : cq_tag_(this),
+      : core_cq_tag_(this),
         return_tag_(this),
         call_(other.call_),
         done_intercepting_(false),
         interceptor_methods_(InterceptorBatchMethodsImpl()) {}
 
   CallOpSet& operator=(const CallOpSet& other) {
-    cq_tag_ = this;
+    core_cq_tag_ = this;
     return_tag_ = this;
     call_ = other.call_;
     done_intercepting_ = false;
@@ -834,13 +834,13 @@ class CallOpSet : public CallOpSetInterface,
 
   void set_output_tag(void* return_tag) { return_tag_ = return_tag; }
 
-  void* cq_tag() override { return cq_tag_; }
+  void* core_cq_tag() override { return core_cq_tag_; }
 
-  /// set_cq_tag is used to provide a different core CQ tag than "this".
+  /// set_core_cq_tag is used to provide a different core CQ tag than "this".
   /// This is used for callback-based tags, where the core tag is the core
   /// callback function. It does not change the use or behavior of any other
   /// function (such as FinalizeResult)
-  void set_cq_tag(void* cq_tag) { cq_tag_ = cq_tag; }
+  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
 
   // This will be called while interceptors are run if the RPC is a hijacked
   // RPC. This should set hijacking state for each of the ops.
@@ -866,7 +866,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::AddOp(ops, &nops);
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), ops, nops, cq_tag(), nullptr));
+                           call_.call(), ops, nops, core_cq_tag(), nullptr));
   }
 
   // Should be called after interceptors are done running on the finalize result
@@ -875,7 +875,7 @@ class CallOpSet : public CallOpSetInterface,
     done_intercepting_ = true;
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), nullptr, 0, cq_tag(), nullptr));
+                           call_.call(), nullptr, 0, core_cq_tag(), nullptr));
   }
 
  private:
@@ -906,7 +906,7 @@ class CallOpSet : public CallOpSetInterface,
     return interceptor_methods_.RunInterceptors();
   }
 
-  void* cq_tag_;
+  void* core_cq_tag_;
   void* return_tag_;
   Call call_;
   bool done_intercepting_ = false;

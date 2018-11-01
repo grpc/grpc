@@ -27,6 +27,7 @@
 
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
+#include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
@@ -65,6 +66,8 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class CallbackUnaryHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
@@ -137,7 +140,7 @@ class ServerContext {
   /// must end in "-bin".
   void AddTrailingMetadata(const grpc::string& key, const grpc::string& value);
 
-  /// IsCancelled is always safe to call when using sync API.
+  /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
   /// the AsyncNotifyWhenDone tag has been delivered.
   bool IsCancelled() const;
@@ -267,6 +270,8 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackUnaryHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
@@ -277,13 +282,19 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call);
+  void BeginCompletionOp(internal::Call* call, bool callback);
   /// Return the tag queued by BeginCompletionOp()
   internal::CompletionQueueTag* GetCompletionOpTag();
 
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 
   void set_call(grpc_call* call) { call_ = call; }
+
+  void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
+
+  void Clear();
+
+  void Setup(gpr_timespec deadline);
 
   uint32_t initial_metadata_flags() const { return 0; }
 
@@ -302,6 +313,7 @@ class ServerContext {
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
+  internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
@@ -321,7 +333,7 @@ class ServerContext {
       pending_ops_;
   bool has_pending_ops_;
 
-  experimental::ServerRpcInfo* rpc_info_ = nullptr;
+  experimental::ServerRpcInfo* rpc_info_;
 };
 
 }  // namespace grpc

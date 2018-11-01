@@ -343,6 +343,16 @@ class ServerInterface : public internal::CallHook {
   interceptor_creators() {
     return nullptr;
   }
+
+  // EXPERIMENTAL
+  // A method to get the callbackable completion queue associated with this
+  // server. If the return value is nullptr, this server doesn't support
+  // callback operations.
+  // TODO(vjpai): Consider a better default like using a global CQ
+  // Returns nullptr (rather than being pure) since this is a post-1.0 method
+  // and adding a new pure method to an interface would be a breaking change
+  // (even though this is private and non-API)
+  virtual CompletionQueue* CallbackCQ() { return nullptr; }
 };
 
 }  // namespace grpc

@@ -165,6 +165,138 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
+void CallbackTestServiceImpl::Echo(
+    ServerContext* context, const EchoRequest* request, EchoResponse* response,
+    experimental::ServerCallbackRpcController* controller) {
+  // A bit of sleep to make sure that short deadline tests fail
+  if (request->has_param() && request->param().server_sleep_us() > 0) {
+    // Set an alarm for that much time
+    alarm_.experimental().Set(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(request->param().server_sleep_us(),
+                                          GPR_TIMESPAN)),
+        [this, context, request, response, controller](bool) {
+          EchoNonDelayed(context, request, response, controller);
+        });
+  } else {
+    EchoNonDelayed(context, request, response, controller);
+  }
+}
+
+void CallbackTestServiceImpl::EchoNonDelayed(
+    ServerContext* context, const EchoRequest* request, EchoResponse* response,
+    experimental::ServerCallbackRpcController* controller) {
+  if (request->has_param() && request->param().server_die()) {
+    gpr_log(GPR_ERROR, "The request should not reach application handler.");
+    GPR_ASSERT(0);
+  }
+  if (request->has_param() && request->param().has_expected_error()) {
+    const auto& error = request->param().expected_error();
+    controller->Finish(Status(static_cast<StatusCode>(error.code()),
+                              error.error_message(),
+                              error.binary_error_details()));
+  }
+  int server_try_cancel = GetIntValueFromMetadata(
+      kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
+  if (server_try_cancel > DO_NOT_CANCEL) {
+    // Since this is a unary RPC, by the time this server handler is called,
+    // the 'request' message is already read from the client. So the scenarios
+    // in server_try_cancel don't make much sense. Just cancel the RPC as long
+    // as server_try_cancel is not DO_NOT_CANCEL
+    EXPECT_FALSE(context->IsCancelled());
+    context->TryCancel();
+    gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
+    // Now wait until it's really canceled
+
+    std::function<void(bool)> recurrence = [this, context, controller,
+                                            &recurrence](bool) {
+      if (!context->IsCancelled()) {
+        alarm_.experimental().Set(
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                         gpr_time_from_micros(1000, GPR_TIMESPAN)),
+            recurrence);
+      } else {
+        controller->Finish(Status::CANCELLED);
+      }
+    };
+    recurrence(true);
+    return;
+  }
+
+  response->set_message(request->message());
+  MaybeEchoDeadline(context, request, response);
+  if (host_) {
+    response->mutable_param()->set_host(*host_);
+  }
+  if (request->has_param() && request->param().client_cancel_after_us()) {
+    {
+      std::unique_lock<std::mutex> lock(mu_);
+      signal_client_ = true;
+    }
+    std::function<void(bool)> recurrence = [this, context, request, controller,
+                                            &recurrence](bool) {
+      if (!context->IsCancelled()) {
+        alarm_.experimental().Set(
+            gpr_time_add(
+                gpr_now(GPR_CLOCK_REALTIME),
+                gpr_time_from_micros(request->param().client_cancel_after_us(),
+                                     GPR_TIMESPAN)),
+            recurrence);
+      } else {
+        controller->Finish(Status::CANCELLED);
+      }
+    };
+    recurrence(true);
+    return;
+  } else if (request->has_param() &&
+             request->param().server_cancel_after_us()) {
+    alarm_.experimental().Set(
+        gpr_time_add(
+            gpr_now(GPR_CLOCK_REALTIME),
+            gpr_time_from_micros(request->param().client_cancel_after_us(),
+                                 GPR_TIMESPAN)),
+        [controller](bool) { controller->Finish(Status::CANCELLED); });
+    return;
+  } else if (!request->has_param() ||
+             !request->param().skip_cancelled_check()) {
+    EXPECT_FALSE(context->IsCancelled());
+  }
+
+  if (request->has_param() && request->param().echo_metadata()) {
+    const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
+        context->client_metadata();
+    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+             iter = client_metadata.begin();
+         iter != client_metadata.end(); ++iter) {
+      context->AddTrailingMetadata(ToString(iter->first),
+                                   ToString(iter->second));
+    }
+    // Terminate rpc with error and debug info in trailer.
+    if (request->param().debug_info().stack_entries_size() ||
+        !request->param().debug_info().detail().empty()) {
+      grpc::string serialized_debug_info =
+          request->param().debug_info().SerializeAsString();
+      context->AddTrailingMetadata(kDebugInfoTrailerKey, serialized_debug_info);
+      controller->Finish(Status::CANCELLED);
+    }
+  }
+  if (request->has_param() &&
+      (request->param().expected_client_identity().length() > 0 ||
+       request->param().check_auth_context())) {
+    CheckServerAuthContext(context,
+                           request->param().expected_transport_security_type(),
+                           request->param().expected_client_identity());
+  }
+  if (request->has_param() && request->param().response_message_length() > 0) {
+    response->set_message(
+        grpc::string(request->param().response_message_length(), '\0'));
+  }
+  if (request->has_param() && request->param().echo_peer()) {
+    response->mutable_param()->set_peer(context->peer());
+  }
+  controller->Finish(Status::OK);
+}
+
 // Unimplemented is left unimplemented to test the returned error.
 
 Status TestServiceImpl::RequestStream(ServerContext* context,
@@ -332,7 +464,8 @@ Status TestServiceImpl::BidiStream(
   return Status::OK;
 }
 
-int TestServiceImpl::GetIntValueFromMetadata(
+namespace {
+int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     int default_value) {
@@ -343,6 +476,21 @@ int TestServiceImpl::GetIntValueFromMetadata(
   }
 
   return default_value;
+}
+};  // namespace
+
+int TestServiceImpl::GetIntValueFromMetadata(
+    const char* key,
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    int default_value) {
+  return GetIntValueFromMetadataHelper(key, metadata, default_value);
+}
+
+int CallbackTestServiceImpl::GetIntValueFromMetadata(
+    const char* key,
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    int default_value) {
+  return GetIntValueFromMetadataHelper(key, metadata, default_value);
 }
 
 void TestServiceImpl::ServerTryCancel(ServerContext* context) {

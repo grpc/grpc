@@ -22,6 +22,7 @@
 #include <mutex>
 
 #include <grpc/grpc.h>
+#include <grpcpp/alarm.h>
 #include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -78,7 +79,39 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   void ServerTryCancel(ServerContext* context);
 
+  bool signal_client_;
+  std::mutex mu_;
+  std::unique_ptr<grpc::string> host_;
+};
+
+class CallbackTestServiceImpl
+    : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
+ public:
+  CallbackTestServiceImpl() : signal_client_(false), host_() {}
+  explicit CallbackTestServiceImpl(const grpc::string& host)
+      : signal_client_(false), host_(new grpc::string(host)) {}
+
+  void Echo(ServerContext* context, const EchoRequest* request,
+            EchoResponse* response,
+            experimental::ServerCallbackRpcController* controller) override;
+
+  // Unimplemented is left unimplemented to test the returned error.
+  bool signal_client() {
+    std::unique_lock<std::mutex> lock(mu_);
+    return signal_client_;
+  }
+
  private:
+  void EchoNonDelayed(ServerContext* context, const EchoRequest* request,
+                      EchoResponse* response,
+                      experimental::ServerCallbackRpcController* controller);
+
+  int GetIntValueFromMetadata(
+      const char* key,
+      const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+      int default_value);
+
+  Alarm alarm_;
   bool signal_client_;
   std::mutex mu_;
   std::unique_ptr<grpc::string> host_;

@@ -45,10 +45,17 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
       : call_(*call),
         has_tag_(false),
         tag_(nullptr),
+        core_cq_tag_(this),
         refs_(2),
         finalized_(false),
         cancelled_(0),
         done_intercepting_(false) {}
+
+  // CompletionOp isn't copyable or movable
+  CompletionOp(const CompletionOp&) = delete;
+  CompletionOp& operator=(const CompletionOp&) = delete;
+  CompletionOp(CompletionOp&&) = delete;
+  CompletionOp& operator=(CompletionOp&&) = delete;
 
   ~CompletionOp() {
     if (call_.server_rpc_info()) {
@@ -85,8 +92,9 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     tag_ = tag;
   }
 
-  /// TODO(vjpai): Allow override of cq_tag if appropriate for callback API
-  void* cq_tag() override { return this; }
+  void set_core_cq_tag(void* core_cq_tag) { core_cq_tag_ = core_cq_tag; }
+
+  void* core_cq_tag() override { return core_cq_tag_; }
 
   void Unref();
 
@@ -130,6 +138,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
   internal::Call call_;
   bool has_tag_;
   void* tag_;
+  void* core_cq_tag_;
   std::mutex mu_;
   int refs_;
   bool finalized_;
@@ -157,8 +166,8 @@ void ServerContext::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetCall(&call_);
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), &ops, 1, this, nullptr));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), &ops, 1,
+                                                   core_cq_tag_, nullptr));
   /* No interceptors to run here */
 }
 
@@ -209,31 +218,35 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
 
 // ServerContext body
 
-ServerContext::ServerContext()
-    : completion_op_(nullptr),
-      has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
-      deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
-      call_(nullptr),
-      cq_(nullptr),
-      sent_initial_metadata_(false),
-      compression_level_set_(false),
-      has_pending_ops_(false) {}
+ServerContext::ServerContext() { Setup(gpr_inf_future(GPR_CLOCK_REALTIME)); }
 
-ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
-    : completion_op_(nullptr),
-      has_notify_when_done_tag_(false),
-      async_notify_when_done_tag_(nullptr),
-      deadline_(deadline),
-      call_(nullptr),
-      cq_(nullptr),
-      sent_initial_metadata_(false),
-      compression_level_set_(false),
-      has_pending_ops_(false) {
+ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr) {
+  Setup(deadline);
   std::swap(*client_metadata_.arr(), *arr);
 }
 
-ServerContext::~ServerContext() {
+void ServerContext::Setup(gpr_timespec deadline) {
+  completion_op_ = nullptr;
+  has_notify_when_done_tag_ = false;
+  async_notify_when_done_tag_ = nullptr;
+  deadline_ = deadline;
+  call_ = nullptr;
+  cq_ = nullptr;
+  sent_initial_metadata_ = false;
+  compression_level_set_ = false;
+  has_pending_ops_ = false;
+  rpc_info_ = nullptr;
+}
+
+void ServerContext::BindDeadlineAndMetadata(gpr_timespec deadline,
+                                            grpc_metadata_array* arr) {
+  deadline_ = deadline;
+  std::swap(*client_metadata_.arr(), *arr);
+}
+
+ServerContext::~ServerContext() { Clear(); }
+
+void ServerContext::Clear() {
   if (call_) {
     grpc_call_unref(call_);
   }
@@ -243,9 +256,11 @@ ServerContext::~ServerContext() {
   if (rpc_info_) {
     rpc_info_->Unref();
   }
+  // Don't need to clear out call_, completion_op_, or rpc_info_ because this is
+  // either called from destructor or just before Setup
 }
 
-void ServerContext::BeginCompletionOp(internal::Call* call) {
+void ServerContext::BeginCompletionOp(internal::Call* call, bool callback) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
@@ -254,7 +269,11 @@ void ServerContext::BeginCompletionOp(internal::Call* call) {
   completion_op_ =
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
           CompletionOp(call);
-  if (has_notify_when_done_tag_) {
+  if (callback) {
+    completion_tag_ =
+        internal::CallbackWithSuccessTag(call->call(), nullptr, completion_op_);
+    completion_op_->set_core_cq_tag(&completion_tag_);
+  } else if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
   call->PerformOps(completion_op_);
@@ -283,12 +302,15 @@ void ServerContext::TryCancel() const {
 }
 
 bool ServerContext::IsCancelled() const {
-  if (has_notify_when_done_tag_) {
-    // when using async API, but the result is only valid
+  if (completion_tag_) {
+    // When using callback API, this result is always valid.
+    return completion_op_->CheckCancelledAsync();
+  } else if (has_notify_when_done_tag_) {
+    // When using async API, the result is only valid
     // if the tag has already been delivered at the completion queue
     return completion_op_ && completion_op_->CheckCancelledAsync();
   } else {
-    // when using sync API
+    // when using sync API, the result is always valid
     return completion_op_ && completion_op_->CheckCancelled(cq_);
   }
 }
