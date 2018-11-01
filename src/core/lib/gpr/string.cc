@@ -156,51 +156,6 @@ int gpr_parse_bytes_to_uint32(const char* buf, size_t len, uint32_t* result) {
   return 1;
 }
 
-static const char alphabet[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const uint8_t tail_xtra[3] = {0, 2, 3};
-
-char* gpr_string_base64_encode(const char* in) {
-  size_t in_len = strlen(in);
-  size_t in_triplets = in_len / 3;
-  size_t tail_case = in_len % 3;
-  size_t out_length = in_triplets * 4 + tail_xtra[tail_case];
-  char* output = static_cast<char*>(gpr_malloc(out_length + 1));
-  char* out = output;
-  size_t i;
-
-  /* encode full triplets */
-  for (i = 0; i < in_triplets; i++) {
-    out[0] = alphabet[in[0] >> 2];
-    out[1] = alphabet[((in[0] & 0x3) << 4) | (in[1] >> 4)];
-    out[2] = alphabet[((in[1] & 0xf) << 2) | (in[2] >> 6)];
-    out[3] = alphabet[in[2] & 0x3f];
-    out += 4;
-    in += 3;
-  }
-
-  /* encode the remaining bytes */
-  switch (tail_case) {
-    case 0:
-      break;
-    case 1:
-      out[0] = alphabet[in[0] >> 2];
-      out[1] = alphabet[(in[0] & 0x3) << 4];
-      out += 2;
-      in += 1;
-      break;
-    case 2:
-      out[0] = alphabet[in[0] >> 2];
-      out[1] = alphabet[((in[0] & 0x3) << 4) | (in[1] >> 4)];
-      out[2] = alphabet[(in[1] & 0xf) << 2];
-      out += 3;
-      in += 2;
-      break;
-  }
-  out[0] = '\0';
-  return output;
-}
-
 void gpr_reverse_bytes(char* str, int len) {
   char *p1, *p2;
   for (p1 = str, p2 = str + len - 1; p2 > p1; ++p1, --p2) {

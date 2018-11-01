@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
@@ -303,11 +304,16 @@ static void PopulateSocketAddressJson(grpc_json* json, const char* name,
     } else {
       char* host = nullptr;
       char* port = nullptr;
-      GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
-      if (port != nullptr) {
-        port_num = atoi(port);
+      if (strcmp(uri->scheme, "localhost") == 0) {
+        host = gpr_strdup("::1");
+        port_num = atoi(uri->path);
+      } else {
+        GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+        if (port != nullptr) {
+          port_num = atoi(port);
+        }
       }
-      char* b64_host = gpr_string_base64_encode(host);
+      char* b64_host = grpc_base64_encode(host, strlen(host), false, false);
       json_iterator =
           grpc_json_create_child(json_iterator, json, "tcpip_address", nullptr,
                                  GRPC_JSON_OBJECT, false);
