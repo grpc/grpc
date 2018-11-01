@@ -109,7 +109,7 @@ static GRPCChannelPool *gChannelPool;
       if (self->_refCount == 0) {
         self->_lastDispatch = [NSDate date];
         dispatch_time_t delay =
-            dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * 1e9);
+            dispatch_time(DISPATCH_TIME_NOW, (int64_t)self->_destroyDelay * NSEC_PER_SEC);
         dispatch_after(delay, self->_timerQueue, ^{
           [self timerFire];
         });
@@ -132,7 +132,7 @@ static GRPCChannelPool *gChannelPool;
 - (void)timerFire {
   dispatch_async(_dispatchQueue, ^{
     if (self->_disconnected || self->_lastDispatch == nil ||
-        -[self->_lastDispatch timeIntervalSinceNow] < -_destroyDelay) {
+        -[self->_lastDispatch timeIntervalSinceNow] < -self->_destroyDelay) {
       return;
     }
     self->_lastDispatch = nil;
