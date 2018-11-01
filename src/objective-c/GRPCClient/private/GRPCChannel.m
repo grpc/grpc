@@ -65,7 +65,6 @@ static GRPCChannelPool *gChannelPool;
   NSUInteger _refCount;
   BOOL _disconnected;
   dispatch_queue_t _dispatchQueue;
-  dispatch_queue_t _timerQueue;
 
   /**
    * Date and time when last timer is scheduled. When a timer is fired, if
@@ -87,12 +86,8 @@ static GRPCChannelPool *gChannelPool;
       _dispatchQueue = dispatch_queue_create(
           NULL,
           dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
-      _timerQueue =
-          dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(
-                                          DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, -1));
     } else {
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-      _timerQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_CONCURRENT);
     }
     _lastDispatch = nil;
   }
@@ -117,7 +112,7 @@ static GRPCChannelPool *gChannelPool;
         self->_lastDispatch = now;
         dispatch_time_t delay =
             dispatch_time(DISPATCH_TIME_NOW, (int64_t)self->_destroyDelay * NSEC_PER_SEC);
-        dispatch_after(delay, self->_timerQueue, ^{
+        dispatch_after(delay, self->_dispatchQueue, ^{
           [self timerFireWithScheduleDate:now];
         });
       }
