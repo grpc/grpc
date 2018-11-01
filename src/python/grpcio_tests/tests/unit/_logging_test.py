@@ -45,10 +45,20 @@ class LoggingTest(unittest.TestCase):
     def test_handler_found(self):
         try:
             reload_module(logging)
-            logging.basicConfig()
             reload_module(grpc)
             self.assertFalse(
                 "No handlers could be found" in sys.stderr.getvalue())
+        finally:
+            reload_module(logging)
+
+    def test_can_configure_logger(self):
+        reload_module(logging)
+        reload_module(grpc)
+        try:
+            intended_stream = six.StringIO()
+            logging.basicConfig(stream=intended_stream)
+            self.assertEqual(1, len(logging.getLogger().handlers))
+            self.assertTrue(logging.getLogger().handlers[0].stream is intended_stream)
         finally:
             reload_module(logging)
 
