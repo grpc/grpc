@@ -650,6 +650,7 @@ TEST_F(ChannelzServerTest, GetServerSocketsTest) {
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
 }
+
 TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
   ResetStubs();
   ConfigureProxy(1);
