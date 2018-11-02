@@ -361,7 +361,6 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   }
   grpc_client_channel_factory* client_channel_factory =
       static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
-  grpc_client_channel_factory_ref(client_channel_factory);
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {
@@ -376,7 +375,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_channel_args* new_args = nullptr;
   grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
                               &proxy_name, &new_args);
-  // Instantiate request router..
+  // Instantiate request router.
+  grpc_client_channel_factory_ref(client_channel_factory);
   grpc_error* error = GRPC_ERROR_NONE;
   chand->request_router.Init(
       chand->owning_stack, chand->combiner, client_channel_factory,

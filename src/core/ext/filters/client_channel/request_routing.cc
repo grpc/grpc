@@ -365,7 +365,7 @@ class RequestRouter::LbConnectivityWatcher {
     LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
     // If the notification is not for the current policy, we're stale,
     // so delete ourselves.
-    if (self->lb_policy_ == self->request_router_->lb_policy_.get()) {
+    if (self->lb_policy_ != self->request_router_->lb_policy_.get()) {
       Delete(self);
       return;
     }
