@@ -145,7 +145,7 @@ class InterceptorBatchMethodsImpl
     recv_trailing_metadata_ = map;
   }
 
-  std::unique_ptr<ChannelInterface> GetInterceptedChannel() {
+  std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
     auto* info = call_->client_rpc_info();
     if (info == nullptr) {
       return std::unique_ptr<ChannelInterface>(nullptr);
@@ -444,7 +444,7 @@ class CancelInterceptorBatchMethods
     return nullptr;
   }
 
-  std::unique_ptr<ChannelInterface> GetInterceptedChannel() {
+  std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetInterceptedChannel on a "
                        "method which has a Cancel notification");
