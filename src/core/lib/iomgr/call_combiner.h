@@ -41,12 +41,12 @@
 extern grpc_core::TraceFlag grpc_call_combiner_trace;
 
 typedef struct {
-  gpr_atm size;  // size_t, num closures in queue or currently executing
+  gpr_atm size = 0;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
   // Either 0 (if not cancelled and no cancellation closure set),
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
-  gpr_atm cancel_state;
+  gpr_atm cancel_state = 0;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.

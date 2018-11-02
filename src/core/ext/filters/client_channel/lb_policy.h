@@ -63,29 +63,29 @@ class LoadBalancingPolicy
   /// State used for an LB pick.
   struct PickState {
     /// Initial metadata associated with the picking call.
-    grpc_metadata_batch* initial_metadata;
+    grpc_metadata_batch* initial_metadata = nullptr;
     /// Bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
-    uint32_t initial_metadata_flags;
+    uint32_t initial_metadata_flags = 0;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
     /// If null, pick will fail if a result is not available synchronously.
-    grpc_closure* on_complete;
+    grpc_closure* on_complete = nullptr;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     /// Will be populated with context to pass to the subchannel call, if
     /// needed.
-    grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
+    grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
     /// Upon success, \a *user_data will be set to whatever opaque information
     /// may need to be propagated from the LB policy, or nullptr if not needed.
     // TODO(roth): As part of revamping our metadata APIs, try to find a
     // way to clean this up and C++-ify it.
-    void** user_data;
+    void** user_data = nullptr;
     /// Next pointer.  For internal use by LB policy.
-    PickState* next;
+    PickState* next = nullptr;
   };
 
   // Not copyable nor movable.

@@ -81,38 +81,45 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 }
 
 /* --- grpc_client_security_context --- */
+grpc_client_security_context::~grpc_client_security_context() {
+  grpc_call_credentials_unref(creds);
+  GRPC_AUTH_CONTEXT_UNREF(auth_context, "client_security_context");
+  if (extension.instance != nullptr && extension.destroy != nullptr) {
+    extension.destroy(extension.instance);
+  }
+}
 
 grpc_client_security_context* grpc_client_security_context_create(
     gpr_arena* arena) {
-  return static_cast<grpc_client_security_context*>(
-      gpr_arena_alloc(arena, sizeof(grpc_client_security_context)));
+  return new (gpr_arena_alloc(arena, sizeof(grpc_client_security_context)))
+      grpc_client_security_context();
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
   grpc_core::ExecCtx exec_ctx;
   grpc_client_security_context* c =
       static_cast<grpc_client_security_context*>(ctx);
-  grpc_call_credentials_unref(c->creds);
-  GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
-  if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
-    c->extension.destroy(c->extension.instance);
-  }
+  c->~grpc_client_security_context();
 }
 
 /* --- grpc_server_security_context --- */
+grpc_server_security_context::~grpc_server_security_context() {
+  GRPC_AUTH_CONTEXT_UNREF(auth_context, "server_security_context");
+  if (extension.instance != nullptr && extension.destroy != nullptr) {
+    extension.destroy(extension.instance);
+  }
+}
+
 grpc_server_security_context* grpc_server_security_context_create(
     gpr_arena* arena) {
-  return static_cast<grpc_server_security_context*>(
-      gpr_arena_alloc(arena, sizeof(grpc_server_security_context)));
+  return new (gpr_arena_alloc(arena, sizeof(grpc_server_security_context)))
+      grpc_server_security_context();
 }
 
 void grpc_server_security_context_destroy(void* ctx) {
   grpc_server_security_context* c =
       static_cast<grpc_server_security_context*>(ctx);
-  GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "server_security_context");
-  if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
-    c->extension.destroy(c->extension.instance);
-  }
+  c->~grpc_server_security_context();
 }
 
 /* --- grpc_auth_context --- */

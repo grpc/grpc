@@ -23,17 +23,20 @@
 
 #include "src/core/lib/transport/transport.h"
 
-typedef struct {
+struct grpc_chttp2_incoming_metadata_buffer {
+  grpc_chttp2_incoming_metadata_buffer(gpr_arena* arena) : arena(arena) {
+    grpc_metadata_batch_init(&batch);
+    batch.deadline = GRPC_MILLIS_INF_FUTURE;
+  }
+  ~grpc_chttp2_incoming_metadata_buffer() {
+    grpc_metadata_batch_destroy(&batch);
+  }
+
   gpr_arena* arena;
   grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
+  size_t size = 0;  // total size of metadata
+};
 
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer* buffer, gpr_arena* arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_chttp2_incoming_metadata_buffer* buffer);
 void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch);
 

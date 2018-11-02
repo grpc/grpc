@@ -37,16 +37,27 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 namespace {
 
 struct call_data {
+  call_data(const grpc_call_element_args& args) {
+    if (args.context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
+      // Get stats object from context and take a ref.
+      client_stats = static_cast<grpc_core::GrpcLbClientStats*>(
+                         args.context[GRPC_GRPCLB_CLIENT_STATS].value)
+                         ->Ref();
+      // Record call started.
+      client_stats->AddCallStarted();
+    }
+  }
+
   // Stats object to update.
   grpc_core::RefCountedPtr<grpc_core::GrpcLbClientStats> client_stats;
   // State for intercepting send_initial_metadata.
   grpc_closure on_complete_for_send;
   grpc_closure* original_on_complete_for_send;
-  bool send_initial_metadata_succeeded;
+  bool send_initial_metadata_succeeded = false;
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
   grpc_closure* original_recv_initial_metadata_ready;
-  bool recv_initial_metadata_succeeded;
+  bool recv_initial_metadata_succeeded = false;
 };
 
 }  // namespace
@@ -70,16 +81,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
-  if (args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
-    calld->client_stats = static_cast<grpc_core::GrpcLbClientStats*>(
-                              args->context[GRPC_GRPCLB_CLIENT_STATS].value)
-                              ->Ref();
-    // Record call started.
-    calld->client_stats->AddCallStarted();
-  }
+  new (elem->call_data) call_data(*args);
   return GRPC_ERROR_NONE;
 }
 
@@ -97,6 +100,7 @@ static void destroy_call_elem(grpc_call_element* elem,
     // TODO(roth): Eliminate this once filter stack is converted to C++.
     calld->client_stats.reset();
   }
+  calld->~call_data();
 }
 
 static void start_transport_stream_op_batch(
