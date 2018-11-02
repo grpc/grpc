@@ -52,8 +52,7 @@ class RequestRouter {
             grpc_metadata_batch* send_initial_metadata,
             uint32_t* send_initial_metadata_flags,
             ApplyServiceConfigCallback apply_service_config,
-            void* apply_service_config_user_data,
-            grpc_closure* on_route_done);
+            void* apply_service_config_user_data, grpc_closure* on_route_done);
 
     ~Request();
 
@@ -101,9 +100,8 @@ class RequestRouter {
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
                 ProcessServiceConfigCallback process_service_config,
-                void* process_service_config_user_data,
-                const char* target_uri, const grpc_channel_args* args,
-                grpc_error** error);
+                void* process_service_config_user_data, const char* target_uri,
+                const grpc_channel_args* args, grpc_error** error);
 
   ~RequestRouter();
 
@@ -139,8 +137,8 @@ class RequestRouter {
                                TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
-  void ConcatenateAndAddChannelTraceLocked(TraceStringVector* trace_strings)
-      const;
+  void ConcatenateAndAddChannelTraceLocked(
+      TraceStringVector* trace_strings) const;
   static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
 
   void SetConnectivityStateLocked(grpc_connectivity_state state,

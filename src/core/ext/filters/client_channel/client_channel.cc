@@ -183,8 +183,7 @@ static void parse_retry_throttle_params(
 // config update.
 static bool process_service_config_from_resolver_locked(
     void* arg, grpc_core::UniquePtr<char> service_config_json,
-    grpc_core::UniquePtr<char> lb_policy_name,
-    const grpc_channel_args& args) {
+    grpc_core::UniquePtr<char> lb_policy_name, const grpc_channel_args& args) {
   channel_data* chand = static_cast<channel_data*>(arg);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
@@ -209,8 +208,7 @@ static bool process_service_config_from_resolver_locked(
       service_config->ParseGlobalParams(parse_retry_throttle_params,
                                         &parsing_state);
       grpc_uri_destroy(uri);
-      chand->retry_throttle_data =
-          std::move(parsing_state.retry_throttle_data);
+      chand->retry_throttle_data = std::move(parsing_state.retry_throttle_data);
     }
     chand->method_params_table = service_config->CreateMethodConfigTable(
         ClientChannelMethodParams::CreateFromJson);
@@ -258,8 +256,8 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
              sizeof(pick_state.subchannel_call_context));
       pick_state.user_data = nullptr;
       // Pick must return synchronously, because pick_state.on_complete is null.
-      GPR_ASSERT(chand->request_router->lb_policy()->PickLocked(&pick_state,
-                                                                &error));
+      GPR_ASSERT(
+          chand->request_router->lb_policy()->PickLocked(&pick_state, &error));
       if (pick_state.connected_subchannel != nullptr) {
         pick_state.connected_subchannel->Ping(op->send_ping.on_initiate,
                                               op->send_ping.on_ack);
@@ -383,8 +381,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
       chand->interested_parties, &grpc_client_channel_trace,
       process_service_config_from_resolver_locked, chand,
       proxy_name != nullptr ? proxy_name : arg->value.string /* target_uri */,
-      new_args != nullptr ? new_args : args->channel_args,
-      &error);
+      new_args != nullptr ? new_args : args->channel_args, &error);
   gpr_free(proxy_name);
   grpc_channel_args_destroy(new_args);
   return error;
@@ -2212,14 +2209,14 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
-      calld->pollent,                       // pollent
-      calld->path,                          // path
-      calld->call_start_time,               // start_time
-      calld->deadline,                      // deadline
-      calld->arena,                         // arena
+      calld->pollent,                                   // pollent
+      calld->path,                                      // path
+      calld->call_start_time,                           // start_time
+      calld->deadline,                                  // deadline
+      calld->arena,                                     // arena
       calld->request->pick()->subchannel_call_context,  // context
-      calld->call_combiner,                 // call_combiner
-      parent_data_size                      // parent_data_size
+      calld->call_combiner,                             // call_combiner
+      parent_data_size                                  // parent_data_size
   };
   grpc_error* new_error =
       calld->request->pick()->connected_subchannel->CreateCall(
@@ -2405,12 +2402,12 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
       calld->seen_send_initial_metadata
           ? &calld->send_initial_metadata_flags
           : &calld->pending_batches[0]
-                .batch->payload->send_initial_metadata
-                .send_initial_metadata_flags;
+                 .batch->payload->send_initial_metadata
+                 .send_initial_metadata_flags;
   GRPC_CLOSURE_INIT(&calld->pick_closure, pick_done, elem,
                     grpc_schedule_on_exec_ctx);
-  calld->request.Init(calld->owning_call, calld->call_combiner,
-                      calld->pollent, initial_metadata, initial_metadata_flags,
+  calld->request.Init(calld->owning_call, calld->call_combiner, calld->pollent,
+                      initial_metadata, initial_metadata_flags,
                       maybe_apply_service_config_to_call_locked, elem,
                       &calld->pick_closure);
   chand->request_router->RouteCallLocked(calld->request.get());
