@@ -34,7 +34,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))

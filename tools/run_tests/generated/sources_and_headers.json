@@ -9648,7 +9648,8 @@
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9805,7 +9806,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9956,7 +9958,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10034,8 +10037,7 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -10083,9 +10085,7 @@
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

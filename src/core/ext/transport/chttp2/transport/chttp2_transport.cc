@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -395,8 +396,12 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
+    // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
+    // it in here, so SocketNode knows its own address.
     t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            grpc_core::UniquePtr<char>(),
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
   }
   return enable_bdp;
 }

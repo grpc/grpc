@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #include <string.h>
 

@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 //
 // representation of an LB address

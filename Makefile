@@ -3600,6 +3600,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
@@ -3723,7 +3724,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     src/core/tsi/alts_transport_security.cc \
@@ -4015,6 +4015,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.cc \
@@ -4069,7 +4070,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4411,6 +4411,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -4434,7 +4435,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4716,6 +4716,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -4739,7 +4740,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4987,6 +4987,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
@@ -5044,7 +5045,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -5840,6 +5840,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -5868,7 +5869,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \

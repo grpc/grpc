@@ -1125,6 +1125,7 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -1248,7 +1249,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
   src/core/tsi/alts_transport_security.cc
@@ -1546,6 +1546,7 @@ add_library(grpc_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc
   src/core/ext/transport/cronet/transport/cronet_api_dummy.cc
@@ -1600,7 +1601,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
   third_party/nanopb/pb_common.c
@@ -1949,6 +1949,7 @@ add_library(grpc_test_util
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1972,7 +1973,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
   third_party/nanopb/pb_common.c
@@ -2268,6 +2268,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2291,7 +2292,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
   third_party/nanopb/pb_common.c
@@ -2566,6 +2566,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
@@ -2623,7 +2624,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
   third_party/nanopb/pb_common.c
@@ -3444,6 +3444,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -3472,7 +3473,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc

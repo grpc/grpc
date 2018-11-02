@@ -382,6 +382,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
+  - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
   filegroups:
@@ -538,6 +539,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
+  - src/core/lib/uri/uri_parser.h
   deps:
   - gpr
   uses:
@@ -588,7 +590,6 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
-  - src/core/ext/filters/client_channel/uri_parser.h
   src:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -612,7 +613,6 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
-  - src/core/ext/filters/client_channel/uri_parser.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base

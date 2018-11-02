@@ -296,7 +296,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
@@ -444,6 +443,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
@@ -615,6 +615,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.cc" role="src" />
@@ -738,7 +739,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />

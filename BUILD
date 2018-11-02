@@ -821,6 +821,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
+        "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
         "src/core/lib/avl/avl.h",
@@ -955,6 +956,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
         "zlib",
@@ -1054,7 +1056,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
-        "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1078,7 +1079,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
-        "src/core/ext/filters/client_channel/uri_parser.h",
     ],
     language = "c++",
     deps = [

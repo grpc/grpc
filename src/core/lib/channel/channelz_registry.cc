@@ -210,6 +210,17 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
   return json_str;
 }
 
+void ChannelzRegistry::InternalLogAllEntities() {
+  MutexLock lock(&mu_);
+  for (size_t i = 0; i < entities_.size(); ++i) {
+    if (entities_[i] != nullptr) {
+      char* json = entities_[i]->RenderJsonString();
+      gpr_log(GPR_INFO, "%s", json);
+      gpr_free(json);
+    }
+  }
+}
+
 }  // namespace channelz
 }  // namespace grpc_core
 
