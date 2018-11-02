@@ -854,7 +854,6 @@ void RequestRouter::RouteCallLocked(Request* request) {
       StartResolvingLocked();
     }
     // Create a new waiter, which will delete itself when done.
-// FIXME: move into Request object
     New<Request::ResolverResultWaiter>(request);
     // Add the request's polling entity to the request_router's
     // interested_parties, so that the I/O of the resolver can be done

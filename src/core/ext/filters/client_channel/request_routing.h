@@ -57,7 +57,8 @@ class RequestRouter {
 
     ~Request();
 
-// FIXME: pass this in from caller?
+    // TODO(roth): It seems a bit ugly to expose this member in a
+    // non-const way.  Find a better API to avoid this.
     LoadBalancingPolicy::PickState* pick() { return &pick_; }
 
    private:
@@ -121,15 +122,7 @@ class RequestRouter {
   void NotifyOnConnectivityStateChange(grpc_connectivity_state* state,
                                        grpc_closure* closure);
 
-  // Only valid during the call to on_resolver_result.
-  grpc_channel_args* resolver_result() const { return resolver_result_; }
-
   LoadBalancingPolicy* lb_policy() const { return lb_policy_.get(); }
-
-// FIXME: remove?
-  const char* lb_policy_name() const {
-    return lb_policy_ == nullptr ? nullptr : lb_policy_->name();
-  }
 
  private:
   using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
