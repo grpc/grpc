@@ -102,8 +102,7 @@ static grpc_error* process_plugin_result(
     } else {
       for (size_t i = 0; i < num_md; ++i) {
         grpc_mdelem mdelem =
-            grpc_mdelem_from_slices(grpc_slice_ref_internal(md[i].key),
-                                    grpc_slice_ref_internal(md[i].value));
+            grpc_mdelem_create(md[i].key, md[i].value, nullptr);
         grpc_credentials_mdelem_array_add(r->md_array, mdelem);
         GRPC_MDELEM_UNREF(mdelem);
       }

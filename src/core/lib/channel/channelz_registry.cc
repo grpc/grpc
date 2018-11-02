@@ -38,6 +38,8 @@ namespace {
 // singleton instance of the registry.
 ChannelzRegistry* g_channelz_registry = nullptr;
 
+const int kPaginationLimit = 100;
+
 }  // anonymous namespace
 
 void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
@@ -77,12 +79,13 @@ void ChannelzRegistry::MaybePerformCompactionLocked() {
   }
 }
 
-int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid) {
-  size_t left = 0;
-  size_t right = entities_.size() - 1;
+int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid,
+                                       bool direct_hit_needed) {
+  int left = 0;
+  int right = int(entities_.size() - 1);
   while (left <= right) {
-    size_t true_middle = left + (right - left) / 2;
-    size_t first_non_null = true_middle;
+    int true_middle = left + (right - left) / 2;
+    int first_non_null = true_middle;
     while (first_non_null < right && entities_[first_non_null] == nullptr) {
       first_non_null++;
     }
@@ -100,14 +103,14 @@ int ChannelzRegistry::FindByUuidLocked(intptr_t target_uuid) {
       right = true_middle - 1;
     }
   }
-  return -1;
+  return direct_hit_needed ? -1 : left;
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
   GPR_ASSERT(uuid <= uuid_generator_);
-  int idx = FindByUuidLocked(uuid);
+  int idx = FindByUuidLocked(uuid, true);
   GPR_ASSERT(idx >= 0);
   entities_[idx] = nullptr;
   num_empty_slots_++;
@@ -119,24 +122,30 @@ BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
   if (uuid < 1 || uuid > uuid_generator_) {
     return nullptr;
   }
-  int idx = FindByUuidLocked(uuid);
+  int idx = FindByUuidLocked(uuid, true);
   return idx < 0 ? nullptr : entities_[idx];
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
+  MutexLock lock(&mu_);
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   InlinedVector<BaseNode*, 10> top_level_channels;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_channel_id=0, which signifies "give me everything." Hence this
-  // funky looking line below.
-  size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
+  bool reached_pagination_limit = false;
+  int start_idx = GPR_MAX(FindByUuidLocked(start_channel_id, false), 0);
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
-            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel) {
+            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
+        entities_[i]->uuid() >= start_channel_id) {
+      // check if we are over pagination limit to determine if we need to set
+      // the "end" element. If we don't go through this block, we know that
+      // when the loop terminates, we have <= to kPaginationLimit.
+      if (top_level_channels.size() == kPaginationLimit) {
+        reached_pagination_limit = true;
+        break;
+      }
       top_level_channels.push_back(entities_[i]);
     }
   }
@@ -150,29 +159,35 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
           grpc_json_link_child(array_parent, channel_json, json_iterator);
     }
   }
-  // For now we do not have any pagination rules. In the future we could
-  // pick a constant for max_channels_sent for a GetTopChannels request.
-  // Tracking: https://github.com/grpc/grpc/issues/16019.
-  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                         GRPC_JSON_TRUE, false);
+  if (!reached_pagination_limit) {
+    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
+                           false);
+  }
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
 }
 
 char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
+  MutexLock lock(&mu_);
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   InlinedVector<BaseNode*, 10> servers;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_server_id=0, which signifies "give me everything."
-  size_t start_idx = start_server_id == 0 ? 0 : start_server_id - 1;
+  bool reached_pagination_limit = false;
+  int start_idx = GPR_MAX(FindByUuidLocked(start_server_id, false), 0);
   for (size_t i = start_idx; i < entities_.size(); ++i) {
     if (entities_[i] != nullptr &&
         entities_[i]->type() ==
-            grpc_core::channelz::BaseNode::EntityType::kServer) {
+            grpc_core::channelz::BaseNode::EntityType::kServer &&
+        entities_[i]->uuid() >= start_server_id) {
+      // check if we are over pagination limit to determine if we need to set
+      // the "end" element. If we don't go through this block, we know that
+      // when the loop terminates, we have <= to kPaginationLimit.
+      if (servers.size() == kPaginationLimit) {
+        reached_pagination_limit = true;
+        break;
+      }
       servers.push_back(entities_[i]);
     }
   }
@@ -186,14 +201,24 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
           grpc_json_link_child(array_parent, server_json, json_iterator);
     }
   }
-  // For now we do not have any pagination rules. In the future we could
-  // pick a constant for max_channels_sent for a GetServers request.
-  // Tracking: https://github.com/grpc/grpc/issues/16019.
-  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
-                                         GRPC_JSON_TRUE, false);
+  if (!reached_pagination_limit) {
+    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
+                           false);
+  }
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
+}
+
+void ChannelzRegistry::InternalLogAllEntities() {
+  MutexLock lock(&mu_);
+  for (size_t i = 0; i < entities_.size(); ++i) {
+    if (entities_[i] != nullptr) {
+      char* json = entities_[i]->RenderJsonString();
+      gpr_log(GPR_INFO, "%s", json);
+      gpr_free(json);
+    }
+  }
 }
 
 }  // namespace channelz
@@ -206,6 +231,24 @@ char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
   return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
+}
+
+char* grpc_channelz_get_server(intptr_t server_id) {
+  grpc_core::channelz::BaseNode* server_node =
+      grpc_core::channelz::ChannelzRegistry::Get(server_id);
+  if (server_node == nullptr ||
+      server_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kServer) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* channel_json = server_node->RenderJson();
+  channel_json->key = "server";
+  grpc_json_link_child(json, channel_json, nullptr);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
 }
 
 char* grpc_channelz_get_server_sockets(intptr_t server_id,

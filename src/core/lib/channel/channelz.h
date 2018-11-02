@@ -42,13 +42,13 @@
 
 /** This is the default value for whether or not to enable channelz. If
  * GRPC_ARG_ENABLE_CHANNELZ is set, it will override this default value. */
-#define GRPC_ENABLE_CHANNELZ_DEFAULT false
+#define GRPC_ENABLE_CHANNELZ_DEFAULT true
 
 /** This is the default value for the maximum amount of memory used by trace
  * events per channel trace node. If
  * GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE is set, it will override
  * this default value. */
-#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 0
+#define GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT 1024 * 4
 
 namespace grpc_core {
 
@@ -232,7 +232,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode();
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -262,16 +262,21 @@ class SocketNode : public BaseNode {
   gpr_atm last_remote_stream_created_millis_ = 0;
   gpr_atm last_message_sent_millis_ = 0;
   gpr_atm last_message_received_millis_ = 0;
-  UniquePtr<char> peer_string_;
+  UniquePtr<char> local_;
+  UniquePtr<char> remote_;
 };
 
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode();
+  // ListenSocketNode takes ownership of host.
+  explicit ListenSocketNode(UniquePtr<char> local_addr);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
+
+ private:
+  UniquePtr<char> local_addr_;
 };
 
 // Creation functions

@@ -17,6 +17,7 @@ GRPCIO_TESTS_UNIT = [
     "_interceptor_test.py",
     "_invalid_metadata_test.py",
     "_invocation_defects_test.py",
+    "_logging_test.py",
     "_metadata_code_details_test.py",
     "_metadata_test.py",
     # TODO: Issue 16336

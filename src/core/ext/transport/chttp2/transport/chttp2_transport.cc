@@ -53,6 +53,7 @@
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -395,8 +396,12 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
+    // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
+    // it in here, so SocketNode knows its own address.
     t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>();
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            grpc_core::UniquePtr<char>(),
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
   }
   return enable_bdp;
 }
@@ -478,7 +483,8 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
 
 static void init_transport(grpc_chttp2_transport* t,
                            const grpc_channel_args* channel_args,
-                           grpc_endpoint* ep, bool is_client) {
+                           grpc_endpoint* ep, bool is_client,
+                           grpc_resource_user* resource_user) {
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -491,6 +497,7 @@ static void init_transport(grpc_chttp2_transport* t,
   t->endpoint_reading = 1;
   t->next_stream_id = is_client ? 1 : 2;
   t->is_client = is_client;
+  t->resource_user = resource_user;
   t->deframe_state = is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->is_first_frame = true;
   grpc_connectivity_state_init(
@@ -778,6 +785,10 @@ static void destroy_stream_locked(void* sp, grpc_error* error) {
 
   s->flow_control.Destroy();
 
+  if (t->resource_user != nullptr) {
+    grpc_resource_user_free(t->resource_user, GRPC_RESOURCE_QUOTA_CALL_SIZE);
+  }
+
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
 
   GRPC_CLOSURE_SCHED(s->destroy_stream_arg, GRPC_ERROR_NONE);
@@ -816,7 +827,21 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   if (t->channel_callback.accept_stream == nullptr) {
     return nullptr;
   }
-  grpc_chttp2_stream* accepting;
+  // Don't accept the stream if memory quota doesn't allow. Note that we should
+  // simply refuse the stream here instead of canceling the stream after it's
+  // accepted since the latter will create the call which costs much memory.
+  if (t->resource_user != nullptr &&
+      !grpc_resource_user_safe_alloc(t->resource_user,
+                                     GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
+    gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
+    grpc_slice_buffer_add(
+        &t->qbuf,
+        grpc_chttp2_rst_stream_create(
+            id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr));
+    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+    return nullptr;
+  }
+  grpc_chttp2_stream* accepting = nullptr;
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->channel_callback.accept_stream(t->channel_callback.accept_stream_user_data,
@@ -2128,8 +2153,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           "add_status_message",
           grpc_chttp2_incoming_metadata_buffer_replace_or_add(
               &s->metadata_buffer[1],
-              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_MESSAGE,
-                                      grpc_slice_ref_internal(slice))));
+              grpc_mdelem_create(GRPC_MDSTR_GRPC_MESSAGE, slice, nullptr)));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
@@ -3186,10 +3210,11 @@ intptr_t grpc_chttp2_transport_get_socket_uuid(grpc_transport* transport) {
 }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
+    grpc_resource_user* resource_user) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(
       gpr_zalloc(sizeof(grpc_chttp2_transport)));
-  init_transport(t, channel_args, ep, is_client);
+  init_transport(t, channel_args, ep, is_client, resource_user);
   return &t->base;
 }
 

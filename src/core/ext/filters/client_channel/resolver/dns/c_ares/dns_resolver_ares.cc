@@ -201,7 +201,7 @@ void AresDnsResolver::ShutdownLocked() {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request(pending_request_);
+    grpc_cancel_ares_request_locked(pending_request_);
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
@@ -298,6 +298,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   grpc_channel_args* result = nullptr;
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
+  gpr_free(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->lb_addresses_ != nullptr) {
     static const char* args_to_remove[2];
@@ -473,7 +474,9 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
       return;
     }
-    default_resolver = grpc_resolve_address_impl;
+    if (default_resolver == nullptr) {
+      default_resolver = grpc_resolve_address_impl;
+    }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(

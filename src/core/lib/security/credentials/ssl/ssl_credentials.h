@@ -22,6 +22,8 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+#include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
+
 typedef struct {
   grpc_channel_credentials base;
   grpc_ssl_config config;

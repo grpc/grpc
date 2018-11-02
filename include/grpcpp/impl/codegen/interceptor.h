@@ -19,7 +19,17 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/impl/codegen/byte_buffer.h>
+#include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/metadata_map.h>
+
 namespace grpc {
+
+class ChannelInterface;
+class Status;
+
 namespace experimental {
 class InterceptedMessage {
  public:
@@ -35,6 +45,7 @@ enum class InterceptionHookPoints {
   PRE_SEND_INITIAL_METADATA,
   PRE_SEND_MESSAGE,
   PRE_SEND_STATUS /* server only */,
+  PRE_SEND_CLOSE /* client only */,
   /* The following three are for hijacked clients only and can only be
      registered by the global interceptor */
   PRE_RECV_INITIAL_METADATA,
@@ -50,7 +61,7 @@ enum class InterceptionHookPoints {
 
 class InterceptorBatchMethods {
  public:
-  virtual ~InterceptorBatchMethods();
+  virtual ~InterceptorBatchMethods(){};
   // Queries to check whether the current batch has an interception hook point
   // of type \a type
   virtual bool QueryInterceptionHookPoint(InterceptionHookPoints type) = 0;
@@ -60,7 +71,53 @@ class InterceptorBatchMethods {
   // Calling this indicates that the interceptor has hijacked the RPC (only
   // valid if the batch contains send_initial_metadata on the client side)
   virtual void Hijack() = 0;
+
+  // Returns a modifable ByteBuffer holding serialized form of the message to be
+  // sent
+  virtual ByteBuffer* GetSendMessage() = 0;
+
+  // Returns a modifiable multimap of the initial metadata to be sent
+  virtual std::multimap<grpc::string, grpc::string>*
+  GetSendInitialMetadata() = 0;
+
+  // Returns the status to be sent
+  virtual Status GetSendStatus() = 0;
+
+  // Modifies the status with \a status
+  virtual void ModifySendStatus(const Status& status) = 0;
+
+  // Returns a modifiable multimap of the trailing metadata to be sent
+  virtual std::multimap<grpc::string, grpc::string>*
+  GetSendTrailingMetadata() = 0;
+
+  // Returns a pointer to the modifiable received message. Note that the message
+  // is already deserialized
+  virtual void* GetRecvMessage() = 0;
+
+  // Returns a modifiable multimap of the received initial metadata
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvInitialMetadata() = 0;
+
+  // Returns a modifiable view of the received status
+  virtual Status* GetRecvStatus() = 0;
+
+  // Returns a modifiable multimap of the received trailing metadata
+  virtual std::multimap<grpc::string_ref, grpc::string_ref>*
+  GetRecvTrailingMetadata() = 0;
+
+  // Gets an intercepted channel. When a call is started on this interceptor,
+  // only interceptors after the current interceptor are created from the
+  // factory objects registered with the channel.
+  virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
 };
+
+class Interceptor {
+ public:
+  virtual ~Interceptor() {}
+
+  virtual void Intercept(InterceptorBatchMethods* methods) = 0;
+};
+
 }  // namespace experimental
 }  // namespace grpc
 

@@ -66,6 +66,12 @@
 #define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
 #endif
 
+#ifndef GRPC_CUSTOM_JSONUTIL
+#include <google/protobuf/util/json_util.h>
+#define GRPC_CUSTOM_JSONUTIL ::google::protobuf::util
+#define GRPC_CUSTOM_UTIL_STATUS ::google::protobuf::util::Status
+#endif
+
 namespace grpc {
 namespace protobuf {
 
@@ -82,6 +88,12 @@ typedef GRPC_CUSTOM_METHODDESCRIPTOR MethodDescriptor;
 typedef GRPC_CUSTOM_SERVICEDESCRIPTOR ServiceDescriptor;
 typedef GRPC_CUSTOM_SIMPLEDESCRIPTORDATABASE SimpleDescriptorDatabase;
 typedef GRPC_CUSTOM_SOURCELOCATION SourceLocation;
+
+namespace util {
+typedef GRPC_CUSTOM_UTIL_STATUS Status;
+}  // namespace util
+
+namespace json = GRPC_CUSTOM_JSONUTIL;
 
 namespace io {
 typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;

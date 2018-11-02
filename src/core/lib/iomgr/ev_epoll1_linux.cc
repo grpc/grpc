@@ -193,9 +193,13 @@ struct grpc_pollset_worker {
 #define MAX_NEIGHBORHOODS 1024
 
 typedef struct pollset_neighborhood {
-  gpr_mu mu;
-  grpc_pollset* active_root;
-  char pad[GPR_CACHELINE_SIZE];
+  union {
+    char pad[GPR_CACHELINE_SIZE];
+    struct {
+      gpr_mu mu;
+      grpc_pollset* active_root;
+    };
+  };
 } pollset_neighborhood;
 
 struct grpc_pollset {

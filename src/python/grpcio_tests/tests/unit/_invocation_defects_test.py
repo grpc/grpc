@@ -15,6 +15,7 @@
 import itertools
 import threading
 import unittest
+import logging
 
 import grpc
 
@@ -271,4 +272,5 @@ class InvocationDefectsTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

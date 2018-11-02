@@ -307,7 +307,10 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
     }
   }
 #else
-  gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  extern grpc_core::TraceFlag grpc_tcp_trace;
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  }
 #endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }

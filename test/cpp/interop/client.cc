@@ -137,8 +137,7 @@ int main(int argc, char** argv) {
       &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
   actions["empty_stream"] =
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
-  if (FLAGS_use_tls ||
-      FLAGS_custom_credentials_type == "google_default_credentials") {
+  if (FLAGS_use_tls) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
                   FLAGS_default_service_account, FLAGS_oauth_scope);

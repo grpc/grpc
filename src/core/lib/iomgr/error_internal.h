@@ -58,6 +58,4 @@ struct grpc_error {
   intptr_t arena[0];
 };
 
-bool grpc_error_is_special(struct grpc_error* err);
-
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_INTERNAL_H */

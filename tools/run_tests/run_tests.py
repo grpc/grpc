@@ -759,8 +759,10 @@ class PythonLanguage(object):
             self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
     def python_manager_name(self):
-        if self.args.compiler in ['python3.5', 'python3.6']:
-            return 'pyenv'
+        if self.args.compiler in [
+                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+        ]:
+            return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
@@ -825,6 +827,12 @@ class PythonLanguage(object):
             minor='6',
             bits=bits,
             config_vars=config_vars)
+        python37_config = _python_config_generator(
+            name='py37',
+            major='3',
+            minor='7',
+            bits=bits,
+            config_vars=config_vars)
         pypy27_config = _pypy_config_generator(
             name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
@@ -846,6 +854,8 @@ class PythonLanguage(object):
             return (python35_config,)
         elif args.compiler == 'python3.6':
             return (python36_config,)
+        elif args.compiler == 'python3.7':
+            return (python37_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -858,6 +868,7 @@ class PythonLanguage(object):
                 python34_config,
                 python35_config,
                 python36_config,
+                python37_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -1360,9 +1371,9 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
-        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
-        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7', 'pypy',
+        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
+        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
     help=
@@ -1506,7 +1517,7 @@ else:
     lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-    for bad in ['grpc-node', 'objc', 'sanity']:
+    for bad in ['csharp', 'grpc-node', 'objc', 'sanity']:
         if bad in lang_list:
             lang_list.remove(bad)
 

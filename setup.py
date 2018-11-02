@@ -87,19 +87,19 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 
 # Export this variable to use the system installation of openssl. You need to
 # have the header files installed (in /usr/include/openssl) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_OPENSSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
                                            False)
 
 # Export this variable to use the system installation of zlib. You need to
 # have the header files installed (in /usr/include/) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
                                         False)
 
 # Export this variable to use the system installation of cares. You need to
 # have the header files installed (in /usr/include/) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
 
@@ -202,7 +202,7 @@ DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
     ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1))
 if "win32" in sys.platform:
-  # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
+  # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
   DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),
                     ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),

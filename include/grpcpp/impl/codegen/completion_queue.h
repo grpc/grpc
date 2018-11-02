@@ -122,8 +122,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// Read from the queue, blocking until an event is available or the queue is
   /// shutting down.
   ///
-  /// \param tag[out] Updated to point to the read event's tag.
-  /// \param ok[out] true if read a successful event, false otherwise.
+  /// \param tag [out] Updated to point to the read event's tag.
+  /// \param ok [out] true if read a successful event, false otherwise.
   ///
   /// Note that each tag sent to the completion queue (through RPC operations
   /// or alarms) will be delivered out of the completion queue by a call to
@@ -178,10 +178,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag[out] Upon sucess, updated to point to the event's tag.
-  /// \param ok[out] Upon sucess, true if a successful event, false otherwise
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
-  /// \param deadline[in] How long to block in wait for an event.
+  /// \param deadline [in] How long to block in wait for an event.
   ///
   /// \return The type of event read.
   template <typename T>
@@ -197,10 +197,11 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param F[in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag[out] Upon sucess, updated to point to the event's tag.
-  /// \param ok[out] Upon sucess, true if read a regular event, false otherwise.
-  /// \param deadline[in] How long to block in wait for an event.
+  /// \param f [in] Function to execute before calling AsyncNext on this queue.
+  /// \param tag [out] Upon sucess, updated to point to the event's tag.
+  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// otherwise.
+  /// \param deadline [in] How long to block in wait for an event.
   ///
   /// \return The type of event read.
   template <typename T, typename F>
@@ -299,14 +300,17 @@ class CompletionQueue : private GrpcLibraryCodegen {
   bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
         g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
-        cq_, tag, deadline, nullptr);
-    bool ok = ev.success != 0;
-    void* ignored = tag;
-    GPR_CODEGEN_ASSERT(tag->FinalizeResult(&ignored, &ok));
-    GPR_CODEGEN_ASSERT(ignored == tag);
-    // Ignore mutations by FinalizeResult: Pluck returns the C API status
-    return ev.success != 0;
+    while (true) {
+      auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+          cq_, tag, deadline, nullptr);
+      bool ok = ev.success != 0;
+      void* ignored = tag;
+      if (tag->FinalizeResult(&ignored, &ok)) {
+        GPR_CODEGEN_ASSERT(ignored == tag);
+        // Ignore mutations by FinalizeResult: Pluck returns the C API status
+        return ev.success != 0;
+      }
+    }
   }
 
   /// Performs a single polling pluck on \a tag.
@@ -376,17 +380,23 @@ class ServerCompletionQueue : public CompletionQueue {
   ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
-  /// \param is_frequently_polled Informs the GRPC library about whether the
-  /// server completion queue would be actively polled (by calling Next() or
-  /// AsyncNext()). By default all server completion queues are assumed to be
-  /// frequently polled.
-  ServerCompletionQueue(grpc_cq_polling_type polling_type)
+  /// \param completion_type indicates whether this is a NEXT or CALLBACK
+  /// completion queue.
+  /// \param polling_type Informs the GRPC library about the type of polling
+  /// allowed on this completion queue. See grpc_cq_polling_type's description
+  /// in grpc_types.h for more details.
+  /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
+  ServerCompletionQueue(grpc_cq_completion_type completion_type,
+                        grpc_cq_polling_type polling_type,
+                        grpc_experimental_completion_queue_functor* shutdown_cb)
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type, nullptr}),
+            GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
+            shutdown_cb}),
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
+  friend class Server;
 };
 
 }  // namespace grpc
