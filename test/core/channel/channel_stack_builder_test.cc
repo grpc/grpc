@@ -49,10 +49,7 @@ static void call_func(grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {}
 
 static void channel_func(grpc_channel_element* elem, grpc_transport_op* op) {
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_UNREF(op->disconnect_with_error);
-  }
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  grpc_channel_next_op(elem, op);
 }
 
 bool g_replacement_fn_called = false;

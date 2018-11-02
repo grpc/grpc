@@ -871,13 +871,7 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
 /* Destructor for channel_data */
 static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (chand->resolver != nullptr) {
-    // The only way we can get here is if we never started resolving,
-    // because we take a ref to the channel stack when we start
-    // resolving and do not release it until the resolver callback is
-    // invoked after the resolver shuts down.
-    chand->resolver.reset();
-  }
+  GPR_ASSERT(chand->resolver == nullptr);
   if (chand->client_channel_factory != nullptr) {
     grpc_client_channel_factory_unref(chand->client_channel_factory);
   }
