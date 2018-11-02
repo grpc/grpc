@@ -158,7 +158,7 @@ class Config(object):
                        would like to run
     """
         actual_environ = self.environ.copy()
-        for k, v in list(environ.items()):
+        for k, v in environ.items():
             actual_environ[k] = v
         if not flaky and shortname and shortname in flaky_tests:
             flaky = True
@@ -1653,7 +1653,7 @@ build_steps = list(
 if make_targets:
     make_commands = itertools.chain.from_iterable(
         make_jobspec(build_config, list(targets), makefile)
-        for (makefile, targets) in list(make_targets.items()))
+        for (makefile, targets) in make_targets.items())
     build_steps.extend(set(make_commands))
 build_steps.extend(
     set(
