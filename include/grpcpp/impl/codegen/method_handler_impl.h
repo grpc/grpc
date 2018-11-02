@@ -59,21 +59,21 @@ class RpcMethodHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request.bbuf_ptr(), &req);
     ResponseType rsp;
+    Status status = param.status;
     if (status.ok()) {
-      status = CatchingFunctionHandler([this, &param, &req, &rsp] {
-        return func_(service_, param.server_context, &req, &rsp);
+      status = CatchingFunctionHandler([this, &param, &rsp] {
+        return func_(service_, param.server_context,
+                     static_cast<RequestType*>(param.request), &rsp);
       });
+      static_cast<RequestType*>(param.request)->~RequestType();
     }
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus>
         ops;
-    ops.SendInitialMetadata(param.server_context->initial_metadata_,
+    ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                             param.server_context->initial_metadata_flags());
     if (param.server_context->compression_level_set()) {
       ops.set_compression_level(param.server_context->compression_level());
@@ -81,9 +81,24 @@ class RpcMethodHandler : public MethodHandler {
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
+  }
+
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
+    ByteBuffer buf;
+    buf.set_buffer(req);
+    auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call, sizeof(RequestType))) RequestType();
+    *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
+    buf.Release();
+    if (status->ok()) {
+      return request;
+    }
+    request->~RequestType();
+    return nullptr;
   }
 
  private:
@@ -117,7 +132,7 @@ class ClientStreamingHandler : public MethodHandler {
               CallOpServerSendStatus>
         ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
@@ -126,7 +141,7 @@ class ClientStreamingHandler : public MethodHandler {
     if (status.ok()) {
       status = ops.SendMessage(rsp);
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -150,31 +165,45 @@ class ServerStreamingHandler : public MethodHandler {
       : func_(func), service_(service) {}
 
   void RunHandler(const HandlerParameter& param) final {
-    RequestType req;
-    Status status = SerializationTraits<RequestType>::Deserialize(
-        param.request.bbuf_ptr(), &req);
-
+    Status status = param.status;
     if (status.ok()) {
       ServerWriter<ResponseType> writer(param.call, param.server_context);
-      status = CatchingFunctionHandler([this, &param, &req, &writer] {
-        return func_(service_, param.server_context, &req, &writer);
+      status = CatchingFunctionHandler([this, &param, &writer] {
+        return func_(service_, param.server_context,
+                     static_cast<RequestType*>(param.request), &writer);
       });
+      static_cast<RequestType*>(param.request)->~RequestType();
     }
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
       }
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
     }
     param.call->cq()->Pluck(&ops);
+  }
+
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
+    ByteBuffer buf;
+    buf.set_buffer(req);
+    auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call, sizeof(RequestType))) RequestType();
+    *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
+    buf.Release();
+    if (status->ok()) {
+      return request;
+    }
+    request->~RequestType();
+    return nullptr;
   }
 
  private:
@@ -206,7 +235,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
     if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+      ops.SendInitialMetadata(&param.server_context->initial_metadata_,
                               param.server_context->initial_metadata_flags());
       if (param.server_context->compression_level_set()) {
         ops.set_compression_level(param.server_context->compression_level());
@@ -218,7 +247,7 @@ class TemplatedBidiStreamingHandler : public MethodHandler {
                         "Service did not provide response message");
       }
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
@@ -281,14 +310,14 @@ class ErrorMethodHandler : public MethodHandler {
   static void FillOps(ServerContext* context, T* ops) {
     Status status(code, "");
     if (!context->sent_initial_metadata_) {
-      ops->SendInitialMetadata(context->initial_metadata_,
+      ops->SendInitialMetadata(&context->initial_metadata_,
                                context->initial_metadata_flags());
       if (context->compression_level_set()) {
         ops->set_compression_level(context->compression_level());
       }
       context->sent_initial_metadata_ = true;
     }
-    ops->ServerSendStatus(context->trailing_metadata_, status);
+    ops->ServerSendStatus(&context->trailing_metadata_, status);
   }
 
   void RunHandler(const HandlerParameter& param) final {
@@ -296,11 +325,15 @@ class ErrorMethodHandler : public MethodHandler {
     FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
-    // We also have to destroy any request payload in the handler parameter
-    ByteBuffer* payload = param.request.bbuf_ptr();
-    if (payload != nullptr) {
-      payload->Clear();
+  }
+
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
+    // We have to destroy any request payload
+    if (req != nullptr) {
+      g_core_codegen_interface->grpc_byte_buffer_destroy(req);
     }
+    return nullptr;
   }
 };
 

@@ -944,6 +944,8 @@ include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
 include/grpcpp/impl/codegen/call_hook.h \
+include/grpcpp/impl/codegen/call_op_set.h \
+include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \
 include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
@@ -959,7 +961,9 @@ include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/grpc_library.h \
+include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
+include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
@@ -969,7 +973,9 @@ include/grpcpp/impl/codegen/rpc_method.h \
 include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
+include/grpcpp/impl/codegen/server_callback.h \
 include/grpcpp/impl/codegen/server_context.h \
+include/grpcpp/impl/codegen/server_interceptor.h \
 include/grpcpp/impl/codegen/server_interface.h \
 include/grpcpp/impl/codegen/service_type.h \
 include/grpcpp/impl/codegen/slice.h \
@@ -1005,6 +1011,7 @@ include/grpcpp/support/client_callback.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
+include/grpcpp/support/server_callback.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
 include/grpcpp/support/status_code_enum.h \
@@ -1012,6 +1019,8 @@ include/grpcpp/support/string_ref.h \
 include/grpcpp/support/stub_options.h \
 include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/time.h \
+src/core/ext/filters/client_channel/health/health.pb.c \
+src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/transport/inproc/inproc_transport.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \
@@ -1174,6 +1183,7 @@ src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.h \
 src/core/lib/transport/transport_impl.h \
+src/core/lib/uri/uri_parser.h \
 src/cpp/README.md \
 src/cpp/client/channel_cc.cc \
 src/cpp/client/client_context.cc \
@@ -1186,6 +1196,7 @@ src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
+src/cpp/codegen/client_interceptor.cc \
 src/cpp/codegen/codegen_init.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \
@@ -1208,8 +1219,6 @@ src/cpp/server/dynamic_thread_pool.cc \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/health/default_health_check_service.cc \
 src/cpp/server/health/default_health_check_service.h \
-src/cpp/server/health/health.pb.c \
-src/cpp/server/health/health.pb.h \
 src/cpp/server/health/health_check_service.cc \
 src/cpp/server/health/health_check_service_server_builder_option.cc \
 src/cpp/server/insecure_server_credentials.cc \
@@ -1228,8 +1237,11 @@ src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
 third_party/nanopb/pb.h \
+third_party/nanopb/pb_common.c \
 third_party/nanopb/pb_common.h \
+third_party/nanopb/pb_decode.c \
 third_party/nanopb/pb_decode.h \
+third_party/nanopb/pb_encode.c \
 third_party/nanopb/pb_encode.h
 
 # This tag can be used to specify the character encoding of the source files

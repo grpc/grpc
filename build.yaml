@@ -382,6 +382,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
+  - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
   filegroups:
@@ -538,6 +539,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
+  - src/core/lib/uri/uri_parser.h
   deps:
   - gpr
   uses:
@@ -572,6 +574,7 @@ filegroups:
   - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/connector.h
+  - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
@@ -587,7 +590,6 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
-  - src/core/ext/filters/client_channel/uri_parser.h
   src:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -596,6 +598,7 @@ filegroups:
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/connector.cc
+  - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
@@ -610,11 +613,11 @@ filegroups:
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
-  - src/core/ext/filters/client_channel/uri_parser.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base
   - grpc_deadline_filter
+  - health_proto
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -824,11 +827,14 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
-  - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/alts/alts_security_connector.h
+  - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
-  - src/core/lib/security/security_connector/local_security_connector.h
+  - src/core/lib/security/security_connector/local/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
+  - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
+  - src/core/lib/security/security_connector/ssl_utils.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -853,11 +859,14 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
-  - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
-  - src/core/lib/security/security_connector/local_security_connector.cc
+  - src/core/lib/security/security_connector/local/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
+  - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
@@ -1107,6 +1116,13 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   uses:
   - nanopb
+- name: health_proto
+  headers:
+  - src/core/ext/filters/client_channel/health/health.pb.h
+  src:
+  - src/core/ext/filters/client_channel/health/health.pb.c
+  uses:
+  - nanopb
 - name: nanopb
   src:
   - third_party/nanopb/pb_common.c
@@ -1206,6 +1222,8 @@ filegroups:
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
+  - include/grpcpp/impl/codegen/call_op_set.h
+  - include/grpcpp/impl/codegen/call_op_set_interface.h
   - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
@@ -1218,14 +1236,18 @@ filegroups:
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/grpc_library.h
+  - include/grpcpp/impl/codegen/intercepted_channel.h
   - include/grpcpp/impl/codegen/interceptor.h
+  - include/grpcpp/impl/codegen/interceptor_common.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
   - include/grpcpp/impl/codegen/rpc_service_method.h
   - include/grpcpp/impl/codegen/security/auth_context.h
   - include/grpcpp/impl/codegen/serialization_traits.h
+  - include/grpcpp/impl/codegen/server_callback.h
   - include/grpcpp/impl/codegen/server_context.h
+  - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
   - include/grpcpp/impl/codegen/service_type.h
   - include/grpcpp/impl/codegen/slice.h
@@ -1240,6 +1262,7 @@ filegroups:
 - name: grpc++_codegen_base_src
   language: c++
   src:
+  - src/cpp/codegen/client_interceptor.cc
   - src/cpp/codegen/codegen_init.cc
   uses:
   - grpc++_codegen_base
@@ -1342,6 +1365,7 @@ filegroups:
   - include/grpcpp/support/config.h
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
+  - include/grpcpp/support/server_callback.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
   - include/grpcpp/support/status_code_enum.h
@@ -1354,7 +1378,6 @@ filegroups:
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/health/health.pb.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
@@ -1378,7 +1401,6 @@ filegroups:
   - src/cpp/server/create_default_thread_pool.cc
   - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/health/default_health_check_service.cc
-  - src/cpp/server/health/health.pb.c
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/server_builder.cc
@@ -1397,6 +1419,7 @@ filegroups:
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
   - nanopb_headers
+  - health_proto
 - name: grpc++_config_proto
   language: c++
   public_headers:
@@ -4508,6 +4531,22 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: client_interceptors_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/interceptors_util.h
+  src:
+  - test/cpp/end2end/client_interceptors_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: client_lb_end2end_test
   gtest: true
   build: test
@@ -5413,6 +5452,22 @@ targets:
   language: c++
   src:
   - test/cpp/end2end/server_early_return_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_interceptors_end2end_test
+  gtest: true
+  cpu_cost: 0.5
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/interceptors_util.h
+  src:
+  - test/cpp/end2end/server_interceptors_end2end_test.cc
   deps:
   - grpc++_test_util
   - grpc_test_util

@@ -75,6 +75,8 @@ _EXEMPT = frozenset((
     'examples/python/multiplex/route_guide_pb2_grpc.py',
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
+    'src/core/ext/filters/client_channel/health/health.pb.h',
+    'src/core/ext/filters/client_channel/health/health.pb.c',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
@@ -87,8 +89,6 @@ _EXEMPT = frozenset((
     'src/core/tsi/alts/handshaker/handshaker.pb.c',
     'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
     'src/core/tsi/alts/handshaker/transport_security_common.pb.c',
-    'src/cpp/server/health/health.pb.h',
-    'src/cpp/server/health/health.pb.c',
 
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',

@@ -26,6 +26,7 @@ import sys
 import threading
 import time
 import unittest
+import logging
 
 from tests.unit import _exit_scenarios
 
@@ -187,4 +188,5 @@ class ExitTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

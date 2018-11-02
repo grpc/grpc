@@ -2962,6 +2962,27 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
   }
 }
 
+// If the channel is in TRANSIENT_FAILURE and the call is not
+// wait_for_ready=true, fails the call and returns true.
+static bool fail_call_if_in_transient_failure(grpc_call_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  grpc_transport_stream_op_batch* batch = calld->pending_batches[0].batch;
+  if (grpc_connectivity_state_check(&chand->state_tracker) ==
+          GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      (batch->payload->send_initial_metadata.send_initial_metadata_flags &
+       GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
+    pending_batches_fail(
+        elem,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "channel is in state TRANSIENT_FAILURE"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+        true /* yield_call_combiner */);
+    return true;
+  }
+  return false;
+}
+
 // Invoked once resolver results are available.
 static void process_service_config_and_start_lb_pick_locked(
     grpc_call_element* elem) {
@@ -2969,6 +2990,9 @@ static void process_service_config_and_start_lb_pick_locked(
   // Only get service config data on the first attempt.
   if (GPR_LIKELY(calld->num_attempts_completed == 0)) {
     apply_service_config_to_call_locked(elem);
+    // Check this after applying service config, since it may have
+    // affected the call's wait_for_ready value.
+    if (fail_call_if_in_transient_failure(elem)) return;
   }
   // Start LB pick.
   grpc_core::LbPicker::StartLocked(elem);
@@ -3138,6 +3162,16 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
     // We do not yet have an LB policy, so wait for a resolver result.
     if (GPR_UNLIKELY(!chand->started_resolving)) {
       start_resolving_locked(chand);
+    } else {
+      // Normally, we want to do this check in
+      // process_service_config_and_start_lb_pick_locked(), so that we
+      // can honor the wait_for_ready setting in the service config.
+      // However, if the channel is in TRANSIENT_FAILURE at this point, that
+      // means that the resolver has returned a failure, so we're not going
+      // to get a service config right away.  In that case, we fail the
+      // call now based on the wait_for_ready value passed in from the
+      // application.
+      if (fail_call_if_in_transient_failure(elem)) return;
     }
     // Create a new waiter, which will delete itself when done.
     grpc_core::New<grpc_core::ResolverResultWaiter>(elem);

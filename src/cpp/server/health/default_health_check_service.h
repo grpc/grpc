@@ -252,7 +252,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     void AddCallHandler(
         std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
     void RemoveCallHandler(
-        std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
+        const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
     bool Unused() const {
       return call_handlers_.empty() && status_ == NOT_FOUND;
     }
@@ -269,7 +269,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
 
   void UnregisterCallHandler(
       const grpc::string& service_name,
-      std::shared_ptr<HealthCheckServiceImpl::CallHandler> handler);
+      const std::shared_ptr<HealthCheckServiceImpl::CallHandler>& handler);
 
   mutable std::mutex mu_;
   std::map<grpc::string, ServiceData> services_map_;  // Guarded by mu_.

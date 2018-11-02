@@ -269,6 +269,9 @@ extern grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import
 typedef char*(*grpc_channelz_get_servers_type)(intptr_t start_server_id);
 extern grpc_channelz_get_servers_type grpc_channelz_get_servers_import;
 #define grpc_channelz_get_servers grpc_channelz_get_servers_import
+typedef char*(*grpc_channelz_get_server_type)(intptr_t server_id);
+extern grpc_channelz_get_server_type grpc_channelz_get_server_import;
+#define grpc_channelz_get_server grpc_channelz_get_server_import
 typedef char*(*grpc_channelz_get_server_sockets_type)(intptr_t server_id, intptr_t start_socket_id);
 extern grpc_channelz_get_server_sockets_type grpc_channelz_get_server_sockets_import;
 #define grpc_channelz_get_server_sockets grpc_channelz_get_server_sockets_import

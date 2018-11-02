@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=thread --linkopt=-fsanitize=thread --test_timeout=3600 --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1 --cache_test_results=no"
-EXCLUDE_TESTS="--test_tag_filters=-qps_json_driver,-json_run_localhost"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}" "${EXCLUDE_TESTS}"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=tsan --cache_test_results=no

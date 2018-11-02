@@ -34,7 +34,7 @@ Status ChannelzService::GetTopChannels(
                   "grpc_channelz_get_top_channels returned null");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
@@ -51,7 +51,24 @@ Status ChannelzService::GetServers(
                   "grpc_channelz_get_servers returned null");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
+  gpr_free(json_str);
+  if (!s.ok()) {
+    return Status(StatusCode::INTERNAL, s.ToString());
+  }
+  return Status::OK;
+}
+
+Status ChannelzService::GetServer(ServerContext* unused,
+                                  const channelz::v1::GetServerRequest* request,
+                                  channelz::v1::GetServerResponse* response) {
+  char* json_str = grpc_channelz_get_server(request->server_id());
+  if (json_str == nullptr) {
+    return Status(StatusCode::INTERNAL,
+                  "grpc_channelz_get_server returned null");
+  }
+  grpc::protobuf::util::Status s =
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
@@ -69,7 +86,7 @@ Status ChannelzService::GetServerSockets(
                   "grpc_channelz_get_server_sockets returned null");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
@@ -85,7 +102,7 @@ Status ChannelzService::GetChannel(
     return Status(StatusCode::NOT_FOUND, "No object found for that ChannelId");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
@@ -102,7 +119,7 @@ Status ChannelzService::GetSubchannel(
                   "No object found for that SubchannelId");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
@@ -118,7 +135,7 @@ Status ChannelzService::GetSocket(ServerContext* unused,
     return Status(StatusCode::NOT_FOUND, "No object found for that SocketId");
   }
   grpc::protobuf::util::Status s =
-      grpc::protobuf::util::JsonStringToMessage(json_str, response);
+      grpc::protobuf::json::JsonStringToMessage(json_str, response);
   gpr_free(json_str);
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());

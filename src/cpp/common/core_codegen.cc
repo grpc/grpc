@@ -102,6 +102,13 @@ size_t CoreCodegen::grpc_byte_buffer_length(grpc_byte_buffer* bb) {
   return ::grpc_byte_buffer_length(bb);
 }
 
+grpc_call_error CoreCodegen::grpc_call_start_batch(grpc_call* call,
+                                                   const grpc_op* ops,
+                                                   size_t nops, void* tag,
+                                                   void* reserved) {
+  return ::grpc_call_start_batch(call, ops, nops, tag, reserved);
+}
+
 grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
     grpc_call* call, grpc_status_code status, const char* description,
     void* reserved) {

@@ -44,9 +44,10 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 
 #========================
 # Bazel installation
-RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update && apt-get -y install bazel=0.15.0 && apt-get clean
+
+RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN wget -q https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-linux-x86_64 -O /usr/local/bin/bazel
+RUN chmod 755 /usr/local/bin/bazel
 
 
 RUN mkdir -p /var/local/jenkins

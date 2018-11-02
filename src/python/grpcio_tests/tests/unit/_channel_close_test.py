@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests server and client side compression."""
 
+import logging
 import threading
 import time
 import unittest
@@ -182,4 +183,5 @@ class ChannelCloseTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

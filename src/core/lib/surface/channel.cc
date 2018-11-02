@@ -39,6 +39,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -63,6 +64,7 @@ struct grpc_channel {
   grpc_compression_options compression_options;
 
   gpr_atm call_size_estimate;
+  grpc_resource_user* resource_user;
 
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
@@ -82,6 +84,8 @@ grpc_channel* grpc_channel_create_with_builder(
   char* target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
   grpc_channel_args* args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
+  grpc_resource_user* resource_user =
+      grpc_channel_stack_builder_get_resource_user(builder);
   grpc_channel* channel;
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
@@ -101,9 +105,11 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   channel->target = target;
+  channel->resource_user = resource_user;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
-  size_t channel_tracer_max_memory = 0;  // default to off
+  size_t channel_tracer_max_memory =
+      GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT;
   bool internal_channel = false;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
@@ -142,7 +148,6 @@ grpc_channel* grpc_channel_create_with_builder(
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)) {
-      GPR_ASSERT(channel_tracer_max_memory == 0);
       const grpc_integer_options options = {
           GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX};
       channel_tracer_max_memory =
@@ -217,7 +222,8 @@ grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* input_args,
                                   grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport) {
+                                  grpc_transport* optional_transport,
+                                  grpc_resource_user* resource_user) {
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
@@ -227,11 +233,17 @@ grpc_channel* grpc_channel_create(const char* target,
   grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
+  grpc_channel_stack_builder_set_resource_user(builder, resource_user);
   if (!grpc_channel_init_create_stack(builder, channel_stack_type)) {
     grpc_channel_stack_builder_destroy(builder);
+    if (resource_user != nullptr) {
+      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+    }
     return nullptr;
   }
-  return grpc_channel_create_with_builder(builder, channel_stack_type);
+  grpc_channel* channel =
+      grpc_channel_create_with_builder(builder, channel_stack_type);
+  return channel;
 }
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel) {
@@ -440,6 +452,10 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->path);
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
+  }
+  if (channel->resource_user != nullptr) {
+    grpc_resource_user_free(channel->resource_user,
+                            GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
   }
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
