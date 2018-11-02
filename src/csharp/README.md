@@ -87,7 +87,7 @@ $ python tools/run_tests/run_tests.py -l csharp -c dbg
 
 DOCUMENTATION
 -------------
-- [.NET Build Integration](INTEGRATION.md)
+- [.NET Build Integration](BUILD-INTEGRATION.md)
 - [API Reference][]
 - [Helloworld Example][]
 - [RouteGuide Tutorial][]

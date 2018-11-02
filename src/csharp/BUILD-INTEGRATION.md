@@ -27,11 +27,11 @@ Common scenarios
 ### I just want to compile .proto files into my library
 
 This is the approach taken by the examples in the `csharp/examples` directory.
-Protoc output files (for example, `Hello.cs` and `HelloGrps.cs` compiled from
-`hello.proto`) are placed among *object* and other temporary files of your
-project, and automatically provided as inputs to the C# compiler. As with other
-automatically generated .cs files, they are included in the source and symbols
-NuGet package, if you build one.
+Protoc output files (for example, `Helloworld.cs` and `HelloworldGrpc.cs`
+compiled from `helloworld.proto`) are placed among *object* and other temporary
+files of your project, and automatically provided as inputs to the C# compiler.
+As with other automatically generated .cs files, they are included in the source
+and symbols NuGet package, if you build one.
 
 Simply reference your .proto files in a `<Protobuf>` item group. The following
 example will add all .proto files in a project and all its subdirectories
@@ -43,27 +43,28 @@ example will add all .proto files in a project and all its subdirectories
   </ItemGroup>
 ```
 
-You must add a reference to the Nuget packages Grpc.Tools and Grpc (the latter
+You must add a reference to the NuGet packages Grpc.Tools and Grpc (the latter
 is a meta-package, in turn referencing Grpc.Core and Google.Protobuf packages).
 It is **very important** to mark Grpc.Tools as a development-only dependency, so
 that the *users* of your library do not fetch the tools package:
 
 * "Classic" .csproj with `packages.config` (Visual Studio, Mono): This is
- handled automatically by NuGet. See the attribute added to the
- [helloworld/packages.config] file by Visual Studio.
+ handled automatically by NuGet. See the attribute added by Visual Studio to the
+ [packages.config](../../examples/csharp/HelloworldLegacyCsproj/Greeter/packages.config#L6)
+ file in the HelloworldLegacyCsproj/Greeter example.
 
 * "SDK" .csproj (Visual Studio, `dotnet new`): Add an attribute
  `PrivateAssets="All"` to the Grpc.Tools package reference. See an example in the
- [Greeter.csproj](/examples/csharp/helloworld-from-cli/Greeter/Greeter.csproj#L9)
+ [Greeter.csproj](../../examples/csharp/Helloworld/Greeter/Greeter.csproj#L10)
  example project in this repository. If adding a package reference in Visual
- Studio, edit the project file and add this attribute. [This is a bug in Nuget
- clinet](https://github.com/NuGet/Home/issues/4125).
+ Studio, edit the project file and add this attribute. [This is a bug in NuGet
+ client](https://github.com/NuGet/Home/issues/4125).
 
-If building a NuGet package from your library with a .nuspec file, then the spec
-file may (and probably should) reference the Grpc metapackage, but **do not add
-a reference to Grpc.Tools** to it. "SDK" projects handle this automatically when
-called from `dotnet pack` by excluding any packages with private assets, such as
-thus marked Grpc.Tools.
+If building a NuGet package from your library with the nuget command line tool
+from a .nuspec file, then the spec file may (and probably should) reference the
+Grpc metapackage, but **do not add a reference to Grpc.Tools** to it. .NET "SDK"
+projects handle this automatically when called from `dotnet pack` by excluding
+any packages with private assets, such as thus marked Grpc.Tools.
 
 #### Per-file options that can be set in Visual Studio
 
@@ -90,8 +91,9 @@ per-file by modifying the source .csproj directly.
 
 #### My .proto files are in a directory outside the project
 
-Refer to the example files [RouteGuide.csproj](/examples/csharp/route_guide/RouteGuide/RouteGuide.csproj#L58-L60)
-and [Greeter.csproj](/examples/csharp/helloworld-from-cli/Greeter/Greeter.csproj#L11)
+Refer to the example files
+[RouteGuide.csproj](../../examples/csharp/RouteGuide/RouteGuide/RouteGuide.csproj#L58-L60)
+and [Greeter.csproj](../../examples/csharp/Helloworld/Greeter/Greeter.csproj#L11)
 in this repository. For the files to show up in Visual Studio properly, add a
 `Link` attribute with just a filename to the `<Protobuf>` item. This will be the
 display name of the file. In the `Include` attribute, specify the complete path
@@ -269,7 +271,7 @@ fits your needs. Also please open an issue (and tag @kkm000 in it!) with your
 scenario. We'll try to support it if it appears general enough.
 
 But if you just want to run `protoc` using MsBuild `<Exec>` task, as you
-probably did before the version 1.14 of Grpc.Tools, we have a few build
+probably did before the version 1.17 of Grpc.Tools, we have a few build
 variables that point to resolved names of tools and common protoc imports.
 You'll have to roll your own dependency checking (or go with a full
 recompilation each time, if that works for you), but at the very least each
@@ -278,17 +280,17 @@ and resolve the compiler and plugin executables appropriate for the host system.
 These property variables are:
 
 * `Protobuf_ProtocFullPath` points to the full path and filename of protoc executable, e. g.,
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.14.0\build\native\bin\windows\protoc.exe".
+  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\bin\windows\protoc.exe".
 
 * `gRPC_PluginFullPath` points to the full path and filename of gRPC plugin, such as
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.14.0\build\native\bin\windows\grpc_csharp_plugin.exe"
+  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\bin\windows\grpc_csharp_plugin.exe"
 
 * `Protobuf_StandardImportsPath` points to the standard proto import directory, for example,
-  "C:\Users\kkm\.nuget\packages\grpc.tools\1.14.0\build\native\include". This is
+  "C:\Users\kkm\.nuget\packages\grpc.tools\1.17.0\build\native\include". This is
   the directory where a declaration such as `import "google/protobuf/wrappers.proto";`
   in a proto file would find its target.
 
-Use MSBuild property expansion syntax $(VariableName) in your protoc command
+Use MSBuild property expansion syntax `$(VariableName)` in your protoc command
 line to substitute these variables, for instance,
 
 ```xml
@@ -353,5 +355,3 @@ Unless explicitly set, will follow `OutputDir` for any given file.
 
 * __Access__  
 Sets generated class access on _both_ generated message and gRPC stub classes.
-
--=- End of INTEGRATION.md -=-
