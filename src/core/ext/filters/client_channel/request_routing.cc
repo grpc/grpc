@@ -216,10 +216,13 @@ class RequestRouter::Request::ResolverResultWaiter {
 RequestRouter::Request::Request(
     grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
     grpc_polling_entity* pollent, grpc_metadata_batch* send_initial_metadata,
-    uint32_t* send_initial_metadata_flags, grpc_closure* on_service_config,
+    uint32_t* send_initial_metadata_flags,
+    ApplyServiceConfigCallback apply_service_config,
+    void* apply_service_config_user_data,
     grpc_closure* on_route_done)
     : owning_call_(owning_call), call_combiner_(call_combiner),
-      pollent_(pollent), on_service_config_(on_service_config),
+      pollent_(pollent), apply_service_config_(apply_service_config),
+      apply_service_config_user_data_(apply_service_config_user_data),
       on_route_done_(on_route_done) {
   pick_.initial_metadata = send_initial_metadata;
   pick_.initial_metadata_flags = send_initial_metadata_flags;
@@ -241,10 +244,7 @@ RequestRouter::Request::~Request() {
 // Invoked once resolver results are available.
 void RequestRouter::Request::ProcessServiceConfigAndStartLbPickLocked() {
   // Get service config data if needed.
-  if (on_service_config_ != nullptr) {
-    GRPC_CLOSURE_RUN(on_service_config_, GRPC_ERROR_NONE);
-// FIXME: fail call if in transient failure
-  }
+  if (!apply_service_config_(apply_service_config_user_data_)) return;
   // Start LB pick.
   StartLbPickLocked();
 }
@@ -453,19 +453,21 @@ RequestRouter::RequestRouter(
     grpc_channel_stack* owning_stack, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     grpc_pollset_set* interested_parties, TraceFlag* tracer,
-    grpc_closure* on_resolver_result, bool request_service_config,
+    ProcessServiceConfigCallback process_service_config,
+    void* process_service_config_user_data,
     const char* target_uri, const grpc_channel_args* args, grpc_error** error)
     : owning_stack_(owning_stack), combiner_(combiner),
       client_channel_factory_(client_channel_factory),
       interested_parties_(interested_parties), tracer_(tracer),
-      on_resolver_result_(on_resolver_result) {
+      process_service_config_(process_service_config),
+      process_service_config_user_data_(process_service_config_user_data) {
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
                     grpc_combiner_scheduler(combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "request_router");
   grpc_channel_args* new_args = nullptr;
-  if (!request_service_config) {
+  if (process_service_config == nullptr) {
     grpc_arg arg = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 0);
     new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
@@ -738,22 +740,22 @@ void RequestRouter::ConcatenateAndAddChannelTraceLocked(
 // Callback invoked when a resolver result is available.
 void RequestRouter::OnResolverResultChangedLocked(void* arg,
                                                   grpc_error* error) {
-  RequestRouter* request_router = static_cast<RequestRouter*>(arg);
-  if (request_router->tracer_->enabled()) {
+  RequestRouter* self = static_cast<RequestRouter*>(arg);
+  if (self->tracer_->enabled()) {
     const char* disposition =
-        request_router->resolver_result_ != nullptr
+        self->resolver_result_ != nullptr
             ? ""
             : (error == GRPC_ERROR_NONE ? " (transient error)"
                                         : " (resolver shutdown)");
     gpr_log(GPR_INFO,
             "request_router=%p: got resolver result: resolver_result=%p "
             "error=%s%s",
-            request_router, request_router->resolver_result_,
-            grpc_error_string(error), disposition);
+            self, self->resolver_result_, grpc_error_string(error),
+            disposition);
   }
   // Handle shutdown.
-  if (error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
-    request_router->OnResolverShutdownLocked(GRPC_ERROR_REF(error));
+  if (error != GRPC_ERROR_NONE || self->resolver_ == nullptr) {
+    self->OnResolverShutdownLocked(GRPC_ERROR_REF(error));
     return;
   }
   // Data used to set the channel's connectivity state.
@@ -774,63 +776,66 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
   // resolver_result_ will be null in the case of a transient
   // resolution error.  In that case, we don't have any new result to
   // process, which means that we keep using the previous result (if any).
-  if (request_router->resolver_result_ == nullptr) {
-    if (request_router->tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: resolver transient failure",
-              request_router);
+  if (self->resolver_result_ == nullptr) {
+    if (self->tracer_->enabled()) {
+      gpr_log(GPR_INFO, "request_router=%p: resolver transient failure", self);
     }
   } else {
     const char* lb_policy_name =
-        request_router->GetLbPolicyNameFromResolverResultLocked();
+        self->GetLbPolicyNameFromResolverResultLocked();
     // Check to see if we're already using the right LB policy.
     const bool lb_policy_name_changed =
-        request_router->lb_policy_ == nullptr ||
-        gpr_stricmp(request_router->lb_policy_->name(), lb_policy_name) != 0;
-    if (request_router->lb_policy_ != nullptr && !lb_policy_name_changed) {
+        self->lb_policy_ == nullptr ||
+        gpr_stricmp(self->lb_policy_->name(), lb_policy_name) != 0;
+    if (self->lb_policy_ != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_->enabled()) {
         gpr_log(GPR_INFO,
                 "request_router=%p: updating existing LB policy \"%s\" (%p)",
-                request_router, lb_policy_name,
-                request_router->lb_policy_.get());
+                self, lb_policy_name, self->lb_policy_.get());
       }
-      request_router->lb_policy_->UpdateLocked(
-          *request_router->resolver_result_);
+      self->lb_policy_->UpdateLocked(*self->resolver_result_);
       // No need to set the channel's connectivity state; the existing
       // watch on the LB policy will take care of that.
       set_connectivity_state = false;
     } else {
       // Instantiate new LB policy.
-      request_router->CreateNewLbPolicyLocked(
-          lb_policy_name, &connectivity_state, &connectivity_error,
-          &trace_strings);
+      self->CreateNewLbPolicyLocked(lb_policy_name, &connectivity_state,
+                                    &connectivity_error, &trace_strings);
     }
-// FIXME: do we need to handle service config update here, for the
-// purposes of channel tracing?
-    if (request_router->channelz_node_ != nullptr) {
-      request_router->MaybeAddTraceMessagesForAddressChangesLocked(
-          &trace_strings);
-      request_router->ConcatenateAndAddChannelTraceLocked(&trace_strings);
+    // Process service config.
+    const grpc_arg* channel_arg =
+        grpc_channel_args_find(self->resolver_result_, GRPC_ARG_SERVICE_CONFIG);
+    const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
+    const bool service_config_changed = self->process_service_config_(
+        self->process_service_config_user_data_,
+        UniquePtr<char>(gpr_strdup(service_config_json)),
+        UniquePtr<char>(gpr_strdup(lb_policy_name)), *self->resolver_result_);
+    // Add channel trace event.
+    if (self->channelz_node_ != nullptr) {
+      if (service_config_changed) {
+        // TODO(ncteisen): might be worth somehow including a snippet of the
+        // config in the trace, at the risk of bloating the trace logs.
+        trace_strings.push_back(gpr_strdup("Service config changed"));
+      }
+      self->MaybeAddTraceMessagesForAddressChangesLocked(&trace_strings);
+      self->ConcatenateAndAddChannelTraceLocked(&trace_strings);
     }
-    // Invoke on_resolver_result_.
-    GRPC_CLOSURE_RUN(request_router->on_resolver_result_, GRPC_ERROR_NONE);
     // Clean up.
-    grpc_channel_args_destroy(request_router->resolver_result_);
-    request_router->resolver_result_ = nullptr;
+    grpc_channel_args_destroy(self->resolver_result_);
+    self->resolver_result_ = nullptr;
   }
   // Set the channel's connectivity state if needed.
   if (set_connectivity_state) {
-    request_router->SetConnectivityStateLocked(
+    self->SetConnectivityStateLocked(
         connectivity_state, connectivity_error, "resolver_result");
   } else {
     GRPC_ERROR_UNREF(connectivity_error);
   }
   // Invoke closures that were waiting for results and renew the watch.
-  GRPC_CLOSURE_LIST_SCHED(
-      &request_router->waiting_for_resolver_result_closures_);
-  request_router->resolver_->NextLocked(
-      &request_router->resolver_result_,
-      &request_router->on_resolver_result_changed_);
+  GRPC_CLOSURE_LIST_SCHED(&self->waiting_for_resolver_result_closures_);
+  self->resolver_->NextLocked(&self->resolver_result_,
+                              &self->on_resolver_result_changed_);
 }
 
 void RequestRouter::RouteCallLocked(Request* request) {
@@ -847,8 +852,6 @@ void RequestRouter::RouteCallLocked(Request* request) {
     // We do not yet have an LB policy, so wait for a resolver result.
     if (!started_resolving_) {
       StartResolvingLocked();
-    } else {
-// FIXME: fail call if in transient failure
     }
     // Create a new waiter, which will delete itself when done.
 // FIXME: move into Request object

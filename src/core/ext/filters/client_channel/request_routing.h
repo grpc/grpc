@@ -43,15 +43,21 @@ class RequestRouter {
  public:
   class Request {
    public:
+    // Synchronous callback that applies the service config to a call.
+    // Returns false if the call should be failed.
+    typedef bool (*ApplyServiceConfigCallback)(void* user_data);
+
     Request(grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
             grpc_polling_entity* pollent,
             grpc_metadata_batch* send_initial_metadata,
             uint32_t* send_initial_metadata_flags,
-            grpc_closure* on_service_config, grpc_closure* on_route_done);
+            ApplyServiceConfigCallback apply_service_config,
+            void* apply_service_config_user_data,
+            grpc_closure* on_route_done);
 
     ~Request();
 
-// FIXME: pass this in from caller
+// FIXME: pass this in from caller?
     LoadBalancingPolicy::PickState* pick() { return &pick_; }
 
    private:
@@ -71,7 +77,8 @@ class RequestRouter {
     grpc_call_stack* owning_call_;
     grpc_call_combiner* call_combiner_;
     grpc_polling_entity* pollent_;
-    grpc_closure* on_service_config_;
+    ApplyServiceConfigCallback apply_service_config_;
+    void* apply_service_config_user_data_;
     grpc_closure* on_route_done_;
     LoadBalancingPolicy::PickState pick_;
 
@@ -82,10 +89,18 @@ class RequestRouter {
     grpc_closure on_cancel_;
   };
 
+  // Synchronous callback that takes the service config JSON string and
+  // LB policy name.
+  // Returns true if the service config has changed since the last result.
+  typedef bool (*ProcessServiceConfigCallback)(
+      void* user_data, UniquePtr<char> service_config_json,
+      UniquePtr<char> lb_policy_name, const grpc_channel_args& args);
+
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
-                grpc_closure* on_resolver_result, bool request_service_config,
+                ProcessServiceConfigCallback process_service_config,
+                void* process_service_config_user_data,
                 const char* target_uri, const grpc_channel_args* args,
                 grpc_error** error);
 
@@ -125,15 +140,15 @@ class RequestRouter {
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   const char* GetLbPolicyNameFromResolverResultLocked();
-  static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
-  void MaybeAddTraceMessagesForAddressChangesLocked(
-      TraceStringVector* trace_strings);
-  void ConcatenateAndAddChannelTraceLocked(TraceStringVector* trace_strings)
-      const;
   void CreateNewLbPolicyLocked(const char* lb_policy_name,
                                grpc_connectivity_state* connectivity_state,
                                grpc_error** connectivity_error,
                                TraceStringVector* trace_strings);
+  void MaybeAddTraceMessagesForAddressChangesLocked(
+      TraceStringVector* trace_strings);
+  void ConcatenateAndAddChannelTraceLocked(TraceStringVector* trace_strings)
+      const;
+  static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
 
   void SetConnectivityStateLocked(grpc_connectivity_state state,
                                   grpc_error* error, const char* reason);
@@ -149,7 +164,8 @@ class RequestRouter {
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
-  grpc_closure* on_resolver_result_;
+  ProcessServiceConfigCallback process_service_config_;
+  void* process_service_config_user_data_;
   bool started_resolving_ = false;
   grpc_channel_args* resolver_result_ = nullptr;
   bool previous_resolution_contained_addresses_ = false;
