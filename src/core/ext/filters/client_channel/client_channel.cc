@@ -436,7 +436,7 @@ get_service_config_from_resolver_result_locked(
   const grpc_arg* channel_arg =
       grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
-  if (*service_config_json != nullptr) {
+  if (service_config_json != nullptr) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
               chand, service_config_json);
