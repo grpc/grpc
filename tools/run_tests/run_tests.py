@@ -14,7 +14,7 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
+
 
 import argparse
 import ast
@@ -158,7 +158,7 @@ class Config(object):
                        would like to run
     """
         actual_environ = self.environ.copy()
-        for k, v in environ.items():
+        for k, v in list(environ.items()):
             actual_environ[k] = v
         if not flaky and shortname and shortname in flaky_tests:
             flaky = True
@@ -1512,7 +1512,7 @@ if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
 if 'all' in args.language:
-    lang_list = _LANGUAGES.keys()
+    lang_list = list(_LANGUAGES.keys())
 else:
     lang_list = args.language
 # We don't support code coverage on some languages
@@ -1653,7 +1653,7 @@ build_steps = list(
 if make_targets:
     make_commands = itertools.chain.from_iterable(
         make_jobspec(build_config, list(targets), makefile)
-        for (makefile, targets) in make_targets.items())
+        for (makefile, targets) in list(make_targets.items()))
     build_steps.extend(set(make_commands))
 build_steps.extend(
     set(
@@ -1719,9 +1719,9 @@ def _has_epollexclusive():
     try:
         subprocess.check_call(binary)
         return True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return False
-    except OSError, e:
+    except OSError as e:
         # For languages other than C and Windows the binary won't exist
         return False
 
