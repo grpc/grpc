@@ -302,8 +302,9 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
       return GRPC_OS_ERROR(errno, "getsockopt(TCP_USER_TIMEOUT)");
     }
     if (newval != timeout) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Failed to set TCP_USER_TIMEOUT");
+      /* Do not fail on failing to set TCP_USER_TIMEOUT for now. */
+      gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+      return GRPC_ERROR_NONE;
     }
   }
 #else
