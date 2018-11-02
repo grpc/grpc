@@ -162,11 +162,11 @@ grpc::string GetServices(const FileDescriptor* file) {
 
     std::string package_name;
 
-    //    if (file->options().has_ruby_package()) {
-    //      package_name = file->options().ruby_package();
-    //    } else {
-    package_name = file->package();
-    //    }
+    if (file->options().has_ruby_package()) {
+      package_name = file->options().ruby_package();
+    } else {
+      package_name = file->package();
+    }
 
     // Write out a file header.
     std::map<grpc::string, grpc::string> header_comment_vars = ListToDict({

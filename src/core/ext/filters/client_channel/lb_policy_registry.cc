@@ -94,7 +94,7 @@ LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
   return factory->CreateLoadBalancingPolicy(args);
 }
 
-bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExist(const char* name) {
+bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(const char* name) {
   GPR_ASSERT(g_state != nullptr);
   return g_state->GetLoadBalancingPolicyFactory(name) != nullptr;
 }

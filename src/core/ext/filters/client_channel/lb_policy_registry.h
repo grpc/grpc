@@ -50,7 +50,7 @@ class LoadBalancingPolicyRegistry {
 
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry.
-  static bool LoadBalancingPolicyExist(const char* name);
+  static bool LoadBalancingPolicyExists(const char* name);
 };
 
 }  // namespace grpc_core

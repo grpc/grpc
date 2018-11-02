@@ -20,6 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 
+#include <ctype.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -251,14 +252,58 @@ static void start_resolving_locked(channel_data* chand) {
                               &chand->on_resolver_result_changed);
 }
 
+// Invoked from the resolver NextLocked() callback when the resolver
+// is shutting down.
+static void on_resolver_shutdown_locked(channel_data* chand,
+                                        grpc_error* error) {
+  if (grpc_client_channel_trace.enabled()) {
+    gpr_log(GPR_INFO, "chand=%p: shutting down", chand);
+  }
+  if (chand->lb_policy != nullptr) {
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", chand,
+              chand->lb_policy.get());
+    }
+    grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties(),
+                                     chand->interested_parties);
+    chand->lb_policy.reset();
+  }
+  if (chand->resolver != nullptr) {
+    // This should never happen; it can only be triggered by a resolver
+    // implementation spotaneously deciding to report shutdown without
+    // being orphaned.  This code is included just to be defensive.
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO, "chand=%p: spontaneous shutdown from resolver %p",
+              chand, chand->resolver.get());
+    }
+    chand->resolver.reset();
+    set_channel_connectivity_state_locked(
+        chand, GRPC_CHANNEL_SHUTDOWN,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Resolver spontaneous shutdown", &error, 1),
+        "resolver_spontaneous_shutdown");
+  }
+  grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
+                             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                                 "Channel disconnected", &error, 1));
+  GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
+  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
+  grpc_channel_args_destroy(chand->resolver_result);
+  chand->resolver_result = nullptr;
+  GRPC_ERROR_UNREF(error);
+}
+
 typedef struct {
+  // LB config parsing state.
+  grpc_core::UniquePtr<char>* lb_policy_name;
+  grpc_json** lb_policy_config;
+  // Retry throttle data parsing state.
   char* server_name;
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
-} retry_throttle_service_config_parsing_state;
+} service_config_parsing_state;
 
 static void parse_retry_throttle_params(
-    const grpc_json* field,
-    retry_throttle_service_config_parsing_state* parsing_state) {
+    const grpc_json* field, service_config_parsing_state* parsing_state) {
   if (strcmp(field->key, "retryThrottling") == 0) {
     if (parsing_state->retry_throttle_data != nullptr) return;  // Duplicate.
     if (field->type != GRPC_JSON_OBJECT) return;
@@ -312,76 +357,30 @@ static void parse_retry_throttle_params(
   }
 }
 
-// Invoked from the resolver NextLocked() callback when the resolver
-// is shutting down.
-static void on_resolver_shutdown_locked(channel_data* chand,
-                                        grpc_error* error) {
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO, "chand=%p: shutting down", chand);
-  }
-  if (chand->lb_policy != nullptr) {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: shutting down lb_policy=%p", chand,
-              chand->lb_policy.get());
-    }
-    grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties(),
-                                     chand->interested_parties);
-    chand->lb_policy.reset();
-  }
-  if (chand->resolver != nullptr) {
-    // This should never happen; it can only be triggered by a resolver
-    // implementation spotaneously deciding to report shutdown without
-    // being orphaned.  This code is included just to be defensive.
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: spontaneous shutdown from resolver %p",
-              chand, chand->resolver.get());
-    }
-    chand->resolver.reset();
-    set_channel_connectivity_state_locked(
-        chand, GRPC_CHANNEL_SHUTDOWN,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "Resolver spontaneous shutdown", &error, 1),
-        "resolver_spontaneous_shutdown");
-  }
-  grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
-                             GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                 "Channel disconnected", &error, 1));
-  GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
-  GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
-  grpc_channel_args_destroy(chand->resolver_result);
-  chand->resolver_result = nullptr;
-  GRPC_ERROR_UNREF(error);
-}
-
-typedef struct {
-  grpc_core::UniquePtr<char>* lb_policy_name;
-  grpc_json** lb_policy_config;
-} lb_config_service_config_parsing_state;
-
-static char* convert_camel_to_snake(const char* camel) {
+static grpc_core::UniquePtr<char> convert_camel_to_snake(const char* camel) {
   const size_t size = strlen(camel);
   char* snake = static_cast<char*>(gpr_malloc(size * 2));
   size_t j = 0;
   for (size_t i = 0; i < size; ++i) {
-    if ('A' <= camel[i] && camel[i] <= 'Z') {
+    if (isupper(camel[i])) {
       snake[j++] = '_';
-      snake[j++] = camel[i] + 'a' - 'A';
+      snake[j++] = tolower(camel[i]);
     } else {
       snake[j++] = camel[i];
     }
   }
   snake[j] = '\0';
-  return snake;
+  return grpc_core::UniquePtr<char>(snake);
 }
 
-static void parse_lb_config(
-    const grpc_json* field,
-    lb_config_service_config_parsing_state* parsing_state) {
+static void parse_lb_config(const grpc_json* field,
+                            service_config_parsing_state* parsing_state) {
   if (*(parsing_state->lb_policy_name) != nullptr) return;  // Already found.
   // Find the LB config global parameter.
   if (field->key == nullptr || strcmp(field->key, "loadBalancingConfig") != 0 ||
-      field->type != GRPC_JSON_ARRAY)
+      field->type != GRPC_JSON_ARRAY) {
     return;  // Not valid lb config array.
+  }
   // Find the first LB policy that this client supports.
   for (grpc_json* lb_config = field->child; lb_config != nullptr;
        lb_config = lb_config->next) {
@@ -391,8 +390,9 @@ static void parse_lb_config(
     for (grpc_json* field = lb_config->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr || strcmp(field->key, "policy") != 0 ||
-          field->type != GRPC_JSON_OBJECT)
+          field->type != GRPC_JSON_OBJECT) {
         return;
+      }
       if (policy != nullptr) return;  // Duplicate.
       policy = field;
     }
@@ -405,68 +405,112 @@ static void parse_lb_config(
       if (policy_content != nullptr) return;  // Violate "oneof" type.
       policy_content = field;
     }
-    char* lb_policy_name = convert_camel_to_snake(policy_content->key);
-    if (!grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExist(
-            lb_policy_name))
+    grpc_core::UniquePtr<char> lb_policy_name =
+        convert_camel_to_snake(policy_content->key);
+    if (!grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+            lb_policy_name.get())) {
       continue;
-    *(parsing_state->lb_policy_name) =
-        grpc_core::UniquePtr<char>(lb_policy_name);
+    }
+    *(parsing_state->lb_policy_name) = std::move(lb_policy_name);
     *(parsing_state->lb_policy_config) = policy_content->child;
     return;
   }
 }
 
-// Fills lb_policy_name and lb_policy_config (as a JSON node pointer) with the
-// resolver result.
-static void get_lb_policy_info_from_resolver_result_locked(
+static void parse_service_config(const grpc_json* field,
+                                 service_config_parsing_state* parsing_state) {
+  parse_lb_config(field, parsing_state);
+  if (parsing_state->server_name != nullptr) {
+    parse_retry_throttle_params(field, parsing_state);
+  }
+}
+
+// Returns service config (as a JSON string) and fills service_config (as an
+// object) with the resolver result. Fills lb_policy_name and lb_policy_config
+// if LB config is found. Also updates state in chand.
+static grpc_core::UniquePtr<char>
+get_service_config_from_resolver_result_locked(
     channel_data* chand,
-    const grpc_core::UniquePtr<grpc_core::ServiceConfig>& service_config,
+    grpc_core::UniquePtr<grpc_core::ServiceConfig>* service_config,
     grpc_core::UniquePtr<char>* lb_policy_name, grpc_json** lb_policy_config) {
-  *lb_policy_name = nullptr;
-  *lb_policy_config = nullptr;
-  // Check the service config for LB config first.
-  if (service_config != nullptr) {
-    lb_config_service_config_parsing_state parsing_state = {lb_policy_name,
-                                                            lb_policy_config};
-    service_config->ParseGlobalParams(parse_lb_config, &parsing_state);
-  }
-  // If no LB config was found, just check the LB policy name then.
-  if (*lb_policy_config == nullptr) {
-    // Prefer the LB policy name found in the service config.
-    if (service_config != nullptr) {
-      *lb_policy_name = grpc_core::UniquePtr<char>(
-          gpr_strdup(service_config->GetLoadBalancingPolicyName()));
+  const grpc_arg* channel_arg =
+      grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
+  const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
+  if (*service_config_json != nullptr) {
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
+              chand, service_config_json);
     }
-    // Otherwise, find the LB policy name set by the client API.
-    if (*lb_policy_name == nullptr) {
-      const grpc_arg* channel_arg = grpc_channel_args_find(
-          chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
-      *lb_policy_name = grpc_core::UniquePtr<char>(
-          gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
-    }
-    // Special case: If at least one balancer address is present, we use
-    // the grpclb policy, regardless of what the resolver has returned.
-    const grpc_arg* channel_arg =
-        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-    if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-      grpc_lb_addresses* addresses =
-          static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-      if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
-        if (*lb_policy_name != nullptr &&
-            gpr_stricmp(lb_policy_name->get(), "grpclb") != 0) {
-          gpr_log(GPR_INFO,
-                  "resolver requested LB policy %s but provided at least one "
-                  "balancer address -- forcing use of grpclb LB policy",
-                  lb_policy_name->get());
-        }
-        *lb_policy_name = grpc_core::UniquePtr<char>(gpr_strdup("grpclb"));
+    *service_config = grpc_core::ServiceConfig::Create(service_config_json);
+    if (*service_config != nullptr) {
+      service_config_parsing_state parsing_state = {
+          lb_policy_name, lb_policy_config, nullptr /* server_name */,
+          nullptr /* retry_throttle_data */};
+      if (chand->enable_retries) {
+        channel_arg =
+            grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
+        const char* server_uri = grpc_channel_arg_get_string(channel_arg);
+        GPR_ASSERT(server_uri != nullptr);
+        grpc_uri* uri = grpc_uri_parse(server_uri, true);
+        GPR_ASSERT(uri->path[0] != '\0');
+        parsing_state.server_name =
+            uri->path[0] == '/' ? uri->path + 1 : uri->path;
+        (*service_config)
+            ->ParseGlobalParams(parse_service_config, &parsing_state);
+        grpc_uri_destroy(uri);
+        chand->retry_throttle_data =
+            std::move(parsing_state.retry_throttle_data);
+      } else {
+        (*service_config)
+            ->ParseGlobalParams(parse_service_config, &parsing_state);
       }
+      chand->method_params_table =
+          (*service_config)
+              ->CreateMethodConfigTable(
+                  ClientChannelMethodParams::CreateFromJson);
     }
-    // Use pick_first if nothing was specified and we didn't select grpclb
-    // above.
-    if (*lb_policy_name == nullptr)
-      *lb_policy_name = grpc_core::UniquePtr<char>(gpr_strdup("pick_first"));
   }
+  return grpc_core::UniquePtr<char>(gpr_strdup(service_config_json));
+}
+
+// Returns LB policy name from the resolver result (regardless of the LB
+// config).
+static grpc_core::UniquePtr<char>
+get_lb_policy_name_from_resolver_result_locked(
+    channel_data* chand, const grpc_core::ServiceConfig* service_config) {
+  const char* lb_policy_name = nullptr;
+  // Prefer the LB policy name found in the service config.
+  if (service_config != nullptr) {
+    lb_policy_name = service_config->GetLoadBalancingPolicyName();
+  }
+  // Otherwise, find the LB policy name set by the client API.
+  if (lb_policy_name == nullptr) {
+    const grpc_arg* channel_arg =
+        grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
+    lb_policy_name = grpc_channel_arg_get_string(channel_arg);
+  }
+  // Special case: If at least one balancer address is present, we use
+  // the grpclb policy, regardless of what the resolver has returned.
+  const grpc_arg* channel_arg =
+      grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
+    grpc_lb_addresses* addresses =
+        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+    if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
+      if (*lb_policy_name != nullptr &&
+          gpr_stricmp(lb_policy_name, "grpclb") != 0) {
+        gpr_log(GPR_INFO,
+                "resolver requested LB policy %s but provided at least one "
+                "balancer address -- forcing use of grpclb LB policy",
+                lb_policy_name);
+      }
+      lb_policy_name = gpr_strdup("grpclb");
+    }
+  }
+  // Use pick_first if nothing was specified and we didn't select grpclb
+  // above.
+  if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
+  return grpc_core::UniquePtr<char>(gpr_strdup(lb_policy_name));
 }
 
 static void request_reresolution_locked(void* arg, grpc_error* error) {
@@ -560,47 +604,6 @@ static void create_new_lb_policy_locked(
   }
 }
 
-// Fills service_config_json (as a string) and service_config with the resolver
-// result. Also updates state in chand.
-static void get_service_config_from_resolver_result_locked(
-    channel_data* chand, grpc_core::UniquePtr<char>* service_config_json,
-    grpc_core::UniquePtr<grpc_core::ServiceConfig>* service_config) {
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
-  *service_config_json = grpc_core::UniquePtr<char>(
-      gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
-  if (*service_config_json != nullptr) {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
-              chand, service_config_json->get());
-    }
-    *service_config =
-        grpc_core::ServiceConfig::Create(service_config_json->get());
-    if (*service_config != nullptr) {
-      if (chand->enable_retries) {
-        channel_arg =
-            grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVER_URI);
-        const char* server_uri = grpc_channel_arg_get_string(channel_arg);
-        GPR_ASSERT(server_uri != nullptr);
-        grpc_uri* uri = grpc_uri_parse(server_uri, true);
-        GPR_ASSERT(uri->path[0] != '\0');
-        retry_throttle_service_config_parsing_state parsing_state;
-        parsing_state.server_name =
-            uri->path[0] == '/' ? uri->path + 1 : uri->path;
-        (*service_config)
-            ->ParseGlobalParams(parse_retry_throttle_params, &parsing_state);
-        grpc_uri_destroy(uri);
-        chand->retry_throttle_data =
-            std::move(parsing_state.retry_throttle_data);
-      }
-      chand->method_params_table =
-          (*service_config)
-              ->CreateMethodConfigTable(
-                  ClientChannelMethodParams::CreateFromJson);
-    }
-  }
-}
-
 static void maybe_add_trace_message_for_address_changes_locked(
     channel_data* chand, TraceStringVector* trace_strings) {
   int resolution_contains_addresses = false;
@@ -688,16 +691,18 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       gpr_log(GPR_INFO, "chand=%p: resolver transient failure", chand);
     }
   } else {
-    // Find service config.
-    grpc_core::UniquePtr<char> service_config_json = nullptr;
+    // Find service config. Also try to find the LB config.
     grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config = nullptr;
-    get_service_config_from_resolver_result_locked(chand, &service_config_json,
-                                                   &service_config);
-    // Find LB policy info.
     grpc_core::UniquePtr<char> lb_policy_name = nullptr;
     grpc_json* lb_policy_config = nullptr;
-    get_lb_policy_info_from_resolver_result_locked(
-        chand, service_config, &lb_policy_name, &lb_policy_config);
+    grpc_core::UniquePtr<char> service_config_json =
+        get_service_config_from_resolver_result_locked(
+            chand, &service_config, &lb_policy_name, &lb_policy_config);
+    // Continue to find LB policy name if LB config is not found.
+    if (lb_policy_config == nullptr) {
+      lb_policy_name = get_lb_policy_name_from_resolver_result_locked(
+          chand, service_config.get());
+    }
     // Check to see if we're already using the right LB policy.
     // Note: It's safe to use chand->info_lb_policy_name here without
     // taking a lock on chand->info_mu, because this function is the
