@@ -250,7 +250,8 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
       grpc_error* error = GRPC_ERROR_NONE;
       grpc_core::LoadBalancingPolicy::PickState pick_state;
       pick_state.initial_metadata = nullptr;
-      pick_state.initial_metadata_flags = 0;
+      uint32_t initial_metadata_flags = 0;
+      pick_state.initial_metadata_flags = &initial_metadata_flags;
       pick_state.on_complete = nullptr;
       memset(&pick_state.subchannel_call_context, 0,
              sizeof(pick_state.subchannel_call_context));
