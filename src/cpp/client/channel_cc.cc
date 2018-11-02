@@ -115,7 +115,7 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
                                            ClientContext* context,
                                            CompletionQueue* cq,
-                                           int interceptor_pos) {
+                                           size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {

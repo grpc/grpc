@@ -601,6 +601,106 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
+class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
+ protected:
+  ClientGlobalInterceptorEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientGlobalInterceptorEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  DummyInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run with the global interceptor
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 21);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+}
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  LoggingInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+}
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  HijackingInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

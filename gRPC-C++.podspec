@@ -225,6 +225,7 @@ Pod::Spec.new do |s|
                       'src/cpp/util/status.cc',
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
+                      'src/cpp/codegen/client_interceptor.cc',
                       'src/cpp/codegen/codegen_init.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
