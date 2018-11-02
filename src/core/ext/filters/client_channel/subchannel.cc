@@ -1128,6 +1128,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     return error;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
+  if (channelz_subchannel_ != nullptr) {
+    channelz_subchannel_->RecordCallStarted();
+  }
   return GRPC_ERROR_NONE;
 }
 
