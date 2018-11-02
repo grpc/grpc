@@ -313,7 +313,11 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
 }
 BENCHMARK(BM_LameChannelCallCreateCoreSeparateBatch);
 
-static void FilterDestroy(void* arg, grpc_error* error) { gpr_free(arg); }
+static void FilterDestroy(void* arg, grpc_error* error) {
+  grpc_channel_stack* cs = static_cast<grpc_channel_stack*>(arg);
+  grpc_channel_stack_destroy(cs);
+  gpr_free(arg);
+}
 
 static void DoNothing(void* arg, grpc_error* error) {}
 
@@ -568,9 +572,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     }
   }
   gpr_arena_destroy(call_args.arena);
-  grpc_channel_stack_destroy(channel_stack);
-
-  gpr_free(channel_stack);
+  GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
   gpr_free(call_stack);
 
   state.SetLabel(label.str());

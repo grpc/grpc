@@ -853,14 +853,14 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
       proxy_name != nullptr ? proxy_name : arg->value.string,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
-  GRPC_CLOSURE_INIT(&chand->on_resolver_destroyed_locked,
-                    on_resolver_destroyed_locked, chand->owning_stack,
-                    grpc_combiner_scheduler(chand->combiner));
   if (proxy_name != nullptr) gpr_free(proxy_name);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
   if (chand->resolver == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
+  GRPC_CLOSURE_INIT(&chand->on_resolver_destroyed_locked,
+                    on_resolver_destroyed_locked, chand->owning_stack,
+                    grpc_combiner_scheduler(chand->combiner));
   GRPC_CHANNEL_STACK_REF(chand->owning_stack, "on_resolver_destroyed_locked");
   chand->resolver->SetOnDestroyed(&chand->on_resolver_destroyed_locked);
   chand->deadline_checking_enabled =
