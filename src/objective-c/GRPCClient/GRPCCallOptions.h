@@ -64,7 +64,7 @@ typedef NS_ENUM(NSInteger, GRPCTransportType) {
  * This method is called when gRPC is about to start the call. When OAuth token is acquired,
  * \a handler is expected to be called with \a token being the new token to be used for this call.
  */
-- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+- (void)getTokenWithHandler:(void (^)(NSString *token))handler;
 @end
 
 @interface GRPCCallOptions : NSObject<NSCopying, NSMutableCopying>

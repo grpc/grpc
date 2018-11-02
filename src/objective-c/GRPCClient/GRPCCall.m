@@ -780,7 +780,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     @synchronized(self) {
       self.isWaitingForToken = YES;
     }
-    [self.tokenProvider getTokenWithHandler:^(NSString *token) {
+    [_callOptions.authTokenProvider getTokenWithHandler:^(NSString *token) {
       @synchronized(self) {
         if (self.isWaitingForToken) {
           if (token) {
