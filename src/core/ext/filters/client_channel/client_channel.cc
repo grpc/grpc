@@ -497,14 +497,14 @@ get_lb_policy_name_from_resolver_result_locked(
     grpc_lb_addresses* addresses =
         static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
     if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
-      if (*lb_policy_name != nullptr &&
+      if (lb_policy_name != nullptr &&
           gpr_stricmp(lb_policy_name, "grpclb") != 0) {
         gpr_log(GPR_INFO,
                 "resolver requested LB policy %s but provided at least one "
                 "balancer address -- forcing use of grpclb LB policy",
                 lb_policy_name);
       }
-      lb_policy_name = gpr_strdup("grpclb");
+      lb_policy_name = "grpclb";
     }
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
