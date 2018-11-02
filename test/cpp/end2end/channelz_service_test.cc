@@ -651,6 +651,28 @@ TEST_F(ChannelzServerTest, GetServerSocketsTest) {
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
 }
 
+TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_server_request;
+  GetServersResponse get_server_response;
+  get_server_request.set_start_server_id(0);
+  ClientContext get_server_context;
+  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
+                                        &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_response.server_size(), 1);
+  EXPECT_EQ(get_server_response.server(0).listen_socket_size(), 1);
+  GetSocketRequest get_socket_request;
+  GetSocketResponse get_socket_response;
+  get_socket_request.set_socket_id(
+      get_server_response.server(0).listen_socket(0).socket_id());
+  ClientContext get_socket_context;
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+}
+
 }  // namespace testing
 }  // namespace grpc
 

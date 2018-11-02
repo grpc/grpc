@@ -449,6 +449,7 @@ grpc_json* ListenSocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
+  json = top_level_json;
   PopulateSocketAddressJson(json, "local", local_addr_.get());
 
   return top_level_json;
