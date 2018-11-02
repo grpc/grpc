@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 
+#include <array>
 #include <functional>
 
 #include <grpcpp/impl/codegen/call.h>
