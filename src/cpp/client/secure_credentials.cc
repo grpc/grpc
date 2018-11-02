@@ -228,9 +228,10 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
   }
   if (w->plugin_->IsBlocking()) {
     // Asynchronous return.
-    w->thread_pool_->Add(
-        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
-                  cb, user_data, nullptr, nullptr, nullptr, nullptr));
+    w->thread_pool_->Add([=]() {
+      w->MetadataCredentialsPluginWrapper::InvokePlugin(
+          context, cb, user_data, nullptr, nullptr, nullptr, nullptr);
+    });
     return 0;
   } else {
     // Synchronous return.
