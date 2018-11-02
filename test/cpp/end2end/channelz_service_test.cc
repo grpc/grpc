@@ -667,9 +667,8 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
   get_socket_request.set_socket_id(
       get_server_response.server(0).listen_socket(0).socket_id());
   ClientContext get_socket_context;
-  s = channelz_stub_->GetSocket(&get_socket_context,
-                                       get_socket_request,
-                                       &get_socket_response);
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
