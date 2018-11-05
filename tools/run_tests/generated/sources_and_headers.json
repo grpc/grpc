@@ -11322,7 +11322,6 @@
     "language": "c++", 
     "name": "grpc++_codegen_base_src", 
     "src": [
-      "src/cpp/codegen/client_interceptor.cc", 
       "src/cpp/codegen/codegen_init.cc"
     ], 
     "third_party": false, 
@@ -11563,6 +11562,7 @@
       "include/grpcpp/support/time.h", 
       "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
+      "src/cpp/client/client_interceptor.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 

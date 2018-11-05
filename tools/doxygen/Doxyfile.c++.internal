@@ -1187,6 +1187,7 @@ src/core/lib/uri/uri_parser.h \
 src/cpp/README.md \
 src/cpp/client/channel_cc.cc \
 src/cpp/client/client_context.cc \
+src/cpp/client/client_interceptor.cc \
 src/cpp/client/create_channel.cc \
 src/cpp/client/create_channel_internal.cc \
 src/cpp/client/create_channel_internal.h \
@@ -1196,7 +1197,6 @@ src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
 src/cpp/client/secure_credentials.h \
-src/cpp/codegen/client_interceptor.cc \
 src/cpp/codegen/codegen_init.cc \
 src/cpp/common/alarm.cc \
 src/cpp/common/auth_property_iterator.cc \

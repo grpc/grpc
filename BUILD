@@ -113,6 +113,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/client_context.cc",
+    "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -2111,7 +2112,6 @@ grpc_cc_library(
     name = "grpc++_codegen_base_src",
     srcs = [
         "src/cpp/codegen/codegen_init.cc",
-        "src/cpp/codegen/client_interceptor.cc",
     ],
     language = "c++",
     deps = [
