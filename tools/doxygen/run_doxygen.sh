@@ -19,7 +19,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../..
 
-for i in core c++ core.internal c++.internal
+for i in core c++ core.internal c++.internal objc objc.internal
 do
 	rm -rf doc/ref/$i
 	mkdir -p doc/ref/$i
