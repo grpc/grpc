@@ -32,9 +32,8 @@ Resolver::Resolver(grpc_combiner* combiner)
 
 Resolver::~Resolver() {
   GRPC_COMBINER_UNREF(combiner_, "resolver");
-  if (on_destroyed_ != nullptr) {
-    GRPC_CLOSURE_SCHED(on_destroyed_, GRPC_ERROR_NONE);
-  }
+  GPR_ASSERT(on_destroyed_ != nullptr);
+  GRPC_CLOSURE_SCHED(on_destroyed_, GRPC_ERROR_NONE);
 }
 
 }  // namespace grpc_core

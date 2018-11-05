@@ -91,17 +91,19 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
+  /// Sets a closure that will be scheduled by this Resolver's dtor.
+  /// Must be called once-and-only-once for every Resolver created.
+  void SetOnDestroyed(grpc_closure* on_destroyed) {
+    GPR_ASSERT(on_destroyed_ == nullptr && on_destroyed != nullptr);
+    on_destroyed_ = on_destroyed;
+  }
+
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(&Resolver::ShutdownAndUnrefLocked, this,
                             grpc_combiner_scheduler(combiner_)),
         GRPC_ERROR_NONE);
-  }
-
-  void SetOnDestroyed(grpc_closure* on_destroyed) {
-    GPR_ASSERT(on_destroyed_ == nullptr && on_destroyed != nullptr);
-    on_destroyed_ = on_destroyed;
   }
 
   GRPC_ABSTRACT_BASE_CLASS

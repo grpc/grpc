@@ -169,6 +169,8 @@ void CheckResolverResultAssertFailureLocked(void* arg, grpc_error* error) {
   gpr_mu_unlock(args->mu);
 }
 
+void unused_on_destroyed(void* arg, grpc_error* error) {}
+
 void TestCancelActiveDNSQuery(ArgsStruct* args) {
   int fake_dns_port = grpc_pick_unused_port_or_die();
   FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
@@ -181,6 +183,8 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(
           client_target, nullptr, args->pollset_set, args->lock);
+  resolver->SetOnDestroyed(GRPC_CLOSURE_CREATE(unused_on_destroyed, nullptr,
+                                               grpc_schedule_on_exec_ctx));
   gpr_free(client_target);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed,

@@ -428,6 +428,8 @@ void CheckResolvedWithoutErrorLocked(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
+void unused_on_destroyed(void* arg, grpc_error* error) {}
+
 void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
                                                          grpc_error* error)) {
   grpc_core::ExecCtx exec_ctx;
@@ -445,6 +447,8 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
                                                   args.pollset_set, args.lock);
+  resolver->SetOnDestroyed(GRPC_CLOSURE_CREATE(unused_on_destroyed, nullptr,
+                                               grpc_schedule_on_exec_ctx));
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, OnDoneLocked, (void*)&args,

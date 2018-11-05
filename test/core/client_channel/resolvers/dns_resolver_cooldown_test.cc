@@ -212,6 +212,8 @@ static void on_first_resolution(void* arg, grpc_error* error) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
+void unused_on_destroyed(void* arg, grpc_error* error) {}
+
 static void start_test_under_combiner(void* arg, grpc_error* error) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
@@ -236,6 +238,8 @@ static void start_test_under_combiner(void* arg, grpc_error* error) {
       grpc_channel_args_copy_and_add(nullptr, &cooldown_arg, 1);
   args.args = cooldown_channel_args;
   res_cb_arg->resolver = factory->CreateResolver(args);
+  res_cb_arg->resolver->SetOnDestroyed(GRPC_CLOSURE_CREATE(
+      unused_on_destroyed, nullptr, grpc_schedule_on_exec_ctx));
   grpc_channel_args_destroy(cooldown_channel_args);
   GPR_ASSERT(res_cb_arg->resolver != nullptr);
   // First resolution, would incur in system-level resolution.

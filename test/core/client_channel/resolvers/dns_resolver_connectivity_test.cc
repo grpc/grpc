@@ -86,6 +86,8 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
 
+static void unused_on_destroyed(void* arg, grpc_error* error) {}
+
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name) {
   grpc_core::ResolverFactory* factory =
@@ -97,6 +99,8 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
   args.combiner = g_combiner;
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
+  resolver->SetOnDestroyed(GRPC_CLOSURE_CREATE(unused_on_destroyed, nullptr,
+                                               grpc_schedule_on_exec_ctx));
   grpc_uri_destroy(uri);
   return resolver;
 }
