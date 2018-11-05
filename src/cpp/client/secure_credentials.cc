@@ -228,7 +228,7 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
   }
   if (w->plugin_->IsBlocking()) {
     // Asynchronous return.
-    w->thread_pool_->Add([=]() {
+    w->thread_pool_->Add([w, context, cb, user_data] {
       w->MetadataCredentialsPluginWrapper::InvokePlugin(
           context, cb, user_data, nullptr, nullptr, nullptr, nullptr);
     });
