@@ -182,6 +182,59 @@ class ClientCallbackEnd2endTest
     }
   }
 
+  void SendGenericEchoAsBidi(int num_rpcs) {
+    const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
+    grpc::string test_string("");
+    for (int i = 0; i < num_rpcs; i++) {
+      test_string += "Hello world. ";
+      class Client : public grpc::experimental::ClientBidiReactor {
+       public:
+        Client(ClientCallbackEnd2endTest* test, const grpc::string& method_name,
+               const grpc::string& test_str) {
+          stream_ =
+              test->generic_stub_->experimental().PrepareBidiStreamingCall(
+                  &cli_ctx_, method_name, this);
+          stream_->StartCall();
+          request_.set_message(test_str);
+          send_buf_ = SerializeToByteBuffer(&request_);
+          stream_->Read(&recv_buf_);
+          stream_->Write(send_buf_.get());
+        }
+        void OnWriteDone(bool ok) override { stream_->WritesDone(); }
+        void OnReadDone(bool ok) override {
+          EchoResponse response;
+          EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
+          EXPECT_EQ(request_.message(), response.message());
+        };
+        void OnDone(Status s) override {
+          // The stream is invalid once OnDone is called
+          stream_ = nullptr;
+          EXPECT_TRUE(s.ok());
+          std::unique_lock<std::mutex> l(mu_);
+          done_ = true;
+          cv_.notify_one();
+        }
+        void Await() {
+          std::unique_lock<std::mutex> l(mu_);
+          while (!done_) {
+            cv_.wait(l);
+          }
+        }
+
+        EchoRequest request_;
+        std::unique_ptr<ByteBuffer> send_buf_;
+        ByteBuffer recv_buf_;
+        ClientContext cli_ctx_;
+        experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
+            stream_;
+        std::mutex mu_;
+        std::condition_variable cv_;
+        bool done_ = false;
+      } rpc{this, kMethodName, test_string};
+
+      rpc.Await();
+    }
+  }
   bool is_server_started_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -209,6 +262,11 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
   ResetStub();
   SendRpcsGeneric(10, false);
+}
+
+TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
+  ResetStub();
+  SendGenericEchoAsBidi(10);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS
@@ -265,6 +323,176 @@ TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
   while (!done) {
     cv.wait(l);
   }
+}
+
+TEST_P(ClientCallbackEnd2endTest, RequestStream) {
+  // TODO(vjpai): test with callback server once supported
+  if (GetParam().callback_server) {
+    return;
+  }
+
+  ResetStub();
+  class Client : public grpc::experimental::ClientWriteReactor {
+   public:
+    explicit Client(grpc::testing::EchoTestService::Stub* stub) {
+      context_.set_initial_metadata_corked(true);
+      stream_ = stub->experimental_async()->RequestStream(&context_, &response_,
+                                                          this);
+      stream_->StartCall();
+      request_.set_message("Hello server.");
+      stream_->Write(&request_);
+    }
+    void OnWriteDone(bool ok) override {
+      writes_left_--;
+      if (writes_left_ > 1) {
+        stream_->Write(&request_);
+      } else if (writes_left_ == 1) {
+        stream_->WriteLast(&request_, WriteOptions());
+      }
+    }
+    void OnDone(Status s) override {
+      stream_ = nullptr;
+      EXPECT_TRUE(s.ok());
+      EXPECT_EQ(response_.message(), "Hello server.Hello server.Hello server.");
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    ::grpc::experimental::ClientCallbackWriter<EchoRequest>* stream_;
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    int writes_left_{3};
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_ = false;
+  } test{stub_.get()};
+
+  test.Await();
+}
+
+TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
+  // TODO(vjpai): test with callback server once supported
+  if (GetParam().callback_server) {
+    return;
+  }
+
+  ResetStub();
+  class Client : public grpc::experimental::ClientReadReactor {
+   public:
+    explicit Client(grpc::testing::EchoTestService::Stub* stub) {
+      request_.set_message("Hello client ");
+      stream_ = stub->experimental_async()->ResponseStream(&context_, &request_,
+                                                           this);
+      stream_->StartCall();
+      stream_->Read(&response_);
+    }
+    void OnReadDone(bool ok) override {
+      // Note that != is the boolean XOR operator
+      EXPECT_NE(ok, reads_complete_ == kServerDefaultResponseStreamsToSend);
+      if (ok) {
+        EXPECT_EQ(response_.message(),
+                  request_.message() + grpc::to_string(reads_complete_));
+        reads_complete_++;
+        stream_->Read(&response_);
+      }
+    }
+    void OnDone(Status s) override {
+      stream_ = nullptr;
+      EXPECT_TRUE(s.ok());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    ::grpc::experimental::ClientCallbackReader<EchoResponse>* stream_;
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    int reads_complete_{0};
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_ = false;
+  } test{stub_.get()};
+
+  test.Await();
+}
+
+TEST_P(ClientCallbackEnd2endTest, BidiStream) {
+  // TODO(vjpai): test with callback server once supported
+  if (GetParam().callback_server) {
+    return;
+  }
+  ResetStub();
+  class Client : public grpc::experimental::ClientBidiReactor {
+   public:
+    explicit Client(grpc::testing::EchoTestService::Stub* stub) {
+      request_.set_message("Hello fren ");
+      stream_ = stub->experimental_async()->BidiStream(&context_, this);
+      stream_->StartCall();
+      stream_->Read(&response_);
+      stream_->Write(&request_);
+    }
+    void OnReadDone(bool ok) override {
+      // Note that != is the boolean XOR operator
+      EXPECT_NE(ok, reads_complete_ == kServerDefaultResponseStreamsToSend);
+      if (ok) {
+        EXPECT_EQ(response_.message(), request_.message());
+        reads_complete_++;
+        stream_->Read(&response_);
+      }
+    }
+    void OnWriteDone(bool ok) override {
+      EXPECT_TRUE(ok);
+      if (++writes_complete_ == kServerDefaultResponseStreamsToSend) {
+        stream_->WritesDone();
+      } else {
+        stream_->Write(&request_);
+      }
+    }
+    void OnDone(Status s) override {
+      stream_ = nullptr;
+      EXPECT_TRUE(s.ok());
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      cv_.notify_one();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        cv_.wait(l);
+      }
+    }
+
+   private:
+    ::grpc::experimental::ClientCallbackReaderWriter<EchoRequest, EchoResponse>*
+        stream_;
+    EchoRequest request_;
+    EchoResponse response_;
+    ClientContext context_;
+    int reads_complete_{0};
+    int writes_complete_{0};
+    std::mutex mu_;
+    std::condition_variable cv_;
+    bool done_ = false;
+  } test{stub_.get()};
+
+  test.Await();
 }
 
 TestScenario scenarios[] = {TestScenario{false}, TestScenario{true}};

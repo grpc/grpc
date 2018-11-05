@@ -145,18 +145,19 @@ class CallbackWithSuccessTag
   // or on a tag that has been Set before unless the tag has been cleared.
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops) {
+    GPR_CODEGEN_ASSERT(call_ == nullptr);
+    g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
     ops_ = ops;
-    g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithSuccessTag::StaticRun;
   }
 
   void Clear() {
     if (call_ != nullptr) {
-      func_ = nullptr;
       grpc_call* call = call_;
       call_ = nullptr;
+      func_ = nullptr;
       g_core_codegen_interface->grpc_call_unref(call);
     }
   }
@@ -182,10 +183,9 @@ class CallbackWithSuccessTag
   }
   void Run(bool ok) {
     void* ignored = ops_;
-    bool new_ok = ok;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
-    bool do_callback = ops_->FinalizeResult(&ignored, &new_ok);
+    bool do_callback = ops_->FinalizeResult(&ignored, &ok);
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     if (do_callback) {

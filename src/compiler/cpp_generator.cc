@@ -132,6 +132,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/async_generic_service.h",
         "grpcpp/impl/codegen/async_stream.h",
         "grpcpp/impl/codegen/async_unary_call.h",
+        "grpcpp/impl/codegen/client_callback.h",
         "grpcpp/impl/codegen/method_handler_impl.h",
         "grpcpp/impl/codegen/proto_utils.h",
         "grpcpp/impl/codegen/rpc_method.h",
@@ -580,11 +581,23 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) = 0;\n");
   } else if (ClientOnlyStreaming(method)) {
-    // TODO(vjpai): Add support for client-side streaming
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ClientCallbackWriter< "
+                   "$Request$>* $Method$(::grpc::ClientContext* context, "
+                   "$Response$* response, "
+                   "::grpc::experimental::ClientWriteReactor* reactor) = 0;\n");
   } else if (ServerOnlyStreaming(method)) {
-    // TODO(vjpai): Add support for server-side streaming
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ClientCallbackReader< "
+                   "$Response$>* $Method$(::grpc::ClientContext* context, "
+                   "$Request$* request, "
+                   "::grpc::experimental::ClientReadReactor* reactor) = 0;\n");
   } else if (method->BidiStreaming()) {
-    // TODO(vjpai): Add support for bidi streaming
+    printer->Print(
+        *vars,
+        "virtual ::grpc::experimental::ClientCallbackReaderWriter< $Request$, "
+        "$Response$>* $Method$(::grpc::ClientContext* context, "
+        "::grpc::experimental::ClientBidiReactor* reactor) = 0;\n");
   }
 }
 
@@ -631,11 +644,26 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) override;\n");
   } else if (ClientOnlyStreaming(method)) {
-    // TODO(vjpai): Add support for client-side streaming
+    printer->Print(
+        *vars,
+        "::grpc::experimental::ClientCallbackWriter< $Request$>* "
+        "$Method$(::grpc::ClientContext* context, "
+        "$Response$* response, "
+        "::grpc::experimental::ClientWriteReactor* reactor) override;\n");
   } else if (ServerOnlyStreaming(method)) {
-    // TODO(vjpai): Add support for server-side streaming
+    printer->Print(
+        *vars,
+        "::grpc::experimental::ClientCallbackReader< $Response$>* "
+        "$Method$(::grpc::ClientContext* context, "
+        "$Request$* request, "
+        "::grpc::experimental::ClientReadReactor* reactor) override;\n");
+
   } else if (method->BidiStreaming()) {
-    // TODO(vjpai): Add support for bidi streaming
+    printer->Print(
+        *vars,
+        "::grpc::experimental::ClientCallbackReaderWriter< $Request$, "
+        "$Response$>* $Method$(::grpc::ClientContext* context, "
+        "::grpc::experimental::ClientBidiReactor* reactor) override;\n");
   }
 }
 
@@ -1607,7 +1635,20 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "context, response);\n"
         "}\n\n");
 
-    // TODO(vjpai): Add callback version
+    printer->Print(
+        *vars,
+        "::grpc::experimental::ClientCallbackWriter< $Request$>* "
+        "$ns$$Service$::"
+        "Stub::experimental_async::$Method$(::grpc::ClientContext* context, "
+        "$Response$* response, "
+        "::grpc::experimental::ClientWriteReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  return ::grpc::internal::ClientCallbackWriterFactory< "
+                   "$Request$>::Create("
+                   "stub_->channel_.get(), "
+                   "stub_->rpcmethod_$Method$_, "
+                   "context, response, reactor);\n"
+                   "}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
@@ -1641,7 +1682,19 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "context, request);\n"
         "}\n\n");
 
-    // TODO(vjpai): Add callback version
+    printer->Print(*vars,
+                   "::grpc::experimental::ClientCallbackReader< $Response$>* "
+                   "$ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
+                   "ClientContext* context, "
+                   "$Request$* request, "
+                   "::grpc::experimental::ClientReadReactor* reactor) {\n");
+    printer->Print(*vars,
+                   "  return ::grpc::internal::ClientCallbackReaderFactory< "
+                   "$Response$>::Create("
+                   "stub_->channel_.get(), "
+                   "stub_->rpcmethod_$Method$_, "
+                   "context, request, reactor);\n"
+                   "}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
@@ -1675,7 +1728,20 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "context);\n"
                    "}\n\n");
 
-    // TODO(vjpai): Add callback version
+    printer->Print(*vars,
+                   "::grpc::experimental::ClientCallbackReaderWriter< "
+                   "$Request$,$Response$>* "
+                   "$ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
+                   "ClientContext* context, "
+                   "::grpc::experimental::ClientBidiReactor* reactor) {\n");
+    printer->Print(
+        *vars,
+        "  return ::grpc::internal::ClientCallbackReaderWriterFactory< "
+        "$Request$,$Response$>::Create("
+        "stub_->channel_.get(), "
+        "stub_->rpcmethod_$Method$_, "
+        "context, reactor);\n"
+        "}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;

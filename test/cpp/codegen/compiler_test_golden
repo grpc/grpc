@@ -30,6 +30,7 @@
 #include <grpcpp/impl/codegen/async_generic_service.h>
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/client_callback.h>
 #include <grpcpp/impl/codegen/method_handler_impl.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
@@ -117,10 +118,13 @@ class ServiceA final {
       //
       // Method A2 leading comment 1
       // Method A2 leading comment 2
+      virtual ::grpc::experimental::ClientCallbackWriter< ::grpc::testing::Request>* MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ClientWriteReactor* reactor) = 0;
       // MethodA2 trailing comment 1
       // Method A3 leading comment 1
+      virtual ::grpc::experimental::ClientCallbackReader< ::grpc::testing::Response>* MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor* reactor) = 0;
       // Method A3 trailing comment 1
       // Method A4 leading comment 1
+      virtual ::grpc::experimental::ClientCallbackReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor* reactor) = 0;
       // Method A4 trailing comment 1
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
@@ -178,6 +182,9 @@ class ServiceA final {
       public StubInterface::experimental_async_interface {
      public:
       void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      ::grpc::experimental::ClientCallbackWriter< ::grpc::testing::Request>* MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ClientWriteReactor* reactor) override;
+      ::grpc::experimental::ClientCallbackReader< ::grpc::testing::Response>* MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor* reactor) override;
+      ::grpc::experimental::ClientCallbackReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor* reactor) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
