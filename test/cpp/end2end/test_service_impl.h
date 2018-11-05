@@ -72,13 +72,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   }
 
  private:
-  int GetIntValueFromMetadata(
-      const char* key,
-      const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-      int default_value);
-
-  void ServerTryCancel(ServerContext* context);
-
   bool signal_client_;
   std::mutex mu_;
   std::unique_ptr<grpc::string> host_;
@@ -95,6 +88,15 @@ class CallbackTestServiceImpl
             EchoResponse* response,
             experimental::ServerCallbackRpcController* controller) override;
 
+  experimental::ServerReadReactor<EchoRequest, EchoResponse>* RequestStream()
+      override;
+
+  experimental::ServerWriteReactor<EchoRequest, EchoResponse>* ResponseStream()
+      override;
+
+  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream()
+      override;
+
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {
     std::unique_lock<std::mutex> lock(mu_);
@@ -105,11 +107,6 @@ class CallbackTestServiceImpl
   void EchoNonDelayed(ServerContext* context, const EchoRequest* request,
                       EchoResponse* response,
                       experimental::ServerCallbackRpcController* controller);
-
-  int GetIntValueFromMetadata(
-      const char* key,
-      const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-      int default_value);
 
   Alarm alarm_;
   bool signal_client_;

@@ -889,6 +889,11 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ServerReadReactor< "
+                   "$RealRequest$, $RealResponse$>* $Method$() {\n"
+                   "  return new ::grpc::internal::UnimplementedReadReactor<\n"
+                   "    $RealRequest$, $RealResponse$>;}\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -900,6 +905,11 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ServerWriteReactor< "
+                   "$RealRequest$, $RealResponse$>* $Method$() {\n"
+                   "  return new ::grpc::internal::UnimplementedWriteReactor<\n"
+                   "    $RealRequest$, $RealResponse$>;}\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
@@ -911,6 +921,11 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
+    printer->Print(*vars,
+                   "virtual ::grpc::experimental::ServerBidiReactor< "
+                   "$RealRequest$, $RealResponse$>* $Method$() {\n"
+                   "  return new ::grpc::internal::UnimplementedBidiReactor<\n"
+                   "    $RealRequest$, $RealResponse$>;}\n");
   }
 }
 
@@ -939,22 +954,36 @@ void PrintHeaderServerMethodCallback(
         *vars,
         "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
-        "ExperimentalWithCallbackMethod_$Method$<BaseClass>, $RealRequest$, "
-        "$RealResponse$>(\n"
+        "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context,\n"
         "             const $RealRequest$* request,\n"
         "             $RealResponse$* response,\n"
         "             ::grpc::experimental::ServerCallbackRpcController* "
         "controller) {\n"
-        "               this->$"
+        "               return this->$"
         "Method$(context, request, response, controller);\n"
-        "             }, this));\n");
+        "             }));\n");
   } else if (ClientOnlyStreaming(method)) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackClientStreamingHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   } else if (ServerOnlyStreaming(method)) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackServerStreamingHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   } else if (method->BidiStreaming()) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackBidiHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,
@@ -991,8 +1020,7 @@ void PrintHeaderServerMethodRawCallback(
         *vars,
         "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
         "    new ::grpc::internal::CallbackUnaryHandler< "
-        "ExperimentalWithRawCallbackMethod_$Method$<BaseClass>, $RealRequest$, "
-        "$RealResponse$>(\n"
+        "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context,\n"
         "             const $RealRequest$* request,\n"
         "             $RealResponse$* response,\n"
@@ -1000,13 +1028,28 @@ void PrintHeaderServerMethodRawCallback(
         "controller) {\n"
         "               this->$"
         "Method$(context, request, response, controller);\n"
-        "             }, this));\n");
+        "             }));\n");
   } else if (ClientOnlyStreaming(method)) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackClientStreamingHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   } else if (ServerOnlyStreaming(method)) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackServerStreamingHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   } else if (method->BidiStreaming()) {
-    // TODO(vjpai): Add in code generation for all streaming methods
+    printer->Print(
+        *vars,
+        "  ::grpc::Service::experimental().MarkMethodRawCallback($Idx$,\n"
+        "    new ::grpc::internal::CallbackBidiHandler< "
+        "$RealRequest$, $RealResponse$>(\n"
+        "      [this] { return this->$Method$(); }));\n");
   }
   printer->Print(*vars, "}\n");
   printer->Print(*vars,
