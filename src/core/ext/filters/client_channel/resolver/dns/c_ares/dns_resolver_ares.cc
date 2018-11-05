@@ -201,17 +201,17 @@ void AresDnsResolver::ResetBackoffLocked() {
 
 void AresDnsResolver::ShutdownLocked() {
   shutdown_initiated_ = true;
-  if (have_next_resolution_timer_) {
-    grpc_timer_cancel(&next_resolution_timer_);
-  }
-  if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request_locked(pending_request_);
-  }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                              "Resolver Shutdown"));
     next_completion_ = nullptr;
+  }
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  if (pending_request_ != nullptr) {
+    grpc_cancel_ares_request_locked(pending_request_);
   }
 }
 
