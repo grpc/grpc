@@ -268,8 +268,8 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         interceptor_methods_.SetRecvMessage(request_);
       }
 
-      auto f = std::bind(&CallData::ContinueRunAfterInterception, this);
-      if (interceptor_methods_.RunInterceptors(f)) {
+      if (interceptor_methods_.RunInterceptors(
+              [this]() { ContinueRunAfterInterception(); })) {
         ContinueRunAfterInterception();
       } else {
         // There were interceptors to be run, so ContinueRunAfterInterception
@@ -981,10 +981,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
     interceptor_methods_.AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA);
     interceptor_methods_.SetRecvInitialMetadata(&context_->client_metadata_);
-    auto f = std::bind(&ServerInterface::BaseAsyncRequest::
-                           ContinueFinalizeResultAfterInterception,
-                       this);
-    if (interceptor_methods_.RunInterceptors(f)) {
+    if (interceptor_methods_.RunInterceptors(
+            [this]() { ContinueFinalizeResultAfterInterception(); })) {
       // There are no interceptors to run. Continue
     } else {
       // There were interceptors to be run, so
