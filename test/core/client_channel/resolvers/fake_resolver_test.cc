@@ -33,6 +33,8 @@
 
 #include "test/core/util/test_config.h"
 
+void unused_on_destroyed(void* arg, grpc_error* error) {}
+
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     grpc_combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator) {
@@ -47,6 +49,8 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
   args.combiner = combiner;
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(args);
+  resolver->SetOnDestroyed(GRPC_CLOSURE_CREATE(unused_on_destroyed, nullptr,
+                                               grpc_schedule_on_exec_ctx));
   return resolver;
 }
 
