@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
+#include <cassert>
+
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
@@ -144,6 +146,15 @@ extern CoreCodegenInterface* g_core_codegen_interface;
       grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)
+
+/// Codegen specific version of \a GPR_DEBUG_ASSERT.
+#ifndef NDEBUG
+#define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
+#else
+#define GPR_CODEGEN_DEBUG_ASSERT(x) \
+  do {                              \
+  } while (0)
+#endif
 
 }  // namespace grpc
 
