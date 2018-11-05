@@ -37,7 +37,7 @@ def start_port_server():
     try:
         version = int(
             request.urlopen('http://localhost:%d/version_number' %
-                           _PORT_SERVER_PORT).read())
+                            _PORT_SERVER_PORT).read())
         logging.info('detected port server running version %d', version)
         running = True
     except Exception as e:

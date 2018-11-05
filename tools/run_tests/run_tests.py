@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-
-
 import argparse
 import ast
 import collections
