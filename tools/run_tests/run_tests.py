@@ -14,6 +14,8 @@
 # limitations under the License.
 """Run tests in parallel."""
 
+from __future__ import print_function
+
 import argparse
 import ast
 import collections
