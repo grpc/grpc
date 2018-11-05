@@ -262,7 +262,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   memset(&op, 0, sizeof(op));
   op.cancel_stream = true;
   op.payload = &op_payload;
@@ -308,8 +308,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   std::unique_ptr<Closure> start;
   std::unique_ptr<Closure> done;
 
@@ -360,8 +359,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   Stream s(&f);
   s.Init(state);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -393,8 +391,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   auto s = std::unique_ptr<Stream>(new Stream(&f));
   s->Init(state);
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
@@ -526,8 +523,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   Fixture f(grpc::ChannelArguments(), true);
   Stream s(&f);
   s.Init(state);
-  grpc_transport_stream_op_batch_payload op_payload;
-  memset(&op_payload, 0, sizeof(op_payload));
+  grpc_transport_stream_op_batch_payload op_payload(nullptr);
   grpc_transport_stream_op_batch op;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
