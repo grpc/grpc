@@ -19,8 +19,6 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
-#include <cassert>
-
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
