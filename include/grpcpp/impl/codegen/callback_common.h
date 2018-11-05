@@ -110,6 +110,9 @@ class CallbackWithStatusTag
   }
 };
 
+/// CallbackWithSuccessTag can be reused multiple times, and will be used in
+/// this fashion for streaming operations. As a result, it shouldn't clear
+/// anything up until its destructor
 class CallbackWithSuccessTag
     : public grpc_experimental_completion_queue_functor {
  public:
@@ -125,11 +128,31 @@ class CallbackWithSuccessTag
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
 
-  CallbackWithSuccessTag() : call_(nullptr), ops_(nullptr) {}
+  CallbackWithSuccessTag() : call_(nullptr) {}
 
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
-                         CompletionQueueTag* ops)
-      : call_(call), func_(std::move(f)), ops_(ops) {
+                         CompletionQueueTag* ops) {
+    Set(call, f, ops);
+  }
+
+  CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
+  CallbackWithSuccessTag& operator=(const CallbackWithSuccessTag&) = delete;
+
+  ~CallbackWithSuccessTag() {
+    if (call_ != nullptr) {
+      func_ = nullptr;
+      g_core_codegen_interface->grpc_call_unref(call_);
+    }
+  }
+
+  // Set can only be called on a default-constructed tag, and it can only
+  // be called exactly once. It should never be called on a tag that was
+  // constructed with arguments or on a tag that has been Set before
+  void Set(grpc_call* call, std::function<void(bool)> f,
+           CompletionQueueTag* ops) {
+    call_ = call;
+    func_ = std::move(f);
+    ops_ = ops;
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithSuccessTag::StaticRun;
   }
@@ -162,14 +185,8 @@ class CallbackWithSuccessTag
     GPR_CODEGEN_ASSERT(ignored == ops_);
 
     if (do_callback) {
-      // Last use of func_, so ok to move it out for rvalue call above
-      auto func = std::move(func_);
-      func_ = nullptr;  // reset to clear this out for sure
-      CatchingCallback(std::move(func), ok);
-    } else {
-      func_ = nullptr;  // reset to clear this out for sure
+      CatchingCallback(func_, ok);
     }
-    g_core_codegen_interface->grpc_call_unref(call_);
   }
 };
 
