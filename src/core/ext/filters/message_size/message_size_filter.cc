@@ -90,9 +90,53 @@ RefCountedPtr<MessageSizeLimits> MessageSizeLimits::CreateFromJson(
 }  // namespace
 }  // namespace grpc_core
 
+static void recv_message_ready(void* user_data, grpc_error* error);
+static void recv_trailing_metadata_ready(void* user_data, grpc_error* error);
+
 namespace {
 
+struct channel_data {
+  message_size_limits limits;
+  // Maps path names to refcounted_message_size_limits structs.
+  grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
+      grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits>>>
+      method_limit_table;
+};
+
 struct call_data {
+  call_data(grpc_call_element* elem, const channel_data& chand,
+            const grpc_call_element_args& args)
+      : call_combiner(args.call_combiner), limits(chand.limits) {
+    GRPC_CLOSURE_INIT(&recv_message_ready, ::recv_message_ready, elem,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
+                      ::recv_trailing_metadata_ready, elem,
+                      grpc_schedule_on_exec_ctx);
+    // Get max sizes from channel data, then merge in per-method config values.
+    // Note: Per-method config is only available on the client, so we
+    // apply the max request size to the send limit and the max response
+    // size to the receive limit.
+    if (chand.method_limit_table != nullptr) {
+      grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits> limits =
+          grpc_core::ServiceConfig::MethodConfigTableLookup(
+              *chand.method_limit_table, args.path);
+      if (limits != nullptr) {
+        if (limits->limits().max_send_size >= 0 &&
+            (limits->limits().max_send_size < this->limits.max_send_size ||
+             this->limits.max_send_size < 0)) {
+          this->limits.max_send_size = limits->limits().max_send_size;
+        }
+        if (limits->limits().max_recv_size >= 0 &&
+            (limits->limits().max_recv_size < this->limits.max_recv_size ||
+             this->limits.max_recv_size < 0)) {
+          this->limits.max_recv_size = limits->limits().max_recv_size;
+        }
+      }
+    }
+  }
+
+  ~call_data() { GRPC_ERROR_UNREF(error); }
+
   grpc_call_combiner* call_combiner;
   message_size_limits limits;
   // Receive closures are chained: we inject this closure as the
@@ -101,23 +145,15 @@ struct call_data {
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
   // The error caused by a message that is too large, or GRPC_ERROR_NONE
-  grpc_error* error;
+  grpc_error* error = GRPC_ERROR_NONE;
   // Used by recv_message_ready.
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
-  grpc_closure* next_recv_message_ready;
+  grpc_closure* next_recv_message_ready = nullptr;
   // Original recv_trailing_metadata callback, invoked after our own.
   grpc_closure* original_recv_trailing_metadata_ready;
-  bool seen_recv_trailing_metadata;
+  bool seen_recv_trailing_metadata = false;
   grpc_error* recv_trailing_metadata_error;
-};
-
-struct channel_data {
-  message_size_limits limits;
-  // Maps path names to refcounted_message_size_limits structs.
-  grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
-      grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits>>>
-      method_limit_table;
 };
 
 }  // namespace
@@ -228,38 +264,7 @@ static void start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  calld->next_recv_message_ready = nullptr;
-  calld->original_recv_trailing_metadata_ready = nullptr;
-  calld->error = GRPC_ERROR_NONE;
-  GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
-                    recv_trailing_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  // Get max sizes from channel data, then merge in per-method config values.
-  // Note: Per-method config is only available on the client, so we
-  // apply the max request size to the send limit and the max response
-  // size to the receive limit.
-  calld->limits = chand->limits;
-  if (chand->method_limit_table != nullptr) {
-    grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits> limits =
-        grpc_core::ServiceConfig::MethodConfigTableLookup(
-            *chand->method_limit_table, args->path);
-    if (limits != nullptr) {
-      if (limits->limits().max_send_size >= 0 &&
-          (limits->limits().max_send_size < calld->limits.max_send_size ||
-           calld->limits.max_send_size < 0)) {
-        calld->limits.max_send_size = limits->limits().max_send_size;
-      }
-      if (limits->limits().max_recv_size >= 0 &&
-          (limits->limits().max_recv_size < calld->limits.max_recv_size ||
-           calld->limits.max_recv_size < 0)) {
-        calld->limits.max_recv_size = limits->limits().max_recv_size;
-      }
-    }
-  }
+  new (elem->call_data) call_data(elem, *chand, *args);
   return GRPC_ERROR_NONE;
 }
 
@@ -268,7 +273,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = (call_data*)elem->call_data;
-  GRPC_ERROR_UNREF(calld->error);
+  calld->~call_data();
 }
 
 static int default_size(const grpc_channel_args* args,

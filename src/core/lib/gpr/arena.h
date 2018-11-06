@@ -37,5 +37,7 @@ gpr_arena* gpr_arena_create(size_t initial_size);
 void* gpr_arena_alloc(gpr_arena* arena, size_t size);
 // Destroy an arena, returning the total number of bytes allocated
 size_t gpr_arena_destroy(gpr_arena* arena);
+// Initializes the Arena component.
+void gpr_arena_init();
 
 #endif /* GRPC_CORE_LIB_GPR_ARENA_H */
