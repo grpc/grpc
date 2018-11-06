@@ -2862,6 +2862,7 @@ add_library(grpc++
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -2896,7 +2897,6 @@ add_library(grpc++
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -3234,6 +3234,7 @@ add_library(grpc++_cronet
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -3268,7 +3269,6 @@ add_library(grpc++_cronet
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -4022,7 +4022,6 @@ add_library(grpc++_test_util
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
   test/cpp/util/test_credentials_provider.cc
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4213,7 +4212,6 @@ add_library(grpc++_test_util_unsecure
   test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4383,6 +4381,7 @@ add_library(grpc++_unsecure
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -4417,7 +4416,6 @@ add_library(grpc++_unsecure
   third_party/nanopb/pb_common.c
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -12645,7 +12643,6 @@ add_executable(codegen_test_minimal
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
-  src/cpp/codegen/client_interceptor.cc
   src/cpp/codegen/codegen_init.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
