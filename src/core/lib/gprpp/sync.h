@@ -19,8 +19,8 @@
 /* Inline implementation of synchronization primitives, preferred over the C
    public API for C++ code. */
 
-#ifndef GRPC_CORE_LIB_GPRPP_SYNC
-#define GRPC_CORE_LIB_GPRPP_SYNC
+#ifndef GRPC_CORE_LIB_GPRPP_SYNC_H
+#define GRPC_CORE_LIB_GPRPP_SYNC_H
 
 #include <grpc/support/port_platform.h>
 
@@ -76,4 +76,4 @@ inline intptr_t StatsRead(const gpr_stats_counter* c) {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPRPP_SYNC */
+#endif /* GRPC_CORE_LIB_GPRPP_SYNC_H */
