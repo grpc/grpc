@@ -185,6 +185,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
         completionHandler:^(NSError *errorOrNil) {
           dispatch_async(self->_dispatchQueue, ^{
             if (self->_call) {
+              // Clean up the request writers. This should have no effect to _call since its
+              // response writeable is already nullified.
               [self->_pipe writesFinishedWithError:nil];
               self->_call = nil;
               self->_pipe = nil;
