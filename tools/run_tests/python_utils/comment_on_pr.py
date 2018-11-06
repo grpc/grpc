@@ -24,14 +24,26 @@ def comment_on_pr(text):
     if 'ghprbPullId' not in os.environ:
         print 'Missing ghprbPullId env var: not commenting'
         return
+    #%s/comments' %
+    #os.environ['ghprbPullId'],
     req = urllib2.Request(
-        url='https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
-        os.environ['ghprbPullId'],
+        url='https://api.github.com/repos/grpc/grpc/check-runs',
         data=json.dumps({
-            'body': text
+            "name": "mighty_readme",
+            "head_sha": '%s' % os.environ['KOKORO_GIT_COMMIT'],
+            "status": "completed",
+            "started_at": "2018-05-04T01:14:52Z",
+            "completed_at": "2018-05-05T01:14:52Z",
+            "conclusion": "success",
+            "output": {
+                "title": "Mighty Readme report",
+                "summary": "this is summary",
+                "text": text
+            }
         }),
         headers={
             'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
             'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.antiope-preview+json',
         })
     print urllib2.urlopen(req).read()
