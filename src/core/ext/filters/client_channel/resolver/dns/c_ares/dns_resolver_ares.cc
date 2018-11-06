@@ -163,11 +163,6 @@ AresDnsResolver::~AresDnsResolver() {
   if (resolved_result_ != nullptr) {
     grpc_channel_args_destroy(resolved_result_);
   }
-  if (next_completion_ != nullptr) {
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
-    next_completion_ = nullptr;
-  }
   gpr_free(dns_server_);
   gpr_free(name_to_resolve_);
   grpc_channel_args_destroy(channel_args_);
