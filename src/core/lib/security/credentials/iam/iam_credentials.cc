@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
@@ -70,7 +71,7 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
       static_cast<grpc_google_iam_credentials*>(gpr_zalloc(sizeof(*c)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_IAM;
   c->base.vtable = &iam_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   grpc_mdelem md = grpc_mdelem_from_slices(
       grpc_slice_from_static_string(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
       grpc_slice_from_copied_string(token));

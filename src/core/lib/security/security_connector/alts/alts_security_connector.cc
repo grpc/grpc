@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -250,7 +251,7 @@ grpc_security_status grpc_alts_channel_security_connector_create(
   }
   auto c = static_cast<grpc_alts_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_alts_channel_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &alts_channel_vtable;
   c->base.add_handshakers = alts_channel_add_handshakers;
   c->base.channel_creds = grpc_channel_credentials_ref(channel_creds);
@@ -277,7 +278,7 @@ grpc_security_status grpc_alts_server_security_connector_create(
   }
   auto c = static_cast<grpc_alts_server_security_connector*>(
       gpr_zalloc(sizeof(grpc_alts_server_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &alts_server_vtable;
   c->base.server_creds = grpc_server_credentials_ref(server_creds);
   c->base.add_handshakers = alts_server_add_handshakers;

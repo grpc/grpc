@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
@@ -83,7 +84,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
           : gpr_strdup(handshaker_service_url);
   creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
   creds->base.vtable = &alts_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
+  grpc_core::RefInit(&creds->base.refcount, 1);
   return &creds->base;
 }
 
@@ -102,7 +103,7 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
           : gpr_strdup(handshaker_service_url);
   creds->base.type = GRPC_CREDENTIALS_TYPE_ALTS;
   creds->base.vtable = &alts_server_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
+  grpc_core::RefInit(&creds->base.refcount, 1);
   return &creds->base;
 }
 

@@ -47,6 +47,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -1724,7 +1725,7 @@ subchannel_batch_data::subchannel_batch_data(grpc_call_element* elem,
           grpc_connected_subchannel_call_get_parent_data(
               calld->subchannel_call));
   batch.payload = &retry_state->batch_payload;
-  gpr_ref_init(&refs, refcount);
+  grpc_core::RefInit(&refs, refcount);
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&on_complete, ::on_complete, this,
                       grpc_schedule_on_exec_ctx);
@@ -1770,7 +1771,7 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
 }
 
 static void batch_data_unref(subchannel_batch_data* batch_data) {
-  if (gpr_unref(&batch_data->refs)) {
+  if (grpc_core::Unref(&batch_data->refs)) {
     batch_data->destroy();
   }
 }

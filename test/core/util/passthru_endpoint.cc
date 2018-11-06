@@ -29,8 +29,9 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/iomgr/sockaddr.h"
 
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct passthru_endpoint passthru_endpoint;
@@ -198,7 +199,7 @@ void grpc_passthru_endpoint_create(grpc_endpoint** client,
   if (stats == nullptr) {
     m->stats = grpc_passthru_endpoint_stats_create();
   } else {
-    gpr_ref(&stats->refs);
+    grpc_core::Ref(&stats->refs);
     m->stats = stats;
   }
   half_init(&m->client, m, resource_quota, "client");
@@ -213,12 +214,12 @@ grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
       static_cast<grpc_passthru_endpoint_stats*>(
           gpr_malloc(sizeof(grpc_passthru_endpoint_stats)));
   memset(stats, 0, sizeof(*stats));
-  gpr_ref_init(&stats->refs, 1);
+  grpc_core::RefInit(&stats->refs, 1);
   return stats;
 }
 
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
-  if (gpr_unref(&stats->refs)) {
+  if (grpc_core::Unref(&stats->refs)) {
     gpr_free(stats);
   }
 }

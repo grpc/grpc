@@ -39,6 +39,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -73,7 +74,7 @@
 #define ESTIMATED_MDELEM_COUNT 16
 
 struct batch_control {
-  batch_control() { gpr_ref_init(&steps_to_complete, 0); }
+  batch_control() { grpc_core::RefInit(&steps_to_complete, 0); }
 
   grpc_call* call = nullptr;
   grpc_transport_stream_op_batch op;
@@ -130,7 +131,7 @@ struct grpc_call {
         channel(args.channel),
         is_client(args.server_transport_data == nullptr),
         stream_op_payload(context) {
-    gpr_ref_init(&ext_ref, 1);
+    grpc_core::RefInit(&ext_ref, 1);
     grpc_call_combiner_init(&call_combiner);
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
@@ -548,10 +549,10 @@ static void destroy_call(void* call, grpc_error* error) {
                                             grpc_schedule_on_exec_ctx));
 }
 
-void grpc_call_ref(grpc_call* c) { gpr_ref(&c->ext_ref); }
+void grpc_call_ref(grpc_call* c) { grpc_core::Ref(&c->ext_ref); }
 
 void grpc_call_unref(grpc_call* c) {
-  if (!gpr_unref(&c->ext_ref)) return;
+  if (!grpc_core::Unref(&c->ext_ref)) return;
 
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
@@ -1209,7 +1210,7 @@ static void post_batch_completion(batch_control* bctl) {
 }
 
 static void finish_batch_step(batch_control* bctl) {
-  if (gpr_unref(&bctl->steps_to_complete)) {
+  if (grpc_core::Unref(&bctl->steps_to_complete)) {
     post_batch_completion(bctl);
   }
 }
@@ -1848,7 +1849,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
-  gpr_ref_init(&bctl->steps_to_complete, (has_send_ops ? 1 : 0) + num_recv_ops);
+  grpc_core::RefInit(&bctl->steps_to_complete,
+                     (has_send_ops ? 1 : 0) + num_recv_ops);
 
   if (has_send_ops) {
     GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,

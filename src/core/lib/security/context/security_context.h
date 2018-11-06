@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -41,7 +42,7 @@ struct grpc_auth_property_array {
 };
 
 struct grpc_auth_context {
-  grpc_auth_context() { gpr_ref_init(&refcount, 0); }
+  grpc_auth_context() { grpc_core::RefInit(&refcount, 0); }
 
   struct grpc_auth_context* chained = nullptr;
   grpc_auth_property_array properties;

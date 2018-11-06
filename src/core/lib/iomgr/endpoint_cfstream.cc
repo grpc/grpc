@@ -80,7 +80,7 @@ static void CFStreamUnref(CFStreamEndpoint* ep, const char* reason,
             "CFStream endpoint unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep,
             reason, val, val - 1);
   }
-  if (gpr_unref(&ep->refcount)) {
+  if (grpc_core::Unref(&ep->refcount)) {
     CFStreamFree(ep);
   }
 }
@@ -92,17 +92,17 @@ static void CFStreamRef(CFStreamEndpoint* ep, const char* reason,
             "CFStream endpoint ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep,
             reason, val, val + 1);
   }
-  gpr_ref(&ep->refcount);
+  grpc_core::Ref(&ep->refcount);
 }
 #else
 #define EP_REF(ep, reason) CFStreamRef((ep))
 #define EP_UNREF(ep, reason) CFStreamUnref((ep))
 static void CFStreamUnref(CFStreamEndpoint* ep) {
-  if (gpr_unref(&ep->refcount)) {
+  if (grpc_core::Unref(&ep->refcount)) {
     CFStreamFree(ep);
   }
 }
-static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
+static void CFStreamRef(CFStreamEndpoint* ep) { grpc_core::Ref(&ep->refcount); }
 #endif
 
 static grpc_error* CFStreamAnnotateError(grpc_error* src_error,
@@ -343,7 +343,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
             ep_impl, read_stream, write_stream);
   }
   ep_impl->base.vtable = &vtable;
-  gpr_ref_init(&ep_impl->refcount, 1);
+  grpc_core::RefInit(&ep_impl->refcount, 1);
   ep_impl->read_stream = read_stream;
   ep_impl->write_stream = write_stream;
   CFRetain(read_stream);

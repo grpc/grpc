@@ -38,7 +38,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
 extern "C" {
@@ -51,6 +50,7 @@ extern "C" {
 }
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
@@ -982,14 +982,14 @@ static void tsi_ssl_handshaker_factory_destroy(
 static tsi_ssl_handshaker_factory* tsi_ssl_handshaker_factory_ref(
     tsi_ssl_handshaker_factory* self) {
   if (self == nullptr) return nullptr;
-  gpr_refn(&self->refcount, 1);
+  grpc_core::RefN(&self->refcount, 1);
   return self;
 }
 
 static void tsi_ssl_handshaker_factory_unref(tsi_ssl_handshaker_factory* self) {
   if (self == nullptr) return;
 
-  if (gpr_unref(&self->refcount)) {
+  if (grpc_core::Unref(&self->refcount)) {
     tsi_ssl_handshaker_factory_destroy(self);
   }
 }
@@ -1003,7 +1003,7 @@ static void tsi_ssl_handshaker_factory_init(
   GPR_ASSERT(factory != nullptr);
 
   factory->vtable = &handshaker_factory_vtable;
-  gpr_ref_init(&factory->refcount, 1);
+  grpc_core::RefInit(&factory->refcount, 1);
 }
 
 /* --- tsi_handshaker_result methods implementation. ---*/

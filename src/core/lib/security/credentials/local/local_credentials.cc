@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
@@ -61,7 +62,7 @@ grpc_channel_credentials* grpc_local_credentials_create(
   creds->connect_type = connect_type;
   creds->base.type = GRPC_CREDENTIALS_TYPE_LOCAL;
   creds->base.vtable = &local_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
+  grpc_core::RefInit(&creds->base.refcount, 1);
   return &creds->base;
 }
 
@@ -72,6 +73,6 @@ grpc_server_credentials* grpc_local_server_credentials_create(
   creds->connect_type = connect_type;
   creds->base.type = GRPC_CREDENTIALS_TYPE_LOCAL;
   creds->base.vtable = &local_server_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
+  grpc_core::RefInit(&creds->base.refcount, 1);
   return &creds->base;
 }

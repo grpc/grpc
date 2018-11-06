@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 
@@ -63,7 +64,7 @@ grpc_channel_credentials* grpc_fake_transport_security_credentials_create(
       gpr_zalloc(sizeof(grpc_channel_credentials)));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   c->vtable = &fake_transport_security_credentials_vtable;
-  gpr_ref_init(&c->refcount, 1);
+  grpc_core::RefInit(&c->refcount, 1);
   return c;
 }
 
@@ -73,7 +74,7 @@ grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
       gpr_malloc(sizeof(grpc_server_credentials)));
   memset(c, 0, sizeof(grpc_server_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
-  gpr_ref_init(&c->refcount, 1);
+  grpc_core::RefInit(&c->refcount, 1);
   c->vtable = &fake_transport_security_server_credentials_vtable;
   return c;
 }
@@ -129,7 +130,7 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
           gpr_zalloc(sizeof(grpc_md_only_test_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->md = grpc_mdelem_from_slices(grpc_slice_from_copied_string(md_key),
                                   grpc_slice_from_copied_string(md_value));
   c->is_async = is_async;

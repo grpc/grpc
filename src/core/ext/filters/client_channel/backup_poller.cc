@@ -23,10 +23,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -74,7 +74,7 @@ static void init_globals() {
 }
 
 static void backup_poller_shutdown_unref(backup_poller* p) {
-  if (gpr_unref(&p->shutdown_refs)) {
+  if (grpc_core::Unref(&p->shutdown_refs)) {
     grpc_pollset_destroy(p->pollset);
     gpr_free(p->pollset);
     gpr_free(p);
@@ -87,7 +87,7 @@ static void done_poller(void* arg, grpc_error* error) {
 
 static void g_poller_unref() {
   gpr_mu_lock(&g_poller_mu);
-  if (gpr_unref(&g_poller->refs)) {
+  if (grpc_core::Unref(&g_poller->refs)) {
     backup_poller* p = g_poller;
     g_poller = nullptr;
     gpr_mu_unlock(&g_poller_mu);
@@ -134,9 +134,9 @@ static void g_poller_init_locked() {
         static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     g_poller->shutting_down = false;
     grpc_pollset_init(g_poller->pollset, &g_poller->pollset_mu);
-    gpr_ref_init(&g_poller->refs, 0);
+    grpc_core::RefInit(&g_poller->refs, 0);
     // one for timer cancellation, one for pollset shutdown
-    gpr_ref_init(&g_poller->shutdown_refs, 2);
+    grpc_core::RefInit(&g_poller->shutdown_refs, 2);
     GRPC_CLOSURE_INIT(&g_poller->run_poller_closure, run_poller, g_poller,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&g_poller->polling_timer,
@@ -153,7 +153,7 @@ void grpc_client_channel_start_backup_polling(
   }
   gpr_mu_lock(&g_poller_mu);
   g_poller_init_locked();
-  gpr_ref(&g_poller->refs);
+  grpc_core::Ref(&g_poller->refs);
   /* Get a reference to g_poller->pollset before releasing g_poller_mu to make
    * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after
    * releasing the lock and setting g_poller to NULL in g_poller_unref() is

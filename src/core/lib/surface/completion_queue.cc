@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
@@ -495,7 +496,7 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
   cq->poller_vtable = poller_vtable;
 
   /* One for destroy(), one for pollset_shutdown */
-  gpr_ref_init(&cq->owning_refs, 2);
+  grpc_core::RefInit(&cq->owning_refs, 2);
 
   poller_vtable->init(POLLSET_FROM_CQ(cq), &cq->mu);
   vtable->init(DATA_FROM_CQ(cq), shutdown_callback);
@@ -575,7 +576,7 @@ void grpc_cq_internal_ref(grpc_completion_queue* cq, const char* reason,
 #else
 void grpc_cq_internal_ref(grpc_completion_queue* cq) {
 #endif
-  gpr_ref(&cq->owning_refs);
+  grpc_core::Ref(&cq->owning_refs);
 }
 
 static void on_pollset_shutdown_done(void* arg, grpc_error* error) {
@@ -595,7 +596,7 @@ void grpc_cq_internal_unref(grpc_completion_queue* cq, const char* reason,
 #else
 void grpc_cq_internal_unref(grpc_completion_queue* cq) {
 #endif
-  if (gpr_unref(&cq->owning_refs)) {
+  if (grpc_core::Unref(&cq->owning_refs)) {
     cq->vtable->destroy(DATA_FROM_CQ(cq));
     cq->poller_vtable->destroy(POLLSET_FROM_CQ(cq));
 #ifndef NDEBUG

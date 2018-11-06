@@ -101,7 +101,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   s->channel_args = grpc_channel_args_copy(args);
-  gpr_ref_init(&s->refs, 1);
+  grpc_core::RefInit(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
   s->on_accept_cb = NULL;
@@ -144,7 +144,7 @@ static void finish_shutdown_locked(grpc_tcp_server* s) {
 }
 
 static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  gpr_ref_non_zero(&s->refs);
+  grpc_core::RefNonZero(&s->refs);
   return s;
 }
 
@@ -174,7 +174,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
 }
 
 static void tcp_server_unref(grpc_tcp_server* s) {
-  if (gpr_unref(&s->refs)) {
+  if (grpc_core::Unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);

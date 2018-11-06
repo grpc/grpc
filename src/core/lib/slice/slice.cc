@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
@@ -119,12 +120,12 @@ typedef struct new_slice_refcount {
 
 static void new_slice_ref(void* p) {
   new_slice_refcount* r = static_cast<new_slice_refcount*>(p);
-  gpr_ref(&r->refs);
+  grpc_core::Ref(&r->refs);
 }
 
 static void new_slice_unref(void* p) {
   new_slice_refcount* r = static_cast<new_slice_refcount*>(p);
-  if (gpr_unref(&r->refs)) {
+  if (grpc_core::Unref(&r->refs)) {
     r->user_destroy(r->user_data);
     gpr_free(r);
   }
@@ -140,7 +141,7 @@ grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
   grpc_slice slice;
   new_slice_refcount* rc =
       static_cast<new_slice_refcount*>(gpr_malloc(sizeof(new_slice_refcount)));
-  gpr_ref_init(&rc->refs, 1);
+  grpc_core::RefInit(&rc->refs, 1);
   rc->rc.vtable = &new_slice_vtable;
   rc->rc.sub_refcount = &rc->rc;
   rc->user_destroy = destroy;
@@ -169,12 +170,12 @@ typedef struct new_with_len_slice_refcount {
 
 static void new_with_len_ref(void* p) {
   new_with_len_slice_refcount* r = static_cast<new_with_len_slice_refcount*>(p);
-  gpr_ref(&r->refs);
+  grpc_core::Ref(&r->refs);
 }
 
 static void new_with_len_unref(void* p) {
   new_with_len_slice_refcount* r = static_cast<new_with_len_slice_refcount*>(p);
-  if (gpr_unref(&r->refs)) {
+  if (grpc_core::Unref(&r->refs)) {
     r->user_destroy(r->user_data, r->user_length);
     gpr_free(r);
   }
@@ -189,7 +190,7 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   grpc_slice slice;
   new_with_len_slice_refcount* rc = static_cast<new_with_len_slice_refcount*>(
       gpr_malloc(sizeof(new_with_len_slice_refcount)));
-  gpr_ref_init(&rc->refs, 1);
+  grpc_core::RefInit(&rc->refs, 1);
   rc->rc.vtable = &new_with_len_vtable;
   rc->rc.sub_refcount = &rc->rc;
   rc->user_destroy = destroy;
@@ -220,12 +221,12 @@ typedef struct {
 
 static void malloc_ref(void* p) {
   malloc_refcount* r = static_cast<malloc_refcount*>(p);
-  gpr_ref(&r->refs);
+  grpc_core::Ref(&r->refs);
 }
 
 static void malloc_unref(void* p) {
   malloc_refcount* r = static_cast<malloc_refcount*>(p);
-  if (gpr_unref(&r->refs)) {
+  if (grpc_core::Unref(&r->refs)) {
     gpr_free(r);
   }
 }
@@ -251,7 +252,7 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
 
   /* Initial refcount on rc is 1 - and it's up to the caller to release
      this reference. */
-  gpr_ref_init(&rc->refs, 1);
+  grpc_core::RefInit(&rc->refs, 1);
 
   rc->base.vtable = &malloc_vtable;
   rc->base.sub_refcount = &rc->base;

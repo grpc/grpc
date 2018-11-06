@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -335,7 +336,7 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials* c,
                                       grpc_fetch_oauth2_func fetch_func) {
   memset(c, 0, sizeof(grpc_oauth2_token_fetcher_credentials));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   gpr_mu_init(&c->mu);
   c->token_expiration = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   c->fetch_func = fetch_func;
@@ -523,7 +524,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   GPR_ASSERT(reserved == nullptr);
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &access_token_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   char* token_md_value;
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
   grpc_core::ExecCtx exec_ctx;

@@ -40,6 +40,7 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -1386,7 +1387,7 @@ static void cache_insert_locked(poll_args* args) {
 
 static void init_result(poll_args* pargs) {
   pargs->result = static_cast<poll_result*>(gpr_malloc(sizeof(poll_result)));
-  gpr_ref_init(&pargs->result->refcount, 1);
+  grpc_core::RefInit(&pargs->result->refcount, 1);
   pargs->result->watchers = nullptr;
   pargs->result->watchcount = 0;
   pargs->result->fds = static_cast<struct pollfd*>(
@@ -1443,7 +1444,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   pargs->trigger_set = 0;
   init_result(pargs);
   cache_poller_locked(pargs);
-  gpr_ref(&g_cvfds.pollcount);
+  grpc_core::Ref(&g_cvfds.pollcount);
   pargs->poller_thd = grpc_core::Thread("grpc_poller", &run_poll, pargs);
   pargs->poller_thd.Start();
   return pargs;
@@ -1540,7 +1541,7 @@ static void cache_harvest_locked() {
 }
 
 static void decref_poll_result(poll_result* res) {
-  if (gpr_unref(&res->refcount)) {
+  if (grpc_core::Unref(&res->refcount)) {
     GPR_ASSERT(!res->watchers);
     gpr_free(res->fds);
     gpr_free(res);
@@ -1597,7 +1598,7 @@ static void run_poll(void* args) {
     gpr_mu_unlock(&g_cvfds.mu);
   }
 
-  if (gpr_unref(&g_cvfds.pollcount)) {
+  if (grpc_core::Unref(&g_cvfds.pollcount)) {
     gpr_cv_signal(&g_cvfds.shutdown_cv);
   }
   while (!pargs->harvestable) {
@@ -1683,7 +1684,7 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
     }
     result->watchers = pollcv;
     result->watchcount++;
-    gpr_ref(&result->refcount);
+    grpc_core::Ref(&result->refcount);
 
     pargs->trigger_set = 1;
     gpr_cv_signal(&pargs->trigger);
@@ -1727,7 +1728,7 @@ static void global_cv_fd_table_init() {
   gpr_mu_init(&g_cvfds.mu);
   gpr_mu_lock(&g_cvfds.mu);
   gpr_cv_init(&g_cvfds.shutdown_cv);
-  gpr_ref_init(&g_cvfds.pollcount, 1);
+  grpc_core::RefInit(&g_cvfds.pollcount, 1);
   g_cvfds.size = CV_DEFAULT_TABLE_SIZE;
   g_cvfds.cvfds = static_cast<grpc_fd_node*>(
       gpr_malloc(sizeof(grpc_fd_node) * CV_DEFAULT_TABLE_SIZE));
@@ -1761,7 +1762,7 @@ static void global_cv_fd_table_shutdown() {
   gpr_mu_lock(&g_cvfds.mu);
   // Attempt to wait for all abandoned poll() threads to terminate
   // Not doing so will result in reported memory leaks
-  if (!gpr_unref(&g_cvfds.pollcount)) {
+  if (!grpc_core::Unref(&g_cvfds.pollcount)) {
     int res = gpr_cv_wait(&g_cvfds.shutdown_cv, &g_cvfds.mu,
                           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                        gpr_time_from_seconds(3, GPR_TIMESPAN)));

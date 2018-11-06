@@ -26,6 +26,7 @@
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
@@ -61,7 +62,7 @@ struct shared_mu {
   shared_mu() {
     // Share one lock between both sides since both sides get affected
     gpr_mu_init(&mu);
-    gpr_ref_init(&refs, 2);
+    grpc_core::RefInit(&refs, 2);
   }
 
   gpr_mu mu;
@@ -75,26 +76,26 @@ struct inproc_transport {
     base.vtable = vtable;
     // Start each side of transport with 2 refs since they each have a ref
     // to the other
-    gpr_ref_init(&refs, 2);
+    grpc_core::RefInit(&refs, 2);
     grpc_connectivity_state_init(&connectivity, GRPC_CHANNEL_READY,
                                  is_client ? "inproc_client" : "inproc_server");
   }
 
   ~inproc_transport() {
     grpc_connectivity_state_destroy(&connectivity);
-    if (gpr_unref(&mu->refs)) {
+    if (grpc_core::Unref(&mu->refs)) {
       gpr_free(mu);
     }
   }
 
   void ref() {
     INPROC_LOG(GPR_INFO, "ref_transport %p", this);
-    gpr_ref(&refs);
+    grpc_core::Ref(&refs);
   }
 
   void unref() {
     INPROC_LOG(GPR_INFO, "unref_transport %p", this);
-    if (!gpr_unref(&refs)) {
+    if (!grpc_core::Unref(&refs)) {
       return;
     }
     INPROC_LOG(GPR_INFO, "really_destroy_transport %p", this);

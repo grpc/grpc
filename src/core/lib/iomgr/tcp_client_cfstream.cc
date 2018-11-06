@@ -166,7 +166,7 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
   // connect->resource_quota = resource_quota;
   connect->refs = 2;  // One for the connect operation, one for the timer.
-  gpr_ref_init(&connect->refcount, 1);
+  grpc_core::RefInit(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
 
   if (grpc_tcp_trace.enabled()) {

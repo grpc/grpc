@@ -40,6 +40,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -210,7 +211,7 @@ void grpc_chttp2_unref_transport(grpc_chttp2_transport* t, const char* reason,
     gpr_log(GPR_DEBUG, "chttp2:unref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
             t, val, val - 1, reason, file, line);
   }
-  if (!gpr_unref(&t->refs)) return;
+  if (!grpc_core::Unref(&t->refs)) return;
   t->~grpc_chttp2_transport();
   gpr_free(t);
 }
@@ -222,16 +223,18 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
     gpr_log(GPR_DEBUG, "chttp2:  ref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
             t, val, val + 1, reason, file, line);
   }
-  gpr_ref(&t->refs);
+  grpc_core::Ref(&t->refs);
 }
 #else
 void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
-  if (!gpr_unref(&t->refs)) return;
+  if (!grpc_core::Unref(&t->refs)) return;
   t->~grpc_chttp2_transport();
   gpr_free(t);
 }
 
-void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) { gpr_ref(&t->refs); }
+void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
+  grpc_core::Ref(&t->refs);
+}
 #endif
 
 static const grpc_transport_vtable* get_vtable(void);
@@ -496,7 +499,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
   /* one ref is for destroy */
-  gpr_ref_init(&refs, 1);
+  grpc_core::RefInit(&refs, 1);
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
      large enough that the exponential growth should happen nicely when it's
@@ -2838,7 +2841,7 @@ Chttp2IncomingByteStream::Chttp2IncomingByteStream(
       transport_(transport),
       stream_(stream),
       remaining_bytes_(frame_size) {
-  gpr_ref_init(&refs_, 2);
+  grpc_core::RefInit(&refs_, 2);
   GRPC_ERROR_UNREF(stream->byte_stream_error);
   stream->byte_stream_error = GRPC_ERROR_NONE;
 }
@@ -2864,12 +2867,12 @@ void Chttp2IncomingByteStream::Orphan() {
 }
 
 void Chttp2IncomingByteStream::Unref() {
-  if (gpr_unref(&refs_)) {
+  if (grpc_core::Unref(&refs_)) {
     Delete(this);
   }
 }
 
-void Chttp2IncomingByteStream::Ref() { gpr_ref(&refs_); }
+void Chttp2IncomingByteStream::Ref() { grpc_core::Ref(&refs_); }
 
 void Chttp2IncomingByteStream::NextLocked(void* arg,
                                           grpc_error* error_ignored) {

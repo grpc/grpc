@@ -33,6 +33,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -128,12 +129,12 @@ grpc_error* grpc_error_do_ref(grpc_error* err, const char* file, int line) {
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
             gpr_atm_no_barrier_load(&err->atomics.refs.count) + 1, file, line);
   }
-  gpr_ref(&err->atomics.refs);
+  grpc_core::Ref(&err->atomics.refs);
   return err;
 }
 #else
 grpc_error* grpc_error_do_ref(grpc_error* err) {
-  gpr_ref(&err->atomics.refs);
+  grpc_core::Ref(&err->atomics.refs);
   return err;
 }
 #endif
@@ -176,13 +177,13 @@ void grpc_error_do_unref(grpc_error* err, const char* file, int line) {
             gpr_atm_no_barrier_load(&err->atomics.refs.count),
             gpr_atm_no_barrier_load(&err->atomics.refs.count) - 1, file, line);
   }
-  if (gpr_unref(&err->atomics.refs)) {
+  if (grpc_core::Unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
 #else
 void grpc_error_do_unref(grpc_error* err) {
-  if (gpr_unref(&err->atomics.refs)) {
+  if (grpc_core::Unref(&err->atomics.refs)) {
     error_destroy(err);
   }
 }
@@ -359,7 +360,7 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
   internal_set_time(&err, GRPC_ERROR_TIME_CREATED, gpr_now(GPR_CLOCK_REALTIME));
 
   gpr_atm_no_barrier_store(&err->atomics.error_string, 0);
-  gpr_ref_init(&err->atomics.refs, 1);
+  grpc_core::RefInit(&err->atomics.refs, 1);
   return err;
 }
 
@@ -400,7 +401,7 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
                        grpc_slice_from_static_string("cancelled"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
     }
-  } else if (gpr_ref_is_unique(&in->atomics.refs)) {
+  } else if (grpc_core::RefIsUnique(&in->atomics.refs)) {
     out = in;
   } else {
     uint8_t new_arena_capacity = in->arena_capacity;
@@ -423,7 +424,7 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
            sizeof(*in) + (in->arena_size * sizeof(intptr_t)) - skip);
     // manually set the atomics and the new capacity
     gpr_atm_no_barrier_store(&out->atomics.error_string, 0);
-    gpr_ref_init(&out->atomics.refs, 1);
+    grpc_core::RefInit(&out->atomics.refs, 1);
     out->arena_capacity = new_arena_capacity;
     ref_strs(out);
     ref_errs(out);

@@ -24,6 +24,7 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -37,7 +38,7 @@ namespace internal {
 class AlarmImpl : public CompletionQueueTag {
  public:
   AlarmImpl() : cq_(nullptr), tag_(nullptr) {
-    gpr_ref_init(&refs_, 1);
+    grpc_core::RefInit(&refs_, 1);
     grpc_timer_init_unset(&timer_);
   }
   ~AlarmImpl() {
@@ -96,9 +97,9 @@ class AlarmImpl : public CompletionQueueTag {
   }
 
  private:
-  void Ref() { gpr_ref(&refs_); }
+  void Ref() { grpc_core::Ref(&refs_); }
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (grpc_core::Unref(&refs_)) {
       delete this;
     }
   }

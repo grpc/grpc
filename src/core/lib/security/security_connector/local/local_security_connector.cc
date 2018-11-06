@@ -30,6 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -200,7 +201,7 @@ grpc_security_status grpc_local_channel_security_connector_create(
   }
   auto c = static_cast<grpc_local_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_local_channel_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &local_channel_vtable;
   c->base.add_handshakers = local_channel_add_handshakers;
   c->base.channel_creds = grpc_channel_credentials_ref(channel_creds);
@@ -235,7 +236,7 @@ grpc_security_status grpc_local_server_security_connector_create(
   }
   auto c = static_cast<grpc_local_server_security_connector*>(
       gpr_zalloc(sizeof(grpc_local_server_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &local_server_vtable;
   c->base.server_creds = grpc_server_credentials_ref(server_creds);
   c->base.base.url_scheme =

@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -129,7 +130,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
   GPR_ASSERT(reserved == nullptr);
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
   c->base.vtable = &ssl_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   ssl_build_config(pem_root_certs, pem_key_cert_pair, verify_options,
                    &c->config);
   return &c->base;
@@ -334,7 +335,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
   c = static_cast<grpc_ssl_server_credentials*>(
       gpr_zalloc(sizeof(grpc_ssl_server_credentials)));
   c->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->base.vtable = &ssl_server_vtable;
 
   if (options->certificate_config_fetcher != nullptr) {

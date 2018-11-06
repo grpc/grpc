@@ -23,6 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
@@ -129,7 +130,7 @@ static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 grpc_auth_context* grpc_auth_context_create(grpc_auth_context* chained) {
   grpc_auth_context* ctx =
       static_cast<grpc_auth_context*>(gpr_zalloc(sizeof(grpc_auth_context)));
-  gpr_ref_init(&ctx->refcount, 1);
+  grpc_core::RefInit(&ctx->refcount, 1);
   if (chained != nullptr) {
     ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
     ctx->peer_identity_property_name =
@@ -153,7 +154,7 @@ grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx,
 grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx) {
   if (ctx == nullptr) return nullptr;
 #endif
-  gpr_ref(&ctx->refcount);
+  grpc_core::Ref(&ctx->refcount);
   return ctx;
 }
 
@@ -171,7 +172,7 @@ void grpc_auth_context_unref(grpc_auth_context* ctx, const char* file, int line,
 void grpc_auth_context_unref(grpc_auth_context* ctx) {
   if (ctx == nullptr) return;
 #endif
-  if (gpr_unref(&ctx->refcount)) {
+  if (grpc_core::Unref(&ctx->refcount)) {
     size_t i;
     GRPC_AUTH_CONTEXT_UNREF(ctx->chained, "chained");
     if (ctx->properties.array != nullptr) {

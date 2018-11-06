@@ -47,6 +47,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
@@ -583,7 +584,7 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   }
 
   (*p)->type = type;
-  gpr_ref_init(&(*p)->refs, 1);
+  grpc_core::RefInit(&(*p)->refs, 1);
   gpr_mu_init(&(*p)->mu);
   (*p)->epfd = epfd;
   (*p)->owner_fd = nullptr;
@@ -609,7 +610,7 @@ static pollable* pollable_ref(pollable* p, int line, const char* reason) {
             "POLLABLE:%p   ref %d->%d %s", p, r, r + 1, reason);
   }
 #endif
-  gpr_ref(&p->refs);
+  grpc_core::Ref(&p->refs);
   return p;
 }
 
@@ -624,7 +625,7 @@ static void pollable_unref(pollable* p, int line, const char* reason) {
             "POLLABLE:%p unref %d->%d %s", p, r, r - 1, reason);
   }
 #endif
-  if (p != nullptr && gpr_unref(&p->refs)) {
+  if (p != nullptr && grpc_core::Unref(&p->refs)) {
     GRPC_FD_TRACE("pollable_unref: Closing epfd: %d", p->epfd);
     close(p->epfd);
     grpc_wakeup_fd_destroy(&p->wakeup);
@@ -1361,13 +1362,13 @@ static grpc_pollset_set* pollset_set_create(void) {
   grpc_pollset_set* pss =
       static_cast<grpc_pollset_set*>(gpr_zalloc(sizeof(*pss)));
   gpr_mu_init(&pss->mu);
-  gpr_ref_init(&pss->refs, 1);
+  grpc_core::RefInit(&pss->refs, 1);
   return pss;
 }
 
 static void pollset_set_unref(grpc_pollset_set* pss) {
   if (pss == nullptr) return;
-  if (!gpr_unref(&pss->refs)) return;
+  if (!grpc_core::Unref(&pss->refs)) return;
   pollset_set_unref(pss->parent);
   gpr_mu_destroy(&pss->mu);
   for (size_t i = 0; i < pss->pollset_count; i++) {
@@ -1558,7 +1559,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   if (grpc_polling_trace.enabled()) {
     gpr_log(GPR_INFO, "PSS: parent %p to %p", b, a);
   }
-  gpr_ref(&a->refs);
+  grpc_core::Ref(&a->refs);
   b->parent = a;
   if (a->fd_capacity < a->fd_count + b->fd_count) {
     a->fd_capacity = GPR_MAX(2 * a->fd_capacity, a->fd_count + b->fd_count);

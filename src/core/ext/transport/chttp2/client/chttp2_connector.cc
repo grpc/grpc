@@ -35,6 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -60,12 +61,12 @@ typedef struct {
 
 static void chttp2_connector_ref(grpc_connector* con) {
   chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
-  gpr_ref(&c->refs);
+  grpc_core::Ref(&c->refs);
 }
 
 static void chttp2_connector_unref(grpc_connector* con) {
   chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
-  if (gpr_unref(&c->refs)) {
+  if (grpc_core::Unref(&c->refs)) {
     gpr_mu_destroy(&c->mu);
     // If handshaking is not yet in progress, destroy the endpoint.
     // Otherwise, the handshaker will do this for us.
@@ -233,6 +234,6 @@ grpc_connector* grpc_chttp2_connector_create() {
   chttp2_connector* c = static_cast<chttp2_connector*>(gpr_zalloc(sizeof(*c)));
   c->base.vtable = &chttp2_connector_vtable;
   gpr_mu_init(&c->mu);
-  gpr_ref_init(&c->refs, 1);
+  grpc_core::RefInit(&c->refs, 1);
   return &c->base;
 }

@@ -31,6 +31,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -144,7 +145,7 @@ grpc_security_connector* grpc_security_connector_ref(
     grpc_security_connector* sc) {
   if (sc == nullptr) return nullptr;
 #endif
-  gpr_ref(&sc->refcount);
+  grpc_core::Ref(&sc->refcount);
   return sc;
 }
 
@@ -163,7 +164,7 @@ void grpc_security_connector_unref(grpc_security_connector* sc,
 void grpc_security_connector_unref(grpc_security_connector* sc) {
   if (sc == nullptr) return;
 #endif
-  if (gpr_unref(&sc->refcount)) sc->vtable->destroy(sc);
+  if (grpc_core::Unref(&sc->refcount)) sc->vtable->destroy(sc);
 }
 
 static void connector_arg_destroy(void* p) {

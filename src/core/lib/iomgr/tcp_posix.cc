@@ -48,6 +48,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -352,7 +353,7 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
             val - 1);
   }
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
@@ -365,18 +366,18 @@ static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
             val + 1);
   }
-  gpr_ref(&tcp->refcount);
+  grpc_core::Ref(&tcp->refcount);
 }
 #else
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_tcp* tcp) {
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(grpc_tcp* tcp) { grpc_core::Ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
@@ -1070,7 +1071,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
   /* paired with unref in grpc_tcp_destroy */
-  gpr_ref_init(&tcp->refcount, 1);
+  grpc_core::RefInit(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);

@@ -24,15 +24,15 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/sync.h>
 
 void grpc_socket_factory_init(grpc_socket_factory* factory,
                               const grpc_socket_factory_vtable* vtable) {
   factory->vtable = vtable;
-  gpr_ref_init(&factory->refcount, 1);
+  grpc_core::RefInit(&factory->refcount, 1);
 }
 
 int grpc_socket_factory_socket(grpc_socket_factory* factory, int domain,
@@ -60,12 +60,12 @@ int grpc_socket_factory_compare(grpc_socket_factory* a,
 }
 
 grpc_socket_factory* grpc_socket_factory_ref(grpc_socket_factory* factory) {
-  gpr_ref(&factory->refcount);
+  grpc_core::Ref(&factory->refcount);
   return factory;
 }
 
 void grpc_socket_factory_unref(grpc_socket_factory* factory) {
-  if (gpr_unref(&factory->refcount)) {
+  if (grpc_core::Unref(&factory->refcount)) {
     factory->vtable->destroy(factory);
   }
 }

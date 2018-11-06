@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -117,7 +118,7 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
   c = static_cast<grpc_httpcli_ssl_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector)));
 
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
   if (secure_peer_name != nullptr) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);

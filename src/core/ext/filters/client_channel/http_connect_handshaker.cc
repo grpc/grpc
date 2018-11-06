@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -64,7 +65,7 @@ typedef struct http_connect_handshaker {
 
 // Unref and clean up handshaker.
 static void http_connect_handshaker_unref(http_connect_handshaker* handshaker) {
-  if (gpr_unref(&handshaker->refcount)) {
+  if (grpc_core::Unref(&handshaker->refcount)) {
     gpr_mu_destroy(&handshaker->mu);
     if (handshaker->endpoint_to_destroy != nullptr) {
       grpc_endpoint_destroy(handshaker->endpoint_to_destroy);
@@ -318,7 +319,7 @@ static void http_connect_handshaker_do_handshake(
   }
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
-  gpr_ref(&handshaker->refcount);
+  grpc_core::Ref(&handshaker->refcount);
   grpc_endpoint_write(args->endpoint, &handshaker->write_buffer,
                       &handshaker->request_done_closure, nullptr);
   gpr_mu_unlock(&handshaker->mu);
@@ -334,7 +335,7 @@ static grpc_handshaker* grpc_http_connect_handshaker_create() {
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);
-  gpr_ref_init(&handshaker->refcount, 1);
+  grpc_core::RefInit(&handshaker->refcount, 1);
   grpc_slice_buffer_init(&handshaker->write_buffer);
   GRPC_CLOSURE_INIT(&handshaker->request_done_closure, on_write_done,
                     handshaker, grpc_schedule_on_exec_ctx);

@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 
@@ -76,7 +77,7 @@ static void offload(void* arg, grpc_error* error);
 
 grpc_combiner* grpc_combiner_create(void) {
   grpc_combiner* lock = static_cast<grpc_combiner*>(gpr_zalloc(sizeof(*lock)));
-  gpr_ref_init(&lock->refs, 1);
+  grpc_core::RefInit(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
@@ -118,14 +119,14 @@ static void start_destroy(grpc_combiner* lock) {
 
 void grpc_combiner_unref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
   GRPC_COMBINER_DEBUG_SPAM("UNREF", -1);
-  if (gpr_unref(&lock->refs)) {
+  if (grpc_core::Unref(&lock->refs)) {
     start_destroy(lock);
   }
 }
 
 grpc_combiner* grpc_combiner_ref(grpc_combiner* lock GRPC_COMBINER_DEBUG_ARGS) {
   GRPC_COMBINER_DEBUG_SPAM("  REF", 1);
-  gpr_ref(&lock->refs);
+  grpc_core::Ref(&lock->refs);
   return lock;
 }
 

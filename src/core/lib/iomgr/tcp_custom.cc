@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
@@ -95,7 +96,7 @@ static void tcp_unref(custom_tcp_endpoint* tcp, const char* reason,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp->socket, reason,
             val, val - 1);
   }
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp->socket);
   }
 }
@@ -108,18 +109,20 @@ static void tcp_ref(custom_tcp_endpoint* tcp, const char* reason,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp->socket, reason,
             val, val + 1);
   }
-  gpr_ref(&tcp->refcount);
+  grpc_core::Ref(&tcp->refcount);
 }
 #else
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(custom_tcp_endpoint* tcp) {
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp->socket);
   }
 }
 
-static void tcp_ref(custom_tcp_endpoint* tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(custom_tcp_endpoint* tcp) {
+  grpc_core::Ref(&tcp->refcount);
+}
 #endif
 
 static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
@@ -352,7 +355,7 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
   socket->endpoint = (grpc_endpoint*)tcp;
   tcp->socket = socket;
   tcp->base.vtable = &vtable;
-  gpr_ref_init(&tcp->refcount, 1);
+  grpc_core::RefInit(&tcp->refcount, 1);
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->shutting_down = false;
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);

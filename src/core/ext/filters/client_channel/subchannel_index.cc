@@ -29,6 +29,7 @@
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/sync.h"
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them
@@ -124,7 +125,7 @@ static const grpc_avl_vtable subchannel_avl_vtable = {
 void grpc_subchannel_index_init(void) {
   g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
   gpr_mu_init(&g_mu);
-  gpr_ref_init(&g_refcount, 1);
+  grpc_core::RefInit(&g_refcount, 1);
 }
 
 void grpc_subchannel_index_shutdown(void) {
@@ -135,13 +136,13 @@ void grpc_subchannel_index_shutdown(void) {
 }
 
 void grpc_subchannel_index_unref(void) {
-  if (gpr_unref(&g_refcount)) {
+  if (grpc_core::Unref(&g_refcount)) {
     gpr_mu_destroy(&g_mu);
     grpc_avl_unref(g_subchannel_index, grpc_core::ExecCtx::Get());
   }
 }
 
-void grpc_subchannel_index_ref(void) { gpr_ref_non_zero(&g_refcount); }
+void grpc_subchannel_index_ref(void) { grpc_core::RefNonZero(&g_refcount); }
 
 grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
   // Lock, and take a reference to the subchannel index.

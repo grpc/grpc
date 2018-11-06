@@ -34,6 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
@@ -65,7 +66,7 @@ struct secure_endpoint {
                             grpc_slice_ref_internal(leftover_slices[i]));
     }
     grpc_slice_buffer_init(&output_buffer);
-    gpr_ref_init(&ref, 1);
+    grpc_core::RefInit(&ref, 1);
   }
 
   ~secure_endpoint() {
@@ -119,7 +120,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
             val - 1);
   }
-  if (gpr_unref(&ep->ref)) {
+  if (grpc_core::Unref(&ep->ref)) {
     destroy(ep);
   }
 }
@@ -132,18 +133,20 @@ static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
             val + 1);
   }
-  gpr_ref(&ep->ref);
+  grpc_core::Ref(&ep->ref);
 }
 #else
 #define SECURE_ENDPOINT_UNREF(ep, reason) secure_endpoint_unref((ep))
 #define SECURE_ENDPOINT_REF(ep, reason) secure_endpoint_ref((ep))
 static void secure_endpoint_unref(secure_endpoint* ep) {
-  if (gpr_unref(&ep->ref)) {
+  if (grpc_core::Unref(&ep->ref)) {
     destroy(ep);
   }
 }
 
-static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
+static void secure_endpoint_ref(secure_endpoint* ep) {
+  grpc_core::Ref(&ep->ref);
+}
 #endif
 
 static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,

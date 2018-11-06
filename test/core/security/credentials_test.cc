@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -55,7 +56,7 @@ static grpc_channel_credentials* grpc_mock_channel_credentials_create(
   memset(c, 0, sizeof(*c));
   c->type = "mock";
   c->vtable = vtable;
-  gpr_ref_init(&c->refcount, 1);
+  grpc_core::RefInit(&c->refcount, 1);
   return c;
 }
 

@@ -147,7 +147,7 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
             val - 1);
   }
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
@@ -160,18 +160,18 @@ static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
             val + 1);
   }
-  gpr_ref(&tcp->refcount);
+  grpc_core::Ref(&tcp->refcount);
 }
 #else
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_tcp* tcp) {
-  if (gpr_unref(&tcp->refcount)) {
+  if (grpc_core::Unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(grpc_tcp* tcp) { grpc_core::Ref(&tcp->refcount); }
 #endif
 
 /* Asynchronous callback from the IOCP, or the background thread. */
@@ -456,7 +456,7 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   tcp->base.vtable = &vtable;
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
-  gpr_ref_init(&tcp->refcount, 1);
+  grpc_core::RefInit(&tcp->refcount, 1);
   GRPC_CLOSURE_INIT(&tcp->on_read, on_read, tcp, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   tcp->peer_string = gpr_strdup(peer_string);

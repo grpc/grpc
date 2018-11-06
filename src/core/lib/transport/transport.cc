@@ -25,9 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -47,7 +47,7 @@ void grpc_stream_ref(grpc_stream_refcount* refcount, const char* reason) {
 #else
 void grpc_stream_ref(grpc_stream_refcount* refcount) {
 #endif
-  gpr_ref_non_zero(&refcount->refs);
+  grpc_core::RefNonZero(&refcount->refs);
 }
 
 #ifndef NDEBUG
@@ -61,7 +61,7 @@ void grpc_stream_unref(grpc_stream_refcount* refcount, const char* reason) {
 #else
 void grpc_stream_unref(grpc_stream_refcount* refcount) {
 #endif
-  if (gpr_unref(&refcount->refs)) {
+  if (grpc_core::Unref(&refcount->refs)) {
     if (grpc_core::ExecCtx::Get()->flags() &
         GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP) {
       /* Ick.
@@ -124,7 +124,7 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
-  gpr_ref_init(&refcount->refs, initial_refs);
+  grpc_core::RefInit(&refcount->refs, initial_refs);
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
   refcount->slice_refcount.vtable = &stream_ref_slice_vtable;
   refcount->slice_refcount.sub_refcount = &refcount->slice_refcount;

@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -274,7 +275,7 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   grpc_fake_channel_security_connector* c =
       static_cast<grpc_fake_channel_security_connector*>(
           gpr_zalloc(sizeof(*c)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
   c->base.channel_creds = channel_creds;
@@ -301,7 +302,7 @@ grpc_server_security_connector* grpc_fake_server_security_connector_create(
   grpc_server_security_connector* c =
       static_cast<grpc_server_security_connector*>(
           gpr_zalloc(sizeof(grpc_server_security_connector)));
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->server_creds = server_creds;

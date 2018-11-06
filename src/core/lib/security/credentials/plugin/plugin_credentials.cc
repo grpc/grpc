@@ -26,8 +26,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -263,7 +263,7 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
   GPR_ASSERT(reserved == nullptr);
   c->base.type = plugin.type;
   c->base.vtable = &plugin_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->plugin = plugin;
   gpr_mu_init(&c->mu);
   return &c->base;

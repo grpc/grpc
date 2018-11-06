@@ -23,12 +23,13 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include "src/core/lib/surface/api_trace.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/surface/api_trace.h"
 
 static void jwt_reset_cache(grpc_service_account_jwt_access_credentials* c) {
   GRPC_MDELEM_UNREF(c->cached.jwt_md);
@@ -126,7 +127,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   c = static_cast<grpc_service_account_jwt_access_credentials*>(
       gpr_zalloc(sizeof(grpc_service_account_jwt_access_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_JWT;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;
   c->key = key;
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();

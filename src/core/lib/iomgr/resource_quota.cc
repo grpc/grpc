@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
@@ -439,12 +440,12 @@ typedef struct {
 
 static void ru_slice_ref(void* p) {
   ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  gpr_ref(&rc->refs);
+  grpc_core::Ref(&rc->refs);
 }
 
 static void ru_slice_unref(void* p) {
   ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(p);
-  if (gpr_unref(&rc->refs)) {
+  if (grpc_core::Unref(&rc->refs)) {
     grpc_resource_user_free(rc->resource_user, rc->size);
     gpr_free(rc);
   }
@@ -460,7 +461,7 @@ static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
       gpr_malloc(sizeof(ru_slice_refcount) + size));
   rc->base.vtable = &ru_slice_vtable;
   rc->base.sub_refcount = &rc->base;
-  gpr_ref_init(&rc->refs, 1);
+  grpc_core::RefInit(&rc->refs, 1);
   rc->resource_user = resource_user;
   rc->size = size;
   grpc_slice slice;
@@ -630,7 +631,7 @@ static void rq_reclamation_done(void* rq, grpc_error* error) {
 grpc_resource_quota* grpc_resource_quota_create(const char* name) {
   grpc_resource_quota* resource_quota =
       static_cast<grpc_resource_quota*>(gpr_malloc(sizeof(*resource_quota)));
-  gpr_ref_init(&resource_quota->refs, 1);
+  grpc_core::RefInit(&resource_quota->refs, 1);
   resource_quota->combiner = grpc_combiner_create();
   resource_quota->free_pool = INT64_MAX;
   resource_quota->size = INT64_MAX;
@@ -660,7 +661,7 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
 }
 
 void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
-  if (gpr_unref(&resource_quota->refs)) {
+  if (grpc_core::Unref(&resource_quota->refs)) {
     // No outstanding thread quota
     GPR_ASSERT(resource_quota->num_threads_allocated == 0);
     GRPC_COMBINER_UNREF(resource_quota->combiner, "resource_quota");
@@ -677,7 +678,7 @@ void grpc_resource_quota_unref(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota) {
-  gpr_ref(&resource_quota->refs);
+  grpc_core::Ref(&resource_quota->refs);
   return resource_quota;
 }
 

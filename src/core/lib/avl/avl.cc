@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 
 grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable) {
   grpc_avl out;
@@ -37,7 +38,7 @@ grpc_avl grpc_avl_create(const grpc_avl_vtable* vtable) {
 
 static grpc_avl_node* ref_node(grpc_avl_node* node) {
   if (node) {
-    gpr_ref(&node->refs);
+    grpc_core::Ref(&node->refs);
   }
   return node;
 }
@@ -47,7 +48,7 @@ static void unref_node(const grpc_avl_vtable* vtable, grpc_avl_node* node,
   if (node == nullptr) {
     return;
   }
-  if (gpr_unref(&node->refs)) {
+  if (grpc_core::Unref(&node->refs)) {
     vtable->destroy_key(node->key, user_data);
     vtable->destroy_value(node->value, user_data);
     unref_node(vtable, node->left, user_data);
@@ -82,7 +83,7 @@ static grpc_avl_node* assert_invariants(grpc_avl_node* n) { return n; }
 grpc_avl_node* new_node(void* key, void* value, grpc_avl_node* left,
                         grpc_avl_node* right) {
   grpc_avl_node* node = static_cast<grpc_avl_node*>(gpr_malloc(sizeof(*node)));
-  gpr_ref_init(&node->refs, 1);
+  grpc_core::RefInit(&node->refs, 1);
   node->key = key;
   node->value = value;
   node->left = assert_invariants(left);

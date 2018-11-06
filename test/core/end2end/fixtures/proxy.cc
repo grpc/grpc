@@ -22,10 +22,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/port.h"
 
@@ -141,7 +141,7 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
 }
 
 static void unrefpc(proxy_call* pc, const char* reason) {
-  if (gpr_unref(&pc->refs)) {
+  if (grpc_core::Unref(&pc->refs)) {
     grpc_call_unref(pc->c2p);
     grpc_call_unref(pc->p2s);
     grpc_metadata_array_destroy(&pc->c2p_initial_metadata);
@@ -152,7 +152,9 @@ static void unrefpc(proxy_call* pc, const char* reason) {
   }
 }
 
-static void refpc(proxy_call* pc, const char* reason) { gpr_ref(&pc->refs); }
+static void refpc(proxy_call* pc, const char* reason) {
+  grpc_core::Ref(&pc->refs);
+}
 
 static void on_c2p_sent_initial_metadata(void* arg, int success) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
@@ -340,7 +342,7 @@ static void on_new_call(void* arg, int success) {
         proxy->client, pc->c2p, GRPC_PROPAGATE_DEFAULTS, proxy->cq,
         proxy->new_call_details.method, &proxy->new_call_details.host,
         proxy->new_call_details.deadline, nullptr);
-    gpr_ref_init(&pc->refs, 1);
+    grpc_core::RefInit(&pc->refs, 1);
 
     op.reserved = nullptr;
 

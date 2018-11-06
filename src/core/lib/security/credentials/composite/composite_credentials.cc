@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
 
@@ -154,7 +155,7 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
       gpr_zalloc(sizeof(grpc_composite_call_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE;
   c->base.vtable = &composite_call_credentials_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   creds1_array = get_creds_array(&creds1);
   creds2_array = get_creds_array(&creds2);
   c->inner.num_creds = creds1_array.num_creds + creds2_array.num_creds;
@@ -262,7 +263,7 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
       3, (channel_creds, call_creds, reserved));
   c->base.type = channel_creds->type;
   c->base.vtable = &composite_channel_credentials_vtable;
-  gpr_ref_init(&c->base.refcount, 1);
+  grpc_core::RefInit(&c->base.refcount, 1);
   c->inner_creds = grpc_channel_credentials_ref(channel_creds);
   c->call_creds = grpc_call_credentials_ref(call_creds);
   return &c->base;

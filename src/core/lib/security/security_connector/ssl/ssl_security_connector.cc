@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
@@ -369,7 +370,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   c = static_cast<grpc_ssl_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_ssl_channel_security_connector)));
 
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.channel_creds = grpc_channel_credentials_ref(channel_creds);
@@ -417,7 +418,7 @@ grpc_ssl_server_security_connector_initialize(
   grpc_ssl_server_security_connector* c =
       static_cast<grpc_ssl_server_security_connector*>(
           gpr_zalloc(sizeof(grpc_ssl_server_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
+  grpc_core::RefInit(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.base.vtable = &ssl_server_vtable;
   c->base.add_handshakers = ssl_server_add_handshakers;

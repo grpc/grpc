@@ -42,11 +42,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -82,7 +82,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
       }
     }
   }
-  gpr_ref_init(&s->refs, 1);
+  grpc_core::RefInit(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
   s->destroyed_ports = 0;
@@ -513,7 +513,7 @@ static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
 }
 
 grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  gpr_ref_non_zero(&s->refs);
+  grpc_core::RefNonZero(&s->refs);
   return s;
 }
 
@@ -526,7 +526,7 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 }
 
 static void tcp_server_unref(grpc_tcp_server* s) {
-  if (gpr_unref(&s->refs)) {
+  if (grpc_core::Unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);

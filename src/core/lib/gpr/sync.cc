@@ -26,6 +26,8 @@
 
 #include <assert.h>
 
+#include "src/core/lib/gprpp/sync.h"
+
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */
 enum { event_sync_partitions = 31 };
@@ -83,42 +85,26 @@ void* gpr_event_wait(gpr_event* ev, gpr_timespec abs_deadline) {
   return result;
 }
 
-void gpr_ref_init(gpr_refcount* r, int n) { gpr_atm_rel_store(&r->count, n); }
+void gpr_ref_init(gpr_refcount* r, int n) { grpc_core::RefInit(r, n); }
 
-void gpr_ref(gpr_refcount* r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }
+void gpr_ref(gpr_refcount* r) { grpc_core::Ref(r); }
 
-void gpr_ref_non_zero(gpr_refcount* r) {
-#ifndef NDEBUG
-  gpr_atm prior = gpr_atm_no_barrier_fetch_add(&r->count, 1);
-  assert(prior > 0);
-#else
-  gpr_ref(r);
-#endif
-}
+void gpr_ref_non_zero(gpr_refcount* r) { grpc_core::RefNonZero(r); }
 
-void gpr_refn(gpr_refcount* r, int n) {
-  gpr_atm_no_barrier_fetch_add(&r->count, n);
-}
+void gpr_refn(gpr_refcount* r, int n) { grpc_core::RefN(r, n); }
 
-int gpr_unref(gpr_refcount* r) {
-  gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
-  GPR_ASSERT(prior > 0);
-  return prior == 1;
-}
+int gpr_unref(gpr_refcount* r) { return grpc_core::Unref(r); }
 
-int gpr_ref_is_unique(gpr_refcount* r) {
-  return gpr_atm_acq_load(&r->count) == 1;
-}
+int gpr_ref_is_unique(gpr_refcount* r) { return grpc_core::RefIsUnique(r); }
 
 void gpr_stats_init(gpr_stats_counter* c, intptr_t n) {
-  gpr_atm_rel_store(&c->value, n);
+  grpc_core::StatsInit(c, n);
 }
 
 void gpr_stats_inc(gpr_stats_counter* c, intptr_t inc) {
-  gpr_atm_no_barrier_fetch_add(&c->value, inc);
+  grpc_core::StatsInc(c, inc);
 }
 
 intptr_t gpr_stats_read(const gpr_stats_counter* c) {
-  /* don't need acquire-load, but we have no no-barrier load yet */
-  return gpr_atm_acq_load(&c->value);
+  return grpc_core::StatsRead(c);
 }

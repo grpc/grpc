@@ -112,7 +112,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
 
 CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
                                CFWriteStreamRef write_stream) {
-  gpr_ref_init(&refcount_, 1);
+  grpc_core::RefInit(&refcount_, 1);
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
@@ -167,7 +167,7 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
             "CFStream Handle ref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
             reason, val, val + 1);
   }
-  gpr_ref(&refcount_);
+  grpc_core::Ref(&refcount_);
 }
 
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
@@ -177,7 +177,7 @@ void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
             "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
             reason, val, val - 1);
   }
-  if (gpr_unref(&refcount_)) {
+  if (grpc_core::Unref(&refcount_)) {
     delete this;
   }
 }

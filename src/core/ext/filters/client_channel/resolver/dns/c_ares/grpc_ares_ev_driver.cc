@@ -31,6 +31,7 @@
 #include <grpc/support/time.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -83,13 +84,13 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
     grpc_ares_ev_driver* ev_driver) {
   gpr_log(GPR_DEBUG, "Ref ev_driver %" PRIuPTR, (uintptr_t)ev_driver);
-  gpr_ref(&ev_driver->refs);
+  grpc_core::Ref(&ev_driver->refs);
   return ev_driver;
 }
 
 static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
   gpr_log(GPR_DEBUG, "Unref ev_driver %" PRIuPTR, (uintptr_t)ev_driver);
-  if (gpr_unref(&ev_driver->refs)) {
+  if (grpc_core::Unref(&ev_driver->refs)) {
     gpr_log(GPR_DEBUG, "destroy ev_driver %" PRIuPTR, (uintptr_t)ev_driver);
     GPR_ASSERT(ev_driver->fds == nullptr);
     GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
@@ -136,7 +137,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
     return err;
   }
   (*ev_driver)->combiner = GRPC_COMBINER_REF(combiner, "ares event driver");
-  gpr_ref_init(&(*ev_driver)->refs, 1);
+  grpc_core::RefInit(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
   (*ev_driver)->working = false;

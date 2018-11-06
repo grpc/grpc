@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
@@ -86,7 +87,7 @@ static size_t move_read_buffer_into_handshake_buffer(security_handshaker* h) {
 }
 
 static void security_handshaker_unref(security_handshaker* h) {
-  if (gpr_unref(&h->refs)) {
+  if (grpc_core::Unref(&h->refs)) {
     gpr_mu_destroy(&h->mu);
     tsi_handshaker_destroy(h->handshaker);
     tsi_handshaker_result_destroy(h->handshaker_result);
@@ -393,7 +394,7 @@ static void security_handshaker_do_handshake(grpc_handshaker* handshaker,
   gpr_mu_lock(&h->mu);
   h->args = args;
   h->on_handshake_done = on_handshake_done;
-  gpr_ref(&h->refs);
+  grpc_core::Ref(&h->refs);
   size_t bytes_received_size = move_read_buffer_into_handshake_buffer(h);
   grpc_error* error =
       do_handshaker_next_locked(h, h->handshake_buffer, bytes_received_size);
@@ -418,7 +419,7 @@ static grpc_handshaker* security_handshaker_create(
   h->handshaker = handshaker;
   h->connector = GRPC_SECURITY_CONNECTOR_REF(connector, "handshake");
   gpr_mu_init(&h->mu);
-  gpr_ref_init(&h->refs, 1);
+  grpc_core::RefInit(&h->refs, 1);
   h->handshake_buffer_size = GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE;
   h->handshake_buffer =
       static_cast<uint8_t*>(gpr_malloc(h->handshake_buffer_size));

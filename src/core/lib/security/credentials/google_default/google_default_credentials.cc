@@ -24,12 +24,12 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -227,7 +227,7 @@ end:
         gpr_zalloc(sizeof(grpc_google_default_channel_credentials)));
     creds->base.vtable = &google_default_credentials_vtable;
     creds->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
-    gpr_ref_init(&creds->base.refcount, 1);
+    grpc_core::RefInit(&creds->base.refcount, 1);
     creds->ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     GPR_ASSERT(creds->ssl_creds != nullptr);

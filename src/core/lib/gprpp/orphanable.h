@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -89,7 +90,7 @@ class InternallyRefCounted : public Orphanable {
   template <typename T>
   friend class RefCountedPtr;
 
-  InternallyRefCounted() { gpr_ref_init(&refs_, 1); }
+  InternallyRefCounted() { grpc_core::RefInit(&refs_, 1); }
   virtual ~InternallyRefCounted() {}
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
@@ -98,13 +99,13 @@ class InternallyRefCounted : public Orphanable {
   }
 
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (grpc_core::Unref(&refs_)) {
       Delete(static_cast<Child*>(this));
     }
   }
 
  private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { grpc_core::Ref(&refs_); }
 
   gpr_refcount refs_;
 };
@@ -138,7 +139,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
   explicit InternallyRefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
+    grpc_core::RefInit(&refs_, 1);
   }
 
 #ifdef NDEBUG
@@ -170,7 +171,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
   // friend of this class.
 
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (grpc_core::Unref(&refs_)) {
       Delete(static_cast<Child*>(this));
     }
   }
@@ -186,7 +187,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
   }
 
  private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { grpc_core::Ref(&refs_); }
 
   TraceFlag* trace_flag_ = nullptr;
   gpr_refcount refs_;

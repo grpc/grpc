@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -76,7 +77,7 @@ typedef struct {
 
 static void server_connection_state_unref(
     server_connection_state* connection_state) {
-  if (gpr_unref(&connection_state->refs)) {
+  if (grpc_core::Unref(&connection_state->refs)) {
     if (connection_state->transport != nullptr) {
       GRPC_CHTTP2_UNREF_TRANSPORT(connection_state->transport,
                                   "receive settings timeout");
@@ -154,14 +155,14 @@ static void on_handshake_done(void* arg, grpc_error* error) {
       // handshake deadline.
       connection_state->transport =
           reinterpret_cast<grpc_chttp2_transport*>(transport);
-      gpr_ref(&connection_state->refs);
+      grpc_core::Ref(&connection_state->refs);
       GRPC_CLOSURE_INIT(&connection_state->on_receive_settings,
                         on_receive_settings, connection_state,
                         grpc_schedule_on_exec_ctx);
       grpc_chttp2_transport_start_reading(
           transport, args->read_buffer, &connection_state->on_receive_settings);
       grpc_channel_args_destroy(args->args);
-      gpr_ref(&connection_state->refs);
+      grpc_core::Ref(&connection_state->refs);
       GRPC_CHTTP2_REF_TRANSPORT((grpc_chttp2_transport*)transport,
                                 "receive settings timeout");
       GRPC_CLOSURE_INIT(&connection_state->on_timeout, on_timeout,
@@ -219,7 +220,7 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(
           gpr_zalloc(sizeof(*connection_state)));
-  gpr_ref_init(&connection_state->refs, 1);
+  grpc_core::RefInit(&connection_state->refs, 1);
   connection_state->svr_state = state;
   connection_state->accepting_pollset = accepting_pollset;
   connection_state->acceptor = acceptor;

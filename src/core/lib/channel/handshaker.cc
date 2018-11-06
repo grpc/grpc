@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -95,7 +96,7 @@ grpc_handshake_manager* grpc_handshake_manager_create() {
   grpc_handshake_manager* mgr = static_cast<grpc_handshake_manager*>(
       gpr_zalloc(sizeof(grpc_handshake_manager)));
   gpr_mu_init(&mgr->mu);
-  gpr_ref_init(&mgr->refs, 1);
+  grpc_core::RefInit(&mgr->refs, 1);
   return mgr;
 }
 
@@ -160,7 +161,7 @@ void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
 }
 
 static void grpc_handshake_manager_unref(grpc_handshake_manager* mgr) {
-  if (gpr_unref(&mgr->refs)) {
+  if (grpc_core::Unref(&mgr->refs)) {
     for (size_t i = 0; i < mgr->count; ++i) {
       grpc_handshaker_destroy(mgr->handshakers[i]);
     }
@@ -317,12 +318,12 @@ void grpc_handshake_manager_do_handshake(grpc_handshake_manager* mgr,
   GRPC_CLOSURE_INIT(&mgr->on_handshake_done, on_handshake_done, &mgr->args,
                     grpc_schedule_on_exec_ctx);
   // Start deadline timer, which owns a ref.
-  gpr_ref(&mgr->refs);
+  grpc_core::Ref(&mgr->refs);
   GRPC_CLOSURE_INIT(&mgr->on_timeout, on_timeout, mgr,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&mgr->deadline_timer, deadline, &mgr->on_timeout);
   // Start first handshaker, which also owns a ref.
-  gpr_ref(&mgr->refs);
+  grpc_core::Ref(&mgr->refs);
   bool done = call_next_handshaker_locked(mgr, GRPC_ERROR_NONE);
   gpr_mu_unlock(&mgr->mu);
   if (done) {

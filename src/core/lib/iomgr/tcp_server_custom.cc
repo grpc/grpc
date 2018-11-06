@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
@@ -95,7 +96,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
       }
     }
   }
-  gpr_ref_init(&s->refs, 1);
+  grpc_core::RefInit(&s->refs, 1);
   s->on_accept_cb = nullptr;
   s->on_accept_cb_arg = nullptr;
   s->open_ports = 0;
@@ -111,7 +112,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
 
 static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  gpr_ref(&s->refs);
+  grpc_core::Ref(&s->refs);
   return s;
 }
 
@@ -192,7 +193,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
 
 static void tcp_server_unref(grpc_tcp_server* s) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-  if (gpr_unref(&s->refs)) {
+  if (grpc_core::Unref(&s->refs)) {
     /* Complete shutdown_starting work before destroying. */
     grpc_core::ExecCtx exec_ctx;
     GRPC_CLOSURE_LIST_SCHED(&s->shutdown_starting);

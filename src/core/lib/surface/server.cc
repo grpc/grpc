@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -370,7 +371,7 @@ static void request_matcher_kill_requests(grpc_server* server,
  */
 
 static void server_ref(grpc_server* server) {
-  gpr_ref(&server->internal_refcount);
+  grpc_core::Ref(&server->internal_refcount);
 }
 
 static void server_delete(grpc_server* server) {
@@ -403,7 +404,7 @@ static void server_delete(grpc_server* server) {
 }
 
 static void server_unref(grpc_server* server) {
-  if (gpr_unref(&server->internal_refcount)) {
+  if (grpc_core::Unref(&server->internal_refcount)) {
     server_delete(server);
   }
 }
@@ -1011,7 +1012,7 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   gpr_cv_init(&server->starting_cv);
 
   /* decremented by grpc_server_destroy */
-  gpr_ref_init(&server->internal_refcount, 1);
+  grpc_core::RefInit(&server->internal_refcount, 1);
   server->root_channel_data.next = server->root_channel_data.prev =
       &server->root_channel_data;
 

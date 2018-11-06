@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -53,7 +54,7 @@ class RefCounted {
   // private, since it will only be used by RefCountedPtr<>, which is a
   // friend of this class.
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (grpc_core::Unref(&refs_)) {
       Delete(static_cast<Child*>(this));
     }
   }
@@ -67,7 +68,7 @@ class RefCounted {
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  RefCounted() { gpr_ref_init(&refs_, 1); }
+  RefCounted() { grpc_core::RefInit(&refs_, 1); }
 
   virtual ~RefCounted() {}
 
@@ -76,7 +77,7 @@ class RefCounted {
   template <typename T>
   friend class RefCountedPtr;
 
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { grpc_core::Ref(&refs_); }
 
   gpr_refcount refs_;
 };
@@ -112,7 +113,7 @@ class RefCountedWithTracing {
   // friend of this class.
 
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (grpc_core::Unref(&refs_)) {
       Delete(static_cast<Child*>(this));
     }
   }
@@ -141,7 +142,7 @@ class RefCountedWithTracing {
 
   explicit RefCountedWithTracing(TraceFlag* trace_flag)
       : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
+    grpc_core::RefInit(&refs_, 1);
   }
 
 #ifdef NDEBUG
@@ -156,7 +157,7 @@ class RefCountedWithTracing {
   template <typename T>
   friend class RefCountedPtr;
 
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { grpc_core::Ref(&refs_); }
 
   TraceFlag* trace_flag_ = nullptr;
   gpr_refcount refs_;

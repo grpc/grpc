@@ -25,6 +25,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -58,13 +59,13 @@ void grpc_credentials_metadata_request_destroy(
 grpc_channel_credentials* grpc_channel_credentials_ref(
     grpc_channel_credentials* creds) {
   if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
+  grpc_core::Ref(&creds->refcount);
   return creds;
 }
 
 void grpc_channel_credentials_unref(grpc_channel_credentials* creds) {
   if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
+  if (grpc_core::Unref(&creds->refcount)) {
     if (creds->vtable->destruct != nullptr) {
       creds->vtable->destruct(creds);
     }
@@ -80,13 +81,13 @@ void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
 
 grpc_call_credentials* grpc_call_credentials_ref(grpc_call_credentials* creds) {
   if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
+  grpc_core::Ref(&creds->refcount);
   return creds;
 }
 
 void grpc_call_credentials_unref(grpc_call_credentials* creds) {
   if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
+  if (grpc_core::Unref(&creds->refcount)) {
     if (creds->vtable->destruct != nullptr) {
       creds->vtable->destruct(creds);
     }
@@ -194,13 +195,13 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 grpc_server_credentials* grpc_server_credentials_ref(
     grpc_server_credentials* creds) {
   if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
+  grpc_core::Ref(&creds->refcount);
   return creds;
 }
 
 void grpc_server_credentials_unref(grpc_server_credentials* creds) {
   if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
+  if (grpc_core::Unref(&creds->refcount)) {
     if (creds->vtable->destruct != nullptr) {
       creds->vtable->destruct(creds);
     }
