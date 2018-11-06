@@ -585,12 +585,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 // values fail to be overridden by the channel args.
 - (void)testTimeoutBackoff1 {
   [self testTimeoutBackoffWithTimeout:0.7 Backoff:0.3];
-  [self testTimeoutBackoffWithOptionsWithTimeout:0.7 Backoff:0.4];
 }
 
 - (void)testTimeoutBackoff2 {
   [self testTimeoutBackoffWithTimeout:0.3 Backoff:0.7];
-  [self testTimeoutBackoffWithOptionsWithTimeout:0.3 Backoff:0.8];
 }
 
 - (void)testErrorDebugInformation {
