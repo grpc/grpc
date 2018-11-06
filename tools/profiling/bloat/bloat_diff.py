@@ -51,43 +51,43 @@ def build(where):
     os.rename('libs', 'bloat_diff_%s' % where)
 
 
-build('new')
+# build('new')
 
-if args.diff_base:
-    old = 'old'
-    where_am_i = subprocess.check_output(
-        ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
-    subprocess.check_call(['git', 'checkout', args.diff_base])
-    subprocess.check_call(['git', 'submodule', 'update'])
-    try:
-        try:
-            build('old')
-        except subprocess.CalledProcessError, e:
-            subprocess.check_call(['make', 'clean'])
-            build('old')
-    finally:
-        subprocess.check_call(['git', 'checkout', where_am_i])
-        subprocess.check_call(['git', 'submodule', 'update'])
+# if args.diff_base:
+#     old = 'old'
+#     where_am_i = subprocess.check_output(
+#         ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
+#     subprocess.check_call(['git', 'checkout', args.diff_base])
+#     subprocess.check_call(['git', 'submodule', 'update'])
+#     try:
+#         try:
+#             build('old')
+#         except subprocess.CalledProcessError, e:
+#             subprocess.check_call(['make', 'clean'])
+#             build('old')
+#     finally:
+#         subprocess.check_call(['git', 'checkout', where_am_i])
+#         subprocess.check_call(['git', 'submodule', 'update'])
 
-subprocess.check_call(
-    'make -j%d' % args.jobs, shell=True, cwd='third_party/bloaty')
+# subprocess.check_call(
+#     'make -j%d' % args.jobs, shell=True, cwd='third_party/bloaty')
 
-text = ''
-for lib in LIBS:
-    text += '****************************************************************\n\n'
-    text += lib + '\n\n'
-    old_version = glob.glob('bloat_diff_old/opt/%s' % lib)
-    new_version = glob.glob('bloat_diff_new/opt/%s' % lib)
-    assert len(new_version) == 1
-    cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
-    if old_version:
-        assert len(old_version) == 1
-        text += subprocess.check_output(
-            '%s %s -- %s' % (cmd, new_version[0], old_version[0]), shell=True)
-    else:
-        text += subprocess.check_output(
-            '%s %s' % (cmd, new_version[0]), shell=True)
-    text += '\n\n'
+# text = ''
+# for lib in LIBS:
+#     text += '****************************************************************\n\n'
+#     text += lib + '\n\n'
+#     old_version = glob.glob('bloat_diff_old/opt/%s' % lib)
+#     new_version = glob.glob('bloat_diff_new/opt/%s' % lib)
+#     assert len(new_version) == 1
+#     cmd = 'third_party/bloaty/bloaty -d compileunits,symbols'
+#     if old_version:
+#         assert len(old_version) == 1
+#         text += subprocess.check_output(
+#             '%s %s -- %s' % (cmd, new_version[0], old_version[0]), shell=True)
+#     else:
+#         text += subprocess.check_output(
+#             '%s %s' % (cmd, new_version[0]), shell=True)
+#     text += '\n\n'
 
-print text
-comment_on_pr.comment_on_pr('```\n%s\n```' % text)
+#print text
+comment_on_pr.comment_on_pr("some comment")

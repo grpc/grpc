@@ -27,9 +27,9 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 tools/run_tests/start_port_server.py
 tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/bloat/bloat_diff.py \
   -d origin/$ghprbTargetBranch || FAILED="true"
-tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
-  -d origin/$ghprbTargetBranch \
-  -b $BENCHMARKS_TO_RUN || FAILED="true"
+#tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
+#  -d origin/$ghprbTargetBranch \
+#  -b $BENCHMARKS_TO_RUN || FAILED="true"
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9

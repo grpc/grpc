@@ -26,6 +26,7 @@ def comment_on_pr(text):
         return
     #%s/comments' %
     #os.environ['ghprbPullId'],
+    print('commenting on PR')
     req = urllib2.Request(
         url='https://api.github.com/repos/grpc/grpc/check-runs',
         data=json.dumps({
