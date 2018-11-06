@@ -237,7 +237,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)writeData:(NSData *)data {
   dispatch_async(_dispatchQueue, ^{
-    [self->_pipe writeValue:data];
+    if (self->_call) {
+      [self->_pipe writeValue:data];
+    }
   });
 }
 
