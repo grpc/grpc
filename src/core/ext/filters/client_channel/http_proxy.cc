@@ -122,7 +122,10 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
             server_uri);
     goto no_use_proxy;
   }
-  no_proxy_str = gpr_getenv("no_proxy");
+  no_proxy_str = gpr_getenv("no_grpc_proxy");
+  if (no_proxy_str == nullptr) {
+    no_proxy_str = gpr_getenv("no_proxy");
+  }
   if (no_proxy_str != nullptr) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
