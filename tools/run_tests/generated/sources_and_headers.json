@@ -3402,6 +3402,7 @@
     "name": "client_interceptors_end2end_test", 
     "src": [
       "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
@@ -3600,12 +3601,16 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "end2end_test", 
     "src": [
-      "test/cpp/end2end/end2end_test.cc"
+      "test/cpp/end2end/end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4736,6 +4741,7 @@
     "language": "c++", 
     "name": "server_interceptors_end2end_test", 
     "src": [
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h", 
       "test/cpp/end2end/server_interceptors_end2end_test.cc"
     ], 
