@@ -86,6 +86,19 @@ ZEND_GET_MODULE(grpc)
    }
 */
 /* }}} */
+void create_new_channel(
+    wrapped_grpc_channel *channel,
+    char *target,
+    grpc_channel_args args,
+    wrapped_grpc_channel_credentials *creds) {
+  if (creds == NULL) {
+    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
+                                                             NULL);
+  } else {
+    channel->wrapper->wrapped =
+        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+  }
+}
 
 void aquire_persistent_locks() {
   zval *data;
@@ -120,7 +133,7 @@ void prefork() {
 }
 
 void postfork_child() {
-  release_persistent_locks();
+  // release_persistent_locks();
 
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
@@ -135,8 +148,10 @@ void postfork_child() {
     wrapped_channel.wrapper = le->channel;
     grpc_channel_wrapper *channel = wrapped_channel.wrapper;
     grpc_channel_destroy(wrapped_channel.wrapper->wrapped);
-    channel->ref_count = 0;
-    create_channel(&wrapped_channel, channel->target, channel->args, channel->creds);
+    create_new_channel(&wrapped_channel, channel->target, channel->args, channel->creds);
+    // this Grpc\Channel is referring to it
+    channel->ref_count = 1;
+    gpr_mu_unlock(&channel->mu);
   PHP_GRPC_HASH_FOREACH_END()
 
   grpc_php_shutdown_completion_queue();

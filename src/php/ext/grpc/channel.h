@@ -48,11 +48,6 @@ static inline wrapped_grpc_channel* wrapped_grpc_channel_from_obj(
                                                          std));
 }
 
-/* for fork support */
-void create_channel(wrapped_grpc_channel* channel, char* target,
-                    grpc_channel_args args,
-                    wrapped_grpc_channel_credentials* creds);
-
 /* Initializes the Channel class */
 GRPC_STARTUP_FUNCTION(channel);
 
