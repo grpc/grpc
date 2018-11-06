@@ -196,7 +196,7 @@ extern NSString *const kGRPCTrailersKey;
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /** Initialize with all properties. */
 - (instancetype)initWithHost:(NSString *)host
@@ -224,7 +224,7 @@ extern NSString *const kGRPCTrailersKey;
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Designated initializer for a call.

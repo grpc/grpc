@@ -24,7 +24,7 @@
 @interface GRPCCall (OAuth2)
 
 @property(atomic, copy) NSString* oauth2AccessToken;
-@property(atomic, readonly) NSString* oauth2ChallengeHeader;
+@property(atomic, copy, readonly) NSString* oauth2ChallengeHeader;
 @property(atomic, strong) id<GRPCAuthorizationProtocol> tokenProvider;
 
 @end

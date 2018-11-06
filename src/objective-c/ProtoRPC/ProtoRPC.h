@@ -66,7 +66,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and
@@ -92,7 +92,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)init NS_UNAVAILABLE;
 
-+ (instancetype) new NS_UNAVAILABLE;
++ (instancetype)new NS_UNAVAILABLE;
 
 /**
  * Users should not use this initializer directly. Call objects will be created, initialized, and

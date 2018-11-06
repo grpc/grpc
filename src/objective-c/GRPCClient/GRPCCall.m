@@ -67,6 +67,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @implementation GRPCRequestOptions
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
+  NSAssert(host.length != 0 && path.length != 0, @"Host and Path cannot be empty");
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
@@ -90,7 +91,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   /** The handler of responses. */
   id<GRPCResponseHandler> _handler;
 
-  // Thread safety of ivars below are protected by _dispatcheQueue.
+  // Thread safety of ivars below are protected by _dispatchQueue.
 
   /**
    * Make use of legacy GRPCCall to make calls. Nullified when call is finished.
@@ -121,7 +122,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
-    _callOptions = [callOptions copy];
+    if (callOptions == nil) {
+      _callOptions = [[GRPCCallOptions alloc] init];
+    } else {
+      _callOptions = [callOptions copy];
+    }
     _handler = responseHandler;
     _initialMetadataPublished = NO;
     _pipe = [GRXBufferedPipe pipe];
