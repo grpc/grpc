@@ -252,6 +252,7 @@ void ServerContext::Clear() {
   }
   if (completion_op_) {
     completion_op_->Unref();
+    completion_tag_.Clear();
   }
   if (rpc_info_) {
     rpc_info_->Unref();
@@ -270,8 +271,7 @@ void ServerContext::BeginCompletionOp(internal::Call* call, bool callback) {
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
           CompletionOp(call);
   if (callback) {
-    completion_tag_ =
-        internal::CallbackWithSuccessTag(call->call(), nullptr, completion_op_);
+    completion_tag_.Set(call->call(), nullptr, completion_op_);
     completion_op_->set_core_cq_tag(&completion_tag_);
   } else if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);

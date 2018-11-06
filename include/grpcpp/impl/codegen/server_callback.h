@@ -22,6 +22,7 @@
 #include <functional>
 
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -116,7 +117,7 @@ class CallbackUnaryHandler : public MethodHandler {
       : public experimental::ServerCallbackRpcController {
    public:
     void Finish(Status s) override {
-      finish_tag_ = CallbackWithSuccessTag(
+      finish_tag_.Set(
           call_.call(),
           [this](bool) {
             grpc_call* call = call_.call();
@@ -149,8 +150,7 @@ class CallbackUnaryHandler : public MethodHandler {
     void SendInitialMetadata(std::function<void(bool)> f) override {
       GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
-      meta_tag_ =
-          CallbackWithSuccessTag(call_.call(), std::move(f), &meta_buf_);
+      meta_tag_.Set(call_.call(), std::move(f), &meta_buf_);
       meta_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
                                     ctx_->initial_metadata_flags());
       if (ctx_->compression_level_set()) {
