@@ -138,16 +138,11 @@ class CallbackWithSuccessTag
   CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
   CallbackWithSuccessTag& operator=(const CallbackWithSuccessTag&) = delete;
 
-  ~CallbackWithSuccessTag() {
-    if (call_ != nullptr) {
-      func_ = nullptr;
-      g_core_codegen_interface->grpc_call_unref(call_);
-    }
-  }
+  ~CallbackWithSuccessTag() { Clear(); }
 
-  // Set can only be called on a default-constructed tag, and it can only
-  // be called exactly once. It should never be called on a tag that was
-  // constructed with arguments or on a tag that has been Set before
+  // Set can only be called on a default-constructed or Clear'ed tag.
+  // It should never be called on a tag that was constructed with arguments
+  // or on a tag that has been Set before unless the tag has been cleared.
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops) {
     call_ = call;
@@ -157,6 +152,15 @@ class CallbackWithSuccessTag
     functor_run = &CallbackWithSuccessTag::StaticRun;
   }
 
+  void Clear() {
+    if (call_ != nullptr) {
+      func_ = nullptr;
+      grpc_call* call = call_;
+      call_ = nullptr;
+      g_core_codegen_interface->grpc_call_unref(call);
+    }
+  }
+
   CompletionQueueTag* ops() { return ops_; }
 
   // force_run can not be performed on a tag if operations using this tag
@@ -164,7 +168,7 @@ class CallbackWithSuccessTag
   // that are detected before the operations are internally processed.
   void force_run(bool ok) { Run(ok); }
 
-  /// check if this tag has ever been set
+  /// check if this tag is currently set
   operator bool() const { return call_ != nullptr; }
 
  private:

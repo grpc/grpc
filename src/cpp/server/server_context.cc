@@ -252,6 +252,7 @@ void ServerContext::Clear() {
   }
   if (completion_op_) {
     completion_op_->Unref();
+    completion_tag_.Clear();
   }
   if (rpc_info_) {
     rpc_info_->Unref();
