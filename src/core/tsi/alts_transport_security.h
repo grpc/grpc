@@ -29,10 +29,21 @@
 typedef struct alts_shared_resource {
   grpc_channel* channel;
   gpr_mu mu;
+  gpr_refcount refcount;
 } alts_shared_resource;
 
 /* This method returns the address of alts_shared_resource object shared by all
  *    TSI handshakes. */
-alts_shared_resource* alts_get_shared_resource(void);
+alts_shared_resource* grpc_alts_get_shared_resource(void);
 
+/**
+ * This method ref's an alts_shared_resource object.
+ */
+alts_shared_resource* grpc_alts_shared_resource_ref(
+    alts_shared_resource* resource);
+
+/**
+ * This method unref's an alts_shared_resource object.
+ */
+void grpc_alts_shared_resource_unref(alts_shared_resource* resource);
 #endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */

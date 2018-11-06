@@ -41,8 +41,6 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 #include "src/core/tsi/alts_transport_security.h"
 
-static alts_shared_resource* g_shared_resources = alts_get_shared_resource();
-
 /* Main struct for ALTS TSI handshaker. */
 struct alts_tsi_handshaker {
   tsi_handshaker base;
@@ -55,6 +53,7 @@ struct alts_tsi_handshaker {
   char* handshaker_service_url;
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
+  alts_shared_resource* resource;
   alts_handshaker_client_vtable* client_vtable_for_testing;
 };
 
@@ -237,18 +236,19 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_handshaker_resp* resp,
   return TSI_OK;
 }
 
-static void init_shared_resources(const char* handshaker_service_url,
-                                  bool use_dedicated_cq) {
-  GPR_ASSERT(handshaker_service_url != nullptr);
-  gpr_mu_lock(&g_shared_resources->mu);
-  if (g_shared_resources->channel == nullptr) {
-    g_shared_resources->channel =
-        grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
-    if (use_dedicated_cq) {
+static void init_shared_resources(alts_tsi_handshaker* handshaker) {
+  GPR_ASSERT(handshaker->handshaker_service_url != nullptr);
+  GPR_ASSERT(handshaker->resource != nullptr);
+  alts_shared_resource* resource = handshaker->resource;
+  gpr_mu_lock(&resource->mu);
+  if (resource->channel == nullptr) {
+    resource->channel = grpc_insecure_channel_create(
+        handshaker->handshaker_service_url, nullptr, nullptr);
+    if (handshaker->use_dedicated_cq) {
       grpc_alts_shared_resource_dedicated_start();
     }
   }
-  gpr_mu_unlock(&g_shared_resources->mu);
+  gpr_mu_unlock(&resource->mu);
 }
 
 /* gRPC provided callback used when gRPC thread model is applied. */
@@ -289,8 +289,7 @@ static tsi_result handshaker_next(
       reinterpret_cast<alts_tsi_handshaker*>(self);
   tsi_result ok = TSI_OK;
   if (!handshaker->has_created_handshaker_client) {
-    init_shared_resources(handshaker->handshaker_service_url,
-                          handshaker->use_dedicated_cq);
+    init_shared_resources(handshaker);
     if (handshaker->use_dedicated_cq) {
       handshaker->interested_parties =
           grpc_alts_get_shared_resource_dedicated()->interested_parties;
@@ -300,7 +299,7 @@ static tsi_result handshaker_next(
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
     handshaker->client = alts_grpc_handshaker_client_create(
-        handshaker, g_shared_resources->channel,
+        handshaker, handshaker->resource->channel,
         handshaker->handshaker_service_url, handshaker->interested_parties,
         handshaker->options, handshaker->target_name, grpc_cb, cb, user_data,
         handshaker->client_vtable_for_testing, handshaker->is_client);
@@ -371,6 +370,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   alts_handshaker_client_destroy(handshaker->client);
   grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
+  grpc_alts_shared_resource_unref(handshaker->resource);
   gpr_free(handshaker->handshaker_service_url);
   gpr_free(handshaker);
 }
@@ -418,6 +418,8 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->has_created_handshaker_client = false;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
   handshaker->options = grpc_alts_credentials_options_copy(options);
+  handshaker->resource =
+      grpc_alts_shared_resource_ref(grpc_alts_get_shared_resource());
   handshaker->base.vtable = handshaker->use_dedicated_cq
                                 ? &handshaker_vtable_dedicated
                                 : &handshaker_vtable;

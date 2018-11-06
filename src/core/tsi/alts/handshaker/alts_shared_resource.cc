@@ -25,7 +25,6 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;
-static alts_shared_resource* g_shared_resources = alts_get_shared_resource();
 
 alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void) {
   return &g_alts_resource_dedicated;

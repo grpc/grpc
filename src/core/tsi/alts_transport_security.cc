@@ -24,18 +24,33 @@
 
 static alts_shared_resource g_alts_resource;
 
-alts_shared_resource* alts_get_shared_resource(void) {
+alts_shared_resource* grpc_alts_get_shared_resource(void) {
   return &g_alts_resource;
 }
 
 void grpc_tsi_alts_init() {
   g_alts_resource.channel = nullptr;
   gpr_mu_init(&g_alts_resource.mu);
+  gpr_ref_init(&g_alts_resource.refcount, 0);
+}
+
+alts_shared_resource* grpc_alts_shared_resource_ref(
+    alts_shared_resource* resource) {
+  gpr_mu_lock(&resource->mu);
+  gpr_ref(&resource->refcount);
+  gpr_mu_unlock(&resource->mu);
+}
+
+void grpc_alts_shared_resource_unref(alts_shared_resource* resource) {
+  gpr_mu_lock(&resource->mu);
+  if (gpr_unref(&resource->refcount)) {
+    grpc_channel_destroy(resource->channel);
+    resource->channel = nullptr;
+  }
+  gpr_mu_unlock(&resource->mu);
 }
 
 void grpc_tsi_alts_shutdown() {
-  if (g_alts_resource.channel != nullptr) {
-    grpc_channel_destroy(g_alts_resource.channel);
-  }
+  GPR_ASSERT(g_alts_resource.channel == nullptr);
   gpr_mu_destroy(&g_alts_resource.mu);
 }
