@@ -1323,6 +1323,8 @@ void XdsLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
   // If fallback is configured and the RR policy already exists, update
   // it with the new fallback addresses.
+  // Note: We have disable fallback mode in the code, so this will only happen
+  // when rr_policy_ is set because we have balancer received serverlist.
   if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
     CreateOrUpdateRoundRobinPolicyLocked();
   }
@@ -1393,11 +1395,10 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   if (xdslb_policy->serverlist_ == nullptr && !xdslb_policy->shutting_down_ &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Falling back to use backends from resolver",
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Fallback timer fired. Not using fallback backends",
               xdslb_policy);
     }
-    GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
-    xdslb_policy->CreateOrUpdateRoundRobinPolicyLocked();
   }
   xdslb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
@@ -1646,13 +1647,9 @@ grpc_channel_args* XdsLb::CreateRoundRobinPolicyArgsLocked() {
     addresses = ProcessServerlist(serverlist_);
     is_backend_from_grpclb_load_balancer = true;
   } else {
-    // If CreateOrUpdateRoundRobinPolicyLocked() is invoked when we haven't
-    // received any serverlist from the balancer, we use the fallback backends
-    // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
-    GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-    addresses = grpc_lb_addresses_copy(fallback_backend_addresses_);
+    // This should never be invoked if we do not have serverlist_, as fallback
+    // mode is disabled for xDS plugin.
+    return nullptr;
   }
   GPR_ASSERT(addresses != nullptr);
   // Replace the LB addresses in the channel args that we pass down to
