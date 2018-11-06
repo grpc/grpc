@@ -393,6 +393,8 @@ PHP_METHOD(Channel, __construct) {
   channel->wrapper->target = strdup(target);
   channel->wrapper->args_hashstr = strdup(sha1str);
   channel->wrapper->creds_hashstr = NULL;
+  channel->wrapper->creds = creds;
+  channel->wrapper->args = args;
   if (creds != NULL && creds->hashstr != NULL) {
     php_grpc_int creds_hashstr_len = strlen(creds->hashstr);
     char *channel_creds_hashstr = malloc(creds_hashstr_len + 1);

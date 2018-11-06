@@ -87,6 +87,70 @@ ZEND_GET_MODULE(grpc)
 */
 /* }}} */
 
+void aquire_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_lock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void release_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_unlock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void prefork() {
+  aquire_persistent_locks();
+}
+
+void postfork_child() {
+  release_persistent_locks();
+
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    wrapped_grpc_channel wrapped_channel;
+    wrapped_channel.wrapper = le->channel;
+    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
+    grpc_channel_destroy(wrapped_channel.wrapper->wrapped);
+    channel->ref_count = 0;
+    create_channel(&wrapped_channel, channel->target, channel->args, channel->creds);
+  PHP_GRPC_HASH_FOREACH_END()
+
+  grpc_php_shutdown_completion_queue();
+  grpc_php_init_completion_queue();
+}
+
+void postfork_parent() {
+  release_persistent_locks();
+}
+
+void register_fork_handler() {
+  pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+}
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(grpc) {
@@ -265,6 +329,7 @@ PHP_MINFO_FUNCTION(grpc) {
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
     grpc_init();
+    register_fork_handler();
     grpc_php_init_completion_queue(TSRMLS_C);
     GRPC_G(initialized) = 1;
   }

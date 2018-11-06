@@ -19,46 +19,54 @@
 #ifndef NET_GRPC_PHP_GRPC_CHANNEL_H_
 #define NET_GRPC_PHP_GRPC_CHANNEL_H_
 
+#include "channel_credentials.h"
 #include "php_grpc.h"
 
 /* Class entry for the PHP Channel class */
-extern zend_class_entry *grpc_ce_channel;
+extern zend_class_entry* grpc_ce_channel;
 
 typedef struct _grpc_channel_wrapper {
-  grpc_channel *wrapped;
-  char *key;
-  char *target;
-  char *args_hashstr;
-  char *creds_hashstr;
+  grpc_channel* wrapped;
+  char* key;
+  char* target;
+  char* args_hashstr;
+  char* creds_hashstr;
   size_t ref_count;
   gpr_mu mu;
+  grpc_channel_args args;
+  wrapped_grpc_channel_credentials *creds;
 } grpc_channel_wrapper;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_channel)
-  grpc_channel_wrapper *wrapper;
+grpc_channel_wrapper* wrapper;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel)
 
-static inline wrapped_grpc_channel
-*wrapped_grpc_channel_from_obj(zend_object *obj) {
-  return (wrapped_grpc_channel*)((char*)(obj) -
-                                 XtOffsetOf(wrapped_grpc_channel, std));
+static inline wrapped_grpc_channel* wrapped_grpc_channel_from_obj(
+    zend_object* obj) {
+  return (wrapped_grpc_channel*)((char*)(obj)-XtOffsetOf(wrapped_grpc_channel,
+                                                         std));
 }
+
+/* for fork support */
+void create_channel(wrapped_grpc_channel* channel, char* target,
+                    grpc_channel_args args,
+                    wrapped_grpc_channel_credentials* creds);
 
 /* Initializes the Channel class */
 GRPC_STARTUP_FUNCTION(channel);
 
 /* Iterates through a PHP array and populates args with the contents */
-int php_grpc_read_args_array(zval *args_array, grpc_channel_args *args
-                             TSRMLS_DC);
+int php_grpc_read_args_array(zval* args_array,
+                             grpc_channel_args* args TSRMLS_DC);
 
-void generate_sha1_str(char *sha1str, char *str, php_grpc_int len);
+void generate_sha1_str(char* sha1str, char* str, php_grpc_int len);
 
-void php_grpc_delete_persistent_list_entry(char *key, php_grpc_int key_len
-                                           TSRMLS_DC);
+void php_grpc_delete_persistent_list_entry(char* key,
+                                           php_grpc_int key_len TSRMLS_DC);
 
 typedef struct _channel_persistent_le {
-  grpc_channel_wrapper *channel;
+  grpc_channel_wrapper* channel;
 } channel_persistent_le_t;
 
 typedef struct _target_bound_le {
