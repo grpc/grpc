@@ -5336,6 +5336,7 @@ add_library(qps
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
+  test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
 )
