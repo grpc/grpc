@@ -28,23 +28,41 @@ def comment_on_pr(text):
     #os.environ['ghprbPullId'],
     print('commenting on PR')
     req = urllib2.Request(
-        url='https://api.github.com/repos/grpc/grpc/check-runs',
+        #url='https://api.github.com/repos/grpc/grpc/check-runs',
+        # data=json.dumps({
+        #     "name": "mighty_readme",
+        #     "head_sha": '%s' ,
+        #     "status": "completed",
+        #     "started_at": "2018-05-04T01:14:52Z",
+        #     "completed_at": "2018-05-05T01:14:52Z",
+        #     "conclusion": "success",
+        #     "output": {
+        #         "title": "Mighty Readme report",
+        #         "summary": "this is summary",
+        #         "text": text
+        #     }
+        # }),
+        url='https://api.github.com/repos/grpc/grpc/statuses/%s' % os.environ['KOKORO_GIT_COMMIT'],
         data=json.dumps({
-            "name": "mighty_readme",
-            "head_sha": '%s' % os.environ['KOKORO_GIT_COMMIT'],
-            "status": "completed",
-            "started_at": "2018-05-04T01:14:52Z",
-            "completed_at": "2018-05-05T01:14:52Z",
-            "conclusion": "success",
-            "output": {
-                "title": "Mighty Readme report",
-                "summary": "this is summary",
-                "text": text
-            }
+            "state": "error",
+            "target_url": "https://example.com/build/status",
+            "description": "sdfasfa sdfsdfas asdfsadf asdfasdfasdfasdfasdf asdf asdf asdf sdf asdfasdf asdf asdf sdf asdf asdf asdf asdf asdfasdfasdf asdf asfdThe build succeeded!",
+            "context": "microbenchmarks",
+            #"name": "mighty_readme",
+            # "head_sha": '%s' % os.environ['KOKORO_GIT_COMMIT'],
+            # "status": "completed",
+            # "started_at": "2018-05-04T01:14:52Z",
+            # "completed_at": "2018-05-05T01:14:52Z",
+            # "conclusion": "success",
+            # "output": {
+            #     "title": "Mighty Readme report",
+            #     "summary": "this is summary",
+            #     "text": text
+            # }
         }),
         headers={
             'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
             'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.antiope-preview+json',
+            #'Accept': 'application/vnd.github.antiope-preview+json',
         })
     print urllib2.urlopen(req).read()
