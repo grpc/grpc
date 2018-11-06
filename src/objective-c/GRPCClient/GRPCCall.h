@@ -245,6 +245,7 @@ extern NSString *const kGRPCTrailersKey;
 
 /**
  * Starts the call. This function should only be called once; additional calls will be discarded.
+ * Invokes after calling cancel: are discarded.
  */
 - (void)start;
 

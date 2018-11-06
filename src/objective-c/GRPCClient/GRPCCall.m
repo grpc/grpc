@@ -209,6 +209,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
+    self->_started = YES;
     if (self->_call) {
       [self->_call cancel];
       self->_call = nil;
