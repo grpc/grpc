@@ -184,6 +184,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
         completionHandler:^(NSError *errorOrNil) {
           dispatch_async(self->_dispatchQueue, ^{
+            if (self->_call) {
+              [self->_pipe writesFinishedWithError:nil];
+              self->_call = nil;
+              self->_pipe = nil;
+            }
             if (self->_handler) {
               if (!self->_initialMetadataPublished) {
                 self->_initialMetadataPublished = YES;
@@ -193,12 +198,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
               // Clean up _handler so that no more responses are reported to the handler.
               self->_handler = nil;
-
-              if (self->_call) {
-                [self->_pipe writesFinishedWithError:nil];
-                self->_call = nil;
-                self->_pipe = nil;
-              }
             }
           });
         }];
