@@ -765,8 +765,10 @@ class PythonLanguage(object):
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        else:
+        elif self.args.compiler == 'python3.4':
             return 'jessie'
+        else:
+            return 'stretch_3.7'
 
     def _get_pythons(self, args):
         if args.arch == 'x86':
@@ -844,7 +846,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
-                    python34_config,
+                    python37_config,
                 )
         elif args.compiler == 'python2.7':
             return (python27_config,)
