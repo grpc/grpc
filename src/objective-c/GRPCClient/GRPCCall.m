@@ -105,6 +105,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_queue_t _dispatchQueue;
   /** Flags whether call has started. */
   BOOL _started;
+  /** Flags whether call has been canceled. */
+  BOOL _canceled;
+  /** Flags whether call has been finished. */
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -140,6 +143,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
     dispatch_set_target_queue(responseHandler.dispatchQueue, _dispatchQueue);
     _started = NO;
+    _canceled = NO;
   }
 
   return self;
@@ -153,9 +157,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)start {
   dispatch_async(_dispatchQueue, ^{
-    if (self->_started) {
-      return;
-    }
+    NSAssert(!self->_started, @"Call already started.");
+    NSAssert(!self->_canceled, @"Call already canceled.");
     self->_started = YES;
     if (!self->_callOptions) {
       self->_callOptions = [[GRPCCallOptions alloc] init];
@@ -184,13 +187,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
         completionHandler:^(NSError *errorOrNil) {
           dispatch_async(self->_dispatchQueue, ^{
-            if (self->_call) {
-              // Clean up the request writers. This should have no effect to _call since its
-              // response writeable is already nullified.
-              [self->_pipe writesFinishedWithError:nil];
-              self->_call = nil;
-              self->_pipe = nil;
-            }
             if (self->_handler) {
               if (!self->_initialMetadataPublished) {
                 self->_initialMetadataPublished = YES;
@@ -201,6 +197,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
               // Clean up _handler so that no more responses are reported to the handler.
               self->_handler = nil;
             }
+            // Clearing _call must happen *after* dispatching close in order to get trailing
+            // metadata from _call.
+            if (self->_call) {
+              // Clean up the request writers. This should have no effect to _call since its
+              // response writeable is already nullified.
+              [self->_pipe writesFinishedWithError:nil];
+              self->_call = nil;
+              self->_pipe = nil;
+            }
           });
         }];
     [self->_call startWithWriteable:responseWriteable];
@@ -209,7 +214,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
-    self->_started = YES;
+    NSAssert(!self->_canceled, @"Call already canceled.");
     if (self->_call) {
       [self->_call cancel];
       self->_call = nil;
@@ -237,6 +242,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)writeData:(NSData *)data {
   dispatch_async(_dispatchQueue, ^{
+    NSAssert(!self->_canceled, @"Call arleady canceled.");
+    NSAssert(!self->_finished, @"Call is half-closed before sending data.");
     if (self->_call) {
       [self->_pipe writeValue:data];
     }
@@ -245,6 +252,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)finish {
   dispatch_async(_dispatchQueue, ^{
+    NSAssert(self->started, @"Call not started.");
+    NSAssert(!self->_canceled, @"Call arleady canceled.");
+    NSAssert(!self->_finished, @"Call already half-closed.");
     if (self->_call) {
       [self->_pipe writesFinishedWithError:nil];
     }
@@ -265,9 +275,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  NSDictionary *trailers = _call.responseTrailers;
   if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-    [_handler closedWithTrailingMetadata:trailers error:error];
+    [_handler closedWithTrailingMetadata:_call.responseTrailers error:error];
   }
 }
 
@@ -464,11 +473,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)cancel {
   @synchronized(self) {
-    if (!self.isWaitingForToken) {
-      [self cancelCall];
-    } else {
-      self.isWaitingForToken = NO;
-    }
+    [self cancelCall];
+    self.isWaitingForToken = NO;
   }
   [self
       maybeFinishWithError:[NSError

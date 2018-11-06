@@ -244,8 +244,7 @@ extern NSString *const kGRPCTrailersKey;
                        responseHandler:(id<GRPCResponseHandler>)responseHandler;
 
 /**
- * Starts the call. This function should only be called once; additional calls will be discarded.
- * Invokes after calling cancel: are discarded.
+ * Starts the call. This function must only be called once for each instance.
  */
 - (void)start;
 
@@ -263,7 +262,7 @@ extern NSString *const kGRPCTrailersKey;
 
 /**
  * Finish the RPC request and half-close the call. The server may still send messages and/or
- * trailers to the client.
+ * trailers to the client. The method must only be called once and after start is called.
  */
 - (void)finish;
 
