@@ -46,7 +46,7 @@ def comment_on_pr(text):
         data=json.dumps({
             "state": "error",
             "target_url": "https://example.com/build/status",
-            "description": "sdfasfa sdfsdfas asdfsadf asdfasdfasdfasdfasdf asdf asdf asdf sdf asdfasdf asdf asdf sdf asdf asdf asdf asdf asdfasdfasdf asdf asfdThe build succeeded!",
+            "description": "sfdThe build succeeded!",
             "context": "microbenchmarks",
             #"name": "mighty_readme",
             # "head_sha": '%s' % os.environ['KOKORO_GIT_COMMIT'],
