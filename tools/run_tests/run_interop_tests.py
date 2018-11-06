@@ -63,6 +63,8 @@ _SKIP_ADVANCED = [
     'unimplemented_service'
 ]
 
+_SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
+
 _TEST_TIMEOUT = 3 * 60
 
 # disable this test on core-based languages,
@@ -100,7 +102,7 @@ class CXXLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -129,7 +131,7 @@ class CSharpLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -158,7 +160,7 @@ class CSharpCoreCLRLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -188,10 +190,10 @@ class DartLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'dart'
@@ -248,7 +250,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'javaokhttp'
@@ -309,7 +311,7 @@ class Http2Server:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING
+        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -339,7 +341,7 @@ class Http2Client:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES
+        return _TEST_CASES + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -431,7 +433,7 @@ class PHPLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -456,7 +458,7 @@ class PHP7Language:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -491,7 +493,7 @@ class ObjcLanguage:
         # cmdline argument. Here we return all but one test cases as unimplemented,
         # and depend upon ObjC test's behavior that it runs all cases even when
         # we tell it to run just one.
-        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -526,7 +528,7 @@ class RubyLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -610,7 +612,7 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service'
+    'unimplemented_service', 'special_status_message'
 ]
 
 _AUTH_TEST_CASES = [
@@ -1315,7 +1317,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
                             tls_test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
