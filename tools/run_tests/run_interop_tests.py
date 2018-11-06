@@ -71,11 +71,9 @@ _TEST_TIMEOUT = 3 * 60
 # see https://github.com/grpc/grpc/issues/9779
 _SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
 
-# report suffix is important for reports to get picked up by internal CI
-_INTERNAL_CL_XML_REPORT = 'sponge_log.xml'
-
-# report suffix is important for reports to get picked up by internal CI
-_XML_REPORT = 'report.xml'
+# report suffix "sponge_log.xml" is important for reports to get picked up by internal CI
+_DOCKER_BUILD_XML_REPORT = 'interop_docker_build/sponge_log.xml'
+_TESTS_XML_REPORT = 'interop_test/sponge_log.xml'
 
 
 class CXXLanguage:
@@ -1163,8 +1161,9 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help=('Put reports into subdirectories to improve '
-          'presentation of results by Internal CI.'))
+    help=(
+        '(Deprecated, has no effect) Put reports into subdirectories to improve '
+        'presentation of results by Internal CI.'))
 argp.add_argument(
     '--bq_result_table',
     default='',
@@ -1253,8 +1252,12 @@ if args.use_docker:
         if args.verbose:
             print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
 
-        num_failures, _ = jobset.run(
+        num_failures, build_resultset = jobset.run(
             build_jobs, newline_on_success=True, maxjobs=args.jobs)
+
+        report_utils.render_junit_xml_report(build_resultset,
+                                             _DOCKER_BUILD_XML_REPORT)
+
         if num_failures == 0:
             jobset.message(
                 'SUCCESS',
@@ -1519,10 +1522,7 @@ try:
     write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
     write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-    xml_report_name = _XML_REPORT
-    if args.internal_ci:
-        xml_report_name = _INTERNAL_CL_XML_REPORT
-    report_utils.render_junit_xml_report(resultset, xml_report_name)
+    report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
 
     for name, job in resultset.items():
         if "http2" in name:
