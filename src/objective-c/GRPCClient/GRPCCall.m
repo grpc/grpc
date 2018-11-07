@@ -468,7 +468,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)cancelCall {
   // Can be called from any thread, any number of times.
-  @synchronized (self) {
+  @synchronized(self) {
     [_wrappedCall cancel];
   }
 }
@@ -732,18 +732,19 @@ const char *kCFStreamVarName = "grpc_cfstream";
   _responseWriteable =
       [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
-  GRPCWrappedCall *wrappedCall = [[GRPCWrappedCall alloc] initWithHost:_host path:_path callOptions:_callOptions];
+  GRPCWrappedCall *wrappedCall =
+      [[GRPCWrappedCall alloc] initWithHost:_host path:_path callOptions:_callOptions];
   if (wrappedCall == nil) {
     [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                    code:GRPCErrorCodeUnavailable
                                                userInfo:@{
-                                                          NSLocalizedDescriptionKey :
-                                                            @"Failed to create call or channel."
-                                                          }]];
+                                                 NSLocalizedDescriptionKey :
+                                                     @"Failed to create call or channel."
+                                               }]];
     return;
   }
 
-  @synchronized (self) {
+  @synchronized(self) {
     _wrappedCall = wrappedCall;
   }
 

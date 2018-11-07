@@ -449,28 +449,29 @@ static const NSTimeInterval kTestTimeout = 16;
   request.responseSize = kSimpleDataLength;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
   GRPCRequestOptions *requestOptions =
-  [[GRPCRequestOptions alloc] initWithHost:kHostAddress
-                                      path:kUnaryCallMethod.HTTPPath
-                                    safety:GRPCCallSafetyDefault];
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
   options.compressionAlgorithm = GRPCCompressGzip;
   GRPCCall2 *call = [[GRPCCall2 alloc]
-                     initWithRequestOptions:requestOptions
-                     responseHandler:                 [[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                         messageCallback:^(NSData *data) {
-                                                                                                           NSError *error;
-                                                                                                           RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:data error:&error];
-                                                                                                           XCTAssertNil(error, @"Error when parsing response: %@", error);
-                                                                                                           XCTAssertEqual(response.payload.body.length, kSimpleDataLength);
-                                                                                                         }
-                                                                                                           closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                             XCTAssertNil(error, @"Received failure: %@", error);
-                                                                                                             [completion fulfill];
-                                                                                                           }]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *data) {
+                                   NSError *error;
+                                   RMTSimpleResponse *response =
+                                       [RMTSimpleResponse parseFromData:data error:&error];
+                                   XCTAssertNil(error, @"Error when parsing response: %@", error);
+                                   XCTAssertEqual(response.payload.body.length, kSimpleDataLength);
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   XCTAssertNil(error, @"Received failure: %@", error);
+                                   [completion fulfill];
+                                 }]
 
-                     callOptions:options];
+                 callOptions:options];
 
   [call start];
   [call writeData:[request data]];
