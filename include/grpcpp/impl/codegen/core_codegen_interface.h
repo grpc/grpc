@@ -144,6 +144,15 @@ class CoreCodegenInterface {
     }                                                                      \
   } while (0)
 
+/// Codegen specific version of \a GPR_DEBUG_ASSERT.
+#ifndef NDEBUG
+#define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
+#else
+#define GPR_CODEGEN_DEBUG_ASSERT(x) \
+  do {                              \
+  } while (0)
+#endif
+
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H

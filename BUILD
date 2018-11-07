@@ -114,6 +114,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/client_context.cc",
+    "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -247,6 +248,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
+    "include/grpcpp/support/server_callback.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
@@ -856,6 +858,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
+        "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
         "src/core/lib/avl/avl.h",
@@ -990,6 +993,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
         "zlib",
@@ -1089,7 +1093,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
-        "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1113,7 +1116,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
-        "src/core/ext/filters/client_channel/uri_parser.h",
     ],
     language = "c++",
     deps = [
@@ -1993,7 +1995,7 @@ grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.cc",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
         "src/core/tsi/alts_transport_security.cc",
@@ -2007,7 +2009,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.h",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
@@ -2124,6 +2126,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/rpc_service_method.h",
         "include/grpcpp/impl/codegen/security/auth_context.h",
         "include/grpcpp/impl/codegen/serialization_traits.h",
+        "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",

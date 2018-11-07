@@ -43,9 +43,10 @@ void AuthMetadataProcessorAyncWrapper::Process(
     return;
   }
   if (w->processor_->IsBlocking()) {
-    w->thread_pool_->Add(
-        std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
-                  context, md, num_md, cb, user_data));
+    w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
+      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
+                                                           cb, user_data);
+    });
   } else {
     // invoke directly.
     w->InvokeProcessor(context, md, num_md, cb, user_data);

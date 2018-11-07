@@ -457,6 +457,22 @@ def _per_rpc_creds(stub, args):
                                                            response.username))
 
 
+def _special_status_message(stub, args):
+    details = b'\t\ntest with whitespace\r\nand Unicode BMP \xe2\x98\xba and non-BMP \xf0\x9f\x98\x88\t\n'.decode(
+        'utf-8')
+    code = 2
+    status = grpc.StatusCode.UNKNOWN  # code = 2
+
+    # Test with a UnaryCall
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_size=1,
+        payload=messages_pb2.Payload(body=b'\x00'),
+        response_status=messages_pb2.EchoStatus(code=code, message=details))
+    response_future = stub.UnaryCall.future(request)
+    _validate_status_code_and_details(response_future, status, details)
+
+
 @enum.unique
 class TestCase(enum.Enum):
     EMPTY_UNARY = 'empty_unary'
@@ -476,6 +492,7 @@ class TestCase(enum.Enum):
     JWT_TOKEN_CREDS = 'jwt_token_creds'
     PER_RPC_CREDS = 'per_rpc_creds'
     TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
+    SPECIAL_STATUS_MESSAGE = 'special_status_message'
 
     def test_interoperability(self, stub, args):
         if self is TestCase.EMPTY_UNARY:
@@ -512,6 +529,8 @@ class TestCase(enum.Enum):
             _jwt_token_creds(stub, args)
         elif self is TestCase.PER_RPC_CREDS:
             _per_rpc_creds(stub, args)
+        elif self is TestCase.SPECIAL_STATUS_MESSAGE:
+            _special_status_message(stub, args)
         else:
             raise NotImplementedError(
                 'Test case "%s" not implemented!' % self.name)

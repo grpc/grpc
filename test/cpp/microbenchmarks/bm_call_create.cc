@@ -468,7 +468,7 @@ class NoOp {
 
 class SendEmptyMetadata {
  public:
-  SendEmptyMetadata() {
+  SendEmptyMetadata() : op_payload_(nullptr) {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);

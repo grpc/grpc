@@ -253,6 +253,12 @@ class BuildExt(build_ext.build_ext):
     LINK_OPTIONS = {}
 
     def build_extensions(self):
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, the macOS use clang and Linux use gcc, that's why
+        #   the special condition here is checking platform.
         if "darwin" in sys.platform:
             config = os.environ.get('CONFIG', 'opt')
             target_path = os.path.abspath(
@@ -274,8 +280,14 @@ class BuildExt(build_ext.build_ext):
             extra_defines = [
                 'EXTRA_DEFINES="GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1"'
             ]
+            # Ensure the BoringSSL are built instead of using system provided
+            #   libraries. It prevents dependency issues while distributing to
+            #   Mac users who use MacPorts to manage their libraries. #17002
+            mod_env = dict(os.environ)
+            mod_env['REQUIRE_CUSTOM_LIBRARIES_opt'] = '1'
             make_process = subprocess.Popen(
                 ['make'] + extra_defines + targets,
+                env=mod_env,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             make_out, make_err = make_process.communicate()

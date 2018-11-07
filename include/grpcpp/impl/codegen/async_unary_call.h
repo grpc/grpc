@@ -240,7 +240,7 @@ class ServerAsyncResponseWriter final
   /// metadata.
   void Finish(const W& msg, const Status& status, void* tag) {
     finish_buf_.set_output_tag(tag);
-    finish_buf_.set_cq_tag(&finish_buf_);
+    finish_buf_.set_core_cq_tag(&finish_buf_);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(&ctx_->initial_metadata_,
                                       ctx_->initial_metadata_flags());

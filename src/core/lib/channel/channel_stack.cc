@@ -157,7 +157,6 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
   size_t count = channel_stack->count;
   grpc_call_element* call_elems;
   char* user_data;
-  size_t i;
 
   elem_args->call_stack->count = count;
   GRPC_STREAM_REF_INIT(&elem_args->call_stack->refcount, initial_refs, destroy,
@@ -168,10 +167,14 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
 
   /* init per-filter data */
   grpc_error* first_error = GRPC_ERROR_NONE;
-  for (i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
+    user_data +=
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
+  }
+  for (size_t i = 0; i < count; i++) {
     grpc_error* error =
         call_elems[i].filter->init_call_elem(&call_elems[i], elem_args);
     if (error != GRPC_ERROR_NONE) {
@@ -181,8 +184,6 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
         GRPC_ERROR_UNREF(error);
       }
     }
-    user_data +=
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
   return first_error;
 }

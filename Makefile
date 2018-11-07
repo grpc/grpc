@@ -1230,6 +1230,7 @@ server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
+server_interceptors_end2end_test: $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
@@ -1727,6 +1728,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
+  $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
@@ -1909,6 +1911,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
+  $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
@@ -2401,6 +2404,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_early_return_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_early_return_test || ( echo test server_early_return_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_interceptors_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test || ( echo test server_interceptors_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_request_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
@@ -3595,6 +3600,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
@@ -3667,7 +3673,7 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
     src/core/tsi/alts/frame_protector/frame_handler.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
-    src/core/tsi/alts/handshaker/alts_tsi_event.cc \
+    src/core/tsi/alts/handshaker/alts_shared_resource.cc \
     src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc \
@@ -3718,7 +3724,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     src/core/tsi/alts_transport_security.cc \
@@ -4010,6 +4015,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.cc \
@@ -4064,7 +4070,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4113,7 +4118,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
     src/core/tsi/alts/frame_protector/frame_handler.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
-    src/core/tsi/alts/handshaker/alts_tsi_event.cc \
+    src/core/tsi/alts/handshaker/alts_shared_resource.cc \
     src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc \
@@ -4406,6 +4411,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -4429,7 +4435,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4711,6 +4716,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -4734,7 +4740,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -4982,6 +4987,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
@@ -5039,7 +5045,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
     third_party/nanopb/pb_common.c \
@@ -5243,6 +5248,7 @@ LIBGRPC++_SRC = \
     src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
+    src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
@@ -5366,6 +5372,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/config.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
+    include/grpcpp/support/server_callback.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
     include/grpcpp/support/status_code_enum.h \
@@ -5483,6 +5490,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
@@ -5622,6 +5630,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
+    src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
@@ -5833,6 +5842,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/uri/uri_parser.cc \
     src/core/lib/debug/trace.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -5861,7 +5871,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/retry_throttle.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
-    src/core/ext/filters/client_channel/uri_parser.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
@@ -5955,6 +5964,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/config.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
+    include/grpcpp/support/server_callback.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
     include/grpcpp/support/status_code_enum.h \
@@ -6072,6 +6082,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
@@ -6471,6 +6482,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
@@ -6634,6 +6646,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
@@ -6729,6 +6742,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/client/channel_cc.cc \
     src/cpp/client/client_context.cc \
+    src/cpp/client/client_interceptor.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
     src/cpp/client/create_channel_posix.cc \
@@ -6852,6 +6866,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/config.h \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
+    include/grpcpp/support/server_callback.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
     include/grpcpp/support/status_code_enum.h \
@@ -6969,6 +6984,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_callback.h \
     include/grpcpp/impl/codegen/server_context.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
@@ -17311,6 +17327,7 @@ endif
 
 CLIENT_INTERCEPTORS_END2END_TEST_SRC = \
     test/cpp/end2end/client_interceptors_end2end_test.cc \
+    test/cpp/end2end/interceptors_util.cc \
 
 CLIENT_INTERCEPTORS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_INTERCEPTORS_END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -17342,6 +17359,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_interceptors_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/interceptors_util.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_interceptors_end2end_test: $(CLIENT_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
 
@@ -17746,6 +17765,7 @@ endif
 
 END2END_TEST_SRC = \
     test/cpp/end2end/end2end_test.cc \
+    test/cpp/end2end/interceptors_util.cc \
 
 END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(END2END_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -17777,6 +17797,8 @@ endif
 endif
 
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/interceptors_util.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_end2end_test: $(END2END_TEST_OBJS:.o=.dep)
 
@@ -20133,6 +20155,52 @@ deps_server_early_return_test: $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_INTERCEPTORS_END2END_TEST_SRC = \
+    test/cpp/end2end/interceptors_util.cc \
+    test/cpp/end2end/server_interceptors_end2end_test.cc \
+
+SERVER_INTERCEPTORS_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_INTERCEPTORS_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_interceptors_end2end_test: $(PROTOBUF_DEP) $(SERVER_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_INTERCEPTORS_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_interceptors_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/interceptors_util.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_interceptors_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_interceptors_end2end_test: $(SERVER_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_INTERCEPTORS_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -24955,7 +25023,7 @@ src/core/tsi/alts/frame_protector/frame_handler.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_client.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_tsi_event.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_shared_resource.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/altscontext.pb.c: $(OPENSSL_DEP)

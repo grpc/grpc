@@ -286,10 +286,9 @@ HealthCheckClient::CallState::CallState(
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(gpr_arena_create(health_check_client_->connected_subchannel_
-                                  ->GetInitialCallSizeEstimate(0))) {
-  memset(&call_combiner_, 0, sizeof(call_combiner_));
+                                  ->GetInitialCallSizeEstimate(0))),
+      payload_(context_) {
   grpc_call_combiner_init(&call_combiner_);
-  memset(context_, 0, sizeof(context_));
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(0));
 }
 
@@ -299,6 +298,11 @@ HealthCheckClient::CallState::~CallState() {
             health_check_client_.get(), this);
   }
   if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
+  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+    if (context_[i].destroy != nullptr) {
+      context_[i].destroy(context_[i].value);
+    }
+  }
   // Unset the call combiner cancellation closure.  This has the
   // effect of scheduling the previously set cancellation closure, if
   // any, so that it can release any internal references it may be
@@ -346,6 +350,7 @@ void HealthCheckClient::CallState::StartCall() {
   }
   // Initialize payload and batch.
   memset(&batch_, 0, sizeof(batch_));
+  payload_.context = context_;
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
   Ref(DEBUG_LOCATION, "on_complete").release();

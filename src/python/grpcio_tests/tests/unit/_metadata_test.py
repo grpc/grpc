@@ -15,6 +15,7 @@
 
 import unittest
 import weakref
+import logging
 
 import grpc
 from grpc import _channel
@@ -237,4 +238,5 @@ class MetadataTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

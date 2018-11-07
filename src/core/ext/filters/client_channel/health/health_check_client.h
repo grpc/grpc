@@ -97,7 +97,7 @@ class HealthCheckClient
 
     gpr_arena* arena_;
     grpc_call_combiner call_combiner_;
-    grpc_call_context_element context_[GRPC_CONTEXT_COUNT];
+    grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-NULL.
     grpc_subchannel_call* call_;

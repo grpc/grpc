@@ -114,6 +114,7 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->scheduler = scheduler;
+  closure->error_data.error = GRPC_ERROR_NONE;
 #ifndef NDEBUG
   closure->scheduled = false;
   closure->file_initiated = nullptr;
