@@ -34,7 +34,7 @@ typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
 };
 
 // Compression algorithm to be used by a gRPC call
-typedef NS_ENUM(NSInteger, GRPCCompressionAlgorithm) {
+typedef NS_ENUM(NSUInteger, GRPCCompressionAlgorithm) {
   GRPCCompressNone = 0,
   GRPCCompressDeflate,
   GRPCCompressGzip,
@@ -45,7 +45,7 @@ typedef NS_ENUM(NSInteger, GRPCCompressionAlgorithm) {
 typedef GRPCCompressionAlgorithm GRPCCompressAlgorithm;
 
 /** The transport to be used by a gRPC call */
-typedef NS_ENUM(NSInteger, GRPCTransportType) {
+typedef NS_ENUM(NSUInteger, GRPCTransportType) {
   GRPCTransportTypeDefault = 0,
   /** gRPC internal HTTP/2 stack with BoringSSL */
   GRPCTransportTypeChttp2BoringSSL = 0,
