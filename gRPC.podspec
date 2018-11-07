@@ -58,7 +58,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
     ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/GRPCCallOptions+Internal.h"
+    ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/*.h"
 
     ss.dependency 'gRPC-Core', version
   end
