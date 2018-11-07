@@ -151,7 +151,7 @@ extern const char *kCFStreamVarName;
     return NO;
   }
   GRPCChannelConfiguration *obj = (GRPCChannelConfiguration *)object;
-  if (!(obj.host == _host || [obj.host isEqualToString:_host])) return NO;
+  if (!(obj.host == _host || (_host != nil && [obj.host isEqualToString:_host]))) return NO;
   if (!(obj.callOptions == _callOptions || [obj.callOptions hasChannelOptionsEqualTo:_callOptions]))
     return NO;
 

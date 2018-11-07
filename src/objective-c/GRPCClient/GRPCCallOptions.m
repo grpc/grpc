@@ -44,6 +44,17 @@ static const id kDefaultLogContext = nil;
 static NSString *const kDefaultChannelPoolDomain = nil;
 static const NSUInteger kDefaultChannelID = 0;
 
+// Check if two objects are equal. Returns YES if both are nil;
+BOOL areObjectsEqual(id obj1, id obj2) {
+  if (obj1 == obj2) {
+    return YES;
+  }
+  if (obj1 == nil || obj2 == nil) {
+    return NO;
+  }
+  return [obj1 isEqual:obj2];
+}
+
 @implementation GRPCCallOptions {
  @protected
   NSString *_serverAuthority;
@@ -232,9 +243,8 @@ static const NSUInteger kDefaultChannelID = 0;
 }
 
 - (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions {
-  if (!(callOptions.userAgentPrefix == _userAgentPrefix ||
-        [callOptions.userAgentPrefix isEqualToString:_userAgentPrefix]))
-    return NO;
+  if (callOptions == nil) return NO;
+  if (!areObjectsEqual(callOptions.userAgentPrefix, _userAgentPrefix)) return NO;
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
   if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
   if (!(callOptions.retryEnabled == _retryEnabled)) return NO;
@@ -243,27 +253,14 @@ static const NSUInteger kDefaultChannelID = 0;
   if (!(callOptions.connectMinTimeout == _connectMinTimeout)) return NO;
   if (!(callOptions.connectInitialBackoff == _connectInitialBackoff)) return NO;
   if (!(callOptions.connectMaxBackoff == _connectMaxBackoff)) return NO;
-  if (!(callOptions.additionalChannelArgs == _additionalChannelArgs ||
-        [callOptions.additionalChannelArgs isEqualToDictionary:_additionalChannelArgs]))
-    return NO;
-  if (!(callOptions.PEMRootCertificates == _PEMRootCertificates ||
-        [callOptions.PEMRootCertificates isEqualToString:_PEMRootCertificates]))
-    return NO;
-  if (!(callOptions.PEMPrivateKey == _PEMPrivateKey ||
-        [callOptions.PEMPrivateKey isEqualToString:_PEMPrivateKey]))
-    return NO;
-  if (!(callOptions.PEMCertChain == _PEMCertChain ||
-        [callOptions.PEMCertChain isEqualToString:_PEMCertChain]))
-    return NO;
-  if (!(callOptions.hostNameOverride == _hostNameOverride ||
-        [callOptions.hostNameOverride isEqualToString:_hostNameOverride]))
-    return NO;
+  if (!areObjectsEqual(callOptions.additionalChannelArgs, _additionalChannelArgs)) return NO;
+  if (!areObjectsEqual(callOptions.PEMRootCertificates, _PEMRootCertificates)) return NO;
+  if (!areObjectsEqual(callOptions.PEMPrivateKey, _PEMPrivateKey)) return NO;
+  if (!areObjectsEqual(callOptions.PEMCertChain, _PEMCertChain)) return NO;
+  if (!areObjectsEqual(callOptions.hostNameOverride, _hostNameOverride)) return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
-  if (!(callOptions.logContext == _logContext || [callOptions.logContext isEqual:_logContext]))
-    return NO;
-  if (!(callOptions.channelPoolDomain == _channelPoolDomain ||
-        [callOptions.channelPoolDomain isEqualToString:_channelPoolDomain]))
-    return NO;
+  if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
+  if (!areObjectsEqual(callOptions.channelPoolDomain, _channelPoolDomain)) return NO;
   if (!(callOptions.channelID == _channelID)) return NO;
 
   return YES;
