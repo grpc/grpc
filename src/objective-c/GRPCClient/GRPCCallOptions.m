@@ -283,7 +283,7 @@ BOOL areObjectsEqual(id obj1, id obj2) {
   result ^= _PEMCertChain.hash;
   result ^= _hostNameOverride.hash;
   result ^= _transportType;
-  result ^= [_logContext hash];
+  result ^= _logContext.hash;
   result ^= _channelPoolDomain.hash;
   result ^= _channelID;
 
