@@ -298,6 +298,7 @@ class _ServerSSLCertReloadTest(
             private_key=CLIENT_KEY_2_PEM,
             certificate_chain=CLIENT_CERT_CHAIN_2_PEM)
         actual_calls = self.cert_config_fetcher.getCalls()
+        print '301 actual_calls', actual_calls
         self.assertGreaterEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         for i, call in enumerate(actual_calls):
@@ -314,6 +315,7 @@ class _ServerSSLCertReloadTest(
             private_key=CLIENT_KEY_1_PEM,
             certificate_chain=CLIENT_CERT_CHAIN_1_PEM)
         actual_calls = self.cert_config_fetcher.getCalls()
+        print '318 actual_calls', actual_calls
         self.assertEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         self.assertIsNone(actual_calls[0].returned_cert_config)
@@ -351,6 +353,7 @@ class _ServerSSLCertReloadTest(
         self.cert_config_fetcher.configure(False, None)
         self._perform_rpc(persistent_client_stub_A, True)
         actual_calls = self.cert_config_fetcher.getCalls()
+        print '356 actual_calls', actual_calls
         self.assertEqual(len(actual_calls), 0)
 
         self.cert_config_fetcher.reset()
