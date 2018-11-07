@@ -253,6 +253,12 @@ class BuildExt(build_ext.build_ext):
     LINK_OPTIONS = {}
 
     def build_extensions(self):
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, the macOS use clang and Linux use gcc, that's why
+        #   the special condition here is checking platform.
         if "darwin" in sys.platform:
             config = os.environ.get('CONFIG', 'opt')
             target_path = os.path.abspath(
