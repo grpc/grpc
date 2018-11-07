@@ -41,6 +41,7 @@
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
+#include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
@@ -402,6 +403,17 @@ class ClientContext {
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
+  experimental::ClientRpcInfo* set_client_rpc_info(
+      const char* method, grpc::ChannelInterface* channel,
+      const std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
+          creators,
+      size_t interceptor_pos) {
+    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_.RegisterInterceptors(creators, interceptor_pos);
+    return &rpc_info_;
+  }
+
   uint32_t initial_metadata_flags() const {
     return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
            (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
@@ -413,6 +425,8 @@ class ClientContext {
   }
 
   grpc::string authority() { return authority_; }
+
+  void SendCancelToInterceptors();
 
   bool initial_metadata_received_;
   bool wait_for_ready_;
@@ -439,6 +453,8 @@ class ClientContext {
   bool initial_metadata_corked_;
 
   grpc::string debug_error_string_;
+
+  experimental::ClientRpcInfo rpc_info_;
 };
 
 }  // namespace grpc

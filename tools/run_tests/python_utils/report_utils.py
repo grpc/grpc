@@ -13,8 +13,6 @@
 # limitations under the License.
 """Generate XML and HTML test reports."""
 
-from __future__ import print_function
-
 try:
     from mako.runtime import Context
     from mako.template import Template

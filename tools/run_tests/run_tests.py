@@ -759,12 +759,16 @@ class PythonLanguage(object):
             self.python_manager_name(), _docker_arch_suffix(self.args.arch))
 
     def python_manager_name(self):
-        if self.args.compiler in ['python3.5', 'python3.6']:
-            return 'pyenv'
+        if self.args.compiler in [
+                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+        ]:
+            return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        else:
+        elif self.args.compiler == 'python3.4':
             return 'jessie'
+        else:
+            return 'stretch_3.7'
 
     def _get_pythons(self, args):
         if args.arch == 'x86':
@@ -842,7 +846,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
-                    python34_config,
+                    python37_config,
                 )
         elif args.compiler == 'python2.7':
             return (python27_config,)
@@ -1510,12 +1514,12 @@ if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
 if 'all' in args.language:
-    lang_list = _LANGUAGES.keys()
+    lang_list = list(_LANGUAGES.keys())
 else:
     lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-    for bad in ['grpc-node', 'objc', 'sanity']:
+    for bad in ['csharp', 'grpc-node', 'objc', 'sanity']:
         if bad in lang_list:
             lang_list.remove(bad)
 
@@ -1717,9 +1721,9 @@ def _has_epollexclusive():
     try:
         subprocess.check_call(binary)
         return True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return False
-    except OSError, e:
+    except OSError as e:
         # For languages other than C and Windows the binary won't exist
         return False
 

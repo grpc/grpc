@@ -35,6 +35,20 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "interceptors_util",
+    testonly = True,
+    srcs = ["interceptors_util.cc"],
+    hdrs = ["interceptors_util.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
@@ -117,6 +131,26 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "client_interceptors_end2end_test",
+    srcs = ["client_interceptors_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":interceptors_util",
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "end2end_test_lib",
     testonly = True,
@@ -125,6 +159,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -463,6 +498,26 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "server_interceptors_end2end_test",
+    srcs = ["server_interceptors_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":interceptors_util",
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",

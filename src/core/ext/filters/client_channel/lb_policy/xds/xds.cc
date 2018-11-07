@@ -319,10 +319,6 @@ class XdsLb : public LoadBalancingPolicy {
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
   xds_grpclb_serverlist* serverlist_ = nullptr;
-  // Index into serverlist for next pick.
-  // If the server at this index is a drop, we return a drop.
-  // Otherwise, we delegate to the RR policy.
-  size_t serverlist_index_ = 0;
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -837,7 +833,6 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
         // serverlist instance will be destroyed either upon the next
         // update or when the XdsLb instance is destroyed.
         xdslb_policy->serverlist_ = serverlist;
-        xdslb_policy->serverlist_index_ = 0;
         xdslb_policy->CreateOrUpdateRoundRobinPolicyLocked();
       }
     } else {
@@ -1575,32 +1570,6 @@ void XdsLb::AddPendingPick(PendingPick* pp) {
 // completion callback even if the pick is available immediately.
 bool XdsLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
                                            grpc_error** error) {
-  // Check for drops if we are not using fallback backend addresses.
-  if (serverlist_ != nullptr) {
-    // Look at the index into the serverlist to see if we should drop this call.
-    xds_grpclb_server* server = serverlist_->servers[serverlist_index_++];
-    if (serverlist_index_ == serverlist_->num_servers) {
-      serverlist_index_ = 0;  // Wrap-around.
-    }
-    if (server->drop) {
-      // Update client load reporting stats to indicate the number of
-      // dropped calls.  Note that we have to do this here instead of in
-      // the client_load_reporting filter, because we do not create a
-      // subchannel call (and therefore no client_load_reporting filter)
-      // for dropped calls.
-      if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-        lb_calld_->client_stats()->AddCallDroppedLocked(
-            server->load_balance_token);
-      }
-      if (force_async) {
-        GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
-        Delete(pp);
-        return false;
-      }
-      Delete(pp);
-      return true;
-    }
-  }
   // Set client_stats and user_data.
   if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
     pp->client_stats = lb_calld_->client_stats()->Ref();

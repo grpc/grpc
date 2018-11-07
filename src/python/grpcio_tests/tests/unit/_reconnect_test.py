@@ -15,6 +15,7 @@
 
 import socket
 import time
+import logging
 import unittest
 
 import grpc
@@ -100,4 +101,5 @@ class ReconnectTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

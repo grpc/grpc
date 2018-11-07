@@ -488,7 +488,6 @@ add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
-add_dependencies(buildtests_c inproc_nosec_test)
 add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
@@ -585,6 +584,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
 endif()
 add_dependencies(buildtests_cxx client_crash_test_server)
+add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
@@ -665,6 +665,7 @@ add_dependencies(buildtests_cxx server_crash_test)
 endif()
 add_dependencies(buildtests_cxx server_crash_test_client)
 add_dependencies(buildtests_cxx server_early_return_test)
+add_dependencies(buildtests_cxx server_interceptors_end2end_test)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx slice_hash_table_test)
@@ -1124,6 +1125,7 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -1170,11 +1172,14 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
-  src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
-  src/core/lib/security/security_connector/local_security_connector.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1193,7 +1198,7 @@ add_library(grpc
   src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/frame_handler.cc
   src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
   src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
@@ -1229,6 +1234,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1243,8 +1249,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
@@ -1540,6 +1546,7 @@ add_library(grpc_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc
   src/core/ext/transport/cronet/transport/cronet_api_dummy.cc
@@ -1579,6 +1586,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1593,8 +1601,11 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1612,11 +1623,14 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
-  src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
-  src/core/lib/security/security_connector/local_security_connector.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1635,7 +1649,7 @@ add_library(grpc_cronet
   src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/frame_handler.cc
   src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
   src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
@@ -1656,9 +1670,6 @@ add_library(grpc_cronet
   src/core/tsi/alts/handshaker/altscontext.pb.c
   src/core/tsi/alts/handshaker/handshaker.pb.c
   src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -1938,6 +1949,7 @@ add_library(grpc_test_util
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1946,6 +1958,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1960,8 +1973,11 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2252,6 +2268,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2260,6 +2277,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -2274,8 +2292,11 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2545,6 +2566,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
@@ -2587,6 +2609,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -2601,8 +2624,11 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2621,9 +2647,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
@@ -2839,6 +2862,7 @@ add_library(grpc++
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -2857,7 +2881,6 @@ add_library(grpc++
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -2870,6 +2893,10 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -2994,6 +3021,7 @@ foreach(_hdr
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -3088,6 +3116,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -3100,14 +3130,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -3200,6 +3234,7 @@ add_library(grpc++_cronet
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -3218,7 +3253,6 @@ add_library(grpc++_cronet
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -3231,6 +3265,10 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -3408,6 +3446,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -3421,6 +3460,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -3435,7 +3475,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
@@ -3565,6 +3604,7 @@ foreach(_hdr
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -3659,6 +3699,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -3671,14 +3713,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4068,6 +4114,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4080,14 +4128,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4249,6 +4301,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4261,14 +4315,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4323,6 +4381,7 @@ add_library(grpc++_unsecure
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -4341,7 +4400,6 @@ add_library(grpc++_unsecure
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -4354,6 +4412,10 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4477,6 +4539,7 @@ foreach(_hdr
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -4571,6 +4634,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
@@ -4583,14 +4648,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -5265,6 +5334,7 @@ add_library(qps
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
+  test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
 )
@@ -12374,6 +12444,48 @@ target_link_libraries(client_crash_test_server
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(client_interceptors_end2end_test
+  test/cpp/end2end/client_interceptors_end2end_test.cc
+  test/cpp/end2end/interceptors_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_interceptors_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_interceptors_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(client_lb_end2end_test
   test/cpp/end2end/client_lb_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12788,6 +12900,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
+  test/cpp/end2end/interceptors_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -15244,6 +15357,48 @@ target_link_libraries(server_early_return_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(server_interceptors_end2end_test
+  test/cpp/end2end/interceptors_util.cc
+  test/cpp/end2end/server_interceptors_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(server_interceptors_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_interceptors_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(server_request_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
@@ -17595,42 +17750,6 @@ target_link_libraries(h2_uds_nosec_test
   endif()
 
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(inproc_nosec_test
-  test/core/end2end/fixtures/inproc.cc
-)
-
-
-target_include_directories(inproc_nosec_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(inproc_nosec_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_nosec_tests
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(inproc_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(inproc_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

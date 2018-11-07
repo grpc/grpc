@@ -539,13 +539,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
     balancers_.at(i)->add_response(response, delay_ms);
   }
 
-  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000) {
+  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+                 bool wait_for_ready = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
+    if (wait_for_ready) context.set_wait_for_ready(true);
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
     return status;
@@ -1366,7 +1368,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
           {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
                {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
-  const Status status = SendRpc();
+  const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
 }
@@ -1391,7 +1393,7 @@ TEST_F(SingleBalancerTest, DropAll) {
   // fail.
   Status status;
   do {
-    status = SendRpc();
+    status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");

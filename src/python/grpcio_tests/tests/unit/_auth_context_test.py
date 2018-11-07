@@ -15,6 +15,7 @@
 
 import pickle
 import unittest
+import logging
 
 import grpc
 from grpc import _channel
@@ -187,4 +188,5 @@ class AuthContextTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

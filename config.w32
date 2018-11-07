@@ -209,6 +209,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\timeout_encoding.cc " +
     "src\\core\\lib\\transport\\transport.cc " +
     "src\\core\\lib\\transport\\transport_op_string.cc " +
+    "src\\core\\lib\\uri\\uri_parser.cc " +
     "src\\core\\lib\\debug\\trace.cc " +
     "src\\core\\ext\\transport\\chttp2\\server\\secure\\server_secure_chttp2.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\bin_decoder.cc " +
@@ -255,11 +256,14 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\credentials\\oauth2\\oauth2_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\plugin\\plugin_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\ssl\\ssl_credentials.cc " +
-    "src\\core\\lib\\security\\security_connector\\alts_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\alts\\alts_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\fake\\fake_security_connector.cc " +
     "src\\core\\lib\\security\\security_connector\\load_system_roots_fallback.cc " +
     "src\\core\\lib\\security\\security_connector\\load_system_roots_linux.cc " +
-    "src\\core\\lib\\security\\security_connector\\local_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\local\\local_security_connector.cc " +
     "src\\core\\lib\\security\\security_connector\\security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\ssl\\ssl_security_connector.cc " +
+    "src\\core\\lib\\security\\security_connector\\ssl_utils.cc " +
     "src\\core\\lib\\security\\transport\\client_auth_filter.cc " +
     "src\\core\\lib\\security\\transport\\secure_endpoint.cc " +
     "src\\core\\lib\\security\\transport\\security_handshaker.cc " +
@@ -278,7 +282,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\alts\\frame_protector\\alts_unseal_privacy_integrity_crypter.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\frame_handler.cc " +
     "src\\core\\tsi\\alts\\handshaker\\alts_handshaker_client.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\alts_tsi_event.cc " +
+    "src\\core\\tsi\\alts\\handshaker\\alts_shared_resource.cc " +
     "src\\core\\tsi\\alts\\handshaker\\alts_tsi_handshaker.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_grpc_integrity_only_record_protocol.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_grpc_privacy_integrity_record_protocol.cc " +
@@ -314,6 +318,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\client_channel_factory.cc " +
     "src\\core\\ext\\filters\\client_channel\\client_channel_plugin.cc " +
     "src\\core\\ext\\filters\\client_channel\\connector.cc " +
+    "src\\core\\ext\\filters\\client_channel\\health\\health_check_client.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_connect_handshaker.cc " +
     "src\\core\\ext\\filters\\client_channel\\http_proxy.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy.cc " +
@@ -328,8 +333,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\retry_throttle.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_index.cc " +
-    "src\\core\\ext\\filters\\client_channel\\uri_parser.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
+    "src\\core\\ext\\filters\\client_channel\\health\\health.pb.c " +
     "src\\core\\tsi\\alts_transport_security.cc " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
@@ -672,6 +677,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\census");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\health");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto");
@@ -734,11 +740,16 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\plugin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\alts");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\fake");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\local");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\slice");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\transport");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\uri");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\plugin_registry");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts");

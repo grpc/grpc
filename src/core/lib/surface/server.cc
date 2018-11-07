@@ -189,6 +189,8 @@ typedef struct {
 struct grpc_server {
   grpc_channel_args* channel_args;
 
+  grpc_resource_user* default_resource_user;
+
   grpc_completion_queue** cqs;
   grpc_pollset** pollsets;
   size_t cq_count;
@@ -822,11 +824,16 @@ static void accept_stream(void* cd, grpc_transport* transport,
   channel_data* chand = static_cast<channel_data*>(cd);
   /* create a call */
   grpc_call_create_args args;
-  memset(&args, 0, sizeof(args));
   args.channel = chand->channel;
-  args.server_transport_data = transport_server_data;
-  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   args.server = chand->server;
+  args.parent = nullptr;
+  args.propagation_mask = 0;
+  args.cq = nullptr;
+  args.pollset_set_alternative = nullptr;
+  args.server_transport_data = transport_server_data;
+  args.add_initial_metadata = nullptr;
+  args.add_initial_metadata_count = 0;
+  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   grpc_call* call;
   grpc_error* error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
@@ -838,8 +845,9 @@ static void accept_stream(void* cd, grpc_transport* transport,
   }
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_op op;
-  memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_INITIAL_METADATA;
+  op.flags = 0;
+  op.reserved = nullptr;
   op.data.recv_initial_metadata.recv_initial_metadata =
       &calld->initial_metadata;
   GRPC_CLOSURE_INIT(&calld->got_initial_metadata, got_initial_metadata, elem,
@@ -1024,6 +1032,15 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
         grpc_slice_from_static_string("Server created"));
   }
 
+  if (args != nullptr) {
+    grpc_resource_quota* resource_quota =
+        grpc_resource_quota_from_channel_args(args, false /* create */);
+    if (resource_quota != nullptr) {
+      server->default_resource_user =
+          grpc_resource_user_create(resource_quota, "default");
+    }
+  }
+
   return server;
 }
 
@@ -1122,7 +1139,8 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
 void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args,
-                                 intptr_t socket_uuid) {
+                                 intptr_t socket_uuid,
+                                 grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1135,7 +1153,8 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   uint32_t max_probes = 0;
   grpc_transport_op* op = nullptr;
 
-  channel = grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
+  channel = grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
+                                resource_user);
   chand = static_cast<channel_data*>(
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
           ->channel_data);
@@ -1330,6 +1349,13 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 
   channel_broadcaster_shutdown(&broadcaster, true /* send_goaway */,
                                GRPC_ERROR_NONE);
+
+  if (server->default_resource_user != nullptr) {
+    grpc_resource_quota_unref(
+        grpc_resource_user_quota(server->default_resource_user));
+    grpc_resource_user_shutdown(server->default_resource_user);
+    grpc_resource_user_unref(server->default_resource_user);
+  }
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
@@ -1544,6 +1570,10 @@ static void fail_call(grpc_server* server, size_t cq_idx, requested_call* rc,
 
 const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server) {
   return server->channel_args;
+}
+
+grpc_resource_user* grpc_server_get_default_resource_user(grpc_server* server) {
+  return server->default_resource_user;
 }
 
 int grpc_server_has_open_connections(grpc_server* server) {

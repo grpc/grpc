@@ -14,6 +14,7 @@
 """Test of RPCs made against gRPC Python's application-layer API."""
 
 import unittest
+import logging
 
 import grpc
 
@@ -131,4 +132,5 @@ class InvalidMetadataTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

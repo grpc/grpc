@@ -3394,6 +3394,29 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "client_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -3578,12 +3601,16 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "end2end_test", 
     "src": [
-      "test/cpp/end2end/end2end_test.cc"
+      "test/cpp/end2end/end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4694,6 +4721,29 @@
     "name": "server_early_return_test", 
     "src": [
       "test/cpp/end2end/server_early_return_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h", 
+      "test/cpp/end2end/server_interceptors_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6557,24 +6607,6 @@
   }, 
   {
     "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "inproc_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/inproc.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc++_test_config", 
@@ -7854,6 +7886,7 @@
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/server_async.cc", 
+      "test/cpp/qps/server_callback.cc", 
       "test/cpp/qps/server_sync.cc", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/usage_timer.cc", 
@@ -9110,7 +9143,7 @@
       "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h", 
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
       "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h", 
@@ -9141,8 +9174,8 @@
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.cc", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.cc", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.cc", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
@@ -9622,7 +9655,8 @@
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9779,7 +9813,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9930,7 +9965,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9984,7 +10020,8 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_deadline_filter"
+      "grpc_deadline_filter", 
+      "health_proto"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/backup_poller.h", 
@@ -9992,6 +10029,7 @@
       "src/core/ext/filters/client_channel/client_channel_channelz.h", 
       "src/core/ext/filters/client_channel/client_channel_factory.h", 
       "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/health/health_check_client.h", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
       "src/core/ext/filters/client_channel/http_proxy.h", 
       "src/core/ext/filters/client_channel/lb_policy.h", 
@@ -10006,8 +10044,7 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -10025,6 +10062,8 @@
       "src/core/ext/filters/client_channel/client_channel_plugin.cc", 
       "src/core/ext/filters/client_channel/connector.cc", 
       "src/core/ext/filters/client_channel/connector.h", 
+      "src/core/ext/filters/client_channel/health/health_check_client.cc", 
+      "src/core/ext/filters/client_channel/health/health_check_client.h", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.cc", 
       "src/core/ext/filters/client_channel/http_connect_handshaker.h", 
       "src/core/ext/filters/client_channel/http_proxy.cc", 
@@ -10053,9 +10092,7 @@
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10459,11 +10496,14 @@
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.h", 
       "src/core/lib/security/security_connector/load_system_roots.h", 
       "src/core/lib/security/security_connector/load_system_roots_linux.h", 
-      "src/core/lib/security/security_connector/local_security_connector.h", 
+      "src/core/lib/security/security_connector/local/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.h", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
+      "src/core/lib/security/security_connector/ssl_utils.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
@@ -10509,16 +10549,22 @@
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.cc", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/security_connector/alts_security_connector.cc", 
-      "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.cc", 
+      "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.cc", 
+      "src/core/lib/security/security_connector/fake/fake_security_connector.h", 
       "src/core/lib/security/security_connector/load_system_roots.h", 
       "src/core/lib/security/security_connector/load_system_roots_fallback.cc", 
       "src/core/lib/security/security_connector/load_system_roots_linux.cc", 
       "src/core/lib/security/security_connector/load_system_roots_linux.h", 
-      "src/core/lib/security/security_connector/local_security_connector.cc", 
-      "src/core/lib/security/security_connector/local_security_connector.h", 
+      "src/core/lib/security/security_connector/local/local_security_connector.cc", 
+      "src/core/lib/security/security_connector/local/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.cc", 
       "src/core/lib/security/security_connector/security_connector.h", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc", 
+      "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
+      "src/core/lib/security/security_connector/ssl_utils.cc", 
+      "src/core/lib/security/security_connector/ssl_utils.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.cc", 
       "src/core/lib/security/transport/secure_endpoint.cc", 
@@ -10997,6 +11043,23 @@
   }, 
   {
     "deps": [
+      "nanopb"
+    ], 
+    "headers": [
+      "src/core/ext/filters/client_channel/health/health.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "health_proto", 
+    "src": [
+      "src/core/ext/filters/client_channel/health/health.pb.c", 
+      "src/core/ext/filters/client_channel/health/health.pb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "nanopb_headers"
     ], 
     "headers": [], 
@@ -11142,6 +11205,8 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
@@ -11154,14 +11219,18 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 
@@ -11212,6 +11281,8 @@
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
+      "include/grpcpp/impl/codegen/call_op_set.h", 
+      "include/grpcpp/impl/codegen/call_op_set_interface.h", 
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
@@ -11224,14 +11295,18 @@
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
+      "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
+      "include/grpcpp/impl/codegen/interceptor_common.h", 
       "include/grpcpp/impl/codegen/metadata_map.h", 
       "include/grpcpp/impl/codegen/method_handler_impl.h", 
       "include/grpcpp/impl/codegen/rpc_method.h", 
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
+      "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
       "include/grpcpp/impl/codegen/service_type.h", 
       "include/grpcpp/impl/codegen/slice.h", 
@@ -11289,6 +11364,7 @@
       "grpc++_codegen_base", 
       "grpc_base_headers", 
       "grpc_transport_inproc_headers", 
+      "health_proto", 
       "nanopb_headers"
     ], 
     "headers": [
@@ -11378,6 +11454,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11389,7 +11466,6 @@
       "src/cpp/common/channel_filter.h", 
       "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/health/default_health_check_service.h", 
-      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/thread_manager/thread_manager.h"
     ], 
@@ -11483,6 +11559,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11492,6 +11569,7 @@
       "include/grpcpp/support/time.h", 
       "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
+      "src/cpp/client/client_interceptor.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 
@@ -11514,8 +11592,6 @@
       "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/health/default_health_check_service.cc", 
       "src/cpp/server/health/default_health_check_service.h", 
-      "src/cpp/server/health/health.pb.c", 
-      "src/cpp/server/health/health.pb.h", 
       "src/cpp/server/health/health_check_service.cc", 
       "src/cpp/server/health/health_check_service_server_builder_option.cc", 
       "src/cpp/server/server_builder.cc", 

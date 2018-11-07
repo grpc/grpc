@@ -130,7 +130,9 @@ class TestGevent(setuptools.Command):
         # Beta API is unsupported for gevent
         'protoc_plugin.beta_python_plugin_test',
         'unit.beta._beta_features_test',
-    )
+        # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
+        # This test will stuck while running higher version of gevent
+        'unit._auth_context_test.AuthContextTest.testSessionResumption')
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 

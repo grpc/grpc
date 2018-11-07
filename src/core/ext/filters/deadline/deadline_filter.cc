@@ -27,6 +27,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -152,7 +153,11 @@ static void inject_recv_trailing_metadata_ready(
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
-  bool in_call_combiner;
+  start_timer_after_init_state(grpc_call_element* elem, grpc_millis deadline)
+      : elem(elem), deadline(deadline) {}
+  ~start_timer_after_init_state() { start_timer_if_needed(elem, deadline); }
+
+  bool in_call_combiner = false;
   grpc_call_element* elem;
   grpc_millis deadline;
   grpc_closure closure;
@@ -171,20 +176,16 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                              "scheduling deadline timer");
     return;
   }
-  start_timer_if_needed(state->elem, state->deadline);
-  gpr_free(state);
+  grpc_core::Delete(state);
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "done scheduling deadline timer");
 }
 
-void grpc_deadline_state_init(grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline) {
-  grpc_deadline_state* deadline_state =
-      static_cast<grpc_deadline_state*>(elem->call_data);
-  deadline_state->call_stack = call_stack;
-  deadline_state->call_combiner = call_combiner;
+grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
+                                         grpc_call_stack* call_stack,
+                                         grpc_call_combiner* call_combiner,
+                                         grpc_millis deadline)
+    : call_stack(call_stack), call_combiner(call_combiner) {
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
   if (deadline != GRPC_MILLIS_INF_FUTURE) {
@@ -196,21 +197,14 @@ void grpc_deadline_state_init(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        static_cast<struct start_timer_after_init_state*>(
-            gpr_zalloc(sizeof(*state)));
-    state->elem = elem;
-    state->deadline = deadline;
+        grpc_core::New<start_timer_after_init_state>(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_SCHED(&state->closure, GRPC_ERROR_NONE);
   }
 }
 
-void grpc_deadline_state_destroy(grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state =
-      static_cast<grpc_deadline_state*>(elem->call_data);
-  cancel_timer_if_needed(deadline_state);
-}
+grpc_deadline_state::~grpc_deadline_state() { cancel_timer_if_needed(this); }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline) {
@@ -269,8 +263,8 @@ typedef struct server_call_data {
 // Constructor for call_data.  Used for both client and server filters.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
-                           args->deadline);
+  new (elem->call_data) grpc_deadline_state(
+      elem, args->call_stack, args->call_combiner, args->deadline);
   return GRPC_ERROR_NONE;
 }
 
@@ -278,7 +272,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  grpc_deadline_state_destroy(elem);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
+  deadline_state->~grpc_deadline_state();
 }
 
 // Method for starting a call op for client filter.

@@ -35,6 +35,7 @@ import os
 import six
 import threading
 import unittest
+import logging
 
 from concurrent import futures
 
@@ -518,4 +519,5 @@ class ServerSSLCertReloadTestCertConfigReuse(_ServerSSLCertReloadTest):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

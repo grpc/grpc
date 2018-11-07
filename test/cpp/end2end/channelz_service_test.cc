@@ -41,6 +41,8 @@
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
+using grpc::channelz::v1::GetServerRequest;
+using grpc::channelz::v1::GetServerResponse;
 using grpc::channelz::v1::GetServerSocketsRequest;
 using grpc::channelz::v1::GetServerSocketsResponse;
 using grpc::channelz::v1::GetServersRequest;
@@ -460,6 +462,29 @@ TEST_F(ChannelzServerTest, BasicServerTest) {
   EXPECT_EQ(response.server_size(), 1);
 }
 
+TEST_F(ChannelzServerTest, BasicGetServerTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_servers_request;
+  GetServersResponse get_servers_response;
+  get_servers_request.set_start_server_id(0);
+  ClientContext get_servers_context;
+  Status s = channelz_stub_->GetServers(
+      &get_servers_context, get_servers_request, &get_servers_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_servers_response.server_size(), 1);
+  GetServerRequest get_server_request;
+  GetServerResponse get_server_response;
+  get_server_request.set_server_id(
+      get_servers_response.server(0).ref().server_id());
+  ClientContext get_server_context;
+  s = channelz_stub_->GetServer(&get_server_context, get_server_request,
+                                &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_servers_response.server(0).ref().server_id(),
+            get_server_response.server().ref().server_id());
+}
+
 TEST_F(ChannelzServerTest, ServerCallTest) {
   ResetStubs();
   ConfigureProxy(1);
@@ -624,6 +649,28 @@ TEST_F(ChannelzServerTest, GetServerSocketsTest) {
                                        &get_server_sockets_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
+}
+
+TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_server_request;
+  GetServersResponse get_server_response;
+  get_server_request.set_start_server_id(0);
+  ClientContext get_server_context;
+  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
+                                        &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_response.server_size(), 1);
+  EXPECT_EQ(get_server_response.server(0).listen_socket_size(), 1);
+  GetSocketRequest get_socket_request;
+  GetSocketResponse get_socket_response;
+  get_socket_request.set_socket_id(
+      get_server_response.server(0).listen_socket(0).socket_id());
+  ClientContext get_socket_context;
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
 }  // namespace testing

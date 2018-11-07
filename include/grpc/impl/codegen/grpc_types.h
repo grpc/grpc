@@ -347,6 +347,9 @@ typedef struct {
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
+/** If set, inhibits health checking (which may be enabled via the
+ *  service config.) */
+#define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

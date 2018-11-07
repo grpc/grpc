@@ -77,14 +77,14 @@ class CallbackUnaryCallImpl {
       tag->force_run(s);
       return;
     }
-    ops->SendInitialMetadata(context->send_initial_metadata_,
+    ops->SendInitialMetadata(&context->send_initial_metadata_,
                              context->initial_metadata_flags());
     ops->RecvInitialMetadata(context);
     ops->RecvMessage(result);
     ops->AllowNoMessage();
     ops->ClientSendClose();
     ops->ClientRecvStatus(context, tag->status_ptr());
-    ops->set_cq_tag(tag);
+    ops->set_core_cq_tag(tag);
     call.PerformOps(ops);
   }
 };

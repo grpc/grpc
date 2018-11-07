@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -86,10 +87,13 @@ void ClientContext::set_call(grpc_call* call,
   call_ = call;
   channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
+    // TODO(yashykt): should interceptors also see this status?
+    SendCancelToInterceptors();
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.", nullptr);
   }
   if (call_canceled_) {
+    SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);
   }
 }
@@ -110,9 +114,17 @@ void ClientContext::set_compression_algorithm(
 void ClientContext::TryCancel() {
   std::unique_lock<std::mutex> lock(mu_);
   if (call_) {
+    SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);
   } else {
     call_canceled_ = true;
+  }
+}
+
+void ClientContext::SendCancelToInterceptors() {
+  internal::CancelInterceptorBatchMethods cancel_methods;
+  for (size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
+    rpc_info_.RunInterceptor(&cancel_methods, i);
   }
 }
 

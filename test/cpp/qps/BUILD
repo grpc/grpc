@@ -36,6 +36,7 @@ grpc_cc_library(
         "qps_server_builder.cc",
         "qps_worker.cc",
         "server_async.cc",
+        "server_callback.cc",
         "server_sync.cc",
     ],
     hdrs = [
