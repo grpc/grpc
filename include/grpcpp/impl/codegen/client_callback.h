@@ -64,10 +64,10 @@ class CallbackUnaryCallImpl {
                   CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
                   CallOpClientSendClose, CallOpClientRecvStatus>;
 
-    auto* ops = new (g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* ops = new (get_g_core_codegen_interface()->grpc_call_arena_alloc(
         call.call(), sizeof(FullCallOpSet))) FullCallOpSet;
 
-    auto* tag = new (g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* tag = new (get_g_core_codegen_interface()->grpc_call_arena_alloc(
         call.call(), sizeof(CallbackWithStatusTag)))
         CallbackWithStatusTag(call.call(), on_completion, ops);
 

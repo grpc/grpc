@@ -35,7 +35,7 @@ class MetadataMap {
   MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
 
   ~MetadataMap() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
+    get_g_core_codegen_interface()->grpc_metadata_array_destroy(&arr_);
   }
 
   grpc::string GetBinaryErrorDetails() {

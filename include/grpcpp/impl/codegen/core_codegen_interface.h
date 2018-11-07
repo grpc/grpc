@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
+#include <grpcpp/impl/codegen/codegen_init.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
@@ -135,13 +136,11 @@ class CoreCodegenInterface {
   virtual gpr_timespec gpr_time_0(gpr_clock_type type) = 0;
 };
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// Codegen specific version of \a GPR_ASSERT.
 #define GPR_CODEGEN_ASSERT(x)                                              \
   do {                                                                     \
     if (!(x)) {                                                            \
-      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
+      grpc::get_g_core_codegen_interface()->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)
 

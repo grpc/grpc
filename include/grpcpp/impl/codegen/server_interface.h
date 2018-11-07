@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/codegen_init.h>
 
 namespace grpc {
 
@@ -37,8 +38,6 @@ class ServerCompletionQueue;
 class ServerContext;
 class ServerCredentials;
 class Service;
-
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// Models a gRPC server.
 ///
@@ -95,7 +94,7 @@ class ServerInterface : public internal::CallHook {
   /// See \a ServerBuilder::AddCompletionQueue for details.
   void Shutdown() {
     ShutdownInternal(
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_MONOTONIC));
+        get_g_core_codegen_interface()->gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
 
   /// Block waiting for all work to complete.
@@ -257,9 +256,9 @@ class ServerInterface : public internal::CallHook {
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to
           // the application.
-          g_core_codegen_interface->grpc_call_cancel_with_status(
+          get_g_core_codegen_interface()->grpc_call_cancel_with_status(
               call_, GRPC_STATUS_INTERNAL, "Unable to parse request", nullptr);
-          g_core_codegen_interface->grpc_call_unref(call_);
+          get_g_core_codegen_interface()->grpc_call_unref(call_);
           new PayloadAsyncRequest(registered_method_, server_, context_,
                                   stream_, call_cq_, notification_cq_, tag_,
                                   request_);

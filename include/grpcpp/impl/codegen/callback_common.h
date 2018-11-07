@@ -67,7 +67,7 @@ class CallbackWithStatusTag
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
-    g_core_codegen_interface->grpc_call_ref(call);
+    get_g_core_codegen_interface()->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
   }
   ~CallbackWithStatusTag() {}
@@ -105,7 +105,7 @@ class CallbackWithStatusTag
 
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
-    g_core_codegen_interface->grpc_call_unref(call_);
+    get_g_core_codegen_interface()->grpc_call_unref(call_);
   }
 };
 
@@ -127,7 +127,7 @@ class CallbackWithSuccessTag
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
                          CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
-    g_core_codegen_interface->grpc_call_ref(call);
+    get_g_core_codegen_interface()->grpc_call_ref(call);
     functor_run = &CallbackWithSuccessTag::StaticRun;
   }
 
@@ -157,7 +157,7 @@ class CallbackWithSuccessTag
     CatchingCallback(std::move(func_), ok);
 
     func_ = nullptr;  // reset to clear this out for sure
-    g_core_codegen_interface->grpc_call_unref(call_);
+    get_g_core_codegen_interface()->grpc_call_unref(call_);
   }
 };
 

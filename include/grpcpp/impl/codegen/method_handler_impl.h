@@ -326,7 +326,7 @@ class ErrorMethodHandler : public MethodHandler {
   void* Deserialize(grpc_byte_buffer* req, Status* status) final {
     // We have to destroy any request payload
     if (req != nullptr) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(req);
+      get_g_core_codegen_interface()->grpc_byte_buffer_destroy(req);
     }
     return nullptr;
   }

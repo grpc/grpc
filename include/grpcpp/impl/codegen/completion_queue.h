@@ -38,6 +38,7 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/impl/codegen/codegen_init.h>
 
 struct grpc_completion_queue;
 
@@ -86,8 +87,6 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 }  // namespace internal
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
@@ -108,7 +107,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
   ~CompletionQueue() {
-    g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
+    get_g_core_codegen_interface()->grpc_completion_queue_destroy(cq_);
   }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
@@ -169,7 +168,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///         shut down.
   bool Next(void** tag, bool* ok) {
     return (AsyncNextInternal(tag, ok,
-                              g_core_codegen_interface->gpr_inf_future(
+                              get_g_core_codegen_interface()->gpr_inf_future(
                                   GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
@@ -237,8 +236,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
   CompletionQueue(const grpc_completion_queue_attributes& attributes) {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
-        g_core_codegen_interface->grpc_completion_queue_factory_lookup(
+    cq_ = get_g_core_codegen_interface()->grpc_completion_queue_create(
+        get_g_core_codegen_interface()->grpc_completion_queue_factory_lookup(
             &attributes),
         &attributes, NULL);
     InitialAvalanching();  // reserve this for the future shutdown
@@ -299,9 +298,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+        get_g_core_codegen_interface()->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
-      auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+      auto ev = get_g_core_codegen_interface()->grpc_completion_queue_pluck(
           cq_, tag, deadline, nullptr);
       bool ok = ev.success != 0;
       void* ignored = tag;
@@ -322,8 +321,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(internal::CompletionQueueTag* tag) {
-    auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+    auto deadline = get_g_core_codegen_interface()->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto ev = get_g_core_codegen_interface()->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
@@ -338,7 +337,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(internal::CompletionQueueTag* tag, gpr_timespec deadline) {
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+    auto ev = get_g_core_codegen_interface()->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;

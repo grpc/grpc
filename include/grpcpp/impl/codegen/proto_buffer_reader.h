@@ -29,14 +29,12 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/codegen_init.h>
 
 /// This header provides an object that reads bytes directly from a
 /// grpc::ByteBuffer, via the ZeroCopyInputStream interface
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// This is a specialization of the protobuf class ZeroCopyInputStream
 /// The principle is to get one chunk of data at a time from the proto layer,
 /// with options to backup (re-see some bytes) or skip (forward past some bytes)
@@ -52,7 +50,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
     if (!buffer->Valid() ||
-        !g_core_codegen_interface->grpc_byte_buffer_reader_init(
+        !get_g_core_codegen_interface()->grpc_byte_buffer_reader_init(
             &reader_, buffer->c_buffer())) {
       status_ = Status(StatusCode::INTERNAL,
                        "Couldn't initialize byte buffer reader");
@@ -61,7 +59,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
 
   ~ProtoBufferReader() {
     if (status_.ok()) {
-      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
+      get_g_core_codegen_interface()->grpc_byte_buffer_reader_destroy(&reader_);
     }
   }
 
@@ -81,11 +79,11 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
       return true;
     }
     /// Otherwise get the next slice from the byte buffer reader
-    if (!g_core_codegen_interface->grpc_byte_buffer_reader_next(&reader_,
+    if (!get_g_core_codegen_interface()->grpc_byte_buffer_reader_next(&reader_,
                                                                 &slice_)) {
       return false;
     }
-    g_core_codegen_interface->grpc_slice_unref(slice_);
+    get_g_core_codegen_interface()->grpc_slice_unref(slice_);
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);

@@ -40,6 +40,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/impl/codegen/codegen_init.h>
 
 #include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -48,7 +49,6 @@
 namespace grpc {
 
 class CompletionQueue;
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 class Call;
@@ -64,7 +64,7 @@ inline grpc_metadata* FillMetadataArray(
     return nullptr;
   }
   grpc_metadata* metadata_array =
-      (grpc_metadata*)(g_core_codegen_interface->gpr_malloc(
+      (grpc_metadata*)(get_g_core_codegen_interface()->gpr_malloc(
           (*metadata_count) * sizeof(grpc_metadata)));
   size_t i = 0;
   for (auto iter = metadata.cbegin(); iter != metadata.cend(); ++iter, ++i) {
@@ -73,7 +73,7 @@ inline grpc_metadata* FillMetadataArray(
   }
   if (!optional_error_details.empty()) {
     metadata_array[i].key =
-        g_core_codegen_interface->grpc_slice_from_static_buffer(
+        get_g_core_codegen_interface()->grpc_slice_from_static_buffer(
             kBinaryErrorDetailsKey, sizeof(kBinaryErrorDetailsKey) - 1);
     metadata_array[i].value = SliceReferencingString(optional_error_details);
   }
@@ -260,7 +260,7 @@ class CallOpSendInitialMetadata {
   }
   void FinishOp(bool* status) {
     if (!send_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(initial_metadata_);
+    get_g_core_codegen_interface()->gpr_free(initial_metadata_);
     send_ = false;
   }
 
@@ -595,7 +595,7 @@ class CallOpServerSendStatus {
 
   void FinishOp(bool* status) {
     if (!send_status_available_ || hijacked_) return;
-    g_core_codegen_interface->gpr_free(trailing_metadata_);
+    get_g_core_codegen_interface()->gpr_free(trailing_metadata_);
     send_status_available_ = false;
   }
 
@@ -685,7 +685,7 @@ class CallOpClientRecvStatus {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
-    error_message_ = g_core_codegen_interface->grpc_empty_slice();
+    error_message_ = get_g_core_codegen_interface()->grpc_empty_slice();
   }
 
  protected:
@@ -713,9 +713,9 @@ class CallOpClientRecvStatus {
                binary_error_details);
     client_context_->set_debug_error_string(
         debug_error_string_ != nullptr ? debug_error_string_ : "");
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
+    get_g_core_codegen_interface()->grpc_slice_unref(error_message_);
     if (debug_error_string_ != nullptr) {
-      g_core_codegen_interface->gpr_free((void*)debug_error_string_);
+      get_g_core_codegen_interface()->gpr_free((void*)debug_error_string_);
     }
   }
 
@@ -792,7 +792,7 @@ class CallOpSet : public CallOpSetInterface,
 
   void FillOps(Call* call) override {
     done_intercepting_ = false;
-    g_core_codegen_interface->grpc_call_ref(call->call());
+    get_g_core_codegen_interface()->grpc_call_ref(call->call());
     call_ =
         *call;  // It's fine to create a copy of call since it's just pointers
 
@@ -811,7 +811,7 @@ class CallOpSet : public CallOpSetInterface,
       // run
       *tag = return_tag_;
       *status = saved_status_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      get_g_core_codegen_interface()->grpc_call_unref(call_.call());
       return true;
     }
 
@@ -824,7 +824,7 @@ class CallOpSet : public CallOpSetInterface,
     saved_status_ = *status;
     if (RunInterceptorsPostRecv()) {
       *tag = return_tag_;
-      g_core_codegen_interface->grpc_call_unref(call_.call());
+      get_g_core_codegen_interface()->grpc_call_unref(call_.call());
       return true;
     }
     // Interceptors are going to be run, so we can't return the tag just yet.
@@ -865,7 +865,7 @@ class CallOpSet : public CallOpSetInterface,
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
-                       g_core_codegen_interface->grpc_call_start_batch(
+                       get_g_core_codegen_interface()->grpc_call_start_batch(
                            call_.call(), ops, nops, cq_tag(), nullptr));
   }
 
@@ -874,7 +874,7 @@ class CallOpSet : public CallOpSetInterface,
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
-                       g_core_codegen_interface->grpc_call_start_batch(
+                       get_g_core_codegen_interface()->grpc_call_start_batch(
                            call_.call(), nullptr, 0, cq_tag(), nullptr));
   }
 

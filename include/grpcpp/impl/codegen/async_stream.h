@@ -186,7 +186,7 @@ class ClientAsyncReaderFactory {
                                       ClientContext* context, const W& request,
                                       bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+    return new (get_g_core_codegen_interface()->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReader<R>)))
         ClientAsyncReader<R>(call, context, request, start, tag);
   }
@@ -334,7 +334,7 @@ class ClientAsyncWriterFactory {
                                       ClientContext* context, R* response,
                                       bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+    return new (get_g_core_codegen_interface()->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncWriter<W>)))
         ClientAsyncWriter<W>(call, context, response, start, tag);
   }
@@ -499,7 +499,7 @@ class ClientAsyncReaderWriterFactory {
       bool start, void* tag) {
     ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
 
-    return new (g_core_codegen_interface->grpc_call_arena_alloc(
+    return new (get_g_core_codegen_interface()->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReaderWriter<W, R>)))
         ClientAsyncReaderWriter<W, R>(call, context, start, tag);
   }

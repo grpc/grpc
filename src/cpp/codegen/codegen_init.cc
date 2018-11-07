@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpcpp/impl/codegen/codegen_init.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 
@@ -26,5 +27,26 @@
 /// the following nulled globals. These should be associated with actual
 /// as part of the instantiation of a \a grpc::GrpcLibraryInitializer variable.
 
-grpc::CoreCodegenInterface* grpc::g_core_codegen_interface;
-grpc::GrpcLibraryInterface* grpc::g_glip;
+grpc::CoreCodegenInterface* g_core_codegen_interface = nullptr;
+grpc::GrpcLibraryInterface* g_glip = nullptr;
+
+// Implement getters and setters for interfaces
+grpc::CoreCodegenInterface* grpc::get_g_core_codegen_interface() {
+    return g_core_codegen_interface;
+}
+
+grpc::GrpcLibraryInterface* grpc::get_g_glip() {
+    return g_glip;
+}
+
+void grpc::init_g_core_codegen_interface(grpc::CoreCodegenInterface* ifc_ptr) {
+    if (g_core_codegen_interface == nullptr) {
+        g_core_codegen_interface = ifc_ptr;
+    }
+}
+
+void grpc::init_g_glip(grpc::GrpcLibraryInterface* ifc_ptr) {
+    if (g_glip == nullptr) {
+        g_glip = ifc_ptr;
+    }
+}

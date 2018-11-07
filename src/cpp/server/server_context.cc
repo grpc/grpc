@@ -117,7 +117,7 @@ class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
     }
     /* Start a dummy op so that we can return the tag */
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
-                       g_core_codegen_interface->grpc_call_start_batch(
+                       get_g_core_codegen_interface()->grpc_call_start_batch(
                            call_.call(), nullptr, 0, this, nullptr));
   }
 
