@@ -21,9 +21,9 @@ startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 build --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain
 build --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/cpp:cc-toolchain-clang-x86_64-default
 # Use custom execution platforms defined in third_party/toolchains
-build --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604
+build --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 build --host_platform=//third_party/toolchains:rbe_ubuntu1604
-build --platforms=//third_party/toolchains:rbe_ubuntu1604
+build --platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 
 build --spawn_strategy=remote
 build --strategy=Javac=remote
