@@ -100,7 +100,7 @@ void create_new_channel(
   }
 }
 
-void aquire_persistent_locks() {
+void acquire_persistent_locks() {
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
     php_grpc_zend_resource *rsrc  =
@@ -129,12 +129,10 @@ void release_persistent_locks() {
 }
 
 void prefork() {
-  aquire_persistent_locks();
+  acquire_persistent_locks();
 }
 
 void postfork_child() {
-  // release_persistent_locks();
-
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
     php_grpc_zend_resource *rsrc  =
@@ -149,8 +147,6 @@ void postfork_child() {
     grpc_channel_wrapper *channel = wrapped_channel.wrapper;
     grpc_channel_destroy(wrapped_channel.wrapper->wrapped);
     create_new_channel(&wrapped_channel, channel->target, channel->args, channel->creds);
-    // this Grpc\Channel is referring to it
-    channel->ref_count = 1;
     gpr_mu_unlock(&channel->mu);
   PHP_GRPC_HASH_FOREACH_END()
 
