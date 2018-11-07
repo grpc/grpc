@@ -31,7 +31,7 @@ static void *copy_pointer_arg(void *p) {
 
 static void destroy_pointer_arg(void *p) {
   // Decrease ref count to the object when destroying
-  CFRelease((CFTreeRef)p);
+  CFRelease((CFTypeRef)p);
 }
 
 static int cmp_pointer_arg(void *p, void *q) { return p == q; }
@@ -52,7 +52,7 @@ void GRPCFreeChannelArgs(grpc_channel_args *channel_args) {
 }
 
 grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary) {
-  if (!dictionary) {
+  if (dictionary.count == 0) {
     return NULL;
   }
 
