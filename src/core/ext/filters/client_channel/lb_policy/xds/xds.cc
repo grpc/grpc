@@ -1321,13 +1321,10 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
-  // If fallback is configured and the RR policy already exists, update
-  // it with the new fallback addresses.
-  // Note: We have disable fallback mode in the code, so this will only happen
-  // when rr_policy_ is set because we have balancer received serverlist.
-  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
-    CreateOrUpdateRoundRobinPolicyLocked();
-  }
+  // Note: We have disable fallback mode in the code, so we dont need to update
+  // the policy.
+  // TODO(vpowar): Handle the fallback_address changes when we add support for
+  // fallback in xDS.
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {
@@ -1642,15 +1639,12 @@ void XdsLb::CreateRoundRobinPolicyLocked(const Args& args) {
 grpc_channel_args* XdsLb::CreateRoundRobinPolicyArgsLocked() {
   grpc_lb_addresses* addresses;
   bool is_backend_from_grpclb_load_balancer = false;
-  if (serverlist_ != nullptr) {
-    GPR_ASSERT(serverlist_->num_servers > 0);
-    addresses = ProcessServerlist(serverlist_);
-    is_backend_from_grpclb_load_balancer = true;
-  } else {
-    // This should never be invoked if we do not have serverlist_, as fallback
-    // mode is disabled for xDS plugin.
-    return nullptr;
-  }
+  // This should never be invoked if we do not have serverlist_, as fallback
+  // mode is disabled for xDS plugin.
+  GPR_ASSERT(serverlist_ != nullptr);
+  GPR_ASSERT(serverlist_->num_servers > 0);
+  addresses = ProcessServerlist(serverlist_);
+  is_backend_from_grpclb_load_balancer = true;
   GPR_ASSERT(addresses != nullptr);
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
