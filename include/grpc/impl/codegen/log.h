@@ -102,7 +102,7 @@ GPRAPI void gpr_set_log_function(gpr_log_func func);
 #ifndef NDEBUG
 #define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
 #else
-#define GPR_DEBUG_ASSERT(x)
+#define GPR_DEBUG_ASSERT(x) (x)
 #endif
 
 #ifdef __cplusplus

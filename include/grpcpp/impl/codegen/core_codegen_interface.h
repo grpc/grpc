@@ -149,9 +149,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 #ifndef NDEBUG
 #define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
 #else
-#define GPR_CODEGEN_DEBUG_ASSERT(x) \
-  do {                              \
-  } while (0)
+#define GPR_CODEGEN_DEBUG_ASSERT(x) (x)
 #endif
 
 }  // namespace grpc
