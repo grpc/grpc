@@ -17,7 +17,7 @@
  */
 
 #import "GRPCCallOptions.h"
-#import "internal/GRPCCallOptions+internal.h"
+#import "internal/GRPCCallOptions+Internal.h"
 
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
@@ -77,7 +77,7 @@ BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_PEMCertChain;
   GRPCTransportType _transportType;
   NSString *_hostNameOverride;
-  id _logContext;
+  id<NSObject> _logContext;
   NSString *_channelPoolDomain;
   NSUInteger _channelID;
 }

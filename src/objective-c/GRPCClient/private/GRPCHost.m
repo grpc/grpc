@@ -25,7 +25,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#import "../internal/GRPCCallOptions+internal.h"
+#import "../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"

@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "../internal/GRPCCallOptions+internal.h"
+#import "../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
