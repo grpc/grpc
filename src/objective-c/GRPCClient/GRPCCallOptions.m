@@ -360,7 +360,7 @@ BOOL areObjectsEqual(id obj1, id obj2) {
                                                   connectMinTimeout:_connectMinTimeout
                                               connectInitialBackoff:_connectInitialBackoff
                                                   connectMaxBackoff:_connectMaxBackoff
-                                              additionalChannelArgs:[_additionalChannelArgs copy]
+                                              additionalChannelArgs:_additionalChannelArgs
                                                 PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
                                                        PEMCertChain:_PEMCertChain
