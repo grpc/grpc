@@ -56,7 +56,7 @@ class InterceptorBatchMethodsImpl
     if (call_->client_rpc_info() != nullptr) {
       return ProceedClient();
     }
-    GPR_CODEGEN_ASSERT(call_->server_rpc_info() != nullptr);
+    GPR_CODEGEN_DEBUG_ASSERT(call_->server_rpc_info() != nullptr);
     ProceedServer();
   }
 
@@ -185,7 +185,7 @@ class InterceptorBatchMethodsImpl
   // ContinueFinalizeOpsAfterInterception will be called. Note that neither of
   // them is invoked if there were no interceptors registered.
   bool RunInterceptors() {
-    GPR_CODEGEN_ASSERT(ops_);
+    GPR_CODEGEN_DEBUG_ASSERT(ops_);
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
       if (client_rpc_info->interceptors_.size() == 0) {
@@ -211,8 +211,8 @@ class InterceptorBatchMethodsImpl
   // SyncRequest.
   bool RunInterceptors(std::function<void(void)> f) {
     // This is used only by the server for initial call request
-    GPR_CODEGEN_ASSERT(reverse_ == true);
-    GPR_CODEGEN_ASSERT(call_->client_rpc_info() == nullptr);
+    GPR_CODEGEN_DEBUG_ASSERT(reverse_ == true);
+    GPR_CODEGEN_DEBUG_ASSERT(call_->client_rpc_info() == nullptr);
     auto* server_rpc_info = call_->server_rpc_info();
     if (server_rpc_info == nullptr ||
         server_rpc_info->interceptors_.size() == 0) {
@@ -307,7 +307,7 @@ class InterceptorBatchMethodsImpl
         return ops_->ContinueFinalizeResultAfterInterception();
       }
     }
-    GPR_CODEGEN_ASSERT(callback_);
+    GPR_CODEGEN_DEBUG_ASSERT(callback_);
     callback_();
   }
 
