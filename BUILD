@@ -29,6 +29,7 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_cc_shared_library",
     "grpc_generate_one_off_targets",
     "grpc_proto_plugin",
 )
@@ -228,6 +229,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/sync_cxx11.h",
     "include/grpcpp/impl/sync_no_cxx11.h",
+    "include/grpcpp/impl/codegen/codegen_init.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/auth_context.h",
     "include/grpcpp/security/auth_metadata_processor.h",
@@ -347,6 +349,40 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
+    ],
+)
+
+grpc_cc_shared_library(
+    name = "grpc++_shared",
+    srcs = [
+        "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/secure_credentials.cc",
+        "src/cpp/common/auth_property_iterator.cc",
+        "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
+        "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/secure_server_credentials.cc",
+    ] + GRPCXX_SRCS,
+    language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPCXX_HDRS,
+    standalone = True,
+    includes = [
+        "src/cpp/client",
+        "src/cpp/common",
+        "src/cpp/server",
+        "src/cpp/thread_manager",
+    ],
+    reexport_deps = [
+        "gpr",
+        "grpc",
+        "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
+        "grpc++_codegen_proto",
+    ],
+    external_deps = [
+        "nanopb",
+        "cares",
     ],
 )
 

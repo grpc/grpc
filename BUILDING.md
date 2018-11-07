@@ -122,6 +122,11 @@ From the grpc repository root
 $ bazel build :all
 ```
 
+If you want to build grpc++ as dll with all exported symbols please use:
+```
+$ bazel build grpc++_shared.dll
+```
+
 ## cmake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for 
