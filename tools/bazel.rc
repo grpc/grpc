@@ -6,7 +6,10 @@
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 
+build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
+
+build:dbg --compilation_mode=dbg
 
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
