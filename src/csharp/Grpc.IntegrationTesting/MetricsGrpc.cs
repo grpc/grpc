@@ -193,6 +193,15 @@ namespace Grpc.Testing {
           .AddMethod(__Method_GetGauge, serviceImpl.GetGauge).Build();
     }
 
+    /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, MetricsServiceBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_GetAllGauges, serviceImpl.GetAllGauges);
+      serviceBinder.AddMethod(__Method_GetGauge, serviceImpl.GetGauge);
+    }
+
   }
 }
 #endregion
