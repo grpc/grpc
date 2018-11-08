@@ -53,7 +53,7 @@ static GRPCChannelPool *gChannelPool;
 /** Reduce call ref count to the channel and maybe set the timer. */
 - (void)unrefChannel;
 
-/** Disconnect the channel immediately. */
+/** Disconnect the channel. Any further ref/unref are discarded. */
 - (void)disconnect;
 
 @end
@@ -67,9 +67,8 @@ static GRPCChannelPool *gChannelPool;
   dispatch_queue_t _dispatchQueue;
 
   /**
-   * Date and time when last timer is scheduled. When a timer is fired, if
-   * _lastDispatch + _destroyDelay < now, it can be determined that another timer is scheduled after
-   * schedule of the current timer, hence the current one should be discarded.
+   * Date and time when last timer is scheduled. If a firing timer's scheduled date is different
+   * from this, it is discarded.
    */
   NSDate *_lastDispatch;
 }
@@ -113,7 +112,7 @@ static GRPCChannelPool *gChannelPool;
         dispatch_time_t delay =
             dispatch_time(DISPATCH_TIME_NOW, (int64_t)self->_destroyDelay * NSEC_PER_SEC);
         dispatch_after(delay, self->_dispatchQueue, ^{
-          [self timerFireWithScheduleDate:now];
+          [self timedDisconnectWithScheduleDate:now];
         });
       }
     }
@@ -131,7 +130,7 @@ static GRPCChannelPool *gChannelPool;
   });
 }
 
-- (void)timerFireWithScheduleDate:(NSDate *)scheduleDate {
+- (void)timedDisconnectWithScheduleDate:(NSDate *)scheduleDate {
   dispatch_async(_dispatchQueue, ^{
     if (self->_disconnected || self->_lastDispatch != scheduleDate) {
       return;
@@ -183,6 +182,8 @@ static GRPCChannelPool *gChannelPool;
         grpc_slice_unref(host_slice);
       }
       grpc_slice_unref(path_slice);
+    } else {
+      NSAssert(self->_unmanagedChannel != nil, @"Invalid channeg.");
     }
   });
   return call;
@@ -255,10 +256,9 @@ static GRPCChannelPool *gChannelPool;
 }
 
 + (nullable instancetype)createChannelWithConfiguration:(GRPCChannelConfiguration *)config {
+  NSAssert(config != nil, @"configuration cannot be empty");
   NSString *host = config.host;
-  if (host.length == 0) {
-    return nil;
-  }
+  NSAssert(host.length != 0, @"host cannot be nil");
 
   NSDictionary *channelArgs;
   if (config.callOptions.additionalChannelArgs.count != 0) {
@@ -287,6 +287,9 @@ static GRPCChannelPool *gChannelPool;
 
   GRPCChannelConfiguration *channelConfig =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
+  if (channelConfig == nil) {
+    return nil;
+  }
 
   return [gChannelPool channelWithConfiguration:channelConfig];
 }

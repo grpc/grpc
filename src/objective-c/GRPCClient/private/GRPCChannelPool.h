@@ -57,8 +57,6 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface GRPCChannelPool : NSObject
 
-- (instancetype)init;
-
 /**
  * Return a channel with a particular configuration. If the channel does not exist, execute \a
  * createChannel then add it in the pool. If the channel exists, increase its reference count.

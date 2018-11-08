@@ -192,6 +192,7 @@ extern const char *kCFStreamVarName;
 }
 
 - (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration {
+  NSAssert(configuration != nil, @"Must has a configuration");
   GRPCChannel *channel;
   @synchronized(self) {
     if ([_channelPool objectForKey:configuration]) {

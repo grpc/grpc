@@ -108,6 +108,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   /** Flags whether call has been canceled. */
   BOOL _canceled;
   /** Flags whether call has been finished. */
+  BOOL _finished;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -144,6 +145,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     dispatch_set_target_queue(responseHandler.dispatchQueue, _dispatchQueue);
     _started = NO;
     _canceled = NO;
+    _finished = YES;
   }
 
   return self;
@@ -252,7 +254,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)finish {
   dispatch_async(_dispatchQueue, ^{
-    NSAssert(self->started, @"Call not started.");
+    NSAssert(self->_started, @"Call not started.");
     NSAssert(!self->_canceled, @"Call arleady canceled.");
     NSAssert(!self->_finished, @"Call already half-closed.");
     if (self->_call) {
