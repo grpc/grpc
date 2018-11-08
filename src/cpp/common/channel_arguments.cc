@@ -106,6 +106,8 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
 
   if (!replaced) {
+    strings_.push_back(mutator_arg.key);
+    mutator_arg.key = const_cast<char*>(strings_.back().c_str());
     args_.push_back(mutator_arg);
   }
 }
