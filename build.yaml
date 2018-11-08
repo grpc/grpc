@@ -4541,7 +4541,6 @@ targets:
   - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/client_interceptors_end2end_test.cc
-  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -4668,11 +4667,8 @@ targets:
   cpu_cost: 0.5
   build: test
   language: c++
-  headers:
-  - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/end2end_test.cc
-  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -5472,7 +5468,6 @@ targets:
   headers:
   - test/cpp/end2end/interceptors_util.h
   src:
-  - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   deps:
   - grpc++_test_util

@@ -19,13 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_COMMON_H
 
-#include <array>
-#include <functional>
-
-#include <grpcpp/impl/codegen/call.h>
-#include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
-#include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -33,8 +27,37 @@
 namespace grpc {
 namespace internal {
 
-class InterceptorBatchMethodsImpl
+/// Internal methods for setting the state
+class InternalInterceptorBatchMethods
     : public experimental::InterceptorBatchMethods {
+ public:
+  virtual ~InternalInterceptorBatchMethods() {}
+
+  virtual void AddInterceptionHookPoint(
+      experimental::InterceptionHookPoints type) = 0;
+
+  virtual void SetSendMessage(ByteBuffer* buf) = 0;
+
+  virtual void SetSendInitialMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual void SetSendStatus(grpc_status_code* code,
+                             grpc::string* error_details,
+                             grpc::string* error_message) = 0;
+
+  virtual void SetSendTrailingMetadata(
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+
+  virtual void SetRecvMessage(void* message) = 0;
+
+  virtual void SetRecvInitialMetadata(MetadataMap* map) = 0;
+
+  virtual void SetRecvStatus(Status* status) = 0;
+
+  virtual void SetRecvTrailingMetadata(MetadataMap* map) = 0;
+};
+
+class InterceptorBatchMethodsImpl : public InternalInterceptorBatchMethods {
  public:
   InterceptorBatchMethodsImpl() {
     for (auto i = static_cast<experimental::InterceptionHookPoints>(0);
@@ -52,7 +75,7 @@ class InterceptorBatchMethodsImpl
     return hooks_[static_cast<size_t>(type)];
   }
 
-  void Proceed() override {
+  void Proceed() override { /* fill this */
     if (call_->client_rpc_info() != nullptr) {
       return ProceedClient();
     }
@@ -75,7 +98,8 @@ class InterceptorBatchMethodsImpl
     rpc_info->RunInterceptor(this, current_interceptor_index_);
   }
 
-  void AddInterceptionHookPoint(experimental::InterceptionHookPoints type) {
+  void AddInterceptionHookPoint(
+      experimental::InterceptionHookPoints type) override {
     hooks_[static_cast<size_t>(type)] = true;
   }
 
@@ -115,34 +139,34 @@ class InterceptorBatchMethodsImpl
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf) { send_message_ = buf; }
+  void SetSendMessage(ByteBuffer* buf) override { send_message_ = buf; }
 
   void SetSendInitialMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) {
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_initial_metadata_ = metadata;
   }
 
   void SetSendStatus(grpc_status_code* code, grpc::string* error_details,
-                     grpc::string* error_message) {
+                     grpc::string* error_message) override {
     code_ = code;
     error_details_ = error_details;
     error_message_ = error_message;
   }
 
   void SetSendTrailingMetadata(
-      std::multimap<grpc::string, grpc::string>* metadata) {
+      std::multimap<grpc::string, grpc::string>* metadata) override {
     send_trailing_metadata_ = metadata;
   }
 
-  void SetRecvMessage(void* message) { recv_message_ = message; }
+  void SetRecvMessage(void* message) override { recv_message_ = message; }
 
-  void SetRecvInitialMetadata(MetadataMap* map) {
+  void SetRecvInitialMetadata(MetadataMap* map) override {
     recv_initial_metadata_ = map;
   }
 
-  void SetRecvStatus(Status* status) { recv_status_ = status; }
+  void SetRecvStatus(Status* status) override { recv_status_ = status; }
 
-  void SetRecvTrailingMetadata(MetadataMap* map) {
+  void SetRecvTrailingMetadata(MetadataMap* map) override {
     recv_trailing_metadata_ = map;
   }
 
@@ -353,105 +377,6 @@ class InterceptorBatchMethodsImpl
   MetadataMap* recv_trailing_metadata_ = nullptr;
 };
 
-// A special implementation of InterceptorBatchMethods to send a Cancel
-// notification down the interceptor stack
-class CancelInterceptorBatchMethods
-    : public experimental::InterceptorBatchMethods {
- public:
-  bool QueryInterceptionHookPoint(
-      experimental::InterceptionHookPoints type) override {
-    if (type == experimental::InterceptionHookPoints::PRE_SEND_CANCEL) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  void Proceed() override {
-    // This is a no-op. For actual continuation of the RPC simply needs to
-    // return from the Intercept method
-  }
-
-  void Hijack() override {
-    // Only the client can hijack when sending down initial metadata
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call Hijack on a method which has a "
-                       "Cancel notification");
-  }
-
-  ByteBuffer* GetSendMessage() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetSendMessage on a method which "
-                       "has a Cancel notification");
-    return nullptr;
-  }
-
-  std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetSendInitialMetadata on a "
-                       "method which has a Cancel notification");
-    return nullptr;
-  }
-
-  Status GetSendStatus() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetSendStatus on a method which "
-                       "has a Cancel notification");
-    return Status();
-  }
-
-  void ModifySendStatus(const Status& status) override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call ModifySendStatus on a method "
-                       "which has a Cancel notification");
-    return;
-  }
-
-  std::multimap<grpc::string, grpc::string>* GetSendTrailingMetadata()
-      override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetSendTrailingMetadata on a "
-                       "method which has a Cancel notification");
-    return nullptr;
-  }
-
-  void* GetRecvMessage() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetRecvMessage on a method which "
-                       "has a Cancel notification");
-    return nullptr;
-  }
-
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()
-      override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetRecvInitialMetadata on a "
-                       "method which has a Cancel notification");
-    return nullptr;
-  }
-
-  Status* GetRecvStatus() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetRecvStatus on a method which "
-                       "has a Cancel notification");
-    return nullptr;
-  }
-
-  std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata()
-      override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetRecvTrailingMetadata on a "
-                       "method which has a Cancel notification");
-    return nullptr;
-  }
-
-  std::unique_ptr<ChannelInterface> GetInterceptedChannel() override {
-    GPR_CODEGEN_ASSERT(false &&
-                       "It is illegal to call GetInterceptedChannel on a "
-                       "method which has a Cancel notification");
-    return std::unique_ptr<ChannelInterface>(nullptr);
-  }
-};
 }  // namespace internal
 }  // namespace grpc
 

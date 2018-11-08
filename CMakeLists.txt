@@ -12446,7 +12446,6 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(client_interceptors_end2end_test
   test/cpp/end2end/client_interceptors_end2end_test.cc
-  test/cpp/end2end/interceptors_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12900,7 +12899,6 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
-  test/cpp/end2end/interceptors_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -15358,7 +15356,6 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_interceptors_end2end_test
-  test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/server_interceptors_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

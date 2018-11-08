@@ -43,6 +43,89 @@ namespace grpc {
 namespace testing {
 namespace {
 
+class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsStreamingEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  EchoTestServiceStreamingImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+class ClientInterceptorsEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+/* This interceptor does nothing. Just keeps a global count on the number of
+ * times it was invoked. */
+class DummyInterceptor : public experimental::Interceptor {
+ public:
+  DummyInterceptor(experimental::ClientRpcInfo* info) {}
+
+  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+      num_times_run_++;
+    } else if (methods->QueryInterceptionHookPoint(
+                   experimental::InterceptionHookPoints::
+                       POST_RECV_INITIAL_METADATA)) {
+      num_times_run_reverse_++;
+    }
+    methods->Proceed();
+  }
+
+  static void Reset() {
+    num_times_run_.store(0);
+    num_times_run_reverse_.store(0);
+  }
+
+  static int GetNumTimesRun() {
+    EXPECT_EQ(num_times_run_.load(), num_times_run_reverse_.load());
+    return num_times_run_.load();
+  }
+
+ private:
+  static std::atomic<int> num_times_run_;
+  static std::atomic<int> num_times_run_reverse_;
+};
+
+std::atomic<int> DummyInterceptor::num_times_run_;
+std::atomic<int> DummyInterceptor::num_times_run_reverse_;
+
+class DummyInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new DummyInterceptor(info);
+  }
+};
+
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
@@ -339,25 +422,6 @@ class LoggingInterceptorFactory
   }
 };
 
-class ClientInterceptorsEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
-};
-
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
@@ -473,25 +537,6 @@ TEST_F(ClientInterceptorsEnd2endTest,
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
-
-class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsStreamingEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  EchoTestServiceStreamingImpl service_;
-  std::unique_ptr<Server> server_;
-};
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
