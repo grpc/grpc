@@ -45,6 +45,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -692,6 +693,10 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   execute_batch(c, op, &state->start_batch);
+}
+
+void grpc_call_cancel_internal(grpc_call* call) {
+  cancel_with_error(call, GRPC_ERROR_CANCELLED);
 }
 
 static grpc_error* error_from_status(grpc_status_code status,

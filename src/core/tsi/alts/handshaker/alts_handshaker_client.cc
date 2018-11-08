@@ -26,6 +26,7 @@
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
@@ -376,7 +377,7 @@ static void handshaker_client_shutdown(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    GPR_ASSERT(grpc_call_cancel(client->call, nullptr) == GRPC_CALL_OK);
+    grpc_call_cancel_internal(client->call);
   }
 }
 
