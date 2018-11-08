@@ -58,6 +58,9 @@ namespace {
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
+// How many callback requests of each method should we pre-register at start
+#define DEFAULT_CALLBACK_REQS_PER_METHOD 32
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -769,9 +772,12 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
         (*it)->AddSyncMethod(method, method_registration_tag);
       }
     } else {
-      // a callback method
-      auto* req = new CallbackRequest(this, method, method_registration_tag);
-      callback_reqs_.emplace_back(req);
+      // a callback method. Register at least some callback requests
+      // TODO(vjpai): Register these dynamically based on need
+      for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
+        auto* req = new CallbackRequest(this, method, method_registration_tag);
+        callback_reqs_.emplace_back(req);
+      }
       // Enqueue it so that it will be Request'ed later once
       // all request matchers are created at core server startup
     }
