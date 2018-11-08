@@ -141,10 +141,10 @@ class XdsLb : public LoadBalancingPolicy {
 
  private:
   /// Linked list of pending pick requests. It stores all information needed to
-  /// eventually call (Round Robin's) pick() on them. They mainly stay pending
-  /// waiting for the RR policy to be created.
+  /// eventually call pick() on them. They mainly stay pending waiting for the
+  /// policy to be created.
   ///
-  /// Note that when a pick is sent to the RR policy, we inject our own
+  /// Note that when a pick is sent to the policy, we inject our own
   /// on_complete callback, so that we can intercept the result before
   /// invoking the original on_complete callback.  This allows us to set the
   /// LB token metadata and add client_stats to the call context.
@@ -273,7 +273,7 @@ class XdsLb : public LoadBalancingPolicy {
   bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
                                       grpc_error** error);
   void UpdateConnectivityStateFromRoundRobinPolicyLocked(
-      grpc_error* rr_state_error);
+      grpc_error* state_error);
   static void OnRoundRobinConnectivityChangedLocked(void* arg,
                                                     grpc_error* error);
   static void OnRoundRobinRequestReresolutionLocked(void* arg,
@@ -330,14 +330,14 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
 
-  // Pending picks that are waiting on the RR policy's connectivity.
+  // Pending picks that are waiting on the policy's connectivity.
   PendingPick* pending_picks_ = nullptr;
 
-  // The RR policy to use for the backends.
-  OrphanablePtr<LoadBalancingPolicy> rr_policy_;
-  grpc_connectivity_state rr_connectivity_state_;
-  grpc_closure on_rr_connectivity_changed_;
-  grpc_closure on_rr_request_reresolution_;
+  // The policy to use for the backends.
+  OrphanablePtr<LoadBalancingPolicy> policy_;
+  grpc_connectivity_state connectivity_state_;
+  grpc_closure on_connectivity_changed_;
+  grpc_closure on_request_reresolution_;
 };
 
 //
@@ -444,7 +444,7 @@ grpc_lb_addresses* ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
   grpc_lb_addresses* lb_addresses =
       grpc_lb_addresses_create(num_valid, &lb_token_vtable);
   /* second pass: actually populate the addresses and LB tokens (aka user data
-   * to the outside world) to be read by the RR policy during its creation.
+   * to the outside world) to be read by the policy during its creation.
    * Given that the validity tests are very cheap, they are performed again
    * instead of marking the valid ones during the first pass, as this would
    * incurr in an allocation due to the arbitrary number of server */
@@ -1031,10 +1031,10 @@ XdsLb::XdsLb(const grpc_lb_addresses* addresses,
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &XdsLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_connectivity_changed_,
+  GRPC_CLOSURE_INIT(&on_connectivity_changed_,
                     &XdsLb::OnRoundRobinConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_request_reresolution_,
+  GRPC_CLOSURE_INIT(&on_request_reresolution_,
                     &XdsLb::OnRoundRobinRequestReresolutionLocked, this,
                     grpc_combiner_scheduler(args.combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "xds");
@@ -1087,7 +1087,7 @@ void XdsLb::ShutdownLocked() {
   if (fallback_timer_callback_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
-  rr_policy_.reset();
+  policy_.reset();
   TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_CANCELLED);
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
@@ -1134,11 +1134,11 @@ void XdsLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 // Cancel a specific pending pick.
 //
 // A grpclb pick progresses as follows:
-// - If there's a Round Robin policy (rr_policy_) available, it'll be
-//   handed over to the RR policy (in CreateRoundRobinPolicyLocked()). From
-//   that point onwards, it'll be RR's responsibility. For cancellations, that
-//   implies the pick needs also be cancelled by the RR instance.
-// - Otherwise, without an RR instance, picks stay pending at this policy's
+// - If there's a policy (policy_) available, it'll be handed over to the policy
+//   (in CreateRoundRobinPolicyLocked()). From that point onwards, it'll be the
+//   policy's responsibility. For cancellations, that implies the pick needs to
+//   be also cancelled by the policy instance.
+// - Otherwise, without an policy instance, picks stay pending at this policy's
 //   level (grpclb), inside the pending_picks_ list. To cancel these,
 //   we invoke the completion closure and set the pick's connected
 //   subchannel to nullptr right here.
@@ -1159,8 +1159,8 @@ void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
     }
     pp = next;
   }
-  if (rr_policy_ != nullptr) {
-    rr_policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
+  if (policy_ != nullptr) {
+    policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1168,11 +1168,11 @@ void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
 // Cancel all pending picks.
 //
 // A grpclb pick progresses as follows:
-// - If there's a Round Robin policy (rr_policy_) available, it'll be
-//   handed over to the RR policy (in CreateRoundRobinPolicyLocked()). From
-//   that point onwards, it'll be RR's responsibility. For cancellations, that
-//   implies the pick needs also be cancelled by the RR instance.
-// - Otherwise, without an RR instance, picks stay pending at this policy's
+// - If there's a policy (policy_) available, it'll be handed over to the policy
+//   (in CreateRoundRobinPolicyLocked()). From that point onwards, it'll be the
+//   policy's responsibility. For cancellations, that implies the pick needs to
+//   be also cancelled by the policy instance.
+// - Otherwise, without an policy instance, picks stay pending at this policy's
 //   level (grpclb), inside the pending_picks_ list. To cancel these,
 //   we invoke the completion closure and set the pick's connected
 //   subchannel to nullptr right here.
@@ -1195,8 +1195,8 @@ void XdsLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
     }
     pp = next;
   }
-  if (rr_policy_ != nullptr) {
-    rr_policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
+  if (policy_ != nullptr) {
+    policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
                                           initial_metadata_flags_eq,
                                           GRPC_ERROR_REF(error));
   }
@@ -1213,22 +1213,22 @@ void XdsLb::ResetBackoffLocked() {
   if (lb_channel_ != nullptr) {
     grpc_channel_reset_connect_backoff(lb_channel_);
   }
-  if (rr_policy_ != nullptr) {
-    rr_policy_->ResetBackoffLocked();
+  if (policy_ != nullptr) {
+    policy_->ResetBackoffLocked();
   }
 }
 
 bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
   PendingPick* pp = PendingPickCreate(pick);
   bool pick_done = false;
-  if (rr_policy_ != nullptr) {
+  if (policy_ != nullptr) {
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] about to PICK from RR %p", this,
-              rr_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] about to PICK from policy %p", this,
+              policy_.get());
     }
     pick_done =
         PickFromRoundRobinPolicyLocked(false /* force_async */, pp, error);
-  } else {  // rr_policy_ == NULL
+  } else {  // policy_ == NULL
     if (pick->on_complete == nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No pick result available but synchronous result required.");
@@ -1236,7 +1236,7 @@ bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
     } else {
       if (grpc_lb_xds_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "[xdslb %p] No RR policy. Adding to grpclb's pending picks",
+                "[xdslb %p] No policy. Adding to grpclb's pending picks",
                 this);
       }
       AddPendingPick(pp);
@@ -1252,7 +1252,7 @@ bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
 void XdsLb::FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                      channelz::ChildRefsList* child_channels) {
   // delegate to the RoundRobin to fill the children subchannels.
-  rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
+  policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
   MutexLock lock(&lb_channel_mu_);
   if (lb_channel_ != nullptr) {
     grpc_core::channelz::ChannelNode* channel_node =
@@ -1445,7 +1445,7 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_) goto done;
   // Re-initialize the lb_call. This should also take care of updating the
-  // embedded RR policy. Note that the current RR policy, if any, will stay in
+  // embedded policy. Note that the current policy, if any, will stay in
   // effect until an update from the new lb_call is received.
   switch (xdslb_policy->lb_channel_connectivity_) {
     case GRPC_CHANNEL_CONNECTING:
@@ -1505,7 +1505,7 @@ void DestroyClientStats(void* arg) {
 }
 
 void XdsLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
-  /* if connected_subchannel is nullptr, no pick has been made by the RR
+  /* if connected_subchannel is nullptr, no pick has been made by the
    * policy (e.g., all addresses failed to connect). There won't be any
    * user_data/token available */
   if (pp->pick->connected_subchannel != nullptr) {
@@ -1561,7 +1561,7 @@ void XdsLb::AddPendingPick(PendingPick* pp) {
 // code for interacting with the RR policy
 //
 
-// Performs a pick over \a rr_policy_. Given that a pick can return
+// Performs a pick over \a policy_. Given that a pick can return
 // immediately (ignoring its completion callback), we need to perform the
 // cleanups this callback would otherwise be responsible for.
 // If \a force_async is true, then we will manually schedule the
@@ -1575,7 +1575,7 @@ bool XdsLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
   GPR_ASSERT(pp->pick->user_data == nullptr);
   pp->pick->user_data = (void**)&pp->lb_token;
   // Pick via the RR policy.
-  bool pick_done = rr_policy_->PickLocked(pp->pick, error);
+  bool pick_done = policy_->PickLocked(pp->pick, error);
   if (pick_done) {
     PendingPickSetMetadataAndContext(pp);
     if (force_async) {
@@ -1586,50 +1586,50 @@ bool XdsLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
     Delete(pp);
   }
   // else, the pending pick will be registered and taken care of by the
-  // pending pick list inside the RR policy.  Eventually,
+  // pending pick list inside the policy.  Eventually,
   // OnPendingPickComplete() will be called, which will (among other
   // things) add the LB token to the call's initial metadata.
   return pick_done;
 }
 
 void XdsLb::CreateRoundRobinPolicyLocked(const Args& args) {
-  GPR_ASSERT(rr_policy_ == nullptr);
-  rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+  GPR_ASSERT(policy_ == nullptr);
+  policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       "round_robin", args);
-  if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
+  if (GPR_UNLIKELY(policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a RoundRobin policy", this);
     return;
   }
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_rr_reresolution_requested");
+  auto self = Ref(DEBUG_LOCATION, "on_reresolution_requested");
   self.release();
-  rr_policy_->SetReresolutionClosureLocked(&on_rr_request_reresolution_);
-  grpc_error* rr_state_error = nullptr;
-  rr_connectivity_state_ = rr_policy_->CheckConnectivityLocked(&rr_state_error);
-  // Connectivity state is a function of the RR policy updated/created.
-  UpdateConnectivityStateFromRoundRobinPolicyLocked(rr_state_error);
+  policy_->SetReresolutionClosureLocked(&on_request_reresolution_);
+  grpc_error* state_error = nullptr;
+  connectivity_state_ = policy_->CheckConnectivityLocked(&state_error);
+  // Connectivity state is a function of the policy updated/created.
+  UpdateConnectivityStateFromRoundRobinPolicyLocked(state_error);
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
-  // created RR policy. This will make the RR policy progress upon activity on
+  // created policy. This will make the policy progress upon activity on
   // gRPC LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(rr_policy_->interested_parties(),
+  grpc_pollset_set_add_pollset_set(policy_->interested_parties(),
                                    interested_parties());
-  // Subscribe to changes to the connectivity of the new RR.
+  // Subscribe to changes to the connectivity of the new policy.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_rr_connectivity_changed");
+  self = Ref(DEBUG_LOCATION, "on_connectivity_changed");
   self.release();
-  rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
-                                        &on_rr_connectivity_changed_);
-  rr_policy_->ExitIdleLocked();
-  // Send pending picks to RR policy.
+  policy_->NotifyOnStateChangeLocked(&connectivity_state_,
+                                        &on_connectivity_changed_);
+  policy_->ExitIdleLocked();
+  // Send pending picks to policy.
   PendingPick* pp;
   while ((pp = pending_picks_)) {
     pending_picks_ = pp->next;
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] Pending pick about to (async) PICK from RR %p", this,
-              rr_policy_.get());
+              "[xdslb %p] Pending pick about to (async) PICK from policy %p",
+              this, policy_.get());
     }
     grpc_error* error = GRPC_ERROR_NONE;
     PickFromRoundRobinPolicyLocked(true /* force_async */, pp, &error);
@@ -1668,12 +1668,12 @@ void XdsLb::CreateOrUpdateRoundRobinPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateRoundRobinPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  if (rr_policy_ != nullptr) {
+  if (policy_ != nullptr) {
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Updating RR policy %p", this,
-              rr_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] Updating the policy %p", this,
+              policy_.get());
     }
-    rr_policy_->UpdateLocked(*args);
+    policy_->UpdateLocked(*args);
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
@@ -1681,8 +1681,8 @@ void XdsLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.args = args;
     CreateRoundRobinPolicyLocked(lb_policy_args);
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created new RR policy %p", this,
-              rr_policy_.get());
+      gpr_log(GPR_INFO, "[xdslb %p] Created new policy %p", this,
+              policy_.get());
     }
   }
   grpc_channel_args_destroy(args);
@@ -1692,38 +1692,38 @@ void XdsLb::OnRoundRobinRequestReresolutionLocked(void* arg,
                                                   grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_rr_reresolution_requested");
+    xdslb_policy->Unref(DEBUG_LOCATION, "on_reresolution_requested");
     return;
   }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(
         GPR_INFO,
-        "[xdslb %p] Re-resolution requested from the internal RR policy (%p).",
-        xdslb_policy, xdslb_policy->rr_policy_.get());
+        "[xdslb %p] Re-resolution requested from the internal policy (%p).",
+        xdslb_policy, xdslb_policy->policy_.get());
   }
   // If we are talking to a balancer, we expect to get updated addresses form
-  // the balancer, so we can ignore the re-resolution request from the RR
-  // policy. Otherwise, handle the re-resolution request using the
-  // grpclb policy's original re-resolution closure.
+  // the balancer, so we can ignore the re-resolution request from the policy.
+  // Otherwise, handle the re-resolution request using the grpclb policy's
+  // original re-resolution closure.
   if (xdslb_policy->lb_calld_ == nullptr ||
       !xdslb_policy->lb_calld_->seen_initial_response()) {
     xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
   }
-  // Give back the wrapper closure to the RR policy.
-  xdslb_policy->rr_policy_->SetReresolutionClosureLocked(
-      &xdslb_policy->on_rr_request_reresolution_);
+  // Give back the wrapper closure to the policy.
+  xdslb_policy->policy_->SetReresolutionClosureLocked(
+      &xdslb_policy->on_request_reresolution_);
 }
 
 void XdsLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
-    grpc_error* rr_state_error) {
+    grpc_error* state_error) {
   const grpc_connectivity_state curr_glb_state =
       grpc_connectivity_state_check(&state_tracker_);
   /* The new connectivity status is a function of the previous one and the new
-   * input coming from the status of the RR policy.
+   * input coming from the status of the policy.
    *
    *  current state (grpclb's)
    *  |
-   *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (RR's)
+   *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (child policy's)
    *  ===++====+=====+=====+======+======+
    *   I || I  |  C  |  R  | [I]  | [I]  |
    *  ---++----+-----+-----+------+------+
@@ -1736,36 +1736,36 @@ void XdsLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
    *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
    *  ---++----+-----+-----+------+------+
    *
-   * A [STATE] indicates that the old RR policy is kept. In those cases, STATE
+   * A [STATE] indicates that the old policy is kept. In those cases, STATE
    * is the current state of grpclb, which is left untouched.
    *
    *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
-   *  the previous RR instance.
+   *  the previous  instance.
    *
    *  Note that the status is never updated to SHUTDOWN as a result of calling
    *  this function. Only glb_shutdown() has the power to set that state.
    *
    *  (*) This function mustn't be called during shutting down. */
   GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
-  switch (rr_connectivity_state_) {
+  switch (connectivity_state_) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
     case GRPC_CHANNEL_SHUTDOWN:
-      GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
+      GPR_ASSERT(state_error != GRPC_ERROR_NONE);
       break;
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_READY:
-      GPR_ASSERT(rr_state_error == GRPC_ERROR_NONE);
+      GPR_ASSERT(state_error == GRPC_ERROR_NONE);
   }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(
         GPR_INFO,
-        "[xdslb %p] Setting grpclb's state to %s from new RR policy %p state.",
-        this, grpc_connectivity_state_name(rr_connectivity_state_),
-        rr_policy_.get());
+        "[xdslb %p] Setting grpclb's state to %s from new policy %p state.",
+        this, grpc_connectivity_state_name(connectivity_state_),
+        policy_.get());
   }
-  grpc_connectivity_state_set(&state_tracker_, rr_connectivity_state_,
-                              rr_state_error,
+  grpc_connectivity_state_set(&state_tracker_, connectivity_state_,
+                              state_error,
                               "update_lb_connectivity_status_locked");
 }
 
@@ -1773,15 +1773,15 @@ void XdsLb::OnRoundRobinConnectivityChangedLocked(void* arg,
                                                   grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_rr_connectivity_changed");
+    xdslb_policy->Unref(DEBUG_LOCATION, "on_connectivity_changed");
     return;
   }
   xdslb_policy->UpdateConnectivityStateFromRoundRobinPolicyLocked(
       GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "on_rr_connectivity_changed" ref.
-  xdslb_policy->rr_policy_->NotifyOnStateChangeLocked(
-      &xdslb_policy->rr_connectivity_state_,
-      &xdslb_policy->on_rr_connectivity_changed_);
+  // Resubscribe. Reuse the "on_connectivity_changed" ref.
+  xdslb_policy->policy_->NotifyOnStateChangeLocked(
+      &xdslb_policy->connectivity_state_,
+      &xdslb_policy->on_connectivity_changed_);
 }
 
 //
