@@ -1321,8 +1321,8 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
-  // Note: We have disable fallback mode in the code, so we dont need to update
-  // the policy.
+  // Note: We have disabled fallback mode in the code, so we don't need to
+  // handle fallback address changes.
   // TODO(vpowar): Handle the fallback_address changes when we add support for
   // fallback in xDS.
   // Start watching the LB channel connectivity for connection, if not
