@@ -1321,11 +1321,10 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
-  // If fallback is configured and the RR policy already exists, update
-  // it with the new fallback addresses.
-  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
-    CreateOrUpdateRoundRobinPolicyLocked();
-  }
+  // Note: We have disabled fallback mode in the code, so we don't need to
+  // handle fallback address changes.
+  // TODO(vpowar): Handle the fallback_address changes when we add support for
+  // fallback in xDS.
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {
@@ -1393,11 +1392,10 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   if (xdslb_policy->serverlist_ == nullptr && !xdslb_policy->shutting_down_ &&
       error == GRPC_ERROR_NONE) {
     if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Falling back to use backends from resolver",
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Fallback timer fired. Not using fallback backends",
               xdslb_policy);
     }
-    GPR_ASSERT(xdslb_policy->fallback_backend_addresses_ != nullptr);
-    xdslb_policy->CreateOrUpdateRoundRobinPolicyLocked();
   }
   xdslb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
@@ -1641,19 +1639,12 @@ void XdsLb::CreateRoundRobinPolicyLocked(const Args& args) {
 grpc_channel_args* XdsLb::CreateRoundRobinPolicyArgsLocked() {
   grpc_lb_addresses* addresses;
   bool is_backend_from_grpclb_load_balancer = false;
-  if (serverlist_ != nullptr) {
-    GPR_ASSERT(serverlist_->num_servers > 0);
-    addresses = ProcessServerlist(serverlist_);
-    is_backend_from_grpclb_load_balancer = true;
-  } else {
-    // If CreateOrUpdateRoundRobinPolicyLocked() is invoked when we haven't
-    // received any serverlist from the balancer, we use the fallback backends
-    // returned by the resolver. Note that the fallback backend list may be
-    // empty, in which case the new round_robin policy will keep the requested
-    // picks pending.
-    GPR_ASSERT(fallback_backend_addresses_ != nullptr);
-    addresses = grpc_lb_addresses_copy(fallback_backend_addresses_);
-  }
+  // This should never be invoked if we do not have serverlist_, as fallback
+  // mode is disabled for xDS plugin.
+  GPR_ASSERT(serverlist_ != nullptr);
+  GPR_ASSERT(serverlist_->num_servers > 0);
+  addresses = ProcessServerlist(serverlist_);
+  is_backend_from_grpclb_load_balancer = true;
   GPR_ASSERT(addresses != nullptr);
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
