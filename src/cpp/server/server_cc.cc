@@ -202,6 +202,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
   void PostShutdownCleanup() {
     if (call_) {
       grpc_call_unref(call_);
+      call_ = nullptr;
     }
     if (cq_) {
       grpc_completion_queue_destroy(cq_);
