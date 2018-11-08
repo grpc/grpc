@@ -412,6 +412,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/slice/slice_weak_hash_table.h )
   s.files += %w( src/core/lib/surface/api_trace.h )
   s.files += %w( src/core/lib/surface/call.h )
+  s.files += %w( src/core/lib/surface/call_internal.h )
   s.files += %w( src/core/lib/surface/call_test_only.h )
   s.files += %w( src/core/lib/surface/channel.h )
   s.files += %w( src/core/lib/surface/channel_init.h )

@@ -417,6 +417,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_weak_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
