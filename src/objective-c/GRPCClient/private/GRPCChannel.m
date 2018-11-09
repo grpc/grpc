@@ -34,7 +34,7 @@
 #import <GRPCClient/GRPCCallOptions.h>
 
 /** When all calls of a channel are destroyed, destroy the channel after this much seconds. */
-NSTimeInterval kDefaultChannelDestroyDelay = 30;
+static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 @implementation GRPCChannelConfiguration
 
@@ -295,6 +295,7 @@ NSTimeInterval kDefaultChannelDestroyDelay = 30;
       NSDate *now = [NSDate date];
       self->_lastDispatch = now;
       dispatch_after(delay, self->_dispatchQueue, ^{
+        // Timed disconnection.
         if (self->_lastDispatch == now) {
           grpc_channel_destroy(self->_unmanagedChannel);
           self->_unmanagedChannel = NULL;
