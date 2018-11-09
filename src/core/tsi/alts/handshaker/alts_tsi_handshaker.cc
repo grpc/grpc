@@ -39,9 +39,6 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
-#include "src/core/tsi/alts_transport_security.h"
-
-static alts_shared_resource* g_shared_resources = alts_get_shared_resource();
 
 /* Main struct for ALTS TSI handshaker. */
 struct alts_tsi_handshaker {
