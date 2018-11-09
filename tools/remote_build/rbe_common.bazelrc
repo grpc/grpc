@@ -64,6 +64,8 @@ build:msan --action_env=LD_LIBRARY_PATH=/usr/local/lib
 build:msan --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/default:toolchain
 # override the config-agnostic crosstool_top
 build:msan --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.16.1/msan:toolchain
+# TODO(jtattermusch): remove this once Foundry adds the env to the docker image.
+build:msan --action_env=MSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
