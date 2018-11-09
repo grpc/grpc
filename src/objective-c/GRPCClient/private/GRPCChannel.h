@@ -64,14 +64,17 @@ NS_ASSUME_NONNULL_BEGIN
  * Create a channel with remote \a host and signature \a channelConfigurations. Destroy delay is
  * defaulted to 30 seconds.
  */
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration;
+- (nullable instancetype)initWithChannelConfiguration:
+    (GRPCChannelConfiguration *)channelConfiguration;
 
 /**
  * Create a channel with remote \a host, signature \a channelConfigurations, and destroy delay of
  * \a destroyDelay.
  */
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
-                         destroyDelay:(NSTimeInterval)destroyDelay NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithChannelConfiguration:
+                             (GRPCChannelConfiguration *)channelConfiguration
+                                         destroyDelay:(NSTimeInterval)destroyDelay
+    NS_DESIGNATED_INITIALIZER;
 
 /**
  * Create a grpc core call object from this channel. The channel's refcount is added by 1. If no
@@ -82,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                               completionQueue:(GRPCCompletionQueue *)queue
                                   callOptions:(GRPCCallOptions *)callOptions
-                                 disconnected:(BOOL * _Nullable)disconnected;
+                                 disconnected:(BOOL *_Nullable)disconnected;
 
 /**
  * Unref the channel when a call is done. It also decreases the channel's refcount. If the refcount

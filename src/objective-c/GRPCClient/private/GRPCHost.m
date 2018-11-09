@@ -32,8 +32,8 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
-#import "version.h"
 #import "utilities.h"
+#import "version.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -122,7 +122,8 @@ static NSMutableDictionary *gHostCache;
     if (_transportType == GRPCTransportTypeInsecure) {
       options.transportType = GRPCTransportTypeInsecure;
     } else {
-      GRPCAssert(_transportType == GRPCTransportTypeDefault, NSInvalidArgumentException, @"Invalid transport type");
+      GRPCAssert(_transportType == GRPCTransportTypeDefault, NSInvalidArgumentException,
+                 @"Invalid transport type");
       options.transportType = GRPCTransportTypeCronet;
     }
   } else

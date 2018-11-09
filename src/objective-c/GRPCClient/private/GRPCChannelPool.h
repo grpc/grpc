@@ -44,8 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Return a channel with a particular configuration. If the channel does not exist, execute \a
  * createChannel then add it in the pool. If the channel exists, increase its reference count.
  */
-- (GRPCChannel *)channelWithHost:(NSString *)host
-                     callOptions:(GRPCCallOptions *)callOptions;
+- (GRPCChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
 
 /**
  * This method is deprecated.

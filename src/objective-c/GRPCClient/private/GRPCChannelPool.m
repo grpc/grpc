@@ -26,8 +26,8 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "version.h"
 #import "utilities.h"
+#import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>
@@ -62,11 +62,8 @@ static dispatch_once_t gInitChannelPool;
   return self;
 }
 
-- (GRPCChannel *)channelWithHost:(NSString *)host
-                     callOptions:(GRPCCallOptions *)callOptions {
-  return [self channelWithHost:host
-                   callOptions:callOptions
-                  destroyDelay:0];
+- (GRPCChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
+  return [self channelWithHost:host callOptions:callOptions destroyDelay:0];
 }
 
 - (GRPCChannel *)channelWithHost:(NSString *)host
@@ -76,22 +73,21 @@ static dispatch_once_t gInitChannelPool;
   GRPCAssert(callOptions != nil, NSInvalidArgumentException, @"callOptions must not be empty.");
   GRPCChannel *channel;
   GRPCChannelConfiguration *configuration =
-  [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
+      [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
   @synchronized(self) {
     channel = _channelPool[configuration];
     if (channel == nil || channel.disconnected) {
       if (destroyDelay == 0) {
         channel = [[GRPCChannel alloc] initWithChannelConfiguration:configuration];
       } else {
-        channel = [[GRPCChannel alloc] initWithChannelConfiguration:configuration destroyDelay:destroyDelay];
+        channel = [[GRPCChannel alloc] initWithChannelConfiguration:configuration
+                                                       destroyDelay:destroyDelay];
       }
       _channelPool[configuration] = channel;
     }
   }
   return channel;
 }
-
-
 
 + (void)closeOpenConnections {
   [[GRPCChannelPool sharedInstance] destroyAllChannels];

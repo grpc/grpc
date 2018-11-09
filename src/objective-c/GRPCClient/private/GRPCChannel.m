@@ -20,6 +20,7 @@
 
 #include <grpc/support/log.h>
 
+#import "../internal/GRPCCallOptions+Internal.h"
 #import "ChannelArgsUtil.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
@@ -27,9 +28,8 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "version.h"
 #import "utilities.h"
-#import "../internal/GRPCCallOptions+Internal.h"
+#import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
@@ -60,10 +60,10 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       if (![GRPCCall isUsingCronet]) {
 #endif
         factory = [GRPCSecureChannelFactory
-                   factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
-                   privateKey:_callOptions.PEMPrivateKey
-                   certChain:_callOptions.PEMCertChain
-                   error:&error];
+            factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                privateKey:_callOptions.PEMPrivateKey
+                                 certChain:_callOptions.PEMCertChain
+                                     error:&error];
         if (factory == nil) {
           NSLog(@"Error creating secure channel factory: %@", error);
         }
@@ -86,7 +86,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   NSString *userAgentPrefix = _callOptions.userAgentPrefix;
   if (userAgentPrefix) {
     args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] =
-    [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
+        [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
   } else {
     args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
   }
@@ -98,19 +98,19 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
   if (_callOptions.responseSizeLimit) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] =
-    [NSNumber numberWithUnsignedInteger:_callOptions.responseSizeLimit];
+        [NSNumber numberWithUnsignedInteger:_callOptions.responseSizeLimit];
   }
 
   if (_callOptions.compressionAlgorithm != GRPC_COMPRESS_NONE) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
-    [NSNumber numberWithInt:_callOptions.compressionAlgorithm];
+        [NSNumber numberWithInt:_callOptions.compressionAlgorithm];
   }
 
   if (_callOptions.keepaliveInterval != 0) {
     args[@GRPC_ARG_KEEPALIVE_TIME_MS] =
-    [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveInterval * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveInterval * 1000)];
     args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] =
-    [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
   }
 
   if (_callOptions.retryEnabled == NO) {
@@ -119,15 +119,15 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
   if (_callOptions.connectMinTimeout > 0) {
     args[@GRPC_ARG_MIN_RECONNECT_BACKOFF_MS] =
-    [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMinTimeout * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMinTimeout * 1000)];
   }
   if (_callOptions.connectInitialBackoff > 0) {
     args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = [NSNumber
-                                                    numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectInitialBackoff * 1000)];
+        numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectInitialBackoff * 1000)];
   }
   if (_callOptions.connectMaxBackoff > 0) {
     args[@GRPC_ARG_MAX_RECONNECT_BACKOFF_MS] =
-    [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMaxBackoff * 1000)];
+        [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.connectMaxBackoff * 1000)];
   }
 
   if (_callOptions.logContext != nil) {
@@ -145,7 +145,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (nonnull id)copyWithZone:(nullable NSZone *)zone {
   GRPCChannelConfiguration *newConfig =
-  [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
+      [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
 
   return newConfig;
 }
@@ -172,8 +172,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 @end
 
-
-
 @implementation GRPCChannel {
   GRPCChannelConfiguration *_configuration;
 
@@ -186,21 +184,24 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 @synthesize disconnected = _disconnected;
 
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
+- (nullable instancetype)initWithChannelConfiguration:
+    (GRPCChannelConfiguration *)channelConfiguration {
   return [self initWithChannelConfiguration:channelConfiguration
                                destroyDelay:kDefaultChannelDestroyDelay];
 }
 
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
+- (nullable instancetype)initWithChannelConfiguration:
+                             (GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay {
-  GRPCAssert(channelConfiguration != nil, NSInvalidArgumentException, @"channelConfiguration must not be empty.");
+  GRPCAssert(channelConfiguration != nil, NSInvalidArgumentException,
+             @"channelConfiguration must not be empty.");
   GRPCAssert(destroyDelay > 0, NSInvalidArgumentException, @"destroyDelay must be greater than 0.");
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
     if (@available(iOS 8.0, *)) {
       _dispatchQueue = dispatch_queue_create(
-                                             NULL,
-                                             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
     } else {
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
@@ -244,7 +245,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       GRPCAssert(self->_unmanagedChannel != NULL, NSInvalidArgumentException, @"Invalid channel.");
 
       NSString *serverAuthority =
-      callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+          callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
       NSTimeInterval timeout = callOptions.timeout;
       GRPCAssert(timeout >= 0, NSInvalidArgumentException, @"Invalid timeout");
       grpc_slice host_slice = grpc_empty_slice();
@@ -253,10 +254,10 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       }
       grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
       gpr_timespec deadline_ms =
-      timeout == 0
-      ? gpr_inf_future(GPR_CLOCK_REALTIME)
-      : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+          timeout == 0
+              ? gpr_inf_future(GPR_CLOCK_REALTIME)
+              : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                             gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
       call = grpc_channel_create_call(self->_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
                                       queue.unmanagedQueue, path_slice,
                                       serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
