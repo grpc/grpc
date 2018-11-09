@@ -29,28 +29,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCChannel;
 
-/** Caching signature of a channel. */
-@interface GRPCChannelConfiguration : NSObject<NSCopying>
-
-/** The host that this channel is connected to. */
-@property(copy, readonly) NSString *host;
-
-/**
- * Options of the corresponding call. Note that only the channel-related options are of interest to
- * this class.
- */
-@property(strong, readonly) GRPCCallOptions *callOptions;
-
-/** Acquire the factory to generate a new channel with current configurations. */
-@property(readonly) id<GRPCChannelFactory> channelFactory;
-
-/** Acquire the dictionary of channel args with current configurations. */
-@property(copy, readonly) NSDictionary *channelArgs;
-
-- (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
-
-@end
-
 /**
  * Manage the pool of connected channels. When a channel is no longer referenced by any call,
  * destroy the channel after a certain period of time elapsed.
@@ -58,19 +36,38 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCChannelPool : NSObject
 
 /**
+ * Get the singleton instance
+ */
++ (nullable instancetype)sharedInstance;
+
+/**
  * Return a channel with a particular configuration. If the channel does not exist, execute \a
  * createChannel then add it in the pool. If the channel exists, increase its reference count.
  */
-- (GRPCChannel *)channelWithConfiguration:(GRPCChannelConfiguration *)configuration;
+- (GRPCChannel *)channelWithHost:(NSString *)host
+                     callOptions:(GRPCCallOptions *)callOptions;
 
-/** Remove a channel from the pool. */
-- (void)removeChannel:(GRPCChannel *)channel;
+/**
+ * This method is deprecated.
+ *
+ * Destroy all open channels and close their connections.
+ */
++ (void)closeOpenConnections;
 
-/** Clear all channels in the pool. */
-- (void)removeAllChannels;
+// Test-only methods below
 
-/** Clear all channels in the pool and destroy the channels. */
-- (void)removeAndCloseAllChannels;
+/**
+ * Return a channel with a special destroy delay. If \a destroyDelay is 0, use the default destroy
+ * delay.
+ */
+- (GRPCChannel *)channelWithHost:(NSString *)host
+                     callOptions:(GRPCCallOptions *)callOptions
+                    destroyDelay:(NSTimeInterval)destroyDelay;
+
+/**
+ * Simulate a network transition event and destroy all channels.
+ */
+- (void)destroyAllChannels;
 
 @end
 

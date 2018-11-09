@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 
 #import "GRPCChannel.h"
+#import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCHost.h"
 #import "NSData+GRPC.h"
@@ -256,13 +257,21 @@
     // consuming too many threads and having contention of multiple calls in a single completion
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
-    _channel = [GRPCChannel channelWithHost:host callOptions:callOptions];
-    if (_channel == nil) {
-      NSLog(@"Failed to get a channel for the host.");
-      return nil;
-    }
-    _call = [_channel unmanagedCallWithPath:path completionQueue:_queue callOptions:callOptions];
-    if (_call == NULL) {
+    BOOL disconnected;
+    do {
+      _channel = [[GRPCChannelPool sharedInstance] channelWithHost:host callOptions:callOptions];
+      if (_channel == nil) {
+        NSLog(@"Failed to get a channel for the host.");
+        return nil;
+      }
+      _call = [_channel unmanagedCallWithPath:path
+                              completionQueue:_queue
+                                  callOptions:callOptions
+                                 disconnected:&disconnected];
+      // Try create another channel if the current channel is disconnected (due to idleness or
+      // connectivity monitor disconnection).
+    } while (_call == NULL && disconnected);
+    if (_call == nil) {
       NSLog(@"Failed to create a call.");
       return nil;
     }
@@ -317,6 +326,7 @@
 - (void)dealloc {
   if (_call) {
     grpc_call_unref(_call);
+    [_channel unref];
   }
   [_channel unref];
   _channel = nil;
