@@ -25,7 +25,6 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;
-static alts_shared_resource* g_shared_resources = alts_get_shared_resource();
 
 alts_shared_resource_dedicated* grpc_alts_get_shared_resource_dedicated(void) {
   return &g_alts_resource_dedicated;
@@ -49,16 +48,25 @@ static void thread_worker(void* arg) {
 
 void grpc_alts_shared_resource_dedicated_init() {
   g_alts_resource_dedicated.cq = nullptr;
+  gpr_mu_init(&g_alts_resource_dedicated.mu);
 }
 
-void grpc_alts_shared_resource_dedicated_start() {
-  g_alts_resource_dedicated.cq = grpc_completion_queue_create_for_next(nullptr);
-  g_alts_resource_dedicated.thread =
-      grpc_core::Thread("alts_tsi_handshaker", &thread_worker, nullptr);
-  g_alts_resource_dedicated.interested_parties = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(g_alts_resource_dedicated.interested_parties,
-                               grpc_cq_pollset(g_alts_resource_dedicated.cq));
-  g_alts_resource_dedicated.thread.Start();
+void grpc_alts_shared_resource_dedicated_start(
+    const char* handshaker_service_url) {
+  gpr_mu_lock(&g_alts_resource_dedicated.mu);
+  if (g_alts_resource_dedicated.cq == nullptr) {
+    g_alts_resource_dedicated.channel =
+        grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
+    g_alts_resource_dedicated.cq =
+        grpc_completion_queue_create_for_next(nullptr);
+    g_alts_resource_dedicated.thread =
+        grpc_core::Thread("alts_tsi_handshaker", &thread_worker, nullptr);
+    g_alts_resource_dedicated.interested_parties = grpc_pollset_set_create();
+    grpc_pollset_set_add_pollset(g_alts_resource_dedicated.interested_parties,
+                                 grpc_cq_pollset(g_alts_resource_dedicated.cq));
+    g_alts_resource_dedicated.thread.Start();
+  }
+  gpr_mu_unlock(&g_alts_resource_dedicated.mu);
 }
 
 void grpc_alts_shared_resource_dedicated_shutdown() {
@@ -69,5 +77,7 @@ void grpc_alts_shared_resource_dedicated_shutdown() {
     g_alts_resource_dedicated.thread.Join();
     grpc_pollset_set_destroy(g_alts_resource_dedicated.interested_parties);
     grpc_completion_queue_destroy(g_alts_resource_dedicated.cq);
+    grpc_channel_destroy(g_alts_resource_dedicated.channel);
   }
+  gpr_mu_destroy(&g_alts_resource_dedicated.mu);
 }
