@@ -35,6 +35,7 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
+#import "private/utilities.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -67,7 +68,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @implementation GRPCRequestOptions
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
-  NSAssert(host.length != 0 && path.length != 0, @"Host and Path cannot be empty");
+  GRPCAssert(host.length != 0 && path.length != 0, NSInvalidArgumentException, @"Host and Path cannot be empty");
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
@@ -114,15 +115,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
                            callOptions:(GRPCCallOptions *_Nullable)callOptions {
-  if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
-  }
-  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
-    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
-  }
-  if (responseHandler == nil) {
-    [NSException raise:NSInvalidArgumentException format:@"Response handler required."];
-  }
+  GRPCAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0, NSInvalidArgumentException, @"Neither host nor path can be nil.");
+  GRPCAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest, NSInvalidArgumentException, @"Invalid call safety value.");
+  GRPCAssert(responseHandler != nil, NSInvalidArgumentException, @"Response handler required.");
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
@@ -159,8 +154,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)start {
   dispatch_async(_dispatchQueue, ^{
-    NSAssert(!self->_started, @"Call already started.");
-    NSAssert(!self->_canceled, @"Call already canceled.");
+    GRPCAssert(!self->_started, NSInternalInconsistencyException, @"Call already started.");
+    GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call already canceled.");
     self->_started = YES;
     if (!self->_callOptions) {
       self->_callOptions = [[GRPCCallOptions alloc] init];
@@ -216,7 +211,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
-    NSAssert(!self->_canceled, @"Call already canceled.");
+    GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call already canceled.");
     if (self->_call) {
       [self->_call cancel];
       self->_call = nil;
@@ -244,8 +239,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)writeData:(NSData *)data {
   dispatch_async(_dispatchQueue, ^{
-    NSAssert(!self->_canceled, @"Call arleady canceled.");
-    NSAssert(!self->_finished, @"Call is half-closed before sending data.");
+    GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call arleady canceled.");
+    GRPCAssert(!self->_finished, NSInternalInconsistencyException, @"Call is half-closed before sending data.");
     if (self->_call) {
       [self->_pipe writeValue:data];
     }
@@ -254,9 +249,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)finish {
   dispatch_async(_dispatchQueue, ^{
-    NSAssert(self->_started, @"Call not started.");
-    NSAssert(!self->_canceled, @"Call arleady canceled.");
-    NSAssert(!self->_finished, @"Call already half-closed.");
+    GRPCAssert(self->_started, NSInternalInconsistencyException, @"Call not started.");
+    GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call arleady canceled.");
+    GRPCAssert(!self->_finished, NSInternalInconsistencyException, @"Call already half-closed.");
     if (self->_call) {
       [self->_pipe writesFinishedWithError:nil];
     }
@@ -404,16 +399,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
               requestsWriter:(GRXWriter *)requestWriter
                  callOptions:(GRPCCallOptions *)callOptions {
   // Purposely using pointer rather than length ([host length] == 0) for backwards compatibility.
-  if (!host || !path) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
-  }
-  if (safety > GRPCCallSafetyCacheableRequest) {
-    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
-  }
-  if (requestWriter.state != GRXWriterStateNotStarted) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"The requests writer can't be already started."];
-  }
+  GRPCAssert(host && path, NSInvalidArgumentException, @"Neither host nor path can be nil.");
+  GRPCAssert(safety <= GRPCCallSafetyCacheableRequest, NSInvalidArgumentException, @"Invalid call safety value.");
+  GRPCAssert(requestWriter.state == GRXWriterStateNotStarted, NSInvalidArgumentException, @"The requests writer can't be already started.");
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
@@ -798,8 +786,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _callOptions = callOptions;
   }
 
-  NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
-           @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
+  GRPCAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil, NSInvalidArgumentException, @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
   if (_callOptions.authTokenProvider != nil) {
     @synchronized(self) {
       self.isWaitingForToken = YES;

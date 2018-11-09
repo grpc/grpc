@@ -28,6 +28,7 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "version.h"
+#import "utilities.h"
 #import "../internal/GRPCCallOptions+Internal.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -39,8 +40,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 @implementation GRPCChannelConfiguration
 
 - (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
-  NSAssert(host.length, @"Host must not be empty.");
-  NSAssert(callOptions, @"callOptions must not be empty.");
+  GRPCAssert(host.length, NSInvalidArgumentException, @"Host must not be empty.");
+  GRPCAssert(callOptions != nil, NSInvalidArgumentException, @"callOptions must not be empty.");
   if ((self = [super init])) {
     _host = [host copy];
     _callOptions = [callOptions copy];
@@ -192,8 +193,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay {
-  NSAssert(channelConfiguration, @"channelConfiguration must not be empty.");
-  NSAssert(destroyDelay > 0, @"destroyDelay must be greater than 0.");
+  GRPCAssert(channelConfiguration != nil, NSInvalidArgumentException, @"channelConfiguration must not be empty.");
+  GRPCAssert(destroyDelay > 0, NSInvalidArgumentException, @"destroyDelay must be greater than 0.");
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
     if (@available(iOS 8.0, *)) {
@@ -206,7 +207,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
     // Create gRPC core channel object.
     NSString *host = channelConfiguration.host;
-    NSAssert(host.length != 0, @"host cannot be nil");
+    GRPCAssert(host.length != 0, NSInvalidArgumentException, @"host cannot be nil");
     NSDictionary *channelArgs;
     if (channelConfiguration.callOptions.additionalChannelArgs.count != 0) {
       NSMutableDictionary *args = [channelConfiguration.channelArgs mutableCopy];
@@ -231,21 +232,21 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
                      completionQueue:(GRPCCompletionQueue *)queue
                          callOptions:(GRPCCallOptions *)callOptions
                         disconnected:(BOOL *)disconnected {
-  NSAssert(path.length, @"path must not be empty.");
-  NSAssert(queue, @"completionQueue must not be empty.");
-  NSAssert(callOptions, @"callOptions must not be empty.");
+  GRPCAssert(path.length, NSInvalidArgumentException, @"path must not be empty.");
+  GRPCAssert(queue, NSInvalidArgumentException, @"completionQueue must not be empty.");
+  GRPCAssert(callOptions, NSInvalidArgumentException, @"callOptions must not be empty.");
   __block BOOL isDisconnected = NO;
   __block grpc_call *call = NULL;
   dispatch_sync(_dispatchQueue, ^{
     if (self->_disconnected) {
       isDisconnected = YES;
     } else {
-      NSAssert(self->_unmanagedChannel != NULL, @"Invalid channel.");
+      GRPCAssert(self->_unmanagedChannel != NULL, NSInvalidArgumentException, @"Invalid channel.");
 
       NSString *serverAuthority =
       callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
       NSTimeInterval timeout = callOptions.timeout;
-      NSAssert(timeout >= 0, @"Invalid timeout");
+      GRPCAssert(timeout >= 0, NSInvalidArgumentException, @"Invalid timeout");
       grpc_slice host_slice = grpc_empty_slice();
       if (serverAuthority) {
         host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);

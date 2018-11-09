@@ -27,6 +27,7 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "version.h"
+#import "utilities.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>
@@ -43,9 +44,7 @@ static dispatch_once_t gInitChannelPool;
 + (nullable instancetype)sharedInstance {
   dispatch_once(&gInitChannelPool, ^{
     gChannelPool = [[GRPCChannelPool alloc] init];
-    if (gChannelPool == nil) {
-      [NSException raise:NSMallocException format:@"Cannot initialize global channel pool."];
-    }
+    GRPCAssert(gChannelPool != nil, NSMallocException, @"Cannot initialize global channel pool.");
   });
   return gChannelPool;
 }
@@ -73,8 +72,8 @@ static dispatch_once_t gInitChannelPool;
 - (GRPCChannel *)channelWithHost:(NSString *)host
                      callOptions:(GRPCCallOptions *)callOptions
                     destroyDelay:(NSTimeInterval)destroyDelay {
-  NSAssert(host.length > 0, @"Host must not be empty.");
-  NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  GRPCAssert(host.length > 0, NSInvalidArgumentException, @"Host must not be empty.");
+  GRPCAssert(callOptions != nil, NSInvalidArgumentException, @"callOptions must not be empty.");
   GRPCChannel *channel;
   GRPCChannelConfiguration *configuration =
   [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
