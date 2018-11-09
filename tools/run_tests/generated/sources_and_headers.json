@@ -11111,7 +11111,6 @@
       "tsi_interface"
     ], 
     "headers": [
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.h", 
       "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
@@ -11124,8 +11123,6 @@
     "language": "c", 
     "name": "tsi", 
     "src": [
-      "src/core/tsi/alts_transport_security.cc", 
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.cc", 
       "src/core/tsi/fake_transport_security.h", 
       "src/core/tsi/local_transport_security.cc", 
