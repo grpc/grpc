@@ -160,7 +160,11 @@ class InterceptorBatchMethodsImpl
         info->channel(), current_interceptor_index_ + 1));
   }
 
-  void FailHijackedRecvMessage() override { *got_message_ = false; }
+  void FailHijackedRecvMessage() override {
+    GPR_CODEGEN_ASSERT(hooks_[static_cast<size_t>(
+        experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)]);
+    *got_message_ = false;
+  }
 
   // Clears all state
   void ClearState() {
