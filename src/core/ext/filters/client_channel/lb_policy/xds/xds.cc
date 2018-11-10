@@ -36,20 +36,18 @@
 /// will be made immediately; otherwise, we apply back-off delays between
 /// attempts.
 ///
-/// We maintain an internal round_robin policy instance for distributing
+/// We maintain an internal child policy (round_robin) instance for distributing
 /// requests across backends.  Whenever we receive a new serverlist from
-/// the balancer, we update the round_robin policy with the new list of
-/// addresses.  If we cannot communicate with the balancer on startup,
-/// however, we may enter fallback mode, in which case we will populate
-/// the RR policy's addresses from the backend addresses returned by the
-/// resolver.
+/// the balancer, we update the child policy with the new list of
+/// addresses.
 ///
-/// Once an RR policy instance is in place (and getting updated as described),
-/// calls for a pick, a ping, or a cancellation will be serviced right
-/// away by forwarding them to the RR instance.  Any time there's no RR
-/// policy available (i.e., right after the creation of the gRPCLB policy),
-/// pick and ping requests are added to a list of pending picks and pings
-/// to be flushed and serviced when the RR policy instance becomes available.
+/// Once a child policy instance is in place (and getting updated as
+/// described), calls for a pick, a ping, or a cancellation will be serviced
+/// right away by forwarding them to the policy instance.  Any time there's no
+/// child policy available (i.e., right after the creation of the gRPCLB
+/// policy), pick and ping requests are added to a list of pending picks and
+/// pings to be flushed and serviced when the child policy instance becomes
+/// available.
 ///
 /// \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
 /// high level design and details.
@@ -144,7 +142,7 @@ class XdsLb : public LoadBalancingPolicy {
   /// eventually call pick() on them. They mainly stay pending waiting for the
   /// policy to be created.
   ///
-  /// Note that when a pick is sent to the policy, we inject our own
+  /// Note that when a pick is sent to the child policy, we inject our own
   /// on_complete callback, so that we can intercept the result before
   /// invoking the original on_complete callback.  This allows us to set the
   /// LB token metadata and add client_stats to the call context.
@@ -266,18 +264,18 @@ class XdsLb : public LoadBalancingPolicy {
   void AddPendingPick(PendingPick* pp);
   static void OnPendingPickComplete(void* arg, grpc_error* error);
 
-  // Methods for dealing with the RR policy.
-  void CreateOrUpdateRoundRobinPolicyLocked();
-  grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
-  void CreateRoundRobinPolicyLocked(const Args& args);
-  bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
-                                      grpc_error** error);
-  void UpdateConnectivityStateFromRoundRobinPolicyLocked(
-      grpc_error* state_error);
-  static void OnRoundRobinConnectivityChangedLocked(void* arg,
-                                                    grpc_error* error);
-  static void OnRoundRobinRequestReresolutionLocked(void* arg,
-                                                    grpc_error* error);
+  // Methods for dealing with the Child policy.
+  void CreateOrUpdateChildPolicyLocked();
+  grpc_channel_args* CreateChildPolicyArgsLocked();
+  void CreateChildPolicyLocked(const Args& args);
+  bool PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
+                                 grpc_error** error);
+  void UpdateConnectivityStateFromChildPolicyLocked(
+      grpc_error* child_state_error);
+  static void OnChildPolicyConnectivityChangedLocked(void* arg,
+                                                     grpc_error* error);
+  static void OnChildPolicyRequestReresolutionLocked(void* arg,
+                                                     grpc_error* error);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -334,10 +332,10 @@ class XdsLb : public LoadBalancingPolicy {
   PendingPick* pending_picks_ = nullptr;
 
   // The policy to use for the backends.
-  OrphanablePtr<LoadBalancingPolicy> policy_;
-  grpc_connectivity_state connectivity_state_;
-  grpc_closure on_connectivity_changed_;
-  grpc_closure on_request_reresolution_;
+  OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  grpc_connectivity_state child_connectivity_state_;
+  grpc_closure on_child_connectivity_changed_;
+  grpc_closure on_child_request_reresolution_;
 };
 
 //
@@ -833,7 +831,7 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
         // serverlist instance will be destroyed either upon the next
         // update or when the XdsLb instance is destroyed.
         xdslb_policy->serverlist_ = serverlist;
-        xdslb_policy->CreateOrUpdateRoundRobinPolicyLocked();
+        xdslb_policy->CreateOrUpdateChildPolicyLocked();
       }
     } else {
       if (grpc_lb_xds_trace.enabled()) {
@@ -1031,11 +1029,11 @@ XdsLb::XdsLb(const grpc_lb_addresses* addresses,
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &XdsLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_connectivity_changed_,
-                    &XdsLb::OnRoundRobinConnectivityChangedLocked, this,
+  GRPC_CLOSURE_INIT(&on_child_connectivity_changed_,
+                    &XdsLb::OnChildPolicyConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_request_reresolution_,
-                    &XdsLb::OnRoundRobinRequestReresolutionLocked, this,
+  GRPC_CLOSURE_INIT(&on_child_request_reresolution_,
+                    &XdsLb::OnChildPolicyRequestReresolutionLocked, this,
                     grpc_combiner_scheduler(args.combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "xds");
   // Record server name.
@@ -1087,7 +1085,7 @@ void XdsLb::ShutdownLocked() {
   if (fallback_timer_callback_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
-  policy_.reset();
+  child_policy_.reset();
   TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_CANCELLED);
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
@@ -1134,8 +1132,9 @@ void XdsLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 // Cancel a specific pending pick.
 //
 // A grpclb pick progresses as follows:
-// - If there's a policy (policy_) available, it'll be handed over to the policy
-//   (in CreateRoundRobinPolicyLocked()). From that point onwards, it'll be the
+// - If there's a policy (child_policy_) available, it'll be handed over to the
+// policy
+//   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
 //   policy's responsibility. For cancellations, that implies the pick needs to
 //   be also cancelled by the policy instance.
 // - Otherwise, without an policy instance, picks stay pending at this policy's
@@ -1159,8 +1158,8 @@ void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
     }
     pp = next;
   }
-  if (policy_ != nullptr) {
-    policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
+  if (child_policy_ != nullptr) {
+    child_policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1168,8 +1167,9 @@ void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
 // Cancel all pending picks.
 //
 // A grpclb pick progresses as follows:
-// - If there's a policy (policy_) available, it'll be handed over to the policy
-//   (in CreateRoundRobinPolicyLocked()). From that point onwards, it'll be the
+// - If there's a policy (child_policy_) available, it'll be handed over to the
+// policy
+//   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
 //   policy's responsibility. For cancellations, that implies the pick needs to
 //   be also cancelled by the policy instance.
 // - Otherwise, without an policy instance, picks stay pending at this policy's
@@ -1195,10 +1195,10 @@ void XdsLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
     }
     pp = next;
   }
-  if (policy_ != nullptr) {
-    policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
-                                          initial_metadata_flags_eq,
-                                          GRPC_ERROR_REF(error));
+  if (child_policy_ != nullptr) {
+    child_policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
+                                             initial_metadata_flags_eq,
+                                             GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1213,22 +1213,21 @@ void XdsLb::ResetBackoffLocked() {
   if (lb_channel_ != nullptr) {
     grpc_channel_reset_connect_backoff(lb_channel_);
   }
-  if (policy_ != nullptr) {
-    policy_->ResetBackoffLocked();
+  if (child_policy_ != nullptr) {
+    child_policy_->ResetBackoffLocked();
   }
 }
 
 bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
   PendingPick* pp = PendingPickCreate(pick);
   bool pick_done = false;
-  if (policy_ != nullptr) {
+  if (child_policy_ != nullptr) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] about to PICK from policy %p", this,
-              policy_.get());
+              child_policy_.get());
     }
-    pick_done =
-        PickFromRoundRobinPolicyLocked(false /* force_async */, pp, error);
-  } else {  // policy_ == NULL
+    pick_done = PickFromChildPolicyLocked(false /* force_async */, pp, error);
+  } else {  // child_policy_ == NULL
     if (pick->on_complete == nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No pick result available but synchronous result required.");
@@ -1236,8 +1235,7 @@ bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
     } else {
       if (grpc_lb_xds_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "[xdslb %p] No policy. Adding to grpclb's pending picks",
-                this);
+                "[xdslb %p] No policy. Adding to grpclb's pending picks", this);
       }
       AddPendingPick(pp);
       if (!started_picking_) {
@@ -1251,8 +1249,8 @@ bool XdsLb::PickLocked(PickState* pick, grpc_error** error) {
 
 void XdsLb::FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
                                      channelz::ChildRefsList* child_channels) {
-  // delegate to the RoundRobin to fill the children subchannels.
-  policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
+  // delegate to the child_policy_ to fill the children subchannels.
+  child_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
   MutexLock lock(&lb_channel_mu_);
   if (lb_channel_ != nullptr) {
     grpc_core::channelz::ChannelNode* channel_node =
@@ -1558,24 +1556,24 @@ void XdsLb::AddPendingPick(PendingPick* pp) {
 }
 
 //
-// code for interacting with the RR policy
+// code for interacting with the Child policy
 //
 
-// Performs a pick over \a policy_. Given that a pick can return
+// Performs a pick over \a child_policy_. Given that a pick can return
 // immediately (ignoring its completion callback), we need to perform the
 // cleanups this callback would otherwise be responsible for.
 // If \a force_async is true, then we will manually schedule the
 // completion callback even if the pick is available immediately.
-bool XdsLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
-                                           grpc_error** error) {
+bool XdsLb::PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
+                                      grpc_error** error) {
   // Set client_stats and user_data.
   if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
     pp->client_stats = lb_calld_->client_stats()->Ref();
   }
   GPR_ASSERT(pp->pick->user_data == nullptr);
   pp->pick->user_data = (void**)&pp->lb_token;
-  // Pick via the RR policy.
-  bool pick_done = policy_->PickLocked(pp->pick, error);
+  // Pick via the Child policy.
+  bool pick_done = child_policy_->PickLocked(pp->pick, error);
   if (pick_done) {
     PendingPickSetMetadataAndContext(pp);
     if (force_async) {
@@ -1592,36 +1590,37 @@ bool XdsLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
   return pick_done;
 }
 
-void XdsLb::CreateRoundRobinPolicyLocked(const Args& args) {
-  GPR_ASSERT(policy_ == nullptr);
-  policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+void XdsLb::CreateChildPolicyLocked(const Args& args) {
+  GPR_ASSERT(child_policy_ == nullptr);
+  child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       "round_robin", args);
-  if (GPR_UNLIKELY(policy_ == nullptr)) {
+  if (GPR_UNLIKELY(child_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a RoundRobin policy", this);
     return;
   }
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_reresolution_requested");
+  auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
   self.release();
-  policy_->SetReresolutionClosureLocked(&on_request_reresolution_);
-  grpc_error* state_error = nullptr;
-  connectivity_state_ = policy_->CheckConnectivityLocked(&state_error);
+  child_policy_->SetReresolutionClosureLocked(&on_child_request_reresolution_);
+  grpc_error* child_state_error = nullptr;
+  child_connectivity_state_ =
+      child_policy_->CheckConnectivityLocked(&child_state_error);
   // Connectivity state is a function of the policy updated/created.
-  UpdateConnectivityStateFromRoundRobinPolicyLocked(state_error);
+  UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created policy. This will make the policy progress upon activity on
   // gRPC LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(policy_->interested_parties(),
+  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                    interested_parties());
   // Subscribe to changes to the connectivity of the new policy.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_connectivity_changed");
+  self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
   self.release();
-  policy_->NotifyOnStateChangeLocked(&connectivity_state_,
-                                        &on_connectivity_changed_);
-  policy_->ExitIdleLocked();
+  child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
+                                           &on_child_connectivity_changed_);
+  child_policy_->ExitIdleLocked();
   // Send pending picks to policy.
   PendingPick* pp;
   while ((pp = pending_picks_)) {
@@ -1629,14 +1628,14 @@ void XdsLb::CreateRoundRobinPolicyLocked(const Args& args) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Pending pick about to (async) PICK from policy %p",
-              this, policy_.get());
+              this, child_policy_.get());
     }
     grpc_error* error = GRPC_ERROR_NONE;
-    PickFromRoundRobinPolicyLocked(true /* force_async */, pp, &error);
+    PickFromChildPolicyLocked(true /* force_async */, pp, &error);
   }
 }
 
-grpc_channel_args* XdsLb::CreateRoundRobinPolicyArgsLocked() {
+grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
   grpc_lb_addresses* addresses;
   bool is_backend_from_grpclb_load_balancer = false;
   // This should never be invoked if we do not have serverlist_, as fallback
@@ -1664,42 +1663,41 @@ grpc_channel_args* XdsLb::CreateRoundRobinPolicyArgsLocked() {
   return args;
 }
 
-void XdsLb::CreateOrUpdateRoundRobinPolicyLocked() {
+void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
-  grpc_channel_args* args = CreateRoundRobinPolicyArgsLocked();
+  grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  if (policy_ != nullptr) {
+  if (child_policy_ != nullptr) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the policy %p", this,
-              policy_.get());
+              child_policy_.get());
     }
-    policy_->UpdateLocked(*args);
+    child_policy_->UpdateLocked(*args);
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
-    CreateRoundRobinPolicyLocked(lb_policy_args);
+    CreateChildPolicyLocked(lb_policy_args);
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Created new policy %p", this,
-              policy_.get());
+              child_policy_.get());
     }
   }
   grpc_channel_args_destroy(args);
 }
 
-void XdsLb::OnRoundRobinRequestReresolutionLocked(void* arg,
-                                                  grpc_error* error) {
+void XdsLb::OnChildPolicyRequestReresolutionLocked(void* arg,
+                                                   grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_reresolution_requested");
+    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_reresolution_requested");
     return;
   }
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[xdslb %p] Re-resolution requested from the internal policy (%p).",
-        xdslb_policy, xdslb_policy->policy_.get());
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Re-resolution requested from the internal policy (%p).",
+            xdslb_policy, xdslb_policy->child_policy_.get());
   }
   // If we are talking to a balancer, we expect to get updated addresses form
   // the balancer, so we can ignore the re-resolution request from the policy.
@@ -1710,12 +1708,12 @@ void XdsLb::OnRoundRobinRequestReresolutionLocked(void* arg,
     xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
   }
   // Give back the wrapper closure to the policy.
-  xdslb_policy->policy_->SetReresolutionClosureLocked(
-      &xdslb_policy->on_request_reresolution_);
+  xdslb_policy->child_policy_->SetReresolutionClosureLocked(
+      &xdslb_policy->on_child_request_reresolution_);
 }
 
-void XdsLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
-    grpc_error* state_error) {
+void XdsLb::UpdateConnectivityStateFromChildPolicyLocked(
+    grpc_error* child_state_error) {
   const grpc_connectivity_state curr_glb_state =
       grpc_connectivity_state_check(&state_tracker_);
   /* The new connectivity status is a function of the previous one and the new
@@ -1747,41 +1745,40 @@ void XdsLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
    *
    *  (*) This function mustn't be called during shutting down. */
   GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
-  switch (connectivity_state_) {
+  switch (child_connectivity_state_) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
     case GRPC_CHANNEL_SHUTDOWN:
-      GPR_ASSERT(state_error != GRPC_ERROR_NONE);
+      GPR_ASSERT(child_state_error != GRPC_ERROR_NONE);
       break;
     case GRPC_CHANNEL_IDLE:
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_READY:
-      GPR_ASSERT(state_error == GRPC_ERROR_NONE);
+      GPR_ASSERT(child_state_error == GRPC_ERROR_NONE);
   }
   if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[xdslb %p] Setting grpclb's state to %s from new policy %p state.",
-        this, grpc_connectivity_state_name(connectivity_state_),
-        policy_.get());
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Setting grpclb's state to %s from new policy %p state.",
+            this, grpc_connectivity_state_name(child_connectivity_state_),
+            child_policy_.get());
   }
-  grpc_connectivity_state_set(&state_tracker_, connectivity_state_,
-                              state_error,
+  grpc_connectivity_state_set(&state_tracker_, child_connectivity_state_,
+                              child_state_error,
                               "update_lb_connectivity_status_locked");
 }
 
-void XdsLb::OnRoundRobinConnectivityChangedLocked(void* arg,
-                                                  grpc_error* error) {
+void XdsLb::OnChildPolicyConnectivityChangedLocked(void* arg,
+                                                   grpc_error* error) {
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_connectivity_changed");
+    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_connectivity_changed");
     return;
   }
-  xdslb_policy->UpdateConnectivityStateFromRoundRobinPolicyLocked(
+  xdslb_policy->UpdateConnectivityStateFromChildPolicyLocked(
       GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "on_connectivity_changed" ref.
-  xdslb_policy->policy_->NotifyOnStateChangeLocked(
-      &xdslb_policy->connectivity_state_,
-      &xdslb_policy->on_connectivity_changed_);
+  // Resubscribe. Reuse the "on_child_connectivity_changed" ref.
+  xdslb_policy->child_policy_->NotifyOnStateChangeLocked(
+      &xdslb_policy->child_connectivity_state_,
+      &xdslb_policy->on_child_connectivity_changed_);
 }
 
 //
