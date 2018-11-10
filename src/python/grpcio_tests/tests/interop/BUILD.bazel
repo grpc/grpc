@@ -35,6 +35,10 @@ py_library(
         requirement('google-auth'),
         requirement('requests'),
         requirement('enum34'),
+        requirement('urllib3'),
+        requirement('chardet'),
+        requirement('certifi'),
+        requirement('idna'),
     ],
     imports=["../../",],
 )
