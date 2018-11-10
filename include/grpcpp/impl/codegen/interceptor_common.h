@@ -134,7 +134,10 @@ class InterceptorBatchMethodsImpl
     send_trailing_metadata_ = metadata;
   }
 
-  void SetRecvMessage(void* message) { recv_message_ = message; }
+  void SetRecvMessage(void* message, bool* got_message) {
+    recv_message_ = message;
+    got_message_ = got_message;
+  }
 
   void SetRecvInitialMetadata(MetadataMap* map) {
     recv_initial_metadata_ = map;
@@ -156,6 +159,8 @@ class InterceptorBatchMethodsImpl
     return std::unique_ptr<ChannelInterface>(new InterceptedChannel(
         info->channel(), current_interceptor_index_ + 1));
   }
+
+  void FailHijackedRecvMessage() override { *got_message_ = false; }
 
   // Clears all state
   void ClearState() {
@@ -345,6 +350,7 @@ class InterceptorBatchMethodsImpl
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
 
   void* recv_message_ = nullptr;
+  bool* got_message_ = nullptr;
 
   MetadataMap* recv_initial_metadata_ = nullptr;
 
@@ -450,6 +456,12 @@ class CancelInterceptorBatchMethods
                        "It is illegal to call GetInterceptedChannel on a "
                        "method which has a Cancel notification");
     return std::unique_ptr<ChannelInterface>(nullptr);
+  }
+
+  void FailHijackedRecvMessage() override {
+    GPR_CODEGEN_ASSERT(false &&
+                       "It is illegal to call FailHijackedRecvMessage on a "
+                       "method which has a Cancel notification");
   }
 };
 }  // namespace internal

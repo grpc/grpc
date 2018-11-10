@@ -280,7 +280,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
         request_payload_ = nullptr;
         interceptor_methods_.AddInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
-        interceptor_methods_.SetRecvMessage(request_);
+        interceptor_methods_.SetRecvMessage(request_, nullptr);
       }
 
       if (interceptor_methods_.RunInterceptors(
@@ -447,7 +447,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
         req_->request_payload_ = nullptr;
         req_->interceptor_methods_.AddInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
-        req_->interceptor_methods_.SetRecvMessage(req_->request_);
+        req_->interceptor_methods_.SetRecvMessage(req_->request_, nullptr);
       }
 
       if (req_->interceptor_methods_.RunInterceptors(

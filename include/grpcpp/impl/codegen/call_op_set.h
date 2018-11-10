@@ -406,7 +406,7 @@ class CallOpRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -501,7 +501,7 @@ class CallOpGenericRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(

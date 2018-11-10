@@ -269,6 +269,92 @@ class HijackingInterceptorMakesAnotherCallFactory
   }
 };
 
+class ServerStreamingRpcHijackingInterceptor
+    : public experimental::Interceptor {
+ public:
+  ServerStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
+    info_ = info;
+  }
+
+  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+    bool hijack = false;
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+      auto* map = methods->GetSendInitialMetadata();
+      // Check that we can see the test metadata
+      ASSERT_EQ(map->size(), static_cast<unsigned>(1));
+      auto iterator = map->begin();
+      EXPECT_EQ("testkey", iterator->first);
+      EXPECT_EQ("testvalue", iterator->second);
+      hijack = true;
+    }
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      EchoRequest req;
+      auto* buffer = methods->GetSendMessage();
+      auto copied_buffer = *buffer;
+      EXPECT_TRUE(
+          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+              .ok());
+      EXPECT_EQ(req.message(), "Hello");
+    }
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {
+      // Got nothing to do here for now
+    }
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
+      auto* map = methods->GetRecvTrailingMetadata();
+      bool found = false;
+      // Check that we received the metadata as an echo
+      for (const auto& pair : *map) {
+        found = pair.first.starts_with("testkey") &&
+                pair.second.starts_with("testvalue");
+        if (found) break;
+      }
+      EXPECT_EQ(found, true);
+      auto* status = methods->GetRecvStatus();
+      EXPECT_EQ(status->ok(), true);
+    }
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
+      if (++count > 10) {
+        methods->FailHijackedRecvMessage();
+      }
+      EchoResponse* resp =
+          static_cast<EchoResponse*>(methods->GetRecvMessage());
+      resp->set_message("Hello");
+    }
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
+      auto* map = methods->GetRecvTrailingMetadata();
+      // insert the metadata that we want
+      EXPECT_EQ(map->size(), static_cast<unsigned>(0));
+      map->insert(std::make_pair("testkey", "testvalue"));
+      auto* status = methods->GetRecvStatus();
+      *status = Status(StatusCode::OK, "");
+    }
+    if (hijack) {
+      methods->Hijack();
+    } else {
+      methods->Proceed();
+    }
+  }
+
+ private:
+  experimental::ClientRpcInfo* info_;
+  int count = 0;
+};
+
+class ServerStreamingRpcHijackingInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new ServerStreamingRpcHijackingInterceptor(info);
+  }
+};
+
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   LoggingInterceptor(experimental::ClientRpcInfo* info) { info_ = info; }
@@ -533,6 +619,21 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
   MakeServerStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  auto creators = std::unique_ptr<std::vector<
+      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
+      new std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  creators->push_back(
+      std::unique_ptr<ServerStreamingRpcHijackingInterceptorFactory>(
+          new ServerStreamingRpcHijackingInterceptorFactory()));
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeServerStreamingCall(channel);
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
