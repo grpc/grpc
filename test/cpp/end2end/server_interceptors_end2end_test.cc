@@ -391,6 +391,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   builder.RegisterAsyncGenericService(&service);
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -486,6 +487,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -539,6 +541,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
