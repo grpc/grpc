@@ -1,0 +1,819 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>grpc_testing &#8212; gRPC Python 1.16.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.16.0</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grpc_testing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2017 gRPC authors.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;Objects for use in testing gRPC Python-using application code.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">six</span>
+
+<span class="kn">from</span> <span class="nn">google.protobuf</span> <span class="k">import</span> <span class="n">descriptor</span>
+
+<span class="kn">import</span> <span class="nn">grpc</span>
+
+
+<div class="viewcode-block" id="UnaryUnaryChannelRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryChannelRpc">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryChannelRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a unary-unary RPC invoked by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play server&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryUnaryChannelRpc.send_initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends the RPC&#39;s initial metadata to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          initial_metadata: The RPC&#39;s initial metadata to be &quot;sent&quot; to</span>
+<span class="sd">            the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryUnaryChannelRpc.cancelled"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryChannelRpc.cancelled">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has cancelled the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryUnaryChannelRpc.terminate"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryChannelRpc.terminate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Terminates the RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          response: The response for the RPC.</span>
+<span class="sd">          trailing_metadata: The RPC&#39;s trailing metadata.</span>
+<span class="sd">          code: The RPC&#39;s status code.</span>
+<span class="sd">          details: The RPC&#39;s status details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="UnaryStreamChannelRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamChannelRpc">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamChannelRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a unary-stream RPC invoked by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play server&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryStreamChannelRpc.send_initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamChannelRpc.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends the RPC&#39;s initial metadata to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          initial_metadata: The RPC&#39;s initial metadata to be &quot;sent&quot; to</span>
+<span class="sd">            the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamChannelRpc.send_response"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamChannelRpc.send_response">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends a response to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          response: A response message to be &quot;sent&quot; to the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamChannelRpc.cancelled"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamChannelRpc.cancelled">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has cancelled the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamChannelRpc.terminate"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamChannelRpc.terminate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Terminates the RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          trailing_metadata: The RPC&#39;s trailing metadata.</span>
+<span class="sd">          code: The RPC&#39;s status code.</span>
+<span class="sd">          details: The RPC&#39;s status details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryChannelRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a stream-unary RPC invoked by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play server&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc.send_initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends the RPC&#39;s initial metadata to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          initial_metadata: The RPC&#39;s initial metadata to be &quot;sent&quot; to</span>
+<span class="sd">            the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc.take_request"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc.take_request">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws one of the requests added to the RPC by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added to the RPC</span>
+<span class="sd">        the request to be returned.</span>
+
+<span class="sd">        Successive calls to this method return requests in the same order in</span>
+<span class="sd">        which the system under test added them to the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A request message added to the RPC by the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc.requests_closed"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc.requests_closed">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">requests_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has closed the request stream.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc.cancelled"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc.cancelled">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has cancelled the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryChannelRpc.terminate"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryChannelRpc.terminate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Terminates the RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          response: The response for the RPC.</span>
+<span class="sd">          trailing_metadata: The RPC&#39;s trailing metadata.</span>
+<span class="sd">          code: The RPC&#39;s status code.</span>
+<span class="sd">          details: The RPC&#39;s status details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="StreamStreamChannelRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamChannelRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a stream-stream RPC invoked by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play server&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.send_initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.send_initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_metadata</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends the RPC&#39;s initial metadata to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          initial_metadata: The RPC&#39;s initial metadata to be &quot;sent&quot; to the</span>
+<span class="sd">            system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.take_request"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.take_request">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws one of the requests added to the RPC by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added to the RPC</span>
+<span class="sd">        the request to be returned.</span>
+
+<span class="sd">        Successive calls to this method return requests in the same order in</span>
+<span class="sd">        which the system under test added them to the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A request message added to the RPC by the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.send_response"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.send_response">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends a response to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          response: A response messages to be &quot;sent&quot; to the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.requests_closed"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.requests_closed">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">requests_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has closed the request stream.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.cancelled"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.cancelled">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancelled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has cancelled the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamChannelRpc.terminate"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamChannelRpc.terminate">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">terminate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trailing_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">details</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Terminates the RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          trailing_metadata: The RPC&#39;s trailing metadata.</span>
+<span class="sd">          code: The RPC&#39;s status code.</span>
+<span class="sd">          details: The RPC&#39;s status details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Channel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Channel">[docs]</a><span class="k">class</span> <span class="nc">Channel</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">,</span> <span class="n">grpc</span><span class="o">.</span><span class="n">Channel</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;A grpc.Channel double with which to test a system that invokes RPCs.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Channel.take_unary_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Channel.take_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an RPC currently being made by the system under test.</span>
+
+<span class="sd">        If the given descriptor does not identify any RPC currently being made</span>
+<span class="sd">        by the system under test, this method blocks until the system under</span>
+<span class="sd">        test invokes such an RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a</span>
+<span class="sd">            unary-unary RPC method.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (invocation_metadata, request, unary_unary_channel_rpc) tuple of</span>
+<span class="sd">            the RPC&#39;s invocation metadata, its request, and a</span>
+<span class="sd">            UnaryUnaryChannelRpc with which to &quot;play server&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Channel.take_unary_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Channel.take_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an RPC currently being made by the system under test.</span>
+
+<span class="sd">        If the given descriptor does not identify any RPC currently being made</span>
+<span class="sd">        by the system under test, this method blocks until the system under</span>
+<span class="sd">        test invokes such an RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a</span>
+<span class="sd">            unary-stream RPC method.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (invocation_metadata, request, unary_stream_channel_rpc) tuple of</span>
+<span class="sd">            the RPC&#39;s invocation metadata, its request, and a</span>
+<span class="sd">            UnaryStreamChannelRpc with which to &quot;play server&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Channel.take_stream_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Channel.take_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an RPC currently being made by the system under test.</span>
+
+<span class="sd">        If the given descriptor does not identify any RPC currently being made</span>
+<span class="sd">        by the system under test, this method blocks until the system under</span>
+<span class="sd">        test invokes such an RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a</span>
+<span class="sd">            stream-unary RPC method.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (invocation_metadata, stream_unary_channel_rpc) tuple of the RPC&#39;s</span>
+<span class="sd">            invocation metadata and a StreamUnaryChannelRpc with which to &quot;play</span>
+<span class="sd">            server&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Channel.take_stream_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Channel.take_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws an RPC currently being made by the system under test.</span>
+
+<span class="sd">        If the given descriptor does not identify any RPC currently being made</span>
+<span class="sd">        by the system under test, this method blocks until the system under</span>
+<span class="sd">        test invokes such an RPC.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a</span>
+<span class="sd">            stream-stream RPC method.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (invocation_metadata, stream_stream_channel_rpc) tuple of the RPC&#39;s</span>
+<span class="sd">            invocation metadata and a StreamStreamChannelRpc with which to</span>
+<span class="sd">            &quot;play server&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="UnaryUnaryServerRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryServerRpc">[docs]</a><span class="k">class</span> <span class="nc">UnaryUnaryServerRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a unary-unary RPC serviced by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play client&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryUnaryServerRpc.initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryServerRpc.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the initial metadata emitted by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added initial</span>
+<span class="sd">        metadata to the RPC (or has provided one or more response messages or</span>
+<span class="sd">        has terminated the RPC, either of which will cause gRPC Python to</span>
+<span class="sd">        synthesize initial metadata for the RPC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The initial metadata for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryUnaryServerRpc.cancel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryServerRpc.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancels the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryUnaryServerRpc.termination"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryUnaryServerRpc.termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">termination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has terminated the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (response, trailing_metadata, code, details) sequence with the RPC&#39;s</span>
+<span class="sd">            response, trailing metadata, code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="UnaryStreamServerRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamServerRpc">[docs]</a><span class="k">class</span> <span class="nc">UnaryStreamServerRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a unary-stream RPC serviced by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play client&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UnaryStreamServerRpc.initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamServerRpc.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the initial metadata emitted by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added initial</span>
+<span class="sd">        metadata to the RPC (or has provided one or more response messages or</span>
+<span class="sd">        has terminated the RPC, either of which will cause gRPC Python to</span>
+<span class="sd">        synthesize initial metadata for the RPC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The initial metadata for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamServerRpc.take_response"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamServerRpc.take_response">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws one of the responses added to the RPC by the system under test.</span>
+
+<span class="sd">        Successive calls to this method return responses in the same order in</span>
+<span class="sd">        which the system under test added them to the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A response message added to the RPC by the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamServerRpc.cancel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamServerRpc.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancels the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UnaryStreamServerRpc.termination"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.UnaryStreamServerRpc.termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">termination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has terminated the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (trailing_metadata, code, details) sequence with the RPC&#39;s trailing</span>
+<span class="sd">            metadata, code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="StreamUnaryServerRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc">[docs]</a><span class="k">class</span> <span class="nc">StreamUnaryServerRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a stream-unary RPC serviced by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play client&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamUnaryServerRpc.initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the initial metadata emitted by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added initial</span>
+<span class="sd">        metadata to the RPC (or has provided one or more response messages or</span>
+<span class="sd">        has terminated the RPC, either of which will cause gRPC Python to</span>
+<span class="sd">        synthesize initial metadata for the RPC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The initial metadata for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryServerRpc.send_request"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc.send_request">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends a request to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: A request message for the RPC to be &quot;sent&quot; to the system</span>
+<span class="sd">            under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryServerRpc.requests_closed"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc.requests_closed">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">requests_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Indicates the end of the RPC&#39;s request stream.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryServerRpc.cancel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancels the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamUnaryServerRpc.termination"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamUnaryServerRpc.termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">termination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has terminated the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (response, trailing_metadata, code, details) sequence with the RPC&#39;s</span>
+<span class="sd">            response, trailing metadata, code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="StreamStreamServerRpc"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc">[docs]</a><span class="k">class</span> <span class="nc">StreamStreamServerRpc</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Fixture for a stream-stream RPC serviced by a system under test.</span>
+
+<span class="sd">    Enables users to &quot;play client&quot; for the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.initial_metadata"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.initial_metadata">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">initial_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the initial metadata emitted by the system under test.</span>
+
+<span class="sd">        This method blocks until the system under test has added initial</span>
+<span class="sd">        metadata to the RPC (or has provided one or more response messages or</span>
+<span class="sd">        has terminated the RPC, either of which will cause gRPC Python to</span>
+<span class="sd">        synthesize initial metadata for the RPC).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The initial metadata for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.send_request"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.send_request">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">send_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends a request to the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          request: A request message for the RPC to be &quot;sent&quot; to the system</span>
+<span class="sd">            under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.requests_closed"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.requests_closed">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">requests_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Indicates the end of the RPC&#39;s request stream.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.take_response"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.take_response">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">take_response</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws one of the responses added to the RPC by the system under test.</span>
+
+<span class="sd">        Successive calls to this method return responses in the same order in</span>
+<span class="sd">        which the system under test added them to the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A response message added to the RPC by the system under test.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.cancel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.cancel">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancels the RPC.&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="StreamStreamServerRpc.termination"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.StreamStreamServerRpc.termination">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">termination</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until the system under test has terminated the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A (trailing_metadata, code, details) sequence with the RPC&#39;s trailing</span>
+<span class="sd">            metadata, code, and details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Server"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server">[docs]</a><span class="k">class</span> <span class="nc">Server</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;A server with which to test a system that services RPCs.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Server.invoke_unary_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_unary_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invoke_unary_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
+                           <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a unary-unary</span>
+<span class="sd">            RPC method.</span>
+<span class="sd">          invocation_metadata: The RPC&#39;s invocation metadata.</span>
+<span class="sd">          request: The RPC&#39;s request.</span>
+<span class="sd">          timeout: A duration of time in seconds for the RPC or None to</span>
+<span class="sd">            indicate that the RPC has no time limit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnaryUnaryServerRpc with which to &quot;play client&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Server.invoke_unary_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_unary_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invoke_unary_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
+                            <span class="n">request</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a unary-stream</span>
+<span class="sd">            RPC method.</span>
+<span class="sd">          invocation_metadata: The RPC&#39;s invocation metadata.</span>
+<span class="sd">          request: The RPC&#39;s request.</span>
+<span class="sd">          timeout: A duration of time in seconds for the RPC or None to</span>
+<span class="sd">            indicate that the RPC has no time limit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A UnaryStreamServerRpc with which to &quot;play client&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Server.invoke_stream_unary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_stream_unary">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invoke_stream_unary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
+                            <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a stream-unary</span>
+<span class="sd">            RPC method.</span>
+<span class="sd">          invocation_metadata: The RPC&#39;s invocation metadata.</span>
+<span class="sd">          timeout: A duration of time in seconds for the RPC or None to</span>
+<span class="sd">            indicate that the RPC has no time limit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamUnaryServerRpc with which to &quot;play client&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Server.invoke_stream_stream"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Server.invoke_stream_stream">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">invoke_stream_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_descriptor</span><span class="p">,</span> <span class="n">invocation_metadata</span><span class="p">,</span>
+                             <span class="n">timeout</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Invokes an RPC to be serviced by the system under test.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          method_descriptor: A descriptor.MethodDescriptor describing a stream-stream</span>
+<span class="sd">            RPC method.</span>
+<span class="sd">          invocation_metadata: The RPC&#39;s invocation metadata.</span>
+<span class="sd">          timeout: A duration of time in seconds for the RPC or None to</span>
+<span class="sd">            indicate that the RPC has no time limit.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A StreamStreamServerRpc with which to &quot;play client&quot; for the RPC.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="Time"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time">[docs]</a><span class="k">class</span> <span class="nc">Time</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;A simulation of time.</span>
+
+<span class="sd">    Implementations needn&#39;t be connected with real time as provided by the</span>
+<span class="sd">    Python interpreter, but as long as systems under test use</span>
+<span class="sd">    RpcContext.is_active and RpcContext.time_remaining for querying RPC liveness</span>
+<span class="sd">    implementations may be used to change passage of time in tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Time.time"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time.time">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Accesses the current test time.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          The current test time (over which this object has authority).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Time.call_in"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time.call_in">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">call_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="n">delay</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a behavior to be called after some time.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          behavior: A behavior to be called with no arguments.</span>
+<span class="sd">          delay: A duration of time in seconds after which to call the behavior.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A grpc.Future with which the call of the behavior may be cancelled</span>
+<span class="sd">            before it is executed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Time.call_at"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time.call_at">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">call_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">behavior</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a behavior to be called at a specific time.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          behavior: A behavior to be called with no arguments.</span>
+<span class="sd">          time: The test time at which to call the behavior.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A grpc.Future with which the call of the behavior may be cancelled</span>
+<span class="sd">            before it is executed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Time.sleep_for"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time.sleep_for">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">sleep_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks for some length of test time.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          duration: A duration of test time in seconds for which to block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Time.sleep_until"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.Time.sleep_until">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">sleep_until</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Blocks until some test time.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          time: The test time until which to block.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
+
+
+<div class="viewcode-block" id="strict_real_time"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.strict_real_time">[docs]</a><span class="k">def</span> <span class="nf">strict_real_time</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Time backed by the Python interpreter&#39;s time.</span>
+
+<span class="sd">    The returned instance will be &quot;strict&quot; with respect to callbacks</span>
+<span class="sd">    submitted to it: it will ensure that all callbacks registered to</span>
+<span class="sd">    be called at time t have been called before it describes the time</span>
+<span class="sd">    as having advanced beyond t.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Time backed by the &quot;system&quot; (Python interpreter&#39;s) time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="k">import</span> <span class="n">_time</span>
+    <span class="k">return</span> <span class="n">_time</span><span class="o">.</span><span class="n">StrictRealTime</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="strict_fake_time"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.strict_fake_time">[docs]</a><span class="k">def</span> <span class="nf">strict_fake_time</span><span class="p">(</span><span class="n">now</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Time that can be manipulated by test code.</span>
+
+<span class="sd">    The returned instance maintains an internal representation of time</span>
+<span class="sd">    independent of real time. This internal representation only advances</span>
+<span class="sd">    when user code calls the instance&#39;s sleep_for and sleep_until methods.</span>
+
+<span class="sd">    The returned instance will be &quot;strict&quot; with respect to callbacks</span>
+<span class="sd">    submitted to it: it will ensure that all callbacks registered to</span>
+<span class="sd">    be called at time t have been called before it describes the time</span>
+<span class="sd">    as having advanced beyond t.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Time that simulates the passage of time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="k">import</span> <span class="n">_time</span>
+    <span class="k">return</span> <span class="n">_time</span><span class="o">.</span><span class="n">StrictFakeTime</span><span class="p">(</span><span class="n">now</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="channel"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.channel">[docs]</a><span class="k">def</span> <span class="nf">channel</span><span class="p">(</span><span class="n">service_descriptors</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Channel for use in tests of a gRPC Python-using system.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      service_descriptors: An iterable of descriptor.ServiceDescriptors</span>
+<span class="sd">        describing the RPCs that will be made on the returned Channel by the</span>
+<span class="sd">        system under test.</span>
+<span class="sd">      time: A Time to be used for tests.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Channel for use in tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="k">import</span> <span class="n">_channel</span>
+    <span class="k">return</span> <span class="n">_channel</span><span class="o">.</span><span class="n">testing_channel</span><span class="p">(</span><span class="n">service_descriptors</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="server_from_dictionary"><a class="viewcode-back" href="../grpc_testing.html#grpc_testing.server_from_dictionary">[docs]</a><span class="k">def</span> <span class="nf">server_from_dictionary</span><span class="p">(</span><span class="n">descriptors_to_servicers</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a Server for use in tests of a gRPC Python-using system.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      descriptors_to_servicers: A dictionary from descriptor.ServiceDescriptors</span>
+<span class="sd">        defining RPC services to servicer objects (usually instances of classes</span>
+<span class="sd">        that implement &quot;Servicer&quot; interfaces defined in generated &quot;_pb2_grpc&quot;</span>
+<span class="sd">        modules) implementing those services.</span>
+<span class="sd">      time: A Time to be used for tests.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A Server for use in tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">grpc_testing</span> <span class="k">import</span> <span class="n">_server</span>
+    <span class="k">return</span> <span class="n">_server</span><span class="o">.</span><span class="n">server_from_dictionary</span><span class="p">(</span><span class="n">descriptors_to_servicers</span><span class="p">,</span> <span class="n">time</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>

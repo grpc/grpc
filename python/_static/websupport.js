@@ -4,7 +4,7 @@
  *
  * sphinx.websupport utilities for all documentation.
  *
- * :copyright: Copyright 2007-2017 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2018 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -301,7 +301,7 @@
     li.hide();
 
     // Determine where in the parents children list to insert this comment.
-    for(i=0; i < siblings.length; i++) {
+    for(var i=0; i < siblings.length; i++) {
       if (comp(comment, siblings[i]) <= 0) {
         $('#cd' + siblings[i].id)
           .parent()

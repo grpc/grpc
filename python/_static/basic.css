@@ -4,7 +4,7 @@
  *
  * Sphinx stylesheet -- basic theme.
  *
- * :copyright: Copyright 2007-2017 by the Sphinx team, see AUTHORS.
+ * :copyright: Copyright 2007-2018 by the Sphinx team, see AUTHORS.
  * :license: BSD, see LICENSE for details.
  *
  */
@@ -81,9 +81,25 @@ div.sphinxsidebar input {
     font-size: 1em;
 }
 
-div.sphinxsidebar #searchbox input[type="text"] {
-    width: 170px;
+div.sphinxsidebar #searchbox form.search {
+    overflow: hidden;
 }
+
+div.sphinxsidebar #searchbox input[type="text"] {
+    float: left;
+    width: 80%;
+    padding: 0.25em;
+    box-sizing: border-box;
+}
+
+div.sphinxsidebar #searchbox input[type="submit"] {
+    float: left;
+    width: 20%;
+    border-left: none;
+    padding: 0.25em;
+    box-sizing: border-box;
+}
+
 
 img {
     border: 0;
@@ -198,6 +214,11 @@ table.modindextable td {
 }
 
 /* -- general body styles --------------------------------------------------- */
+
+div.body {
+    min-width: 450px;
+    max-width: 800px;
+}
 
 div.body p, div.body dd, div.body li, div.body blockquote {
     -moz-hyphens: auto;
@@ -332,6 +353,11 @@ table.docutils {
     border-collapse: collapse;
 }
 
+table.align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 table caption span.caption-number {
     font-style: italic;
 }
@@ -404,6 +430,13 @@ table.field-list td, table.field-list th {
     -webkit-hyphens: manual;
     hyphens: manual;
 }
+
+/* -- hlist styles ---------------------------------------------------------- */
+
+table.hlist td {
+    vertical-align: top;
+}
+
 
 /* -- other body styles ----------------------------------------------------- */
 

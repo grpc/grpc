@@ -1,16 +1,19 @@
-.. grpcio documentation master file, created by
-   sphinx-quickstart on Tue Dec 12 18:55:33 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Welcome to gRPC Python's documentation!
+=======================================
 
-Welcome to grpcio's documentation!
-==================================
+Version: |version| Release: |release|
+
+API Reference
+=============
 
 .. toctree::
-   :maxdepth: 4
    :caption: Contents:
 
    grpc
+   grpc_health_checking
+   grpc_reflection
+   grpc_testing
+   glossary
 
 
 Indices and tables
