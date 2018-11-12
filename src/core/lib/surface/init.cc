@@ -114,21 +114,8 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
   g_number_of_plugins++;
 }
 
-// For debug of the timer manager crash only.
-// TODO (mxyan): remove after bug is fixed.
-#ifdef GRPC_DEBUG_TIMER_MANAGER
-void init_debug_timer_manager();
-#endif
-
 void grpc_init(void) {
   int i;
-
-// For debug of the timer manager crash only.
-// TODO (mxyan): remove after bug is fixed.
-  #ifdef GRPC_DEBUG_TIMER_MANAGER
-  init_debug_timer_manager();
-  #endif
-
   gpr_once_init(&g_basic_init, do_basic_init);
 
   gpr_mu_lock(&g_init_mu);
