@@ -1,0 +1,1072 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>gRPC Testing &#8212; gRPC Python 1.16.0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Glossary" href="glossary.html" />
+    <link rel="prev" title="gRPC Reflection" href="grpc_reflection.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.16.0</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-grpc_testing">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="grpc_reflection.html" title="previous chapter">gRPC Reflection</a></li>
+      <li>Next: <a href="glossary.html" title="next chapter">Glossary</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="grpc-testing">
+<h1>gRPC Testing<a class="headerlink" href="#grpc-testing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-grpc_testing">
+<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_testing" title="Permalink to this headline">¶</a></h2>
+<p>Objects for use in testing gRPC Python-using application code.</p>
+<dl class="class">
+<dt id="grpc_testing.Channel">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">Channel</code><a class="reference internal" href="_modules/grpc_testing.html#Channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>A grpc.Channel double with which to test a system that invokes RPCs.</p>
+<dl class="method">
+<dt id="grpc_testing.Channel.take_stream_stream">
+<code class="descname">take_stream_stream</code><span class="sig-paren">(</span><em>method_descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws an RPC currently being made by the system under test.</p>
+<p>If the given descriptor does not identify any RPC currently being made
+by the system under test, this method blocks until the system under
+test invokes such an RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a
+stream-stream RPC method.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (invocation_metadata, stream_stream_channel_rpc) tuple of the RPC’s</dt>
+<dd>invocation metadata and a StreamStreamChannelRpc with which to
+“play server” for the RPC.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Channel.take_stream_unary">
+<code class="descname">take_stream_unary</code><span class="sig-paren">(</span><em>method_descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Channel.take_stream_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws an RPC currently being made by the system under test.</p>
+<p>If the given descriptor does not identify any RPC currently being made
+by the system under test, this method blocks until the system under
+test invokes such an RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a
+stream-unary RPC method.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (invocation_metadata, stream_unary_channel_rpc) tuple of the RPC’s</dt>
+<dd>invocation metadata and a StreamUnaryChannelRpc with which to “play
+server” for the RPC.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Channel.take_unary_stream">
+<code class="descname">take_unary_stream</code><span class="sig-paren">(</span><em>method_descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws an RPC currently being made by the system under test.</p>
+<p>If the given descriptor does not identify any RPC currently being made
+by the system under test, this method blocks until the system under
+test invokes such an RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a
+unary-stream RPC method.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (invocation_metadata, request, unary_stream_channel_rpc) tuple of</dt>
+<dd>the RPC’s invocation metadata, its request, and a
+UnaryStreamChannelRpc with which to “play server” for the RPC.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Channel.take_unary_unary">
+<code class="descname">take_unary_unary</code><span class="sig-paren">(</span><em>method_descriptor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Channel.take_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Channel.take_unary_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws an RPC currently being made by the system under test.</p>
+<p>If the given descriptor does not identify any RPC currently being made
+by the system under test, this method blocks until the system under
+test invokes such an RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a
+unary-unary RPC method.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (invocation_metadata, request, unary_unary_channel_rpc) tuple of</dt>
+<dd>the RPC’s invocation metadata, its request, and a
+UnaryUnaryChannelRpc with which to “play server” for the RPC.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.Server">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">Server</code><a class="reference internal" href="_modules/grpc_testing.html#Server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>A server with which to test a system that services RPCs.</p>
+<dl class="method">
+<dt id="grpc_testing.Server.invoke_stream_stream">
+<code class="descname">invoke_stream_stream</code><span class="sig-paren">(</span><em>method_descriptor</em>, <em>invocation_metadata</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes an RPC to be serviced by the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a stream-stream
+RPC method.</li>
+<li><strong>invocation_metadata</strong> – The RPC’s invocation metadata.</li>
+<li><strong>timeout</strong> – A duration of time in seconds for the RPC or None to
+indicate that the RPC has no time limit.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A StreamStreamServerRpc with which to “play client” for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Server.invoke_stream_unary">
+<code class="descname">invoke_stream_unary</code><span class="sig-paren">(</span><em>method_descriptor</em>, <em>invocation_metadata</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_stream_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Server.invoke_stream_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes an RPC to be serviced by the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a stream-unary
+RPC method.</li>
+<li><strong>invocation_metadata</strong> – The RPC’s invocation metadata.</li>
+<li><strong>timeout</strong> – A duration of time in seconds for the RPC or None to
+indicate that the RPC has no time limit.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A StreamUnaryServerRpc with which to “play client” for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Server.invoke_unary_stream">
+<code class="descname">invoke_unary_stream</code><span class="sig-paren">(</span><em>method_descriptor</em>, <em>invocation_metadata</em>, <em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes an RPC to be serviced by the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a unary-stream
+RPC method.</li>
+<li><strong>invocation_metadata</strong> – The RPC’s invocation metadata.</li>
+<li><strong>request</strong> – The RPC’s request.</li>
+<li><strong>timeout</strong> – A duration of time in seconds for the RPC or None to
+indicate that the RPC has no time limit.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A UnaryStreamServerRpc with which to “play client” for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Server.invoke_unary_unary">
+<code class="descname">invoke_unary_unary</code><span class="sig-paren">(</span><em>method_descriptor</em>, <em>invocation_metadata</em>, <em>request</em>, <em>timeout</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Server.invoke_unary_unary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Server.invoke_unary_unary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invokes an RPC to be serviced by the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method_descriptor</strong> – A descriptor.MethodDescriptor describing a unary-unary
+RPC method.</li>
+<li><strong>invocation_metadata</strong> – The RPC’s invocation metadata.</li>
+<li><strong>request</strong> – The RPC’s request.</li>
+<li><strong>timeout</strong> – A duration of time in seconds for the RPC or None to
+indicate that the RPC has no time limit.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A UnaryUnaryServerRpc with which to “play client” for the RPC.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.StreamStreamChannelRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">StreamStreamChannelRpc</code><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a stream-stream RPC invoked by a system under test.</p>
+<p>Enables users to “play server” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.cancelled">
+<code class="descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has cancelled the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.requests_closed">
+<code class="descname">requests_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.requests_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has closed the request stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.send_initial_metadata">
+<code class="descname">send_initial_metadata</code><span class="sig-paren">(</span><em>initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the RPC’s initial metadata to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The RPC’s initial metadata to be “sent” to the
+system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.send_response">
+<code class="descname">send_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.send_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a response to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> – A response messages to be “sent” to the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.take_request">
+<code class="descname">take_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.take_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws one of the requests added to the RPC by the system under test.</p>
+<p>This method blocks until the system under test has added to the RPC
+the request to be returned.</p>
+<p>Successive calls to this method return requests in the same order in
+which the system under test added them to the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A request message added to the RPC by the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamChannelRpc.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><em>trailing_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamChannelRpc.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminates the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>trailing_metadata</strong> – The RPC’s trailing metadata.</li>
+<li><strong>code</strong> – The RPC’s status code.</li>
+<li><strong>details</strong> – The RPC’s status details.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.StreamStreamServerRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">StreamStreamServerRpc</code><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a stream-stream RPC serviced by a system under test.</p>
+<p>Enables users to “play client” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.initial_metadata">
+<code class="descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata emitted by the system under test.</p>
+<p>This method blocks until the system under test has added initial
+metadata to the RPC (or has provided one or more response messages or
+has terminated the RPC, either of which will cause gRPC Python to
+synthesize initial metadata for the RPC).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata for the RPC.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.requests_closed">
+<code class="descname">requests_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.requests_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates the end of the RPC’s request stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.send_request">
+<code class="descname">send_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.send_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> – A request message for the RPC to be “sent” to the system
+under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.take_response">
+<code class="descname">take_response</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.take_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws one of the responses added to the RPC by the system under test.</p>
+<p>Successive calls to this method return responses in the same order in
+which the system under test added them to the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A response message added to the RPC by the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamStreamServerRpc.termination">
+<code class="descname">termination</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamStreamServerRpc.termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has terminated the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (trailing_metadata, code, details) sequence with the RPC’s trailing</dt>
+<dd>metadata, code, and details.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.StreamUnaryChannelRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">StreamUnaryChannelRpc</code><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a stream-unary RPC invoked by a system under test.</p>
+<p>Enables users to “play server” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryChannelRpc.cancelled">
+<code class="descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has cancelled the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryChannelRpc.requests_closed">
+<code class="descname">requests_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.requests_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has closed the request stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryChannelRpc.send_initial_metadata">
+<code class="descname">send_initial_metadata</code><span class="sig-paren">(</span><em>initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the RPC’s initial metadata to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The RPC’s initial metadata to be “sent” to
+the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryChannelRpc.take_request">
+<code class="descname">take_request</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.take_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.take_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws one of the requests added to the RPC by the system under test.</p>
+<p>This method blocks until the system under test has added to the RPC
+the request to be returned.</p>
+<p>Successive calls to this method return requests in the same order in
+which the system under test added them to the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A request message added to the RPC by the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryChannelRpc.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><em>response</em>, <em>trailing_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryChannelRpc.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminates the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> – The response for the RPC.</li>
+<li><strong>trailing_metadata</strong> – The RPC’s trailing metadata.</li>
+<li><strong>code</strong> – The RPC’s status code.</li>
+<li><strong>details</strong> – The RPC’s status details.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.StreamUnaryServerRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">StreamUnaryServerRpc</code><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a stream-unary RPC serviced by a system under test.</p>
+<p>Enables users to “play client” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryServerRpc.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryServerRpc.initial_metadata">
+<code class="descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata emitted by the system under test.</p>
+<p>This method blocks until the system under test has added initial
+metadata to the RPC (or has provided one or more response messages or
+has terminated the RPC, either of which will cause gRPC Python to
+synthesize initial metadata for the RPC).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata for the RPC.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryServerRpc.requests_closed">
+<code class="descname">requests_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.requests_closed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.requests_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicates the end of the RPC’s request stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryServerRpc.send_request">
+<code class="descname">send_request</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.send_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.send_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a request to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> – A request message for the RPC to be “sent” to the system
+under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.StreamUnaryServerRpc.termination">
+<code class="descname">termination</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#StreamUnaryServerRpc.termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.StreamUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has terminated the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (response, trailing_metadata, code, details) sequence with the RPC’s</dt>
+<dd>response, trailing metadata, code, and details.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.Time">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">Time</code><a class="reference internal" href="_modules/grpc_testing.html#Time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time" title="Permalink to this definition">¶</a></dt>
+<dd><p>A simulation of time.</p>
+<p>Implementations needn’t be connected with real time as provided by the
+Python interpreter, but as long as systems under test use
+RpcContext.is_active and RpcContext.time_remaining for querying RPC liveness
+implementations may be used to change passage of time in tests.</p>
+<dl class="method">
+<dt id="grpc_testing.Time.call_at">
+<code class="descname">call_at</code><span class="sig-paren">(</span><em>behavior</em>, <em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time.call_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a behavior to be called at a specific time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> – A behavior to be called with no arguments.</li>
+<li><strong>time</strong> – The test time at which to call the behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A grpc.Future with which the call of the behavior may be cancelled</dt>
+<dd><p class="first last">before it is executed.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Time.call_in">
+<code class="descname">call_in</code><span class="sig-paren">(</span><em>behavior</em>, <em>delay</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.call_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time.call_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a behavior to be called after some time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>behavior</strong> – A behavior to be called with no arguments.</li>
+<li><strong>delay</strong> – A duration of time in seconds after which to call the behavior.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A grpc.Future with which the call of the behavior may be cancelled</dt>
+<dd><p class="first last">before it is executed.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Time.sleep_for">
+<code class="descname">sleep_for</code><span class="sig-paren">(</span><em>duration</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_for"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time.sleep_for" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks for some length of test time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>duration</strong> – A duration of test time in seconds for which to block.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Time.sleep_until">
+<code class="descname">sleep_until</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.sleep_until"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time.sleep_until" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until some test time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> – The test time until which to block.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.Time.time">
+<code class="descname">time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#Time.time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.Time.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the current test time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The current test time (over which this object has authority).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.UnaryStreamChannelRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">UnaryStreamChannelRpc</code><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a unary-stream RPC invoked by a system under test.</p>
+<p>Enables users to “play server” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamChannelRpc.cancelled">
+<code class="descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has cancelled the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamChannelRpc.send_initial_metadata">
+<code class="descname">send_initial_metadata</code><span class="sig-paren">(</span><em>initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the RPC’s initial metadata to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The RPC’s initial metadata to be “sent” to
+the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamChannelRpc.send_response">
+<code class="descname">send_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.send_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.send_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a response to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> – A response message to be “sent” to the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamChannelRpc.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><em>trailing_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamChannelRpc.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminates the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>trailing_metadata</strong> – The RPC’s trailing metadata.</li>
+<li><strong>code</strong> – The RPC’s status code.</li>
+<li><strong>details</strong> – The RPC’s status details.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.UnaryStreamServerRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">UnaryStreamServerRpc</code><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a unary-stream RPC serviced by a system under test.</p>
+<p>Enables users to “play client” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamServerRpc.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamServerRpc.initial_metadata">
+<code class="descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata emitted by the system under test.</p>
+<p>This method blocks until the system under test has added initial
+metadata to the RPC (or has provided one or more response messages or
+has terminated the RPC, either of which will cause gRPC Python to
+synthesize initial metadata for the RPC).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata for the RPC.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamServerRpc.take_response">
+<code class="descname">take_response</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.take_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.take_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws one of the responses added to the RPC by the system under test.</p>
+<p>Successive calls to this method return responses in the same order in
+which the system under test added them to the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A response message added to the RPC by the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryStreamServerRpc.termination">
+<code class="descname">termination</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryStreamServerRpc.termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryStreamServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has terminated the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (trailing_metadata, code, details) sequence with the RPC’s trailing</dt>
+<dd>metadata, code, and details.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.UnaryUnaryChannelRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">UnaryUnaryChannelRpc</code><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a unary-unary RPC invoked by a system under test.</p>
+<p>Enables users to “play server” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryChannelRpc.cancelled">
+<code class="descname">cancelled</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.cancelled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.cancelled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has cancelled the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata">
+<code class="descname">send_initial_metadata</code><span class="sig-paren">(</span><em>initial_metadata</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.send_initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.send_initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends the RPC’s initial metadata to the system under test.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>initial_metadata</strong> – The RPC’s initial metadata to be “sent” to
+the system under test.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryChannelRpc.terminate">
+<code class="descname">terminate</code><span class="sig-paren">(</span><em>response</em>, <em>trailing_metadata</em>, <em>code</em>, <em>details</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryChannelRpc.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryChannelRpc.terminate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminates the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>response</strong> – The response for the RPC.</li>
+<li><strong>trailing_metadata</strong> – The RPC’s trailing metadata.</li>
+<li><strong>code</strong> – The RPC’s status code.</li>
+<li><strong>details</strong> – The RPC’s status details.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="grpc_testing.UnaryUnaryServerRpc">
+<em class="property">class </em><code class="descclassname">grpc_testing.</code><code class="descname">UnaryUnaryServerRpc</code><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fixture for a unary-unary RPC serviced by a system under test.</p>
+<p>Enables users to “play client” for the RPC.</p>
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryServerRpc.cancel">
+<code class="descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.cancel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancels the RPC.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryServerRpc.initial_metadata">
+<code class="descname">initial_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.initial_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.initial_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the initial metadata emitted by the system under test.</p>
+<p>This method blocks until the system under test has added initial
+metadata to the RPC (or has provided one or more response messages or
+has terminated the RPC, either of which will cause gRPC Python to
+synthesize initial metadata for the RPC).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">The initial metadata for the RPC.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc_testing.UnaryUnaryServerRpc.termination">
+<code class="descname">termination</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#UnaryUnaryServerRpc.termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.UnaryUnaryServerRpc.termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Blocks until the system under test has terminated the RPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A (response, trailing_metadata, code, details) sequence with the RPC’s</dt>
+<dd>response, trailing metadata, code, and details.</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc_testing.channel">
+<code class="descclassname">grpc_testing.</code><code class="descname">channel</code><span class="sig-paren">(</span><em>service_descriptors</em>, <em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Channel for use in tests of a gRPC Python-using system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>service_descriptors</strong> – An iterable of descriptor.ServiceDescriptors
+describing the RPCs that will be made on the returned Channel by the
+system under test.</li>
+<li><strong>time</strong> – A Time to be used for tests.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Channel for use in tests.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc_testing.server_from_dictionary">
+<code class="descclassname">grpc_testing.</code><code class="descname">server_from_dictionary</code><span class="sig-paren">(</span><em>descriptors_to_servicers</em>, <em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#server_from_dictionary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.server_from_dictionary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Server for use in tests of a gRPC Python-using system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>descriptors_to_servicers</strong> – A dictionary from descriptor.ServiceDescriptors
+defining RPC services to servicer objects (usually instances of classes
+that implement “Servicer” interfaces defined in generated “_pb2_grpc”
+modules) implementing those services.</li>
+<li><strong>time</strong> – A Time to be used for tests.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A Server for use in tests.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc_testing.strict_fake_time">
+<code class="descclassname">grpc_testing.</code><code class="descname">strict_fake_time</code><span class="sig-paren">(</span><em>now</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#strict_fake_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.strict_fake_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Time that can be manipulated by test code.</p>
+<p>The returned instance maintains an internal representation of time
+independent of real time. This internal representation only advances
+when user code calls the instance’s sleep_for and sleep_until methods.</p>
+<p>The returned instance will be “strict” with respect to callbacks
+submitted to it: it will ensure that all callbacks registered to
+be called at time t have been called before it describes the time
+as having advanced beyond t.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Time that simulates the passage of time.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc_testing.strict_real_time">
+<code class="descclassname">grpc_testing.</code><code class="descname">strict_real_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_testing.html#strict_real_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_testing.strict_real_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a Time backed by the Python interpreter’s time.</p>
+<p>The returned instance will be “strict” with respect to callbacks
+submitted to it: it will ensure that all callbacks registered to
+be called at time t have been called before it describes the time
+as having advanced beyond t.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A Time backed by the “system” (Python interpreter’s) time.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2018, The gRPC Authors.
+      
+      |
+      <a href="_sources/grpc_testing.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>
