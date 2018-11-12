@@ -30,11 +30,13 @@
 // For debug of the timer manager crash only.
 // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
-void GRPCDebugTimerManagerLogStats(
-    int64_t timer_manager_init_count, int64_t timer_manager_shutdown_count,
-    int64_t fork_count, int64_t timer_wait_err, int64_t timer_cv_value,
-    int64_t timer_mu_value, int64_t abstime_sec_value,
-    int64_t abstime_nsec_value);
+void GRPCDebugTimerManagerLogStats(int64_t timer_manager_init_count,
+                                   int64_t timer_manager_shutdown_count,
+                                   int64_t fork_count, int64_t timer_wait_err,
+                                   int64_t timer_cv_value,
+                                   int64_t timer_mu_value,
+                                   int64_t abstime_sec_value,
+                                   int64_t abstime_nsec_value);
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
