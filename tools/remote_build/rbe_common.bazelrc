@@ -48,7 +48,7 @@ test --test_env=GRPC_VERBOSITY=debug
 build:asan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:asan --test_timeout=3600
-build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
+build:asan --test_tag_filters=-qps_json_driver
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -70,7 +70,7 @@ build:msan --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubunt
 build:tsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:tsan --test_timeout=3600
-build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
+build:tsan --test_tag_filters=-qps_json_driver
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
