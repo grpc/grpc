@@ -15,11 +15,13 @@
 
 import abc
 import enum
+import logging
 import sys
-
 import six
 
 from grpc._cython import cygrpc as _cygrpc
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 ############################## Future Interface  ###############################
 
