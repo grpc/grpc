@@ -1251,7 +1251,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1675,7 +1674,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
