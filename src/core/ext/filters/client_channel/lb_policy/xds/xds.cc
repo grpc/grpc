@@ -1132,8 +1132,8 @@ void XdsLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 // A pick progresses as follows:
 // - If there's a child policy available, it'll be handed over to child policy
 //   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
-//   policy's responsibility. For cancellations, that implies the pick needs to
-//   be also cancelled by the child policy instance.
+//   child policy's responsibility. For cancellations, that implies the pick
+//   needs to be also cancelled by the child policy instance.
 // - Otherwise, without a child policy instance, picks stay pending at this
 //   policy's level (xds), inside the pending_picks_ list. To cancel these,
 //   we invoke the completion closure and set the pick's connected
@@ -1166,8 +1166,8 @@ void XdsLb::CancelPickLocked(PickState* pick, grpc_error* error) {
 // A pick progresses as follows:
 // - If there's a child policy available, it'll be handed over to child policy
 //   (in CreateChildPolicyLocked()). From that point onwards, it'll be the
-//   policy's responsibility. For cancellations, that implies the pick needs to
-//   be also cancelled by the child policy instance.
+//   child policy's responsibility. For cancellations, that implies the pick
+//   needs to be also cancelled by the child policy instance.
 // - Otherwise, without a child policy instance, picks stay pending at this
 //   policy's level (xds), inside the pending_picks_ list. To cancel these,
 //   we invoke the completion closure and set the pick's connected
@@ -1440,7 +1440,7 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
   XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
   if (xdslb_policy->shutting_down_) goto done;
   // Re-initialize the lb_call. This should also take care of updating the
-  // embedded child policy. Note that the current child policy, if any, will
+  // child policy. Note that the current child policy, if any, will
   // stay in effect until an update from the new lb_call is received.
   switch (xdslb_policy->lb_channel_connectivity_) {
     case GRPC_CHANNEL_CONNECTING:
@@ -1501,7 +1501,7 @@ void DestroyClientStats(void* arg) {
 
 void XdsLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
   /* if connected_subchannel is nullptr, no pick has been made by the
-   * policy (e.g., all addresses failed to connect). There won't be any
+   * child policy (e.g., all addresses failed to connect). There won't be any
    * user_data/token available */
   if (pp->pick->connected_subchannel != nullptr) {
     if (GPR_LIKELY(!GRPC_MDISNULL(pp->lb_token))) {
@@ -1527,8 +1527,8 @@ void XdsLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
 }
 
 /* The \a on_complete closure passed as part of the pick requires keeping a
- * reference to its associated round robin instance. We wrap this closure in
- * order to unref the round robin instance upon its invocation */
+ * reference to its associated child policy instance. We wrap this closure in
+ * order to unref the child policy instance upon its invocation */
 void XdsLb::OnPendingPickComplete(void* arg, grpc_error* error) {
   PendingPick* pp = static_cast<PendingPick*>(arg);
   PendingPickSetMetadataAndContext(pp);
@@ -1592,7 +1592,7 @@ void XdsLb::CreateChildPolicyLocked(const Args& args) {
   child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       "round_robin", args);
   if (GPR_UNLIKELY(child_policy_ == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a RoundRobin policy", this);
+    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
     return;
   }
   // TODO(roth): We currently track this ref manually.  Once the new
@@ -1694,7 +1694,7 @@ void XdsLb::OnChildPolicyRequestReresolutionLocked(void* arg,
   }
   if (grpc_lb_xds_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[xdslb %p] Re-resolution requested from the internal child policy "
+            "[xdslb %p] Re-resolution requested from child policy "
             "(%p).",
             xdslb_policy, xdslb_policy->child_policy_.get());
   }
