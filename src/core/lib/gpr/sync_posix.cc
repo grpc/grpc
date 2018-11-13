@@ -30,13 +30,11 @@
 // For debug of the timer manager crash only.
 // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
-void GRPCDebugTimerManagerLogStats(int64_t timer_manager_init_count,
-                                   int64_t timer_manager_shutdown_count,
-                                   int64_t fork_count, int64_t timer_wait_err,
-                                   int64_t timer_cv_value,
-                                   int64_t timer_mu_value,
-                                   int64_t abstime_sec_value,
-                                   int64_t abstime_nsec_value);
+void (*g_grpc_debug_timer_manager_stats)(
+    int64_t timer_manager_init_count, int64_t timer_manager_shutdown_count,
+    int64_t fork_count, int64_t timer_wait_err, int64_t timer_cv_value,
+    int64_t timer_mu_value, int64_t abstime_sec_value,
+    int64_t abstime_nsec_value) = nullptr;
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
@@ -121,13 +119,15 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   // For debug of the timer manager crash only.
   // TODO (mxyan): remove after bug is fixed.
   if (GPR_UNLIKELY(!(err == 0 || err == ETIMEDOUT || err == EAGAIN))) {
-    g_timer_wait_err = err;
-    g_timer_cv_value = (int64_t)cv;
-    g_timer_mu_value = (int64_t)mu;
-    GRPCDebugTimerManagerLogStats(
-        g_timer_manager_init_count, g_timer_manager_shutdown_count,
-        g_fork_count, g_timer_wait_err, g_timer_cv_value, g_timer_mu_value,
-        g_abstime_sec_value, g_abstime_nsec_value);
+    if (g_grpc_debug_timer_manager_stats) {
+      g_timer_wait_err = err;
+      g_timer_cv_value = (int64_t)cv;
+      g_timer_mu_value = (int64_t)mu;
+      g_grpc_debug_timer_manager_stats(
+          g_timer_manager_init_count, g_timer_manager_shutdown_count,
+          g_fork_count, g_timer_wait_err, g_timer_cv_value, g_timer_mu_value,
+          g_abstime_sec_value, g_abstime_nsec_value);
+    }
   }
 #endif
   GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
