@@ -1321,10 +1321,12 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 
 void XdsLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
-  // Note: We have disabled fallback mode in the code, so we don't need to
-  // handle fallback address changes.
+  // Update the existing RR policy.
+  // Note: We have disabled fallback mode in the code, so this RR policy must
+  // have been created from a serverlist.
   // TODO(vpowar): Handle the fallback_address changes when we add support for
   // fallback in xDS.
+  if (rr_policy_ != nullptr) CreateOrUpdateRoundRobinPolicyLocked();
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {
