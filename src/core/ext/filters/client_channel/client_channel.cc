@@ -322,7 +322,7 @@ class ProcessedResolverResult {
 
  private:
   // Converts string format from JSON to proto.
-  grpc_core::UniquePtr<char> ConvertCamelToSnake(const char* camel) {
+  static grpc_core::UniquePtr<char> ConvertCamelToSnake(const char* camel) {
     const size_t size = strlen(camel);
     char* snake = static_cast<char*>(gpr_malloc(size * 2));
     size_t j = 0;
@@ -444,7 +444,8 @@ class ProcessedResolverResult {
     }
   }
 
-  // Finds the service config and extract useful fields from it.
+  // Finds the service config; extracts LB config and (maybe) retry throttle
+  // params from it.
   void ProcessServiceConfig(const channel_data* chand) {
     const grpc_arg* channel_arg =
         grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
@@ -519,10 +520,10 @@ class ProcessedResolverResult {
   // LB policy.
   grpc_json* lb_policy_config_ = nullptr;
   grpc_core::UniquePtr<char> lb_policy_name_;
-  // Retry throttle data..
+  // Retry throttle data.
   char* server_name_ = nullptr;
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
-  // Mehod params table.
+  // Method params table.
   grpc_core::RefCountedPtr<MethodParamsTable> method_params_table_;
 };
 
@@ -3077,10 +3078,9 @@ namespace grpc_core {
 
 // Handles waiting for a resolver result.
 // Used only for the first call on an idle channel.
-class ProcessedResolverResultWaiter {
+class ResolverResultWaiter {
  public:
-  explicit ProcessedResolverResultWaiter(grpc_call_element* elem)
-      : elem_(elem) {
+  explicit ResolverResultWaiter(grpc_call_element* elem) : elem_(elem) {
     channel_data* chand = static_cast<channel_data*>(elem->channel_data);
     call_data* calld = static_cast<call_data*>(elem->call_data);
     if (grpc_client_channel_trace.enabled()) {
@@ -3089,14 +3089,12 @@ class ProcessedResolverResultWaiter {
               chand, calld);
     }
     // Add closure to be run when a resolver result is available.
-    GRPC_CLOSURE_INIT(&done_closure_,
-                      &ProcessedResolverResultWaiter::DoneLocked, this,
+    GRPC_CLOSURE_INIT(&done_closure_, &ResolverResultWaiter::DoneLocked, this,
                       grpc_combiner_scheduler(chand->combiner));
     AddToWaitingList();
     // Set cancellation closure, so that we abort if the call is cancelled.
-    GRPC_CLOSURE_INIT(&cancel_closure_,
-                      &ProcessedResolverResultWaiter::CancelLocked, this,
-                      grpc_combiner_scheduler(chand->combiner));
+    GRPC_CLOSURE_INIT(&cancel_closure_, &ResolverResultWaiter::CancelLocked,
+                      this, grpc_combiner_scheduler(chand->combiner));
     grpc_call_combiner_set_notify_on_cancel(calld->call_combiner,
                                             &cancel_closure_);
   }
@@ -3111,8 +3109,7 @@ class ProcessedResolverResultWaiter {
 
   // Invoked when a resolver result is available.
   static void DoneLocked(void* arg, grpc_error* error) {
-    ProcessedResolverResultWaiter* self =
-        static_cast<ProcessedResolverResultWaiter*>(arg);
+    ResolverResultWaiter* self = static_cast<ResolverResultWaiter*>(arg);
     // If CancelLocked() has already run, delete ourselves without doing
     // anything.  Note that the call stack may have already been destroyed,
     // so it's not safe to access anything in elem_.
@@ -3188,8 +3185,7 @@ class ProcessedResolverResultWaiter {
   // Note: This runs under the client_channel combiner, but will NOT be
   // holding the call combiner.
   static void CancelLocked(void* arg, grpc_error* error) {
-    ProcessedResolverResultWaiter* self =
-        static_cast<ProcessedResolverResultWaiter*>(arg);
+    ResolverResultWaiter* self = static_cast<ResolverResultWaiter*>(arg);
     // If DoneLocked() has already run, delete ourselves without doing anything.
     if (GPR_LIKELY(self->finished_)) {
       Delete(self);
@@ -3244,7 +3240,7 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
       start_resolving_locked(chand);
     }
     // Create a new waiter, which will delete itself when done.
-    grpc_core::New<grpc_core::ProcessedResolverResultWaiter>(elem);
+    grpc_core::New<grpc_core::ResolverResultWaiter>(elem);
     // Add the polling entity from call_data to the channel_data's
     // interested_parties, so that the I/O of the resolver can be done
     // under it.  It will be removed in pick_done_locked().
