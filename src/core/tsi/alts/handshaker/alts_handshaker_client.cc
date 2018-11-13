@@ -376,7 +376,7 @@ static void handshaker_client_shutdown(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    GPR_ASSERT(grpc_call_cancel(client->call, nullptr) == GRPC_CALL_OK);
+    grpc_call_cancel_internal(client->call);
   }
 }
 
