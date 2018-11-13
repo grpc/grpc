@@ -664,7 +664,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/third_party/fiat/curve25519.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
-    -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
+    -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
+    -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
