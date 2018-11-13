@@ -859,8 +859,8 @@ static void cq_end_op_for_callback(
 
   gpr_atm_no_barrier_fetch_add(&cqd->things_queued_ever, 1);
   if (gpr_atm_full_fetch_add(&cqd->pending_events, -1) == 1) {
-    cq_finish_shutdown_callback(cq);
     gpr_mu_unlock(cq->mu);
+    cq_finish_shutdown_callback(cq);
   } else {
     gpr_mu_unlock(cq->mu);
   }

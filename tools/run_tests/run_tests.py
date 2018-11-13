@@ -1512,7 +1512,7 @@ if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
 if 'all' in args.language:
-    lang_list = _LANGUAGES.keys()
+    lang_list = list(_LANGUAGES.keys())
 else:
     lang_list = args.language
 # We don't support code coverage on some languages
@@ -1719,9 +1719,9 @@ def _has_epollexclusive():
     try:
         subprocess.check_call(binary)
         return True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return False
-    except OSError, e:
+    except OSError as e:
         # For languages other than C and Windows the binary won't exist
         return False
 

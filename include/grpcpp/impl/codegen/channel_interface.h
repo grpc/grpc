@@ -21,6 +21,7 @@
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpcpp/impl/codegen/call.h>
+#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -133,7 +134,7 @@ class ChannelInterface {
   virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                             ClientContext* context,
                                             CompletionQueue* cq,
-                                            int interceptor_pos) {
+                                            size_t interceptor_pos) {
     return internal::Call();
   }
 
@@ -142,7 +143,7 @@ class ChannelInterface {
   // channel. If the return value is nullptr, this channel doesn't support
   // callback operations.
   // TODO(vjpai): Consider a better default like using a global CQ
-  // Returns nullptr (rather than being pure) since this is a new method
+  // Returns nullptr (rather than being pure) since this is a post-1.0 method
   // and adding a new pure method to an interface would be a breaking change
   // (even though this is private and non-API)
   virtual CompletionQueue* CallbackCQ() { return nullptr; }

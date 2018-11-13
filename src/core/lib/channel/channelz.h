@@ -232,7 +232,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode();
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -262,16 +262,21 @@ class SocketNode : public BaseNode {
   gpr_atm last_remote_stream_created_millis_ = 0;
   gpr_atm last_message_sent_millis_ = 0;
   gpr_atm last_message_received_millis_ = 0;
-  UniquePtr<char> peer_string_;
+  UniquePtr<char> local_;
+  UniquePtr<char> remote_;
 };
 
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode();
+  // ListenSocketNode takes ownership of host.
+  explicit ListenSocketNode(UniquePtr<char> local_addr);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
+
+ private:
+  UniquePtr<char> local_addr_;
 };
 
 // Creation functions

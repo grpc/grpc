@@ -42,51 +42,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-/* This interceptor does nothing. Just keeps a global count on the number of
- * times it was invoked. */
-class DummyInterceptor : public experimental::Interceptor {
- public:
-  DummyInterceptor(experimental::ServerRpcInfo* info) {}
-
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      num_times_run_++;
-    } else if (methods->QueryInterceptionHookPoint(
-                   experimental::InterceptionHookPoints::
-                       POST_RECV_INITIAL_METADATA)) {
-      num_times_run_reverse_++;
-    }
-    methods->Proceed();
-  }
-
-  static void Reset() {
-    num_times_run_.store(0);
-    num_times_run_reverse_.store(0);
-  }
-
-  static int GetNumTimesRun() {
-    EXPECT_EQ(num_times_run_.load(), num_times_run_reverse_.load());
-    return num_times_run_.load();
-  }
-
- private:
-  static std::atomic<int> num_times_run_;
-  static std::atomic<int> num_times_run_reverse_;
-};
-
-std::atomic<int> DummyInterceptor::num_times_run_;
-std::atomic<int> DummyInterceptor::num_times_run_reverse_;
-
-class DummyInterceptorFactory
-    : public experimental::ServerInterceptorFactoryInterface {
- public:
-  virtual experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
-    return new DummyInterceptor(info);
-  }
-};
-
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   LoggingInterceptor(experimental::ServerRpcInfo* info) { info_ = info; }
@@ -103,7 +58,9 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSendMessage();
       auto copied_buffer = *buffer;
-      SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req);
+      EXPECT_TRUE(
+          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
+              .ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(

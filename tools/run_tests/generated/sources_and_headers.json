@@ -3402,6 +3402,7 @@
     "name": "client_interceptors_end2end_test", 
     "src": [
       "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
@@ -3600,12 +3601,16 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "end2end_test", 
     "src": [
-      "test/cpp/end2end/end2end_test.cc"
+      "test/cpp/end2end/end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4716,6 +4721,29 @@
     "name": "server_early_return_test", 
     "src": [
       "test/cpp/end2end/server_early_return_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_interceptors_end2end_test", 
+    "src": [
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h", 
+      "test/cpp/end2end/server_interceptors_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -9114,7 +9142,7 @@
       "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h", 
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
       "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h", 
@@ -9145,8 +9173,8 @@
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.cc", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.cc", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.cc", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
@@ -9626,7 +9654,8 @@
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9783,7 +9812,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9934,7 +9964,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10012,8 +10043,7 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -10061,9 +10091,7 @@
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -11199,6 +11227,7 @@
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
@@ -11274,6 +11303,7 @@
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
@@ -11423,6 +11453,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11527,6 +11558,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11536,6 +11568,7 @@
       "include/grpcpp/support/time.h", 
       "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
+      "src/cpp/client/client_interceptor.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 

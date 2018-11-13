@@ -23,9 +23,10 @@ make progress on one of the steps involved in name resolution, TCP connection
 establishment or TLS handshake. This may be used as the initial state for channels upon
 creation.
 
-READY: The channel has successfully established a connection all the way
-through TLS handshake (or equivalent) and all subsequent attempt to communicate
-have succeeded (or are pending without any known failure ).
+READY: The channel has successfully established a connection all the way through
+TLS handshake (or equivalent) and protocol-level (HTTP/2, etc) handshaking, and
+all subsequent attempt to communicate have succeeded (or are pending without any
+known failure).
 
 TRANSIENT_FAILURE: There has been some transient failure (such as a TCP 3-way
 handshake timing out or a socket error). Channels in this state will eventually
@@ -52,8 +53,8 @@ immediately. Pending RPCs may continue running till the application cancels them
 Channels may enter this state either because the application explicitly requested
 a shutdown or if a non-recoverable error has happened during attempts to connect
 communicate . (As of 6/12/2015, there are no known errors (while connecting or
-communicating) that are classified as non-recoverable) 
-Channels that enter this state never leave this state. 
+communicating) that are classified as non-recoverable.)  Channels that enter this
+state never leave this state.
 
 The following table lists the legal transitions from one state to another and
 corresponding reasons. Empty cells denote disallowed transitions.

@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import urllib
-import jobset
+from __future__ import print_function
+
+from . import jobset
+
+import six.moves.urllib.request as request
 import logging
 import os
 import socket
@@ -33,8 +36,8 @@ def start_port_server():
     # otherwise, leave it up
     try:
         version = int(
-            urllib.urlopen('http://localhost:%d/version_number' %
-                           _PORT_SERVER_PORT).read())
+            request.urlopen('http://localhost:%d/version_number' %
+                            _PORT_SERVER_PORT).read())
         logging.info('detected port server running version %d', version)
         running = True
     except Exception as e:
@@ -51,7 +54,7 @@ def start_port_server():
         running = (version >= current_version)
         if not running:
             logging.info('port_server version mismatch: killing the old one')
-            urllib.urlopen(
+            request.urlopen(
                 'http://localhost:%d/quitquitquit' % _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
@@ -92,7 +95,7 @@ def start_port_server():
                 # try one final time: maybe another build managed to start one
                 time.sleep(1)
                 try:
-                    urllib.urlopen(
+                    request.urlopen(
                         'http://localhost:%d/get' % _PORT_SERVER_PORT).read()
                     logging.info(
                         'last ditch attempt to contact port server succeeded')
@@ -101,11 +104,11 @@ def start_port_server():
                     logging.exception(
                         'final attempt to contact port server failed')
                     port_log = open(logfile, 'r').read()
-                    print port_log
+                    print(port_log)
                     sys.exit(1)
             try:
                 port_server_url = 'http://localhost:%d/get' % _PORT_SERVER_PORT
-                urllib.urlopen(port_server_url).read()
+                request.urlopen(port_server_url).read()
                 logging.info('port server is up and ready')
                 break
             except socket.timeout:

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import json
+import pkgutil
 import unittest
 
-import pkg_resources
 import six
 
 import tests
@@ -35,7 +35,7 @@ class SanityTest(unittest.TestCase):
                 loader.suite)
         })
 
-        tests_json_string = pkg_resources.resource_string('tests', 'tests.json')
+        tests_json_string = pkgutil.get_data('tests', 'tests.json')
         tests_json = json.loads(tests_json_string.decode()
                                 if six.PY3 else tests_json_string)
 

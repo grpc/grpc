@@ -66,7 +66,7 @@ class RpcMethodHandler : public MethodHandler {
         return func_(service_, param.server_context,
                      static_cast<RequestType*>(param.request), &rsp);
       });
-      delete static_cast<RequestType*>(param.request);
+      static_cast<RequestType*>(param.request)->~RequestType();
     }
 
     GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
@@ -86,16 +86,18 @@ class RpcMethodHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
     ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new RequestType();
+    auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call, sizeof(RequestType))) RequestType();
     *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
     }
-    delete request;
+    request->~RequestType();
     return nullptr;
   }
 
@@ -170,7 +172,7 @@ class ServerStreamingHandler : public MethodHandler {
         return func_(service_, param.server_context,
                      static_cast<RequestType*>(param.request), &writer);
       });
-      delete static_cast<RequestType*>(param.request);
+      static_cast<RequestType*>(param.request)->~RequestType();
     }
 
     CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
@@ -189,16 +191,18 @@ class ServerStreamingHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
     ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request = new RequestType();
+    auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
+        call, sizeof(RequestType))) RequestType();
     *status = SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
     }
-    delete request;
+    request->~RequestType();
     return nullptr;
   }
 
@@ -323,7 +327,8 @@ class ErrorMethodHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_byte_buffer* req, Status* status) final {
+  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
+                    Status* status) final {
     // We have to destroy any request payload
     if (req != nullptr) {
       get_g_core_codegen_interface()->grpc_byte_buffer_destroy(req);

@@ -62,6 +62,10 @@ class ChannelzRegistry {
     return Default()->InternalGetServers(start_server_id);
   }
 
+  // Test only helper function to dump the JSON representation to std out.
+  // This can aid in debugging channelz code.
+  static void LogAllEntities() { Default()->InternalLogAllEntities(); }
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
@@ -95,6 +99,8 @@ class ChannelzRegistry {
   // If direct_hit_needed, then will return -1 in case of absence.
   // Else, will return idx of the first uuid higher than the target.
   int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
+
+  void InternalLogAllEntities();
 
   // protects members
   gpr_mu mu_;

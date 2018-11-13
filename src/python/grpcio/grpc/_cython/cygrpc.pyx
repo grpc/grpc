@@ -15,7 +15,6 @@
 
 cimport cpython
 
-import pkg_resources
 import os.path
 import sys
 
