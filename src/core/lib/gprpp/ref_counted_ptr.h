@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -74,6 +75,8 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr(const RefCountedPtr<Y>& other) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = other.value_;
   }
@@ -89,6 +92,8 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
@@ -102,8 +107,14 @@ class RefCountedPtr {
   }
 
   // If value is non-null, we take ownership of a ref to it.
+  void reset(T* value) {
+    if (value_ != nullptr) value_->Unref();
+    value_ = value;
+  }
   template <typename Y>
   void reset(Y* value) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref();
     value_ = value;
   }
