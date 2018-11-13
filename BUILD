@@ -68,7 +68,7 @@ g_stands_for = "gao"
 
 core_version = "6.0.0"
 
-version = "1.16.1-pre1"
+version = "1.16.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
