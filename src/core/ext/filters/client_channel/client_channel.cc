@@ -35,9 +35,9 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
@@ -64,7 +64,7 @@
 #include "src/core/lib/transport/status_metadata.h"
 
 using grpc_core::internal::ClientChannelMethodParams;
-using grpc_core::internal::MethodParamsTable;
+using grpc_core::internal::ClientChannelMethodParamsTable;
 using grpc_core::internal::ProcessedResolverResult;
 using grpc_core::internal::ServerRetryThrottleData;
 
@@ -101,7 +101,7 @@ typedef struct client_channel_channel_data {
   /** retry throttle data */
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   /** maps method names to method_parameters structs */
-  grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
+  grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_channel_args* resolver_result;
   /** a list of closures that are all waiting for resolver result to come in */
@@ -470,13 +470,13 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     }
   } else {
     // Parse the resolver result.
-    ProcessedResolverResult resolver_result =
-        ProcessedResolverResult(chand->resolver_result, chand->enable_retries);
+    ProcessedResolverResult resolver_result(chand->resolver_result,
+                                            chand->enable_retries);
     chand->retry_throttle_data = resolver_result.retry_throttle_data();
     chand->method_params_table = resolver_result.method_params_table();
     grpc_core::UniquePtr<char> service_config_json =
         resolver_result.service_config_json();
-    if (grpc_client_channel_trace.enabled()) {
+    if (service_config_json != nullptr && grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
               chand, service_config_json.get());
     }

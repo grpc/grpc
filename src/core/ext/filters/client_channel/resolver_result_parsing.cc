@@ -38,6 +38,27 @@
 namespace grpc_core {
 namespace internal {
 
+namespace {
+
+// Converts string format from JSON to proto.
+grpc_core::UniquePtr<char> ConvertCamelToSnake(const char* camel) {
+  const size_t size = strlen(camel);
+  char* snake = static_cast<char*>(gpr_malloc(size * 2));
+  size_t j = 0;
+  for (size_t i = 0; i < size; ++i) {
+    if (isupper(camel[i])) {
+      snake[j++] = '_';
+      snake[j++] = tolower(camel[i]);
+    } else {
+      snake[j++] = camel[i];
+    }
+  }
+  snake[j] = '\0';
+  return grpc_core::UniquePtr<char>(snake);
+}
+
+}  // namespace
+
 ProcessedResolverResult::ProcessedResolverResult(
     const grpc_channel_args* resolver_result, bool parse_retry) {
   ProcessServiceConfig(resolver_result, parse_retry);
@@ -76,7 +97,9 @@ void ProcessedResolverResult::ProcessServiceConfig(
 void ProcessedResolverResult::ProcessLbPolicyName(
     const grpc_channel_args* resolver_result) {
   const char* lb_policy_name = nullptr;
-  // Prefer the LB policy name found in the service config.
+  // Prefer the LB policy name found in the service config. Note that this is
+  // checking the deprecated loadBalancingPolicy field, rather than the new
+  // loadBalancingConfig field.
   if (service_config_ != nullptr) {
     lb_policy_name = service_config_->GetLoadBalancingPolicyName();
   }
@@ -215,23 +238,6 @@ void ProcessedResolverResult::ParseRetryThrottleParamsFromServiceConfig(
         grpc_core::internal::ServerRetryThrottleMap::GetDataForServer(
             server_name_, max_milli_tokens, milli_token_ratio);
   }
-}
-
-grpc_core::UniquePtr<char> ProcessedResolverResult::ConvertCamelToSnake(
-    const char* camel) {
-  const size_t size = strlen(camel);
-  char* snake = static_cast<char*>(gpr_malloc(size * 2));
-  size_t j = 0;
-  for (size_t i = 0; i < size; ++i) {
-    if (isupper(camel[i])) {
-      snake[j++] = '_';
-      snake[j++] = tolower(camel[i]);
-    } else {
-      snake[j++] = camel[i];
-    }
-  }
-  snake[j] = '\0';
-  return grpc_core::UniquePtr<char>(snake);
 }
 
 namespace {
