@@ -26,9 +26,6 @@
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll", "poll-cv"]
 
-def _get_shared_extension(boolval):
-    return(".dll" if boolval else ".so")
-
 def if_not_windows(a):
     return select({
         "//:windows": [],
@@ -104,59 +101,6 @@ def grpc_cc_library(
             "include",
         ],
         alwayslink = alwayslink,
-        data = data,
-    )
-
-def grpc_cc_shared_library(
-        name,
-        srcs = [],
-        public_hdrs = [],
-        external_deps = [],
-        standalone = False,
-        language = "C++",
-        testonly = False,
-        visibility = None,
-        includes = [],
-        data = [],
-        defines = [],
-        reexport_deps = [],
-        linkshared = True):
-    copts = []
-    if language.upper() == "C":
-        copts = if_not_windows(["-std=c99"])
-    native.cc_binary(
-        name = name + _get_shared_extension(
-            boolval = select({
-                "//:windows": True,
-                "//:windows_msvc": True,
-                "//conditions:default": False,
-            })
-        ),
-        srcs = srcs,
-        defines = select({
-                      "//:grpc_no_ares": ["GRPC_ARES=0"],
-                      "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:remote_execution": ["GRPC_PORT_ISOLATED_RUNTIME=1"],
-                      "//conditions:default": [],
-                  }) +
-                  select({
-                      "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
-                      "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
-                      "//conditions:default": [],
-                  }) + defines,
-        deps = reexport_deps + _get_external_deps(external_deps),
-        features = ["windows_export_all_symbols"],
-        copts = copts,
-        visibility = visibility,
-        testonly = testonly,
-        linkopts = if_not_windows(["-pthread"]),
-        linkshared = linkshared,
-        reexport_deps = reexport_deps,
-        includes = [
-            "include"
-        ] + includes,
         data = data,
     )
 
