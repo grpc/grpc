@@ -359,7 +359,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',
-                      'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
