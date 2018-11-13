@@ -120,6 +120,8 @@ class AresDnsResolver : public Resolver {
   grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
+  // has shutdown been initiated
+  bool shutdown_initiated_ = false;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -197,6 +199,7 @@ void AresDnsResolver::ResetBackoffLocked() {
 }
 
 void AresDnsResolver::ShutdownLocked() {
+  shutdown_initiated_ = true;
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
@@ -213,9 +216,13 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  GRPC_CARES_TRACE_LOG(
+      "%p re-resolution timer fired. error: %s. shutdown_initiated_: %d", r,
+      grpc_error_string(error), r->shutdown_initiated_);
   r->have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE) {
+  if (error == GRPC_ERROR_NONE && !r->shutdown_initiated_) {
     if (!r->resolving_) {
+      GRPC_CARES_TRACE_LOG("%p start resolving due to re-resolution timer", r);
       r->StartResolvingLocked();
     }
   }
@@ -340,7 +347,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();
-  } else {
+  } else if (!r->shutdown_initiated_) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_millis next_try = r->backoff_.NextAttemptTime();
