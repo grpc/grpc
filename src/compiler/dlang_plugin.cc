@@ -50,14 +50,14 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 
 		cos.WriteString("\t" + res + " " + func + "( " + req + " request)\n");
 		cos.WriteString("\t{\n");
-		cos.WriteString("\t\tmixin(CM!(HelloReply , GreeterBase.SERVICE));\n");
+		cos.WriteString("\t\tmixin(CM!(" + res  + " , " + service->name()  + "Base.SERVICE));\n");
 		cos.WriteString("\t}\n");
 
 		cos.WriteString("\n");
 
 		cos.WriteString("\tvoid " + func + "( " + req + " request , void delegate(Result!" + res + " reply) dele)\n");
 		cos.WriteString("\t{\n");
-		cos.WriteString("\t\tmixin(CMA!(HelloReply , GreeterBase.SERVICE));\n");
+		cos.WriteString("\t\tmixin(CMA!(" + res + " , " + service->name()  + "Base.SERVICE));\n");
 		cos.WriteString("\t}\n");
 
 		cos.WriteString("\n");
@@ -170,7 +170,10 @@ public:
 		for(int i = 0 ; i < file->dependency_count() ; i++ )
 		{
 			auto dep = file->dependency(i);
-			cos.WriteString("import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
+			if(dep->package() != "")
+				cos.WriteString("import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
+			else
+				cos.WriteString("import " + grpc_generator::StripProto(dep->name()) + ";\n");
 		}
 
 		cos.WriteString("\n\n");
@@ -180,8 +183,12 @@ public:
 			for (int i = 0; i < file->public_dependency_count(); i++)
 			{
 				auto dep = file->public_dependency(i);
-				cos.WriteString("public import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
+				if(dep->package() != "")
+					cos.WriteString("public import " + dep->package() + "." + grpc_generator::StripProto(dep->name()) + ";\n");
+				else
+					cos.WriteString("public import " + grpc_generator::StripProto(dep->name()) + ";\n");
 			}
+
 		}
 
 		/// service
