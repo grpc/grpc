@@ -197,8 +197,8 @@ class ClientCallbackEnd2endTest
           stream_->StartCall();
           request_.set_message(test_str);
           send_buf_ = SerializeToByteBuffer(&request_);
-          stream_->Read(&recv_buf_);
           stream_->Write(send_buf_.get());
+          stream_->Read(&recv_buf_);
         }
         void OnWriteDone(bool ok) override { stream_->WritesDone(); }
         void OnReadDone(bool ok) override {
@@ -207,8 +207,6 @@ class ClientCallbackEnd2endTest
           EXPECT_EQ(request_.message(), response.message());
         };
         void OnDone(Status s) override {
-          // The stream is invalid once OnDone is called
-          stream_ = nullptr;
           EXPECT_TRUE(s.ok());
           std::unique_lock<std::mutex> l(mu_);
           done_ = true;
@@ -396,9 +394,10 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
       stream_->Read(&response_);
     }
     void OnReadDone(bool ok) override {
-      // Note that != is the boolean XOR operator
-      EXPECT_NE(ok, reads_complete_ == kServerDefaultResponseStreamsToSend);
-      if (ok) {
+      if (!ok) {
+        EXPECT_EQ(reads_complete_, kServerDefaultResponseStreamsToSend);
+      } else {
+        EXPECT_LE(reads_complete_, kServerDefaultResponseStreamsToSend);
         EXPECT_EQ(response_.message(),
                   request_.message() + grpc::to_string(reads_complete_));
         reads_complete_++;
@@ -449,9 +448,10 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
       stream_->Write(&request_);
     }
     void OnReadDone(bool ok) override {
-      // Note that != is the boolean XOR operator
-      EXPECT_NE(ok, reads_complete_ == kServerDefaultResponseStreamsToSend);
-      if (ok) {
+      if (!ok) {
+        EXPECT_EQ(reads_complete_, kServerDefaultResponseStreamsToSend);
+      } else {
+        EXPECT_LE(reads_complete_, kServerDefaultResponseStreamsToSend);
         EXPECT_EQ(response_.message(), request_.message());
         reads_complete_++;
         stream_->Read(&response_);
