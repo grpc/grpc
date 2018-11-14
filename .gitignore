@@ -134,13 +134,3 @@ bm_*.json
 
 # cmake build files
 /cmake/build
-
-# .vscode
-**/.vscode/**
-
-# example files
-examples/**
-
-third_party/**
-
-doc/**
