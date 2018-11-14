@@ -349,7 +349,6 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
       }
     }
     void OnDone(Status s) override {
-      stream_ = nullptr;
       EXPECT_TRUE(s.ok());
       EXPECT_EQ(response_.message(), "Hello server.Hello server.Hello server.");
       std::unique_lock<std::mutex> l(mu_);
@@ -405,7 +404,6 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
       }
     }
     void OnDone(Status s) override {
-      stream_ = nullptr;
       EXPECT_TRUE(s.ok());
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
@@ -466,7 +464,6 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
       }
     }
     void OnDone(Status s) override {
-      stream_ = nullptr;
       EXPECT_TRUE(s.ok());
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
