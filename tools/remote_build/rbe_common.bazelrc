@@ -56,7 +56,7 @@ build:msan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:msan --test_timeout=3600
 # TODO(jtattermusch): revisit the disabled tests
-build:msan --test_tag_filters=-json_run_localhost
+build:msan --test_tag_filters=-nomsan,-json_run_localhost
 build:msan --cxxopt=--stdlib=libc++
 # setting LD_LIBRARY_PATH is necessary
 # to avoid "libc++.so.1: cannot open shared object file"
