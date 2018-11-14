@@ -96,7 +96,6 @@ namespace experimental {
 // The user must implement this reactor interface with reactions to each event
 // type that gets called by the library. An empty reaction is provided by
 // default
-
 class ClientBidiReactor {
  public:
   virtual ~ClientBidiReactor() {}
@@ -198,8 +197,8 @@ class ClientCallbackReaderWriterImpl
   }
 
   void StartCall() override {
-    // This call initiates two batches
-    // 1. Send initial metadata (unless corked)/recv initial metadata
+    // This call initiates two batches, each with a callback
+    // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Recv trailing metadata, on_completion callback
     callbacks_outstanding_ = 2;
 
@@ -359,8 +358,8 @@ class ClientCallbackReaderImpl
   }
 
   void StartCall() override {
-    // This call initiates two batches
-    // 1. Send initial metadata (unless corked)/recv initial metadata
+    // This call initiates two batches, each with a callback
+    // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Recv trailing metadata, on_completion callback
     callbacks_outstanding_ = 2;
 
@@ -472,9 +471,9 @@ class ClientCallbackWriterImpl
   }
 
   void StartCall() override {
-    // This call initiates two batches
-    // 1. Send initial metadata (unless corked)/recv initial metadata
-    // 2. Recv message + trailing metadata, on_completion callback
+    // This call initiates two batches, each with a callback
+    // 1. Send initial metadata (unless corked) + recv initial metadata
+    // 2. Recv message + recv trailing metadata, on_completion callback
     callbacks_outstanding_ = 2;
 
     start_tag_.Set(call_.call(),
