@@ -197,8 +197,8 @@ class ClientCallbackEnd2endTest
           stream_->StartCall();
           request_.set_message(test_str);
           send_buf_ = SerializeToByteBuffer(&request_);
-          stream_->Write(send_buf_.get());
           stream_->Read(&recv_buf_);
+          stream_->Write(send_buf_.get());
         }
         void OnWriteDone(bool ok) override { stream_->WritesDone(); }
         void OnReadDone(bool ok) override {
