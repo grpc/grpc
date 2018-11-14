@@ -199,7 +199,9 @@ void postfork_parent() {
 }
 
 void register_fork_handlers() {
-  pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+  if(getenv("GRPC_ENABLE_FORK_SUPPORT")) {
+    pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+  }
 }
 
 /* {{{ PHP_MINIT_FUNCTION
