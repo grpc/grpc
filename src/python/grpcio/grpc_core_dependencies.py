@@ -334,7 +334,6 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/subchannel_index.cc',
     'src/core/ext/filters/deadline/deadline_filter.cc',
     'src/core/ext/filters/client_channel/health/health.pb.c',
-    'src/core/tsi/alts_transport_security.cc',
     'src/core/tsi/fake_transport_security.cc',
     'src/core/tsi/local_transport_security.cc',
     'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',

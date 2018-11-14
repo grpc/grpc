@@ -1333,11 +1333,8 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
 
 void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
   ProcessChannelArgsLocked(args);
-  // If fallback is configured and the RR policy already exists, update
-  // it with the new fallback addresses.
-  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
-    CreateOrUpdateRoundRobinPolicyLocked();
-  }
+  // Update the existing RR policy.
+  if (rr_policy_ != nullptr) CreateOrUpdateRoundRobinPolicyLocked();
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {

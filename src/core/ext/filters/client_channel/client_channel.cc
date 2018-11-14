@@ -1023,13 +1023,17 @@ struct subchannel_call_retry_state {
   bool completed_recv_initial_metadata : 1;
   bool started_recv_trailing_metadata : 1;
   bool completed_recv_trailing_metadata : 1;
-  // State for callback processing.
-  bool retry_dispatched : 1;
   subchannel_batch_data* recv_initial_metadata_ready_deferred_batch = nullptr;
   grpc_error* recv_initial_metadata_error = GRPC_ERROR_NONE;
   subchannel_batch_data* recv_message_ready_deferred_batch = nullptr;
   grpc_error* recv_message_error = GRPC_ERROR_NONE;
   subchannel_batch_data* recv_trailing_metadata_internal_batch = nullptr;
+  // State for callback processing.
+  // NOTE: Do not move this next to the metadata bitfields above. That would
+  //       save space but will also result in a data race because compiler will
+  //       generate a 2 byte store which overwrites the meta-data fields upon
+  //       setting this field.
+  bool retry_dispatched : 1;
 };
 
 // Pending batches stored in call data.

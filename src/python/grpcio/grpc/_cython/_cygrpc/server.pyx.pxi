@@ -19,7 +19,6 @@ import time
 import grpc
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addHandler(logging.NullHandler())
 
 cdef class Server:
 

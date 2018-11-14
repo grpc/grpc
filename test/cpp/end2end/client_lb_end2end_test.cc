@@ -149,7 +149,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void StartServers(size_t num_servers,
                     std::vector<int> ports = std::vector<int>()) {
-    CreateServers(num_servers, ports);
+    CreateServers(num_servers, std::move(ports));
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }

@@ -34,6 +34,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 #include <gtest/gtest.h>
 
@@ -100,11 +101,13 @@ class ClientCallbackEnd2endTest
 
       test_string += "Hello world. ";
       request.set_message(test_string);
-
+      grpc::string val;
       if (with_binary_metadata) {
+        request.mutable_param()->set_echo_metadata(true);
         char bytes[8] = {'\0', '\1', '\2', '\3',
                          '\4', '\5', '\6', static_cast<char>(i)};
-        cli_ctx.AddMetadata("custom-bin", grpc::string(bytes, 8));
+        val = grpc::string(bytes, 8);
+        cli_ctx.AddMetadata("custom-bin", val);
       }
 
       cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
@@ -114,10 +117,18 @@ class ClientCallbackEnd2endTest
       bool done = false;
       stub_->experimental_async()->Echo(
           &cli_ctx, &request, &response,
-          [&request, &response, &done, &mu, &cv](Status s) {
+          [&cli_ctx, &request, &response, &done, &mu, &cv, val,
+           with_binary_metadata](Status s) {
             GPR_ASSERT(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
+            if (with_binary_metadata) {
+              EXPECT_EQ(
+                  1u, cli_ctx.GetServerTrailingMetadata().count("custom-bin"));
+              EXPECT_EQ(val, ToString(cli_ctx.GetServerTrailingMetadata()
+                                          .find("custom-bin")
+                                          ->second));
+            }
             std::lock_guard<std::mutex> l(mu);
             done = true;
             cv.notify_one();
