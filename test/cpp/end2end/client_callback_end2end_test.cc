@@ -194,11 +194,11 @@ class ClientCallbackEnd2endTest
           stream_ =
               test->generic_stub_->experimental().PrepareBidiStreamingCall(
                   &cli_ctx_, method_name, this);
-          stream_->StartCall();
           request_.set_message(test_str);
           send_buf_ = SerializeToByteBuffer(&request_);
-          stream_->Read(&recv_buf_);
           stream_->Write(send_buf_.get());
+          stream_->Read(&recv_buf_);
+          stream_->StartCall();
         }
         void OnWriteDone(bool ok) override { stream_->WritesDone(); }
         void OnReadDone(bool ok) override {

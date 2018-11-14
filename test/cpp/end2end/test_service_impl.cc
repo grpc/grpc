@@ -223,6 +223,7 @@ void CallbackTestServiceImpl::EchoNonDelayed(
     return;
   }
 
+  gpr_log(GPR_DEBUG, "Request message was %s", request->message().c_str());
   response->set_message(request->message());
   MaybeEchoDeadline(context, request, response);
   if (host_) {
