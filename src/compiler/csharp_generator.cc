@@ -613,7 +613,10 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
                                          const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Register service method implementations with a service "
-      "binder. Useful when customizing the service binding logic.</summary>\n");
+      "binder. Useful when customizing the service binding logic.\n"
+      "/// Note: this method is part of an experimental API that can change or "
+      "be "
+      "removed without any prior notice.</summary>\n");
   out->Print(
       "/// <param name=\"serviceBinder\">Service methods will be bound by "
       "calling <c>AddMethod</c> on this object."
