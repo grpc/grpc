@@ -143,7 +143,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     dispatch_set_target_queue(responseHandler.dispatchQueue, _dispatchQueue);
     _started = NO;
     _canceled = NO;
-    _finished = YES;
+    _finished = NO;
   }
 
   return self;
@@ -218,6 +218,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
     GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call already canceled.");
+    self->_canceled = YES;
     if (self->_call) {
       [self->_call cancel];
       self->_call = nil;
@@ -263,6 +264,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
       [self->_pipe writesFinishedWithError:nil];
     }
     self->_pipe = nil;
+    self->_finished = YES;
   });
 }
 
