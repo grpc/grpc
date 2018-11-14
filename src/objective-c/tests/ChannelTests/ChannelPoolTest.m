@@ -47,14 +47,10 @@ NSString *kDummyHost = @"dummy.host";
 
   GRPCChannelPool *pool = [GRPCChannelPool sharedInstance];
 
-  GRPCChannel *channel1 = [pool channelWithHost:kDummyHost
-                                    callOptions:options1];
-  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost
-                                    callOptions:options2];
-  GRPCChannel *channel3 = [pool channelWithHost:kDummyHost2
-                                    callOptions:options1];
-  GRPCChannel *channel4 = [pool channelWithHost:kDummyHost
-                                    callOptions:options3];
+  GRPCChannel *channel1 = [pool channelWithHost:kDummyHost callOptions:options1];
+  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost callOptions:options2];
+  GRPCChannel *channel3 = [pool channelWithHost:kDummyHost2 callOptions:options1];
+  GRPCChannel *channel4 = [pool channelWithHost:kDummyHost callOptions:options3];
   XCTAssertEqual(channel1, channel2);
   XCTAssertNotEqual(channel1, channel3);
   XCTAssertNotEqual(channel1, channel4);
@@ -66,16 +62,14 @@ NSString *kDummyHost = @"dummy.host";
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   GRPCChannelPool *pool = [GRPCChannelPool sharedInstance];
-  GRPCChannel *channel = [pool channelWithHost:kDummyHost
-                                   callOptions:options];
+  GRPCChannel *channel = [pool channelWithHost:kDummyHost callOptions:options];
   grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
                                    completionQueue:[GRPCCompletionQueue completionQueue]
                                        callOptions:options
                                       disconnected:nil];
   [pool destroyAllChannels];
   XCTAssertTrue(channel.disconnected);
-  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost
-                                    callOptions:options];
+  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost callOptions:options];
   XCTAssertNotEqual(channel, channel2);
   grpc_call_unref(call);
 }
@@ -86,9 +80,8 @@ NSString *kDummyHost = @"dummy.host";
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   GRPCChannelPool *pool = [GRPCChannelPool sharedInstance];
-  GRPCChannel *channel = [pool channelWithHost:kDummyHost
-                                   callOptions:options
-                                  destroyDelay:kDestroyDelay];
+  GRPCChannel *channel =
+      [pool channelWithHost:kDummyHost callOptions:options destroyDelay:kDestroyDelay];
   grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
                                    completionQueue:[GRPCCompletionQueue completionQueue]
                                        callOptions:options
@@ -97,9 +90,8 @@ NSString *kDummyHost = @"dummy.host";
   [channel unref];
 
   // Test that we can still get the channel at this time
-  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost
-                                    callOptions:options
-                                   destroyDelay:kDestroyDelay];
+  GRPCChannel *channel2 =
+      [pool channelWithHost:kDummyHost callOptions:options destroyDelay:kDestroyDelay];
   XCTAssertEqual(channel, channel2);
   call = [channel2 unmanagedCallWithPath:@"dummy.path"
                          completionQueue:[GRPCCompletionQueue completionQueue]
@@ -117,9 +109,8 @@ NSString *kDummyHost = @"dummy.host";
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   GRPCChannelPool *pool = [GRPCChannelPool sharedInstance];
-  GRPCChannel *channel = [pool channelWithHost:kDummyHost
-                                   callOptions:options
-                                  destroyDelay:kDestroyDelay];
+  GRPCChannel *channel =
+      [pool channelWithHost:kDummyHost callOptions:options destroyDelay:kDestroyDelay];
   grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
                                    completionQueue:[GRPCCompletionQueue completionQueue]
                                        callOptions:options
@@ -130,9 +121,8 @@ NSString *kDummyHost = @"dummy.host";
   sleep(kDestroyDelay + 1);
 
   // Test that we get new channel to the same host and with the same callOptions
-  GRPCChannel *channel2 = [pool channelWithHost:kDummyHost
-                                    callOptions:options
-                                   destroyDelay:kDestroyDelay];
+  GRPCChannel *channel2 =
+      [pool channelWithHost:kDummyHost callOptions:options destroyDelay:kDestroyDelay];
   XCTAssertNotEqual(channel, channel2);
 }
 

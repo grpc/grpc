@@ -33,12 +33,13 @@
 }
 
 - (void)testTimedDisconnection {
-  NSString * const kHost = @"grpc-test.sandbox.googleapis.com";
+  NSString *const kHost = @"grpc-test.sandbox.googleapis.com";
   const NSTimeInterval kDestroyDelay = 1;
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCChannelConfiguration *configuration = [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
-  GRPCChannel *channel = [[GRPCChannel alloc] initWithChannelConfiguration:configuration
-                                                              destroyDelay:kDestroyDelay];
+  GRPCChannelConfiguration *configuration =
+      [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
+  GRPCChannel *channel =
+      [[GRPCChannel alloc] initWithChannelConfiguration:configuration destroyDelay:kDestroyDelay];
   BOOL disconnected;
   grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
                                    completionQueue:[GRPCCompletionQueue completionQueue]
@@ -61,12 +62,13 @@
 }
 
 - (void)testForceDisconnection {
-  NSString * const kHost = @"grpc-test.sandbox.googleapis.com";
+  NSString *const kHost = @"grpc-test.sandbox.googleapis.com";
   const NSTimeInterval kDestroyDelay = 1;
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCChannelConfiguration *configuration = [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
-  GRPCChannel *channel = [[GRPCChannel alloc] initWithChannelConfiguration:configuration
-                                                              destroyDelay:kDestroyDelay];
+  GRPCChannelConfiguration *configuration =
+      [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
+  GRPCChannel *channel =
+      [[GRPCChannel alloc] initWithChannelConfiguration:configuration destroyDelay:kDestroyDelay];
   grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
                                    completionQueue:[GRPCCompletionQueue completionQueue]
                                        callOptions:options
