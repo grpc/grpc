@@ -172,7 +172,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (self->_callOptions.initialMetadata) {
       [self->_call.requestHeaders addEntriesFromDictionary:self->_callOptions.initialMetadata];
     }
-    id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
+
+    void (^valueHandler)(id value) = ^(id value) {
       dispatch_async(self->_dispatchQueue, ^{
         if (self->_handler) {
           if (!self->_initialMetadataPublished) {
@@ -184,30 +185,32 @@ const char *kCFStreamVarName = "grpc_cfstream";
           }
         }
       });
-    }
-        completionHandler:^(NSError *errorOrNil) {
-          dispatch_async(self->_dispatchQueue, ^{
-            if (self->_handler) {
-              if (!self->_initialMetadataPublished) {
-                self->_initialMetadataPublished = YES;
-                [self issueInitialMetadata:self->_call.responseHeaders];
-              }
-              [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+    };
+    void (^completionHandler)(NSError *errorOrNil) = ^(NSError *errorOrNil) {
+      dispatch_async(self->_dispatchQueue, ^{
+        if (self->_handler) {
+          if (!self->_initialMetadataPublished) {
+            self->_initialMetadataPublished = YES;
+            [self issueInitialMetadata:self->_call.responseHeaders];
+          }
+          [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
 
-              // Clean up _handler so that no more responses are reported to the handler.
-              self->_handler = nil;
-            }
-            // Clearing _call must happen *after* dispatching close in order to get trailing
-            // metadata from _call.
-            if (self->_call) {
-              // Clean up the request writers. This should have no effect to _call since its
-              // response writeable is already nullified.
-              [self->_pipe writesFinishedWithError:nil];
-              self->_call = nil;
-              self->_pipe = nil;
-            }
-          });
-        }];
+          // Clean up _handler so that no more responses are reported to the handler.
+          self->_handler = nil;
+        }
+        // Clearing _call must happen *after* dispatching close in order to get trailing
+        // metadata from _call.
+        if (self->_call) {
+          // Clean up the request writers. This should have no effect to _call since its
+          // response writeable is already nullified.
+          [self->_pipe writesFinishedWithError:nil];
+          self->_call = nil;
+          self->_pipe = nil;
+        }
+      });
+    };
+    id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:valueHandler
+                                                                  completionHandler:completionHandler];
     [self->_call startWithWriteable:responseWriteable];
   });
 }
