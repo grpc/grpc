@@ -29,7 +29,10 @@ namespace {
 
 class Foo : public RefCounted<Foo> {
  public:
-  Foo() {}
+  Foo() {
+    static_assert(std::has_virtual_destructor<Foo>::value,
+                  "PolymorphicRefCount doesn't have a virtual dtor");
+  }
 };
 
 TEST(RefCounted, Basic) {
@@ -40,6 +43,28 @@ TEST(RefCounted, Basic) {
 TEST(RefCounted, ExtraRef) {
   Foo* foo = New<Foo>();
   RefCountedPtr<Foo> foop = foo->Ref();
+  foop.release();
+  foo->Unref();
+  foo->Unref();
+}
+
+class FooNonPolymorphic
+    : public RefCounted<FooNonPolymorphic, NonPolymorphicRefCount> {
+ public:
+  FooNonPolymorphic() {
+    static_assert(!std::has_virtual_destructor<FooNonPolymorphic>::value,
+                  "NonPolymorphicRefCount has a virtual dtor");
+  }
+};
+
+TEST(RefCountedNonPolymorphic, Basic) {
+  FooNonPolymorphic* foo = New<FooNonPolymorphic>();
+  foo->Unref();
+}
+
+TEST(RefCountedNonPolymorphic, ExtraRef) {
+  FooNonPolymorphic* foo = New<FooNonPolymorphic>();
+  RefCountedPtr<FooNonPolymorphic> foop = foo->Ref();
   foop.release();
   foo->Unref();
   foo->Unref();
@@ -57,6 +82,26 @@ class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
 TEST(RefCountedWithTracing, Basic) {
   FooWithTracing* foo = New<FooWithTracing>();
   RefCountedPtr<FooWithTracing> foop = foo->Ref(DEBUG_LOCATION, "extra_ref");
+  foop.release();
+  foo->Unref(DEBUG_LOCATION, "extra_ref");
+  // Can use the no-argument methods, too.
+  foop = foo->Ref();
+  foop.release();
+  foo->Unref();
+  foo->Unref(DEBUG_LOCATION, "original_ref");
+}
+
+class FooNonPolymorphicWithTracing
+    : public RefCountedWithTracing<FooNonPolymorphicWithTracing,
+                                   NonPolymorphicRefCount> {
+ public:
+  FooNonPolymorphicWithTracing() : RefCountedWithTracing(&foo_tracer) {}
+};
+
+TEST(RefCountedNonPolymorphicWithTracing, Basic) {
+  FooNonPolymorphicWithTracing* foo = New<FooNonPolymorphicWithTracing>();
+  RefCountedPtr<FooNonPolymorphicWithTracing> foop =
+      foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
   // Can use the no-argument methods, too.

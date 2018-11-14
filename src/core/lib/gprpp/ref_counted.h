@@ -34,14 +34,58 @@
 
 namespace grpc_core {
 
+// PolymorphicRefCount enforces polymorphic destruction of RefCounted.
+class PolymorphicRefCount {
+ public:
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+  virtual ~PolymorphicRefCount() {}
+};
+
+// NonPolymorphicRefCount does not enforce polymorphic destruction of
+// RefCounted. Please refer to grpc_core::RefCounted for more details, and
+// when in doubt use PolymorphicRefCount.
+class NonPolymorphicRefCount {
+ public:
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+  ~NonPolymorphicRefCount() {}
+};
+
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
 // When the refcount reaches 0, the object will be deleted via Delete().
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
 // e.g., class MyClass : public RefCounted<MyClass>
-template <typename Child>
-class RefCounted {
+//
+// Use PolymorphicRefCount and NonPolymorphicRefCount to select between
+// different implementations of RefCounted.
+//
+// Note that NonPolymorphicRefCount does not support polymorphic destruction.
+// So, use NonPolymorphicRefCount only when both of the following conditions
+// are guaranteed to hold:
+// (a) Child is a concrete leaf class in RefCounted<Child>, and
+// (b) you are gauranteed to call Unref only on concrete leaf classes and not
+//     their parents.
+//
+// The following example is illegal, because calling Unref() will not call
+// the dtor of Child.
+//
+//    class Parent : public RefCounted<Parent, NonPolymorphicRefCount> {}
+//    class Child : public Parent {}
+//
+//    Child* ch;
+//    ch->Unref();
+//
+template <typename Child, typename Impl = PolymorphicRefCount>
+class RefCounted : public Impl {
  public:
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
@@ -69,7 +113,8 @@ class RefCounted {
 
   RefCounted() { gpr_ref_init(&refs_, 1); }
 
-  virtual ~RefCounted() {}
+  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
+  ~RefCounted() {}
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
@@ -87,8 +132,8 @@ class RefCounted {
 // pointers and legacy code that is manually calling Ref() and Unref().
 // Once all of our code is converted to idiomatic C++, we may be able to
 // eliminate this class.
-template <typename Child>
-class RefCountedWithTracing {
+template <typename Child, typename Impl = PolymorphicRefCount>
+class RefCountedWithTracing : public Impl {
  public:
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
@@ -149,7 +194,8 @@ class RefCountedWithTracing {
       : RefCountedWithTracing() {}
 #endif
 
-  virtual ~RefCountedWithTracing() {}
+  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
+  ~RefCountedWithTracing() {}
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
