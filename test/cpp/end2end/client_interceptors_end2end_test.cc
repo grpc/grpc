@@ -318,7 +318,7 @@ class ServerStreamingRpcHijackingInterceptor
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_MESSAGE)) {
-      if (++count > 10) {
+      if (++count_ > 10) {
         methods->FailHijackedRecvMessage();
       }
       EchoResponse* resp =
@@ -343,7 +343,7 @@ class ServerStreamingRpcHijackingInterceptor
 
  private:
   experimental::ClientRpcInfo* info_;
-  int count = 0;
+  int count_ = 0;
 };
 
 class ServerStreamingRpcHijackingInterceptorFactory
