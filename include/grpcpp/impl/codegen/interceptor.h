@@ -118,6 +118,10 @@ class InterceptorBatchMethods {
   // only interceptors after the current interceptor are created from the
   // factory objects registered with the channel.
   virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
+
+  // On a hijacked RPC/ to-be hijacked RPC, this can be called to fail a SEND
+  // MESSAGE op
+  virtual void FailHijackedSendMessage() = 0;
 };
 
 class Interceptor {

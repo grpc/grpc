@@ -314,14 +314,19 @@ class CallOpSendMessage {
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status) { send_buf_.Clear(); }
+  void FinishOp(bool* status) {
+    send_buf_.Clear();
+    if (hijacked_ && failed_send_) {
+      *status = false;
+    }
+  }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_);
+    interceptor_methods->SetSendMessage(&send_buf_, &failed_send_);
   }
 
   void SetFinishInterceptionHookPoint(
@@ -333,6 +338,7 @@ class CallOpSendMessage {
 
  private:
   bool hijacked_ = false;
+  bool failed_send_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
 };
