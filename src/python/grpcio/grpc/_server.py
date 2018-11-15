@@ -828,7 +828,7 @@ class _Server(grpc.Server):
         return _stop(self._state, grace)
 
     def __del__(self):
-        _stop(self._state, None)
+        _stop(self._state, 0)
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
