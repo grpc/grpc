@@ -83,7 +83,7 @@ NS_ASSUME_NONNULL_BEGIN
       if (errorPtr) {
         *errorPtr = defaultRootsError;
       }
-      GRPCAssertWithArgument(
+      NSAssert(
           defaultRootsASCII, NSObjectNotAvailableException,
           @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
            "with the root certificates, is needed to establish secure (TLS) connections. "

@@ -18,19 +18,6 @@
 
 #import <Foundation/Foundation.h>
 
-/** Raise exception when condition not met. Disregard NS_BLOCK_ASSERTIONS. */
-#define GRPCAssert(condition, errorType, errorString)      \
-  do {                                                     \
-    if (!(condition)) {                                    \
-      [NSException raise:(errorType)format:(errorString)]; \
-    }                                                      \
-  } while (0)
-
-/** The same as GRPCAssert but allows arguments to be put in the raised string.
- */
-#define GRPCAssertWithArgument(condition, errorType, errorFormat, ...)  \
-  do {                                                                  \
-    if (!(condition)) {                                                 \
-      [NSException raise:(errorType)format:(errorFormat), __VA_ARGS__]; \
-    }                                                                   \
-  } while (0)
+/** Raise exception when condition not met. */
+#define GRPCAssert(condition, errorString)      \
+    NSAssert(condition, errorString)

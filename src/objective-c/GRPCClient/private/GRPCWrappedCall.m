@@ -249,7 +249,7 @@
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                  callOptions:(GRPCCallOptions *)callOptions {
-  GRPCAssert(host.length != 0 && path.length != 0, NSInvalidArgumentException,
+  NSAssert(host.length != 0 && path.length != 0,
              @"path and host cannot be nil.");
 
   if ((self = [super init])) {
@@ -261,6 +261,7 @@
     do {
       _channel = [[GRPCChannelPool sharedInstance] channelWithHost:host callOptions:callOptions];
       if (_channel == nil) {
+        NSAssert(_channel != nil, @"Failed to get a channel for the host.");
         NSLog(@"Failed to get a channel for the host.");
         return nil;
       }
@@ -272,6 +273,7 @@
       // connectivity monitor disconnection).
     } while (_call == NULL && disconnected);
     if (_call == nil) {
+      NSAssert(_channel != nil, @"Failed to get a channel for the host.");
       NSLog(@"Failed to create a call.");
       return nil;
     }
