@@ -59,7 +59,7 @@ platform(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//tools/cpp:clang",
         "@bazel_toolchains//constraints:xenial",
-        "@@bazel_toolchains//constraints/sanitizers:support_msan",
+        "@bazel_toolchains//constraints/sanitizers:support_msan",
         "//third_party/toolchains/machine_size:large",
     ],
     remote_execution_properties = """
@@ -82,7 +82,8 @@ toolchain(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//tools/cpp:clang",
-        "//constraints:xenial",
+        "@bazel_toolchains//constraints:xenial",
+        "@bazel_toolchains//constraints/sanitizers:support_msan",
         "//third_party/toolchains/machine_size:standard",
         "//third_party/toolchains/machine_size:large",
     ],
