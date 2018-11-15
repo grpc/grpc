@@ -191,6 +191,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
     grpc_channel_args_destroy(fake_results);
   }
 
+  void SetFailureOnReresolution() {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator_->SetFailureOnReresolution();
+  }
+
   std::vector<int> GetServersPorts() {
     std::vector<int> ports;
     for (const auto& server : servers_) ports.push_back(server->port_);
@@ -726,6 +731,23 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   EXPECT_EQ("pick_first", channel_1->GetLoadBalancingPolicyName());
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel_2->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
+  // Start server, send RPC, and make sure channel is READY.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("");  // pick_first is the default.
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // Stop server.  Channel should go into state IDLE.
+  SetFailureOnReresolution();
+  servers_[0]->Shutdown();
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  servers_.clear();
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
