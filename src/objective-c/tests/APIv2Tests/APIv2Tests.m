@@ -277,6 +277,7 @@ static const NSTimeInterval kTestTimeout = 16;
                  callOptions:options];
   [call writeData:[NSData data]];
   [call start];
+  [call finish];
 
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
@@ -312,6 +313,7 @@ static const NSTimeInterval kTestTimeout = 16;
                  callOptions:options];
   [call writeData:[request data]];
   [call start];
+  [call finish];
 
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
