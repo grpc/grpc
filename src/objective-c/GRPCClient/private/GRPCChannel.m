@@ -40,8 +40,11 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 @implementation GRPCChannelConfiguration
 
 - (instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
-  NSAssert(host.length, @"Host must not be empty.");
+  NSAssert(host.length > 0, @"Host must not be empty.");
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  if (host.length == 0) return nil;
+  if (callOptions == nil) return nil;
+
   if ((self = [super init])) {
     _host = [host copy];
     _callOptions = [callOptions copy];
@@ -196,6 +199,9 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   NSAssert(channelConfiguration != nil,
              @"channelConfiguration must not be empty.");
   NSAssert(destroyDelay > 0, @"destroyDelay must be greater than 0.");
+  if (channelConfiguration == nil) return nil;
+  if (destroyDelay <= 0) return nil;
+
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
     if (@available(iOS 8.0, *)) {
@@ -219,6 +225,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     }
     id<GRPCChannelFactory> factory = channelConfiguration.channelFactory;
     _unmanagedChannel = [factory createChannelWithHost:host channelArgs:channelArgs];
+    NSAssert(_unmanagedChannel != NULL, @"Failed to create channel");
     if (_unmanagedChannel == NULL) {
       NSLog(@"Unable to create channel.");
       return nil;
@@ -233,9 +240,13 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
                      completionQueue:(GRPCCompletionQueue *)queue
                          callOptions:(GRPCCallOptions *)callOptions
                         disconnected:(BOOL *)disconnected {
-  NSAssert(path.length, @"path must not be empty.");
-  NSAssert(queue, @"completionQueue must not be empty.");
-  NSAssert(callOptions, @"callOptions must not be empty.");
+  NSAssert(path.length > 0, @"path must not be empty.");
+  NSAssert(queue != nil, @"completionQueue must not be empty.");
+  NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  if (path.length == 0) return nil;
+  if (queue == nil) return nil;
+  if (callOptions == nil) return nil;
+
   __block BOOL isDisconnected = NO;
   __block grpc_call *call = NULL;
   dispatch_sync(_dispatchQueue, ^{
@@ -244,11 +255,13 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     } else {
       NSAssert(self->_unmanagedChannel != NULL,
                  @"Channel should have valid unmanaged channel.");
+      if (self->_unmanagedChannel == NULL) return;
 
       NSString *serverAuthority =
           callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
       NSTimeInterval timeout = callOptions.timeout;
       NSAssert(timeout >= 0, @"Invalid timeout");
+      if (timeout < 0) return;
       grpc_slice host_slice = grpc_empty_slice();
       if (serverAuthority) {
         host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
@@ -292,6 +305,10 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   NSLog(@"unref");
   dispatch_async(_dispatchQueue, ^{
     NSAssert(self->_refcount > 0, @"Illegal reference count.");
+    if (self->_refcount == 0) {
+      NSLog(@"Illegal reference count.");
+      return;
+    }
     self->_refcount--;
     if (self->_refcount == 0 && !self->_disconnected) {
       // Start timer.

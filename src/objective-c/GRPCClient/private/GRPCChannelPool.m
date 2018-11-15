@@ -71,6 +71,9 @@ static dispatch_once_t gInitChannelPool;
                     destroyDelay:(NSTimeInterval)destroyDelay {
   NSAssert(host.length > 0, @"Host must not be empty.");
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
+  if (host.length == 0) return nil;
+  if (callOptions == nil) return nil;
+  
   GRPCChannel *channel;
   GRPCChannelConfiguration *configuration =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];

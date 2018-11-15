@@ -69,6 +69,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
   NSAssert(host.length != 0 && path.length != 0, @"Host and Path cannot be empty");
+  if (host.length == 0) {
+    host = [NSString string];
+  }
+  if (path.length == 0) {
+    path = [NSString string];
+  }
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
@@ -120,6 +126,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
   NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest,
              @"Invalid call safety value.");
   NSAssert(responseHandler != nil, @"Response handler required.");
+  if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
+    return nil;
+  }
+  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+    return nil;
+  }
+  if (responseHandler == nil) {
+    return nil;
+  }
+
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
@@ -158,6 +174,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_async(_dispatchQueue, ^{
     NSAssert(!self->_started, @"Call already started.");
     NSAssert(!self->_canceled, @"Call already canceled.");
+    if (self->_started) {
+      return;
+    }
+    if (self->_canceled) {
+      return;
+    }
+
     self->_started = YES;
     if (!self->_callOptions) {
       self->_callOptions = [[GRPCCallOptions alloc] init];
@@ -218,6 +241,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (void)cancel {
   dispatch_async(_dispatchQueue, ^{
     NSAssert(!self->_canceled, @"Call already canceled.");
+    if (self->_canceled) {
+      return;
+    }
+
     self->_canceled = YES;
     if (self->_call) {
       [self->_call cancel];
@@ -248,6 +275,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_async(_dispatchQueue, ^{
     NSAssert(!self->_canceled, @"Call arleady canceled.");
     NSAssert(!self->_finished, @"Call is half-closed before sending data.");
+    if (self->_canceled) {
+      return;
+    }
+    if (self->_finished) {
+      return;
+    }
+
     if (self->_pipe) {
       [self->_pipe writeValue:data];
     }
@@ -259,6 +293,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
     NSAssert(self->_started, @"Call not started.");
     NSAssert(!self->_canceled, @"Call arleady canceled.");
     NSAssert(!self->_finished, @"Call already half-closed.");
+    if (!self->_started) {
+      return;
+    }
+    if (self->_canceled) {
+      return;
+    }
+    if (self->_finished) {
+      return;
+    }
+
     if (self->_pipe) {
       [self->_pipe writesFinishedWithError:nil];
     }
@@ -412,6 +456,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
              @"Invalid call safety value.");
   NSAssert(requestWriter.state == GRXWriterStateNotStarted,
              @"The requests writer can't be already started.");
+  if (!host || !path) {
+    return nil;
+  }
+  if (safety > GRPCCallSafetyCacheableRequest) {
+    return nil;
+  }
+  if (requestWriter.state != GRXWriterStateNotStarted) {
+    return nil;
+  }
+
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
