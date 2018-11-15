@@ -84,7 +84,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
   NSString *userAgent = @"grpc-objc/" GRPC_OBJC_VERSION_STRING;
   NSString *userAgentPrefix = _callOptions.userAgentPrefix;
-  if (userAgentPrefix) {
+  if (userAgentPrefix.length != 0) {
     args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] =
         [_callOptions.userAgentPrefix stringByAppendingFormat:@" %@", userAgent];
   } else {
@@ -242,7 +242,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     if (self->_disconnected) {
       isDisconnected = YES;
     } else {
-      GRPCAssert(self->_unmanagedChannel != NULL, NSInvalidArgumentException, @"Invalid channel.");
+      GRPCAssert(self->_unmanagedChannel != NULL, NSInternalInconsistencyException, @"Channel should have valid unmanaged channel.");
 
       NSString *serverAuthority =
           callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
@@ -281,14 +281,17 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 // This function should be called on _dispatchQueue.
 - (void)ref {
-  _refcount++;
-  if (_refcount == 1 && _lastDispatch != nil) {
-    _lastDispatch = nil;
-  }
+  dispatch_sync(_dispatchQueue, ^{
+    self->_refcount++;
+    if (self->_refcount == 1 && self->_lastDispatch != nil) {
+      self->_lastDispatch = nil;
+    }
+  });
 }
 
 - (void)unref {
   dispatch_async(_dispatchQueue, ^{
+    GRPCAssert(self->_refcount > 0, NSInternalInconsistencyException, @"Illegal reference count.");
     self->_refcount--;
     if (self->_refcount == 0 && !self->_disconnected) {
       // Start timer.
@@ -298,7 +301,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       self->_lastDispatch = now;
       dispatch_after(delay, self->_dispatchQueue, ^{
         // Timed disconnection.
-        if (self->_lastDispatch == now) {
+        if (!self->_disconnected && self->_lastDispatch == now) {
           grpc_channel_destroy(self->_unmanagedChannel);
           self->_unmanagedChannel = NULL;
           self->_disconnected = YES;

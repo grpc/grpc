@@ -30,6 +30,7 @@
 #import "NSData+GRPC.h"
 #import "NSDictionary+GRPC.h"
 #import "NSError+GRPC.h"
+#import "utilities.h"
 
 #import "GRPCOpBatchLog.h"
 
@@ -248,16 +249,14 @@
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                  callOptions:(GRPCCallOptions *)callOptions {
-  if (host.length == 0 || path.length == 0) {
-    [NSException raise:NSInvalidArgumentException format:@"path and host cannot be nil."];
-  }
+  GRPCAssert(host.length != 0 && path.length != 0, NSInvalidArgumentException, @"path and host cannot be nil.");
 
   if ((self = [super init])) {
     // Each completion queue consumes one thread. There's a trade to be made between creating and
     // consuming too many threads and having contention of multiple calls in a single completion
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
-    BOOL disconnected;
+    BOOL disconnected = NO;
     do {
       _channel = [[GRPCChannelPool sharedInstance] channelWithHost:host callOptions:callOptions];
       if (_channel == nil) {
