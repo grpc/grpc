@@ -249,7 +249,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     GRPCAssert(!self->_canceled, NSInternalInconsistencyException, @"Call arleady canceled.");
     GRPCAssert(!self->_finished, NSInternalInconsistencyException,
                @"Call is half-closed before sending data.");
-    if (self->_call) {
+    if (self->_pipe) {
       [self->_pipe writeValue:data];
     }
   });

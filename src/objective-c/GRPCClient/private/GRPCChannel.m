@@ -281,15 +281,14 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 // This function should be called on _dispatchQueue.
 - (void)ref {
-  dispatch_sync(_dispatchQueue, ^{
-    self->_refcount++;
-    if (self->_refcount == 1 && self->_lastDispatch != nil) {
-      self->_lastDispatch = nil;
-    }
-  });
+  _refcount++;
+  if (_refcount == 1 && _lastDispatch != nil) {
+    _lastDispatch = nil;
+  }
 }
 
 - (void)unref {
+  NSLog(@"unref");
   dispatch_async(_dispatchQueue, ^{
     GRPCAssert(self->_refcount > 0, NSInternalInconsistencyException, @"Illegal reference count.");
     self->_refcount--;
