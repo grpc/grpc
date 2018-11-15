@@ -103,6 +103,9 @@ class InterceptorBatchMethods {
   // is already deserialized
   virtual void* GetRecvMessage() = 0;
 
+  // Checks whether the RECV MESSAGE op completed successfully
+  virtual bool GetRecvMessageStatus() = 0;
+
   // Returns a modifiable multimap of the received initial metadata
   virtual std::multimap<grpc::string_ref, grpc::string_ref>*
   GetRecvInitialMetadata() = 0;

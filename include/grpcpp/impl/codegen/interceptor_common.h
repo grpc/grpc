@@ -103,6 +103,8 @@ class InterceptorBatchMethodsImpl
 
   void* GetRecvMessage() override { return recv_message_; }
 
+  bool GetRecvMessageStatus() override { return *got_message_; }
+
   std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()
       override {
     return recv_initial_metadata_->map();
@@ -430,6 +432,14 @@ class CancelInterceptorBatchMethods
                        "It is illegal to call GetRecvMessage on a method which "
                        "has a Cancel notification");
     return nullptr;
+  }
+
+  bool GetRecvMessageStatus() override {
+    GPR_CODEGEN_ASSERT(
+        false &&
+        "It is illegal to call GetRecvMessageStatus on a method which "
+        "has a Cancel notification");
+    return false;
   }
 
   std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvInitialMetadata()

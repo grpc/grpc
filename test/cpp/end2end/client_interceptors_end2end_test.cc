@@ -326,6 +326,12 @@ class ServerStreamingRpcHijackingInterceptor
       resp->set_message("Hello");
     }
     if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
+      // Only the last message will be a failure
+      EXPECT_FALSE(got_failed_message_);
+      got_failed_message_ = !methods->GetRecvMessageStatus();
+    }
+    if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
       // insert the metadata that we want
@@ -341,10 +347,15 @@ class ServerStreamingRpcHijackingInterceptor
     }
   }
 
+  static bool GotFailedMessage() { return got_failed_message_; }
+
  private:
   experimental::ClientRpcInfo* info_;
+  static bool got_failed_message_;
   int count_ = 0;
 };
+
+bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ = false;
 
 class ServerStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
@@ -634,6 +645,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeServerStreamingCall(channel);
+  EXPECT_TRUE(ServerStreamingRpcHijackingInterceptor::GotFailedMessage());
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
