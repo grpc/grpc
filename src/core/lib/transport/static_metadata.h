@@ -523,6 +523,9 @@ extern uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-encoding": "identity,gzip" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_IDENTITY_COMMA_GZIP \
   (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[85], GRPC_MDELEM_STORAGE_STATIC))
+/* "grpc-encoding": "brotli" */
+#define GRPC_MDELEM_GRPC_ENCODING_BROTLI \
+  (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[86], GRPC_MDELEM_STORAGE_STATIC))
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b);
 typedef enum {

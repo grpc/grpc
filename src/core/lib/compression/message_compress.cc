@@ -25,8 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include <brotli/decode.h>
+#include <brotli/encode.h>
 #include <zlib.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
@@ -80,11 +81,11 @@ error:
   return 0;
 }
 
-static void* zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
+static void* zlib_alloc(void* opaque, unsigned int items, unsigned int size) {
   return gpr_malloc(items * size);
 }
 
-static void zfree_gpr(void* opaque, void* address) { gpr_free(address); }
+static void zlib_free(void* opaque, void* address) { gpr_free(address); }
 
 static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
                          int gzip) {
@@ -94,8 +95,8 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   size_t count_before = output->count;
   size_t length_before = output->length;
   memset(&zs, 0, sizeof(zs));
-  zs.zalloc = zalloc_gpr;
-  zs.zfree = zfree_gpr;
+  zs.zalloc = zlib_alloc;
+  zs.zfree = zlib_free;
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
   GPR_ASSERT(r == Z_OK);
@@ -119,8 +120,8 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   size_t count_before = output->count;
   size_t length_before = output->length;
   memset(&zs, 0, sizeof(zs));
-  zs.zalloc = zalloc_gpr;
-  zs.zfree = zfree_gpr;
+  zs.zalloc = zlib_alloc;
+  zs.zfree = zlib_free;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
   GPR_ASSERT(r == Z_OK);
   r = zlib_body(&zs, input, output, inflate);
@@ -132,6 +133,160 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
     output->length = length_before;
   }
   inflateEnd(&zs);
+  return r;
+}
+
+static void* brotli_alloc(void* opaque, size_t size) {
+  return gpr_malloc(size);
+}
+
+static void brotli_free(void* opaque, void* address) {
+  return gpr_free(address);
+}
+
+static int brotli_compress(grpc_slice_buffer* input,
+                           grpc_slice_buffer* output) {
+  int r;
+  size_t count_before = output->count;
+  size_t length_before = output->length;
+  grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+  const uInt uint_max = ~static_cast<uInt>(0);
+
+  GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+  size_t avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
+  uint8_t* next_out = GRPC_SLICE_START_PTR(outbuf);
+  BrotliEncoderState* state =
+      BrotliEncoderCreateInstance(brotli_alloc, brotli_free, nullptr);
+  BrotliEncoderOperation operation = BROTLI_OPERATION_PROCESS;
+  for (size_t i = 0; i < input->count; i++) {
+    if (i == input->count - 1) operation = BROTLI_OPERATION_FINISH;
+    GPR_ASSERT(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
+    size_t avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(input->slices[i]);
+    const uint8_t* next_in = GRPC_SLICE_START_PTR(input->slices[i]);
+    do {
+      if (avail_out == 0) {
+        grpc_slice_buffer_add_indexed(output, outbuf);
+        outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+        GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+        avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
+        next_out = GRPC_SLICE_START_PTR(outbuf);
+      }
+      r = BrotliEncoderCompressStream(static_cast<BrotliEncoderState*>(state),
+                                      operation, &avail_in, &next_in,
+                                      &avail_out, &next_out, nullptr);
+      if (!r) {
+        gpr_log(GPR_INFO, "brotli encode error");
+        grpc_slice_unref_internal(outbuf);
+        goto error;
+      }
+    } while (avail_out == 0);
+    if (avail_in) {
+      gpr_log(GPR_INFO, "brotli: not all input consumed");
+      grpc_slice_unref_internal(outbuf);
+      goto error;
+    }
+  }
+
+  GPR_ASSERT(outbuf.refcount);
+  outbuf.data.refcounted.length -= avail_out;
+  grpc_slice_buffer_add_indexed(output, outbuf);
+
+  if (output->length >= input->length) goto error;
+
+  return 1;
+
+error:
+  for (size_t i = count_before; i < output->count; i++) {
+    grpc_slice_unref_internal(output->slices[i]);
+  }
+  output->count = count_before;
+  output->length = length_before;
+  return 0;
+}
+
+static int brotli_body(grpc_slice_buffer* input, grpc_slice_buffer* output,
+                       bool encode) {
+  int r;
+  int flush;
+  size_t i;
+  grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+  const uInt uint_max = ~static_cast<uInt>(0);
+
+  GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+  size_t avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
+  uint8_t* next_out = GRPC_SLICE_START_PTR(outbuf);
+  void* state;
+  if (encode) {
+    state = static_cast<BrotliEncoderState*>(
+        BrotliEncoderCreateInstance(brotli_alloc, brotli_free, nullptr));
+  } else {
+    state = static_cast<BrotliDecoderState*>(
+        BrotliDecoderCreateInstance(brotli_alloc, brotli_free, nullptr));
+  }
+  flush = BROTLI_OPERATION_PROCESS;
+  for (i = 0; i < input->count; i++) {
+    if (i == input->count - 1) flush = BROTLI_OPERATION_FINISH;
+    //    if (BrotliEncoderIsFinished(state)) break;
+    GPR_ASSERT(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
+    size_t avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(input->slices[i]);
+    const uint8_t* next_in = GRPC_SLICE_START_PTR(input->slices[i]);
+    do {
+      if (avail_out == 0) {
+        grpc_slice_buffer_add_indexed(output, outbuf);
+        outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
+        GPR_ASSERT(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+        avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
+        next_out = GRPC_SLICE_START_PTR(outbuf);
+      }
+      if (encode) {
+        //        state = static_cast<BrotliEncoderState*>(state);
+        r = BrotliEncoderCompressStream(
+            static_cast<BrotliEncoderState*>(state),
+            static_cast<BrotliEncoderOperation>(flush), &avail_in, &next_in,
+            &avail_out, &next_out, nullptr);
+      } else {
+        //        state = static_cast<BrotliDecoderState*>(state);
+        r = BrotliDecoderDecompressStream(
+            static_cast<BrotliDecoderState*>(state), &avail_in, &next_in,
+            &avail_out, &next_out, nullptr);
+      }
+      if (!r) {
+        gpr_log(GPR_INFO, "brotli error (%d)", r);
+        goto error;
+      }
+    } while (avail_out == 0);
+    if (avail_in) {
+      gpr_log(GPR_ERROR, "brotli: not all input consumed");
+      goto error;
+    }
+  }
+
+  GPR_ASSERT(outbuf.refcount);
+  outbuf.data.refcounted.length -= avail_out;
+  grpc_slice_buffer_add_indexed(output, outbuf);
+
+  return 1;
+
+error:
+  grpc_slice_unref_internal(outbuf);
+  return 0;
+}
+
+static int brotli_decompress(grpc_slice_buffer* input,
+                             grpc_slice_buffer* output) {
+  int r;
+  size_t i;
+  size_t count_before = output->count;
+  size_t length_before = output->length;
+  r = brotli_body(input, output, false);
+  gpr_log(GPR_ERROR, "r=%d", r);
+  if (!r) {
+    for (i = count_before; i < output->count; i++) {
+      grpc_slice_unref_internal(output->slices[i]);
+    }
+    output->count = count_before;
+    output->length = length_before;
+  }
   return r;
 }
 
@@ -154,6 +309,8 @@ static int compress_inner(grpc_message_compression_algorithm algorithm,
       return zlib_compress(input, output, 0);
     case GRPC_MESSAGE_COMPRESS_GZIP:
       return zlib_compress(input, output, 1);
+    case GRPC_MESSAGE_COMPRESS_BROTLI:
+      return brotli_compress(input, output);
     case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
@@ -179,6 +336,8 @@ int grpc_msg_decompress(grpc_message_compression_algorithm algorithm,
       return zlib_decompress(input, output, 0);
     case GRPC_MESSAGE_COMPRESS_GZIP:
       return zlib_decompress(input, output, 1);
+    case GRPC_MESSAGE_COMPRESS_BROTLI:
+      return brotli_decompress(input, output);
     case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
       break;
   }

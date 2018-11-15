@@ -98,6 +98,16 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils"
     )
 
+    native.bind(
+        name = "brotli-enc",
+        actual = "@org_brotli//:brotlienc"
+    )
+
+    native.bind(
+        name = "brotli-dec",
+        actual = "@org_brotli//:brotlidec"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",
@@ -183,6 +193,13 @@ def grpc_deps():
             strip_prefix = "opencensus-cpp-fdf0f308b1631bb4a942e32ba5d22536a6170274",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fdf0f308b1631bb4a942e32ba5d22536a6170274.tar.gz",
         )
+
+    if "org_brotli" not in native.existing_rules():
+        native.http_archive(
+                   name = "org_brotli",
+                   url = "https://github.com/google/brotli/archive/d0ffe60b87aa5ec302fcb031c8ebf726c1a1692a.tar.gz",
+                   strip_prefix = "brotli-d0ffe60b87aa5ec302fcb031c8ebf726c1a1692a",
+               )
 
 
 # TODO: move some dependencies from "grpc_deps" here?

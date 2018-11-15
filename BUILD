@@ -961,6 +961,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "zlib",
+        "brotli-enc",
+        "brotli-dec",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,

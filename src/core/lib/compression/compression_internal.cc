@@ -57,6 +57,8 @@ grpc_mdelem grpc_message_compression_encoding_mdelem(
       return GRPC_MDELEM_GRPC_ENCODING_DEFLATE;
     case GRPC_MESSAGE_COMPRESS_GZIP:
       return GRPC_MDELEM_GRPC_ENCODING_GZIP;
+    case GRPC_MESSAGE_COMPRESS_BROTLI:
+      return GRPC_MDELEM_GRPC_ENCODING_BROTLI;
     default:
       break;
   }
@@ -178,6 +180,9 @@ int grpc_message_compression_algorithm_name(
       return 1;
     case GRPC_MESSAGE_COMPRESS_GZIP:
       *name = "gzip";
+      return 1;
+    case GRPC_MESSAGE_COMPRESS_BROTLI:
+      *name = "brotli";
       return 1;
     case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
       return 0;
