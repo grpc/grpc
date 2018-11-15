@@ -103,28 +103,22 @@ BOOL isRemoteInteropTest(NSString *host) {
 }
 
 - (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
-  dispatch_async(_dispatchQueue, ^{
-    if (_initialMetadataCallback) {
-      _initialMetadataCallback(initialMetadata);
-    }
-  });
+  if (_initialMetadataCallback) {
+    _initialMetadataCallback(initialMetadata);
+  }
 }
 
 - (void)receivedProtoMessage:(GPBMessage *)message {
-  dispatch_async(_dispatchQueue, ^{
-    if (_messageCallback) {
-      _messageCallback(message);
-    }
-  });
+  if (_messageCallback) {
+    _messageCallback(message);
+  }
 }
 
 - (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
                              error:(NSError *)error {
-  dispatch_async(_dispatchQueue, ^{
-    if (_closeCallback) {
-      _closeCallback(trailingMetadata, error);
-    }
-  });
+  if (_closeCallback) {
+    _closeCallback(trailingMetadata, error);
+  }
 }
 
 - (dispatch_queue_t)dispatchQueue {

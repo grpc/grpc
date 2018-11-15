@@ -82,28 +82,22 @@ static const NSTimeInterval kTestTimeout = 16;
 }
 
 - (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
-  dispatch_async(_dispatchQueue, ^{
-    if (self->_initialMetadataCallback) {
-      self->_initialMetadataCallback(initialMetadata);
-    }
-  });
+  if (self->_initialMetadataCallback) {
+    self->_initialMetadataCallback(initialMetadata);
+  }
 }
 
 - (void)receivedRawMessage:(GPBMessage *_Nullable)message {
-  dispatch_async(_dispatchQueue, ^{
-    if (self->_messageCallback) {
-      self->_messageCallback(message);
-    }
-  });
+  if (self->_messageCallback) {
+    self->_messageCallback(message);
+  }
 }
 
 - (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
                              error:(NSError *_Nullable)error {
-  dispatch_async(_dispatchQueue, ^{
-    if (self->_closeCallback) {
-      self->_closeCallback(trailingMetadata, error);
-    }
-  });
+  if (self->_closeCallback) {
+    self->_closeCallback(trailingMetadata, error);
+  }
 }
 
 - (dispatch_queue_t)dispatchQueue {
