@@ -1161,6 +1161,11 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
 
   channel = grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
                                 resource_user);
+  if (channel == nullptr) {
+    gpr_log(GPR_ERROR, "Error creating channel. Will not setup transport");
+    grpc_transport_destroy(transport);
+    return;
+  }
   chand = static_cast<channel_data*>(
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
           ->channel_data);
