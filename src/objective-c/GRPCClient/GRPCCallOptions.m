@@ -45,7 +45,7 @@ static NSString *const kDefaultChannelPoolDomain = nil;
 static const NSUInteger kDefaultChannelID = 0;
 
 // Check if two objects are equal. Returns YES if both are nil;
-BOOL areObjectsEqual(id obj1, id obj2) {
+static BOOL areObjectsEqual(id obj1, id obj2) {
   if (obj1 == obj2) {
     return YES;
   }

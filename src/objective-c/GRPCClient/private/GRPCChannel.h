@@ -39,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Options of the corresponding call. Note that only the channel-related options are of interest to
  * this class.
  */
-@property(strong, readonly) GRPCCallOptions *callOptions;
+@property(readonly) GRPCCallOptions *callOptions;
 
 /** Acquire the factory to generate a new channel with current configurations. */
 @property(readonly) id<GRPCChannelFactory> channelFactory;

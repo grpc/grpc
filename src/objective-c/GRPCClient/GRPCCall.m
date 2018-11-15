@@ -282,7 +282,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-    [_handler closedWithTrailingMetadata:_call.responseTrailers error:error];
+    [_handler closedWithTrailingMetadata:trailingMetadata error:error];
   }
 }
 
