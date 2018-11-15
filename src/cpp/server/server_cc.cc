@@ -84,10 +84,7 @@ class ShutdownTag : public internal::CompletionQueueTag {
 
 class DummyTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) {
-    *status = true;
-    return true;
-  }
+  bool FinalizeResult(void** tag, bool* status) { return true; }
 };
 
 class UnimplementedAsyncRequestContext {
