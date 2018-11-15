@@ -209,8 +209,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
         }
       });
     };
-    id<GRXWriteable> responseWriteable = [[GRXWriteable alloc] initWithValueHandler:valueHandler
-                                                                  completionHandler:completionHandler];
+    id<GRXWriteable> responseWriteable =
+        [[GRXWriteable alloc] initWithValueHandler:valueHandler
+                                 completionHandler:completionHandler];
     [self->_call startWithWriteable:responseWriteable];
   });
 }

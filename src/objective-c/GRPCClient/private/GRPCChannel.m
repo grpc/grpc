@@ -242,7 +242,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     if (self->_disconnected) {
       isDisconnected = YES;
     } else {
-      GRPCAssert(self->_unmanagedChannel != NULL, NSInternalInconsistencyException, @"Channel should have valid unmanaged channel.");
+      GRPCAssert(self->_unmanagedChannel != NULL, NSInternalInconsistencyException,
+                 @"Channel should have valid unmanaged channel.");
 
       NSString *serverAuthority =
           callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;

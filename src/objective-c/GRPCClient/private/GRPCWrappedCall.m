@@ -249,7 +249,8 @@
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                  callOptions:(GRPCCallOptions *)callOptions {
-  GRPCAssert(host.length != 0 && path.length != 0, NSInvalidArgumentException, @"path and host cannot be nil.");
+  GRPCAssert(host.length != 0 && path.length != 0, NSInvalidArgumentException,
+             @"path and host cannot be nil.");
 
   if ((self = [super init])) {
     // Each completion queue consumes one thread. There's a trade to be made between creating and
