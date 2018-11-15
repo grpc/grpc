@@ -597,6 +597,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: resolver transient failure", chand);
     }
+    // Don't override connectivity state if we already have an LB policy.
+    if (chand->lb_policy != nullptr) set_connectivity_state = false;
   } else {
     grpc_core::UniquePtr<char> lb_policy_name =
         get_lb_policy_name_from_resolver_result_locked(chand);

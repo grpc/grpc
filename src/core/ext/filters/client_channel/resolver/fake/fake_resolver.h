@@ -61,6 +61,10 @@ class FakeResolverResponseGenerator
   // returning a null result with no error).
   void SetFailure();
 
+  // Same as SetFailure(), but instead of returning the error
+  // immediately, waits for the next call to RequestReresolutionLocked().
+  void SetFailureOnReresolution();
+
   // Returns a channel arg containing \a generator.
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
