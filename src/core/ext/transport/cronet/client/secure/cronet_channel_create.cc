@@ -48,10 +48,12 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
 
   // Disable client authority filter when using Cronet
   grpc_arg disable_client_authority_filter_arg;
-  disable_client_authority_filter_arg.key = const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  disable_client_authority_filter_arg.key =
+      const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
   disable_client_authority_filter_arg.type = GRPC_ARG_INTEGER;
   disable_client_authority_filter_arg.value.integer = 1;
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &disable_client_authority_filter_arg, 1);
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, &disable_client_authority_filter_arg, 1);
 
   grpc_transport* ct =
       grpc_create_cronet_transport(engine, target, new_args, reserved);
