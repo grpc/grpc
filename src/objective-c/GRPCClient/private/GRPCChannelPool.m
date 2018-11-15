@@ -41,7 +41,7 @@ static dispatch_once_t gInitChannelPool;
   NSMutableDictionary<GRPCChannelConfiguration *, GRPCChannel *> *_channelPool;
 }
 
-+ (nullable instancetype)sharedInstance {
++ (instancetype)sharedInstance {
   dispatch_once(&gInitChannelPool, ^{
     gChannelPool = [[GRPCChannelPool alloc] init];
     NSAssert(gChannelPool != nil, @"Cannot initialize global channel pool.");

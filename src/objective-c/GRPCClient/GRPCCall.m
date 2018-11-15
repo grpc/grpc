@@ -114,7 +114,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions {
+                           callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
              @"Neither host nor path can be nil.");
   NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest,
@@ -134,7 +134,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (@available(iOS 8.0, *)) {
       _dispatchQueue = dispatch_queue_create(
           NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
       // Fallback on earlier versions
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);

@@ -78,7 +78,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(copy, readonly) NSString *serverAuthority;
+@property(copy, readonly, nullable) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
@@ -94,18 +94,18 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * request's "authorization" header field. This parameter should not be used simultaneously with
  * \a authTokenProvider.
  */
-@property(copy, readonly) NSString *oauth2AccessToken;
+@property(copy, readonly, nullable) NSString *oauth2AccessToken;
 
 /**
  * The interface to get the OAuth2 access token string. gRPC will attempt to acquire token when
  * initiating the call. This parameter should not be used simultaneously with \a oauth2AccessToken.
  */
-@property(readonly) id<GRPCAuthorizationProtocol> authTokenProvider;
+@property(readonly, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
 
 /**
  * Initial metadata key-value pairs that should be included in the request.
  */
-@property(copy, readonly) NSDictionary *initialMetadata;
+@property(copy, readonly, nullable) NSDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -113,7 +113,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Custom string that is prefixed to a request's user-agent header field before gRPC's internal
  * user-agent string.
  */
-@property(copy, readonly) NSString *userAgentPrefix;
+@property(copy, readonly, nullable) NSString *userAgentPrefix;
 
 /**
  * The size limit for the response received from server. If it is exceeded, an error with status
@@ -152,7 +152,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readonly) NSDictionary *additionalChannelArgs;
+@property(copy, readonly, nullable) NSDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 
@@ -160,17 +160,17 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readonly) NSString *PEMRootCertificates;
+@property(copy, readonly, nullable) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readonly) NSString *PEMPrivateKey;
+@property(copy, readonly, nullable) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readonly) NSString *PEMCertChain;
+@property(copy, readonly, nullable) NSString *PEMCertChain;
 
 /**
  * Select the transport type to be used for this call.
@@ -180,13 +180,13 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * Override the hostname during the TLS hostname validation process.
  */
-@property(copy, readonly) NSString *hostNameOverride;
+@property(copy, readonly, nullable) NSString *hostNameOverride;
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
  * will not get cached to the same connection.
  */
-@property(copy, readonly) NSString *channelPoolDomain;
+@property(copy, readonly, nullable) NSString *channelPoolDomain;
 
 /**
  * Channel id allows control of channel caching within a channelPoolDomain. A call with a unique
@@ -199,7 +199,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * Return if the channel options are equal to another object.
  */
-- (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
+- (BOOL)hasChannelOptionsEqualTo:(nonnull GRPCCallOptions *)callOptions;
 
 /**
  * Hash for channel options.
@@ -219,7 +219,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  *       :authority header field of the call and performs an extra check that server's certificate
  *       matches the :authority header.
  */
-@property(copy, readwrite) NSString *serverAuthority;
+@property(copy, readwrite, nullable) NSString *serverAuthority;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
@@ -236,18 +236,18 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * request's "authorization" header field. This parameter should not be used simultaneously with
  * \a authTokenProvider.
  */
-@property(copy, readwrite) NSString *oauth2AccessToken;
+@property(copy, readwrite, nullable) NSString *oauth2AccessToken;
 
 /**
  * The interface to get the OAuth2 access token string. gRPC will attempt to acquire token when
  * initiating the call. This parameter should not be used simultaneously with \a oauth2AccessToken.
  */
-@property(readwrite) id<GRPCAuthorizationProtocol> authTokenProvider;
+@property(readwrite, nullable) id<GRPCAuthorizationProtocol> authTokenProvider;
 
 /**
  * Initial metadata key-value pairs that should be included in the request.
  */
-@property(copy, readwrite) NSDictionary *initialMetadata;
+@property(copy, readwrite, nullable) NSDictionary *initialMetadata;
 
 // Channel parameters; take into account of channel signature.
 
@@ -255,7 +255,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Custom string that is prefixed to a request's user-agent header field before gRPC's internal
  * user-agent string.
  */
-@property(copy, readwrite) NSString *userAgentPrefix;
+@property(copy, readwrite, nullable) NSString *userAgentPrefix;
 
 /**
  * The size limit for the response received from server. If it is exceeded, an error with status
@@ -296,7 +296,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * Specify channel args to be used for this call. For a list of channel args available, see
  * grpc/grpc_types.h
  */
-@property(copy, readwrite) NSDictionary *additionalChannelArgs;
+@property(copy, readwrite, nullable) NSDictionary *additionalChannelArgs;
 
 // Parameters for SSL authentication.
 
@@ -304,17 +304,17 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * PEM format root certifications that is trusted. If set to nil, gRPC uses a list of default
  * root certificates.
  */
-@property(copy, readwrite) NSString *PEMRootCertificates;
+@property(copy, readwrite, nullable) NSString *PEMRootCertificates;
 
 /**
  * PEM format private key for client authentication, if required by the server.
  */
-@property(copy, readwrite) NSString *PEMPrivateKey;
+@property(copy, readwrite, nullable) NSString *PEMPrivateKey;
 
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readwrite) NSString *PEMCertChain;
+@property(copy, readwrite, nullable) NSString *PEMCertChain;
 
 /**
  * Select the transport type to be used for this call.
@@ -324,7 +324,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * Override the hostname during the TLS hostname validation process.
  */
-@property(copy, readwrite) NSString *hostNameOverride;
+@property(copy, readwrite, nullable) NSString *hostNameOverride;
 
 /**
  * A string that specify the domain where channel is being cached. Channels with different domains
@@ -332,7 +332,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * domain 'io.grpc.example' so that its calls do not reuse the channel created by other modules in
  * the same process.
  */
-@property(copy, readwrite) NSString *channelPoolDomain;
+@property(copy, readwrite, nullable) NSString *channelPoolDomain;
 
 /**
  * Channel id allows a call to force creating a new channel (connection) rather than using a cached

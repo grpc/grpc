@@ -85,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                               completionQueue:(GRPCCompletionQueue *)queue
                                   callOptions:(GRPCCallOptions *)callOptions
-                                 disconnected:(BOOL *_Nullable)disconnected;
+                                 disconnected:(nullable BOOL *)disconnected;
 
 /**
  * Unref the channel when a call is done. It also decreases the channel's refcount. If the refcount

@@ -52,7 +52,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+                           callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
   if ((self = [super init])) {
     _call = [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
@@ -88,7 +88,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+                           callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
@@ -108,7 +108,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     if (@available(iOS 8.0, *)) {
       _dispatchQueue = dispatch_queue_create(
           NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
       _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
     }
@@ -171,7 +171,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   });
 }
 
-- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
+- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
   dispatch_async(_dispatchQueue, ^{
     if (initialMetadata != nil && [self->_handler respondsToSelector:@selector(initialMetadata:)]) {
       [self->_handler receivedInitialMetadata:initialMetadata];
@@ -179,7 +179,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   });
 }
 
-- (void)receivedRawMessage:(NSData *_Nullable)message {
+- (void)receivedRawMessage:(NSData *)message {
   dispatch_async(_dispatchQueue, ^{
     if (self->_handler && message != nil) {
       NSError *error = nil;
@@ -202,8 +202,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   });
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
-                             error:(NSError *_Nullable)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
+                             error:(NSError *)error {
   dispatch_async(_dispatchQueue, ^{
     if ([self->_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       [self->_handler closedWithTrailingMetadata:trailingMetadata error:error];

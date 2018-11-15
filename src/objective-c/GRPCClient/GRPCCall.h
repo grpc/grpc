@@ -159,14 +159,14 @@ extern NSString *const kGRPCTrailersKey;
  * Issued when initial metadata is received from the server. The task must be scheduled onto the
  * dispatch queue in property \a dispatchQueue.
  */
-- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
+- (void)receivedInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization. The task must be scheduled onto the
  * dispatch queue in property \a dispatchQueue.
  */
-- (void)receivedRawMessage:(NSData *_Nullable)message;
+- (void)receivedRawMessage:(nullable NSData *)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -175,8 +175,8 @@ extern NSString *const kGRPCTrailersKey;
  * error descriptions. The task must be scheduled onto the dispatch queue in property
  * \a dispatchQueue.
  */
-- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
-                             error:(NSError *_Nullable)error;
+- (void)closedWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                             error:(nullable NSError *)error;
 
 @required
 
@@ -234,7 +234,7 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+                           callOptions:(nullable GRPCCallOptions *)callOptions
     NS_DESIGNATED_INITIALIZER;
 /**
  * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
@@ -342,9 +342,9 @@ NS_ASSUME_NONNULL_END
  * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-- (instancetype _Null_unspecified)initWithHost:(NSString *_Null_unspecified)host
-                                          path:(NSString *_Null_unspecified)path
-                                requestsWriter:(GRXWriter *_Null_unspecified)requestWriter;
+- (null_unspecified instancetype)initWithHost:(null_unspecified NSString *)host
+                                          path:(null_unspecified NSString *)path
+                                requestsWriter:(null_unspecified GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -356,11 +356,11 @@ NS_ASSUME_NONNULL_END
  * The following methods are deprecated.
  */
 + (void)setCallSafety:(GRPCCallSafety)callSafety
-                 host:(NSString *_Null_unspecified)host
-                 path:(NSString *_Null_unspecified)path;
+                 host:(null_unspecified NSString *)host
+                 path:(null_unspecified NSString *)path;
 @property(null_unspecified, atomic, copy, readwrite) NSString *serverName;
 @property NSTimeInterval timeout;
-- (void)setResponseDispatchQueue:(dispatch_queue_t _Null_unspecified)queue;
+- (void)setResponseDispatchQueue:(null_unspecified dispatch_queue_t)queue;
 
 @end
 
@@ -371,11 +371,11 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
-- (id _Null_unspecified)objectForKeyedSubscript:(id _Null_unspecified)key;
-- (void)setObject:(id _Null_unspecified)obj forKeyedSubscript:(id _Null_unspecified)key;
+- (null_unspecified id)objectForKeyedSubscript:(null_unspecified id)key;
+- (void)setObject:(null_unspecified id)obj forKeyedSubscript:(null_unspecified id)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(id _Null_unspecified)key;
+- (void)removeObjectForKey:(null_unspecified id)key;
 @end
 
 #pragma clang diagnostic push

@@ -26,13 +26,11 @@
 #import <Cronet/Cronet.h>
 #include <grpc/grpc_cronet.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
 @implementation GRPCCronetChannelFactory {
   stream_engine *_cronetEngine;
 }
 
-+ (instancetype _Nullable)sharedInstance {
++ (instancetype)sharedInstance {
   static GRPCCronetChannelFactory *instance;
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
@@ -41,7 +39,7 @@ NS_ASSUME_NONNULL_BEGIN
   return instance;
 }
 
-- (instancetype _Nullable)initWithEngine:(stream_engine *)engine {
+- (instancetype)initWithEngine:(stream_engine *)engine {
   if (!engine) {
     [NSException raise:NSInvalidArgumentException format:@"Cronet engine is NULL. Set it first."];
     return nil;
@@ -52,8 +50,8 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *_Nullable)args {
+- (grpc_channel *)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *)args {
   grpc_channel_args *channelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
@@ -63,29 +61,23 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-NS_ASSUME_NONNULL_END
-
 #else
-
-NS_ASSUME_NONNULL_BEGIN
 
 @implementation GRPCCronetChannelFactory
 
-+ (instancetype _Nullable)sharedInstance {
++ (instancetype)sharedInstance {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return nil;
 }
 
-- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *_Nullable)args {
+- (grpc_channel *)createChannelWithHost:(NSString *)host
+                                     channelArgs:(NSDictionary *)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return NULL;
 }
 
 @end
-
-NS_ASSUME_NONNULL_END
 
 #endif

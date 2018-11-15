@@ -102,7 +102,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   return self;
 }
 
-- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
+- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
   dispatch_async(_dispatchQueue, ^{
     if (_initialMetadataCallback) {
       _initialMetadataCallback(initialMetadata);
@@ -110,7 +110,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   });
 }
 
-- (void)receivedProtoMessage:(GPBMessage *_Nullable)message {
+- (void)receivedProtoMessage:(GPBMessage *)message {
   dispatch_async(_dispatchQueue, ^{
     if (_messageCallback) {
       _messageCallback(message);
@@ -118,8 +118,8 @@ BOOL isRemoteInteropTest(NSString *host) {
   });
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
-                             error:(NSError *_Nullable)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
+                             error:(NSError *)error {
   dispatch_async(_dispatchQueue, ^{
     if (_closeCallback) {
       _closeCallback(trailingMetadata, error);

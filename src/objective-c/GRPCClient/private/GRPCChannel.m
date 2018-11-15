@@ -39,7 +39,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 @implementation GRPCChannelConfiguration
 
-- (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
+- (instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(host.length, @"Host must not be empty.");
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
   if ((self = [super init])) {
@@ -143,7 +143,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   return args;
 }
 
-- (nonnull id)copyWithZone:(nullable NSZone *)zone {
+- (id)copyWithZone:(NSZone *)zone {
   GRPCChannelConfiguration *newConfig =
       [[GRPCChannelConfiguration alloc] initWithHost:_host callOptions:_callOptions];
 
@@ -184,13 +184,13 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 @synthesize disconnected = _disconnected;
 
-- (nullable instancetype)initWithChannelConfiguration:
+- (instancetype)initWithChannelConfiguration:
     (GRPCChannelConfiguration *)channelConfiguration {
   return [self initWithChannelConfiguration:channelConfiguration
                                destroyDelay:kDefaultChannelDestroyDelay];
 }
 
-- (nullable instancetype)initWithChannelConfiguration:
+- (instancetype)initWithChannelConfiguration:
                              (GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay {
   NSAssert(channelConfiguration != nil,
@@ -201,7 +201,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     if (@available(iOS 8.0, *)) {
       _dispatchQueue = dispatch_queue_create(
           NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, -1));
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }

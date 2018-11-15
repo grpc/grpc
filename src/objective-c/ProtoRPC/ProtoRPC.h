@@ -33,13 +33,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Issued when initial metadata is received from the server. The task must be scheduled onto the
  * dispatch queue in property \a dispatchQueue. */
-- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata;
+- (void)receivedInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the deserialized proto object.
  * The task must be scheduled onto the dispatch queue in property \a dispatchQueue.
  */
-- (void)receivedProtoMessage:(GPBMessage *_Nullable)message;
+- (void)receivedProtoMessage:(nullable GPBMessage *)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -48,8 +48,8 @@ NS_ASSUME_NONNULL_BEGIN
  * error descriptions. The task must be scheduled onto the dispatch queue in property
  * \a dispatchQueue.
  */
-- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
-                             error:(NSError *_Nullable)error;
+- (void)closedWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                             error:(nullable NSError *)error;
 
 @required
 
@@ -75,7 +75,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                                message:(GPBMessage *)message
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+                           callOptions:(nullable GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
@@ -100,7 +100,7 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(GRPCCallOptions *_Nullable)callOptions
+                           callOptions:(nullable GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
