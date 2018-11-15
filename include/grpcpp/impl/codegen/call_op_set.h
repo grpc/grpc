@@ -315,9 +315,16 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    send_buf_.Clear();
+    if (!send_buf_.Valid()) {
+      return;
+    }
     if (hijacked_ && failed_send_) {
+      // Hijacking interceptor failed this Op
       *status = false;
+    } else if (!*status) {
+      // This Op was passed down to core and the Op failed
+      gpr_log(GPR_ERROR, "failure status");
+      failed_send_ = true;
     }
   }
 
@@ -330,7 +337,14 @@ class CallOpSendMessage {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* interceptor_methods) {
+    if (send_buf_.Valid()) {
+      interceptor_methods->AddInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_SEND_MESSAGE);
+      // We had already registered failed_send_ earlier. No need to do it again.
+    }
+    send_buf_.Clear();
+  }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;

@@ -41,9 +41,10 @@ class InterceptedMessage {
 };
 
 enum class InterceptionHookPoints {
-  /* The first two in this list are for clients and servers */
+  /* The first three in this list are for clients and servers */
   PRE_SEND_INITIAL_METADATA,
   PRE_SEND_MESSAGE,
+  POST_SEND_MESSAGE,
   PRE_SEND_STATUS /* server only */,
   PRE_SEND_CLOSE /* client only */,
   /* The following three are for hijacked clients only and can only be
@@ -84,6 +85,9 @@ class InterceptorBatchMethods {
   // Returns a modifable ByteBuffer holding serialized form of the message to be
   // sent
   virtual ByteBuffer* GetSendMessage() = 0;
+
+  // Checks whether the SEND MESSAGE op succeeded
+  virtual bool GetSendMessageStatus() = 0;
 
   // Returns a modifiable multimap of the initial metadata to be sent
   virtual std::multimap<grpc::string, grpc::string>*

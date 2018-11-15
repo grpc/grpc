@@ -288,6 +288,13 @@ class ClientStreamingRpcHijackingInterceptor
       }
     }
     if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::POST_SEND_MESSAGE)) {
+      EXPECT_FALSE(got_failed_send_);
+      gpr_log(GPR_ERROR, "%d", got_failed_send_);
+      got_failed_send_ = !methods->GetSendMessageStatus();
+      gpr_log(GPR_ERROR, "%d", got_failed_send_);
+    }
+    if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::UNAVAILABLE, "Done sending 10 messages");
@@ -299,10 +306,16 @@ class ClientStreamingRpcHijackingInterceptor
     }
   }
 
+  static bool GotFailedSend() { return got_failed_send_; }
+
  private:
   experimental::ClientRpcInfo* info_;
   int count_ = 0;
+  static bool got_failed_send_;
 };
+
+bool ClientStreamingRpcHijackingInterceptor::got_failed_send_ = false;
+
 class ClientStreamingRpcHijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
@@ -602,10 +615,11 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
     EXPECT_TRUE(writer->Write(req));
     expected_resp += "Hello";
   }
-  // Expect that the interceptor will reject the 11th message
-  EXPECT_FALSE(writer->Write(req));
+  // The interceptor will reject the 11th message
+  writer->Write(req);
   Status s = writer->Finish();
   EXPECT_EQ(s.ok(), false);
+  EXPECT_TRUE(ClientStreamingRpcHijackingInterceptor::GotFailedSend());
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
