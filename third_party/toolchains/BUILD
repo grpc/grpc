@@ -83,6 +83,8 @@ toolchain(
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//tools/cpp:clang",
         "//constraints:xenial",
+        "//third_party/toolchains/machine_size:standard",
+        "//third_party/toolchains/machine_size:large",
     ],
     target_compatible_with = [
         "//third_party/toolchains:rbe_ubuntu1604",
