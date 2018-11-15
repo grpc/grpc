@@ -88,8 +88,8 @@ toolchain(
         "//third_party/toolchains/machine_size:large",
     ],
     target_compatible_with = [
-        "//third_party/toolchains:rbe_ubuntu1604",
-        "//third_party/toolchains:rbe_ubuntu1604_large",
+        # "//third_party/toolchains:rbe_ubuntu1604",
+        # "//third_party/toolchains:rbe_ubuntu1604_large",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
     ],
