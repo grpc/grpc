@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+
 namespace Grpc.Core
 {
     /// <summary>
@@ -29,6 +31,9 @@ namespace Grpc.Core
         /// payload which must not be accessed afterwards.
         /// </summary>
         /// <param name="payload">the serialized form of current message</param>
-        public abstract void Complete(byte[] payload);
+        public virtual void Complete(byte[] payload)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

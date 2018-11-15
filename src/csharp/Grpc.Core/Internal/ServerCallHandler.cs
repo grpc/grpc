@@ -52,8 +52,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -116,8 +116,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -179,8 +179,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -242,8 +242,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
