@@ -119,6 +119,25 @@ ENABLE_CYTHON_TRACING = os.environ.get(
 ENABLE_DOCUMENTATION_BUILD = os.environ.get(
     'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD', False)
 
+# Patch ccompiler not to pass -std=c++11 for C code.
+# This is neccessary on macOS to avoid:
+# error: invalid argument '-std=c++11' not allowed with 'C/ObjC'
+def monkeypatch_spawn_using_cxx11_for_cxx_only():
+  from distutils import ccompiler
+  def spawn_using_cxx11_for_cxx_only(old_spawn):
+    def spawn(cmd, search_path=1, verbose=0, dry_run=0):
+      is_cxx = any((arg.endswith('.cc') or arg.endswith('.cpp'))
+                    for arg in cmd)
+      cmd2 = []
+      for arg in cmd:
+        if not is_cxx and arg != '-std=c++11':
+          cmd2.append(arg)
+        elif is_cxx:
+          cmd2.append(arg)
+      return old_spawn(cmd2, search_path, verbose, dry_run)
+    return spawn
+  ccompiler.spawn = spawn_using_cxx11_for_cxx_only(ccompiler.spawn)
+
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
 # We use these environment variables to thus get around that without locking
@@ -333,6 +352,8 @@ PACKAGE_DATA = {
     ],
 }
 PACKAGES = setuptools.find_packages(PYTHON_STEM)
+
+monkeypatch_spawn_using_cxx11_for_cxx_only()
 
 setuptools.setup(
   name='grpcio',
