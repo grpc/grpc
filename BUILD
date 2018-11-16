@@ -2269,4 +2269,149 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_api",
+    srcs = [
+        "envoy/type/percent.upb.c",
+        "envoy/api/v2/discovery.upb.c",
+        "envoy/api/v2/core/base.upb.c",
+        "envoy/service/discovery/v2/ads.upb.c",
+    ],
+    hdrs = [
+        "envoy/type/percent.upb.h",
+        "envoy/api/v2/discovery.upb.h",
+        "envoy/api/v2/core/base.upb.h",
+        "envoy/service/discovery/v2/ads.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+        ":gogoproto",
+        ":validate",
+        ":google_api",
+        ":google_rpc",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "gogoproto",
+    srcs = [
+        "gogoproto/gogo.upb.c",
+    ],
+    hdrs = [
+        "gogoproto/gogo.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "validate",
+    srcs = [
+        "validate/validate.upb.c",
+    ],
+    hdrs = [
+        "validate/validate.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "google_api",
+    srcs = [
+        "google/api/http.upb.c",
+        "google/api/annotations.upb.c",
+    ],
+    hdrs = [
+        "google/api/http.upb.h",
+        "google/api/annotations.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "google_rpc",
+    srcs = [
+        "google/rpc/status.upb.c",
+    ],
+    hdrs = [
+        "google/rpc/status.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "google_protobuf",
+    srcs = [
+        "google/protobuf/any.upb.c",
+        "google/protobuf/descriptor.upb.c",
+        "google/protobuf/duration.upb.c",
+        "google/protobuf/struct.upb.c",
+        "google/protobuf/timestamp.upb.c",
+        "google/protobuf/wrappers.upb.c",
+    ],
+    hdrs = [
+        "google/protobuf/any.upb.h",
+        "google/protobuf/descriptor.upb.h",
+        "google/protobuf/duration.upb.h",
+        "google/protobuf/struct.upb.h",
+        "google/protobuf/timestamp.upb.h",
+        "google/protobuf/wrappers.upb.h",
+    ],
+    language = "c++",
+    deps = [
+        ":upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "upb",
+    srcs = [
+        "upb/decode.c",
+        "upb/def.c",
+        "upb/encode.c",
+        "upb/handlers.c",
+        "upb/msg.c",
+        "upb/msgfactory.c",
+        "upb/refcounted.c",
+        "upb/sink.c",
+        "upb/table.c",
+        "upb/upb.c",
+    ],
+    hdrs = [
+        "upb/structdefs.int.h",
+        "upb/structs.int.h",
+        "upb/table.int.h",
+        "upb/def.h",
+        "upb/handlers-inl.h",
+        "upb/handlers.h",
+        "upb/sink.h",
+        "upb/msg.h",
+        "upb/msgfactory.h",
+        "upb/refcounted.h",
+        "upb/decode.h",
+        "upb/encode.h",
+        "upb/upb.h",
+        "upb/port_def.inc",
+        "upb/port_undef.inc",
+    ],
+    language = "c++",
+)
+
 grpc_generate_one_off_targets()

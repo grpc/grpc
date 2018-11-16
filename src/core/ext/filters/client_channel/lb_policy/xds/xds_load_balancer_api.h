@@ -61,19 +61,6 @@ xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
 xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
     grpc_slice encoded_xds_grpclb_response);
 
-/** Return a copy of \a sl. The caller is responsible for calling \a
- * xds_grpclb_destroy_serverlist on the returned copy. */
-xds_grpclb_serverlist* xds_grpclb_serverlist_copy(
-    const xds_grpclb_serverlist* sl);
-
-bool xds_grpclb_serverlist_equals(const xds_grpclb_serverlist* lhs,
-                                  const xds_grpclb_serverlist* rhs);
-
-bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
-                              const xds_grpclb_server* rhs);
-
-/** Destroy \a serverlist */
-void xds_grpclb_destroy_serverlist(xds_grpclb_serverlist* serverlist);
 
 /** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
  * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
@@ -84,6 +71,22 @@ grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb);
 
 /** Destroy \a initial_response */
 void xds_grpclb_initial_response_destroy(xds_grpclb_initial_response* response);
+
+// **********
+// NO-CHANGE
+// **********
+/** Return a copy of \a sl. The caller is responsible for calling \a
+ * xds_grpclb_destroy_serverlist on the returned copy. */
+xds_grpclb_serverlist* xds_grpclb_serverlist_copy(
+    const xds_grpclb_serverlist* sl);
+
+bool xds_grpclb_serverlist_equals(const xds_grpclb_serverlist* lhs,
+                                  const xds_grpclb_serverlist* rhs);
+bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
+                              const xds_grpclb_server* rhs);
+
+/** Destroy \a serverlist */
+void xds_grpclb_destroy_serverlist(xds_grpclb_serverlist* serverlist);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
         */
