@@ -65,13 +65,13 @@ class Channel final : public ChannelInterface,
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> CreateChannelInternal(
       const grpc::string& host, grpc_channel* c_channel,
-      std::unique_ptr<std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
   friend class internal::InterceptedChannel;
   Channel(const grpc::string& host, grpc_channel* c_channel,
-          std::unique_ptr<std::vector<
-              std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+          std::vector<
+              std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
               interceptor_creators);
 
   internal::Call CreateCall(const internal::RpcMethod& method,

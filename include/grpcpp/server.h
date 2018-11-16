@@ -111,8 +111,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     /// interceptors
     std::shared_ptr<Channel> InProcessChannelWithInterceptors(
         const ChannelArguments& args,
-        std::unique_ptr<std::vector<
-            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+        std::vector<
+            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
 
    private:
