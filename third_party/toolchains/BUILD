@@ -35,9 +35,9 @@ platform(
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//tools/cpp:clang",
-        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
-        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
-        "//third_party/toolchains/machine_size:standard",
+        #        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
+        #        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
+        #        "//third_party/toolchains/machine_size:standard",
     ],
     remote_execution_properties = """
         properties: {
@@ -82,10 +82,10 @@ toolchain(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//tools/cpp:clang",
-        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
-        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
-        "//third_party/toolchains/machine_size:standard",
-        "//third_party/toolchains/machine_size:large",
+        #        "@com_github_bazelbuild_bazeltoolchains//constraints:xenial",
+        #        "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
+        #        "//third_party/toolchains/machine_size:standard",
+        #        "//third_party/toolchains/machine_size:large",
     ],
     target_compatible_with = [
         # "//third_party/toolchains:rbe_ubuntu1604",
