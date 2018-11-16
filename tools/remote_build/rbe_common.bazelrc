@@ -23,7 +23,7 @@ build --extra_toolchains=//third_party/toolchains:cc-toolchain-clang-x86_64-defa
 # Use custom execution platforms defined in third_party/toolchains
 build --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 build --host_platform=//third_party/toolchains:rbe_ubuntu1604
-build --platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
+build --platforms=//third_party/toolchains:rbe_ubuntu1604
 
 build --spawn_strategy=remote
 build --strategy=Javac=remote
