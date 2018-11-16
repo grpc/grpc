@@ -103,19 +103,19 @@ static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
 
 static int me_get_fd(grpc_endpoint* ep) { return -1; }
 
-static const grpc_endpoint_vtable vtable = {
-    me_read,
-    me_write,
-    me_add_to_pollset,
-    me_add_to_pollset_set,
-    me_delete_from_pollset_set,
-    me_shutdown,
-    me_destroy,
-    me_get_resource_user,
-    me_get_peer,
-    me_get_fd,
-    nullptr,
-};
+static bool me_can_track_err(grpc_endpoint* ep) { return false; }
+
+static const grpc_endpoint_vtable vtable = {me_read,
+                                            me_write,
+                                            me_add_to_pollset,
+                                            me_add_to_pollset_set,
+                                            me_delete_from_pollset_set,
+                                            me_shutdown,
+                                            me_destroy,
+                                            me_get_resource_user,
+                                            me_get_peer,
+                                            me_get_fd,
+                                            me_can_track_err};
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota) {

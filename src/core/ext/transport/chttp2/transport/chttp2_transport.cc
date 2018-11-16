@@ -157,7 +157,6 @@ bool g_flow_control_enabled = true;
  */
 
 grpc_chttp2_transport::~grpc_chttp2_transport() {
-  gpr_log(GPR_INFO, "destruct transport %p", t);
   size_t i;
 
   if (channelz_socket != nullptr) {
@@ -172,10 +171,11 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
 
   grpc_core::ContextList::Execute(cl, nullptr, GRPC_ERROR_NONE);
+  cl = nullptr;
+
   grpc_slice_buffer_destroy_internal(&read_buffer);
   grpc_chttp2_hpack_parser_destroy(&hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
-
 
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GPR_ASSERT(lists[i].head == nullptr);
@@ -1072,9 +1072,6 @@ static void write_action(void* gt, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
-  if (cl) {
-    gpr_log(GPR_INFO, "cleared for write");
-  }
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,

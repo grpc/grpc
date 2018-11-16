@@ -35,29 +35,25 @@ class ContextList {
     /* Make sure context is not already present */
     ContextList* ptr = *head;
     GRPC_CHTTP2_STREAM_REF(s, "timestamp");
-    //grpc_stream_ref(s->refcount);
     while (ptr != nullptr) {
-      if (ptr->s == s) {
-        GPR_ASSERT(false);
+      if (ptr->s_ == s) {
+        GPR_ASSERT(
+            false &&
+            "Trying to append a stream that is already present in the list");
       }
-      ptr = ptr->next;
+      ptr = ptr->next_;
     }
-    ContextList* elem =
-        static_cast<ContextList*>(gpr_malloc(sizeof(ContextList)));
-    elem->s = s;
-    elem->next = nullptr;
+    ContextList* elem = grpc_core::New<ContextList>();
+    elem->s_ = s;
     if (*head == nullptr) {
       *head = elem;
-      gpr_log(GPR_INFO, "new head");
-      gpr_log(GPR_INFO, "append %p %p", elem, *head);
       return;
     }
-    gpr_log(GPR_INFO, "append %p %p", elem, *head);
     ptr = *head;
-    while (ptr->next != nullptr) {
-      ptr = ptr->next;
+    while (ptr->next_ != nullptr) {
+      ptr = ptr->next_;
     }
-    ptr->next = elem;
+    ptr->next_ = elem;
   }
 
   /* Executes a function \a fn with each context in the list and \a ts. It also
@@ -65,12 +61,12 @@ class ContextList {
   static void Execute(void* arg, grpc_core::Timestamps* ts, grpc_error* error);
 
  private:
-  grpc_chttp2_stream* s;
-  ContextList* next;
+  grpc_chttp2_stream* s_ = nullptr;
+  ContextList* next_ = nullptr;
 };
 
 void grpc_http2_set_write_timestamps_callback(
-    void (*fn)(void*, const char*));
+    void (*fn)(void*, grpc_core::Timestamps*));
 } /* namespace grpc_core */
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */

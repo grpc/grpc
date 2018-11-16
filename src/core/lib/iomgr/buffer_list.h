@@ -82,7 +82,12 @@ class TracedBuffer {
   grpc_core::TracedBuffer* next_; /* The next TracedBuffer in the list */
 };
 #else  /* GRPC_LINUX_ERRQUEUE */
-class TracedBuffer {};
+class TracedBuffer {
+ public:
+  /* Dummy shutdown function */
+  static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
+                       grpc_error* shutdown_err) {}
+};
 #endif /* GRPC_LINUX_ERRQUEUE */
 
 /** Sets the callback function to call when timestamps for a write are

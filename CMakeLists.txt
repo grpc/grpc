@@ -262,7 +262,6 @@ add_dependencies(buildtests_c combiner_test)
 add_dependencies(buildtests_c compression_test)
 add_dependencies(buildtests_c concurrent_connectivity_test)
 add_dependencies(buildtests_c connection_refused_test)
-add_dependencies(buildtests_c context_list_test)
 add_dependencies(buildtests_c dns_resolver_connectivity_test)
 add_dependencies(buildtests_c dns_resolver_cooldown_test)
 add_dependencies(buildtests_c dns_resolver_test)
@@ -589,6 +588,7 @@ add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
+add_dependencies(buildtests_cxx context_list_test)
 add_dependencies(buildtests_cxx credentials_test)
 add_dependencies(buildtests_cxx cxx_byte_buffer_test)
 add_dependencies(buildtests_cxx cxx_slice_test)
@@ -6454,39 +6454,6 @@ target_link_libraries(connection_refused_test
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
     set_target_properties(connection_refused_test PROPERTIES LINKER_LANGUAGE C)
     target_compile_options(connection_refused_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(context_list_test
-  test/core/transport/chttp2/context_list_test.cc
-)
-
-
-target_include_directories(context_list_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(context_list_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(context_list_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(context_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
@@ -12734,6 +12701,43 @@ target_link_libraries(codegen_test_minimal
   grpc++_core_stats
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(context_list_test
+  test/core/transport/chttp2/context_list_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(context_list_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(context_list_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

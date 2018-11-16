@@ -131,6 +131,8 @@ static int te_get_fd(grpc_endpoint* ep) {
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
+static bool te_can_track_err(grpc_endpoint* ep) { return false; }
+
 static void te_finish_write(void* arg, grpc_error* error) {
   trickle_endpoint* te = static_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
@@ -149,7 +151,7 @@ static const grpc_endpoint_vtable vtable = {te_read,
                                             te_get_resource_user,
                                             te_get_peer,
                                             te_get_fd,
-                                            nullptr};
+                                            te_can_track_err};
 
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second) {

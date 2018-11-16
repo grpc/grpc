@@ -488,8 +488,7 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    if (/* traced && */ grpc_endpoint_can_track_err(t_->ep)) {
-      gpr_log(GPR_INFO, "for transport %p", t_);
+    if (s_->traced && grpc_endpoint_can_track_err(t_->ep)) {
       grpc_core::ContextList::Append(&t_->cl, s_);
     }
     while ((s_->flow_controlled_buffer.length > 0 ||

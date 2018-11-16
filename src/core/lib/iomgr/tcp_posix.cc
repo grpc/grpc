@@ -382,7 +382,6 @@ static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 static void tcp_destroy(grpc_endpoint* ep) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  gpr_log(GPR_INFO, "tcp destroy %p %p", ep, tcp->outgoing_buffer_arg);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     gpr_mu_lock(&tcp->tb_mu);
@@ -594,7 +593,6 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       ssize_t* sent_length,
                                       grpc_error** error) {
   if (!tcp->socket_ts_enabled) {
-    gpr_log(GPR_INFO, "set timestamps");
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
@@ -627,7 +625,6 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
-    gpr_log(GPR_INFO, "tcp new entry %p %p", tcp, tcp->outgoing_buffer_arg);
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::AddNewEntry(
         &tcp->tb_head, static_cast<int>(tcp->bytes_counter + length),
@@ -687,7 +684,6 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
  * non-linux platforms, error processing is not used/enabled currently.
  */
 static bool process_errors(grpc_tcp* tcp) {
-  gpr_log(GPR_INFO, "process errors");
   while (true) {
     struct iovec iov;
     iov.iov_base = nullptr;
@@ -750,8 +746,6 @@ static bool process_errors(grpc_tcp* tcp) {
 }
 
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
-  gpr_log(GPR_INFO, "handle error %p", arg);
-  GRPC_LOG_IF_ERROR("handle error", GRPC_ERROR_REF(error));
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp, grpc_error_string(error));
@@ -761,8 +755,6 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
-    gpr_log(GPR_INFO, "%p %d early return", error,
-            static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification)));
     TCP_UNREF(tcp, "error-tracking");
     return;
   }
@@ -797,6 +789,8 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
 
+/* If outgoing_buffer_arg is filled, shuts down the list early, so that any
+ * release operations needed can be performed on the arg */
 void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   if (tcp->outgoing_buffer_arg) {
     gpr_mu_lock(&tcp->tb_mu);
@@ -856,7 +850,6 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
                                      error)) {
-        gpr_log(GPR_INFO, "something went wrong");
         tcp_shutdown_buffer_list(tcp);
         return true; /* something went wrong with timestamps */
       }
@@ -881,13 +874,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
         }
         return false;
       } else if (errno == EPIPE) {
-        gpr_log(GPR_INFO, "something went wrong");
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        gpr_log(GPR_INFO, "something went wrong");
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
@@ -951,7 +942,6 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb, void* arg) {
   GPR_TIMER_SCOPE("tcp_write", 0);
-  gpr_log(GPR_INFO, "tcp_write %p %p", ep, arg);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error* error = GRPC_ERROR_NONE;
 
@@ -992,7 +982,6 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     }
     notify_on_write(tcp);
   } else {
-    gpr_log(GPR_INFO, "imm sched");
     if (grpc_tcp_trace.enabled()) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
@@ -1041,7 +1030,6 @@ static bool tcp_can_track_err(grpc_endpoint* ep) {
   struct sockaddr addr;
   socklen_t len = sizeof(addr);
   if (getsockname(tcp->fd, &addr, &len) < 0) {
-    gpr_log(GPR_ERROR, "getsockname");
     return false;
   }
   if (addr.sa_family == AF_INET || addr.sa_family == AF_INET6) {
@@ -1160,7 +1148,6 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done) {
   grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  gpr_log(GPR_INFO, "destroy and release %p %p", ep, tcp->outgoing_buffer_arg);
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
   tcp->release_fd_cb = done;

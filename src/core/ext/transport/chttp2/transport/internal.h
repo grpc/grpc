@@ -485,7 +485,7 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
-  grpc_core::ContextList* cl;
+  grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
 };
@@ -640,6 +640,8 @@ struct grpc_chttp2_stream {
   bool unprocessed_incoming_frames_decompressed = false;
   /** gRPC header bytes that are already decompressed */
   size_t decompressed_header_bytes = 0;
+  /** Whether the bytes needs to be traced using Fathom */
+  bool traced = false;
 };
 
 /** Transport writing call flow:

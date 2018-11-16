@@ -54,7 +54,8 @@ class DummyEndpoint : public grpc_endpoint {
                                                    destroy,
                                                    get_resource_user,
                                                    get_peer,
-                                                   get_fd};
+                                                   get_fd,
+                                                   can_track_err};
     grpc_endpoint::vtable = &my_vtable;
     ru_ = grpc_resource_user_create(Library::get().rq(), "dummy_endpoint");
   }
@@ -125,6 +126,7 @@ class DummyEndpoint : public grpc_endpoint {
   }
   static char* get_peer(grpc_endpoint* ep) { return gpr_strdup("test"); }
   static int get_fd(grpc_endpoint* ep) { return 0; }
+  static bool can_track_err(grpc_endpoint* ep) { return false; }
 };
 
 class Fixture {
