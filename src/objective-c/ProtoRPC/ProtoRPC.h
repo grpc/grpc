@@ -32,6 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Issued when initial metadata is received from the server.
+ */
 - (void)receivedInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**

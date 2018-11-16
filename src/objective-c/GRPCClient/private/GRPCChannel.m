@@ -302,7 +302,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (void)unref {
-  NSLog(@"unref");
   dispatch_async(_dispatchQueue, ^{
     NSAssert(self->_refcount > 0, @"Illegal reference count.");
     if (self->_refcount == 0) {
