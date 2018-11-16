@@ -1,0 +1,4 @@
+# Install Python 3.7
+<%include file="./debian_testing_repo.include"/>
+RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7

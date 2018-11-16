@@ -1,0 +1,7 @@
+#==================
+# Ruby dependencies
+
+RUN apt-get install -y ruby ruby-dev
+RUN echo 'gem: --no-ri --no-rdoc' > ~/.gemrc
+RUN gem update --system
+RUN gem install bundler --no-ri --no-rdoc
