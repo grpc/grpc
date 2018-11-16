@@ -52,6 +52,16 @@
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
+  grpc_end2end_http_proxy()
+      : proxy_name(nullptr),
+        server(nullptr),
+        channel_args(nullptr),
+        mu(nullptr),
+        pollset(nullptr),
+        combiner(nullptr) {
+    gpr_ref_init(&users, 1);
+    combiner = grpc_combiner_create();
+  }
   char* proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
@@ -519,11 +529,7 @@ static void thread_main(void* arg) {
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_end2end_http_proxy* proxy =
-      static_cast<grpc_end2end_http_proxy*>(gpr_malloc(sizeof(*proxy)));
-  memset(proxy, 0, sizeof(*proxy));
-  proxy->combiner = grpc_combiner_create();
-  gpr_ref_init(&proxy->users, 1);
+  grpc_end2end_http_proxy* proxy = grpc_core::New<grpc_end2end_http_proxy>();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(&proxy->proxy_name, "localhost", proxy_port);
@@ -573,7 +579,7 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
                                             grpc_schedule_on_exec_ctx));
   GRPC_COMBINER_UNREF(proxy->combiner, "test");
-  gpr_free(proxy);
+  grpc_core::Delete(proxy);
 }
 
 const char* grpc_end2end_http_proxy_get_proxy_name(

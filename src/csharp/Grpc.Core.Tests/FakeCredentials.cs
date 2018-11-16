@@ -16,15 +16,7 @@
 
 #endregion
 
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
 using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
@@ -42,7 +34,7 @@ namespace Grpc.Core.Tests
             get { return composable; }
         }
 
-        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
+        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
         {
             return null;
         }

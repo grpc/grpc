@@ -100,6 +100,9 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_new_with_len(void* p, size_t len,
                                              void (*destroy)(void*,
                                                              size_t)) = 0;
+  virtual grpc_call_error grpc_call_start_batch(grpc_call* call,
+                                                const grpc_op* ops, size_t nops,
+                                                void* tag, void* reserved) = 0;
   virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                        grpc_status_code status,
                                                        const char* description,
@@ -141,6 +144,15 @@ extern CoreCodegenInterface* g_core_codegen_interface;
       grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)
+
+/// Codegen specific version of \a GPR_DEBUG_ASSERT.
+#ifndef NDEBUG
+#define GPR_CODEGEN_DEBUG_ASSERT(x) GPR_CODEGEN_ASSERT(x)
+#else
+#define GPR_CODEGEN_DEBUG_ASSERT(x) \
+  do {                              \
+  } while (0)
+#endif
 
 }  // namespace grpc
 

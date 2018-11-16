@@ -57,11 +57,13 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
+import _parallel_compile_patch
 import _spawn_patch
 import commands
 import grpc_core_dependencies
 import grpc_version
 
+_parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
 LICENSE = 'Apache License 2.0'
@@ -87,21 +89,25 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 
 # Export this variable to use the system installation of openssl. You need to
 # have the header files installed (in /usr/include/openssl) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_OPENSSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
                                            False)
 
 # Export this variable to use the system installation of zlib. You need to
 # have the header files installed (in /usr/include/) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
                                         False)
 
 # Export this variable to use the system installation of cares. You need to
 # have the header files installed (in /usr/include/) and during
-# runtime, the shared libary must be installed
+# runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
+
+# If this environmental variable is set, GRPC will not try to be compatible with
+# libc versions old than the one it was compiled against.
+DISABLE_LIBC_COMPATIBILITY = os.environ.get('GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY', False)
 
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
@@ -198,11 +204,11 @@ if BUILD_WITH_SYSTEM_ZLIB:
 if BUILD_WITH_SYSTEM_CARES:
   EXTENSION_LIBRARIES += ('cares',)
 
-DEFINE_MACROS = (
-    ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1))
+DEFINE_MACROS = (('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600))
+if not DISABLE_LIBC_COMPATIBILITY:
+  DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
 if "win32" in sys.platform:
-  # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
+  # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
   DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),
                     ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),
@@ -283,8 +289,7 @@ if not PY3:
   INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
 
 SETUP_REQUIRES = INSTALL_REQUIRES + (
-    'sphinx>=1.3',
-    'sphinx_rtd_theme>=0.1.8',
+    'Sphinx~=1.8.1',
     'six>=1.10',
   ) if ENABLE_DOCUMENTATION_BUILD else ()
 

@@ -1051,9 +1051,9 @@ static tsi_result ssl_handshaker_result_extract_peer(
   }
 
   const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
-  result = tsi_construct_string_peer_property(
+  result = tsi_construct_string_peer_property_from_cstring(
       TSI_SSL_SESSION_REUSED_PEER_PROPERTY, session_reused,
-      strlen(session_reused) + 1, &peer->properties[peer->property_count]);
+      &peer->properties[peer->property_count]);
   if (result != TSI_OK) return result;
   peer->property_count++;
 

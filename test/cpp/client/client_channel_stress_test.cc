@@ -245,7 +245,7 @@ class ClientChannelStressTest {
       EchoResponse response;
       {
         std::lock_guard<std::mutex> lock(stub_mutex_);
-        stub_->Echo(&context, request, &response);
+        Status status = stub_->Echo(&context, request, &response);
       }
     }
     gpr_log(GPR_INFO, "Finish sending requests.");

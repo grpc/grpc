@@ -22,10 +22,14 @@ gRPC C# now has experimental support for Unity. Please try using gRPC with
 Unity and provide feedback!
 
 How to test gRPC in a Unity project
+
 1. Create a Unity project that targets .NET 4.x (Edit -> Project Settings -> Editor -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
+
 2. Download the latest development build of `grpc_unity_package.VERSION.zip` from
    [daily builds](https://packages.grpc.io/)
+
 3. Extract the `.zip` file in the `Assets` directory in your Unity project
+
 4. Unity IDE will pick up all the bundled files and add them to project automatically.
    You should be able to use gRPC and Protobuf in your scripts from now on.
 

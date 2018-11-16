@@ -21,42 +21,29 @@ set -ex
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
-temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5"
+# Download bazel
+temp_dir="$(mktemp -d)"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-linux-x86_64 -O "${temp_dir}/bazel"
+chmod 755 "${temp_dir}/bazel"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
-chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# TODO(adelez): implement size for test targets and change test_timeout back
-"${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
-  --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="200" \
-  --test_output=errors  \
-  --verbose_failures=true  \
-  --keep_going  \
-  --remote_accept_cached=true  \
-  --spawn_strategy=remote  \
-  --remote_local_fallback=false  \
-  --remote_timeout=3600  \
-  --strategy=Javac=remote  \
-  --strategy=Closure=remote  \
-  --genrule_strategy=remote  \
-  --experimental_strict_action_env=true \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/default:toolchain \
-  --define GRPC_PORT_ISOLATED_RUNTIME=1 \
-  --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
-  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
-  --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
-  --platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  $1 \
+# to get "bazel" link for kokoro build, we need to generate
+# invocation UUID, set an env var for bazel to pick it up
+#  and upload "bazel_invocation_ids" file as artifact.
+export BAZEL_INTERNAL_INVOCATION_ID="$(uuidgen)"
+echo "${BAZEL_INTERNAL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
+
+bazel \
+  --bazelrc=tools/remote_build/kokoro.bazelrc \
+  test \
+  $@ \
   -- //test/... || FAILED="true"
 
 if [ "$UPLOAD_TEST_RESULTS" != "" ]

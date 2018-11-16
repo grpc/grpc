@@ -30,6 +30,10 @@
 namespace grpc_core {
 namespace channelz {
 
+namespace testing {
+class ChannelzRegistryPeer;
+}
+
 // singleton registry object to track all objects that are needed to support
 // channelz bookkeeping. All objects share globally distributed uuids.
 class ChannelzRegistry {
@@ -40,32 +44,11 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
-  // Register/Unregister/Get for ChannelNode
-  static intptr_t RegisterChannelNode(ChannelNode* channel_node) {
-    RegistryEntry entry(channel_node, EntityType::kChannelNode);
-    return Default()->InternalRegisterEntry(entry);
+  static void Register(BaseNode* node) {
+    return Default()->InternalRegister(node);
   }
-  static void UnregisterChannelNode(intptr_t uuid) {
-    Default()->InternalUnregisterEntry(uuid, EntityType::kChannelNode);
-  }
-  static ChannelNode* GetChannelNode(intptr_t uuid) {
-    void* gotten = Default()->InternalGetEntry(uuid, EntityType::kChannelNode);
-    return gotten == nullptr ? nullptr : static_cast<ChannelNode*>(gotten);
-  }
-
-  // Register/Unregister/Get for SubchannelNode
-  static intptr_t RegisterSubchannelNode(SubchannelNode* channel_node) {
-    RegistryEntry entry(channel_node, EntityType::kSubchannelNode);
-    return Default()->InternalRegisterEntry(entry);
-  }
-  static void UnregisterSubchannelNode(intptr_t uuid) {
-    Default()->InternalUnregisterEntry(uuid, EntityType::kSubchannelNode);
-  }
-  static SubchannelNode* GetSubchannelNode(intptr_t uuid) {
-    void* gotten =
-        Default()->InternalGetEntry(uuid, EntityType::kSubchannelNode);
-    return gotten == nullptr ? nullptr : static_cast<SubchannelNode*>(gotten);
-  }
+  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
+  static BaseNode* Get(intptr_t uuid) { return Default()->InternalGet(uuid); }
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
@@ -73,22 +56,20 @@ class ChannelzRegistry {
     return Default()->InternalGetTopChannels(start_channel_id);
   }
 
+  // Returns the allocated JSON string that represents the proto
+  // GetServersResponse as per channelz.proto.
+  static char* GetServers(intptr_t start_server_id) {
+    return Default()->InternalGetServers(start_server_id);
+  }
+
+  // Test only helper function to dump the JSON representation to std out.
+  // This can aid in debugging channelz code.
+  static void LogAllEntities() { Default()->InternalLogAllEntities(); }
+
  private:
-  enum class EntityType {
-    kChannelNode,
-    kSubchannelNode,
-    kUnset,
-  };
-
-  struct RegistryEntry {
-    RegistryEntry(void* object_in, EntityType type_in)
-        : object(object_in), type(type_in) {}
-    void* object;
-    EntityType type;
-  };
-
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  friend class testing::ChannelzRegistryPeer;
 
   ChannelzRegistry();
   ~ChannelzRegistry();
@@ -97,21 +78,35 @@ class ChannelzRegistry {
   static ChannelzRegistry* Default();
 
   // globally registers an Entry. Returns its unique uuid
-  intptr_t InternalRegisterEntry(const RegistryEntry& entry);
+  void InternalRegister(BaseNode* node);
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregisterEntry(intptr_t uuid, EntityType type);
+  void InternalUnregister(intptr_t uuid);
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  void* InternalGetEntry(intptr_t uuid, EntityType type);
+  BaseNode* InternalGet(intptr_t uuid);
 
   char* InternalGetTopChannels(intptr_t start_channel_id);
+  char* InternalGetServers(intptr_t start_server_id);
 
-  // protects entities_ and uuid_
+  // If entities_ has over a certain threshold of empty slots, it will
+  // compact the vector and move all used slots to the front.
+  void MaybePerformCompactionLocked();
+
+  // Performs binary search on entities_ to find the index with that uuid.
+  // If direct_hit_needed, then will return -1 in case of absence.
+  // Else, will return idx of the first uuid higher than the target.
+  int FindByUuidLocked(intptr_t uuid, bool direct_hit_needed);
+
+  void InternalLogAllEntities();
+
+  // protects members
   gpr_mu mu_;
-  InlinedVector<RegistryEntry, 20> entities_;
+  InlinedVector<BaseNode*, 20> entities_;
+  intptr_t uuid_generator_ = 0;
+  int num_empty_slots_ = 0;
 };
 
 }  // namespace channelz

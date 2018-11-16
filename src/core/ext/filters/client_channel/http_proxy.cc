@@ -29,12 +29,12 @@
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/b64.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 /**
  * Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the

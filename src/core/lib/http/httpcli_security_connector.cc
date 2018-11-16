@@ -29,6 +29,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -51,6 +53,7 @@ static void httpcli_ssl_destroy(grpc_security_connector* sc) {
 }
 
 static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
+                                        grpc_pollset_set* interested_parties,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc);
@@ -189,11 +192,11 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_handshake_manager_create();
-  grpc_handshakers_add(HANDSHAKER_CLIENT, &args, c->handshake_mgr);
+  grpc_handshakers_add(HANDSHAKER_CLIENT, &args,
+                       nullptr /* interested_parties */, c->handshake_mgr);
   grpc_handshake_manager_do_handshake(
-      c->handshake_mgr, nullptr /* interested_parties */, tcp,
-      nullptr /* channel_args */, deadline, nullptr /* acceptor */,
-      on_handshake_done, c /* user_data */);
+      c->handshake_mgr, tcp, nullptr /* channel_args */, deadline,
+      nullptr /* acceptor */, on_handshake_done, c /* user_data */);
   GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
 }
 

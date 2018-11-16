@@ -37,21 +37,22 @@ grpc_cc_library(
     name = "fake_handshaker_lib",
     testonly = True,
     srcs = ["fake_handshaker_server.cc"],
+    hdrs = ["fake_handshaker_server.h"],
     language = "C++",
     deps = [
         "handshaker_proto",
         "transport_security_common_proto",
         "//:grpc++",
-        "//test/cpp/util:test_config",
     ],
 )
 
 grpc_cc_binary(
     name = "fake_handshaker_server",
     testonly = True,
-    srcs = ["fake_handshaker_server.cc"],
+    srcs = ["fake_handshaker_server_main.cc"],
     language = "C++",
     deps = [
+        "//test/cpp/util:test_config",
         "fake_handshaker_lib",
     ],
 )

@@ -123,6 +123,14 @@ class InlinedVector {
 
   void push_back(T&& value) { emplace_back(std::move(value)); }
 
+  void pop_back() {
+    assert(!empty());
+    size_t s = size();
+    T& value = data()[s - 1];
+    value.~T();
+    size_--;
+  }
+
   void copy_from(const InlinedVector& v) {
     // if v is allocated, copy over the buffer.
     if (v.dynamic_ != nullptr) {

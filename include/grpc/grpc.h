@@ -111,7 +111,8 @@ GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_pluck(
     of GRPC_CQ_CALLBACK and grpc_cq_polling_type of GRPC_CQ_DEFAULT_POLLING.
     This function is experimental. */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create_for_callback(
-    void* shutdown_callback, void* reserved);
+    grpc_experimental_completion_queue_functor* shutdown_callback,
+    void* reserved);
 
 /** Create a completion queue */
 GRPCAPI grpc_completion_queue* grpc_completion_queue_create(
@@ -247,10 +248,13 @@ GRPCAPI void* grpc_call_arena_alloc(grpc_call* call, size_t size);
     appropriate to call grpc_completion_queue_next or
     grpc_completion_queue_pluck consequent to the failed grpc_call_start_batch
     call.
+    If a call to grpc_call_start_batch with an empty batch returns
+    GRPC_CALL_OK, the tag is put in the completion queue immediately.
     THREAD SAFETY: access to grpc_call_start_batch in multi-threaded environment
     needs to be synchronized. As an optimization, you may synchronize batches
     containing just send operations independently from batches containing just
-    receive operations. */
+    receive operations. Access to grpc_call_start_batch with an empty batch is
+    thread-compatible. */
 GRPCAPI grpc_call_error grpc_call_start_batch(grpc_call* call,
                                               const grpc_op* ops, size_t nops,
                                               void* tag, void* reserved);
@@ -499,9 +503,27 @@ GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
    The returned string is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_top_channels(intptr_t start_channel_id);
 
+/* Gets all servers that exist in the process. */
+GRPCAPI char* grpc_channelz_get_servers(intptr_t start_server_id);
+
+/* Returns a single Server, or else a NOT_FOUND code. */
+GRPCAPI char* grpc_channelz_get_server(intptr_t server_id);
+
+/* Gets all server sockets that exist in the server. */
+GRPCAPI char* grpc_channelz_get_server_sockets(intptr_t server_id,
+                                               intptr_t start_socket_id);
+
 /* Returns a single Channel, or else a NOT_FOUND code. The returned string
    is allocated and must be freed by the application. */
 GRPCAPI char* grpc_channelz_get_channel(intptr_t channel_id);
+
+/* Returns a single Subchannel, or else a NOT_FOUND code. The returned string
+   is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_subchannel(intptr_t subchannel_id);
+
+/* Returns a single Socket, or else a NOT_FOUND code. The returned string
+   is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
 
 #ifdef __cplusplus
 }

@@ -23,16 +23,12 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
+
+typedef struct grpc_subchannel grpc_subchannel;
 
 namespace grpc_core {
-
-// TODO(ncteisen), this only contains the uuids of the children for now,
-// since that is all that is strictly needed. In a future enhancement we will
-// add human readable names as in the channelz.proto
-typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
 namespace channelz {
 
 // Subtype of ChannelNode that overrides and provides client_channel specific
@@ -43,26 +39,57 @@ class ClientChannelNode : public ChannelNode {
       grpc_channel* channel, size_t channel_tracer_max_nodes,
       bool is_top_level_channel);
 
-  // Override this functionality since client_channels have a notion of
-  // channel connectivity.
-  void PopulateConnectivityState(grpc_json* json) override;
+  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                    bool is_top_level_channel);
+  virtual ~ClientChannelNode() {}
 
-  // Override this functionality since client_channels have subchannels
+  // Overriding template methods from ChannelNode to render information that
+  // only ClientChannelNode knows about.
+  void PopulateConnectivityState(grpc_json* json) override;
   void PopulateChildRefs(grpc_json* json) override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
   static grpc_arg CreateChannelArg();
 
- protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                    bool is_top_level_channel);
-  virtual ~ClientChannelNode() {}
-
  private:
   grpc_channel_element* client_channel_;
+};
+
+// Handles channelz bookkeeping for sockets
+class SubchannelNode : public BaseNode {
+ public:
+  SubchannelNode(grpc_subchannel* subchannel, size_t channel_tracer_max_nodes);
+  ~SubchannelNode() override;
+
+  void MarkSubchannelDestroyed() {
+    GPR_ASSERT(subchannel_ != nullptr);
+    subchannel_ = nullptr;
+  }
+
+  grpc_json* RenderJson() override;
+
+  // proxy methods to composed classes.
+  void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {
+    trace_.AddTraceEvent(severity, data);
+  }
+  void AddTraceEventWithReference(ChannelTrace::Severity severity,
+                                  grpc_slice data,
+                                  RefCountedPtr<BaseNode> referenced_channel) {
+    trace_.AddTraceEventWithReference(severity, data,
+                                      std::move(referenced_channel));
+  }
+  void RecordCallStarted() { call_counter_.RecordCallStarted(); }
+  void RecordCallFailed() { call_counter_.RecordCallFailed(); }
+  void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
+
+ private:
+  grpc_subchannel* subchannel_;
+  UniquePtr<char> target_;
+  CallCountingHelper call_counter_;
+  ChannelTrace trace_;
+
+  void PopulateConnectivityState(grpc_json* json);
 };
 
 }  // namespace channelz

@@ -184,7 +184,7 @@ namespace Grpc.Core.Internal
             throw new InvalidOperationException("Call be only called for client calls");
         }
 
-        protected override void OnAfterReleaseResources()
+        protected override void OnAfterReleaseResourcesLocked()
         {
             server.RemoveCallReference(this);
         }
@@ -206,6 +206,7 @@ namespace Grpc.Core.Internal
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_CLOSE_ON_SERVER,
             // success will be always set to true.
+            bool releasedResources;
             lock (myLock)
             {
                 finished = true;
@@ -217,7 +218,12 @@ namespace Grpc.Core.Internal
                     streamingReadTcs = new TaskCompletionSource<TRequest>();
                     streamingReadTcs.SetResult(default(TRequest));
                 }
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (cancelled)

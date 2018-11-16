@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyTitle>RouteGuideServer</AssemblyTitle>
-    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <DebugType>portable</DebugType>
     <AssemblyName>RouteGuideServer</AssemblyName>
     <OutputType>Exe</OutputType>

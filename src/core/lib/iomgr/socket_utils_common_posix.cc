@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -219,6 +220,101 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
   if ((newval != 0) != val) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
   }
+  return GRPC_ERROR_NONE;
+}
+
+/* The default values for TCP_USER_TIMEOUT are currently configured to be in
+ * line with the default values of KEEPALIVE_TIMEOUT as proposed in
+ * https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
+#define DEFAULT_CLIENT_TCP_USER_TIMEOUT_MS 20000 /* 20 seconds */
+#define DEFAULT_SERVER_TCP_USER_TIMEOUT_MS 20000 /* 20 seconds */
+
+static int g_default_client_tcp_user_timeout_ms =
+    DEFAULT_CLIENT_TCP_USER_TIMEOUT_MS;
+static int g_default_server_tcp_user_timeout_ms =
+    DEFAULT_SERVER_TCP_USER_TIMEOUT_MS;
+static bool g_default_client_tcp_user_timeout_enabled = false;
+static bool g_default_server_tcp_user_timeout_enabled = true;
+
+void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
+  if (is_client) {
+    g_default_client_tcp_user_timeout_enabled = enable;
+    if (timeout > 0) {
+      g_default_client_tcp_user_timeout_ms = timeout;
+    }
+  } else {
+    g_default_server_tcp_user_timeout_enabled = enable;
+    if (timeout > 0) {
+      g_default_server_tcp_user_timeout_ms = timeout;
+    }
+  }
+}
+
+/* Set TCP_USER_TIMEOUT */
+grpc_error* grpc_set_socket_tcp_user_timeout(
+    int fd, const grpc_channel_args* channel_args, bool is_client) {
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
+  bool enable;
+  int timeout;
+  if (is_client) {
+    enable = g_default_client_tcp_user_timeout_enabled;
+    timeout = g_default_client_tcp_user_timeout_ms;
+  } else {
+    enable = g_default_server_tcp_user_timeout_enabled;
+    timeout = g_default_server_tcp_user_timeout_ms;
+  }
+  if (channel_args) {
+    for (unsigned int i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
+        /* Continue using default if value is 0 */
+        if (value == 0) {
+          continue;
+        }
+        /* Disable if value is INT_MAX */
+        enable = value != INT_MAX;
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
+        /* Continue using default if value is 0 */
+        if (value == 0) {
+          continue;
+        }
+        timeout = value;
+      }
+    }
+  }
+  if (enable) {
+    extern grpc_core::TraceFlag grpc_tcp_trace;
+    if (grpc_tcp_trace.enabled()) {
+      gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
+              timeout);
+    }
+    int newval;
+    socklen_t len = sizeof(newval);
+    if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                        sizeof(timeout))) {
+      gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
+    }
+    if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+      gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
+    }
+    if (newval != timeout) {
+      /* Do not fail on failing to set TCP_USER_TIMEOUT for now. */
+      gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+      return GRPC_ERROR_NONE;
+    }
+  }
+#else
+  extern grpc_core::TraceFlag grpc_tcp_trace;
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  }
+#endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }
 

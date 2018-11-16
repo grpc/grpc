@@ -144,8 +144,14 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       return grpc_ssl_credentials_create(
           c_pem_root_certificates, NULL, NULL, NULL)
     else:
-      c_pem_key_certificate_pair.private_key = self._private_key
-      c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
+      if self._private_key:
+        c_pem_key_certificate_pair.private_key = self._private_key
+      else:
+        c_pem_key_certificate_pair.private_key = NULL
+      if self._certificate_chain:
+        c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
+      else:
+        c_pem_key_certificate_pair.certificate_chain = NULL
       return grpc_ssl_credentials_create(
           c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
 

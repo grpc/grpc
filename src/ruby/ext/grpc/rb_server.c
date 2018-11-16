@@ -243,6 +243,8 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
 static VALUE grpc_rb_server_start(VALUE self) {
   grpc_rb_server* s = NULL;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+
+  grpc_ruby_fork_guard();
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
   } else {

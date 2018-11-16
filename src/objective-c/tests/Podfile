@@ -14,6 +14,7 @@ GRPC_LOCAL_SRC = '../../..'
   InteropTestsLocalSSL
   InteropTestsLocalCleartext
   InteropTestsRemoteWithCronet
+  UnitTests
 ).each do |target_name|
   target target_name do
     pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true

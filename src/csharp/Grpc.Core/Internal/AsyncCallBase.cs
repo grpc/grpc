@@ -189,17 +189,21 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected abstract Exception GetRpcExceptionClientOnly();
 
-        private void ReleaseResources()
+        protected void ReleaseResources()
         {
             if (call != null)
             {
                 call.Dispose();
             }
             disposed = true;
-            OnAfterReleaseResources();
+            OnAfterReleaseResourcesLocked();
         }
 
-        protected virtual void OnAfterReleaseResources()
+        protected virtual void OnAfterReleaseResourcesLocked()
+        {
+        }
+
+        protected virtual void OnAfterReleaseResourcesUnlocked()
         {
         }
 
@@ -235,6 +239,7 @@ namespace Grpc.Core.Internal
         {
             bool delayCompletion = false;
             TaskCompletionSource<object> origTcs = null;
+            bool releasedResources;
             lock (myLock)
             {
                 if (!success && !finished && IsClient) {
@@ -252,7 +257,12 @@ namespace Grpc.Core.Internal
                     streamingWriteTcs = null;    
                 }
 
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (!success)
@@ -282,9 +292,15 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected void HandleSendStatusFromServerFinished(bool success)
         {
+            bool releasedResources;
             lock (myLock)
             {
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (!success)
@@ -310,6 +326,7 @@ namespace Grpc.Core.Internal
             var deserializeException = (success && receivedMessage != null) ? TryDeserialize(receivedMessage, out msg) : null;
 
             TaskCompletionSource<TRead> origTcs = null;
+            bool releasedResources;
             lock (myLock)
             {
                 origTcs = streamingReadTcs;
@@ -332,7 +349,12 @@ namespace Grpc.Core.Internal
                     streamingReadTcs = null;
                 }
 
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (deserializeException != null && !IsClient)

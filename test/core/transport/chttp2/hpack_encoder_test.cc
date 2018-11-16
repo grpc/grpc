@@ -202,7 +202,7 @@ static void verify_table_size_change_match_elem_size(const char* key,
   grpc_mdelem elem = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string(key)),
       grpc_slice_intern(grpc_slice_from_static_string(value)));
-  size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, use_true_binary);
+  size_t elem_size = grpc_chttp2_get_size_in_hpack_table(elem, use_true_binary);
   size_t initial_table_size = g_compressor.table_size;
   grpc_linked_mdelem* e =
       static_cast<grpc_linked_mdelem*>(gpr_malloc(sizeof(*e)));

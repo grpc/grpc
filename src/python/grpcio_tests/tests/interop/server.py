@@ -26,6 +26,7 @@ from tests.interop import resources
 from tests.unit import test_common
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 

@@ -49,8 +49,8 @@
 
 /* -- Default credentials. -- */
 
-static grpc_channel_credentials* g_default_credentials = nullptr;
 static int g_compute_engine_detection_done = 0;
+static int g_need_compute_engine_creds = 0;
 static gpr_mu g_state_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
@@ -182,18 +182,12 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Failed to create Google credentials");
   grpc_error* err;
+  int need_compute_engine_creds = 0;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
 
   gpr_once_init(&g_once, init_default_credentials);
-
-  gpr_mu_lock(&g_state_mu);
-
-  if (g_default_credentials != nullptr) {
-    result = grpc_channel_credentials_ref(g_default_credentials);
-    goto end;
-  }
 
   /* First, try the environment variable. */
   err = create_default_creds_from_path(
@@ -207,55 +201,50 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   if (err == GRPC_ERROR_NONE) goto end;
   error = grpc_error_add_child(error, err);
 
+  gpr_mu_lock(&g_state_mu);
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
   if (!g_compute_engine_detection_done) {
-    int need_compute_engine_creds = g_gce_tenancy_checker();
+    g_need_compute_engine_creds = g_gce_tenancy_checker();
     g_compute_engine_detection_done = 1;
-    if (need_compute_engine_creds) {
-      call_creds = grpc_google_compute_engine_credentials_create(nullptr);
-      if (call_creds == nullptr) {
-        error = grpc_error_add_child(
-            error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                       "Failed to get credentials from network"));
-      }
+  }
+  need_compute_engine_creds = g_need_compute_engine_creds;
+  gpr_mu_unlock(&g_state_mu);
+
+  if (need_compute_engine_creds) {
+    call_creds = grpc_google_compute_engine_credentials_create(nullptr);
+    if (call_creds == nullptr) {
+      error = grpc_error_add_child(
+          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                     "Failed to get credentials from network"));
     }
   }
 
 end:
-  if (result == nullptr) {
-    if (call_creds != nullptr) {
-      /* Create google default credentials. */
-      auto creds = static_cast<grpc_google_default_channel_credentials*>(
-          gpr_zalloc(sizeof(grpc_google_default_channel_credentials)));
-      creds->base.vtable = &google_default_credentials_vtable;
-      creds->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
-      gpr_ref_init(&creds->base.refcount, 1);
-      creds->ssl_creds =
-          grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-      GPR_ASSERT(creds->ssl_creds != nullptr);
-      grpc_alts_credentials_options* options =
-          grpc_alts_credentials_client_options_create();
-      creds->alts_creds = grpc_alts_credentials_create(options);
-      grpc_alts_credentials_options_destroy(options);
-      /* Add a global reference so that it can be cached and re-served. */
-      g_default_credentials = grpc_composite_channel_credentials_create(
-          &creds->base, call_creds, nullptr);
-      GPR_ASSERT(g_default_credentials != nullptr);
-      grpc_channel_credentials_unref(&creds->base);
-      grpc_call_credentials_unref(call_creds);
-      result = grpc_channel_credentials_ref(g_default_credentials);
-    } else {
-      gpr_log(GPR_ERROR, "Could not create google default credentials.");
-    }
-  }
-  gpr_mu_unlock(&g_state_mu);
-  if (result == nullptr) {
-    GRPC_LOG_IF_ERROR("grpc_google_default_credentials_create", error);
+  if (call_creds != nullptr) {
+    /* Create google default credentials. */
+    auto creds = static_cast<grpc_google_default_channel_credentials*>(
+        gpr_zalloc(sizeof(grpc_google_default_channel_credentials)));
+    creds->base.vtable = &google_default_credentials_vtable;
+    creds->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
+    gpr_ref_init(&creds->base.refcount, 1);
+    creds->ssl_creds =
+        grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
+    GPR_ASSERT(creds->ssl_creds != nullptr);
+    grpc_alts_credentials_options* options =
+        grpc_alts_credentials_client_options_create();
+    creds->alts_creds = grpc_alts_credentials_create(options);
+    grpc_alts_credentials_options_destroy(options);
+    result = grpc_composite_channel_credentials_create(&creds->base, call_creds,
+                                                       nullptr);
+    GPR_ASSERT(result != nullptr);
+    grpc_channel_credentials_unref(&creds->base);
+    grpc_call_credentials_unref(call_creds);
   } else {
-    GRPC_ERROR_UNREF(error);
+    gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
+            grpc_error_string(error));
   }
-
+  GRPC_ERROR_UNREF(error);
   return result;
 }
 
@@ -266,20 +255,16 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
   g_gce_tenancy_checker = checker;
 }
 
-}  // namespace internal
-}  // namespace grpc_core
-
 void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
-  if (g_default_credentials != nullptr) {
-    grpc_channel_credentials_unref(g_default_credentials);
-    g_default_credentials = nullptr;
-  }
   g_compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
 }
+
+}  // namespace internal
+}  // namespace grpc_core
 
 /* -- Well known credentials path. -- */
 

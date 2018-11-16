@@ -88,6 +88,14 @@ static const grpc_slice_refcount_vtable noop_refcount_vtable = {
 static grpc_slice_refcount noop_refcount = {&noop_refcount_vtable,
                                             &noop_refcount};
 
+size_t grpc_slice_memory_usage(grpc_slice s) {
+  if (s.refcount == nullptr || s.refcount == &noop_refcount) {
+    return 0;
+  } else {
+    return s.data.refcounted.length;
+  }
+}
+
 grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
   grpc_slice slice;
   slice.refcount = &noop_refcount;

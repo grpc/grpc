@@ -55,7 +55,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "stream_compress_test",
+    name = "stream_compression_test",
     srcs = ["stream_compression_test.cc"],
     language = "C++",
     deps = [

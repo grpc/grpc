@@ -43,6 +43,7 @@ void grpc_handshaker_factory_register(bool at_start,
 
 void grpc_handshakers_add(grpc_handshaker_type handshaker_type,
                           const grpc_channel_args* args,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */

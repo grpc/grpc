@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address --test_timeout=3600 --cache_test_results=no"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=asan --cache_test_results=no
 

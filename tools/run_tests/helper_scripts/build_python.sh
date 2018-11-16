@@ -56,6 +56,12 @@ function is_linux() {
   fi
 }
 
+function inside_venv() {
+  if [[ -n "${VIRTUAL_ENV}" ]]; then
+    echo true
+  fi
+}
+
 # Associated virtual environment name for the given python command.
 function venv() {
   $1 -c "import sys; print('py{}{}'.format(*sys.version_info[:2]))"
@@ -80,6 +86,8 @@ function toolchain() {
   fi
 }
 
+# TODO(jtattermusch): this adds dependency on grealpath on mac
+# (brew install coreutils) for little reason.
 # Command to invoke the linux command `realpath` or equivalent.
 function script_realpath() {
   # Find `realpath`
@@ -112,6 +120,10 @@ export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
+# Allow build_ext to build C/C++ files in parallel
+# by enabling a monkeypatch. It speeds up the build a lot.
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=4
+
 # If ccache is available on Linux, use it.
 if [ "$(is_linux)" ]; then
   # We're not on Darwin (Mac OS X)
@@ -128,10 +140,14 @@ fi
 # Perform build operations #
 ############################
 
-# Instantiate the virtualenv from the Python version passed in.
-$PYTHON -m pip install --user virtualenv
-$PYTHON -m virtualenv "$VENV"
-VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+if [[ "$(inside_venv)" ]]; then
+  VENV_PYTHON="$PYTHON"
+else
+  # Instantiate the virtualenv from the Python version passed in.
+  $PYTHON -m pip install --user virtualenv
+  $PYTHON -m virtualenv "$VENV"
+  VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+fi
 
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
@@ -149,9 +165,12 @@ pip_install_dir() {
 }
 
 case "$VENV" in
-  *gevent*)
+  *py35_gevent*)
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
   $VENV_PYTHON -m pip install gevent==1.3.b1
+  ;;
+  *gevent*)
+  $VENV_PYTHON -m pip install -U gevent
   ;;
 esac
 

@@ -27,6 +27,7 @@
 
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -36,11 +37,6 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 /* --- status enum. --- */
 
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
-
-/* --- URL schemes. --- */
-
-#define GRPC_SSL_URL_SCHEME "https"
-#define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
 
 /* --- security_connector object. ---
 
@@ -125,6 +121,7 @@ struct grpc_channel_security_connector {
                                  grpc_closure* on_call_host_checked,
                                  grpc_error* error);
   void (*add_handshakers)(grpc_channel_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 
@@ -151,6 +148,7 @@ void grpc_channel_security_connector_cancel_check_call_host(
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(
     grpc_channel_security_connector* connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr);
 
 /* --- server_security_connector object. ---
@@ -164,6 +162,7 @@ struct grpc_server_security_connector {
   grpc_security_connector base;
   grpc_server_credentials* server_creds;
   void (*add_handshakers)(grpc_server_security_connector* sc,
+                          grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
 };
 
@@ -172,114 +171,7 @@ int grpc_server_security_connector_cmp(grpc_server_security_connector* sc1,
                                        grpc_server_security_connector* sc2);
 
 void grpc_server_security_connector_add_handshakers(
-    grpc_server_security_connector* sc, grpc_handshake_manager* handshake_mgr);
-
-/* --- Creation security connectors. --- */
-
-/* For TESTING ONLY!
-   Creates a fake connector that emulates real channel security.  */
-grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target,
-    const grpc_channel_args* args);
-
-/* For TESTING ONLY!
-   Creates a fake connector that emulates real server security.  */
-grpc_server_security_connector* grpc_fake_server_security_connector_create(
-    grpc_server_credentials* server_creds);
-
-/* Config for ssl clients. */
-
-typedef struct {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  char* pem_root_certs;
-  verify_peer_options verify_options;
-} grpc_ssl_config;
-
-/* Creates an SSL channel_security_connector.
-   - request_metadata_creds is the credentials object which metadata
-     will be sent with each request. This parameter can be NULL.
-   - config is the SSL config to be used for the SSL channel establishment.
-   - is_client should be 0 for a server or a non-0 value for a client.
-   - secure_peer_name is the secure peer name that should be checked in
-     grpc_channel_security_connector_check_peer. This parameter may be NULL in
-     which case the peer name will not be checked. Note that if this parameter
-     is not NULL, then, pem_root_certs should not be NULL either.
-   - sc is a pointer on the connector to be created.
-  This function returns GRPC_SECURITY_OK in case of success or a
-  specific error code otherwise.
-*/
-grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
-    const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache,
-    grpc_channel_security_connector** sc);
-
-/* Config for ssl servers. */
-typedef struct {
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
-  size_t num_key_cert_pairs;
-  char* pem_root_certs;
-  grpc_ssl_client_certificate_request_type client_certificate_request;
-} grpc_ssl_server_config;
-
-/* Creates an SSL server_security_connector.
-   - config is the SSL config to be used for the SSL channel establishment.
-   - sc is a pointer on the connector to be created.
-  This function returns GRPC_SECURITY_OK in case of success or a
-  specific error code otherwise.
-*/
-grpc_security_status grpc_ssl_server_security_connector_create(
-    grpc_server_credentials* server_credentials,
-    grpc_server_security_connector** sc);
-
-/* Util. */
-const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
-                                                       const char* name);
-
-/* Exposed for testing only. */
-grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer);
-tsi_peer grpc_shallow_peer_from_ssl_auth_context(
-    const grpc_auth_context* auth_context);
-void grpc_shallow_peer_destruct(tsi_peer* peer);
-int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name);
-
-/* --- Default SSL Root Store. --- */
-namespace grpc_core {
-
-// The class implements default SSL root store.
-class DefaultSslRootStore {
- public:
-  // Gets the default SSL root store. Returns nullptr if not found.
-  static const tsi_ssl_root_certs_store* GetRootStore();
-
-  // Gets the default PEM root certificate.
-  static const char* GetPemRootCerts();
-
- protected:
-  // Returns default PEM root certificates in nullptr terminated grpc_slice.
-  // This function is protected instead of private, so that it can be tested.
-  static grpc_slice ComputePemRootCerts();
-
- private:
-  // Construct me not!
-  DefaultSslRootStore();
-
-  // Initialization of default SSL root store.
-  static void InitRootStore();
-
-  // One-time initialization of default SSL root store.
-  static void InitRootStoreOnce();
-
-  // SSL root store in tsi_ssl_root_certs_store object.
-  static tsi_ssl_root_certs_store* default_root_store_;
-
-  // Default PEM root certificates.
-  static grpc_slice default_pem_root_certs_;
-};
-
-}  // namespace grpc_core
+    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
+    grpc_handshake_manager* handshake_mgr);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */

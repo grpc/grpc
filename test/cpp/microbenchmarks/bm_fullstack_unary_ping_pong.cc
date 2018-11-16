@@ -31,6 +31,8 @@ auto& force_library_initialization = Library::get();
  * CONFIGURATIONS
  */
 
+// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
+// internal microbenchmarking tooling
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
   b->Args({0, 0});
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {

@@ -66,7 +66,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   grpc_server_setup_transport(a->server, transport, nullptr,
-                              grpc_server_get_channel_args(a->server));
+                              grpc_server_get_channel_args(a->server), 0);
 }
 
 /* Sets the read_done event */

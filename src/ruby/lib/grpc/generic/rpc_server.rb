@@ -136,7 +136,7 @@ module GRPC
         begin
           blk, args = worker_queue.pop
           blk.call(*args)
-        rescue StandardError => e
+        rescue StandardError, GRPC::Core::CallError => e
           GRPC.logger.warn('Error in worker thread')
           GRPC.logger.warn(e)
         end

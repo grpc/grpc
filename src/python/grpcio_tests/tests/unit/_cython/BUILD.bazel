@@ -1,0 +1,46 @@
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+GRPCIO_TESTS_UNIT_CYTHON = [
+    "_cancel_many_calls_test.py",
+    "_channel_test.py",
+    "_no_messages_server_completion_queue_per_call_test.py",
+    "_no_messages_single_server_completion_queue_test.py",
+    "_read_some_but_not_all_responses_test.py",
+    "_server_test.py",
+    "cygrpc_test.py",
+]
+
+py_library(
+    name = "common",
+    srcs = ["_common.py"],
+)
+
+py_library(
+    name = "test_utilities",
+    srcs = ["test_utilities.py"],
+)
+
+[
+    py_test(
+        name=test_file_name[:-3],
+        size="small",
+        srcs=[test_file_name],
+        main=test_file_name,
+        deps=[
+            "//src/python/grpcio/grpc:grpcio",
+            ":common",
+            ":test_utilities",
+            "//src/python/grpcio_tests/tests/unit/framework/common",
+            "//src/python/grpcio_tests/tests/unit:test_common",
+            "//src/python/grpcio_tests/tests/unit:resources",
+        ],
+        imports=["../../../",],
+        data=[
+            "//src/python/grpcio_tests/tests/unit/credentials",
+        ],
+    ) for test_file_name in GRPCIO_TESTS_UNIT_CYTHON
+]
+
+

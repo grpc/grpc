@@ -212,10 +212,6 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
   return new_index;
 }
 
-/* dummy function */
-static void add_nothing(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
-                        size_t elem_size) {}
-
 // Add a key to the dynamic table. Both key and value will be added to table at
 // the decoder.
 static void add_key_with_index(grpc_chttp2_hpack_compressor* c,
@@ -524,17 +520,22 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   uint32_t indices_key;
 
   /* should this elem be in the table? */
-  size_t decoder_space_usage =
-      grpc_mdelem_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
-  bool should_add_elem = elem_interned &&
-                         decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
-                         c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
-                             c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
-  void (*maybe_add)(grpc_chttp2_hpack_compressor*, grpc_mdelem, size_t) =
-      should_add_elem ? add_elem : add_nothing;
-  void (*emit)(grpc_chttp2_hpack_compressor*, uint32_t, grpc_mdelem,
-               framer_state*) =
-      should_add_elem ? emit_lithdr_incidx : emit_lithdr_noidx;
+  const size_t decoder_space_usage =
+      grpc_chttp2_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
+  const bool should_add_elem = elem_interned &&
+                               decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
+                               c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
+                                   c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
+
+  auto emit_maybe_add = [&should_add_elem, &elem, &st, &c, &indices_key,
+                         &decoder_space_usage] {
+    if (should_add_elem) {
+      emit_lithdr_incidx(c, dynidx(c, indices_key), elem, st);
+      add_elem(c, elem, decoder_space_usage);
+    } else {
+      emit_lithdr_noidx(c, dynidx(c, indices_key), elem, st);
+    }
+  };
 
   /* no hits for the elem... maybe there's a key? */
   indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
@@ -542,8 +543,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                     GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
-    emit(c, dynidx(c, indices_key), elem, st);
-    maybe_add(c, elem, decoder_space_usage);
+    emit_maybe_add();
     return;
   }
 
@@ -552,20 +552,23 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                     GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
-    emit(c, dynidx(c, indices_key), elem, st);
-    maybe_add(c, elem, decoder_space_usage);
+    emit_maybe_add();
     return;
   }
 
   /* no elem, key in the table... fall back to literal emission */
-  bool should_add_key =
+  const bool should_add_key =
       !elem_interned && decoder_space_usage < MAX_DECODER_SPACE_USAGE;
-  emit = (should_add_elem || should_add_key) ? emit_lithdr_incidx_v
-                                             : emit_lithdr_noidx_v;
-  maybe_add =
-      should_add_elem ? add_elem : (should_add_key ? add_key : add_nothing);
-  emit(c, 0, elem, st);
-  maybe_add(c, elem, decoder_space_usage);
+  if (should_add_elem || should_add_key) {
+    emit_lithdr_incidx_v(c, 0, elem, st);
+  } else {
+    emit_lithdr_noidx_v(c, 0, elem, st);
+  }
+  if (should_add_elem) {
+    add_elem(c, elem, decoder_space_usage);
+  } else if (should_add_key) {
+    add_key(c, elem, decoder_space_usage);
+  }
 }
 
 #define STRLEN_LIT(x) (sizeof(x) - 1)
@@ -688,11 +691,22 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
     emit_advertise_table_size_change(c, &st);
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
-    hpack_enc(c, *extra_headers[i], &st);
+    grpc_mdelem md = *extra_headers[i];
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, md, &st);
+    }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    hpack_enc(c, l->md, &st);
+    uint8_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
+    if (static_index) {
+      emit_indexed(c, static_index, &st);
+    } else {
+      hpack_enc(c, l->md, &st);
+    }
   }
   grpc_millis deadline = metadata->deadline;
   if (deadline != GRPC_MILLIS_INF_FUTURE) {

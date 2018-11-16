@@ -70,8 +70,8 @@ class RoundRobin : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                ChildRefsList* ignored) override;
+  void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
+                                channelz::ChildRefsList* ignored) override;
 
  private:
   ~RoundRobin();
@@ -89,11 +89,12 @@ class RoundRobin : public LoadBalancingPolicy {
       : public SubchannelData<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
    public:
-    RoundRobinSubchannelData(RoundRobinSubchannelList* subchannel_list,
-                             const grpc_lb_user_data_vtable* user_data_vtable,
-                             const grpc_lb_address& address,
-                             grpc_subchannel* subchannel,
-                             grpc_combiner* combiner)
+    RoundRobinSubchannelData(
+        SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
+            subchannel_list,
+        const grpc_lb_user_data_vtable* user_data_vtable,
+        const grpc_lb_address& address, grpc_subchannel* subchannel,
+        grpc_combiner* combiner)
         : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
                          combiner),
           user_data_vtable_(user_data_vtable),
@@ -222,8 +223,8 @@ class RoundRobin : public LoadBalancingPolicy {
   /// Lock and data used to capture snapshots of this channel's child
   /// channels and subchannels. This data is consumed by channelz.
   gpr_mu child_refs_mu_;
-  ChildRefsList child_subchannels_;
-  ChildRefsList child_channels_;
+  channelz::ChildRefsList child_subchannels_;
+  channelz::ChildRefsList child_channels_;
 };
 
 RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
@@ -401,7 +402,8 @@ bool RoundRobin::PickLocked(PickState* pick, grpc_error** error) {
 }
 
 void RoundRobin::FillChildRefsForChannelz(
-    ChildRefsList* child_subchannels_to_fill, ChildRefsList* ignored) {
+    channelz::ChildRefsList* child_subchannels_to_fill,
+    channelz::ChildRefsList* ignored) {
   MutexLock lock(&child_refs_mu_);
   for (size_t i = 0; i < child_subchannels_.size(); ++i) {
     // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
@@ -421,7 +423,7 @@ void RoundRobin::FillChildRefsForChannelz(
 }
 
 void RoundRobin::UpdateChildRefsLocked() {
-  ChildRefsList cs;
+  channelz::ChildRefsList cs;
   if (subchannel_list_ != nullptr) {
     subchannel_list_->PopulateChildRefsList(&cs);
   }

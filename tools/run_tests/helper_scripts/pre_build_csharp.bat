@@ -32,9 +32,7 @@ cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC
 
 cd ..\..\..\src\csharp
 
-if NOT DEFINED GRPC_SKIP_DOTNET_RESTORE (
-  dotnet restore Grpc.sln || goto :error
-)
+dotnet restore Grpc.sln || goto :error
 
 endlocal
 

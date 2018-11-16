@@ -24,10 +24,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#ifdef GPR_LINUX
-#include <linux/version.h>
-#endif /* GPR_LINUX */
-
 bool kernel_supports_errqueue() {
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)

@@ -819,6 +819,7 @@ static VALUE grpc_rb_call_run_batch(VALUE self, VALUE ops_hash) {
   unsigned write_flag = 0;
   void* tag = (void*)&st;
 
+  grpc_ruby_fork_guard();
   if (RTYPEDDATA_DATA(self) == NULL) {
     rb_raise(grpc_rb_eCallError, "Cannot run batch on closed call");
     return Qnil;

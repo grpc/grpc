@@ -81,18 +81,7 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   ///
   /// If this causes new data to become available, then the currently
   /// pending call to \a NextLocked() will return the new result.
-  ///
-  /// Note: Currently, all resolvers are required to return a new result
-  /// shortly after this method is called.  For pull-based mechanisms, if
-  /// the implementation decides to delay querying the name service, it
-  /// should immediately return a new copy of the previously returned
-  /// result (and it can then return the updated data later, when it
-  /// actually does query the name service).  For push-based mechanisms,
-  /// the implementation should immediately return a new copy of the
-  /// last-seen result.
-  /// TODO(roth): Remove this requirement once we fix pick_first to not
-  /// throw away unselected subchannels.
-  virtual void RequestReresolutionLocked() GRPC_ABSTRACT;
+  virtual void RequestReresolutionLocked() {}
 
   /// Resets the re-resolution backoff, if any.
   /// This needs to be implemented only by pull-based implementations;

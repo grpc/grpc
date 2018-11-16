@@ -41,6 +41,11 @@ os.chdir(_ROOT)
 
 _REMOTE_HOST_USERNAME = 'jenkins'
 
+_SCENARIO_TIMEOUT = 3 * 60
+_WORKER_TIMEOUT = 3 * 60
+_NETPERF_TIMEOUT = 60
+_QUIT_WORKER_TIMEOUT = 2 * 60
+
 
 class QpsWorkerJob:
     """Encapsulates a qps worker server job."""
@@ -85,15 +90,14 @@ def create_qpsworker_job(language,
         cmdline = perf_cmd + ['-o', '%s-perf.data' % perf_file_base_name
                              ] + cmdline
 
-    worker_timeout = 3 * 60
+    worker_timeout = _WORKER_TIMEOUT
     if remote_host:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
         ssh_cmd = ['ssh']
         cmdline = ['timeout', '%s' % (worker_timeout + 30)] + cmdline
         ssh_cmd.extend([
             str(user_at_host),
-            'cd ~/performance_workspace/grpc/ && python tools/run_tests/start_port_server.py && %s'
-            % ' '.join(cmdline)
+            'cd ~/performance_workspace/grpc/ && %s' % ' '.join(cmdline)
         ])
         cmdline = ssh_cmd
 
@@ -132,7 +136,7 @@ def create_scenario_jobspec(scenario_json,
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='qps_json_driver.%s' % scenario_json['name'],
-        timeout_seconds=12 * 60,
+        timeout_seconds=_SCENARIO_TIMEOUT,
         shell=True,
         verbose_success=True)
 
@@ -140,7 +144,7 @@ def create_scenario_jobspec(scenario_json,
 def create_quit_jobspec(workers, remote_host=None):
     """Runs quit using QPS driver."""
     # setting QPS_WORKERS env variable here makes sure it works with SSH too.
-    cmd = 'QPS_WORKERS="%s" bins/opt/qps_json_driver --quit' % ','.join(
+    cmd = 'QPS_WORKERS="%s" cmake/build/qps_json_driver --quit' % ','.join(
         w.host_and_port for w in workers)
     if remote_host:
         user_at_host = '%s@%s' % (_REMOTE_HOST_USERNAME, remote_host)
@@ -150,7 +154,7 @@ def create_quit_jobspec(workers, remote_host=None):
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='qps_json_driver.quit',
-        timeout_seconds=3 * 60,
+        timeout_seconds=_QUIT_WORKER_TIMEOUT,
         shell=True,
         verbose_success=True)
 
@@ -182,7 +186,7 @@ def create_netperf_jobspec(server_host='localhost',
     return jobset.JobSpec(
         cmdline=[cmd],
         shortname='netperf',
-        timeout_seconds=60,
+        timeout_seconds=_NETPERF_TIMEOUT,
         shell=True,
         verbose_success=True)
 
@@ -270,6 +274,12 @@ def build_on_remote_hosts(hosts,
                          'CONFIG': 'opt'},
                 timeout_seconds=build_timeout))
     if build_local:
+        # start port server locally
+        build_jobs.append(
+            jobset.JobSpec(
+                cmdline=['python', 'tools/run_tests/start_port_server.py'],
+                shortname='local_start_port_server',
+                timeout_seconds=2 * 60))
         # Build locally as well
         build_jobs.append(
             jobset.JobSpec(

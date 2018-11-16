@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.15.0-dev")
+set(PACKAGE_VERSION   "1.17.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -40,6 +40,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
+option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -113,6 +114,25 @@ if (gRPC_USE_PROTO_LITE)
   add_definitions("-DGRPC_USE_PROTO_LITE")
 else()
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
+endif()
+
+if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
+  add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
+  if (_gRPC_PLATFORM_MAC)
+    # some C++11 constructs not supported before OS X 10.9
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.9)
+  endif()
+endif()
+
+if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
+  # C core has C++ source code, but should not depend on libstc++ (for better portability).
+  # We need to use a few tricks to convince cmake to do that.
+  # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
+  set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
+  # Exceptions and RTTI must be off to avoid dependency on libstdc++
+  set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
+else()
+  set(_gRPC_CORE_NOSTDCXX_FLAGS "")
 endif()
 
 include(cmake/zlib.cmake)
@@ -254,9 +274,6 @@ add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c ev_epollex_linux_test)
 endif()
-if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c ev_epollsig_linux_test)
-endif()
 add_dependencies(buildtests_c fake_resolver_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fake_transport_security_test)
@@ -312,10 +329,10 @@ add_dependencies(buildtests_c grpc_jwt_verifier_test)
 add_dependencies(buildtests_c grpc_security_connector_test)
 add_dependencies(buildtests_c grpc_ssl_credentials_test)
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_client)
+add_dependencies(buildtests_c handshake_client_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c handshake_server)
+add_dependencies(buildtests_c handshake_server_ssl)
 endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
@@ -343,10 +360,10 @@ add_dependencies(buildtests_c json_stream_error_test)
 add_dependencies(buildtests_c json_test)
 add_dependencies(buildtests_c lame_client_test)
 add_dependencies(buildtests_c load_file_test)
-add_dependencies(buildtests_c memory_profile_client)
-add_dependencies(buildtests_c memory_profile_server)
+add_dependencies(buildtests_c memory_usage_client)
+add_dependencies(buildtests_c memory_usage_server)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_c memory_profile_test)
+add_dependencies(buildtests_c memory_usage_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
@@ -356,13 +373,11 @@ add_dependencies(buildtests_c no_server_test)
 add_dependencies(buildtests_c num_external_connectivity_watchers_test)
 add_dependencies(buildtests_c parse_address_test)
 add_dependencies(buildtests_c percent_encoding_test)
-if(_gRPC_PLATFORM_LINUX)
-add_dependencies(buildtests_c pollset_set_test)
-endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c resolve_address_posix_test)
 endif()
-add_dependencies(buildtests_c resolve_address_test)
+add_dependencies(buildtests_c resolve_address_using_ares_resolver_test)
+add_dependencies(buildtests_c resolve_address_using_native_resolver_test)
 add_dependencies(buildtests_c resource_quota_test)
 add_dependencies(buildtests_c secure_channel_create_test)
 add_dependencies(buildtests_c secure_endpoint_test)
@@ -474,7 +489,6 @@ add_dependencies(buildtests_c h2_sockpair_1byte_nosec_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
-add_dependencies(buildtests_c inproc_nosec_test)
 add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
@@ -565,11 +579,13 @@ add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
 add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
 add_dependencies(buildtests_cxx cli_call_test)
+add_dependencies(buildtests_cxx client_callback_end2end_test)
 add_dependencies(buildtests_cxx client_channel_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx client_crash_test)
 endif()
 add_dependencies(buildtests_cxx client_crash_test_server)
+add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
@@ -650,6 +666,7 @@ add_dependencies(buildtests_cxx server_crash_test)
 endif()
 add_dependencies(buildtests_cxx server_crash_test_client)
 add_dependencies(buildtests_cxx server_early_return_test)
+add_dependencies(buildtests_cxx server_interceptors_end2end_test)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx slice_hash_table_test)
@@ -715,7 +732,12 @@ target_include_directories(address_sorting
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(address_sorting PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(address_sorting PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(address_sorting
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -762,7 +784,12 @@ target_include_directories(alts_test_util
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(alts_test_util PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(alts_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(alts_test_util
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -838,7 +865,12 @@ target_include_directories(gpr
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(gpr PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
@@ -928,7 +960,12 @@ target_include_directories(gpr_test_util
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_test_util PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(gpr_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(gpr_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
@@ -973,7 +1010,6 @@ add_library(grpc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1090,6 +1126,7 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -1137,11 +1174,14 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
-  src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
-  src/core/lib/security/security_connector/local_security_connector.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1160,7 +1200,7 @@ add_library(grpc
   src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/frame_handler.cc
   src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
   src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
@@ -1196,6 +1236,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1210,9 +1251,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/tsi/alts_transport_security.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1231,10 +1271,14 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1280,7 +1324,12 @@ target_include_directories(grpc
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -1382,7 +1431,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1499,6 +1547,7 @@ add_library(grpc_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc
   src/core/ext/transport/cronet/transport/cronet_api_dummy.cc
@@ -1539,6 +1588,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1553,8 +1603,11 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1572,11 +1625,14 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
-  src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/alts/alts_security_connector.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
-  src/core/lib/security/security_connector/local_security_connector.cc
+  src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1595,7 +1651,7 @@ add_library(grpc_cronet
   src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/frame_handler.cc
   src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_shared_resource.cc
   src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
@@ -1616,15 +1672,11 @@ add_library(grpc_cronet
   src/core/tsi/alts/handshaker/altscontext.pb.c
   src/core/tsi/alts/handshaker/handshaker.pb.c
   src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1659,7 +1711,12 @@ target_include_directories(grpc_cronet
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_cronet PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc_cronet PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -1777,7 +1834,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1894,6 +1950,7 @@ add_library(grpc_test_util
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1902,6 +1959,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -1916,8 +1974,11 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -1972,7 +2033,12 @@ target_include_directories(grpc_test_util
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_test_util PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
@@ -2088,7 +2154,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -2205,6 +2270,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2213,6 +2279,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -2227,8 +2294,11 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2283,7 +2353,12 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_test_util_unsecure PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc_test_util_unsecure PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
@@ -2378,7 +2453,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -2495,6 +2569,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
@@ -2538,6 +2613,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -2552,8 +2628,11 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2575,9 +2654,10 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2613,7 +2693,12 @@ target_include_directories(grpc_unsecure
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_unsecure PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc_unsecure PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -2706,7 +2791,12 @@ target_include_directories(reconnect_server
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(reconnect_server PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(reconnect_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(reconnect_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
@@ -2748,7 +2838,12 @@ target_include_directories(test_tcp_server
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(test_tcp_server PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(test_tcp_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(test_tcp_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -2771,6 +2866,7 @@ add_library(grpc++
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -2789,7 +2885,6 @@ add_library(grpc++
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -2802,6 +2897,10 @@ add_library(grpc++
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -2830,7 +2929,6 @@ target_include_directories(grpc++
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -2923,9 +3021,11 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -3020,8 +3120,13 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -3029,13 +3134,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
+  include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -3111,7 +3221,6 @@ target_include_directories(grpc++_core_stats
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_core_stats
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3129,6 +3238,7 @@ add_library(grpc++_cronet
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -3147,7 +3257,6 @@ add_library(grpc++_cronet
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -3160,6 +3269,10 @@ add_library(grpc++_cronet
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -3222,7 +3335,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_epollsig_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -3339,6 +3451,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/filters/http/client/http_client_filter.cc
@@ -3352,6 +3465,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
   src/core/ext/filters/client_channel/connector.cc
+  src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
@@ -3366,7 +3480,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
-  src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
@@ -3399,7 +3512,6 @@ target_include_directories(grpc++_cronet
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -3493,9 +3605,11 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -3590,8 +3704,13 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -3599,13 +3718,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
+  include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -3671,7 +3795,6 @@ target_include_directories(grpc++_error_details
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_error_details
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -3743,7 +3866,6 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_proto_reflection_desc_db
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3803,7 +3925,6 @@ target_include_directories(grpc++_reflection
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_reflection
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3867,7 +3988,6 @@ target_include_directories(grpc++_test_config
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_test_config
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -3954,7 +4074,6 @@ target_include_directories(grpc++_test_util
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_test_util
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4000,8 +4119,13 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -4009,13 +4133,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
+  include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4132,7 +4261,6 @@ target_include_directories(grpc++_test_util_unsecure
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_test_util_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4178,8 +4306,13 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -4187,13 +4320,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
+  include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4248,6 +4386,7 @@ add_library(grpc++_unsecure
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_context.cc
+  src/cpp/client/client_interceptor.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
@@ -4266,7 +4405,6 @@ add_library(grpc++_unsecure
   src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/dynamic_thread_pool.cc
   src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health.pb.c
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
@@ -4279,6 +4417,10 @@ add_library(grpc++_unsecure
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
+  src/core/ext/filters/client_channel/health/health.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4307,7 +4449,6 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc++_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -4399,9 +4540,11 @@ foreach(_hdr
   include/grpcpp/support/async_unary_call.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/client_callback.h
   include/grpcpp/support/config.h
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
+  include/grpcpp/support/server_callback.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -4496,8 +4639,13 @@ foreach(_hdr
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/call_op_set.h
+  include/grpcpp/impl/codegen/call_op_set_interface.h
+  include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_callback.h
   include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_interceptor.h
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
@@ -4505,13 +4653,18 @@ foreach(_hdr
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/intercepted_channel.h
+  include/grpcpp/impl/codegen/interceptor.h
+  include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_callback.h
   include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interceptor.h
   include/grpcpp/impl/codegen/server_interface.h
   include/grpcpp/impl/codegen/service_type.h
   include/grpcpp/impl/codegen/slice.h
@@ -4573,7 +4726,6 @@ target_include_directories(grpc_benchmark
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc_benchmark
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4633,7 +4785,6 @@ target_include_directories(grpc_cli_libs
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc_cli_libs
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4691,7 +4842,6 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -4757,7 +4907,6 @@ target_include_directories(grpcpp_channelz
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(grpcpp_channelz
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4842,7 +4991,6 @@ target_include_directories(http2_client_main
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(http2_client_main
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4899,7 +5047,6 @@ target_include_directories(interop_client_helper
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(interop_client_helper
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -4971,7 +5118,6 @@ target_include_directories(interop_client_main
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(interop_client_main
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5023,7 +5169,6 @@ target_include_directories(interop_server_helper
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(interop_server_helper
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5093,7 +5238,6 @@ target_include_directories(interop_server_lib
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(interop_server_lib
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5145,7 +5289,6 @@ target_include_directories(interop_server_main
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(interop_server_main
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5188,6 +5331,7 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
+  test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
   test/cpp/qps/parse_json.cc
@@ -5195,6 +5339,7 @@ add_library(qps
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
+  test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
 )
@@ -5249,7 +5394,6 @@ target_include_directories(qps
   PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
-
 target_link_libraries(qps
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5293,7 +5437,12 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_csharp_ext PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(grpc_csharp_ext PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(grpc_csharp_ext
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
@@ -5341,7 +5490,12 @@ target_include_directories(bad_client_test
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
@@ -5382,7 +5536,12 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bad_ssl_test_server PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(bad_ssl_test_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(bad_ssl_test_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -5502,7 +5661,12 @@ target_include_directories(end2end_tests
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(end2end_tests PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(end2end_tests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(end2end_tests
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5622,7 +5786,12 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
-
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(end2end_nosec_tests PROPERTIES LINKER_LANGUAGE C)
+    # only use the flags for C++ source files
+    target_compile_options(end2end_nosec_tests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 target_link_libraries(end2end_nosec_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
@@ -5662,6 +5831,12 @@ target_link_libraries(algorithm_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(algorithm_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(algorithm_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5688,6 +5863,12 @@ target_link_libraries(alloc_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(alloc_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(alloc_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5718,6 +5899,12 @@ target_link_libraries(alpn_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(alpn_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(alpn_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5744,6 +5931,12 @@ target_link_libraries(arena_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(arena_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(arena_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5772,6 +5965,12 @@ target_link_libraries(avl_test
   gpr
   grpc
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(avl_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(avl_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5803,6 +6002,12 @@ target_link_libraries(bad_server_response_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bad_server_response_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(bad_server_response_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5830,6 +6035,12 @@ target_link_libraries(bin_decoder_test
   grpc
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bin_decoder_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(bin_decoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -5856,6 +6067,12 @@ target_link_libraries(bin_encoder_test
   grpc_test_util
   grpc
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bin_encoder_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(bin_encoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5887,6 +6104,12 @@ target_link_libraries(buffer_list_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(buffer_list_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(buffer_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5917,6 +6140,12 @@ target_link_libraries(channel_create_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(channel_create_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(channel_create_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 
 add_executable(check_epollexclusive
@@ -5942,6 +6171,12 @@ target_link_libraries(check_epollexclusive
   grpc
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(check_epollexclusive PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(check_epollexclusive PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -5970,6 +6205,12 @@ target_link_libraries(chttp2_hpack_encoder_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(chttp2_hpack_encoder_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(chttp2_hpack_encoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6000,6 +6241,12 @@ target_link_libraries(chttp2_stream_map_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(chttp2_stream_map_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(chttp2_stream_map_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6029,6 +6276,12 @@ target_link_libraries(chttp2_varint_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(chttp2_varint_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(chttp2_varint_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6056,6 +6309,12 @@ target_link_libraries(cmdline_test
   gpr_test_util
   grpc_test_util
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(cmdline_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(cmdline_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6086,6 +6345,12 @@ target_link_libraries(combiner_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(combiner_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(combiner_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6114,6 +6379,12 @@ target_link_libraries(compression_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(compression_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(compression_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6144,6 +6415,12 @@ target_link_libraries(concurrent_connectivity_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(concurrent_connectivity_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(concurrent_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6173,6 +6450,12 @@ target_link_libraries(connection_refused_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(connection_refused_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(connection_refused_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6199,6 +6482,12 @@ target_link_libraries(context_list_test
   grpc_test_util
   grpc
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(context_list_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(context_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6229,6 +6518,12 @@ target_link_libraries(dns_resolver_connectivity_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dns_resolver_connectivity_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dns_resolver_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6258,6 +6553,12 @@ target_link_libraries(dns_resolver_cooldown_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dns_resolver_cooldown_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dns_resolver_cooldown_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6286,6 +6587,12 @@ target_link_libraries(dns_resolver_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dns_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dns_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6317,6 +6624,12 @@ target_link_libraries(dualstack_socket_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(dualstack_socket_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(dualstack_socket_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6347,6 +6660,12 @@ target_link_libraries(endpoint_pair_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(endpoint_pair_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(endpoint_pair_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6375,6 +6694,12 @@ target_link_libraries(error_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(error_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(error_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6406,36 +6731,11 @@ target_link_libraries(ev_epollex_linux_test
   gpr
 )
 
-endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX)
-
-add_executable(ev_epollsig_linux_test
-  test/core/iomgr/ev_epollsig_linux_test.cc
-)
-
-
-target_include_directories(ev_epollsig_linux_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(ev_epollsig_linux_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(ev_epollex_linux_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(ev_epollex_linux_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6467,6 +6767,12 @@ target_link_libraries(fake_resolver_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fake_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fake_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -6496,6 +6802,12 @@ target_link_libraries(fake_transport_security_test
   gpr
   grpc
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fake_transport_security_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fake_transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6528,6 +6840,12 @@ target_link_libraries(fd_conservation_posix_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fd_conservation_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fd_conservation_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6559,6 +6877,12 @@ target_link_libraries(fd_posix_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fd_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fd_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6589,6 +6913,12 @@ target_link_libraries(fling_client
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fling_client PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fling_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6617,6 +6947,12 @@ target_link_libraries(fling_server
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fling_server PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fling_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6647,6 +6983,12 @@ target_link_libraries(fling_stream_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fling_stream_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fling_stream_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6679,6 +7021,12 @@ target_link_libraries(fling_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fling_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fling_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6707,6 +7055,12 @@ target_link_libraries(fork_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(fork_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(fork_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6739,6 +7093,12 @@ target_link_libraries(goaway_server_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(goaway_server_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(goaway_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6767,6 +7127,12 @@ target_link_libraries(gpr_cpu_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_cpu_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_cpu_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6793,6 +7159,12 @@ target_link_libraries(gpr_env_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_env_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_env_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6821,6 +7193,12 @@ target_link_libraries(gpr_host_port_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_host_port_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_host_port_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6847,6 +7225,12 @@ target_link_libraries(gpr_log_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_log_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_log_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6875,6 +7259,12 @@ target_link_libraries(gpr_manual_constructor_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_manual_constructor_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_manual_constructor_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6901,6 +7291,12 @@ target_link_libraries(gpr_mpscq_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_mpscq_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_mpscq_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6929,6 +7325,12 @@ target_link_libraries(gpr_spinlock_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_spinlock_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_spinlock_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -6955,6 +7357,12 @@ target_link_libraries(gpr_string_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_string_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_string_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6983,6 +7391,12 @@ target_link_libraries(gpr_sync_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_sync_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_sync_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7009,6 +7423,12 @@ target_link_libraries(gpr_thd_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_thd_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_thd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7037,6 +7457,12 @@ target_link_libraries(gpr_time_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_time_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_time_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7064,6 +7490,12 @@ target_link_libraries(gpr_tls_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_tls_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_tls_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7090,6 +7522,12 @@ target_link_libraries(gpr_useful_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(gpr_useful_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(gpr_useful_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7120,6 +7558,12 @@ target_link_libraries(grpc_auth_context_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_auth_context_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_auth_context_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7148,6 +7592,12 @@ target_link_libraries(grpc_b64_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_b64_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_b64_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7178,6 +7628,12 @@ target_link_libraries(grpc_byte_buffer_reader_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_byte_buffer_reader_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_byte_buffer_reader_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7206,6 +7662,12 @@ target_link_libraries(grpc_channel_args_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_channel_args_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_channel_args_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7236,6 +7698,12 @@ target_link_libraries(grpc_channel_stack_builder_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_channel_stack_builder_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_channel_stack_builder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7264,6 +7732,12 @@ target_link_libraries(grpc_channel_stack_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_channel_stack_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_channel_stack_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7294,6 +7768,12 @@ target_link_libraries(grpc_completion_queue_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_completion_queue_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_completion_queue_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7323,6 +7803,12 @@ target_link_libraries(grpc_completion_queue_threading_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_completion_queue_threading_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_completion_queue_threading_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_create_jwt
@@ -7351,6 +7837,12 @@ target_link_libraries(grpc_create_jwt
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_create_jwt PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_create_jwt PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_credentials_test
@@ -7378,6 +7870,12 @@ target_link_libraries(grpc_credentials_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_credentials_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_credentials_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7408,6 +7906,12 @@ target_link_libraries(grpc_fetch_oauth2
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_fetch_oauth2 PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_fetch_oauth2 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7436,6 +7940,12 @@ target_link_libraries(grpc_ipv6_loopback_available_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_ipv6_loopback_available_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_ipv6_loopback_available_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7467,6 +7977,12 @@ target_link_libraries(grpc_json_token_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_json_token_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_json_token_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7497,6 +8013,12 @@ target_link_libraries(grpc_jwt_verifier_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_jwt_verifier_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_jwt_verifier_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_print_google_default_creds_token
@@ -7523,6 +8045,12 @@ target_link_libraries(grpc_print_google_default_creds_token
   grpc
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_print_google_default_creds_token PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_print_google_default_creds_token PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -7551,6 +8079,12 @@ target_link_libraries(grpc_security_connector_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_security_connector_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_security_connector_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7581,6 +8115,12 @@ target_link_libraries(grpc_ssl_credentials_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_ssl_credentials_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_ssl_credentials_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 
 add_executable(grpc_verify_jwt
@@ -7608,15 +8148,21 @@ target_link_libraries(grpc_verify_jwt
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(grpc_verify_jwt PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(grpc_verify_jwt PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_client
+add_executable(handshake_client_ssl
   test/core/handshake/client_ssl.cc
 )
 
 
-target_include_directories(handshake_client
+target_include_directories(handshake_client_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -7629,7 +8175,7 @@ target_include_directories(handshake_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_client
+target_link_libraries(handshake_client_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -7637,19 +8183,25 @@ target_link_libraries(handshake_client
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(handshake_client_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_client_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
-add_executable(handshake_server
+add_executable(handshake_server_ssl
   test/core/handshake/server_ssl.cc
   test/core/handshake/server_ssl_common.cc
 )
 
 
-target_include_directories(handshake_server
+target_include_directories(handshake_server_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -7662,7 +8214,7 @@ target_include_directories(handshake_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(handshake_server
+target_link_libraries(handshake_server_ssl
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -7670,6 +8222,12 @@ target_link_libraries(handshake_server
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(handshake_server_ssl PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_server_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7704,6 +8262,12 @@ target_link_libraries(handshake_server_with_readahead_handshaker
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(handshake_server_with_readahead_handshaker PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_server_with_readahead_handshaker PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7736,6 +8300,12 @@ target_link_libraries(handshake_verify_peer_options
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(handshake_verify_peer_options PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(handshake_verify_peer_options PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7763,6 +8333,12 @@ target_link_libraries(histogram_test
   grpc_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(histogram_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(histogram_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7793,6 +8369,12 @@ target_link_libraries(hpack_parser_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(hpack_parser_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(hpack_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7821,6 +8403,12 @@ target_link_libraries(hpack_table_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(hpack_table_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(hpack_table_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7851,6 +8439,12 @@ target_link_libraries(http_parser_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(http_parser_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(http_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7879,6 +8473,12 @@ target_link_libraries(httpcli_format_request_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(httpcli_format_request_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(httpcli_format_request_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7909,6 +8509,12 @@ target_link_libraries(httpcli_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(httpcli_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(httpcli_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7941,6 +8547,12 @@ target_link_libraries(httpscli_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(httpscli_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(httpscli_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7971,6 +8583,12 @@ target_link_libraries(init_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(init_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(init_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -7999,6 +8617,12 @@ target_link_libraries(inproc_callback_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(inproc_callback_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(inproc_callback_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8029,6 +8653,12 @@ target_link_libraries(invalid_call_argument_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(invalid_call_argument_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(invalid_call_argument_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8057,6 +8687,12 @@ target_link_libraries(json_rewrite
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(json_rewrite PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(json_rewrite PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8087,6 +8723,12 @@ target_link_libraries(json_rewrite_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(json_rewrite_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(json_rewrite_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8115,6 +8757,12 @@ target_link_libraries(json_stream_error_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(json_stream_error_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(json_stream_error_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8145,6 +8793,12 @@ target_link_libraries(json_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(json_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(json_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8173,6 +8827,12 @@ target_link_libraries(lame_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(lame_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(lame_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8203,15 +8863,21 @@ target_link_libraries(load_file_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(load_file_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(load_file_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_client
+add_executable(memory_usage_client
   test/core/memory_usage/client.cc
 )
 
 
-target_include_directories(memory_profile_client
+target_include_directories(memory_usage_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8224,23 +8890,29 @@ target_include_directories(memory_profile_client
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_client
+target_link_libraries(memory_usage_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(memory_usage_client PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(memory_profile_server
+add_executable(memory_usage_server
   test/core/memory_usage/server.cc
 )
 
 
-target_include_directories(memory_profile_server
+target_include_directories(memory_usage_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8253,24 +8925,30 @@ target_include_directories(memory_profile_server
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_server
+target_link_libraries(memory_usage_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(memory_usage_server PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-add_executable(memory_profile_test
+add_executable(memory_usage_test
   test/core/memory_usage/memory_usage_test.cc
 )
 
 
-target_include_directories(memory_profile_test
+target_include_directories(memory_usage_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8283,13 +8961,19 @@ target_include_directories(memory_profile_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(memory_profile_test
+target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(memory_usage_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(memory_usage_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8321,6 +9005,12 @@ target_link_libraries(message_compress_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(message_compress_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(message_compress_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8349,6 +9039,12 @@ target_link_libraries(minimal_stack_is_minimal_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(minimal_stack_is_minimal_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(minimal_stack_is_minimal_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8379,6 +9075,12 @@ target_link_libraries(multiple_server_queues_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(multiple_server_queues_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(multiple_server_queues_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8405,6 +9107,12 @@ target_link_libraries(murmur_hash_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(murmur_hash_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(murmur_hash_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8435,6 +9143,12 @@ target_link_libraries(no_server_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(no_server_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(no_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8463,6 +9177,12 @@ target_link_libraries(num_external_connectivity_watchers_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(num_external_connectivity_watchers_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(num_external_connectivity_watchers_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8493,6 +9213,12 @@ target_link_libraries(parse_address_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(parse_address_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(parse_address_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8522,37 +9248,12 @@ target_link_libraries(percent_encoding_test
   gpr
 )
 
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX)
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(percent_encoding_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(percent_encoding_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
-add_executable(pollset_set_test
-  test/core/iomgr/pollset_set_test.cc
-)
-
-
-target_include_directories(pollset_set_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(pollset_set_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -8583,16 +9284,22 @@ target_link_libraries(resolve_address_posix_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(resolve_address_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(resolve_address_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(resolve_address_test
+add_executable(resolve_address_using_ares_resolver_test
   test/core/iomgr/resolve_address_test.cc
 )
 
 
-target_include_directories(resolve_address_test
+target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -8605,13 +9312,54 @@ target_include_directories(resolve_address_test
   PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
-target_link_libraries(resolve_address_test
+target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(resolve_address_using_ares_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(resolve_address_using_ares_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(resolve_address_using_native_resolver_test
+  test/core/iomgr/resolve_address_test.cc
+)
+
+
+target_include_directories(resolve_address_using_native_resolver_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(resolve_address_using_native_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(resolve_address_using_native_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(resolve_address_using_native_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8642,6 +9390,12 @@ target_link_libraries(resource_quota_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(resource_quota_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(resource_quota_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8670,6 +9424,12 @@ target_link_libraries(secure_channel_create_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(secure_channel_create_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(secure_channel_create_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8700,6 +9460,12 @@ target_link_libraries(secure_endpoint_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(secure_endpoint_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(secure_endpoint_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8728,6 +9494,12 @@ target_link_libraries(sequential_connectivity_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(sequential_connectivity_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(sequential_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8758,6 +9530,12 @@ target_link_libraries(server_chttp2_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(server_chttp2_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(server_chttp2_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8786,6 +9564,12 @@ target_link_libraries(server_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(server_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8816,6 +9600,12 @@ target_link_libraries(slice_buffer_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(slice_buffer_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(slice_buffer_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8844,6 +9634,12 @@ target_link_libraries(slice_string_helpers_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(slice_string_helpers_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(slice_string_helpers_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8874,6 +9670,12 @@ target_link_libraries(slice_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(slice_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(slice_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -8902,6 +9704,12 @@ target_link_libraries(sockaddr_resolver_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(sockaddr_resolver_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(sockaddr_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8932,6 +9740,12 @@ target_link_libraries(sockaddr_utils_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(sockaddr_utils_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(sockaddr_utils_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -8961,6 +9775,12 @@ target_link_libraries(socket_utils_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(socket_utils_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(socket_utils_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8993,6 +9813,12 @@ target_link_libraries(ssl_transport_security_test
   grpc
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(ssl_transport_security_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(ssl_transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9023,6 +9849,12 @@ target_link_libraries(status_conversion_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(status_conversion_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(status_conversion_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9052,6 +9884,12 @@ target_link_libraries(stream_compression_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(stream_compression_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(stream_compression_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9080,6 +9918,12 @@ target_link_libraries(stream_owned_slice_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(stream_owned_slice_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(stream_owned_slice_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9111,6 +9955,12 @@ target_link_libraries(tcp_client_posix_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tcp_client_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tcp_client_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9141,6 +9991,12 @@ target_link_libraries(tcp_client_uv_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tcp_client_uv_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tcp_client_uv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -9170,6 +10026,12 @@ target_link_libraries(tcp_posix_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tcp_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tcp_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9202,6 +10064,12 @@ target_link_libraries(tcp_server_posix_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tcp_server_posix_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tcp_server_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9232,6 +10100,12 @@ target_link_libraries(tcp_server_uv_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tcp_server_uv_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tcp_server_uv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9260,6 +10134,12 @@ target_link_libraries(time_averaged_stats_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(time_averaged_stats_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(time_averaged_stats_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9290,6 +10170,12 @@ target_link_libraries(timeout_encoding_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(timeout_encoding_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(timeout_encoding_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9318,6 +10204,12 @@ target_link_libraries(timer_heap_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(timer_heap_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(timer_heap_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9348,6 +10240,12 @@ target_link_libraries(timer_list_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(timer_list_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(timer_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9376,6 +10274,12 @@ target_link_libraries(transport_connectivity_state_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(transport_connectivity_state_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(transport_connectivity_state_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9406,6 +10310,12 @@ target_link_libraries(transport_metadata_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(transport_metadata_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(transport_metadata_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -9435,6 +10345,12 @@ target_link_libraries(transport_security_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(transport_security_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9467,6 +10383,12 @@ target_link_libraries(udp_server_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(udp_server_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(udp_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9497,6 +10419,12 @@ target_link_libraries(uri_parser_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(uri_parser_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(uri_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -9526,6 +10454,12 @@ target_link_libraries(wakeup_fd_cv_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(wakeup_fd_cv_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(wakeup_fd_cv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9568,6 +10502,7 @@ target_link_libraries(alarm_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9604,6 +10539,7 @@ target_link_libraries(alts_counter_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9643,6 +10579,7 @@ target_link_libraries(alts_crypt_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9680,6 +10617,7 @@ target_link_libraries(alts_crypter_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9716,6 +10654,7 @@ target_link_libraries(alts_frame_handler_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9755,6 +10694,7 @@ target_link_libraries(alts_frame_protector_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9791,6 +10731,7 @@ target_link_libraries(alts_grpc_record_protocol_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9829,6 +10770,7 @@ target_link_libraries(alts_handshaker_client_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9865,6 +10807,7 @@ target_link_libraries(alts_handshaker_service_api_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9903,6 +10846,7 @@ target_link_libraries(alts_iovec_record_protocol_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -9938,6 +10882,7 @@ target_link_libraries(alts_security_connector_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9976,6 +10921,7 @@ target_link_libraries(alts_tsi_handshaker_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10013,6 +10959,7 @@ target_link_libraries(alts_tsi_utils_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10049,6 +10996,7 @@ target_link_libraries(alts_zero_copy_grpc_protector_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10090,6 +11038,7 @@ target_link_libraries(async_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10130,6 +11079,7 @@ target_link_libraries(auth_property_iterator_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10167,6 +11117,7 @@ target_link_libraries(backoff_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10207,6 +11158,7 @@ target_link_libraries(bdp_estimator_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10251,6 +11203,7 @@ target_link_libraries(bm_arena
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10297,6 +11250,7 @@ target_link_libraries(bm_call_create
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10341,6 +11295,7 @@ target_link_libraries(bm_channel
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10387,6 +11342,7 @@ target_link_libraries(bm_chttp2_hpack
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10431,6 +11387,7 @@ target_link_libraries(bm_chttp2_transport
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10477,6 +11434,7 @@ target_link_libraries(bm_closure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10521,6 +11479,7 @@ target_link_libraries(bm_cq
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10567,6 +11526,7 @@ target_link_libraries(bm_cq_multiple_threads
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10611,6 +11571,7 @@ target_link_libraries(bm_error
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10657,6 +11618,7 @@ target_link_libraries(bm_fullstack_streaming_ping_pong
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10701,6 +11663,7 @@ target_link_libraries(bm_fullstack_streaming_pump
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10747,6 +11710,7 @@ target_link_libraries(bm_fullstack_trickle
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10791,6 +11755,7 @@ target_link_libraries(bm_fullstack_unary_ping_pong
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10837,6 +11802,7 @@ target_link_libraries(bm_metadata
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10882,6 +11848,7 @@ target_link_libraries(bm_pollset
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10921,6 +11888,7 @@ target_link_libraries(byte_stream_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10958,6 +11926,7 @@ target_link_libraries(channel_arguments_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -10994,6 +11963,7 @@ target_link_libraries(channel_filter_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11042,6 +12012,7 @@ target_link_libraries(channel_trace_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11081,6 +12052,7 @@ target_link_libraries(channelz_registry_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11130,6 +12102,7 @@ target_link_libraries(channelz_service_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11177,6 +12150,7 @@ target_link_libraries(channelz_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11213,6 +12187,7 @@ target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11248,6 +12223,7 @@ target_link_libraries(check_gcp_environment_windows_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11286,6 +12262,7 @@ target_link_libraries(chttp2_settings_timeout_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11327,6 +12304,48 @@ target_link_libraries(cli_call_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(client_callback_end2end_test
+  test/cpp/end2end/client_callback_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_callback_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_callback_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11375,6 +12394,7 @@ target_link_libraries(client_channel_stress_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -11415,6 +12435,7 @@ target_link_libraries(client_crash_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -11457,6 +12478,49 @@ target_link_libraries(client_crash_test_server
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(client_interceptors_end2end_test
+  test/cpp/end2end/client_interceptors_end2end_test.cc
+  test/cpp/end2end/interceptors_util.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(client_interceptors_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_interceptors_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11496,6 +12560,7 @@ target_link_libraries(client_lb_end2end_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11584,6 +12649,7 @@ target_link_libraries(codegen_test_full
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11671,6 +12737,7 @@ target_link_libraries(codegen_test_minimal
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11707,6 +12774,7 @@ target_link_libraries(credentials_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11747,6 +12815,7 @@ target_link_libraries(cxx_byte_buffer_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11786,6 +12855,7 @@ target_link_libraries(cxx_slice_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11821,6 +12891,7 @@ target_link_libraries(cxx_string_ref_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11861,11 +12932,13 @@ target_link_libraries(cxx_time_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(end2end_test
   test/cpp/end2end/end2end_test.cc
+  test/cpp/end2end/interceptors_util.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -11900,6 +12973,7 @@ target_link_libraries(end2end_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -11944,6 +13018,7 @@ target_link_libraries(error_details_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -11983,6 +13058,7 @@ target_link_libraries(exception_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12024,6 +13100,7 @@ target_link_libraries(filter_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12063,6 +13140,7 @@ target_link_libraries(generic_end2end_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12108,6 +13186,7 @@ target_link_libraries(golden_file_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12143,6 +13222,7 @@ target_link_libraries(grpc_alts_credentials_options_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12184,6 +13264,7 @@ target_link_libraries(grpc_cli
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_CODEGEN)
 
@@ -12212,6 +13293,7 @@ target_link_libraries(grpc_cpp_plugin
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
+
 
 
 if (gRPC_INSTALL)
@@ -12250,6 +13332,7 @@ target_link_libraries(grpc_csharp_plugin
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
+
 
 
 if (gRPC_INSTALL)
@@ -12298,6 +13381,7 @@ target_link_libraries(grpc_linux_system_roots_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_CODEGEN)
 
@@ -12326,6 +13410,7 @@ target_link_libraries(grpc_node_plugin
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
+
 
 
 if (gRPC_INSTALL)
@@ -12366,6 +13451,7 @@ target_link_libraries(grpc_objective_c_plugin
 )
 
 
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
@@ -12402,6 +13488,7 @@ target_link_libraries(grpc_php_plugin
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
+
 
 
 if (gRPC_INSTALL)
@@ -12442,6 +13529,7 @@ target_link_libraries(grpc_python_plugin
 )
 
 
+
 if (gRPC_INSTALL)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
@@ -12478,6 +13566,7 @@ target_link_libraries(grpc_ruby_plugin
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_plugin_support
 )
+
 
 
 if (gRPC_INSTALL)
@@ -12545,6 +13634,7 @@ target_link_libraries(grpc_tool_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12589,6 +13679,7 @@ target_link_libraries(grpclb_api_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12637,6 +13728,7 @@ target_link_libraries(grpclb_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12676,6 +13768,7 @@ target_link_libraries(h2_ssl_cert_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12714,6 +13807,7 @@ target_link_libraries(h2_ssl_session_reuse_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12755,6 +13849,7 @@ target_link_libraries(health_service_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -12794,6 +13889,7 @@ target_link_libraries(http2_client
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -12836,6 +13932,7 @@ target_link_libraries(hybrid_end2end_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -12874,6 +13971,7 @@ target_link_libraries(inlined_vector_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12919,6 +14017,7 @@ target_link_libraries(inproc_sync_unary_ping_pong_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -12962,6 +14061,7 @@ target_link_libraries(interop_client
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -13008,6 +14108,7 @@ target_link_libraries(interop_server
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13048,6 +14149,7 @@ target_link_libraries(interop_test
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -13092,6 +14194,7 @@ target_link_libraries(json_run_localhost
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13131,6 +14234,7 @@ target_link_libraries(memory_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13177,6 +14281,7 @@ target_link_libraries(metrics_client
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13216,6 +14321,7 @@ target_link_libraries(mock_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13257,6 +14363,7 @@ target_link_libraries(nonblocking_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13291,6 +14398,7 @@ target_link_libraries(noop-benchmark
   ${_gRPC_BENCHMARK_LIBRARIES}
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13330,6 +14438,7 @@ target_link_libraries(orphanable_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13373,6 +14482,7 @@ target_link_libraries(proto_server_reflection_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13408,6 +14518,7 @@ target_link_libraries(proto_utils_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13451,6 +14562,7 @@ target_link_libraries(qps_interarrival_test
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -13496,6 +14608,7 @@ target_link_libraries(qps_json_driver
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -13539,6 +14652,7 @@ target_link_libraries(qps_openloop_test
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -13584,6 +14698,7 @@ target_link_libraries(qps_worker
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13623,6 +14738,7 @@ target_link_libraries(raw_end2end_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13685,6 +14801,7 @@ target_link_libraries(reconnect_interop_client
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13750,6 +14867,7 @@ target_link_libraries(reconnect_interop_server
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13788,6 +14906,7 @@ target_link_libraries(ref_counted_ptr_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13828,6 +14947,7 @@ target_link_libraries(ref_counted_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -13865,6 +14985,7 @@ target_link_libraries(retry_throttle_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13905,6 +15026,7 @@ target_link_libraries(secure_auth_context_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13950,6 +15072,7 @@ target_link_libraries(secure_sync_unary_ping_pong_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -13990,6 +15113,7 @@ target_link_libraries(server_builder_plugin_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14044,6 +15168,7 @@ target_link_libraries(server_builder_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14100,6 +15225,7 @@ target_link_libraries(server_builder_with_socket_mutator_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14139,6 +15265,7 @@ target_link_libraries(server_context_test_spouse_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14181,6 +15308,7 @@ target_link_libraries(server_crash_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14222,6 +15350,7 @@ target_link_libraries(server_crash_test_client
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14261,6 +15390,49 @@ target_link_libraries(server_early_return_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(server_interceptors_end2end_test
+  test/cpp/end2end/interceptors_util.cc
+  test/cpp/end2end/server_interceptors_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(server_interceptors_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_interceptors_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14316,6 +15488,7 @@ target_link_libraries(server_request_call_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14356,6 +15529,7 @@ target_link_libraries(shutdown_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14394,6 +15568,7 @@ target_link_libraries(slice_hash_table_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14431,6 +15606,7 @@ target_link_libraries(slice_weak_hash_table_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14471,6 +15647,7 @@ target_link_libraries(stats_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14506,6 +15683,7 @@ target_link_libraries(status_metadata_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14540,6 +15718,7 @@ target_link_libraries(status_util_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14581,6 +15760,7 @@ target_link_libraries(streaming_throughput_test
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -14655,6 +15835,7 @@ target_link_libraries(stress_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14692,6 +15873,7 @@ target_link_libraries(thread_manager_test
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14733,6 +15915,7 @@ target_link_libraries(thread_stress_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14773,6 +15956,7 @@ target_link_libraries(transport_pid_controller_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -14809,6 +15993,7 @@ target_link_libraries(transport_security_common_api_test
   grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14851,6 +16036,7 @@ target_link_libraries(writes_per_rpc_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -14879,6 +16065,7 @@ target_link_libraries(public_headers_must_be_c89
   gpr
 )
 
+
 endif (gRPC_BUILD_TESTS)
 
 add_executable(gen_hpack_tables
@@ -14906,6 +16093,7 @@ target_link_libraries(gen_hpack_tables
 )
 
 
+
 add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.cc
 )
@@ -14929,6 +16117,7 @@ target_link_libraries(gen_legal_metadata_characters
 )
 
 
+
 add_executable(gen_percent_encoding_tables
   tools/codegen/core/gen_percent_encoding_tables.cc
 )
@@ -14950,6 +16139,7 @@ target_include_directories(gen_percent_encoding_tables
 target_link_libraries(gen_percent_encoding_tables
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
+
 
 if (gRPC_BUILD_TESTS)
 
@@ -14980,6 +16170,12 @@ target_link_libraries(badreq_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(badreq_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(badreq_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15012,6 +16208,12 @@ target_link_libraries(connection_prefix_bad_client_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(connection_prefix_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(connection_prefix_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15042,6 +16244,12 @@ target_link_libraries(duplicate_header_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(duplicate_header_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(duplicate_header_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15074,6 +16282,12 @@ target_link_libraries(head_of_line_blocking_bad_client_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(head_of_line_blocking_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(head_of_line_blocking_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15104,6 +16318,12 @@ target_link_libraries(headers_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(headers_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(headers_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15136,6 +16356,12 @@ target_link_libraries(initial_settings_frame_bad_client_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(initial_settings_frame_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(initial_settings_frame_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15166,6 +16392,12 @@ target_link_libraries(large_metadata_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(large_metadata_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(large_metadata_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15198,6 +16430,12 @@ target_link_libraries(server_registered_method_bad_client_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(server_registered_method_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(server_registered_method_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15228,6 +16466,12 @@ target_link_libraries(simple_request_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(simple_request_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(simple_request_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15260,6 +16504,12 @@ target_link_libraries(unknown_frame_bad_client_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(unknown_frame_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(unknown_frame_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15290,6 +16540,12 @@ target_link_libraries(window_overflow_bad_client_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(window_overflow_bad_client_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(window_overflow_bad_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15322,6 +16578,12 @@ target_link_libraries(bad_ssl_cert_server
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bad_ssl_cert_server PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(bad_ssl_cert_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15352,6 +16614,12 @@ target_link_libraries(bad_ssl_cert_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(bad_ssl_cert_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(bad_ssl_cert_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -15384,6 +16652,12 @@ target_link_libraries(h2_census_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_census_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_census_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15414,6 +16688,12 @@ target_link_libraries(h2_compress_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_compress_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_compress_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15443,6 +16723,12 @@ target_link_libraries(h2_fakesec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_fakesec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_fakesec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15475,6 +16761,12 @@ target_link_libraries(h2_fd_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_fd_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_fd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15505,6 +16797,12 @@ target_link_libraries(h2_full_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15537,6 +16835,12 @@ target_link_libraries(h2_full+pipe_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+pipe_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+pipe_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15568,6 +16872,12 @@ target_link_libraries(h2_full+trace_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+trace_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+trace_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15598,6 +16908,12 @@ target_link_libraries(h2_full+workarounds_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+workarounds_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+workarounds_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15627,6 +16943,12 @@ target_link_libraries(h2_http_proxy_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_http_proxy_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_http_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15659,6 +16981,12 @@ target_link_libraries(h2_local_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_local_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_local_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15690,6 +17018,12 @@ target_link_libraries(h2_oauth2_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_oauth2_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_oauth2_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15719,6 +17053,12 @@ target_link_libraries(h2_proxy_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_proxy_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15750,6 +17090,12 @@ target_link_libraries(h2_sockpair_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15779,6 +17125,12 @@ target_link_libraries(h2_sockpair+trace_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair+trace_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair+trace_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15810,6 +17162,12 @@ target_link_libraries(h2_sockpair_1byte_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair_1byte_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair_1byte_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15840,6 +17198,12 @@ target_link_libraries(h2_ssl_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_ssl_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_ssl_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15869,6 +17233,12 @@ target_link_libraries(h2_ssl_proxy_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_ssl_proxy_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_ssl_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15901,6 +17271,12 @@ target_link_libraries(h2_uds_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_uds_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_uds_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -15932,6 +17308,12 @@ target_link_libraries(inproc_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(inproc_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(inproc_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15962,6 +17344,12 @@ target_link_libraries(h2_census_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_census_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_census_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15991,6 +17379,12 @@ target_link_libraries(h2_compress_nosec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_compress_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_compress_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16023,6 +17417,12 @@ target_link_libraries(h2_fd_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_fd_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_fd_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16053,6 +17453,12 @@ target_link_libraries(h2_full_nosec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16085,6 +17491,12 @@ target_link_libraries(h2_full+pipe_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+pipe_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+pipe_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16116,6 +17528,12 @@ target_link_libraries(h2_full+trace_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+trace_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+trace_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16145,6 +17563,12 @@ target_link_libraries(h2_full+workarounds_nosec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_full+workarounds_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_full+workarounds_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16176,6 +17600,12 @@ target_link_libraries(h2_http_proxy_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_http_proxy_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_http_proxy_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16205,6 +17635,12 @@ target_link_libraries(h2_proxy_nosec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_proxy_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_proxy_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16236,6 +17672,12 @@ target_link_libraries(h2_sockpair_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16266,6 +17708,12 @@ target_link_libraries(h2_sockpair+trace_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair+trace_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair+trace_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16295,6 +17743,12 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_sockpair_1byte_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_sockpair_1byte_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16327,37 +17781,13 @@ target_link_libraries(h2_uds_nosec_test
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_uds_nosec_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_uds_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(inproc_nosec_test
-  test/core/end2end/fixtures/inproc.cc
-)
-
-
-target_include_directories(inproc_nosec_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(inproc_nosec_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_nosec_tests
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16398,6 +17828,7 @@ target_link_libraries(resolver_component_test_unsecure
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16440,6 +17871,7 @@ target_link_libraries(resolver_component_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -16481,6 +17913,7 @@ target_link_libraries(resolver_component_tests_runner_invoker_unsecure
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -16525,6 +17958,7 @@ target_link_libraries(resolver_component_tests_runner_invoker
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16567,6 +18001,7 @@ target_link_libraries(address_sorting_test_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16607,6 +18042,7 @@ target_link_libraries(address_sorting_test
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
+
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16649,6 +18085,7 @@ target_link_libraries(cancel_ares_query_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16678,6 +18115,12 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(alts_credentials_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(alts_credentials_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16709,6 +18152,12 @@ target_link_libraries(api_fuzzer_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(api_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(api_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16738,6 +18187,12 @@ target_link_libraries(client_fuzzer_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(client_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(client_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16769,6 +18224,12 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(hpack_parser_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(hpack_parser_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16798,6 +18259,12 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(http_request_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(http_request_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16829,6 +18296,12 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(http_response_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(http_response_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16858,6 +18331,12 @@ target_link_libraries(json_fuzzer_test_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(json_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(json_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16889,6 +18368,12 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(nanopb_fuzzer_response_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(nanopb_fuzzer_response_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16918,6 +18403,12 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(nanopb_fuzzer_serverlist_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(nanopb_fuzzer_serverlist_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -16949,6 +18440,12 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(percent_decode_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(percent_decode_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -16978,6 +18475,12 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(percent_encode_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(percent_encode_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -17009,6 +18512,12 @@ target_link_libraries(server_fuzzer_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(server_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(server_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -17039,6 +18548,12 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   gpr
 )
 
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(ssl_server_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(ssl_server_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -17068,6 +18583,12 @@ target_link_libraries(uri_fuzzer_test_one_entry
   gpr_test_util
   gpr
 )
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(uri_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(uri_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
 
 endif (gRPC_BUILD_TESTS)
 

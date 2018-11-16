@@ -142,3 +142,24 @@ grpc_cc_binary(
         "//test/cpp/util:test_config",
     ],
 )
+
+grpc_cc_test(
+    name = "interop_test",
+    srcs = ["interop_test.cc"],
+    data = [
+        ":interop_client",
+        ":interop_server",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)

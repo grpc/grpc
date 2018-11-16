@@ -120,6 +120,8 @@ class AresDnsResolver : public Resolver {
   grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
+  // has shutdown been initiated
+  bool shutdown_initiated_ = false;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -197,11 +199,12 @@ void AresDnsResolver::ResetBackoffLocked() {
 }
 
 void AresDnsResolver::ShutdownLocked() {
+  shutdown_initiated_ = true;
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
   if (pending_request_ != nullptr) {
-    grpc_cancel_ares_request(pending_request_);
+    grpc_cancel_ares_request_locked(pending_request_);
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
@@ -213,9 +216,13 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  GRPC_CARES_TRACE_LOG(
+      "%p re-resolution timer fired. error: %s. shutdown_initiated_: %d", r,
+      grpc_error_string(error), r->shutdown_initiated_);
   r->have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE) {
+  if (error == GRPC_ERROR_NONE && !r->shutdown_initiated_) {
     if (!r->resolving_) {
+      GRPC_CARES_TRACE_LOG("%p start resolving due to re-resolution timer", r);
       r->StartResolvingLocked();
     }
   }
@@ -298,6 +305,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   grpc_channel_args* result = nullptr;
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
+  gpr_free(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->lb_addresses_ != nullptr) {
     static const char* args_to_remove[2];
@@ -339,7 +347,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();
-  } else {
+  } else if (!r->shutdown_initiated_) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
     grpc_millis next_try = r->backoff_.NextAttemptTime();
@@ -373,13 +381,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
 void AresDnsResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
-  if (have_next_resolution_timer_) {
-    // TODO(dgq): remove the following two lines once Pick First stops
-    // discarding subchannels after selecting.
-    ++resolved_version_;
-    MaybeFinishNextLocked();
-    return;
-  }
+  if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
@@ -401,10 +403,6 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       self.release();
       grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
                       &on_next_resolution_);
-      // TODO(dgq): remove the following two lines once Pick First stops
-      // discarding subchannels after selecting.
-      ++resolved_version_;
-      MaybeFinishNextLocked();
       return;
     }
   }
@@ -483,7 +481,9 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
       return;
     }
-    default_resolver = grpc_resolve_address_impl;
+    if (default_resolver == nullptr) {
+      default_resolver = grpc_resolve_address_impl;
+    }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(

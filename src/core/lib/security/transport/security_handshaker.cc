@@ -275,9 +275,6 @@ static void on_handshake_next_done_grpc_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   security_handshaker* h = static_cast<security_handshaker*>(user_data);
-  // This callback will be invoked by TSI in a non-grpc thread, so it's
-  // safe to create our own exec_ctx here.
-  grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(&h->mu);
   grpc_error* error = on_handshake_next_done_locked(
       h, result, bytes_to_send, bytes_to_send_size, handshaker_result);
@@ -475,22 +472,24 @@ static grpc_handshaker* fail_handshaker_create() {
 
 static void client_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_channel_security_connector* security_connector =
       reinterpret_cast<grpc_channel_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_channel_security_connector_add_handshakers(security_connector,
-                                                  handshake_mgr);
+  grpc_channel_security_connector_add_handshakers(
+      security_connector, interested_parties, handshake_mgr);
 }
 
 static void server_handshaker_factory_add_handshakers(
     grpc_handshaker_factory* hf, const grpc_channel_args* args,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager* handshake_mgr) {
   grpc_server_security_connector* security_connector =
       reinterpret_cast<grpc_server_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_server_security_connector_add_handshakers(security_connector,
-                                                 handshake_mgr);
+  grpc_server_security_connector_add_handshakers(
+      security_connector, interested_parties, handshake_mgr);
 }
 
 static void handshaker_factory_destroy(

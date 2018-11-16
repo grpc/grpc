@@ -102,7 +102,7 @@ def grpc_deps():
         native.http_archive(
             name = "boringssl",
             # on the chromium-stable-with-bazel branch
-            url = "https://boringssl.googlesource.com/boringssl/+archive/dcd3e6e6ecddf059adb48fca45bc7346a108bdd9.tar.gz",
+            url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
         )
 
     if "com_github_madler_zlib" not in native.existing_rules():
@@ -169,12 +169,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         native.http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-4653c01284d8a4a536f8f9bb47b7d10f94c549e7",
+            strip_prefix = "bazel-toolchains-280edaa6f93623074513d2b426068de42e62ea4d",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/280edaa6f93623074513d2b426068de42e62ea4d.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/280edaa6f93623074513d2b426068de42e62ea4d.tar.gz",
             ],
-            sha256 = "1c4a532b396c698e6467a1548554571cb85fa091e472b05e398ebc836c315d77",
+            sha256 = "50c9df51f80cdf9ff8f2bc27620c155526b9ba67be95e8a686f32ff8898a06e2",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():

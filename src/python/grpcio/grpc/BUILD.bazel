@@ -2,7 +2,7 @@ load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
 
-py_binary(
+py_library(
     name = "grpcio",
     srcs = ["__init__.py"],
     deps = [
@@ -22,7 +22,6 @@ py_binary(
     data = [
         "//:grpc",
     ],
-    main = "__init__.py",
     imports = ["../",],
 )
 

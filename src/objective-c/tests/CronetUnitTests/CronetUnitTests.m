@@ -39,7 +39,7 @@
 
 #import "src/core/tsi/grpc_shadow_boringssl.h"
 
-#import <openssl/ssl.h>
+#import <openssl_grpc/ssl.h>
 
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;

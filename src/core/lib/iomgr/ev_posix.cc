@@ -35,7 +35,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
-#include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 
 grpc_core::TraceFlag grpc_polling_trace(false,
@@ -123,13 +122,13 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 // environment variable if that variable is set (which should be a
 // comma-separated list of one or more event engine names)
 static event_engine_factory g_factories[] = {
-    {ENGINE_HEAD_CUSTOM, nullptr},          {ENGINE_HEAD_CUSTOM, nullptr},
-    {ENGINE_HEAD_CUSTOM, nullptr},          {ENGINE_HEAD_CUSTOM, nullptr},
-    {"epollex", grpc_init_epollex_linux},   {"epoll1", grpc_init_epoll1_linux},
-    {"epollsig", grpc_init_epollsig_linux}, {"poll", grpc_init_poll_posix},
-    {"poll-cv", grpc_init_poll_cv_posix},   {"none", init_non_polling},
-    {ENGINE_TAIL_CUSTOM, nullptr},          {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},          {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
+    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
+    {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
+    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
+    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {

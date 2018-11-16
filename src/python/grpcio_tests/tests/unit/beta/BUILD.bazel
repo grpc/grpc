@@ -1,0 +1,75 @@
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "test_utilities",
+    srcs = ["test_utilities.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+py_test(
+    name = "_beta_features_test",
+    srcs = ["_beta_features_test.py"],
+    main = "_beta_features_test.py",
+    size = "small",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit:resources",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+        ":test_utilities",
+    ],
+    imports=["../../../",],
+)
+
+py_test(
+    name = "_connectivity_channel_test",
+    srcs = ["_connectivity_channel_test.py"],
+    main = "_connectivity_channel_test.py",
+    size = "small",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+)
+
+# TODO(ghostwriternr): To be added later.
+#py_test(
+#    name = "_implementations_test",
+#    srcs = ["_implementations_test.py"],
+#    main = "_implementations_test.py",
+#    size = "small",
+#    deps = [
+#        "//src/python/grpcio/grpc:grpcio",
+#        "//src/python/grpcio_tests/tests/unit:resources",
+#        requirement('oauth2client'),
+#    ],
+#    imports=["../../../",],
+#)
+
+py_test(
+    name = "_not_found_test",
+    srcs = ["_not_found_test.py"],
+    main = "_not_found_test.py",
+    size = "small",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+    imports=["../../../",],
+)
+
+py_test(
+    name = "_utilities_test",
+    srcs = ["_utilities_test.py"],
+    main = "_utilities_test.py",
+    size = "small",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
+    ],
+    imports=["../../../",],
+)
+
+

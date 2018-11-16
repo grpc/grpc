@@ -13,6 +13,7 @@
 # limitations under the License.
 
 require 'spec_helper'
+require 'English'
 
 def load_test_certs
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -25,6 +26,28 @@ describe GRPC::Core::Channel do
 
   def create_test_cert
     GRPC::Core::ChannelCredentials.new(load_test_certs[0])
+  end
+
+  def fork_with_propagated_error_message
+    pipe_read, pipe_write = IO.pipe
+    pid = fork do
+      pipe_read.close
+      begin
+        yield
+      rescue => exc
+        pipe_write.syswrite(exc.message)
+      end
+      pipe_write.close
+    end
+    pipe_write.close
+
+    exc_message = pipe_read.read
+    Process.wait(pid)
+
+    unless $CHILD_STATUS.success?
+      raise "forked process failed with #{$CHILD_STATUS}"
+    end
+    raise exc_message unless exc_message.empty?
   end
 
   shared_examples '#new' do
@@ -79,6 +102,14 @@ describe GRPC::Core::Channel do
       blk = construct_with_args(args)
       expect(&blk).to_not raise_error
     end
+
+    it 'raises if grpc was initialized in another process' do
+      blk = construct_with_args({})
+      expect(&blk).not_to raise_error
+      expect do
+        fork_with_propagated_error_message(&blk)
+      end.to raise_error(RuntimeError, 'grpc cannot be used before and after forking')
+    end
   end
 
   describe '#new for secure channels' do
@@ -120,6 +151,19 @@ describe GRPC::Core::Channel do
         ch.create_call(nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to raise_error(RuntimeError)
+    end
+
+    it 'raises if grpc was initialized in another process' do
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
+
+      deadline = Time.now + 5
+
+      blk = proc do
+        fork_with_propagated_error_message do
+          ch.create_call(nil, nil, 'dummy_method', nil, deadline)
+        end
+      end
+      expect(&blk).to raise_error(RuntimeError, 'grpc cannot be used before and after forking')
     end
   end
 

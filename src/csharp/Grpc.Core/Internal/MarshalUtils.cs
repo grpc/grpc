@@ -35,6 +35,13 @@ namespace Grpc.Core.Internal
         /// </summary>
         public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
+            if (len == 0)
+            {
+                return "";
+            }
+
+            // TODO(jtattermusch): once Span dependency is added,
+            // use Span-based API to decode the string without copying the buffer.
             var bytes = new byte[len];
             Marshal.Copy(ptr, bytes, 0, len);
             return EncodingUTF8.GetString(bytes);

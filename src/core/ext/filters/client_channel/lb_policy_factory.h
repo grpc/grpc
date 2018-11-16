@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 //
 // representation of an LB address
@@ -70,16 +70,14 @@ grpc_lb_addresses* grpc_lb_addresses_create(
 grpc_lb_addresses* grpc_lb_addresses_copy(const grpc_lb_addresses* addresses);
 
 /** Sets the value of the address at index \a index of \a addresses.
- * \a address is a socket address of length \a address_len.
- * Takes ownership of \a balancer_name. */
+ * \a address is a socket address of length \a address_len. */
 void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
                                    const void* address, size_t address_len,
                                    bool is_balancer, const char* balancer_name,
                                    void* user_data);
 
 /** Sets the value of the address at index \a index of \a addresses from \a uri.
- * Returns true upon success, false otherwise. Takes ownership of \a
- * balancer_name. */
+ * Returns true upon success, false otherwise. */
 bool grpc_lb_addresses_set_address_from_uri(grpc_lb_addresses* addresses,
                                             size_t index, const grpc_uri* uri,
                                             bool is_balancer,

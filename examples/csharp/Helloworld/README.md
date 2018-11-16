@@ -12,7 +12,7 @@ which have been already added to the project for you.
 PREREQUISITES
 -------------
 
-- The [.NET Core SDK](https://www.microsoft.com/net/core) (version 2+ is recommended)
+- The [.NET Core SDK 2.1+](https://www.microsoft.com/net/core)
 
 You can also build the example directly using Visual Studio 2017, but it's not a requirement.
 
@@ -23,8 +23,6 @@ From the `examples/csharp/Helloworld` directory:
 
 - `dotnet build Greeter.sln`
 
-(if you're using dotnet SDK 1.x you need to run `dotnet restore Greeter.sln` first)
-
 Try it!
 -------
 
@@ -32,14 +30,14 @@ Try it!
 
   ```
   > cd GreeterServer
-  > dotnet run -f netcoreapp1.0
+  > dotnet run -f netcoreapp2.1
   ```
 
 - Run the client
 
   ```
   > cd GreeterClient
-  > dotnet run -f netcoreapp1.0
+  > dotnet run -f netcoreapp2.1
   ```
 
 Tutorial

@@ -54,7 +54,8 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   port in \a name. grpc_ares_init() must be called at least once before this
   function. \a on_done may be called directly in this function without being
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
-  being held by the caller. */
+  being held by the caller. The returned grpc_ares_request object is owned
+  by the caller and it is safe to free after on_done is called back. */
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -62,7 +63,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     char** service_config_json, grpc_combiner* combiner);
 
 /* Cancel the pending grpc_ares_request \a request */
-void grpc_cancel_ares_request(grpc_ares_request* request);
+extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
@@ -81,9 +82,15 @@ void grpc_ares_complete_request_locked(grpc_ares_request* request);
 /* E.g., return false if ipv6 is known to not be available. */
 bool grpc_ares_query_ipv6();
 
-/* Exposed only for testing */
-void grpc_cares_wrapper_test_only_address_sorting_sort(
-    grpc_lb_addresses* lb_addrs);
+/* Maybe (depending on the current platform) checks if "name" matches
+ * "localhost" and if so fills in addrs with the correct sockaddr structures.
+ * Returns a bool indicating whether or not such an action was performed.
+ * See https://github.com/grpc/grpc/issues/15158. */
+bool grpc_ares_maybe_resolve_localhost_manually_locked(
+    const char* name, const char* default_port, grpc_lb_addresses** addrs);
+
+/* Sorts destinations in lb_addrs according to RFC 6724. */
+void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

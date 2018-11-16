@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -38,15 +39,32 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
                                             grpc_pollset** pollsets,
                                             size_t npollsets),
                               void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done));
+                                              grpc_closure* on_done),
+                              intptr_t socket_uuid);
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
 void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args);
+                                 const grpc_channel_args* args,
+                                 intptr_t socket_uuid,
+                                 grpc_resource_user* resource_user = nullptr);
+
+/* fills in the uuids of all sockets used for connections on this server */
+void grpc_server_populate_server_sockets(
+    grpc_server* server, grpc_core::channelz::ChildRefsList* server_sockets,
+    intptr_t start_idx);
+
+/* fills in the uuids of all listen sockets on this server */
+void grpc_server_populate_listen_sockets(
+    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets);
+
+grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
+    grpc_server* server);
 
 const grpc_channel_args* grpc_server_get_channel_args(grpc_server* server);
+
+grpc_resource_user* grpc_server_get_default_resource_user(grpc_server* server);
 
 int grpc_server_has_open_connections(grpc_server* server);
 
