@@ -323,7 +323,6 @@ class CallOpSendMessage {
       *status = false;
     } else if (!*status) {
       // This Op was passed down to core and the Op failed
-      gpr_log(GPR_ERROR, "failure status");
       failed_send_ = true;
     }
   }

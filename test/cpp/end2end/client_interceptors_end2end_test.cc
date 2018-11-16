@@ -290,9 +290,7 @@ class ClientStreamingRpcHijackingInterceptor
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_SEND_MESSAGE)) {
       EXPECT_FALSE(got_failed_send_);
-      gpr_log(GPR_ERROR, "%d", got_failed_send_);
       got_failed_send_ = !methods->GetSendMessageStatus();
-      gpr_log(GPR_ERROR, "%d", got_failed_send_);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {

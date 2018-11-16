@@ -115,7 +115,6 @@ class InterceptorBatchMethodsImpl
   void FailHijackedSendMessage() override {
     GPR_CODEGEN_ASSERT(hooks_[static_cast<size_t>(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)]);
-    gpr_log(GPR_ERROR, "failing");
     *fail_send_message_ = true;
   }
 
