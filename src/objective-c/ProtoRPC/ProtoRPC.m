@@ -105,11 +105,17 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     _handler = handler;
     _callOptions = [callOptions copy];
     _responseClass = responseClass;
-    if (@available(iOS 8.0, *)) {
+
+    // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED < 101300
+    if (@available(iOS 8.0, macOS 10.10, *)) {
       _dispatchQueue = dispatch_queue_create(
           NULL,
           dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
+#else
+    {
+#endif
       _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
     }
     dispatch_set_target_queue(_dispatchQueue, handler.dispatchQueue);

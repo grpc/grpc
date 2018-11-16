@@ -204,14 +204,17 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
-    if (@available(iOS 8.0, *)) {
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED < 101300
+    if (@available(iOS 8.0, macOS 10.10, *)) {
       _dispatchQueue = dispatch_queue_create(
           NULL,
           dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
+#else
+    {
+#endif
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
-
     // Create gRPC core channel object.
     NSString *host = channelConfiguration.host;
     NSAssert(host.length != 0, @"host cannot be nil");
