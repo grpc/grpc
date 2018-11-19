@@ -505,7 +505,7 @@ XdsLb::BalancerCallState::BalancerCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       xdslb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy_->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
+      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   xds_grpclb_request* request =
@@ -757,9 +757,7 @@ void XdsLb::BalancerCallState::OnBalancerMessageReceivedLocked(
           nullptr) {
     // Have NOT seen initial response, look for initial response.
     if (initial_response->has_client_stats_report_interval) {
-      lb_calld->client_stats_report_interval_ = GPR_MAX(
-          GPR_MS_PER_SEC, xds_grpclb_duration_to_millis(
-                              &initial_response->client_stats_report_interval));
+      lb_calld->client_stats_report_interval_ = GPR_MS_PER_SEC;
       if (grpc_lb_xds_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Received initial LB response message; "

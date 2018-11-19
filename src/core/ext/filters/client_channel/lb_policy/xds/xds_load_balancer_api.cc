@@ -270,37 +270,6 @@ bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
   return memcmp(lhs, rhs, sizeof(xds_grpclb_server)) == 0;
 }
 
-int xds_grpclb_duration_compare(const xds_grpclb_duration* lhs,
-                                const xds_grpclb_duration* rhs) {
-  GPR_ASSERT(lhs && rhs);
-  if (lhs->has_seconds && rhs->has_seconds) {
-    if (lhs->seconds < rhs->seconds) return -1;
-    if (lhs->seconds > rhs->seconds) return 1;
-  } else if (lhs->has_seconds) {
-    return 1;
-  } else if (rhs->has_seconds) {
-    return -1;
-  }
-
-  GPR_ASSERT(lhs->seconds == rhs->seconds);
-  if (lhs->has_nanos && rhs->has_nanos) {
-    if (lhs->nanos < rhs->nanos) return -1;
-    if (lhs->nanos > rhs->nanos) return 1;
-  } else if (lhs->has_nanos) {
-    return 1;
-  } else if (rhs->has_nanos) {
-    return -1;
-  }
-
-  return 0;
-}
-
-grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb) {
-  return static_cast<grpc_millis>(
-      (duration_pb->has_seconds ? duration_pb->seconds : 0) * GPR_MS_PER_SEC +
-      (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS);
-}
-
 void xds_grpclb_initial_response_destroy(
     xds_grpclb_initial_response* response) {
   gpr_free(response);

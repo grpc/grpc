@@ -61,14 +61,6 @@ xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
 xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
     grpc_slice encoded_xds_grpclb_response);
 
-
-/** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
- * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
-int xds_grpclb_duration_compare(const xds_grpclb_duration* lhs,
-                                const xds_grpclb_duration* rhs);
-
-grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb);
-
 /** Destroy \a initial_response */
 void xds_grpclb_initial_response_destroy(xds_grpclb_initial_response* response);
 
