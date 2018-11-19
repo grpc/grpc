@@ -81,20 +81,20 @@ static const NSTimeInterval kTestTimeout = 16;
   return self;
 }
 
-- (void)receivedInitialMetadata:(NSDictionary *_Nullable)initialMetadata {
+- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
   if (self->_initialMetadataCallback) {
     self->_initialMetadataCallback(initialMetadata);
   }
 }
 
-- (void)receivedRawMessage:(GPBMessage *_Nullable)message {
+- (void)receivedRawMessage:(GPBMessage *)message {
   if (self->_messageCallback) {
     self->_messageCallback(message);
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *_Nullable)trailingMetadata
-                             error:(NSError *_Nullable)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
+                             error:(NSError *)error {
   if (self->_closeCallback) {
     self->_closeCallback(trailingMetadata, error);
   }

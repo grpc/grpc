@@ -23,12 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface GRPCInsecureChannelFactory : NSObject<GRPCChannelFactory>
 
-+ (instancetype _Nullable)sharedInstance;
++ (nullable instancetype)sharedInstance;
 
-- (grpc_channel *_Nullable)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *_Nullable)args;
+- (nullable grpc_channel *)createChannelWithHost:(NSString *)host
+                                     channelArgs:(nullable NSDictionary *)args;
 
-- (instancetype _Nullable)init NS_UNAVAILABLE;
+- (nullable instancetype)init NS_UNAVAILABLE;
 
 @end
 
