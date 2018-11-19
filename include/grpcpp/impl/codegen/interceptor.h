@@ -57,9 +57,11 @@ enum class InterceptionHookPoints {
   POST_RECV_STATUS /* client only */,
   POST_RECV_CLOSE /* server only */,
   /* This is a special hook point available to both clients and servers when
-     TryCancel() is performed. It is illegal for an interceptor to block/delay
-     this operation. ALL interceptors see this hook point irrespective of
-     whether the RPC was hijacked or not. */
+     TryCancel() is performed.
+     - No other hook points will be present along with this.
+     - It is illegal for an interceptor to block/delay this operation.
+     - ALL interceptors see this hook point irrespective of whether the RPC was
+     hijacked or not. */
   PRE_SEND_CANCEL,
   NUM_INTERCEPTION_HOOKS
 };

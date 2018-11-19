@@ -135,7 +135,8 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
           "",
           grpc_lame_client_channel_create("localhost:1234",
                                           GRPC_STATUS_UNAUTHENTICATED, "blah"),
-          nullptr));
+          std::vector<std::unique_ptr<
+              grpc::experimental::ClientInterceptorFactoryInterface>>()));
   grpc::CompletionQueue cq;
   grpc::testing::EchoRequest send_request;
   grpc::testing::EchoResponse recv_response;

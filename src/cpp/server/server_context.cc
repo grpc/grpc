@@ -247,6 +247,10 @@ void ServerContext::BindDeadlineAndMetadata(gpr_timespec deadline,
 ServerContext::~ServerContext() { Clear(); }
 
 void ServerContext::Clear() {
+  auth_context_.reset();
+  initial_metadata_.clear();
+  trailing_metadata_.clear();
+  client_metadata_.Reset();
   if (call_) {
     grpc_call_unref(call_);
   }

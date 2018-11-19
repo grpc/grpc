@@ -15,14 +15,8 @@
 
 # Source this rc script to prepare the environment for macos builds
 
-sudo launchctl limit maxfiles unlimited unlimited
-
-# show current maxfiles
+# show original open file limit values
 launchctl limit maxfiles
-
-ulimit -n 10000
-
-# show current limits
 ulimit -a
 
 # synchronize the clock

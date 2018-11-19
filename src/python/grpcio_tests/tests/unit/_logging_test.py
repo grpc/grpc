@@ -68,6 +68,13 @@ class LoggingTest(unittest.TestCase):
         self.assertEqual(1, len(logging.getLogger().handlers))
         self.assertIs(logging.getLogger().handlers[0].stream, intended_stream)
 
+    @isolated_logging
+    def test_grpc_logger(self):
+        self.assertIn("grpc", logging.Logger.manager.loggerDict)
+        root_logger = logging.getLogger("grpc")
+        self.assertEqual(1, len(root_logger.handlers))
+        self.assertIsInstance(root_logger.handlers[0], logging.NullHandler)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

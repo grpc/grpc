@@ -15,6 +15,12 @@
 import collections
 
 
+class InitialMetadataFlags:
+  used_mask = GRPC_INITIAL_METADATA_USED_MASK
+  wait_for_ready = GRPC_INITIAL_METADATA_WAIT_FOR_READY
+  wait_for_ready_explicitly_set = GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+
+
 _Metadatum = collections.namedtuple('_Metadatum', ('key', 'value',))
 
 

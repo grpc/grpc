@@ -17,10 +17,10 @@ and tests run by Kokoro CI.
 
 ## Running remote build manually from dev workstation
 
-Run from repository root:
+Run from repository root (opt, dbg):
 ```
 # manual run of bazel tests remotely on Foundry
-bazel --bazelrc=tools/remote_build/manual.bazelrc test -c opt //test/...
+bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=opt //test/...
 ```
 
 Sanitizer runs (asan, msan, tsan, ubsan):

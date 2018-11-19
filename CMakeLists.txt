@@ -1240,18 +1240,17 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1592,12 +1591,12 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -1675,7 +1674,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1964,12 +1962,12 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -2283,12 +2281,12 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -2615,12 +2613,12 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -3466,12 +3464,12 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -5334,6 +5332,7 @@ add_library(qps
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
+  test/cpp/qps/server_callback.cc
   test/cpp/qps/server_sync.cc
   test/cpp/qps/usage_timer.cc
 )

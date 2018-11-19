@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,22 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
+#import "AppDelegate.h"
 
-#include <grpc/support/port_platform.h>
+@interface AppDelegate ()
 
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
+@end
 
-#include "src/core/lib/gprpp/thd.h"
+@implementation AppDelegate
 
-typedef struct alts_shared_resource {
-  grpc_channel* channel;
-  gpr_mu mu;
-} alts_shared_resource;
+- (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
+  // Insert code here to initialize your application
+}
 
-/* This method returns the address of alts_shared_resource object shared by all
- *    TSI handshakes. */
-alts_shared_resource* alts_get_shared_resource(void);
 
-#endif /* GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H */
+- (void)applicationWillTerminate:(NSNotification *)aNotification {
+  // Insert code here to tear down your application
+}
+
+
+@end

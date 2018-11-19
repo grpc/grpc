@@ -9,6 +9,7 @@ graft third_party/boringssl
 graft third_party/cares
 graft third_party/nanopb
 graft third_party/zlib
+include src/python/grpcio/_parallel_compile_patch.py
 include src/python/grpcio/_spawn_patch.py
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_version.py
