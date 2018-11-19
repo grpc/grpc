@@ -25,6 +25,7 @@ from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addHandler(logging.NullHandler())
 
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
