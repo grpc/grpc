@@ -68,7 +68,7 @@ g_stands_for = "gizmo"
 
 core_version = "7.0.0-dev"
 
-version = "1.17.0-dev"
+version = "1.17.0-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
