@@ -66,7 +66,7 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "gizmo"
 
-core_version = "6.0.0-dev"
+core_version = "7.0.0-dev"
 
 version = "1.17.0-dev"
 
