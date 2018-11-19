@@ -93,8 +93,7 @@ static const NSTimeInterval kTestTimeout = 16;
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
-                             error:(NSError *)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (self->_closeCallback) {
     self->_closeCallback(trailingMetadata, error);
   }
