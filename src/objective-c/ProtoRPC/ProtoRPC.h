@@ -132,11 +132,11 @@ __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
        * addr and the port number, for example @"localhost:5050".
        */
       -
-      (instancetype _Null_unspecified)initWithHost : (NSString *_Null_unspecified)host method
-    : (GRPCProtoMethod *_Null_unspecified)method requestsWriter
-    : (GRXWriter *_Null_unspecified)requestsWriter responseClass
-    : (Class _Null_unspecified)responseClass responsesWriteable
-    : (id<GRXWriteable> _Null_unspecified)responsesWriteable NS_DESIGNATED_INITIALIZER;
+      (nullable instancetype)initWithHost : (nullable NSString *)host method
+    : (nullable GRPCProtoMethod *)method requestsWriter
+    : (nullable GRXWriter *)requestsWriter responseClass
+    : (nullable Class)responseClass responsesWriteable
+    : (nullable id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
 
 - (void)start;
 @end
