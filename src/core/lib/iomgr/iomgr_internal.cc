@@ -41,3 +41,7 @@ void grpc_iomgr_platform_init() { iomgr_platform_vtable->init(); }
 void grpc_iomgr_platform_flush() { iomgr_platform_vtable->flush(); }
 
 void grpc_iomgr_platform_shutdown() { iomgr_platform_vtable->shutdown(); }
+
+void grpc_iomgr_platform_shutdown_background_closure() {
+  iomgr_platform_vtable->shutdown_background_closure();
+}

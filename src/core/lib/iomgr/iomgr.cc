@@ -154,6 +154,10 @@ void grpc_iomgr_shutdown() {
   gpr_cv_destroy(&g_rcv);
 }
 
+void grpc_iomgr_shutdown_background_closure() {
+  grpc_iomgr_platform_shutdown_background_closure();
+}
+
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name) {
   obj->name = gpr_strdup(name);
   gpr_mu_lock(&g_mu);
