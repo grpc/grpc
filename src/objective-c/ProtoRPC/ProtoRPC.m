@@ -138,21 +138,21 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     call = _call;
     _call = nil;
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
-        dispatch_async(_handler.dispatchQueue, ^{
-          id<GRPCProtoResponseHandler> handler = nil;
-          @synchronized(self) {
-            handler = self->_handler;
-            self->_handler = nil;
-          }
-          [handler closedWithTrailingMetadata:nil
-                                        error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                  code:GRPCErrorCodeCancelled
-                                                              userInfo:@{
-                                                                NSLocalizedDescriptionKey :
-                                                                    @"Canceled by app"
-                                                              }]];
-        });
-      }
+      dispatch_async(_handler.dispatchQueue, ^{
+        id<GRPCProtoResponseHandler> handler = nil;
+        @synchronized(self) {
+          handler = self->_handler;
+          self->_handler = nil;
+        }
+        [handler closedWithTrailingMetadata:nil
+                                      error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                code:GRPCErrorCodeCancelled
+                                                            userInfo:@{
+                                                              NSLocalizedDescriptionKey :
+                                                                  @"Canceled by app"
+                                                            }]];
+      });
+    }
   }
   [call cancel];
 }
@@ -179,11 +179,11 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
-  @synchronized (self) {
+  @synchronized(self) {
     if (initialMetadata != nil && [_handler respondsToSelector:@selector(initialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
         }
         [handler receivedInitialMetadata:initialMetadata];
@@ -197,19 +197,20 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
   NSError *error = nil;
   GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
-  @synchronized (self) {
+  @synchronized(self) {
     if (parsed && [_handler respondsToSelector:@selector(receivedProtoMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
         }
         [handler receivedProtoMessage:parsed];
       });
-    } else if (!parsed && [_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]){
+    } else if (!parsed &&
+               [_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
           self->_handler = nil;
         }
@@ -222,13 +223,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
-                             error:(NSError *)error {
-  @synchronized (self) {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  @synchronized(self) {
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
           self->_handler = nil;
         }

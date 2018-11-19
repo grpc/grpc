@@ -19,5 +19,4 @@
 #import <Foundation/Foundation.h>
 
 /** Raise exception when condition not met. */
-#define GRPCAssert(condition, errorString)      \
-    NSAssert(condition, errorString)
+#define GRPCAssert(condition, errorString) NSAssert(condition, errorString)

@@ -45,8 +45,8 @@
   long _grpcCallCounter;
 }
 
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
-  return nil;
+- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration
+*)channelConfiguration { return nil;
 }
 
 - (instancetype)initWithCreateExpectation:(XCTestExpectation *)createExpectation

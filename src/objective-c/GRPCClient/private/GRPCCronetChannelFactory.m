@@ -50,8 +50,7 @@
   return self;
 }
 
-- (grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *)args {
+- (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
   grpc_channel_args *channelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
@@ -71,8 +70,7 @@
   return nil;
 }
 
-- (grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *)args {
+- (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
   [NSException raise:NSInvalidArgumentException
               format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return NULL;

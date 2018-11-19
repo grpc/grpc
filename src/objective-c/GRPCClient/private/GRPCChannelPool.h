@@ -42,9 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Initialize with an actual channel object \a channel and a reference to the channel pool.
  */
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
+- (nullable instancetype)initWithChannelConfiguration:
+                             (GRPCChannelConfiguration *)channelConfiguration
                                           channelPool:(GRPCChannelPool *)channelPool;
-
 
 /**
  * Create a grpc core call object (grpc_call) from this channel. If channel is disconnected, get a

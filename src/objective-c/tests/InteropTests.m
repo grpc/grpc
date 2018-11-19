@@ -114,8 +114,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata
-                             error:(NSError *)error {
+- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (_closeCallback) {
     _closeCallback(trailingMetadata, error);
   }

@@ -122,8 +122,7 @@ static NSMutableDictionary *gHostCache;
     if (_transportType == GRPCTransportTypeInsecure) {
       options.transportType = GRPCTransportTypeInsecure;
     } else {
-      NSAssert(_transportType == GRPCTransportTypeDefault,
-                 @"Invalid transport type");
+      NSAssert(_transportType == GRPCTransportTypeDefault, @"Invalid transport type");
       options.transportType = GRPCTransportTypeCronet;
     }
   } else

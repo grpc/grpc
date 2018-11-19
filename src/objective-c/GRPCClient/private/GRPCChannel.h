@@ -64,8 +64,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Create a channel with remote \a host and signature \a channelConfigurations.
  */
 - (nullable instancetype)initWithChannelConfiguration:
-                             (GRPCChannelConfiguration *)channelConfiguration
-    NS_DESIGNATED_INITIALIZER;
+    (GRPCChannelConfiguration *)channelConfiguration NS_DESIGNATED_INITIALIZER;
 
 /**
  * Create a grpc core call object (grpc_call) from this channel. If no call is created, NULL is

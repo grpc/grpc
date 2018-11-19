@@ -122,9 +122,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
                        responseHandler:(id<GRPCResponseHandler>)responseHandler
                            callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
-             @"Neither host nor path can be nil.");
-  NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest,
-             @"Invalid call safety value.");
+           @"Neither host nor path can be nil.");
+  NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
   NSAssert(responseHandler != nil, @"Response handler required.");
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     return nil;
@@ -135,7 +134,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if (responseHandler == nil) {
     return nil;
   }
-
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
@@ -159,7 +157,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 #endif
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
-    dispatch_set_target_queue(_dispatchQueue ,responseHandler.dispatchQueue);
+    dispatch_set_target_queue(_dispatchQueue, responseHandler.dispatchQueue);
     _started = NO;
     _canceled = NO;
     _finished = NO;
@@ -176,7 +174,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)start {
   GRPCCall *call = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     NSAssert(!_started, @"Call already started.");
     NSAssert(!_canceled, @"Call already canceled.");
     if (_started) {
@@ -192,10 +190,10 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
 
     _call = [[GRPCCall alloc] initWithHost:_requestOptions.host
-                                            path:_requestOptions.path
-                                      callSafety:_requestOptions.safety
-                                  requestsWriter:_pipe
-                                     callOptions:_callOptions];
+                                      path:_requestOptions.path
+                                callSafety:_requestOptions.safety
+                            requestsWriter:_pipe
+                               callOptions:_callOptions];
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
     }
@@ -203,7 +201,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 
   void (^valueHandler)(id value) = ^(id value) {
-    @synchronized (self) {
+    @synchronized(self) {
       if (self->_handler) {
         if (!self->_initialMetadataPublished) {
           self->_initialMetadataPublished = YES;
@@ -223,7 +221,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
           [self issueInitialMetadata:self->_call.responseHeaders];
         }
         [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
-
       }
       // Clearing _call must happen *after* dispatching close in order to get trailing
       // metadata from _call.
@@ -237,14 +234,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
   };
   id<GRXWriteable> responseWriteable =
-  [[GRXWriteable alloc] initWithValueHandler:valueHandler
-                           completionHandler:completionHandler];
+      [[GRXWriteable alloc] initWithValueHandler:valueHandler completionHandler:completionHandler];
   [call startWithWriteable:responseWriteable];
 }
 
 - (void)cancel {
   GRPCCall *call = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     if (_canceled) {
       return;
     }
@@ -259,7 +255,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
       dispatch_async(_dispatchQueue, ^{
         // Copy to local so that block is freed after cancellation completes.
         id<GRPCResponseHandler> copiedHandler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           copiedHandler = self->_handler;
           self->_handler = nil;
         }
@@ -268,9 +264,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                             error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                       code:GRPCErrorCodeCancelled
                                                                   userInfo:@{
-                                                                             NSLocalizedDescriptionKey :
-                                                                               @"Canceled by app"
-                                                                             }]];
+                                                                    NSLocalizedDescriptionKey :
+                                                                        @"Canceled by app"
+                                                                  }]];
       });
     }
   }
@@ -322,11 +318,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  @synchronized (self) {
-    if (initialMetadata != nil && [_handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+  @synchronized(self) {
+    if (initialMetadata != nil &&
+        [_handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
         }
         [handler receivedInitialMetadata:initialMetadata];
@@ -336,11 +333,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueMessage:(id)message {
-  @synchronized (self) {
+  @synchronized(self) {
     if (message != nil && [_handler respondsToSelector:@selector(receivedRawMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
         }
         [handler receivedRawMessage:message];
@@ -350,17 +347,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  @synchronized (self) {
+  @synchronized(self) {
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> handler = nil;
-        @synchronized (self) {
+        @synchronized(self) {
           handler = self->_handler;
           // Clean up _handler so that no more responses are reported to the handler.
           self->_handler = nil;
         }
-        [handler closedWithTrailingMetadata:trailingMetadata
-                                      error:error];
+        [handler closedWithTrailingMetadata:trailingMetadata error:error];
       });
     }
   }
@@ -489,10 +485,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
                  callOptions:(GRPCCallOptions *)callOptions {
   // Purposely using pointer rather than length ([host length] == 0) for backwards compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
-  NSAssert(safety <= GRPCCallSafetyCacheableRequest,
-             @"Invalid call safety value.");
+  NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
   NSAssert(requestWriter.state == GRXWriterStateNotStarted,
-             @"The requests writer can't be already started.");
+           @"The requests writer can't be already started.");
   if (!host || !path) {
     return nil;
   }
@@ -888,7 +883,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 
   NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
-             @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
+           @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
   if (_callOptions.authTokenProvider != nil) {
     @synchronized(self) {
       self.isWaitingForToken = YES;

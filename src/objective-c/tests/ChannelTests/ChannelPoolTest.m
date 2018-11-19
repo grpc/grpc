@@ -41,12 +41,12 @@ NSString *kDummyPath = @"/dummy/path";
 - (void)testCreateChannelAndCall {
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCPooledChannel *channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                            callOptions:options];
+  GRPCPooledChannel *channel =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
   XCTAssertNil(channel.wrappedChannel);
   GRPCCompletionQueue *cq = [GRPCCompletionQueue completionQueue];
-  grpc_call *call = [channel unmanagedCallWithPath:kDummyPath
-                                   completionQueue:cq callOptions:options];
+  grpc_call *call =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssert(call != NULL);
   XCTAssertNotNil(channel.wrappedChannel);
   [channel unrefUnmanagedCall:call];
@@ -60,26 +60,22 @@ NSString *kDummyPath = @"/dummy/path";
   GRPCMutableCallOptions *options3 = [options1 mutableCopy];
   options3.transportType = GRPCTransportTypeInsecure;
   GRPCCompletionQueue *cq = [GRPCCompletionQueue completionQueue];
-  GRPCPooledChannel *channel1 = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                             callOptions:options1];
-  grpc_call *call1 = [channel1 unmanagedCallWithPath:kDummyPath
-                                     completionQueue:cq
-                                         callOptions:options1];
-  GRPCPooledChannel *channel2 = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                             callOptions:options2];
-  grpc_call *call2 = [channel2 unmanagedCallWithPath:kDummyPath
-                                     completionQueue:cq
-                                         callOptions:options2];
-  GRPCPooledChannel *channel3 = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                             callOptions:options3];
-  grpc_call *call3 = [channel3 unmanagedCallWithPath:kDummyPath
-                                     completionQueue:cq
-                                         callOptions:options3];
-  GRPCPooledChannel *channel4 = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost2
-                                                             callOptions:options1];
-  grpc_call *call4 = [channel4 unmanagedCallWithPath:kDummyPath
-                                     completionQueue:cq
-                                         callOptions:options1];
+  GRPCPooledChannel *channel1 =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options1];
+  grpc_call *call1 =
+      [channel1 unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options1];
+  GRPCPooledChannel *channel2 =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options2];
+  grpc_call *call2 =
+      [channel2 unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options2];
+  GRPCPooledChannel *channel3 =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options3];
+  grpc_call *call3 =
+      [channel3 unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options3];
+  GRPCPooledChannel *channel4 =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost2 callOptions:options1];
+  grpc_call *call4 =
+      [channel4 unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options1];
   XCTAssertEqual(channel1.wrappedChannel, channel2.wrappedChannel);
   XCTAssertNotEqual(channel1.wrappedChannel, channel3.wrappedChannel);
   XCTAssertNotEqual(channel1.wrappedChannel, channel4.wrappedChannel);
@@ -96,32 +92,26 @@ NSString *kDummyPath = @"/dummy/path";
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   pool.destroyDelay = kDestroyDelay;
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCPooledChannel *channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                            callOptions:options];
+  GRPCPooledChannel *channel =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
   GRPCCompletionQueue *cq = [GRPCCompletionQueue completionQueue];
-  grpc_call *call = [channel unmanagedCallWithPath:kDummyPath
-                                   completionQueue:cq callOptions:options];
+  grpc_call *call =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   GRPCChannel *wrappedChannel = channel.wrappedChannel;
 
   [channel unrefUnmanagedCall:call];
   // Confirm channel is not destroyed at this time
-  call = [channel unmanagedCallWithPath:kDummyPath
-                        completionQueue:cq
-                            callOptions:options];
+  call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertEqual(wrappedChannel, channel.wrappedChannel);
 
   [channel unrefUnmanagedCall:call];
   sleep(kDestroyDelay + 1);
   // Confirm channel is new at this time
-  call = [channel unmanagedCallWithPath:kDummyPath
-                        completionQueue:cq
-                            callOptions:options];
+  call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotEqual(wrappedChannel, channel.wrappedChannel);
 
   // Confirm the new channel can create call
-  call = [channel unmanagedCallWithPath:kDummyPath
-                        completionQueue:cq
-                            callOptions:options];
+  call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssert(call != NULL);
   [channel unrefUnmanagedCall:call];
 }
@@ -129,31 +119,26 @@ NSString *kDummyPath = @"/dummy/path";
 - (void)testPoolDisconnection {
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCPooledChannel *channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                            callOptions:options];
+  GRPCPooledChannel *channel =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
   GRPCCompletionQueue *cq = [GRPCCompletionQueue completionQueue];
-  grpc_call *call = [channel unmanagedCallWithPath:kDummyPath
-                                   completionQueue:cq
-                                       callOptions:options];
+  grpc_call *call =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotNil(channel.wrappedChannel);
   GRPCChannel *wrappedChannel = channel.wrappedChannel;
 
   // Test a new channel is created by requesting a channel from pool
   [pool disconnectAllChannels];
-  channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                          callOptions:options];
-  call = [channel unmanagedCallWithPath:kDummyPath
-                        completionQueue:cq
-                            callOptions:options];
+  channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
+  call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotNil(channel.wrappedChannel);
   XCTAssertNotEqual(wrappedChannel, channel.wrappedChannel);
   wrappedChannel = channel.wrappedChannel;
 
   // Test a new channel is created by requesting a new call from the previous proxy
   [pool disconnectAllChannels];
-  grpc_call *call2 = [channel unmanagedCallWithPath:kDummyPath
-                                    completionQueue:cq
-                                        callOptions:options];
+  grpc_call *call2 =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotNil(channel.wrappedChannel);
   XCTAssertNotEqual(channel.wrappedChannel, wrappedChannel);
   [channel unrefUnmanagedCall:call];
@@ -163,20 +148,17 @@ NSString *kDummyPath = @"/dummy/path";
 - (void)testUnrefCallFromStaleChannel {
   GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCPooledChannel *channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                                            callOptions:options];
+  GRPCPooledChannel *channel =
+      (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
   GRPCCompletionQueue *cq = [GRPCCompletionQueue completionQueue];
-  grpc_call *call = [channel unmanagedCallWithPath:kDummyPath
-                                   completionQueue:cq
-                                       callOptions:options];
+  grpc_call *call =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
 
   [pool disconnectAllChannels];
-  channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost
-                                          callOptions:options];
+  channel = (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
 
-  grpc_call *call2 = [channel unmanagedCallWithPath:kDummyPath
-                                    completionQueue:cq
-                                        callOptions:options];
+  grpc_call *call2 =
+      [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   // Test unref the call of a stale channel will not cause the current channel going into timed
   // destroy state
   XCTAssertNotNil(channel.wrappedChannel);

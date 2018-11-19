@@ -249,8 +249,7 @@
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                  callOptions:(GRPCCallOptions *)callOptions {
-  NSAssert(host.length != 0 && path.length != 0,
-             @"path and host cannot be nil.");
+  NSAssert(host.length != 0 && path.length != 0, @"path and host cannot be nil.");
 
   if ((self = [super init])) {
     // Each completion queue consumes one thread. There's a trade to be made between creating and
@@ -263,9 +262,7 @@
       NSLog(@"Failed to get a channel for the host.");
       return nil;
     }
-    _call = [_channel unmanagedCallWithPath:path
-                            completionQueue:_queue
-                                callOptions:callOptions];
+    _call = [_channel unmanagedCallWithPath:path completionQueue:_queue callOptions:callOptions];
     if (_call == nil) {
       NSAssert(_channel != nil, @"Failed to get a channel for the host.");
       NSLog(@"Failed to create a call.");

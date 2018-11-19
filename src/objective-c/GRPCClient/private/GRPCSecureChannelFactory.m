@@ -29,9 +29,9 @@
 }
 
 + (instancetype)factoryWithPEMRootCertificates:(NSString *)rootCerts
-                                              privateKey:(NSString *)privateKey
-                                               certChain:(NSString *)certChain
-                                                   error:(NSError **)errorPtr {
+                                    privateKey:(NSString *)privateKey
+                                     certChain:(NSString *)certChain
+                                         error:(NSError **)errorPtr {
   return [[self alloc] initWithPEMRootCerts:rootCerts
                                  privateKey:privateKey
                                   certChain:certChain
@@ -50,9 +50,9 @@
 }
 
 - (instancetype)initWithPEMRootCerts:(NSString *)rootCerts
-                                    privateKey:(NSString *)privateKey
-                                     certChain:(NSString *)certChain
-                                         error:(NSError **)errorPtr {
+                          privateKey:(NSString *)privateKey
+                           certChain:(NSString *)certChain
+                               error:(NSError **)errorPtr {
   static NSData *defaultRootsASCII;
   static NSError *defaultRootsError;
   static dispatch_once_t loading;
@@ -115,8 +115,7 @@
   return self;
 }
 
-- (grpc_channel *)createChannelWithHost:(NSString *)host
-                                     channelArgs:(NSDictionary *)args {
+- (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
   grpc_channel *unmanagedChannel =
       grpc_secure_channel_create(_channelCreds, host.UTF8String, coreChannelArgs, NULL);

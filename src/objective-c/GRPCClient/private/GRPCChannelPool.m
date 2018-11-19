@@ -40,7 +40,7 @@ static dispatch_once_t gInitChannelPool;
 /** When all calls of a channel are destroyed, destroy the channel after this much seconds. */
 static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
-@interface GRPCChannelPool()
+@interface GRPCChannelPool ()
 
 - (GRPCChannel *)refChannelWithConfiguration:(GRPCChannelConfiguration *)configuration;
 
@@ -74,7 +74,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
-                              completionQueue:(GRPCCompletionQueue *)queue
+                     completionQueue:(GRPCCompletionQueue *)queue
                          callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(path.length > 0, @"path must not be empty.");
   NSAssert(queue != nil, @"completionQueue must not be empty.");
@@ -90,7 +90,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       }
       NSAssert(_wrappedChannel != nil, @"Unable to get a raw channel for proxy.");
     }
-    call = [_wrappedChannel unmanagedCallWithPath:path completionQueue:queue callOptions:callOptions];
+    call =
+        [_wrappedChannel unmanagedCallWithPath:path completionQueue:queue callOptions:callOptions];
     if (call != NULL) {
       [_unmanagedCalls addObject:[NSValue valueWithPointer:call]];
     }
@@ -100,7 +101,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall {
   if (unmanagedCall == nil) return;
-  
+
   grpc_call_unref(unmanagedCall);
   BOOL timedDestroy = NO;
   @synchronized(self) {
@@ -125,7 +126,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (GRPCChannel *)wrappedChannel {
   GRPCChannel *channel = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     channel = _wrappedChannel;
   }
   return channel;
@@ -148,7 +149,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 /**
  * A convenience value type for cached channel.
  */
-@interface GRPCChannelRecord : NSObject <NSCopying>
+@interface GRPCChannelRecord : NSObject<NSCopying>
 
 /** Pointer to the raw channel. May be nil when the channel has been destroyed. */
 @property GRPCChannel *channel;
@@ -197,14 +198,14 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
       _dispatchQueue = dispatch_queue_create(
-                                             NULL,
-                                             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
 #else
-      {
+    {
 #endif
-        _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-      }
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    }
     _destroyDelay = kDefaultChannelDestroyDelay;
 
     // Connectivity monitor is not required for CFStream
@@ -221,7 +222,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
   if (host.length == 0) return nil;
   if (callOptions == nil) return nil;
-  
+
   GRPCPooledChannel *channelProxy = nil;
   GRPCChannelConfiguration *configuration =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
@@ -229,8 +230,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     GRPCChannelRecord *record = _channelPool[configuration];
     if (record == nil) {
       record = [[GRPCChannelRecord alloc] init];
-      record.proxy = [[GRPCPooledChannel alloc] initWithChannelConfiguration:configuration
-                                                                 channelPool:self];
+      record.proxy =
+          [[GRPCPooledChannel alloc] initWithChannelConfiguration:configuration channelPool:self];
       record.timedDestroyDate = nil;
       _channelPool[configuration] = record;
       channelProxy = record.proxy;
@@ -247,7 +248,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (GRPCChannel *)refChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
   GRPCChannel *ret = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     NSAssert(configuration != nil, @"configuration cannot be empty.");
     if (configuration == nil) return nil;
 
@@ -271,7 +272,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (void)unrefChannelWithConfiguration:(GRPCChannelConfiguration *)configuration {
-  @synchronized (self) {
+  @synchronized(self) {
     GRPCChannelRecord *record = _channelPool[configuration];
     NSAssert(record != nil, @"No record corresponding to a proxy.");
     if (record == nil) return;
@@ -282,9 +283,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
         NSDate *now = [NSDate date];
         record.timedDestroyDate = now;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_destroyDelay * NSEC_PER_SEC)),
-                       _dispatchQueue,
-                       ^{
-                         @synchronized (self) {
+                       _dispatchQueue, ^{
+                         @synchronized(self) {
                            if (now == record.timedDestroyDate) {
                              // Destroy the raw channel and reset related records.
                              record.timedDestroyDate = nil;
@@ -292,7 +292,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
                              record.channel = nil;
                            }
                          }
-        });
+                       });
       }
     }
   }
@@ -300,16 +300,18 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 - (void)disconnectAllChannels {
   NSMutableSet<GRPCPooledChannel *> *proxySet = [NSMutableSet set];
-  @synchronized (self) {
-    [_channelPool enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration * _Nonnull key, GRPCChannelRecord * _Nonnull obj, BOOL * _Nonnull stop) {
-      obj.channel = nil;
-      obj.timedDestroyDate = nil;
-      obj.refcount = 0;
-      [proxySet addObject:obj.proxy];
-    }];
+  @synchronized(self) {
+    [_channelPool
+        enumerateKeysAndObjectsUsingBlock:^(GRPCChannelConfiguration *_Nonnull key,
+                                            GRPCChannelRecord *_Nonnull obj, BOOL *_Nonnull stop) {
+          obj.channel = nil;
+          obj.timedDestroyDate = nil;
+          obj.refcount = 0;
+          [proxySet addObject:obj.proxy];
+        }];
   }
   // Disconnect proxies
-  [proxySet enumerateObjectsUsingBlock:^(GRPCPooledChannel * _Nonnull obj, BOOL * _Nonnull stop) {
+  [proxySet enumerateObjectsUsingBlock:^(GRPCPooledChannel *_Nonnull obj, BOOL *_Nonnull stop) {
     [obj disconnect];
   }];
 }

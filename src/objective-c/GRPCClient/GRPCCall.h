@@ -340,8 +340,8 @@ NS_ASSUME_NONNULL_END
  * and the port number, for example @"localhost:5050".
  */
 - (null_unspecified instancetype)initWithHost:(null_unspecified NSString *)host
-                                          path:(null_unspecified NSString *)path
-                                requestsWriter:(null_unspecified GRXWriter *)requestWriter;
+                                         path:(null_unspecified NSString *)path
+                               requestsWriter:(null_unspecified GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and

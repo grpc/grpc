@@ -178,10 +178,8 @@
   grpc_channel *_unmanagedChannel;
 }
 
-- (instancetype)initWithChannelConfiguration:
-                             (GRPCChannelConfiguration *)channelConfiguration {
-  NSAssert(channelConfiguration != nil,
-             @"channelConfiguration must not be empty.");
+- (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
+  NSAssert(channelConfiguration != nil, @"channelConfiguration must not be empty.");
   if (channelConfiguration == nil) return nil;
 
   if ((self = [super init])) {
@@ -221,12 +219,11 @@
 
   grpc_call *call = NULL;
   @synchronized(self) {
-    NSAssert(_unmanagedChannel != NULL,
-             @"Channel should have valid unmanaged channel.");
+    NSAssert(_unmanagedChannel != NULL, @"Channel should have valid unmanaged channel.");
     if (_unmanagedChannel == NULL) return NULL;
 
     NSString *serverAuthority =
-    callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+        callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
     NSTimeInterval timeout = callOptions.timeout;
     NSAssert(timeout >= 0, @"Invalid timeout");
     if (timeout < 0) return NULL;
@@ -236,10 +233,9 @@
     }
     grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
     gpr_timespec deadline_ms =
-    timeout == 0
-    ? gpr_inf_future(GPR_CLOCK_REALTIME)
-    : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+        timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+                     : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                    gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
     call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
                                     queue.unmanagedQueue, path_slice,
                                     serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
