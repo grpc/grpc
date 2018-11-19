@@ -34,9 +34,6 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
 
-/** When all calls of a channel are destroyed, destroy the channel after this much seconds. */
-static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
-
 @implementation GRPCChannelConfiguration
 
 - (instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
@@ -178,43 +175,18 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 @implementation GRPCChannel {
   GRPCChannelConfiguration *_configuration;
 
-  dispatch_queue_t _dispatchQueue;
   grpc_channel *_unmanagedChannel;
-  NSTimeInterval _destroyDelay;
-
-  NSUInteger _refcount;
-  NSDate *_lastDispatch;
-}
-@synthesize disconnected = _disconnected;
-
-- (instancetype)initWithChannelConfiguration:
-    (GRPCChannelConfiguration *)channelConfiguration {
-  return [self initWithChannelConfiguration:channelConfiguration
-                               destroyDelay:kDefaultChannelDestroyDelay];
 }
 
 - (instancetype)initWithChannelConfiguration:
-                             (GRPCChannelConfiguration *)channelConfiguration
-                                         destroyDelay:(NSTimeInterval)destroyDelay {
+                             (GRPCChannelConfiguration *)channelConfiguration {
   NSAssert(channelConfiguration != nil,
              @"channelConfiguration must not be empty.");
-  NSAssert(destroyDelay > 0, @"destroyDelay must be greater than 0.");
   if (channelConfiguration == nil) return nil;
-  if (destroyDelay <= 0) return nil;
 
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED < 101300
-    if (@available(iOS 8.0, macOS 10.10, *)) {
-      _dispatchQueue = dispatch_queue_create(
-          NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
-    } else {
-#else
-    {
-#endif
-      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-    }
+
     // Create gRPC core channel object.
     NSString *host = channelConfiguration.host;
     NSAssert(host.length != 0, @"host cannot be nil");
@@ -233,119 +205,54 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
       NSLog(@"Unable to create channel.");
       return nil;
     }
-    _destroyDelay = destroyDelay;
-    _disconnected = NO;
   }
   return self;
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
                      completionQueue:(GRPCCompletionQueue *)queue
-                         callOptions:(GRPCCallOptions *)callOptions
-                        disconnected:(BOOL *)disconnected {
+                         callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(path.length > 0, @"path must not be empty.");
   NSAssert(queue != nil, @"completionQueue must not be empty.");
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
-  if (path.length == 0) return nil;
-  if (queue == nil) return nil;
-  if (callOptions == nil) return nil;
+  if (path.length == 0) return NULL;
+  if (queue == nil) return NULL;
+  if (callOptions == nil) return NULL;
 
-  __block BOOL isDisconnected = NO;
-  __block grpc_call *call = NULL;
-  dispatch_sync(_dispatchQueue, ^{
-    if (self->_disconnected) {
-      isDisconnected = YES;
-    } else {
-      NSAssert(self->_unmanagedChannel != NULL,
-                 @"Channel should have valid unmanaged channel.");
-      if (self->_unmanagedChannel == NULL) return;
+  grpc_call *call = NULL;
+  @synchronized(self) {
+    NSAssert(_unmanagedChannel != NULL,
+             @"Channel should have valid unmanaged channel.");
+    if (_unmanagedChannel == NULL) return NULL;
 
-      NSString *serverAuthority =
-          callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
-      NSTimeInterval timeout = callOptions.timeout;
-      NSAssert(timeout >= 0, @"Invalid timeout");
-      if (timeout < 0) return;
-      grpc_slice host_slice = grpc_empty_slice();
-      if (serverAuthority) {
-        host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
-      }
-      grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
-      gpr_timespec deadline_ms =
-          timeout == 0
-              ? gpr_inf_future(GPR_CLOCK_REALTIME)
-              : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                             gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
-      call = grpc_channel_create_call(self->_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
-                                      queue.unmanagedQueue, path_slice,
-                                      serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
-      if (serverAuthority) {
-        grpc_slice_unref(host_slice);
-      }
-      grpc_slice_unref(path_slice);
-      if (call == NULL) {
-        NSLog(@"Unable to create call.");
-      } else {
-        // Ref the channel;
-        [self ref];
-      }
+    NSString *serverAuthority =
+    callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+    NSTimeInterval timeout = callOptions.timeout;
+    NSAssert(timeout >= 0, @"Invalid timeout");
+    if (timeout < 0) return NULL;
+    grpc_slice host_slice = grpc_empty_slice();
+    if (serverAuthority) {
+      host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
     }
-  });
-  if (disconnected != nil) {
-    *disconnected = isDisconnected;
+    grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
+    gpr_timespec deadline_ms =
+    timeout == 0
+    ? gpr_inf_future(GPR_CLOCK_REALTIME)
+    : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                   gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+    call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                    queue.unmanagedQueue, path_slice,
+                                    serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
+    if (serverAuthority) {
+      grpc_slice_unref(host_slice);
+    }
+    grpc_slice_unref(path_slice);
+    NSAssert(call != nil, @"Unable to create call.");
+    if (call == NULL) {
+      NSLog(@"Unable to create call.");
+    }
   }
   return call;
-}
-
-// This function should be called on _dispatchQueue.
-- (void)ref {
-  _refcount++;
-  if (_refcount == 1 && _lastDispatch != nil) {
-    _lastDispatch = nil;
-  }
-}
-
-- (void)unref {
-  dispatch_async(_dispatchQueue, ^{
-    NSAssert(self->_refcount > 0, @"Illegal reference count.");
-    if (self->_refcount == 0) {
-      NSLog(@"Illegal reference count.");
-      return;
-    }
-    self->_refcount--;
-    if (self->_refcount == 0 && !self->_disconnected) {
-      // Start timer.
-      dispatch_time_t delay =
-          dispatch_time(DISPATCH_TIME_NOW, (int64_t)self->_destroyDelay * NSEC_PER_SEC);
-      NSDate *now = [NSDate date];
-      self->_lastDispatch = now;
-      dispatch_after(delay, self->_dispatchQueue, ^{
-        // Timed disconnection.
-        if (!self->_disconnected && self->_lastDispatch == now) {
-          grpc_channel_destroy(self->_unmanagedChannel);
-          self->_unmanagedChannel = NULL;
-          self->_disconnected = YES;
-        }
-      });
-    }
-  });
-}
-
-- (void)disconnect {
-  dispatch_async(_dispatchQueue, ^{
-    if (!self->_disconnected) {
-      grpc_channel_destroy(self->_unmanagedChannel);
-      self->_unmanagedChannel = nil;
-      self->_disconnected = YES;
-    }
-  });
-}
-
-- (BOOL)disconnected {
-  __block BOOL disconnected;
-  dispatch_sync(_dispatchQueue, ^{
-    disconnected = self->_disconnected;
-  });
-  return disconnected;
 }
 
 - (void)dealloc {

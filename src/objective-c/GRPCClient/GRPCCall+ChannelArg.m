@@ -36,7 +36,7 @@
 }
 
 + (void)closeOpenConnections {
-  [GRPCChannelPool closeOpenConnections];
+  [[GRPCChannelPool sharedInstance] closeOpenConnections];
 }
 
 + (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host {

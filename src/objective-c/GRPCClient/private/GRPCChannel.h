@@ -61,47 +61,19 @@ NS_ASSUME_NONNULL_BEGIN
 + (nullable instancetype) new NS_UNAVAILABLE;
 
 /**
- * Create a channel with remote \a host and signature \a channelConfigurations. Destroy delay is
- * defaulted to 30 seconds.
- */
-- (nullable instancetype)initWithChannelConfiguration:
-    (GRPCChannelConfiguration *)channelConfiguration;
-
-/**
- * Create a channel with remote \a host, signature \a channelConfigurations, and destroy delay of
- * \a destroyDelay.
+ * Create a channel with remote \a host and signature \a channelConfigurations.
  */
 - (nullable instancetype)initWithChannelConfiguration:
                              (GRPCChannelConfiguration *)channelConfiguration
-                                         destroyDelay:(NSTimeInterval)destroyDelay
     NS_DESIGNATED_INITIALIZER;
 
 /**
- * Create a grpc core call object from this channel. The channel's refcount is added by 1. If no
- * call is created, NULL is returned, and if the reason is because the channel is already
- * disconnected, \a disconnected is set to YES. When the returned call is unreffed, the caller is
- * obligated to call \a unref method once. \a disconnected may be null.
+ * Create a grpc core call object (grpc_call) from this channel. If no call is created, NULL is
+ * returned.
  */
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                               completionQueue:(GRPCCompletionQueue *)queue
-                                  callOptions:(GRPCCallOptions *)callOptions
-                                 disconnected:(nullable BOOL *)disconnected;
-
-/**
- * Unref the channel when a call is done. It also decreases the channel's refcount. If the refcount
- * of the channel decreases to 0, the channel is destroyed after the destroy delay.
- */
-- (void)unref;
-
-/**
- * Force the channel to be disconnected and destroyed.
- */
-- (void)disconnect;
-
-/**
- * Return whether the channel is already disconnected.
- */
-@property(readonly) BOOL disconnected;
+                                  callOptions:(GRPCCallOptions *)callOptions;
 
 @end
 

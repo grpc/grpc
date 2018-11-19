@@ -20,7 +20,84 @@
 
 #import "../../GRPCClient/GRPCCallOptions.h"
 #import "../../GRPCClient/private/GRPCChannel.h"
+#import "../../GRPCClient/private/GRPCChannelPool.h"
 #import "../../GRPCClient/private/GRPCCompletionQueue.h"
+
+/*
+#define TEST_TIMEOUT 8
+
+@interface GRPCChannelFake : NSObject
+
+- (instancetype)initWithCreateExpectation:(XCTestExpectation *)createExpectation
+                         unrefExpectation:(XCTestExpectation *)unrefExpectation;
+
+- (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
+                              completionQueue:(GRPCCompletionQueue *)queue
+                                  callOptions:(GRPCCallOptions *)callOptions;
+
+- (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall;
+
+@end
+
+@implementation GRPCChannelFake {
+  __weak XCTestExpectation *_createExpectation;
+  __weak XCTestExpectation *_unrefExpectation;
+  long _grpcCallCounter;
+}
+
+- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
+  return nil;
+}
+
+- (instancetype)initWithCreateExpectation:(XCTestExpectation *)createExpectation
+                         unrefExpectation:(XCTestExpectation *)unrefExpectation {
+  if ((self = [super init])) {
+    _createExpectation = createExpectation;
+    _unrefExpectation = unrefExpectation;
+    _grpcCallCounter = 0;
+  }
+  return self;
+}
+
+- (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
+                              completionQueue:(GRPCCompletionQueue *)queue
+                                  callOptions:(GRPCCallOptions *)callOptions {
+  if (_createExpectation) [_createExpectation fulfill];
+  return (grpc_call *)(++_grpcCallCounter);
+}
+
+- (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall {
+  if (_unrefExpectation) [_unrefExpectation fulfill];
+}
+
+@end
+
+@interface GRPCChannelPoolFake : NSObject
+
+- (instancetype)initWithDelayedDestroyExpectation:(XCTestExpectation *)delayedDestroyExpectation;
+
+- (GRPCChannel *)rawChannelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
+
+- (void)delayedDestroyChannel;
+
+@end
+
+@implementation GRPCChannelPoolFake {
+  __weak XCTestExpectation *_delayedDestroyExpectation;
+}
+
+- (instancetype)initWithDelayedDestroyExpectation:(XCTestExpectation *)delayedDestroyExpectation {
+  if ((self = [super init])) {
+    _delayedDestroyExpectation = delayedDestroyExpectation;
+  }
+  return self;
+}
+
+- (void)delayedDestroyChannel {
+  if (_delayedDestroyExpectation) [_delayedDestroyExpectation fulfill];
+}
+
+@end */
 
 @interface ChannelTests : XCTestCase
 
@@ -30,55 +107,6 @@
 
 + (void)setUp {
   grpc_init();
-}
-
-- (void)testTimedDisconnection {
-  NSString *const kHost = @"grpc-test.sandbox.googleapis.com";
-  const NSTimeInterval kDestroyDelay = 1;
-  GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCChannelConfiguration *configuration =
-      [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
-  GRPCChannel *channel =
-      [[GRPCChannel alloc] initWithChannelConfiguration:configuration destroyDelay:kDestroyDelay];
-  BOOL disconnected;
-  grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
-                                   completionQueue:[GRPCCompletionQueue completionQueue]
-                                       callOptions:options
-                                      disconnected:&disconnected];
-  XCTAssertFalse(disconnected);
-  grpc_call_unref(call);
-  [channel unref];
-  XCTAssertFalse(channel.disconnected, @"Channel is pre-maturely disconnected.");
-  sleep(kDestroyDelay + 1);
-  XCTAssertTrue(channel.disconnected, @"Channel is not disconnected after delay.");
-
-  // Check another call creation returns null and indicates disconnected.
-  call = [channel unmanagedCallWithPath:@"dummy.path"
-                        completionQueue:[GRPCCompletionQueue completionQueue]
-                            callOptions:options
-                           disconnected:&disconnected];
-  XCTAssert(call == NULL);
-  XCTAssertTrue(disconnected);
-}
-
-- (void)testForceDisconnection {
-  NSString *const kHost = @"grpc-test.sandbox.googleapis.com";
-  const NSTimeInterval kDestroyDelay = 1;
-  GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
-  GRPCChannelConfiguration *configuration =
-      [[GRPCChannelConfiguration alloc] initWithHost:kHost callOptions:options];
-  GRPCChannel *channel =
-      [[GRPCChannel alloc] initWithChannelConfiguration:configuration destroyDelay:kDestroyDelay];
-  grpc_call *call = [channel unmanagedCallWithPath:@"dummy.path"
-                                   completionQueue:[GRPCCompletionQueue completionQueue]
-                                       callOptions:options
-                                      disconnected:nil];
-  grpc_call_unref(call);
-  [channel disconnect];
-  XCTAssertTrue(channel.disconnected, @"Channel is not disconnected.");
-
-  // Test calling another unref here will not crash
-  [channel unref];
 }
 
 @end
