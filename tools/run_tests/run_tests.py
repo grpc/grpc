@@ -756,9 +756,10 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self.python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
 
-    def python_manager_name(self):
+    def _python_manager_name(self):
+        """Choose the docker image to use based on python version."""
         if self.args.compiler in [
                 'python2.7', 'python3.5', 'python3.6', 'python3.7'
         ]:
@@ -771,6 +772,7 @@ class PythonLanguage(object):
             return 'stretch_3.7'
 
     def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
         if args.arch == 'x86':
             bits = '32'
         else:
