@@ -10,7 +10,7 @@ register_execution_platforms(
     "//third_party/toolchains:all",
 )
 
-register_toolchain(
+register_toolchains(
     "//third_party/toolchains:all",
 )
 
