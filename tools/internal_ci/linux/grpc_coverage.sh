@@ -22,19 +22,19 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 python tools/run_tests/run_tests.py \
    -l c c++ -x coverage_cpp/sponge_log.xml \
-   --use_docker -t -c gcov -j 8 || FAILED="true"
+   --use_docker -t -c gcov -j 2 || FAILED="true"
 
 python tools/run_tests/run_tests.py \
    -l python -x coverage_python/sponge_log.xml \
-   --use_docker -t -c gcov -j 8 || FAILED="true"
+   --use_docker -t -c gcov -j 2 || FAILED="true"
 
 python tools/run_tests/run_tests.py \
    -l ruby -x coverage_ruby/sponge_log.xml \
-   --use_docker -t -c gcov -j 8 || FAILED="true"
+   --use_docker -t -c gcov -j 2 || FAILED="true"
 
 python tools/run_tests/run_tests.py \
    -l php -x coverage_php/sponge_log.xml \
-   --use_docker -t -c gcov -j 8 || FAILED="true" 
+   --use_docker -t -c gcov -j 2 || FAILED="true"
   
 # HTML reports can't be easily displayed in GCS, so create a zip archive
 # and put it under reports directory to get it uploaded as an artifact.
