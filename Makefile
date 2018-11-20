@@ -437,7 +437,7 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 7.0.0-dev
+CORE_VERSION = 7.0.0-pre1
 CPP_VERSION = 1.17.0-pre1
 CSHARP_VERSION = 1.17.0-pre1
 
