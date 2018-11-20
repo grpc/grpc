@@ -5,10 +5,10 @@ mergeable:
         - and:
           - must_include:
               regex: 'release notes: yes'
-              message: 'Please include release note: yes'
+              message: 'Please add the label "release notes: yes"'
           - must_include:
               regex: '^lang\/'
-              message: 'Please include a language label'
+              message: 'Please add a language ("lang/*") label'
         - must_include:
             regex: 'release notes: no'
-            message: 'Please include release note: no'
+            message: 'Please add the label "release notes: no"'
