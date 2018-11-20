@@ -36,14 +36,17 @@ SecureChannelCredentials::SecureChannelCredentials(
 
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
-  return CreateChannelWithInterceptors(target, args, nullptr);
+  return CreateChannelWithInterceptors(
+      target, args,
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
 
 std::shared_ptr<grpc::Channel>
 SecureChannelCredentials::CreateChannelWithInterceptors(
     const string& target, const grpc::ChannelArguments& args,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);

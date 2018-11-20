@@ -308,13 +308,12 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   gpr_free(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->lb_addresses_ != nullptr) {
-    static const char* args_to_remove[2];
+    static const char* args_to_remove[1];
     size_t num_args_to_remove = 0;
-    grpc_arg new_args[3];
+    grpc_arg args_to_add[2];
     size_t num_args_to_add = 0;
-    new_args[num_args_to_add++] =
+    args_to_add[num_args_to_add++] =
         grpc_lb_addresses_create_channel_arg(r->lb_addresses_);
-    grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config;
     char* service_config_string = nullptr;
     if (r->service_config_json_ != nullptr) {
       service_config_string = ChooseServiceConfig(r->service_config_json_);
@@ -323,24 +322,12 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
         gpr_log(GPR_INFO, "selected service config choice: %s",
                 service_config_string);
         args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
-        new_args[num_args_to_add++] = grpc_channel_arg_string_create(
+        args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
             (char*)GRPC_ARG_SERVICE_CONFIG, service_config_string);
-        service_config =
-            grpc_core::ServiceConfig::Create(service_config_string);
-        if (service_config != nullptr) {
-          const char* lb_policy_name =
-              service_config->GetLoadBalancingPolicyName();
-          if (lb_policy_name != nullptr) {
-            args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
-            new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-                (char*)GRPC_ARG_LB_POLICY_NAME,
-                const_cast<char*>(lb_policy_name));
-          }
-        }
       }
     }
     result = grpc_channel_args_copy_and_add_and_remove(
-        r->channel_args_, args_to_remove, num_args_to_remove, new_args,
+        r->channel_args_, args_to_remove, num_args_to_remove, args_to_add,
         num_args_to_add);
     gpr_free(service_config_string);
     grpc_lb_addresses_destroy(r->lb_addresses_);
