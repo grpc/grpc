@@ -33,14 +33,14 @@ PB_STATIC_ASSERT((pb_membersize(grpc_gcp_AltsContext, peer_rpc_versions) < 65536
 #endif
 
 #if !defined(PB_FIELD_16BIT) && !defined(PB_FIELD_32BIT)
-/* If you get an error here, it means that you need to define PB_FIELD_16BIT
+/* If you get an error here, it means that you need to define PB_FIELD_32BIT
  * compile-time option. You can do that in pb.h or on compiler command line.
  * 
  * The reason you need to do this is that some of your messages contain tag
  * numbers or field sizes that are larger than what can fit in the default
  * 8 bit descriptors.
  */
-PB_STATIC_ASSERT((pb_membersize(grpc_gcp_AltsContext, peer_rpc_versions) < 256), YOU_MUST_DEFINE_PB_FIELD_16BIT_FOR_MESSAGES_grpc_gcp_AltsContext)
+PB_STATIC_ASSERT((pb_membersize(grpc_gcp_AltsContext, peer_rpc_versions) < 256), YOU_MUST_DEFINE_PB_FIELD_32BIT_FOR_MESSAGES_grpc_gcp_AltsContext)
 #endif
 
 

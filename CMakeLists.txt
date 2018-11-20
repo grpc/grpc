@@ -94,7 +94,7 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-add_definitions(-DPB_FIELD_16BIT)
+add_definitions(-DPB_FIELD_32BIT)
 
 if (MSVC)
   include(cmake/msvc_static_runtime.cmake)

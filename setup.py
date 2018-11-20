@@ -144,7 +144,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv -fno-exceptions'
-EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_16BIT'
+EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_32BIT'
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
