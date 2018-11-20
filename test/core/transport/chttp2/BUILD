@@ -69,6 +69,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "context_list_test",
     srcs = ["context_list_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

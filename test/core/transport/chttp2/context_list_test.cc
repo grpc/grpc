@@ -18,6 +18,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <gtest/gtest.h>
 #include <new>
 #include <vector>
 
@@ -29,25 +30,28 @@
 
 #include <grpc/grpc.h>
 
-static void TestExecuteFlushesListVerifier(void* arg,
-                                           grpc_core::Timestamps* ts) {
+namespace grpc_core {
+namespace testing {
+namespace {
+void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts) {
   GPR_ASSERT(arg != nullptr);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
 
-static void discard_write(grpc_slice slice) {}
+void discard_write(grpc_slice slice) {}
 
 /** Tests that all ContextList elements in the list are flushed out on
  * execute.
  * Also tests that arg is passed correctly.
  */
-static void TestExecuteFlushesList() {
+TEST(ContextList, ExecuteFlushesList) {
   grpc_core::ContextList* list = nullptr;
   grpc_http2_set_write_timestamps_callback(TestExecuteFlushesListVerifier);
-#define NUM_ELEM 5
+  const int kNumElems = 5;
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;
+  GRPC_STREAM_REF_INIT(&ref, 1, nullptr, nullptr, "dummy ref");
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("context_list_test");
   grpc_endpoint* mock_endpoint =
@@ -55,9 +59,9 @@ static void TestExecuteFlushesList() {
   grpc_transport* t =
       grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
-  s.reserve(NUM_ELEM);
-  gpr_atm verifier_called[NUM_ELEM];
-  for (auto i = 0; i < NUM_ELEM; i++) {
+  s.reserve(kNumElems);
+  gpr_atm verifier_called[kNumElems];
+  for (auto i = 0; i < kNumElems; i++) {
     s.push_back(static_cast<grpc_chttp2_stream*>(
         gpr_malloc(grpc_transport_stream_size(t))));
     grpc_transport_init_stream(reinterpret_cast<grpc_transport*>(t),
@@ -69,7 +73,7 @@ static void TestExecuteFlushesList() {
   }
   grpc_core::Timestamps ts;
   grpc_core::ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
-  for (auto i = 0; i < NUM_ELEM; i++) {
+  for (auto i = 0; i < kNumElems; i++) {
     GPR_ASSERT(gpr_atm_acq_load(&verifier_called[i]) ==
                static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
@@ -82,12 +86,13 @@ static void TestExecuteFlushesList() {
   grpc_resource_quota_unref(resource_quota);
   exec_ctx.Flush();
 }
-
-static void TestContextList() { TestExecuteFlushesList(); }
+}  // namespace
+}  // namespace testing
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  grpc_test_init(argc, argv);
   grpc_init();
-  TestContextList();
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

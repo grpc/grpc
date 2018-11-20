@@ -63,8 +63,5 @@ grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* ep) {
 }
 
 bool grpc_endpoint_can_track_err(grpc_endpoint* ep) {
-  if (ep->vtable->can_track_err != nullptr) {
-    return ep->vtable->can_track_err(ep);
-  }
-  return false;
+  return ep->vtable->can_track_err(ep);
 }

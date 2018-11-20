@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H
-#define GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,8 +33,10 @@ class ContextList {
    * list. */
   static void Append(ContextList** head, grpc_chttp2_stream* s) {
     /* Make sure context is not already present */
-    ContextList* ptr = *head;
     GRPC_CHTTP2_STREAM_REF(s, "timestamp");
+
+#ifndef NDEBUG
+    ContextList* ptr = *head;
     while (ptr != nullptr) {
       if (ptr->s_ == s) {
         GPR_ASSERT(
@@ -43,17 +45,13 @@ class ContextList {
       }
       ptr = ptr->next_;
     }
+#endif
+
+    /* Create a new element in the list and add it at the front */
     ContextList* elem = grpc_core::New<ContextList>();
     elem->s_ = s;
-    if (*head == nullptr) {
-      *head = elem;
-      return;
-    }
-    ptr = *head;
-    while (ptr->next_ != nullptr) {
-      ptr = ptr->next_;
-    }
-    ptr->next_ = elem;
+    elem->next_ = *head;
+    *head = elem;
   }
 
   /* Executes a function \a fn with each context in the list and \a ts. It also
@@ -69,4 +67,4 @@ void grpc_http2_set_write_timestamps_callback(
     void (*fn)(void*, grpc_core::Timestamps*));
 } /* namespace grpc_core */
 
-#endif /* GRPC_CORE_EXT_TRANSPORT_CONTEXT_LIST_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H */
