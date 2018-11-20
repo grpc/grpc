@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "envoy/api/v2/discovery.upb.h"
 
 #define XDS_SERVICE_NAME_MAX_LENGTH 128
 
@@ -35,22 +36,25 @@ typedef grpc_lb_v1_InitialLoadBalanceResponse xds_grpclb_initial_response;
 typedef grpc_lb_v1_Server xds_grpclb_server;
 typedef google_protobuf_Duration xds_grpclb_duration;
 typedef google_protobuf_Timestamp xds_grpclb_timestamp;
+// xDS API typedef
+typedef envoy_api_v2_DiscoveryRequest xds_discovery_request;
+typedef envoy_api_v2_DiscoveryResponse xds_discovery_response;
 
 typedef struct {
   xds_grpclb_server** servers;
   size_t num_servers;
 } xds_grpclb_serverlist;
 
-/** Create a request for a gRPC LB service under \a lb_service_name */
-xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name);
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats);
+/** Create a request for a xDS service under \a lb_service_name */
+xds_discovery_request* xds_request_create(const char* lb_service_name,
+                                       upb_arena *arena);
 
 /** Protocol Buffers v3-encode \a request */
-grpc_slice xds_grpclb_request_encode(const xds_grpclb_request* request);
+grpc_slice xds_request_encode(const xds_discovery_request* request,
+                              upb_arena *arena);
 
 /** Destroy \a request */
-void xds_grpclb_request_destroy(xds_grpclb_request* request);
+void xds_request_destroy(xds_discovery_request* request);
 
 /** Parse (ie, decode) the bytes in \a encoded_xds_grpclb_response as a \a
  * xds_grpclb_initial_response */

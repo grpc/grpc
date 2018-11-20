@@ -61,101 +61,34 @@ static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
   return true;
 }
 
-xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name) {
-  xds_grpclb_request* req =
-      static_cast<xds_grpclb_request*>(gpr_malloc(sizeof(xds_grpclb_request)));
-  req->has_client_stats = false;
-  req->has_initial_request = true;
-  req->initial_request.has_name = true;
-  strncpy(req->initial_request.name, lb_service_name,
-          XDS_SERVICE_NAME_MAX_LENGTH);
-  return req;
+xds_discovery_request*
+xds_discovery_request_create(
+    const char* lb_service_name,
+    upb_arena *arena) {
+  xds_discovery_request* request = envoy_api_v2_DiscoveryRequest_new(arena);
+  // Set the URL for eds request
+  static const char url[] = "type.googleapis.com/envoy.api.v2.Cluster";
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_stringview_make(url, sizeof(url)));
+  // Set the service name in resources
+  upb_array* resources = upb_array_new(UPB_TYPE_STRING, arena);
+//  upb_array_set(resources, 0, upb_stringview_make(lb_service_name, sizeof(lb_service_name)));
+  envoy_api_v2_DiscoveryRequest_set_resource_names(request, resources);
+  return request;
 }
 
-static void populate_timestamp(gpr_timespec timestamp,
-                               xds_grpclb_timestamp* timestamp_pb) {
-  timestamp_pb->has_seconds = true;
-  timestamp_pb->seconds = timestamp.tv_sec;
-  timestamp_pb->has_nanos = true;
-  timestamp_pb->nanos = timestamp.tv_nsec;
+grpc_slice xds_request_encode(
+    const xds_discovery_request* request,
+    upb_arena *arena) {
+  // seralize the request
+  size_t request_len;
+  char *serialize_request = envoy_api_v2_DiscoveryRequest_serialize(
+      request, arena, &request_len);
+
+  return grpc_slice_from_copied_buffer(serialize_request, request_len);
 }
 
-static bool encode_string(pb_ostream_t* stream, const pb_field_t* field,
-                          void* const* arg) {
-  char* str = static_cast<char*>(*arg);
-  if (!pb_encode_tag_for_field(stream, field)) return false;
-  return pb_encode_string(stream, reinterpret_cast<uint8_t*>(str), strlen(str));
-}
-
-static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
-                         void* const* arg) {
-  grpc_core::XdsLbClientStats::DroppedCallCounts* drop_entries =
-      static_cast<grpc_core::XdsLbClientStats::DroppedCallCounts*>(*arg);
-  if (drop_entries == nullptr) return true;
-  for (size_t i = 0; i < drop_entries->size(); ++i) {
-    if (!pb_encode_tag_for_field(stream, field)) return false;
-    grpc_lb_v1_ClientStatsPerToken drop_message;
-    drop_message.load_balance_token.funcs.encode = encode_string;
-    drop_message.load_balance_token.arg = (*drop_entries)[i].token.get();
-    drop_message.has_num_calls = true;
-    drop_message.num_calls = (*drop_entries)[i].count;
-    if (!pb_encode_submessage(stream, grpc_lb_v1_ClientStatsPerToken_fields,
-                              &drop_message)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats) {
-  xds_grpclb_request* req =
-      static_cast<xds_grpclb_request*>(gpr_zalloc(sizeof(xds_grpclb_request)));
-  req->has_client_stats = true;
-  req->client_stats.has_timestamp = true;
-  populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
-  req->client_stats.has_num_calls_started = true;
-  req->client_stats.has_num_calls_finished = true;
-  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
-  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
-  req->client_stats.has_num_calls_finished_known_received = true;
-  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
-  grpc_core::UniquePtr<grpc_core::XdsLbClientStats::DroppedCallCounts>
-      drop_counts;
-  client_stats->GetLocked(
-      &req->client_stats.num_calls_started,
-      &req->client_stats.num_calls_finished,
-      &req->client_stats.num_calls_finished_with_client_failed_to_send,
-      &req->client_stats.num_calls_finished_known_received, &drop_counts);
-  // Will be deleted in xds_grpclb_request_destroy().
-  req->client_stats.calls_finished_with_drop.arg = drop_counts.release();
-  return req;
-}
-
-grpc_slice xds_grpclb_request_encode(const xds_grpclb_request* request) {
-  size_t encoded_length;
-  pb_ostream_t sizestream;
-  pb_ostream_t outputstream;
-  grpc_slice slice;
-  memset(&sizestream, 0, sizeof(pb_ostream_t));
-  pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
-  encoded_length = sizestream.bytes_written;
-
-  slice = GRPC_SLICE_MALLOC(encoded_length);
-  outputstream =
-      pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
-  GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
-                       request) != 0);
-  return slice;
-}
-
-void xds_grpclb_request_destroy(xds_grpclb_request* request) {
-  if (request->has_client_stats) {
-    grpc_core::XdsLbClientStats::DroppedCallCounts* drop_entries =
-        static_cast<grpc_core::XdsLbClientStats::DroppedCallCounts*>(
-            request->client_stats.calls_finished_with_drop.arg);
-    grpc_core::Delete(drop_entries);
-  }
+void xds_request_destroy(xds_discovery_request* request) {
   gpr_free(request);
 }
 

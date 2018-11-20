@@ -239,6 +239,9 @@ class XdsLb : public LoadBalancingPolicy {
     // The closure used for either the load report timer or the callback for
     // completion of sending the load report.
     grpc_closure client_load_report_closure_;
+
+    // upb changes
+    upb_arena upb_arena_;
   };
 
   ~XdsLb();
@@ -507,14 +510,16 @@ XdsLb::BalancerCallState::BalancerCallState(
       xdslb_policy_->interested_parties(),
       GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
       nullptr, deadline, nullptr);
+  // init the arena
+  upb_arena_init(&upb_arena_);
   // Init the LB call request payload.
-  xds_grpclb_request* request =
-      xds_grpclb_request_create(xdslb_policy()->server_name_);
-  grpc_slice request_payload_slice = xds_grpclb_request_encode(request);
+  xds_discovery_request* request =
+      xds_request_create(xdslb_policy()->server_name_, &upb_arena_);
+  grpc_slice request_payload_slice = xds_request_encode(request, &upb_arena_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
-  xds_grpclb_request_destroy(request);
+  xds_request_destroy(request);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -671,25 +676,13 @@ bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
 void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
-  xds_grpclb_request* request =
-      xds_grpclb_load_report_request_create_locked(client_stats_.get());
-  // Skip client load report if the counters were all zero in the last
-  // report and they are still zero in this one.
-  if (LoadReportCountersAreZero(request)) {
-    if (last_client_load_report_counters_were_zero_) {
-      xds_grpclb_request_destroy(request);
-      ScheduleNextClientLoadReportLocked();
-      return;
-    }
-    last_client_load_report_counters_were_zero_ = true;
-  } else {
-    last_client_load_report_counters_were_zero_ = false;
-  }
-  grpc_slice request_payload_slice = xds_grpclb_request_encode(request);
+  xds_discovery_request* request =
+      xds_request_create(xdslb_policy()->server_name_, &upb_arena_);
+  grpc_slice request_payload_slice = xds_request_encode(request, &upb_arena_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
-  xds_grpclb_request_destroy(request);
+  xds_request_destroy(request);
   // Send the report.
   grpc_op op;
   memset(&op, 0, sizeof(op));

@@ -1315,6 +1315,12 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpclb_proto",
+        "xds_api",
+        ":gogoproto",
+        ":validate",
+        ":google_api",
+        ":google_rpc",
+        ":google_protobuf",
     ],
 )
 
@@ -1342,6 +1348,7 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_secure",
         "grpclb_proto",
+        "xds_api",
     ],
 )
 
