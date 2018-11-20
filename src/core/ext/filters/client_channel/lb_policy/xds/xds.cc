@@ -668,16 +668,17 @@ bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
          (drop_entries == nullptr || drop_entries->empty());
 }
 
+// TODO(vpowar): Use LRS to send the client Load Report.
 void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   xds_grpclb_request* request =
       xds_grpclb_load_report_request_create_locked(client_stats_.get());
+
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {
     if (last_client_load_report_counters_were_zero_) {
-      xds_grpclb_request_destroy(request);
       ScheduleNextClientLoadReportLocked();
       return;
     }
@@ -685,25 +686,8 @@ void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   } else {
     last_client_load_report_counters_were_zero_ = false;
   }
-  grpc_slice request_payload_slice = xds_grpclb_request_encode(request);
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
+  // TODO(vpowar): Send the report on LRS stream.
   xds_grpclb_request_destroy(request);
-  // Send the report.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = send_message_payload_;
-  GRPC_CLOSURE_INIT(&client_load_report_closure_, ClientLoadReportDoneLocked,
-                    this, grpc_combiner_scheduler(xdslb_policy()->combiner()));
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      lb_call_, &op, 1, &client_load_report_closure_);
-  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] call_error=%d", xdslb_policy_.get(),
-            call_error);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  }
 }
 
 void XdsLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
