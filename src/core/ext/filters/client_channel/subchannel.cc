@@ -497,24 +497,24 @@ static void parse_args_for_backoff_values(
         initial_backoff_ms = *min_connect_timeout_ms = max_backoff_ms =
             grpc_channel_arg_get_integer(
                 &args->args[i],
-                {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+                {static_cast<int>(initial_backoff_ms), 0, INT_MAX});
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         *min_connect_timeout_ms = grpc_channel_arg_get_integer(
             &args->args[i],
-            {static_cast<int>(*min_connect_timeout_ms), 100, INT_MAX});
+            {static_cast<int>(*min_connect_timeout_ms), 0, INT_MAX});
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         max_backoff_ms = grpc_channel_arg_get_integer(
-            &args->args[i], {static_cast<int>(max_backoff_ms), 100, INT_MAX});
+            &args->args[i], {static_cast<int>(max_backoff_ms), 0, INT_MAX});
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
         initial_backoff_ms = grpc_channel_arg_get_integer(
             &args->args[i],
-            {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+            {static_cast<int>(initial_backoff_ms), 0, INT_MAX});
       }
     }
   }
