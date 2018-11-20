@@ -1342,9 +1342,9 @@ argp.add_argument(
 argp.add_argument(
     '-l',
     '--language',
-    choices=['all'] + sorted(_LANGUAGES.keys()),
+    choices=sorted(_LANGUAGES.keys()),
     nargs='+',
-    default=['all'])
+    required=True)
 argp.add_argument(
     '-S', '--stop_on_failure', default=False, action='store_const', const=True)
 argp.add_argument(
@@ -1515,17 +1515,7 @@ build_config = run_config.build_config
 if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-if 'all' in args.language:
-    lang_list = list(_LANGUAGES.keys())
-else:
-    lang_list = args.language
-# We don't support code coverage on some languages
-if 'gcov' in args.config:
-    for bad in ['csharp', 'grpc-node', 'objc', 'sanity']:
-        if bad in lang_list:
-            lang_list.remove(bad)
-
-languages = set(_LANGUAGES[l] for l in lang_list)
+languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
     l.configure(run_config, args)
 
@@ -1537,7 +1527,7 @@ if any(language.make_options() for language in languages):
         )
         sys.exit(1)
     else:
-        # Combining make options is not clean and just happens to work. It allows C/C++ and C# to build
+        # Combining make options is not clean and just happens to work. It allows C & C++ to build
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
