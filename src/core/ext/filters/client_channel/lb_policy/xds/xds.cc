@@ -199,7 +199,6 @@ class XdsLb : public LoadBalancingPolicy {
     static bool LoadReportCountersAreZero(xds_grpclb_request* request);
 
     static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-    static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
     static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
     static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
     static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
@@ -674,11 +673,11 @@ void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   GPR_ASSERT(send_message_payload_ == nullptr);
   xds_grpclb_request* request =
       xds_grpclb_load_report_request_create_locked(client_stats_.get());
-
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {
     if (last_client_load_report_counters_were_zero_) {
+      xds_grpclb_request_destroy(request);
       ScheduleNextClientLoadReportLocked();
       return;
     }
@@ -688,19 +687,6 @@ void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   }
   // TODO(vpowar): Send the report on LRS stream.
   xds_grpclb_request_destroy(request);
-}
-
-void XdsLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
-                                                          grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  XdsLb* xdslb_policy = lb_calld->xdslb_policy();
-  grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
-  lb_calld->send_message_payload_ = nullptr;
-  if (error != GRPC_ERROR_NONE || lb_calld != xdslb_policy->lb_calld_.get()) {
-    lb_calld->Unref(DEBUG_LOCATION, "client_load_report");
-    return;
-  }
-  lb_calld->ScheduleNextClientLoadReportLocked();
 }
 
 void XdsLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
