@@ -664,7 +664,8 @@ module GRPC
                            :write_flag=, :trailing_metadata)
 
     # InterceptableView further limits access to an ActiveCall's methods
-    # for use in interceptors on the client, exposing only the deadline
-    InterceptableView = view_class(:deadline)
+    # for use in interceptors on the client, exposing only the deadline and the
+    # status.
+    InterceptableView = view_class(:deadline, :status)
   end
 end
