@@ -427,6 +427,8 @@ static grpc_resource_user* win_get_resource_user(grpc_endpoint* ep) {
 
 static int win_get_fd(grpc_endpoint* ep) { return -1; }
 
+static bool win_can_track_err(grpc_endpoint* ep) { return false; }
+
 static grpc_endpoint_vtable vtable = {win_read,
                                       win_write,
                                       win_add_to_pollset,
@@ -436,7 +438,8 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_destroy,
                                       win_get_resource_user,
                                       win_get_peer,
-                                      win_get_fd};
+                                      win_get_fd,
+                                      win_can_track_err};
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
