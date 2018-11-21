@@ -148,5 +148,14 @@ post_install do |installer|
         end
       end
     end
+
+    # Enable NSAssert on gRPC
+    if target.name == 'gRPC' || target.name == 'ProtoRPC' || target.name == 'RxLibrary'
+      target.build_configurations.each do |config|
+        if config.name != 'Release'
+          config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'
+        end
+      end
+    end
   end
 end
