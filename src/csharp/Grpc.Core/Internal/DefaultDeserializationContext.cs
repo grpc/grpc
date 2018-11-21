@@ -92,8 +92,8 @@ namespace Grpc.Core.Internal
             int offset = 0;
             while (reader.TryGetNextSlice(out Slice slice))
             {
-                slice.CopyTo(destination.Slice(offset, (int)slice.length));
-                offset += (int)slice.length;
+                slice.CopyTo(destination.Slice(offset, (int)slice.Length));
+                offset += (int)slice.Length;
             }
             // check that we fill the entire destination
             GrpcPreconditions.CheckState(offset == reader.TotalLength.Value);

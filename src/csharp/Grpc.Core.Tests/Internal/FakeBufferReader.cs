@@ -50,7 +50,7 @@ namespace Grpc.Core.Internal.Tests
             // return slice with inlined data of size 1
             // not very efficient, but enough for what we need for tests
             slice = ReadInlineSliceFromBuffer(data, currentIndex);
-            currentIndex += (int) slice.length;
+            currentIndex += (int) slice.Length;
             return true;
         }
 
