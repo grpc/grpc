@@ -71,7 +71,7 @@ platform(
           name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-standard-8"
         }
-        """,
+    """,
 )
 
 # This target is auto-generated from release/cpp.tpl and should not be
@@ -79,7 +79,6 @@ platform(
 toolchain(
     name = "cc-toolchain-clang-x86_64-default",
     exec_compatible_with = [
-        "@bazel_tools//platforms:autoconfigured",
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//tools/cpp:clang",
