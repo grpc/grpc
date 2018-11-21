@@ -75,7 +75,12 @@ class BlockingUnaryCallImpl {
                          "No message returned for unary request");
       }
     } else {
-      GPR_CODEGEN_ASSERT(!status_.ok());
+      // Some of the ops failed. For example, this can happen if deserialization
+      // of the message fails. gRPC Core guarantees that the op
+      // GRPC_OP_RECV_STATUS_ON_CLIENT always succeeds, so status would still be
+      // filled.
+      // TODO(yashykt): If deserialization fails, but the status received is OK,
+      // then it might be a good idea to change the status to reflect this.
     }
   }
   Status status() { return status_; }
