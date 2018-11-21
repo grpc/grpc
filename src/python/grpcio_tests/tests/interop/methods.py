@@ -391,7 +391,7 @@ def _custom_metadata(stub):
         if trailing_metadata[_TRAILING_METADATA_KEY] != trailing_metadata_value:
             raise ValueError('expected trailing metadata %s, got %s' %
                              (trailing_metadata_value,
-                              initial_metadata[_TRAILING_METADATA_KEY]))
+                              trailing_metadata[_TRAILING_METADATA_KEY]))
 
     # Testing with UnaryCall
     request = messages_pb2.SimpleRequest(
