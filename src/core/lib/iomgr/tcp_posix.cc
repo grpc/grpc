@@ -384,6 +384,12 @@ static void tcp_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
@@ -749,7 +755,6 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
-    grpc_core::TracedBuffer::Shutdown(&tcp->tb_head, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "error-tracking");
     return;
   }
@@ -783,6 +788,19 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
   GPR_ASSERT(0);
 }
 #endif /* GRPC_LINUX_ERRQUEUE */
+
+/* If outgoing_buffer_arg is filled, shuts down the list early, so that any
+ * release operations needed can be performed on the arg */
+void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
+  if (tcp->outgoing_buffer_arg) {
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
+  }
+}
 
 /* returns true if done, false if pending; if returning true, *error is set */
 #if defined(IOV_MAX) && IOV_MAX < 1000
@@ -831,8 +849,10 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     msg.msg_flags = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     error))
+                                     error)) {
+        tcp_shutdown_buffer_list(tcp);
         return true; /* something went wrong with timestamps */
+      }
     } else {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
@@ -856,10 +876,12 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       } else if (errno == EPIPE) {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+        tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
+        tcp_shutdown_buffer_list(tcp);
         return true;
       }
     }
@@ -936,17 +958,18 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
 
   GPR_ASSERT(tcp->write_cb == nullptr);
 
+  tcp->outgoing_buffer_arg = arg;
   if (buf->length == 0) {
     GRPC_CLOSURE_SCHED(
         cb, grpc_fd_is_shutdown(tcp->em_fd)
                 ? tcp_annotate_error(
                       GRPC_ERROR_CREATE_FROM_STATIC_STRING("EOF"), tcp)
                 : GRPC_ERROR_NONE);
+    tcp_shutdown_buffer_list(tcp);
     return;
   }
   tcp->outgoing_buffer = buf;
   tcp->outgoing_byte_idx = 0;
-  tcp->outgoing_buffer_arg = arg;
   if (arg) {
     GPR_ASSERT(grpc_event_engine_can_track_errors());
   }
@@ -999,6 +1022,22 @@ static grpc_resource_user* tcp_get_resource_user(grpc_endpoint* ep) {
   return tcp->resource_user;
 }
 
+static bool tcp_can_track_err(grpc_endpoint* ep) {
+  grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
+  if (!grpc_event_engine_can_track_errors()) {
+    return false;
+  }
+  struct sockaddr addr;
+  socklen_t len = sizeof(addr);
+  if (getsockname(tcp->fd, &addr, &len) < 0) {
+    return false;
+  }
+  if (addr.sa_family == AF_INET || addr.sa_family == AF_INET6) {
+    return true;
+  }
+  return false;
+}
+
 static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_write,
                                             tcp_add_to_pollset,
@@ -1008,7 +1047,8 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_destroy,
                                             tcp_get_resource_user,
                                             tcp_get_peer,
-                                            tcp_get_fd};
+                                            tcp_get_fd,
+                                            tcp_can_track_err};
 
 #define MAX_CHUNK_SIZE 32 * 1024 * 1024
 
@@ -1069,6 +1109,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->is_first_read = true;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
+  tcp->outgoing_buffer_arg = nullptr;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
@@ -1113,6 +1154,12 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
     /* Stop errors notification. */
+    gpr_mu_lock(&tcp->tb_mu);
+    grpc_core::TracedBuffer::Shutdown(
+        &tcp->tb_head, tcp->outgoing_buffer_arg,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+    gpr_mu_unlock(&tcp->tb_mu);
+    tcp->outgoing_buffer_arg = nullptr;
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }

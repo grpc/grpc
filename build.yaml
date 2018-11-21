@@ -962,6 +962,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -984,6 +985,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame_data.cc
   - src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -4601,6 +4603,18 @@ targets:
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  uses_polling: false
+- name: context_list_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/chttp2/context_list_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
   uses_polling: false
 - name: credentials_test
   gtest: true
