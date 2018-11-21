@@ -377,7 +377,7 @@ def _unimplemented_service(unimplemented_service_stub):
 
 def _custom_metadata(stub):
     initial_metadata_value = "test_initial_metadata_value"
-    trailing_metadata_value = "\x0a\x0b\x0a\x0b\x0a\x0b"
+    trailing_metadata_value = b"\x0a\x0b\x0a\x0b\x0a\x0b"
     metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
                 (_TRAILING_METADATA_KEY, trailing_metadata_value))
 
