@@ -13,6 +13,7 @@
 # limitations under the License.
 
 cimport libc.time
+from libc.stdint cimport intptr_t
 
 
 # Typedef types with approximately the same semantics to provide their names to
@@ -390,6 +391,15 @@ cdef extern from "grpc/grpc.h":
       grpc_server *server, grpc_completion_queue *cq, void *tag) nogil
   void grpc_server_cancel_all_calls(grpc_server *server) nogil
   void grpc_server_destroy(grpc_server *server) nogil
+
+  char* grpc_channelz_get_top_channels(intptr_t start_channel_id)
+  char* grpc_channelz_get_servers(intptr_t start_server_id)
+  char* grpc_channelz_get_server(intptr_t server_id)
+  char* grpc_channelz_get_server_sockets(intptr_t server_id,
+                                         intptr_t start_socket_id)
+  char* grpc_channelz_get_channel(intptr_t channel_id)
+  char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
+  char* grpc_channelz_get_socket(intptr_t socket_id)
 
 
 cdef extern from "grpc/grpc_security.h":

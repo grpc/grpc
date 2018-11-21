@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/grpc_version.py.template`!!!
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
-
-grpc_package(name = "health", visibility = "public")
-
-grpc_proto_library(
-    name = "health_proto",
-    srcs = ["health.proto"],
-)
-
-filegroup(
-    name = "health_proto_file",
-    srcs = [
-        "health.proto",
-    ],
-)
+VERSION = '1.18.0.dev0'
