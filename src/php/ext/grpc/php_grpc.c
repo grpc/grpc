@@ -200,7 +200,9 @@ void postfork_parent() {
 
 void register_fork_handlers() {
   if (getenv("GRPC_ENABLE_FORK_SUPPORT")) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   }
 }
 
