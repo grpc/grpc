@@ -28,19 +28,24 @@ cd DistribTest
 dotnet restore DistribTestDotNet.csproj
 
 dotnet build DistribTestDotNet.csproj
-dotnet publish -f netcoreapp1.0 DistribTestDotNet.csproj
-dotnet publish -f net45 DistribTestDotNet.csproj
+dotnet publish -f netcoreapp2.1 DistribTestDotNet.csproj
+#dotnet publish -f net45 DistribTestDotNet.csproj
 
 ls -R bin
 
+#ldd /root/.nuget/packages/grpc.core/*/lib/netstandard1.5/../../runtimes/linux/native/libgrpc_csharp_ext.x64.so
+
+#ldd /root/.nuget/packages/grpc.tools/*/tools/linux_x64/grpc_csharp_plugin
+
+#exit 1
 # .NET 4.5 target after dotnet build
-mono bin/Debug/net45/publish/DistribTestDotNet.exe
+#mono bin/Debug/net45/publish/DistribTestDotNet.exe
 
 # .NET 4.5 target after dotnet publish
-mono bin/Debug/net45/publish/DistribTestDotNet.exe
+#mono bin/Debug/net45/publish/DistribTestDotNet.exe
 
 # .NET Core target after dotnet build
-dotnet exec bin/Debug/netcoreapp1.0/DistribTestDotNet.dll
+dotnet exec bin/Debug/netcoreapp2.1/DistribTestDotNet.dll
 
 # .NET Core target after dotnet publish
-dotnet exec bin/Debug/netcoreapp1.0/publish/DistribTestDotNet.dll
+dotnet exec bin/Debug/netcoreapp2.1/publish/DistribTestDotNet.dll
