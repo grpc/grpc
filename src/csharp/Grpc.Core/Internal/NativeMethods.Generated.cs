@@ -130,6 +130,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.gprsharp_sizeof_timespec_delegate gprsharp_sizeof_timespec;
         public readonly Delegates.grpcsharp_test_callback_delegate grpcsharp_test_callback;
         public readonly Delegates.grpcsharp_test_nop_delegate grpcsharp_test_nop;
+        public readonly Delegates.grpcsharp_test_slice_inlined_size_delegate grpcsharp_test_slice_inlined_size;
         public readonly Delegates.grpcsharp_test_override_method_delegate grpcsharp_test_override_method;
 
         #endregion
@@ -232,6 +233,7 @@ namespace Grpc.Core.Internal
             this.gprsharp_sizeof_timespec = GetMethodDelegate<Delegates.gprsharp_sizeof_timespec_delegate>(library);
             this.grpcsharp_test_callback = GetMethodDelegate<Delegates.grpcsharp_test_callback_delegate>(library);
             this.grpcsharp_test_nop = GetMethodDelegate<Delegates.grpcsharp_test_nop_delegate>(library);
+            this.grpcsharp_test_slice_inlined_size = GetMethodDelegate<Delegates.grpcsharp_test_slice_inlined_size_delegate>(library);
             this.grpcsharp_test_override_method = GetMethodDelegate<Delegates.grpcsharp_test_override_method_delegate>(library);
         }
         
@@ -333,6 +335,7 @@ namespace Grpc.Core.Internal
             this.gprsharp_sizeof_timespec = DllImportsFromStaticLib.gprsharp_sizeof_timespec;
             this.grpcsharp_test_callback = DllImportsFromStaticLib.grpcsharp_test_callback;
             this.grpcsharp_test_nop = DllImportsFromStaticLib.grpcsharp_test_nop;
+            this.grpcsharp_test_slice_inlined_size = DllImportsFromStaticLib.grpcsharp_test_slice_inlined_size;
             this.grpcsharp_test_override_method = DllImportsFromStaticLib.grpcsharp_test_override_method;
         }
         
@@ -434,6 +437,7 @@ namespace Grpc.Core.Internal
             this.gprsharp_sizeof_timespec = DllImportsFromSharedLib.gprsharp_sizeof_timespec;
             this.grpcsharp_test_callback = DllImportsFromSharedLib.grpcsharp_test_callback;
             this.grpcsharp_test_nop = DllImportsFromSharedLib.grpcsharp_test_nop;
+            this.grpcsharp_test_slice_inlined_size = DllImportsFromSharedLib.grpcsharp_test_slice_inlined_size;
             this.grpcsharp_test_override_method = DllImportsFromSharedLib.grpcsharp_test_override_method;
         }
 
@@ -538,6 +542,7 @@ namespace Grpc.Core.Internal
             public delegate int gprsharp_sizeof_timespec_delegate();
             public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
+            public delegate int grpcsharp_test_slice_inlined_size_delegate();
             public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
         }
         
@@ -837,6 +842,9 @@ namespace Grpc.Core.Internal
             public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
             
             [DllImport(ImportName)]
+            public static extern int grpcsharp_test_slice_inlined_size();
+            
+            [DllImport(ImportName)]
             public static extern void grpcsharp_test_override_method(string methodName, string variant);
         }
         
@@ -1134,6 +1142,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern IntPtr grpcsharp_test_nop(IntPtr ptr);
+            
+            [DllImport(ImportName)]
+            public static extern int grpcsharp_test_slice_inlined_size();
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_test_override_method(string methodName, string variant);

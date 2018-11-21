@@ -1214,6 +1214,11 @@ GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_sizeof_grpc_event(void) {
   return sizeof(grpc_event);
 }
 
+/* For testing */
+GPR_EXPORT int32_t GPR_CALLTYPE grpcsharp_test_slice_inlined_size(void) {
+  return GRPC_SLICE_INLINED_SIZE;
+}
+
 /* Override a method for testing */
 GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_test_override_method(const char* method_name, const char* variant) {
