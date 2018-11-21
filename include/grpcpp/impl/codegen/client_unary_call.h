@@ -69,18 +69,17 @@ class BlockingUnaryCallImpl {
     ops.ClientSendClose();
     ops.ClientRecvStatus(context, &status_);
     call.PerformOps(&ops);
-    if (cq.Pluck(&ops)) {
-      if (!ops.got_message && status_.ok()) {
-        status_ = Status(StatusCode::UNIMPLEMENTED,
-                         "No message returned for unary request");
-      }
-    } else {
-      // Some of the ops failed. For example, this can happen if deserialization
-      // of the message fails. gRPC Core guarantees that the op
-      // GRPC_OP_RECV_STATUS_ON_CLIENT always succeeds, so status would still be
-      // filled.
-      // TODO(yashykt): If deserialization fails, but the status received is OK,
-      // then it might be a good idea to change the status to reflect this.
+    cq.Pluck(&ops);
+    // Some of the ops might fail. If the ops fail in the core layer, status
+    // would reflect the error. But, if the ops fail in the C++ layer, the
+    // status would still be the same as the one returned by gRPC Core. This can
+    // happen if deserialization of the message fails.
+    // TODO(yashykt): If deserialization fails, but the status received is OK,
+    // then it might be a good idea to change the status to something better
+    // than StatusCode::UNIMPLEMENTED to reflect this.
+    if (!ops.got_message && status_.ok()) {
+      status_ = Status(StatusCode::UNIMPLEMENTED,
+                       "No message returned for unary request");
     }
   }
   Status status() { return status_; }
