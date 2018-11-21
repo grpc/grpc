@@ -167,18 +167,20 @@ module GRPC
     # @param [Hash] args The arguments for the call
     #
     def intercept!(type, args = {})
-      return yield if @interceptors.none?
+      return yield(args) if @interceptors.none?
 
       i = @interceptors.pop
-      return yield unless i
+      return yield(args) unless i
 
-      i.send(type, args) do
+      i.send(type, args) do |intercepted_args|
+        intercepted_args ||= args
         if @interceptors.any?
-          intercept!(type, args) do
-            yield
+          intercept!(type, intercepted_args) do |nested_intercepted_args|
+            nested_intercepted_args ||= intercepted_args
+            yield nested_intercepted_args
           end
         else
-          yield
+          yield intercepted_args
         end
       end
     end

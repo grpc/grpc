@@ -168,14 +168,16 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:request_response, intercept_args) do
-            c.request_response(req, metadata: metadata)
+          interception_context.intercept!(:request_response, intercept_args) do |intercepted_args|
+            intercepted_args ||= intercept_args
+            c.request_response(intercepted_args[:request], metadata: intercepted_args[:metadata])
           end
         end
         op
       else
-        interception_context.intercept!(:request_response, intercept_args) do
-          c.request_response(req, metadata: metadata)
+        interception_context.intercept!(:request_response, intercept_args) do |intercepted_args|
+          intercepted_args ||= intercept_args
+          c.request_response(intercepted_args[:request], metadata: intercepted_args[:metadata])
         end
       end
     end
@@ -245,14 +247,16 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:client_streamer, intercept_args) do
-            c.client_streamer(requests)
+          interception_context.intercept!(:client_streamer, intercept_args) do |intercepted_args|
+            intercepted_args ||= intercept_args
+            c.client_streamer(intercepted_args[:requests], metadata: intercepted_args[:metadata])
           end
         end
         op
       else
-        interception_context.intercept!(:client_streamer, intercept_args) do
-          c.client_streamer(requests, metadata: metadata)
+        interception_context.intercept!(:client_streamer, intercept_args) do |intercepted_args|
+          intercepted_args ||= intercept_args
+          c.client_streamer(intercepted_args[:requests], metadata: intercepted_args[:metadata])
         end
       end
     end
@@ -334,17 +338,18 @@ module GRPC
       if return_op
         # return the operation view of the active_call; define #execute
         # as a new method for this instance that invokes #server_streamer
-        c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:server_streamer, intercept_args) do
-            c.server_streamer(req, &blk)
+          interception_context.intercept!(:server_streamer, intercept_args) do |intercepted_args|
+            intercepted_args ||= intercept_args
+            c.server_streamer(intercepted_args[:request], metadata: intercepted_args[:metadata], &blk)
           end
         end
         op
       else
-        interception_context.intercept!(:server_streamer, intercept_args) do
-          c.server_streamer(req, metadata: metadata, &blk)
+        interception_context.intercept!(:server_streamer, intercept_args) do |intercepted_args|
+          intercepted_args ||= intercept_args
+          c.server_streamer(intercepted_args[:request], metadata: intercepted_args[:metadata], &blk)
         end
       end
     end
@@ -459,14 +464,16 @@ module GRPC
         c.merge_metadata_to_send(metadata)
         op = c.operation
         op.define_singleton_method(:execute) do
-          interception_context.intercept!(:bidi_streamer, intercept_args) do
-            c.bidi_streamer(requests, &blk)
+          interception_context.intercept!(:bidi_streamer, intercept_args) do |intercepted_args|
+            intercepted_args ||= intercept_args
+            c.bidi_streamer(intercepted_args[:requests], metadata: intercepted_args[:metadata], &blk)
           end
         end
         op
       else
-        interception_context.intercept!(:bidi_streamer, intercept_args) do
-          c.bidi_streamer(requests, metadata: metadata, &blk)
+        interception_context.intercept!(:bidi_streamer, intercept_args) do |intercepted_args|
+          intercepted_args ||= intercept_args
+          c.bidi_streamer(intercepted_args[:requests], metadata: intercepted_args[:metadata], &blk)
         end
       end
     end
