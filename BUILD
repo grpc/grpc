@@ -66,9 +66,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "gizmo"
 
-core_version = "7.0.0-pre1"
+core_version = "7.0.0-pre2"
 
-version = "1.17.0-pre1"
+version = "1.17.0-pre2"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1087,11 +1087,11 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
+        "health_proto",
         "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "health_proto",
     ],
 )
 
@@ -1589,8 +1589,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/security/security_connector/security_connector.cc",
-        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
+        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1623,8 +1623,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.h",
         "src/core/lib/security/security_connector/local/local_security_connector.h",
         "src/core/lib/security/security_connector/security_connector.h",
-        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
+        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
