@@ -8,6 +8,7 @@
     "Grpc.Core.Internal.Tests.CompletionQueueEventTest",
     "Grpc.Core.Internal.Tests.CompletionQueueSafeHandleTest",
     "Grpc.Core.Internal.Tests.DefaultObjectPoolTest",
+    "Grpc.Core.Internal.Tests.FakeBufferReaderTest",
     "Grpc.Core.Internal.Tests.MetadataArraySafeHandleTest",
     "Grpc.Core.Internal.Tests.SliceTest",
     "Grpc.Core.Internal.Tests.TimespecTest",

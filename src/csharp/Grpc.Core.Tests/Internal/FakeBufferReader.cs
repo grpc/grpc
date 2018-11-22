@@ -47,35 +47,11 @@ namespace Grpc.Core.Internal.Tests
                 return false;
             }
 
-            // return slice with inlined data of size 1
-            // not very efficient, but enough for what we need for tests
-            slice = ReadInlineSliceFromBuffer(data, currentIndex);
-            currentIndex += (int) slice.Length;
+            int sliceLen = Math.Min(Slice.InlineDataMaxLength, data.Length - currentIndex);
+            // returning inlined slices is not very efficient, but good enough for tests
+            slice = Slice.CreateInlineFrom(new ReadOnlySpan<byte>(data, currentIndex, sliceLen));
+            currentIndex += sliceLen;
             return true;
-        }
-
-        // Reads up to Slice.InlineDataMaxLength bytes from buffer.
-        private static Slice ReadInlineSliceFromBuffer(byte[] buffer, int offset)
-        {
-            GrpcPreconditions.CheckArgument(offset >= 0);
-            ulong inline0 = 0;
-            ulong inline1 = 0;
-            ulong inline2 = 0;
-
-            if (offset < buffer.Length)
-            {
-                inline0 = BitConverter.ToUInt64(buffer, offset);
-            }
-            if (offset + 8 < buffer.Length)
-            {
-                inline1 = BitConverter.ToUInt64(buffer, offset + 8);
-            }
-            if (offset + 16 < buffer.Length)
-            {
-                inline2 = BitConverter.ToUInt64(buffer, offset + 16);
-            }
-            long sliceLen = Math.Min(Slice.InlineDataMaxLength, buffer.Length - offset);
-            return new Slice(sliceLen, IntPtr.Zero, new Slice.InlineData(inline0, inline1, inline2));
         }
     }
 }
