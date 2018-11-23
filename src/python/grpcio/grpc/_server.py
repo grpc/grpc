@@ -16,6 +16,7 @@
 import collections
 import enum
 import logging
+import os
 import threading
 import time
 
@@ -809,6 +810,7 @@ class _Server(grpc.Server):
         self._state = _ServerState(completion_queue, server, generic_handlers,
                                    _interceptor.service_pipeline(interceptors),
                                    thread_pool, maximum_concurrent_rpcs)
+        self._owner_pid = os.getpid()
 
     def add_generic_rpc_handlers(self, generic_rpc_handlers):
         _validate_generic_rpc_handlers(generic_rpc_handlers)
@@ -828,7 +830,10 @@ class _Server(grpc.Server):
         return _stop(self._state, grace)
 
     def __del__(self):
-        _stop(self._state, None)
+        # If a user calls fork in a handler, then the main server thread is no
+        # longer running. Trying to call here _stop will deadlock.
+        if os.getpid() == self._owner_pid:
+            _stop(self._state, None)
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
