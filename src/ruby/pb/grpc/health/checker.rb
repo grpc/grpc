@@ -14,7 +14,6 @@
 
 require 'grpc'
 require 'grpc/health/v1/health_services_pb'
-require 'thread'
 
 module Grpc
   # Health contains classes and modules that support providing a health check
