@@ -6,6 +6,10 @@ grpc_deps()
 
 grpc_test_only_deps()
 
+register_execution_platforms(
+    "//third_party/toolchains:all",
+)
+
 register_toolchains(
     "//third_party/toolchains:all",
 )
