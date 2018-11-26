@@ -222,8 +222,7 @@ static grpc_error* check_peer_locked(security_handshaker* h) {
     return grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Peer extraction failed"), result);
   }
-  grpc_security_connector_check_peer(h->connector, peer, &h->auth_context,
-                                     &h->on_peer_checked);
+  h->connector->check_peer(peer, &h->auth_context, &h->on_peer_checked);
   return GRPC_ERROR_NONE;
 }
 
@@ -477,8 +476,9 @@ static void client_handshaker_factory_add_handshakers(
   grpc_channel_security_connector* security_connector =
       reinterpret_cast<grpc_channel_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_channel_security_connector_add_handshakers(
-      security_connector, interested_parties, handshake_mgr);
+  if (security_connector) {
+    security_connector->add_handshakers(interested_parties, handshake_mgr);
+  }
 }
 
 static void server_handshaker_factory_add_handshakers(
@@ -488,8 +488,9 @@ static void server_handshaker_factory_add_handshakers(
   grpc_server_security_connector* security_connector =
       reinterpret_cast<grpc_server_security_connector*>(
           grpc_security_connector_find_in_args(args));
-  grpc_server_security_connector_add_handshakers(
-      security_connector, interested_parties, handshake_mgr);
+  if (security_connector) {
+    security_connector->add_handshakers(interested_parties, handshake_mgr);
+  }
 }
 
 static void handshaker_factory_destroy(

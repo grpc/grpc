@@ -89,8 +89,7 @@ grpc_channel_args* grpc_lb_policy_xds_modify_lb_channel_args(
   grpc_channel_credentials* creds_sans_call_creds = nullptr;
   if (channel_credentials != nullptr) {
     creds_sans_call_creds =
-        grpc_channel_credentials_duplicate_without_call_credentials(
-            channel_credentials);
+        channel_credentials->duplicate_without_call_credentials();
     GPR_ASSERT(creds_sans_call_creds != nullptr);
     args_to_remove[num_args_to_remove++] = GRPC_ARG_CHANNEL_CREDENTIALS;
     args_to_add[num_args_to_add++] =
@@ -101,7 +100,7 @@ grpc_channel_args* grpc_lb_policy_xds_modify_lb_channel_args(
   // Clean up.
   grpc_channel_args_destroy(args);
   if (creds_sans_call_creds != nullptr) {
-    grpc_channel_credentials_unref(creds_sans_call_creds);
+    creds_sans_call_creds->Unref();
   }
   return result;
 }

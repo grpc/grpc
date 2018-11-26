@@ -50,13 +50,11 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   ctx = static_cast<grpc_client_security_context*>(
       grpc_call_context_get(call, GRPC_CONTEXT_SECURITY));
   if (ctx == nullptr) {
-    ctx = grpc_client_security_context_create(grpc_call_get_arena(call));
-    ctx->creds = grpc_call_credentials_ref(creds);
+    ctx = grpc_client_security_context_create(grpc_call_get_arena(call), creds);
     grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
                           grpc_client_security_context_destroy);
   } else {
-    grpc_call_credentials_unref(ctx->creds);
-    ctx->creds = grpc_call_credentials_ref(creds);
+    ctx->set_creds(creds);
   }
 
   return GRPC_CALL_OK;
@@ -82,7 +80,7 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 
 /* --- grpc_client_security_context --- */
 grpc_client_security_context::~grpc_client_security_context() {
-  grpc_call_credentials_unref(creds);
+  if (creds) creds->Unref();
   GRPC_AUTH_CONTEXT_UNREF(auth_context, "client_security_context");
   if (extension.instance != nullptr && extension.destroy != nullptr) {
     extension.destroy(extension.instance);
@@ -90,9 +88,9 @@ grpc_client_security_context::~grpc_client_security_context() {
 }
 
 grpc_client_security_context* grpc_client_security_context_create(
-    gpr_arena* arena) {
+    gpr_arena* arena, grpc_call_credentials* creds) {
   return new (gpr_arena_alloc(arena, sizeof(grpc_client_security_context)))
-      grpc_client_security_context();
+      grpc_client_security_context(creds);
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
@@ -127,15 +125,7 @@ void grpc_server_security_context_destroy(void* ctx) {
 static grpc_auth_property_iterator empty_iterator = {nullptr, 0, nullptr};
 
 grpc_auth_context* grpc_auth_context_create(grpc_auth_context* chained) {
-  grpc_auth_context* ctx =
-      static_cast<grpc_auth_context*>(gpr_zalloc(sizeof(grpc_auth_context)));
-  gpr_ref_init(&ctx->refcount, 1);
-  if (chained != nullptr) {
-    ctx->chained = GRPC_AUTH_CONTEXT_REF(chained, "chained");
-    ctx->peer_identity_property_name =
-        ctx->chained->peer_identity_property_name;
-  }
-  return ctx;
+  return grpc_core::New<grpc_auth_context>(chained);
 }
 
 #ifndef NDEBUG
@@ -144,51 +134,32 @@ grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx,
                                          const char* reason) {
   if (ctx == nullptr) return nullptr;
   if (grpc_trace_auth_context_refcount.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    const grpc_core::RefCount::Value val = ctx->refcount();
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "AUTH_CONTEXT:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
             val + 1, reason);
   }
-#else
-grpc_auth_context* grpc_auth_context_ref(grpc_auth_context* ctx) {
-  if (ctx == nullptr) return nullptr;
-#endif
-  gpr_ref(&ctx->refcount);
-  return ctx;
+  return ctx->Ref();
 }
 
-#ifndef NDEBUG
 void grpc_auth_context_unref(grpc_auth_context* ctx, const char* file, int line,
                              const char* reason) {
   if (ctx == nullptr) return;
   if (grpc_trace_auth_context_refcount.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&ctx->refcount.count);
+    const grpc_core::RefCount::Value val = ctx->refcount();
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "AUTH_CONTEXT:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", ctx, val,
             val - 1, reason);
   }
-#else
-void grpc_auth_context_unref(grpc_auth_context* ctx) {
-  if (ctx == nullptr) return;
-#endif
-  if (gpr_unref(&ctx->refcount)) {
-    size_t i;
-    GRPC_AUTH_CONTEXT_UNREF(ctx->chained, "chained");
-    if (ctx->properties.array != nullptr) {
-      for (i = 0; i < ctx->properties.count; i++) {
-        grpc_auth_property_reset(&ctx->properties.array[i]);
-      }
-      gpr_free(ctx->properties.array);
-    }
-    gpr_free(ctx);
-  }
+  ctx->Unref();
 }
+#endif
 
 const char* grpc_auth_context_peer_identity_property_name(
     const grpc_auth_context* ctx) {
   GRPC_API_TRACE("grpc_auth_context_peer_identity_property_name(ctx=%p)", 1,
                  (ctx));
-  return ctx->peer_identity_property_name;
+  return ctx->peer_identity_property_name();
 }
 
 int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
@@ -204,13 +175,13 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context* ctx,
             name != nullptr ? name : "NULL");
     return 0;
   }
-  ctx->peer_identity_property_name = prop->name;
+  ctx->set_peer_identity_property_name(prop->name);
   return 1;
 }
 
 int grpc_auth_context_peer_is_authenticated(const grpc_auth_context* ctx) {
   GRPC_API_TRACE("grpc_auth_context_peer_is_authenticated(ctx=%p)", 1, (ctx));
-  return ctx->peer_identity_property_name == nullptr ? 0 : 1;
+  return ctx->is_authenticated();
 }
 
 grpc_auth_property_iterator grpc_auth_context_property_iterator(
@@ -226,16 +197,17 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     grpc_auth_property_iterator* it) {
   GRPC_API_TRACE("grpc_auth_property_iterator_next(it=%p)", 1, (it));
   if (it == nullptr || it->ctx == nullptr) return nullptr;
-  while (it->index == it->ctx->properties.count) {
-    if (it->ctx->chained == nullptr) return nullptr;
-    it->ctx = it->ctx->chained;
+  while (it->index == it->ctx->properties().count) {
+    if (it->ctx->chained() == nullptr) return nullptr;
+    it->ctx = it->ctx->chained();
     it->index = 0;
   }
   if (it->name == nullptr) {
-    return &it->ctx->properties.array[it->index++];
+    return &it->ctx->properties().array[it->index++];
   } else {
-    while (it->index < it->ctx->properties.count) {
-      const grpc_auth_property* prop = &it->ctx->properties.array[it->index++];
+    while (it->index < it->ctx->properties().count) {
+      const grpc_auth_property* prop =
+          &it->ctx->properties().array[it->index++];
       GPR_ASSERT(prop->name != nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
@@ -262,30 +234,22 @@ grpc_auth_property_iterator grpc_auth_context_peer_identity(
   GRPC_API_TRACE("grpc_auth_context_peer_identity(ctx=%p)", 1, (ctx));
   if (ctx == nullptr) return empty_iterator;
   return grpc_auth_context_find_properties_by_name(
-      ctx, ctx->peer_identity_property_name);
+      ctx, ctx->peer_identity_property_name());
 }
 
-static void ensure_auth_context_capacity(grpc_auth_context* ctx) {
-  if (ctx->properties.count == ctx->properties.capacity) {
-    ctx->properties.capacity =
-        GPR_MAX(ctx->properties.capacity + 8, ctx->properties.capacity * 2);
-    ctx->properties.array = static_cast<grpc_auth_property*>(
-        gpr_realloc(ctx->properties.array,
-                    ctx->properties.capacity * sizeof(grpc_auth_property)));
+void grpc_auth_context::ensure_capacity() {
+  if (properties_.count == properties_.capacity) {
+    properties_.capacity =
+        GPR_MAX(properties_.capacity + 8, properties_.capacity * 2);
+    properties_.array = static_cast<grpc_auth_property*>(gpr_realloc(
+        properties_.array, properties_.capacity * sizeof(grpc_auth_property)));
   }
 }
 
-void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
-                                    const char* value, size_t value_length) {
-  grpc_auth_property* prop;
-  GRPC_API_TRACE(
-      "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
-      "value_length=%lu)",
-      6,
-      (ctx, name, (int)value_length, (int)value_length, value,
-       (unsigned long)value_length));
-  ensure_auth_context_capacity(ctx);
-  prop = &ctx->properties.array[ctx->properties.count++];
+void grpc_auth_context::add_property(const char* name, const char* value,
+                                     size_t value_length) {
+  ensure_capacity();
+  grpc_auth_property* prop = &properties_.array[properties_.count++];
   prop->name = gpr_strdup(name);
   prop->value = static_cast<char*>(gpr_malloc(value_length + 1));
   memcpy(prop->value, value, value_length);
@@ -293,18 +257,33 @@ void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
   prop->value_length = value_length;
 }
 
-void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
-                                            const char* name,
-                                            const char* value) {
-  grpc_auth_property* prop;
+void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
+                                    const char* value, size_t value_length) {
   GRPC_API_TRACE(
-      "grpc_auth_context_add_cstring_property(ctx=%p, name=%s, value=%s)", 3,
-      (ctx, name, value));
-  ensure_auth_context_capacity(ctx);
-  prop = &ctx->properties.array[ctx->properties.count++];
+      "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
+      "value_length=%lu)",
+      6,
+      (ctx, name, (int)value_length, (int)value_length, value,
+       (unsigned long)value_length));
+  ctx->add_property(name, value, value_length);
+}
+
+void grpc_auth_context::add_cstring_property(const char* name,
+                                             const char* value) {
+  ensure_capacity();
+  grpc_auth_property* prop = &properties_.array[properties_.count++];
   prop->name = gpr_strdup(name);
   prop->value = gpr_strdup(value);
   prop->value_length = strlen(value);
+}
+
+void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
+                                            const char* name,
+                                            const char* value) {
+  GRPC_API_TRACE(
+      "grpc_auth_context_add_cstring_property(ctx=%p, name=%s, value=%s)", 3,
+      (ctx, name, value));
+  ctx->add_cstring_property(name, value);
 }
 
 void grpc_auth_property_reset(grpc_auth_property* property) {

@@ -412,8 +412,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
             channel_creds, call_creds, nullptr)));
-    grpc_call_credentials_unref(call_creds);
-    grpc_channel_credentials_unref(channel_creds);
+    call_creds->Unref();
+    channel_creds->Unref();
     channel_ = CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }

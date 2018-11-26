@@ -208,7 +208,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
-    if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
+    if (chand->creds != nullptr &&
+        chand->creds->processor().process != nullptr) {
       // We're calling out to the application, so we need to make sure
       // to drop the call combiner early if we get cancelled.
       GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
@@ -218,8 +219,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
-      chand->creds->processor.process(
-          chand->creds->processor.state, chand->auth_context,
+      chand->creds->processor().process(
+          chand->creds->processor().state, chand->auth_context,
           calld->md.metadata, calld->md.count, on_md_processing_done, elem);
       return;
     }
@@ -298,7 +299,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
       GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
   grpc_server_credentials* creds =
       grpc_find_server_credentials_in_args(args->channel_args);
-  chand->creds = grpc_server_credentials_ref(creds);
+  chand->creds = creds->Ref();
   return GRPC_ERROR_NONE;
 }
 
@@ -306,7 +307,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
-  grpc_server_credentials_unref(chand->creds);
+  chand->creds->Unref();
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {

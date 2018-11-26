@@ -39,76 +39,9 @@
 #define GRPC_UDS_URL_SCHEME "unix"
 #define GRPC_LOCAL_TRANSPORT_SECURITY_TYPE "local"
 
-typedef struct {
-  grpc_channel_security_connector base;
-  char* target_name;
-} grpc_local_channel_security_connector;
+namespace {
 
-typedef struct {
-  grpc_server_security_connector base;
-} grpc_local_server_security_connector;
-
-static void local_channel_destroy(grpc_security_connector* sc) {
-  if (sc == nullptr) {
-    return;
-  }
-  auto c = reinterpret_cast<grpc_local_channel_security_connector*>(sc);
-  grpc_call_credentials_unref(c->base.request_metadata_creds);
-  grpc_channel_credentials_unref(c->base.channel_creds);
-  gpr_free(c->target_name);
-  gpr_free(sc);
-}
-
-static void local_server_destroy(grpc_security_connector* sc) {
-  if (sc == nullptr) {
-    return;
-  }
-  auto c = reinterpret_cast<grpc_local_server_security_connector*>(sc);
-  grpc_server_credentials_unref(c->base.server_creds);
-  gpr_free(sc);
-}
-
-static void local_channel_add_handshakers(
-    grpc_channel_security_connector* sc, grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_manager) {
-  tsi_handshaker* handshaker = nullptr;
-  GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
-             TSI_OK);
-  grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
-                                                    handshaker, &sc->base));
-}
-
-static void local_server_add_handshakers(
-    grpc_server_security_connector* sc, grpc_pollset_set* interested_parties,
-    grpc_handshake_manager* handshake_manager) {
-  tsi_handshaker* handshaker = nullptr;
-  GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */, &handshaker) ==
-             TSI_OK);
-  grpc_handshake_manager_add(handshake_manager, grpc_security_handshaker_create(
-                                                    handshaker, &sc->base));
-}
-
-static int local_channel_cmp(grpc_security_connector* sc1,
-                             grpc_security_connector* sc2) {
-  grpc_local_channel_security_connector* c1 =
-      reinterpret_cast<grpc_local_channel_security_connector*>(sc1);
-  grpc_local_channel_security_connector* c2 =
-      reinterpret_cast<grpc_local_channel_security_connector*>(sc2);
-  int c = grpc_channel_security_connector_cmp(&c1->base, &c2->base);
-  if (c != 0) return c;
-  return strcmp(c1->target_name, c2->target_name);
-}
-
-static int local_server_cmp(grpc_security_connector* sc1,
-                            grpc_security_connector* sc2) {
-  grpc_local_server_security_connector* c1 =
-      reinterpret_cast<grpc_local_server_security_connector*>(sc1);
-  grpc_local_server_security_connector* c2 =
-      reinterpret_cast<grpc_local_server_security_connector*>(sc2);
-  return grpc_server_security_connector_cmp(&c1->base, &c2->base);
-}
-
-static grpc_security_status local_auth_context_create(grpc_auth_context** ctx) {
+grpc_security_status local_auth_context_create(grpc_auth_context** ctx) {
   if (ctx == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to local_auth_context_create()");
     return GRPC_SECURITY_ERROR;
@@ -123,12 +56,12 @@ static grpc_security_status local_auth_context_create(grpc_auth_context** ctx) {
   return GRPC_SECURITY_OK;
 }
 
-static void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
-                             grpc_auth_context** auth_context,
-                             grpc_closure* on_peer_checked) {
+void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                      grpc_auth_context** auth_context,
+                      grpc_closure* on_peer_checked) {
   grpc_security_status status;
   /* Create an auth context which is necessary to pass the santiy check in
-   * {client, server}_auth_filter that verifies if the peer's auth context is
+   * {client, server}_auth_filter that verifies if the pepp's auth context is
    * obtained during handshakes. The auth context is only checked for its
    * existence and not actually used.
    */
@@ -140,32 +73,90 @@ static void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
   GRPC_CLOSURE_SCHED(on_peer_checked, error);
 }
 
-static grpc_security_connector_vtable local_channel_vtable = {
-    local_channel_destroy, local_check_peer, local_channel_cmp};
+class grpc_local_channel_security_connector final
+    : public grpc_channel_security_connector {
+ public:
+  grpc_local_channel_security_connector(
+      grpc_channel_credentials* channel_creds,
+      grpc_call_credentials* request_metadata_creds, const char* target_name)
+      : grpc_channel_security_connector(GRPC_UDS_URL_SCHEME, channel_creds,
+                                        request_metadata_creds),
+        target_name_(gpr_strdup(target_name)) {}
 
-static grpc_security_connector_vtable local_server_vtable = {
-    local_server_destroy, local_check_peer, local_server_cmp};
+  ~grpc_local_channel_security_connector() override { gpr_free(target_name_); }
 
-static bool local_check_call_host(grpc_channel_security_connector* sc,
-                                  const char* host,
-                                  grpc_auth_context* auth_context,
-                                  grpc_closure* on_call_host_checked,
-                                  grpc_error** error) {
-  grpc_local_channel_security_connector* local_sc =
-      reinterpret_cast<grpc_local_channel_security_connector*>(sc);
-  if (host == nullptr || local_sc == nullptr ||
-      strcmp(host, local_sc->target_name) != 0) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "local call host does not match target name");
+  void add_handshakers(grpc_pollset_set* interested_parties,
+                       grpc_handshake_manager* handshake_manager) override {
+    tsi_handshaker* handshaker = nullptr;
+    GPR_ASSERT(local_tsi_handshaker_create(true /* is_client */, &handshaker) ==
+               TSI_OK);
+    grpc_handshake_manager_add(
+        handshake_manager, grpc_security_handshaker_create(handshaker, this));
   }
-  return true;
-}
 
-static void local_cancel_check_call_host(grpc_channel_security_connector* sc,
-                                         grpc_closure* on_call_host_checked,
-                                         grpc_error* error) {
-  GRPC_ERROR_UNREF(error);
-}
+  int cmp(const grpc_security_connector* other_sc) const override {
+    auto* other =
+        reinterpret_cast<const grpc_local_channel_security_connector*>(
+            other_sc);
+    int c = grpc_channel_security_connector_cmp(this, other);
+    if (c != 0) return c;
+    return strcmp(target_name_, other->target_name_);
+  }
+
+  void check_peer(tsi_peer peer, grpc_auth_context** auth_context,
+                  grpc_closure* on_peer_checked) override {
+    local_check_peer(this, peer, auth_context, on_peer_checked);
+  }
+
+  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+                       grpc_closure* on_call_host_checked,
+                       grpc_error** error) override {
+    if (host == nullptr || strcmp(host, target_name_) != 0) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "local call host does not match target name");
+    }
+    return true;
+  }
+
+  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+                              grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
+  const char* target_name() const { return target_name_; }
+
+ private:
+  char* target_name_;
+};
+
+class grpc_local_server_security_connector final
+    : public grpc_server_security_connector {
+ public:
+  grpc_local_server_security_connector(grpc_server_credentials* server_creds)
+      : grpc_server_security_connector(GRPC_UDS_URL_SCHEME, server_creds) {}
+  ~grpc_local_server_security_connector() override = default;
+
+  void add_handshakers(grpc_pollset_set* interested_parties,
+                       grpc_handshake_manager* handshake_manager) override {
+    tsi_handshaker* handshaker = nullptr;
+    GPR_ASSERT(local_tsi_handshaker_create(false /* is_client */,
+                                           &handshaker) == TSI_OK);
+    grpc_handshake_manager_add(
+        handshake_manager, grpc_security_handshaker_create(handshaker, this));
+  }
+
+  void check_peer(tsi_peer peer, grpc_auth_context** auth_context,
+                  grpc_closure* on_peer_checked) override {
+    local_check_peer(this, peer, auth_context, on_peer_checked);
+  }
+
+  int cmp(const grpc_security_connector* other) const override {
+    return grpc_server_security_connector_cmp(
+        this,
+        reinterpret_cast<const grpc_local_server_security_connector*>(other));
+  }
+};
+}  // namespace
 
 grpc_security_status grpc_local_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
@@ -181,7 +172,7 @@ grpc_security_status grpc_local_channel_security_connector_create(
   // Check if local_connect_type is UDS. Only UDS is supported for now.
   grpc_local_credentials* creds =
       reinterpret_cast<grpc_local_credentials*>(channel_creds);
-  if (creds->connect_type != UDS) {
+  if (creds->connect_type() != UDS) {
     gpr_log(GPR_ERROR,
             "Invalid local channel type to "
             "grpc_local_channel_security_connector_create()");
@@ -198,20 +189,8 @@ grpc_security_status grpc_local_channel_security_connector_create(
             "grpc_local_channel_security_connector_create()");
     return GRPC_SECURITY_ERROR;
   }
-  auto c = static_cast<grpc_local_channel_security_connector*>(
-      gpr_zalloc(sizeof(grpc_local_channel_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
-  c->base.base.vtable = &local_channel_vtable;
-  c->base.add_handshakers = local_channel_add_handshakers;
-  c->base.channel_creds = grpc_channel_credentials_ref(channel_creds);
-  c->base.request_metadata_creds =
-      grpc_call_credentials_ref(request_metadata_creds);
-  c->base.check_call_host = local_check_call_host;
-  c->base.cancel_check_call_host = local_cancel_check_call_host;
-  c->base.base.url_scheme =
-      creds->connect_type == UDS ? GRPC_UDS_URL_SCHEME : nullptr;
-  c->target_name = gpr_strdup(target_name);
-  *sc = &c->base;
+  *sc = grpc_core::New<grpc_local_channel_security_connector>(
+      channel_creds, request_metadata_creds, target_name);
   return GRPC_SECURITY_OK;
 }
 
@@ -227,20 +206,12 @@ grpc_security_status grpc_local_server_security_connector_create(
   // Check if local_connect_type is UDS. Only UDS is supported for now.
   grpc_local_server_credentials* creds =
       reinterpret_cast<grpc_local_server_credentials*>(server_creds);
-  if (creds->connect_type != UDS) {
+  if (creds->connect_type() != UDS) {
     gpr_log(GPR_ERROR,
             "Invalid local server type to "
             "grpc_local_server_security_connector_create()");
     return GRPC_SECURITY_ERROR;
   }
-  auto c = static_cast<grpc_local_server_security_connector*>(
-      gpr_zalloc(sizeof(grpc_local_server_security_connector)));
-  gpr_ref_init(&c->base.base.refcount, 1);
-  c->base.base.vtable = &local_server_vtable;
-  c->base.server_creds = grpc_server_credentials_ref(server_creds);
-  c->base.base.url_scheme =
-      creds->connect_type == UDS ? GRPC_UDS_URL_SCHEME : nullptr;
-  c->base.add_handshakers = local_server_add_handshakers;
-  *sc = &c->base;
+  *sc = grpc_core::New<grpc_local_server_security_connector>(server_creds);
   return GRPC_SECURITY_OK;
 }

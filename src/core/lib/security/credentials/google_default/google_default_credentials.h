@@ -39,11 +39,25 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
-typedef struct {
-  grpc_channel_credentials base;
-  grpc_channel_credentials* alts_creds;
-  grpc_channel_credentials* ssl_creds;
-} grpc_google_default_channel_credentials;
+class grpc_google_default_channel_credentials
+    : public grpc_channel_credentials {
+ public:
+  grpc_google_default_channel_credentials(grpc_channel_credentials* alts_creds,
+                                          grpc_channel_credentials* ssl_creds);
+  ~grpc_google_default_channel_credentials() override;
+
+  grpc_security_status create_security_connector(
+      grpc_call_credentials* call_creds, const char* target,
+      const grpc_channel_args* args, grpc_channel_security_connector** sc,
+      grpc_channel_args** new_args) override;
+
+  const grpc_channel_credentials* alts_creds() const { return alts_creds_; }
+  const grpc_channel_credentials* ssl_creds() const { return ssl_creds_; }
+
+ private:
+  grpc_channel_credentials* alts_creds_;
+  grpc_channel_credentials* ssl_creds_;
+};
 
 namespace grpc_core {
 namespace internal {
