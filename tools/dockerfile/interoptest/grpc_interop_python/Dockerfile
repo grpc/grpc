@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
-
+FROM debian:stretch
+  
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
@@ -49,27 +49,24 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-#====================
-# Python dependencies
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client oauth2client
 
-# Install dependencies
+# Install Python 2.7
+RUN apt-get update && apt-get install -y python2.7 python-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
-
-# Install pip and virtualenv for Python 3.4
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
-RUN python3.4 -m pip install virtualenv
+# Add Debian 'testing' repository
+RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
 
 
 RUN mkdir /var/local/jenkins
 
 # Define the default command.
 CMD ["bash"]
+
+
+RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
