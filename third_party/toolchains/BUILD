@@ -74,6 +74,28 @@ platform(
     """,
 )
 
+platform(
+    name = "host_platform-large",
+    constraint_values = [
+        "//third_party/toolchains/machine_size:large",
+    ],
+    cpu_constraints = [
+        "@bazel_tools//platforms:x86_32",
+        "@bazel_tools//platforms:x86_64",
+        "@bazel_tools//platforms:ppc",
+        "@bazel_tools//platforms:arm",
+        "@bazel_tools//platforms:aarch64",
+        "@bazel_tools//platforms:s390x",
+    ],
+    host_platform = True,
+    os_constraints = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:freebsd",
+        "@bazel_tools//platforms:linux",
+        "@bazel_tools//platforms:windows",
+    ],
+)
+
 # This target is auto-generated from release/cpp.tpl and should not be
 # modified directly.
 toolchain(
