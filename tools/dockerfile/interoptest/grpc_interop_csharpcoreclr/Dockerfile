@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:stretch
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -67,37 +67,43 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 #================
 # C# dependencies
 
-# Update to a newer version of mono
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb http://download.mono-project.com/repo/debian jessie main" | tee /etc/apt/sources.list.d/mono-official.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-apache24-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
-RUN echo "deb http://download.mono-project.com/repo/debian wheezy-libjpeg62-compat main" | tee -a /etc/apt/sources.list.d/mono-xamarin.list
+# cmake >=3.6 needed to build grpc_csharp_ext
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
-# Install dependencies
-RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y \
+# Install mono
+RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
+RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+RUN echo "deb https://download.mono-project.com/repo/debian stable-stretch main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+RUN apt-get update && apt-get install -y \
     mono-devel \
     ca-certificates-mono \
     nuget \
     && apt-get clean
 
-RUN nuget update -self
+# Install dotnet SDK
+ENV DOTNET_SDK_VERSION 2.1.500
+RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && rm dotnet.tar.gz \
+    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
-#=================
-# Use cmake 3.6 from jessie-backports
-# needed to build grpc_csharp_ext with cmake
 
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+# Install .NET Core 1.0.5 Runtime (required to run netcoreapp1.0)
+RUN curl -sSL -o dotnet105.tar.gz https://download.microsoft.com/download/2/4/A/24A06858-E8AC-469B-8AE6-D0CEC9BA982A/dotnet-debian-x64.1.0.5.tar.gz \
+    && mkdir -p dotnet105_download \
+    && tar zxf dotnet105.tar.gz -C dotnet105_download \
+    && cp -r dotnet105_download/shared/Microsoft.NETCore.App/1.0.5/ /usr/share/dotnet/shared/Microsoft.NETCore.App/ \
+    && rm -rf dotnet105_download/ dotnet105.tar.gz
+RUN apt-get update && apt-get install -y libunwind8 && apt-get clean
+# To prevent "Failed to initialize CoreCLR, HRESULT: 0x80131500" with .NET Core 1.0.5 runtime
+RUN curl -sSL -o libicu52.deb http://http.us.debian.org/debian/pool/main/i/icu/libicu52_52.1-8+deb8u7_amd64.deb \
+    && dpkg -i libicu52.deb \
+    && rm libicu52.deb
+RUN curl -sSL -o libssl100.deb http://security.debian.org/debian-security/pool/updates/main/o/openssl/libssl1.0.0_1.0.1t-1+deb8u10_amd64.deb \
+    && dpkg -i libssl100.deb \
+    && rm libssl100.deb
 
-# Install dotnet SDK based on https://www.microsoft.com/net/core#debian
-RUN apt-get update && apt-get install -y curl libunwind8 gettext
-# dotnet-dev-1.0.0-preview2-003131
-RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
-RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
-# dotnet-dev-1.0.1
-RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453
-RUN mkdir -p /opt/dotnet && tar zxf dotnet101.tar.gz -C /opt/dotnet
-RUN ln -s /opt/dotnet/dotnet /usr/local/bin
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip

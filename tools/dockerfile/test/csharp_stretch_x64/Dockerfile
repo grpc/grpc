@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,6 +48,10 @@ RUN apt-get update && apt-get install -y \
 #================
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
+
+# Google Cloud platform API libraries
+RUN apt-get update && apt-get install -y python-pip && apt-get clean
+RUN pip install --upgrade google-api-python-client oauth2client
 
 #====================
 # Python dependencies
