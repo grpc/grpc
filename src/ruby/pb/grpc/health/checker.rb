@@ -36,9 +36,9 @@ module Grpc
         @status_mutex.synchronize do
           status = @statuses["#{req.service}"]
         end
-	if status.nil?
+        if status.nil?
           fail GRPC::BadStatus.new_status_exception(StatusCodes::NOT_FOUND)
-	end
+        end
         HealthCheckResponse.new(status: status)
       end
 
