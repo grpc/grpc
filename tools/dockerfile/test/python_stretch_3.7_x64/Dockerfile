@@ -70,3 +70,6 @@ CMD ["bash"]
 
 RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
+
+# for Python test coverage reporting
+RUN pip install coverage

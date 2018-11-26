@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
@@ -154,6 +155,7 @@ bool g_flow_control_enabled = true;
 /*******************************************************************************
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
+
 grpc_chttp2_transport::~grpc_chttp2_transport() {
   size_t i;
 
@@ -167,6 +169,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy_internal(&outbuf);
   grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
+
+  grpc_core::ContextList::Execute(cl, nullptr, GRPC_ERROR_NONE);
+  cl = nullptr;
 
   grpc_slice_buffer_destroy_internal(&read_buffer);
   grpc_chttp2_hpack_parser_destroy(&hpack_parser);
@@ -1065,11 +1070,13 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
 static void write_action(void* gt, grpc_error* error) {
   GPR_TIMER_SCOPE("write_action", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
+  void* cl = t->cl;
+  t->cl = nullptr;
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end_locked, t,
                         grpc_combiner_scheduler(t->combiner)),
-      nullptr);
+      cl);
 }
 
 /* Callback from the grpc_endpoint after bytes have been written by calling
@@ -1393,6 +1400,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   GRPC_STATS_INC_HTTP2_OP_BATCHES();
 
+  s->context = op->payload->context;
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,

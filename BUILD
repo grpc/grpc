@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gizmo"
+g_stands_for = "goose"
 
-core_version = "6.0.0-dev"
+core_version = "7.0.0-dev"
 
-version = "1.17.0-dev"
+version = "1.18.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1048,12 +1048,12 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy_factory.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
-        "src/core/ext/filters/client_channel/method_params.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
@@ -1070,13 +1070,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
-        "src/core/ext/filters/client_channel/method_params.h",
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
@@ -1650,6 +1650,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
+        "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
@@ -1673,6 +1674,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
+        "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
@@ -1962,7 +1964,6 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
-        "src/core/tsi/alts_transport_security.cc",
         "src/core/tsi/fake_transport_security.cc",
         "src/core/tsi/local_transport_security.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
@@ -1977,7 +1978,6 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
-        "src/core/tsi/alts_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/local_transport_security.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",

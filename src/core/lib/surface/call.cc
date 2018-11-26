@@ -694,6 +694,10 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
   execute_batch(c, op, &state->start_batch);
 }
 
+void grpc_call_cancel_internal(grpc_call* call) {
+  cancel_with_error(call, GRPC_ERROR_CANCELLED);
+}
+
 static grpc_error* error_from_status(grpc_status_code status,
                                      const char* description) {
   // copying 'description' is needed to ensure the grpc_call_cancel_with_status

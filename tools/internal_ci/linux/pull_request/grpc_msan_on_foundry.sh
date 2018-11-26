@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,4 @@
 
 set -ex
 
-out=$(readlink -f "${1:-coverage}")
-
-root=$(readlink -f "$(dirname "$0")/../../..")
-shift || true
-tmp=$(mktemp)
-cd "$root"
-tools/run_tests/run_tests.py -c gcov -l c c++ "$@" || true
-lcov --capture --directory . --output-file "$tmp"
-genhtml "$tmp" --output-directory "$out"
-rm "$tmp"
-if which xdg-open > /dev/null
-then
-  xdg-open "file://$out/index.html"
-fi
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=msan

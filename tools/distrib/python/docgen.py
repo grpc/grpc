@@ -32,12 +32,10 @@ parser.add_argument(
     help='GRPC/GPR libraries build configuration',
     default='opt')
 parser.add_argument('--submit', action='store_true')
-parser.add_argument('--gh-user', type=str, help='GitHub user to push as.')
 parser.add_argument(
-    '--gh-repo-owner',
+    '--repo-owner',
     type=str,
-    help=('Owner of the GitHub repository to be pushed; '
-          'defaults to --gh-user.'))
+    help=('Owner of the GitHub repository to be pushed'))
 parser.add_argument('--doc-branch', type=str)
 args = parser.parse_args()
 
@@ -70,7 +68,7 @@ subprocess_arguments_list = [
         'env': environment
     },
     {
-        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==10.0.1'],
+        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==18.1'],
         'env': environment
     },
     {
@@ -78,7 +76,7 @@ subprocess_arguments_list = [
         'env': environment
     },
     {
-        'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'],
+        'args': [VIRTUALENV_PIP_PATH, 'install', 'Sphinx~=1.8.1'],
         'env': environment
     },
     {
@@ -91,12 +89,12 @@ for subprocess_arguments in subprocess_arguments_list:
     print('Running command: {}'.format(subprocess_arguments['args']))
     subprocess.check_call(**subprocess_arguments)
 
-if args.submit:
-    assert args.gh_user
+if not args.submit:
+    print('Please check generated Python doc inside doc/build')
+elif args.submit:
+    assert args.repo_owner
     assert args.doc_branch
-    github_user = args.gh_user
-    github_repository_owner = (args.gh_repo_owner
-                               if args.gh_repo_owner else args.gh_user)
+    github_repository_owner = args.repo_owner
     # Create a temporary directory out of tree, checkout gh-pages from the
     # specified repository, edit it, and push it. It's up to the user to then go
     # onto GitHub and make a PR against grpc/grpc:gh-pages.
@@ -109,16 +107,19 @@ if args.submit:
     print('Cloning your repository...')
     subprocess.check_call(
         [
-            'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
-                github_user, github_repository_owner)
+            'git',
+            'clone',
+            '--branch',
+            'gh-pages',
+            'https://github.com/grpc/grpc',
         ],
         cwd=repo_parent_dir)
+    subprocess.check_call(['git', 'checkout', '-b', doc_branch], cwd=repo_dir)
     subprocess.check_call(
-        ['git', 'remote', 'add', 'upstream', 'https://github.com/grpc/grpc'],
-        cwd=repo_dir)
-    subprocess.check_call(['git', 'fetch', 'upstream'], cwd=repo_dir)
-    subprocess.check_call(
-        ['git', 'checkout', 'upstream/gh-pages', '-b', doc_branch],
+        [
+            'git', 'remote', 'add', 'ssh-origin',
+            'git@github.com:%s/grpc.git' % (github_repository_owner)
+        ],
         cwd=repo_dir)
     print('Updating documentation...')
     shutil.rmtree(python_doc_dir, ignore_errors=True)
@@ -130,7 +131,7 @@ if args.submit:
             ['git', 'commit', '-m', 'Auto-update Python documentation'],
             cwd=repo_dir)
         subprocess.check_call(
-            ['git', 'push', '--set-upstream', 'origin', doc_branch],
+            ['git', 'push', '--set-upstream', 'ssh-origin', doc_branch],
             cwd=repo_dir)
     except subprocess.CalledProcessError:
         print('Failed to push documentation. Examine this directory and push '

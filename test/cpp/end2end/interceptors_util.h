@@ -149,8 +149,7 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
 bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
                    const string& key, const string& value);
 
-std::unique_ptr<std::vector<
-    std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreateDummyClientInterceptors();
 
 inline void* tag(int i) { return (void*)static_cast<intptr_t>(i); }

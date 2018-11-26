@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+
 namespace Grpc.Core
 {
     /// <summary>
@@ -41,6 +43,9 @@ namespace Grpc.Core
         /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
         /// </summary>
         /// <returns>byte array containing the entire payload.</returns>
-        public abstract byte[] PayloadAsNewBuffer();
+        public virtual byte[] PayloadAsNewBuffer()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

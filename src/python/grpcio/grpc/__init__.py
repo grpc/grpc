@@ -15,11 +15,13 @@
 
 import abc
 import enum
+import logging
 import sys
-
 import six
 
 from grpc._cython import cygrpc as _cygrpc
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 ############################## Future Interface  ###############################
 
@@ -387,7 +389,8 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: An optional flag to enable wait for ready mechanism.
+      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
+        enable wait for ready mechanism.
     """
 
 
@@ -654,8 +657,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC.
@@ -683,8 +686,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -712,8 +715,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -744,8 +747,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: An optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -776,8 +779,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC.
@@ -806,8 +809,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -835,8 +838,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -867,8 +870,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and an iterator of

@@ -70,18 +70,11 @@ SERVER_CERT_CHAIN_2_PEM = (resources.cert_hier_2_server_1_cert() +
 Call = collections.namedtuple('Call', ['did_raise', 'returned_cert_config'])
 
 
-def _create_client_stub(
-        port,
-        expect_success,
-        root_certificates=None,
-        private_key=None,
-        certificate_chain=None,
-):
-    channel = grpc.secure_channel('localhost:{}'.format(port),
-                                  grpc.ssl_channel_credentials(
-                                      root_certificates=root_certificates,
-                                      private_key=private_key,
-                                      certificate_chain=certificate_chain))
+def _create_channel(port, credentials):
+    return grpc.secure_channel('localhost:{}'.format(port), credentials)
+
+
+def _create_client_stub(channel, expect_success):
     if expect_success:
         # per Nathaniel: there's some robustness issue if we start
         # using a channel without waiting for it to be actually ready
@@ -176,14 +169,13 @@ class _ServerSSLCertReloadTest(
                                 root_certificates=None,
                                 private_key=None,
                                 certificate_chain=None):
-        client_stub = _create_client_stub(
-            self.port,
-            expect_success,
+        credentials = grpc.ssl_channel_credentials(
             root_certificates=root_certificates,
             private_key=private_key,
             certificate_chain=certificate_chain)
-        self._perform_rpc(client_stub, expect_success)
-        del client_stub
+        with _create_channel(self.port, credentials) as client_channel:
+            client_stub = _create_client_stub(client_channel, expect_success)
+            self._perform_rpc(client_stub, expect_success)
 
     def _test(self):
         # things should work...
@@ -259,12 +251,13 @@ class _ServerSSLCertReloadTest(
         # now create the "persistent" clients
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        persistent_client_stub_A = _create_client_stub(
+        channel_A = _create_channel(
             self.port,
-            True,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM)
+            grpc.ssl_channel_credentials(
+                root_certificates=CA_1_PEM,
+                private_key=CLIENT_KEY_2_PEM,
+                certificate_chain=CLIENT_CERT_CHAIN_2_PEM))
+        persistent_client_stub_A = _create_client_stub(channel_A, True)
         self._perform_rpc(persistent_client_stub_A, True)
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
@@ -273,12 +266,13 @@ class _ServerSSLCertReloadTest(
 
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        persistent_client_stub_B = _create_client_stub(
+        channel_B = _create_channel(
             self.port,
-            True,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM)
+            grpc.ssl_channel_credentials(
+                root_certificates=CA_1_PEM,
+                private_key=CLIENT_KEY_2_PEM,
+                certificate_chain=CLIENT_CERT_CHAIN_2_PEM))
+        persistent_client_stub_B = _create_client_stub(channel_B, True)
         self._perform_rpc(persistent_client_stub_B, True)
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
@@ -358,6 +352,9 @@ class _ServerSSLCertReloadTest(
         self._perform_rpc(persistent_client_stub_B, True)
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 0)
+
+        channel_A.close()
+        channel_B.close()
 
 
 class ServerSSLCertConfigFetcherParamsChecks(unittest.TestCase):

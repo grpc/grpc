@@ -48,13 +48,15 @@ test --test_env=GRPC_VERBOSITY=debug
 build:asan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:asan --test_timeout=3600
-build:asan --test_tag_filters=-qps_json_driver,-json_run_localhost
+build:asan --test_tag_filters=-qps_json_driver
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:msan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:msan --test_timeout=3600
+# TODO(jtattermusch): revisit the disabled tests
+build:msan --test_tag_filters=-nomsan,-json_run_localhost
 build:msan --cxxopt=--stdlib=libc++
 # setting LD_LIBRARY_PATH is necessary
 # to avoid "libc++.so.1: cannot open shared object file"
@@ -68,7 +70,7 @@ build:msan --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubunt
 build:tsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:tsan --test_timeout=3600
-build:tsan --test_tag_filters=-qps_json_driver,-json_run_localhost
+build:tsan --test_tag_filters=-qps_json_driver
 build:tsan --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc

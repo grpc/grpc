@@ -45,6 +45,10 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport_impl.h"
 
+namespace grpc_core {
+class ContextList;
+}
+
 /* streams are kept in various linked lists depending on what things need to
    happen to them... this enum labels each list */
 typedef enum {
@@ -481,7 +485,7 @@ struct grpc_chttp2_transport {
   bool keepalive_permit_without_calls = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
-
+  grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
 };
@@ -498,6 +502,7 @@ struct grpc_chttp2_stream {
                      const void* server_data, gpr_arena* arena);
   ~grpc_chttp2_stream();
 
+  void* context;
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
 
@@ -635,6 +640,8 @@ struct grpc_chttp2_stream {
   bool unprocessed_incoming_frames_decompressed = false;
   /** gRPC header bytes that are already decompressed */
   size_t decompressed_header_bytes = 0;
+  /** Whether the bytes needs to be traced using Fathom */
+  bool traced = false;
 };
 
 /** Transport writing call flow:

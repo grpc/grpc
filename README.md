@@ -1,7 +1,7 @@
 gRPC - An RPC library and framework
 ===================================
 
-gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can run anywhere. It enables client and server applications to communicate transparently, and makes it easier to build connected systems.
+gRPC is a modern, open source, high-performance remote procedure call (RPC) framework that can run anywhere. gRPC enables client and server applications to communicate transparently, and simplifies the building of connected systems.
 
 <table>
   <tr>
@@ -18,10 +18,10 @@ gRPC is a modern, open source, high-performance remote procedure call (RPC) fram
 
 # To start using gRPC
 
-To maximize usability, gRPC supports the standard way of adding dependencies in your language of choice (if there is one).
-In most languages, the gRPC runtime comes in form of a package available in your language's package manager.
+To maximize usability, gRPC supports the standard method for adding dependencies to a user's chosen language (if there is one).
+In most languages, the gRPC runtime comes as a package available in a user's language package manager.
 
-For instructions on how to use the language-specific gRPC runtime in your project, please refer to these documents
+For instructions on how to use the language-specific gRPC runtime for a project, please refer to these documents
 
  * [C++](src/cpp): follow the instructions under the `src/cpp` directory
  * [C#](src/csharp): NuGet package `Grpc`
@@ -35,7 +35,7 @@ For instructions on how to use the language-specific gRPC runtime in your projec
  * [Ruby](src/ruby): `gem install grpc`
  * [WebJS](https://github.com/grpc/grpc-web): follow the grpc-web instructions
 
-You can find per-language quickstart guides and tutorials in [Documentation section on grpc.io website](https://grpc.io/docs/). The code examples are available in the [examples](examples) directory.
+Per-language quickstart guides and tutorials can be found in the [documentation section on the grpc.io website](https://grpc.io/docs/). Code examples are available in the [examples](examples) directory.
 
 Precompiled bleeding-edge package builds of gRPC `master` branch's `HEAD` are uploaded daily to [packages.grpc.io](https://packages.grpc.io).
 
@@ -43,9 +43,9 @@ Precompiled bleeding-edge package builds of gRPC `master` branch's `HEAD` are up
 
 Contributions are welcome!
 
-Please read [How to contribute](CONTRIBUTING.md) which will guide you through the entire workflow of how to build the source code, how to run the tests and how to contribute your changes to
+Please read [How to contribute](CONTRIBUTING.md) which will guide you through the entire workflow of how to build the source code, how to run the tests, and how to contribute changes to
 the gRPC codebase.
-The document also contains info on how the contributing process works and contains best practices for creating contributions.
+The "How to contribute" document also contains info on how the contribution process works and contains best practices for creating contributions.
 
 # Troubleshooting
 
@@ -53,7 +53,7 @@ Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLES
 
 # Performance 
 
-See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for the performance numbers for the latest released version.
+See the [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for performance numbers of the latest released version.
 
 # Concepts
 
@@ -61,9 +61,9 @@ See [gRPC Concepts](CONCEPTS.md)
 
 # About This Repository
 
-This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core](src/core).
+This repository contains source code for gRPC libraries implemented in multiple languages written on top of a shared C core library [src/core](src/core).
 
-Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
+Libraries in different languages may be in various states of development. We are seeking contributions for all of these libraries:
 
 | Language                | Source                              |
 |-------------------------|-------------------------------------|

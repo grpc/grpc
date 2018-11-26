@@ -123,7 +123,8 @@ class GrpcLb : public LoadBalancingPolicy {
  public:
   GrpcLb(const grpc_lb_addresses* addresses, const Args& args);
 
-  void UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -1331,13 +1332,10 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-void GrpcLb::UpdateLocked(const grpc_channel_args& args) {
+void GrpcLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
   ProcessChannelArgsLocked(args);
-  // If fallback is configured and the RR policy already exists, update
-  // it with the new fallback addresses.
-  if (lb_fallback_timeout_ms_ > 0 && rr_policy_ != nullptr) {
-    CreateOrUpdateRoundRobinPolicyLocked();
-  }
+  // Update the existing RR policy.
+  if (rr_policy_ != nullptr) CreateOrUpdateRoundRobinPolicyLocked();
   // Start watching the LB channel connectivity for connection, if not
   // already doing so.
   if (!watching_lb_channel_) {
@@ -1730,7 +1728,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
       gpr_log(GPR_INFO, "[grpclb %p] Updating RR policy %p", this,
               rr_policy_.get());
     }
-    rr_policy_->UpdateLocked(*args);
+    rr_policy_->UpdateLocked(*args, nullptr);
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();

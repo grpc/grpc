@@ -41,9 +41,10 @@ class DefaultGlobalClientCallbacks final
 };
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
-static DefaultGlobalClientCallbacks g_default_client_callbacks;
+static DefaultGlobalClientCallbacks* g_default_client_callbacks =
+    new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
-    &g_default_client_callbacks;
+    g_default_client_callbacks;
 
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
@@ -139,9 +140,9 @@ grpc::string ClientContext::peer() const {
 }
 
 void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
-  GPR_ASSERT(g_client_callbacks == &g_default_client_callbacks);
+  GPR_ASSERT(g_client_callbacks == g_default_client_callbacks);
   GPR_ASSERT(client_callbacks != nullptr);
-  GPR_ASSERT(client_callbacks != &g_default_client_callbacks);
+  GPR_ASSERT(client_callbacks != g_default_client_callbacks);
   g_client_callbacks = client_callbacks;
 }
 
