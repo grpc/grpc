@@ -647,6 +647,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_trace",
+        "ref_counted",
         "ref_counted_ptr",
     ],
 )
