@@ -72,8 +72,9 @@ namespace grpc_core {
 class RequestRouter::Request::ResolverResultWaiter {
  public:
   explicit ResolverResultWaiter(Request* request)
-      : request_router_(request->request_router_), request_(request) {
-    if (request_router_->tracer_->enabled()) {
+      : request_router_(request->request_router_), request_(request),
+        tracer_enabled_(request_router_->tracer_->enabled()) {
+    if (tracer_enabled_) {
       gpr_log(GPR_INFO,
               "request_router=%p request=%p: deferring pick pending resolver "
               "result",
@@ -107,7 +108,7 @@ class RequestRouter::Request::ResolverResultWaiter {
     // anything.  Note that the call stack may have already been destroyed,
     // so it's not safe to access anything in state_.
     if (GPR_UNLIKELY(self->finished_)) {
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p: call cancelled before resolver result",
                 request_router);
@@ -118,7 +119,7 @@ class RequestRouter::Request::ResolverResultWaiter {
     // Otherwise, process the resolver result.
     Request* request = self->request_;
     if (error != GRPC_ERROR_NONE) {
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p request=%p: resolver failed to return data",
                 request_router, request);
@@ -126,7 +127,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       GRPC_CLOSURE_RUN(request->on_route_done_, GRPC_ERROR_REF(error));
     } else if (request_router->resolver_ == nullptr) {
       // Shutting down.
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_enabled_) {
         gpr_log(GPR_INFO, "request_router=%p request=%p: resolver disconnected",
                 request_router, request);
       }
@@ -137,7 +138,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       // If call has wait_for_ready=true, try again; otherwise, fail.
       if (*request->pick_.initial_metadata_flags &
           GRPC_INITIAL_METADATA_WAIT_FOR_READY) {
-        if (request_router->tracer_->enabled()) {
+        if (self->tracer_enabled_) {
           gpr_log(GPR_INFO,
                   "request_router=%p request=%p: resolver returned but no LB "
                   "policy; wait_for_ready=true; trying again",
@@ -148,7 +149,7 @@ class RequestRouter::Request::ResolverResultWaiter {
         // Return early so that we don't set finished_ to true below.
         return;
       } else {
-        if (request_router->tracer_->enabled()) {
+        if (self->tracer_enabled_) {
           gpr_log(GPR_INFO,
                   "request_router=%p request=%p: resolver returned but no LB "
                   "policy; wait_for_ready=false; failing",
@@ -161,7 +162,7 @@ class RequestRouter::Request::ResolverResultWaiter {
                 GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
       }
     } else {
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p request=%p: resolver returned, doing LB "
                 "pick",
@@ -187,7 +188,7 @@ class RequestRouter::Request::ResolverResultWaiter {
     // If we are being cancelled, immediately invoke on_route_done_
     // to propagate the error back to the caller.
     if (error != GRPC_ERROR_NONE) {
-      if (request_router->tracer_->enabled()) {
+      if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p request=%p: cancelling call waiting for "
                 "name resolution",
@@ -206,6 +207,7 @@ class RequestRouter::Request::ResolverResultWaiter {
 
   RequestRouter* request_router_;
   Request* request_;
+  const bool tracer_enabled_;
   grpc_closure done_closure_;
   grpc_closure cancel_closure_;
   bool finished_ = false;
