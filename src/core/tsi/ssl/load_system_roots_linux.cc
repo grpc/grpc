@@ -19,11 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice_buffer.h>
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#include "src/core/tsi/ssl/load_system_roots_linux.h"
 
 #ifdef GPR_LINUX
 
-#include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/tsi/ssl/load_system_roots.h"
 
 #include <dirent.h>
 #include <fcntl.h>

@@ -28,8 +28,8 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/tsi/fake_transport_security.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/fake/fake_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 
 typedef struct {

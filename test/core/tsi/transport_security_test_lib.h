@@ -70,6 +70,12 @@ typedef struct tsi_test_fixture_vtable {
   void (*destruct)(tsi_test_fixture* fixture);
 } tsi_test_fixture_vtable;
 
+/* -- tsi_test_handshaker_args object ---
+ This object contains information needed for TSI handshakes (e.g., handshake
+ buffer).
+ */
+typedef struct tsi_test_handshaker_args tsi_test_handshaker_args;
+
 struct tsi_test_fixture {
   const tsi_test_fixture_vtable* vtable;
   /* client/server TSI handshaker used to perform TSI handshakes, and will get
@@ -105,6 +111,9 @@ struct tsi_test_fixture {
   gpr_cv cv;
   gpr_mu mu;
   bool notified;
+
+  tsi_test_handshaker_args* client_args;
+  tsi_test_handshaker_args* server_args;
 };
 
 struct tsi_test_frame_protector_fixture {

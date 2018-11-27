@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_LOCAL_LOCAL_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_LOCAL_LOCAL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -48,4 +48,4 @@ typedef struct local_tsi_handshaker local_tsi_handshaker;
  */
 tsi_result local_tsi_handshaker_create(bool is_client, tsi_handshaker** self);
 
-#endif /* GRPC_CORE_TSI_LOCAL_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_LOCAL_LOCAL_TRANSPORT_SECURITY_H */

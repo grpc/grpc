@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
+#ifndef GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H
+#define GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,5 +40,5 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 }  // namespace grpc_core
 
 #endif /* GPR_LINUX */
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
+#endif /* GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H \
         */

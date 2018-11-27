@@ -33,7 +33,8 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security_util.h"
 
 typedef struct {
   grpc_channel_security_connector base;

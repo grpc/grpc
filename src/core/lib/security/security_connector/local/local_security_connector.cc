@@ -33,7 +33,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/tsi/local_transport_security.h"
+#include "src/core/tsi/local/local_transport_security.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
 #define GRPC_UDS_URL_SCHEME "unix"

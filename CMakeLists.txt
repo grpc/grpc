@@ -412,6 +412,9 @@ add_dependencies(buildtests_c time_averaged_stats_test)
 add_dependencies(buildtests_c timeout_encoding_test)
 add_dependencies(buildtests_c timer_heap_test)
 add_dependencies(buildtests_c timer_list_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c tls_transport_security_test)
+endif()
 add_dependencies(buildtests_c transport_connectivity_state_test)
 add_dependencies(buildtests_c transport_metadata_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -463,6 +466,7 @@ add_dependencies(buildtests_c h2_proxy_test)
 add_dependencies(buildtests_c h2_sockpair_test)
 add_dependencies(buildtests_c h2_sockpair+trace_test)
 add_dependencies(buildtests_c h2_sockpair_1byte_test)
+add_dependencies(buildtests_c h2_spiffe_test)
 add_dependencies(buildtests_c h2_ssl_test)
 add_dependencies(buildtests_c h2_ssl_proxy_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1174,14 +1178,15 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/spiffe_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1253,12 +1258,15 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
+  src/core/tsi/fake/fake_transport_security.cc
+  src/core/tsi/local/local_transport_security.cc
+  src/core/tsi/ssl/load_system_roots_fallback.cc
+  src/core/tsi/ssl/load_system_roots_linux.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/ssl/ssl_transport_security.cc
+  src/core/tsi/ssl/ssl_transport_security_util.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
@@ -1625,14 +1633,15 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  src/core/lib/security/credentials/tls/spiffe_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
@@ -1677,12 +1686,15 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
+  src/core/tsi/fake/fake_transport_security.cc
+  src/core/tsi/local/local_transport_security.cc
+  src/core/tsi/ssl/load_system_roots_fallback.cc
+  src/core/tsi/ssl/load_system_roots_linux.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/ssl/ssl_transport_security.cc
+  src/core/tsi/ssl/ssl_transport_security_util.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
@@ -9756,6 +9768,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(ssl_transport_security_test
   test/core/tsi/ssl_transport_security_test.cc
+  test/core/tsi/ssl_transport_security_test_common.cc
   test/core/tsi/transport_security_test_lib.cc
 )
 
@@ -10213,6 +10226,44 @@ target_link_libraries(timer_list_test
     target_compile_options(timer_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(tls_transport_security_test
+  test/core/tsi/tls_transport_security_test.cc
+  test/core/tsi/ssl_transport_security_test_common.cc
+  test/core/tsi/transport_security_test_lib.cc
+)
+
+
+target_include_directories(tls_transport_security_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(tls_transport_security_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr_test_util
+  gpr
+  grpc
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(tls_transport_security_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(tls_transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -17172,6 +17223,42 @@ target_link_libraries(h2_sockpair_1byte_test
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
     set_target_properties(h2_sockpair_1byte_test PROPERTIES LINKER_LANGUAGE C)
     target_compile_options(h2_sockpair_1byte_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_spiffe_test
+  test/core/end2end/fixtures/h2_spiffe.cc
+)
+
+
+target_include_directories(h2_spiffe_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_spiffe_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(h2_spiffe_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(h2_spiffe_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)

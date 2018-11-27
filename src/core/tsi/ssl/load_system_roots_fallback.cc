@@ -16,14 +16,17 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
+#include <grpc/support/port_platform.h>
+
+#include <grpc/slice_buffer.h>
+#include "src/core/tsi/ssl/load_system_roots.h"
+
+#ifndef GPR_LINUX
 
 namespace grpc_core {
 
-// Returns a slice containing roots from the OS trust store
-grpc_slice LoadSystemRootCerts();
+grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H */
+#endif /* GPR_LINUX */

@@ -29,7 +29,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
@@ -123,6 +123,8 @@ struct grpc_channel_security_connector {
   void (*add_handshakers)(grpc_channel_security_connector* sc,
                           grpc_pollset_set* interested_parties,
                           grpc_handshake_manager* handshake_mgr);
+  void (*cancel_server_authorization_check)(
+      grpc_channel_security_connector* sc);
 };
 
 /// A helper function for use in grpc_security_connector_cmp() implementations.
@@ -144,6 +146,10 @@ bool grpc_channel_security_connector_check_call_host(
 void grpc_channel_security_connector_cancel_check_call_host(
     grpc_channel_security_connector* sc, grpc_closure* on_call_host_checked,
     grpc_error* error);
+
+/// Cancels a pending asychronous call for server authorization check.
+void grpc_channel_security_connector_cancel_server_authorization_check(
+    grpc_channel_security_connector* sc);
 
 /* Registers handshakers with \a handshake_mgr. */
 void grpc_channel_security_connector_add_handshakers(

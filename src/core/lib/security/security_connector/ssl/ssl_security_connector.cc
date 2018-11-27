@@ -33,10 +33,11 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/load_system_roots.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security_util.h"
 #include "src/core/tsi/transport_security.h"
 
 typedef struct {
@@ -202,34 +203,6 @@ static void ssl_server_add_handshakers(grpc_server_security_connector* sc,
       handshake_mgr, grpc_security_handshaker_create(tsi_hs, &sc->base));
 }
 
-static grpc_error* ssl_check_peer(grpc_security_connector* sc,
-                                  const char* peer_name, const tsi_peer* peer,
-                                  grpc_auth_context** auth_context) {
-#if TSI_OPENSSL_ALPN_SUPPORT
-  /* Check the ALPN if ALPN is supported. */
-  const tsi_peer_property* p =
-      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
-  if (p == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: missing selected ALPN property.");
-  }
-  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Cannot check peer: invalid ALPN value.");
-  }
-#endif /* TSI_OPENSSL_ALPN_SUPPORT */
-  /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
-    char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    return error;
-  }
-  *auth_context = grpc_ssl_peer_to_auth_context(peer);
-  return GRPC_ERROR_NONE;
-}
-
 static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
                                    grpc_auth_context** auth_context,
                                    grpc_closure* on_peer_checked) {
@@ -238,7 +211,7 @@ static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
   const char* target_name = c->overridden_target_name != nullptr
                                 ? c->overridden_target_name
                                 : c->target_name;
-  grpc_error* error = ssl_check_peer(sc, target_name, &peer, auth_context);
+  grpc_error* error = grpc_ssl_check_peer(sc, target_name, &peer, auth_context);
   if (error == GRPC_ERROR_NONE &&
       c->verify_options->verify_peer_callback != nullptr) {
     const tsi_peer_property* p =
@@ -270,7 +243,7 @@ static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
 static void ssl_server_check_peer(grpc_security_connector* sc, tsi_peer peer,
                                   grpc_auth_context** auth_context,
                                   grpc_closure* on_peer_checked) {
-  grpc_error* error = ssl_check_peer(sc, nullptr, &peer, auth_context);
+  grpc_error* error = grpc_ssl_check_peer(sc, nullptr, &peer, auth_context);
   tsi_peer_destruct(&peer);
   GRPC_CLOSURE_SCHED(on_peer_checked, error);
 }

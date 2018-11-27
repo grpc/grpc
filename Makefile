@@ -1109,6 +1109,7 @@ time_averaged_stats_test: $(BINDIR)/$(CONFIG)/time_averaged_stats_test
 timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
+tls_transport_security_test: $(BINDIR)/$(CONFIG)/tls_transport_security_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
@@ -1329,6 +1330,7 @@ h2_proxy_test: $(BINDIR)/$(CONFIG)/h2_proxy_test
 h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
 h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
+h2_spiffe_test: $(BINDIR)/$(CONFIG)/h2_spiffe_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
@@ -1552,6 +1554,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/timeout_encoding_test \
   $(BINDIR)/$(CONFIG)/timer_heap_test \
   $(BINDIR)/$(CONFIG)/timer_list_test \
+  $(BINDIR)/$(CONFIG)/tls_transport_security_test \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_metadata_test \
   $(BINDIR)/$(CONFIG)/transport_security_test \
@@ -1587,6 +1590,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
+  $(BINDIR)/$(CONFIG)/h2_spiffe_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
@@ -2177,6 +2181,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/timer_heap_test || ( echo test timer_heap_test failed ; exit 1 )
 	$(E) "[RUN]     Testing timer_list_test"
 	$(Q) $(BINDIR)/$(CONFIG)/timer_list_test || ( echo test timer_list_test failed ; exit 1 )
+	$(E) "[RUN]     Testing tls_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/tls_transport_security_test || ( echo test tls_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_connectivity_state_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
@@ -3653,14 +3659,15 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-    src/core/lib/security/security_connector/load_system_roots_linux.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -3732,12 +3739,15 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
-    src/core/tsi/fake_transport_security.cc \
-    src/core/tsi/local_transport_security.cc \
+    src/core/tsi/fake/fake_transport_security.cc \
+    src/core/tsi/local/local_transport_security.cc \
+    src/core/tsi/ssl/load_system_roots_fallback.cc \
+    src/core/tsi/ssl/load_system_roots_linux.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
-    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security_util.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
@@ -4098,14 +4108,15 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-    src/core/lib/security/security_connector/load_system_roots_linux.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -4150,12 +4161,15 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
-    src/core/tsi/fake_transport_security.cc \
-    src/core/tsi/local_transport_security.cc \
+    src/core/tsi/fake/fake_transport_security.cc \
+    src/core/tsi/local/local_transport_security.cc \
+    src/core/tsi/ssl/load_system_roots_fallback.cc \
+    src/core/tsi/ssl/load_system_roots_linux.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
-    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security_util.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/plugin_registry/grpc_cronet_plugin_registry.cc \
 
@@ -14597,6 +14611,7 @@ endif
 
 SSL_TRANSPORT_SECURITY_TEST_SRC = \
     test/core/tsi/ssl_transport_security_test.cc \
+    test/core/tsi/ssl_transport_security_test_common.cc \
     test/core/tsi/transport_security_test_lib.cc \
 
 SSL_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_TRANSPORT_SECURITY_TEST_SRC))))
@@ -14618,6 +14633,8 @@ $(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_O
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test_common.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
 
 $(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
 
@@ -15010,6 +15027,44 @@ deps_timer_list_test: $(TIMER_LIST_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TIMER_LIST_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TLS_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/tls_transport_security_test.cc \
+    test/core/tsi/ssl_transport_security_test_common.cc \
+    test/core/tsi/transport_security_test_lib.cc \
+
+TLS_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TLS_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/tls_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/tls_transport_security_test: $(TLS_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(TLS_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/tls_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/tls_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test_common.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_tls_transport_security_test: $(TLS_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TLS_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -23829,6 +23884,38 @@ endif
 endif
 
 
+H2_SPIFFE_TEST_SRC = \
+    test/core/end2end/fixtures/h2_spiffe.cc \
+
+H2_SPIFFE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SPIFFE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_spiffe_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(H2_SPIFFE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_spiffe_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_spiffe.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_spiffe_test: $(H2_SPIFFE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SPIFFE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 H2_SSL_TEST_SRC = \
     test/core/end2end/fixtures/h2_ssl.cc \
 
@@ -25047,14 +25134,15 @@ src/core/lib/security/credentials/local/local_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/spiffe_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/fake/fake_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/load_system_roots_linux.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/local/local_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/tls/spiffe_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
@@ -25089,12 +25177,15 @@ src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_p
 src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc: $(OPENSSL_DEP)
-src/core/tsi/fake_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/local_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/fake/fake_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/local/local_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/load_system_roots_fallback.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/load_system_roots_linux.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
-src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/ssl_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/ssl_transport_security_util.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)

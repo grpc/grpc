@@ -229,14 +229,15 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local/local_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
@@ -299,11 +300,14 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/local/local_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/load_system_roots.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/load_system_roots_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/ssl_transport_security_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/grpc_shadow_boringssl.h" role="src" />
@@ -663,14 +667,15 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/spiffe_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/fake/fake_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_fallback.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local/local_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.cc" role="src" />
@@ -742,12 +747,15 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake/fake_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/local/local_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/load_system_roots_fallback.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/load_system_roots_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/ssl_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/ssl_transport_security_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc" role="src" />

@@ -282,14 +282,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
+    src/core/lib/security/credentials/tls/spiffe_credentials.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-    src/core/lib/security/security_connector/load_system_roots_linux.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
@@ -361,12 +362,15 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/client_channel/health/health.pb.c \
-    src/core/tsi/fake_transport_security.cc \
-    src/core/tsi/local_transport_security.cc \
+    src/core/tsi/fake/fake_transport_security.cc \
+    src/core/tsi/local/local_transport_security.cc \
+    src/core/tsi/ssl/load_system_roots_fallback.cc \
+    src/core/tsi/ssl/load_system_roots_linux.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
-    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security.cc \
+    src/core/tsi/ssl/ssl_transport_security_util.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
@@ -724,11 +728,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
@@ -741,6 +747,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/fake)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/local)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_FAKE_FAKE_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_FAKE_FAKE_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -42,4 +42,4 @@ tsi_frame_protector* tsi_create_fake_frame_protector(
 tsi_zero_copy_grpc_protector* tsi_create_fake_zero_copy_grpc_protector(
     size_t* max_protected_frame_size);
 
-#endif /* GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */
+#endif /* GRPC_CORE_TSI_FAKE_FAKE_TRANSPORT_SECURITY_H */
