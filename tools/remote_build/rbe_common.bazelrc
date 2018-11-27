@@ -37,6 +37,7 @@ build --verbose_failures=true
 
 build --experimental_strict_action_env=true
 build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+build --toolchain_resolution_debug
 
 # don't use port server
 build --define GRPC_PORT_ISOLATED_RUNTIME=1
