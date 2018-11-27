@@ -1723,7 +1723,7 @@ def server(thread_pool,
         handlers. The interceptors are given control in the order they are
         specified. This is an EXPERIMENTAL API.
       options: An optional list of key-value pairs (channel args in gRPC runtime)
-      to configure the channel.
+        to configure the channel.
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
