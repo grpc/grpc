@@ -35,7 +35,7 @@ def _spawn_callback_async(callback, args):
 
 cdef class CallCredentials:
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     raise NotImplementedError()
 
 
@@ -69,7 +69,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     self._metadata_plugin = metadata_plugin
     self._name = name
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     cdef grpc_metadata_credentials_plugin c_metadata_plugin
     c_metadata_plugin.get_metadata = _get_metadata
     c_metadata_plugin.destroy = _destroy
@@ -101,13 +101,13 @@ cdef class CompositeCallCredentials(CallCredentials):
   def __cinit__(self, call_credentialses):
     self._call_credentialses = call_credentialses
 
-  cdef grpc_call_credentials *c(self):
+  cdef grpc_call_credentials *c(self) except *:
     return _composition(self._call_credentialses)
 
 
 cdef class ChannelCredentials:
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     raise NotImplementedError()
 
 
@@ -135,7 +135,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     self._private_key = private_key
     self._certificate_chain = certificate_chain
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
     cdef grpc_ssl_pem_key_cert_pair c_pem_key_certificate_pair
     if self._pem_root_certificates is None:
@@ -164,7 +164,7 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
     self._call_credentialses = call_credentialses
     self._channel_credentials = channel_credentials
 
-  cdef grpc_channel_credentials *c(self):
+  cdef grpc_channel_credentials *c(self) except *:
     cdef grpc_channel_credentials *c_channel_credentials
     c_channel_credentials = self._channel_credentials.c()
     cdef grpc_call_credentials *c_call_credentials_composition = _composition(

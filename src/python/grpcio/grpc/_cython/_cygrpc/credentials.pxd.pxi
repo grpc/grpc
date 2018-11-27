@@ -15,7 +15,7 @@
 
 cdef class CallCredentials:
 
-  cdef grpc_call_credentials *c(self)
+  cdef grpc_call_credentials *c(self) except *
 
   # TODO(https://github.com/grpc/grpc/issues/12531): remove.
   cdef grpc_call_credentials *c_credentials
@@ -36,7 +36,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
   cdef readonly object _metadata_plugin
   cdef readonly bytes _name
 
-  cdef grpc_call_credentials *c(self)
+  cdef grpc_call_credentials *c(self) except *
 
 
 cdef grpc_call_credentials *_composition(call_credentialses)
@@ -46,12 +46,12 @@ cdef class CompositeCallCredentials(CallCredentials):
 
   cdef readonly tuple _call_credentialses
 
-  cdef grpc_call_credentials *c(self)
+  cdef grpc_call_credentials *c(self) except *
 
 
 cdef class ChannelCredentials:
 
-  cdef grpc_channel_credentials *c(self)
+  cdef grpc_channel_credentials *c(self) except *
 
   # TODO(https://github.com/grpc/grpc/issues/12531): remove.
   cdef grpc_channel_credentials *c_credentials
@@ -68,7 +68,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
   cdef readonly object _private_key
   cdef readonly object _certificate_chain
 
-  cdef grpc_channel_credentials *c(self)
+  cdef grpc_channel_credentials *c(self) except *
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):
@@ -76,7 +76,7 @@ cdef class CompositeChannelCredentials(ChannelCredentials):
   cdef readonly tuple _call_credentialses
   cdef readonly ChannelCredentials _channel_credentials
 
-  cdef grpc_channel_credentials *c(self)
+  cdef grpc_channel_credentials *c(self) except *
 
 
 cdef class ServerCertificateConfig:

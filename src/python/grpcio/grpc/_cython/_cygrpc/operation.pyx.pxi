@@ -15,10 +15,10 @@
 
 cdef class Operation:
 
-  cdef void c(self):
+  cdef void c(self) except *:
     raise NotImplementedError()
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     raise NotImplementedError()
 
 
@@ -31,7 +31,7 @@ cdef class SendInitialMetadataOperation(Operation):
   def type(self):
     return GRPC_OP_SEND_INITIAL_METADATA
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_INITIAL_METADATA
     self.c_op.flags = self._flags
     _store_c_metadata(
@@ -41,7 +41,7 @@ cdef class SendInitialMetadataOperation(Operation):
     self.c_op.data.send_initial_metadata.count = self._c_initial_metadata_count
     self.c_op.data.send_initial_metadata.maybe_compression_level.is_set = 0
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     _release_c_metadata(
         self._c_initial_metadata, self._c_initial_metadata_count)
 
@@ -55,7 +55,7 @@ cdef class SendMessageOperation(Operation):
   def type(self):
     return GRPC_OP_SEND_MESSAGE
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
     cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
@@ -65,7 +65,7 @@ cdef class SendMessageOperation(Operation):
     grpc_slice_unref(message_slice)
     self.c_op.data.send_message.send_message = self._c_message_byte_buffer
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     grpc_byte_buffer_destroy(self._c_message_byte_buffer)
 
 
@@ -77,11 +77,11 @@ cdef class SendCloseFromClientOperation(Operation):
   def type(self):
     return GRPC_OP_SEND_CLOSE_FROM_CLIENT
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_CLOSE_FROM_CLIENT
     self.c_op.flags = self._flags
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     pass
 
 
@@ -96,7 +96,7 @@ cdef class SendStatusFromServerOperation(Operation):
   def type(self):
     return GRPC_OP_SEND_STATUS_FROM_SERVER
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_STATUS_FROM_SERVER
     self.c_op.flags = self._flags
     _store_c_metadata(
@@ -110,7 +110,7 @@ cdef class SendStatusFromServerOperation(Operation):
     self._c_details = _slice_from_bytes(_encode(self._details))
     self.c_op.data.send_status_from_server.status_details = &self._c_details
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     grpc_slice_unref(self._c_details)
     _release_c_metadata(
         self._c_trailing_metadata, self._c_trailing_metadata_count)
@@ -124,14 +124,14 @@ cdef class ReceiveInitialMetadataOperation(Operation):
   def type(self):
     return GRPC_OP_RECV_INITIAL_METADATA
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_RECV_INITIAL_METADATA
     self.c_op.flags = self._flags
     grpc_metadata_array_init(&self._c_initial_metadata)
     self.c_op.data.receive_initial_metadata.receive_initial_metadata = (
         &self._c_initial_metadata)
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     self._initial_metadata = _metadata(&self._c_initial_metadata)
     grpc_metadata_array_destroy(&self._c_initial_metadata)
 
@@ -147,13 +147,13 @@ cdef class ReceiveMessageOperation(Operation):
   def type(self):
     return GRPC_OP_RECV_MESSAGE
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_RECV_MESSAGE
     self.c_op.flags = self._flags
     self.c_op.data.receive_message.receive_message = (
         &self._c_message_byte_buffer)
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     cdef grpc_byte_buffer_reader message_reader
     cdef bint message_reader_status
     cdef grpc_slice message_slice
@@ -189,7 +189,7 @@ cdef class ReceiveStatusOnClientOperation(Operation):
   def type(self):
     return GRPC_OP_RECV_STATUS_ON_CLIENT
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_RECV_STATUS_ON_CLIENT
     self.c_op.flags = self._flags
     grpc_metadata_array_init(&self._c_trailing_metadata)
@@ -202,7 +202,7 @@ cdef class ReceiveStatusOnClientOperation(Operation):
     self.c_op.data.receive_status_on_client.error_string = (
         &self._c_error_string)
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     self._trailing_metadata = _metadata(&self._c_trailing_metadata)
     grpc_metadata_array_destroy(&self._c_trailing_metadata)
     self._code = self._c_code
@@ -235,12 +235,12 @@ cdef class ReceiveCloseOnServerOperation(Operation):
   def type(self):
     return GRPC_OP_RECV_CLOSE_ON_SERVER
 
-  cdef void c(self):
+  cdef void c(self) except *:
     self.c_op.type = GRPC_OP_RECV_CLOSE_ON_SERVER
     self.c_op.flags = self._flags
     self.c_op.data.receive_close_on_server.cancelled = &self._c_cancelled
 
-  cdef void un_c(self):
+  cdef void un_c(self) except *:
     self._cancelled = bool(self._c_cancelled)
 
   def cancelled(self):
