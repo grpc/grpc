@@ -131,11 +131,11 @@ static bool process_resolver_result_locked(
             chand, service_config_json.get());
   }
   // Update channel state.
-  chand->retry_throttle_data = std::move(resolver_result.retry_throttle_data());
-  chand->method_params_table = std::move(resolver_result.method_params_table());
+  chand->retry_throttle_data = resolver_result.retry_throttle_data();
+  chand->method_params_table = resolver_result.method_params_table();
   // Swap out the data used by cc_get_channel_info().
   gpr_mu_lock(&chand->info_mu);
-  chand->info_lb_policy_name = std::move(resolver_result.lb_policy_name());
+  chand->info_lb_policy_name = resolver_result.lb_policy_name();
   const bool service_config_changed =
       ((service_config_json == nullptr) !=
        (chand->info_service_config_json == nullptr)) ||
