@@ -62,8 +62,7 @@
 #define GRPC_HAVE_UNIX_SOCKET 1
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-/* TODO(yashykt): Re-enable once Fathom changes are commited.
-#define GRPC_LINUX_ERRQUEUE 1 */
+#define GRPC_LINUX_ERRQUEUE 1
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0) */
 #endif /* LINUX_VERSION_CODE */
 #define GRPC_LINUX_MULTIPOLL_WITH_EPOLL 1
