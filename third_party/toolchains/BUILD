@@ -68,8 +68,8 @@ platform(
           value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:9bd8ba020af33edb5f11eff0af2f63b3bcb168cd6566d7b27c6685e717787928"
         }
         properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-8"
+          name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
+          value: "n1-standard-16"
         }
     """,
 )
