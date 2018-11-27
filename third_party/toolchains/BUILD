@@ -20,17 +20,17 @@ package(default_visibility = ["//visibility:public"])
 # Update every time when a new container is released.
 alias(
     name = "rbe_ubuntu1604",
-    actual = ":rbe_ubuntu1604_r340178",
+    actual = ":rbe_ubuntu1604_r342117",
 )
 
 alias(
     name = "rbe_ubuntu1604_large",
-    actual = ":rbe_ubuntu1604_r340178_large",
+    actual = ":rbe_ubuntu1604_r342117_large",
 )
 
-# RBE Ubuntu16_04 r340178
+# RBE Ubuntu16_04 r342117
 platform(
-    name = "rbe_ubuntu1604_r340178",
+    name = "rbe_ubuntu1604_r342117",
     constraint_values = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
@@ -42,7 +42,7 @@ platform(
     remote_execution_properties = """
         properties: {
           name: "container-image"
-          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:9bd8ba020af33edb5f11eff0af2f63b3bcb168cd6566d7b27c6685e717787928"
+          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:f3120a030a19d67626ababdac79cc787e699a1aa924081431285118f87e7b375"
         }
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.
@@ -51,9 +51,9 @@ platform(
         """,
 )
 
-# RBE Ubuntu16_04 r340178 large
+# RBE Ubuntu16_04 r342117 large
 platform(
-    name = "rbe_ubuntu1604_r340178_large",
+    name = "rbe_ubuntu1604_r342117_large",
     constraint_values = [
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:linux",
@@ -65,11 +65,11 @@ platform(
     remote_execution_properties = """
         properties: {
           name: "container-image"
-          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:9bd8ba020af33edb5f11eff0af2f63b3bcb168cd6566d7b27c6685e717787928"
+          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:f3120a030a19d67626ababdac79cc787e699a1aa924081431285118f87e7b375"
         }
         properties: {
           name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
-          value: "n1-standard-16"
+          value: "n1-standard-8"
         }
     """,
 )
