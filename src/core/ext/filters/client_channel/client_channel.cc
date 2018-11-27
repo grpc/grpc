@@ -119,9 +119,10 @@ typedef struct client_channel_channel_data {
 
 // Synchronous callback from chand->request_router to process a resolver
 // result update.
-static bool process_resolver_result_locked(
-    void* arg, const grpc_channel_args& args,
-    const char** lb_policy_name, grpc_json** lb_policy_config) {
+static bool process_resolver_result_locked(void* arg,
+                                           const grpc_channel_args& args,
+                                           const char** lb_policy_name,
+                                           grpc_json** lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
   ProcessedResolverResult resolver_result(args, chand->enable_retries);
   grpc_core::UniquePtr<char> service_config_json =

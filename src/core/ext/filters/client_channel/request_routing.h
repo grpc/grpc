@@ -92,9 +92,10 @@ class RequestRouter {
   // Synchronous callback that takes the service config JSON string and
   // LB policy name.
   // Returns true if the service config has changed since the last result.
-  typedef bool (*ProcessResolverResultCallback)(
-      void* user_data, const grpc_channel_args& args,
-      const char** lb_policy_name, grpc_json** lb_policy_config);
+  typedef bool (*ProcessResolverResultCallback)(void* user_data,
+                                                const grpc_channel_args& args,
+                                                const char** lb_policy_name,
+                                                grpc_json** lb_policy_config);
 
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
                 grpc_client_channel_factory* client_channel_factory,

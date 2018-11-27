@@ -59,9 +59,7 @@ class ProcessedResolverResult {
   RefCountedPtr<ClientChannelMethodParamsTable> method_params_table() {
     return std::move(method_params_table_);
   }
-  UniquePtr<char> lb_policy_name() {
-    return std::move(lb_policy_name_);
-  }
+  UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
   grpc_json* lb_policy_config() { return lb_policy_config_; }
 
  private:
