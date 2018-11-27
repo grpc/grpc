@@ -44,13 +44,15 @@ struct thd_arg {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
   const char* name;        /* name of thread. Can be nullptr. */
+  bool joinable;
+  bool tracked;
 };
 
 class ThreadInternalsPosix
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
   ThreadInternalsPosix(const char* thd_name, void (*thd_body)(void* arg),
-                       void* arg, bool* success)
+                       void* arg, bool* success, const Thread::Options& options)
       : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
@@ -63,11 +65,20 @@ class ThreadInternalsPosix
     info->body = thd_body;
     info->arg = arg;
     info->name = thd_name;
-    grpc_core::Fork::IncThreadCount();
+    info->joinable = options.joinable();
+    info->tracked = options.tracked();
+    if (options.tracked()) {
+      grpc_core::Fork::IncThreadCount();
+    }
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
-    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-               0);
+    if (options.joinable()) {
+      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
+                 0);
+    } else {
+      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
+                 0);
+    }
 
     *success =
         (pthread_create(&pthread_id_, &attr,
@@ -98,7 +109,12 @@ class ThreadInternalsPosix
                           gpr_mu_unlock(&arg.thread->mu_);
 
                           (*arg.body)(arg.arg);
-                          grpc_core::Fork::DecThreadCount();
+                          if (arg.tracked) {
+                            grpc_core::Fork::DecThreadCount();
+                          }
+                          if (!arg.joinable) {
+                            grpc_core::Delete(arg.thread);
+                          }
                           return nullptr;
                         },
                         info) == 0);
@@ -108,9 +124,11 @@ class ThreadInternalsPosix
     if (!(*success)) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
-      grpc_core::Fork::DecThreadCount();
+      if (options.tracked()) {
+        grpc_core::Fork::DecThreadCount();
+      }
     }
-  };
+  }
 
   ~ThreadInternalsPosix() override {
     gpr_mu_destroy(&mu_);
@@ -136,10 +154,11 @@ class ThreadInternalsPosix
 }  // namespace
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success) {
+               bool* success, const Options& options)
+    : options_(options) {
   bool outcome = false;
-  impl_ =
-      grpc_core::New<ThreadInternalsPosix>(thd_name, thd_body, arg, &outcome);
+  impl_ = grpc_core::New<ThreadInternalsPosix>(thd_name, thd_body, arg,
+                                               &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {

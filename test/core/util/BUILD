@@ -31,7 +31,10 @@ grpc_cc_library(
         "memory_counters.h",
         "test_config.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//:grpc_common",
+    ],
     data = [
         "lsan_suppressions.txt",
         "tsan_suppressions.txt",

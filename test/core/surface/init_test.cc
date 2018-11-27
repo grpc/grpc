@@ -18,6 +18,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/surface/init.h"
 #include "test/core/util/test_config.h"
 
 static int g_flag;
@@ -30,6 +33,7 @@ static void test(int rounds) {
   for (i = 0; i < rounds; i++) {
     grpc_shutdown();
   }
+  grpc_maybe_wait_for_async_shutdown();
 }
 
 static void test_mixed(void) {
@@ -39,6 +43,7 @@ static void test_mixed(void) {
   grpc_init();
   grpc_shutdown();
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
 }
 
 static void plugin_init(void) { g_flag = 1; }
@@ -49,6 +54,7 @@ static void test_plugin() {
   grpc_init();
   GPR_ASSERT(g_flag == 1);
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
   GPR_ASSERT(g_flag == 2);
 }
 
@@ -57,6 +63,7 @@ static void test_repeatedly() {
     grpc_init();
     grpc_shutdown();
   }
+  grpc_maybe_wait_for_async_shutdown();
 }
 
 int main(int argc, char** argv) {

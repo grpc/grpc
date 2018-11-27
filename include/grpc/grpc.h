@@ -73,7 +73,9 @@ GRPCAPI void grpc_init(void);
     Before it's called, there should haven been a matching invocation to
     grpc_init().
 
-    No memory is used by grpc after this call returns, nor are any instructions
+    The last call to grpc_shutdown will initiate cleaning up of grpc library
+    internals, which can happen in another thread. Once the clean-up is done,
+    no memory is used by grpc after this call returns, nor are any instructions
     executing within the grpc library.
     Prior to calling, all application owned grpc objects must have been
     destroyed. */

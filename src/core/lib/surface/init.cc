@@ -61,10 +61,15 @@ extern void grpc_register_built_in_plugins(void);
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
 static int g_initializations;
+static gpr_cv* g_shutting_down_cv;
+static bool g_shutting_down;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
+  g_shutting_down_cv = static_cast<gpr_cv*>(malloc(sizeof(gpr_cv)));
+  gpr_cv_init(g_shutting_down_cv);
+  g_shutting_down = false;
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
   g_initializations = 0;
@@ -120,6 +125,10 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
+    if (g_shutting_down) {
+      g_shutting_down = false;
+      gpr_cv_broadcast(g_shutting_down_cv);
+    }
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     gpr_time_init();
@@ -154,34 +163,55 @@ void grpc_init(void) {
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
-void grpc_shutdown(void) {
+void grpc_shutdown_internal(void* ignored) {
   int i;
+  GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
+  gpr_mu_lock(&g_init_mu);
+  // We have released lock from the shutdown thread and it is possible that
+  // another grpc_init has been called, and do nothing if that is the case.
+  if (--g_initializations != 0) {
+    gpr_mu_unlock(&g_init_mu);
+    return;
+  }
+  {
+    grpc_core::ExecCtx exec_ctx(0);
+    {
+      grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+      grpc_executor_shutdown();
+      for (i = g_number_of_plugins; i >= 0; i--) {
+        if (g_all_of_the_plugins[i].destroy != nullptr) {
+          g_all_of_the_plugins[i].destroy();
+        }
+      }
+    }
+    grpc_iomgr_shutdown();
+    gpr_timers_global_destroy();
+    grpc_tracer_shutdown();
+    grpc_mdctx_global_shutdown();
+    grpc_handshaker_factory_registry_shutdown();
+    grpc_slice_intern_shutdown();
+    grpc_core::channelz::ChannelzRegistry::Shutdown();
+    grpc_stats_shutdown();
+    grpc_core::Fork::GlobalShutdown();
+  }
+  grpc_core::ExecCtx::GlobalShutdown();
+  g_shutting_down = false;
+  gpr_cv_broadcast(g_shutting_down_cv);
+  gpr_mu_unlock(&g_init_mu);
+}
+
+void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
-    {
-      grpc_core::ExecCtx exec_ctx(0);
-      {
-        grpc_timer_manager_set_threading(
-            false);  // shutdown timer_manager thread
-        grpc_executor_shutdown();
-        for (i = g_number_of_plugins; i >= 0; i--) {
-          if (g_all_of_the_plugins[i].destroy != nullptr) {
-            g_all_of_the_plugins[i].destroy();
-          }
-        }
-      }
-      grpc_iomgr_shutdown();
-      gpr_timers_global_destroy();
-      grpc_tracer_shutdown();
-      grpc_mdctx_global_shutdown();
-      grpc_handshaker_factory_registry_shutdown();
-      grpc_slice_intern_shutdown();
-      grpc_core::channelz::ChannelzRegistry::Shutdown();
-      grpc_stats_shutdown();
-      grpc_core::Fork::GlobalShutdown();
-    }
-    grpc_core::ExecCtx::GlobalShutdown();
+    g_initializations++;
+    g_shutting_down = true;
+    // spawn a detached thread to do the actual clean up in case we are
+    // currently in an executor thread.
+    grpc_core::Thread cleanup_thread(
+        "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
+        grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
+    cleanup_thread.Start();
   }
   gpr_mu_unlock(&g_init_mu);
 }
@@ -193,4 +223,14 @@ int grpc_is_initialized(void) {
   r = g_initializations > 0;
   gpr_mu_unlock(&g_init_mu);
   return r;
+}
+
+void grpc_maybe_wait_for_async_shutdown(void) {
+  gpr_once_init(&g_basic_init, do_basic_init);
+  gpr_mu_lock(&g_init_mu);
+  while (g_shutting_down) {
+    gpr_cv_wait(g_shutting_down_cv, &g_init_mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
+  gpr_mu_unlock(&g_init_mu);
 }

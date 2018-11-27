@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/lib/surface/init.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -47,11 +48,12 @@ bool registered_handlers = false;
 }  // namespace
 
 void grpc_prefork() {
-  grpc_core::ExecCtx exec_ctx;
-  skipped_handler = true;
+  grpc_maybe_wait_for_async_shutdown();
   if (!grpc_is_initialized()) {
     return;
   }
+  grpc_core::ExecCtx exec_ctx;
+  skipped_handler = true;
   if (!grpc_core::Fork::Enabled()) {
     gpr_log(GPR_ERROR,
             "Fork support not enabled; try running with the "
