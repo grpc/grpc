@@ -69,7 +69,7 @@ platform(
         }
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-standard-8"
+          value: "n1-highmem-8"
         }
     """,
 )
