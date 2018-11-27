@@ -72,7 +72,8 @@ namespace grpc_core {
 class RequestRouter::Request::ResolverResultWaiter {
  public:
   explicit ResolverResultWaiter(Request* request)
-      : request_router_(request->request_router_), request_(request),
+      : request_router_(request->request_router_),
+        request_(request),
         tracer_enabled_(request_router_->tracer_->enabled()) {
     if (tracer_enabled_) {
       gpr_log(GPR_INFO,
