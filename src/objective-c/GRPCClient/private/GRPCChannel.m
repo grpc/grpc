@@ -39,8 +39,9 @@
 - (instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(host.length > 0, @"Host must not be empty.");
   NSAssert(callOptions != nil, @"callOptions must not be empty.");
-  if (host.length == 0) return nil;
-  if (callOptions == nil) return nil;
+  if (host.length == 0 || callOptions == nil) {
+    return nil;
+  }
 
   if ((self = [super init])) {
     _host = [host copy];
@@ -180,7 +181,9 @@
 
 - (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
   NSAssert(channelConfiguration != nil, @"channelConfiguration must not be empty.");
-  if (channelConfiguration == nil) return nil;
+  if (channelConfiguration == nil) {
+    return nil;
+  }
 
   if ((self = [super init])) {
     _configuration = [channelConfiguration copy];
@@ -218,35 +221,34 @@
   if (callOptions == nil) return NULL;
 
   grpc_call *call = NULL;
-  @synchronized(self) {
-    NSAssert(_unmanagedChannel != NULL, @"Channel should have valid unmanaged channel.");
-    if (_unmanagedChannel == NULL) return NULL;
+  // No need to lock here since _unmanagedChannel is only changed in _dealloc
+  NSAssert(_unmanagedChannel != NULL, @"Channel should have valid unmanaged channel.");
+  if (_unmanagedChannel == NULL) return NULL;
 
-    NSString *serverAuthority =
-        callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
-    NSTimeInterval timeout = callOptions.timeout;
-    NSAssert(timeout >= 0, @"Invalid timeout");
-    if (timeout < 0) return NULL;
-    grpc_slice host_slice = grpc_empty_slice();
-    if (serverAuthority) {
-      host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
-    }
-    grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
-    gpr_timespec deadline_ms =
-        timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
-                     : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                    gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
-    call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
-                                    queue.unmanagedQueue, path_slice,
-                                    serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
-    if (serverAuthority) {
-      grpc_slice_unref(host_slice);
-    }
-    grpc_slice_unref(path_slice);
-    NSAssert(call != nil, @"Unable to create call.");
-    if (call == NULL) {
-      NSLog(@"Unable to create call.");
-    }
+  NSString *serverAuthority =
+  callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+  NSTimeInterval timeout = callOptions.timeout;
+  NSAssert(timeout >= 0, @"Invalid timeout");
+  if (timeout < 0) return NULL;
+  grpc_slice host_slice = grpc_empty_slice();
+  if (serverAuthority) {
+    host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
+  }
+  grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
+  gpr_timespec deadline_ms =
+  timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+  : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                 gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+  call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                  queue.unmanagedQueue, path_slice,
+                                  serverAuthority ? &host_slice : NULL, deadline_ms, NULL);
+  if (serverAuthority) {
+    grpc_slice_unref(host_slice);
+  }
+  grpc_slice_unref(path_slice);
+  NSAssert(call != nil, @"Unable to create call.");
+  if (call == NULL) {
+    NSLog(@"Unable to create call.");
   }
   return call;
 }

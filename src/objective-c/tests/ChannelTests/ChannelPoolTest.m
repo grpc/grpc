@@ -28,6 +28,8 @@ NSString *kDummyHost = @"dummy.host";
 NSString *kDummyHost2 = @"dummy.host.2";
 NSString *kDummyPath = @"/dummy/path";
 
+const NSTimeInterval kDestroyDelay = 1.0;
+
 @interface ChannelPoolTest : XCTestCase
 
 @end
@@ -39,7 +41,7 @@ NSString *kDummyPath = @"/dummy/path";
 }
 
 - (void)testCreateChannelAndCall {
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initTestPoolWithDestroyDelay:kDestroyDelay];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
   GRPCPooledChannel *channel =
       (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
@@ -49,12 +51,12 @@ NSString *kDummyPath = @"/dummy/path";
       [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssert(call != NULL);
   XCTAssertNotNil(channel.wrappedChannel);
-  [channel unrefUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call];
   XCTAssertNil(channel.wrappedChannel);
 }
 
 - (void)testCacheChannel {
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initTestPoolWithDestroyDelay:kDestroyDelay];
   GRPCCallOptions *options1 = [[GRPCCallOptions alloc] init];
   GRPCCallOptions *options2 = [options1 copy];
   GRPCMutableCallOptions *options3 = [options1 mutableCopy];
@@ -80,17 +82,14 @@ NSString *kDummyPath = @"/dummy/path";
   XCTAssertNotEqual(channel1.wrappedChannel, channel3.wrappedChannel);
   XCTAssertNotEqual(channel1.wrappedChannel, channel4.wrappedChannel);
   XCTAssertNotEqual(channel3.wrappedChannel, channel4.wrappedChannel);
-  [channel1 unrefUnmanagedCall:call1];
-  [channel2 unrefUnmanagedCall:call2];
-  [channel3 unrefUnmanagedCall:call3];
-  [channel4 unrefUnmanagedCall:call4];
+  [channel1 destroyUnmanagedCall:call1];
+  [channel2 destroyUnmanagedCall:call2];
+  [channel3 destroyUnmanagedCall:call3];
+  [channel4 destroyUnmanagedCall:call4];
 }
 
 - (void)testTimedDestroyChannel {
-  const NSTimeInterval kDestroyDelay = 1.0;
-
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
-  pool.destroyDelay = kDestroyDelay;
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initTestPoolWithDestroyDelay:kDestroyDelay];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
   GRPCPooledChannel *channel =
       (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
@@ -99,25 +98,24 @@ NSString *kDummyPath = @"/dummy/path";
       [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   GRPCChannel *wrappedChannel = channel.wrappedChannel;
 
-  [channel unrefUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call];
   // Confirm channel is not destroyed at this time
   call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertEqual(wrappedChannel, channel.wrappedChannel);
 
-  [channel unrefUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call];
   sleep(kDestroyDelay + 1);
   // Confirm channel is new at this time
   call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotEqual(wrappedChannel, channel.wrappedChannel);
 
   // Confirm the new channel can create call
-  call = [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssert(call != NULL);
-  [channel unrefUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call];
 }
 
 - (void)testPoolDisconnection {
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initTestPoolWithDestroyDelay:kDestroyDelay];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
   GRPCPooledChannel *channel =
       (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
@@ -141,12 +139,12 @@ NSString *kDummyPath = @"/dummy/path";
       [channel unmanagedCallWithPath:kDummyPath completionQueue:cq callOptions:options];
   XCTAssertNotNil(channel.wrappedChannel);
   XCTAssertNotEqual(channel.wrappedChannel, wrappedChannel);
-  [channel unrefUnmanagedCall:call];
-  [channel unrefUnmanagedCall:call2];
+  [channel destroyUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call2];
 }
 
 - (void)testUnrefCallFromStaleChannel {
-  GRPCChannelPool *pool = [[GRPCChannelPool alloc] init];
+  GRPCChannelPool *pool = [[GRPCChannelPool alloc] initTestPoolWithDestroyDelay:kDestroyDelay];
   GRPCCallOptions *options = [[GRPCCallOptions alloc] init];
   GRPCPooledChannel *channel =
       (GRPCPooledChannel *)[pool channelWithHost:kDummyHost callOptions:options];
@@ -163,12 +161,12 @@ NSString *kDummyPath = @"/dummy/path";
   // destroy state
   XCTAssertNotNil(channel.wrappedChannel);
   GRPCChannel *wrappedChannel = channel.wrappedChannel;
-  [channel unrefUnmanagedCall:call];
+  [channel destroyUnmanagedCall:call];
   XCTAssertNotNil(channel.wrappedChannel);
   XCTAssertEqual(wrappedChannel, channel.wrappedChannel);
   // Test unref the call of the current channel will cause the channel going into timed destroy
   // state
-  [channel unrefUnmanagedCall:call2];
+  [channel destroyUnmanagedCall:call2];
   XCTAssertNil(channel.wrappedChannel);
 }
 

@@ -32,6 +32,10 @@ NS_ASSUME_NONNULL_BEGIN
 /** Caching signature of a channel. */
 @interface GRPCChannelConfiguration : NSObject<NSCopying>
 
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
 /** The host that this channel is connected to. */
 @property(copy, readonly) NSString *host;
 
@@ -47,7 +51,7 @@ NS_ASSUME_NONNULL_BEGIN
 /** Acquire the dictionary of channel args with current configurations. */
 @property(copy, readonly) NSDictionary *channelArgs;
 
-- (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
+- (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 
 @end
 

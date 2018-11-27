@@ -554,13 +554,14 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
   NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
-                                             path:@"/dummyPath"
-                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  [GRPCCall useInsecureConnectionsForHost:kDummyAddress];
   [GRPCCall setMinConnectTimeout:timeout * 1000
                   initialBackoff:backoff * 1000
                       maxBackoff:0
                          forHost:kDummyAddress];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+                                             path:@"/dummyPath"
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   NSDate *startTime = [NSDate date];
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
     XCTAssert(NO, @"Received message. Should not reach here");

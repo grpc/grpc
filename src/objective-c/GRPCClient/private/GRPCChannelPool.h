@@ -39,12 +39,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface GRPCPooledChannel : NSObject
 
+- (nullable instancetype)init NS_UNAVAILABLE;
+
++ (nullable instancetype)new NS_UNAVAILABLE;
+
 /**
  * Initialize with an actual channel object \a channel and a reference to the channel pool.
  */
 - (nullable instancetype)initWithChannelConfiguration:
                              (GRPCChannelConfiguration *)channelConfiguration
-                                          channelPool:(GRPCChannelPool *)channelPool;
+                                          channelPool:(GRPCChannelPool *)channelPool NS_DESIGNATED_INITIALIZER;
 
 /**
  * Create a grpc core call object (grpc_call) from this channel. If channel is disconnected, get a
@@ -59,17 +63,21 @@ NS_ASSUME_NONNULL_BEGIN
  * \a unmanagedCallWithPath:completionQueue:callOptions: and decrease channel refcount. If refcount
  * of the channel becomes 0, return the channel object to channel pool.
  */
-- (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall;
+- (void)destroyUnmanagedCall:(grpc_call *)unmanagedCall;
 
 /**
- * Force the channel to disconnect immediately.
+ * Force the channel to disconnect immediately. Subsequent calls to unmanagedCallWithPath: will
+ * attempt to reconnect to the remote channel.
  */
 - (void)disconnect;
 
-// The following methods and properties are for test only
+@end
+
+/** Test-only interface for \a GRPCPooledChannel. */
+@interface GRPCPooledChannel (Test)
 
 /**
- * Return the pointer to the real channel wrapped by the proxy.
+ * Return the pointer to the raw channel wrapped.
  */
 @property(atomic, readonly) GRPCChannel *wrappedChannel;
 
@@ -80,6 +88,10 @@ NS_ASSUME_NONNULL_BEGIN
  * destroy the channel after a certain period of time elapsed.
  */
 @interface GRPCChannelPool : NSObject
+
+- (nullable instancetype)init NS_UNAVAILABLE;
+
++ (nullable instancetype)new NS_UNAVAILABLE;
 
 /**
  * Get the global channel pool.
@@ -92,31 +104,20 @@ NS_ASSUME_NONNULL_BEGIN
 - (GRPCPooledChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
 
 /**
- * This method is deprecated.
- *
- * Destroy all open channels and close their connections.
- */
-- (void)closeOpenConnections;
-
-// Test-only methods below
-
-/**
- * Get an instance of pool isolated from the global shared pool. This method is for test only.
- * Global pool should be used in production.
- */
-- (nullable instancetype)init;
-
-/**
- * Simulate a network transition event and destroy all channels. This method is for internal and
- * test only.
+ * Disconnect all channels in this pool.
  */
 - (void)disconnectAllChannels;
 
+@end
+
+/** Test-only interface for \a GRPCChannelPool. */
+@interface GRPCChannelPool (Test)
+
 /**
- * Set the destroy delay of channels. A channel should be destroyed if it stayed idle (no active
- * call on it) for this period of time. This property is for test only.
+ * Get an instance of pool isolated from the global shared pool with channels' destroy delay being
+ * \a destroyDelay.
  */
-@property(atomic) NSTimeInterval destroyDelay;
+- (nullable instancetype)initTestPoolWithDestroyDelay:(NSTimeInterval)destroyDelay;
 
 @end
 

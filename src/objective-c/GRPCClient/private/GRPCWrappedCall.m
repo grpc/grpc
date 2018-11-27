@@ -317,7 +317,7 @@
 }
 
 - (void)dealloc {
-  [_channel unrefUnmanagedCall:_call];
+  [_channel destroyUnmanagedCall:_call];
   _channel = nil;
 }
 

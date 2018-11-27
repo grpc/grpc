@@ -35,7 +35,7 @@
                               completionQueue:(GRPCCompletionQueue *)queue
                                   callOptions:(GRPCCallOptions *)callOptions;
 
-- (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall;
+- (void)destroyUnmanagedCall:(grpc_call *)unmanagedCall;
 
 @end
 
@@ -66,7 +66,7 @@
   return (grpc_call *)(++_grpcCallCounter);
 }
 
-- (void)unrefUnmanagedCall:(grpc_call *)unmanagedCall {
+- (void)destroyUnmanagedCall:(grpc_call *)unmanagedCall {
   if (_unrefExpectation) [_unrefExpectation fulfill];
 }
 

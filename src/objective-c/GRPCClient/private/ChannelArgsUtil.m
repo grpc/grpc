@@ -60,36 +60,35 @@ grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary) {
   NSUInteger argCount = [keys count];
 
   grpc_channel_args *channelArgs = gpr_malloc(sizeof(grpc_channel_args));
-  channelArgs->num_args = argCount;
   channelArgs->args = gpr_malloc(argCount * sizeof(grpc_arg));
 
   // TODO(kriswuollett) Check that keys adhere to GRPC core library requirements
 
+  NSUInteger j = 0;
   for (NSUInteger i = 0; i < argCount; ++i) {
-    grpc_arg *arg = &channelArgs->args[i];
+    grpc_arg *arg = &channelArgs->args[j];
     arg->key = gpr_strdup([keys[i] UTF8String]);
 
     id value = dictionary[keys[i]];
     if ([value respondsToSelector:@selector(UTF8String)]) {
       arg->type = GRPC_ARG_STRING;
       arg->value.string = gpr_strdup([value UTF8String]);
+      j++;
     } else if ([value respondsToSelector:@selector(intValue)]) {
-      if ([value compare:[NSNumber numberWithInteger:INT_MAX]] == NSOrderedDescending ||
-          [value compare:[NSNumber numberWithInteger:INT_MIN]] == NSOrderedAscending) {
-        [NSException raise:NSInvalidArgumentException
-                    format:@"Out of range for a value-typed channel argument: %@", value];
+      int64_t value64 = [value longLongValue];
+      if (value64 <= INT_MAX || value64 >= INT_MIN) {
+        arg->type = GRPC_ARG_INTEGER;
+        arg->value.integer = [value intValue];
+        j++;
       }
-      arg->type = GRPC_ARG_INTEGER;
-      arg->value.integer = [value intValue];
     } else if (value != nil) {
       arg->type = GRPC_ARG_POINTER;
       arg->value.pointer.p = (__bridge_retained void *)value;
       arg->value.pointer.vtable = &objc_arg_vtable;
-    } else {
-      [NSException raise:NSInvalidArgumentException
-                  format:@"Invalid channel argument type: %@", [value class]];
+      j++;
     }
   }
+  channelArgs->num_args = j;
 
   return channelArgs;
 }

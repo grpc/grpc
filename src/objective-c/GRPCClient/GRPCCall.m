@@ -69,11 +69,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
   NSAssert(host.length != 0 && path.length != 0, @"Host and Path cannot be empty");
-  if (host.length == 0) {
-    host = [NSString string];
-  }
-  if (path.length == 0) {
-    path = [NSString string];
+  if (host.length == 0 || path.length == 0) {
+    return nil;
   }
   if ((self = [super init])) {
     _host = [host copy];
@@ -173,7 +170,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)start {
-  GRPCCall *call = nil;
+  GRPCCall *copiedCall = nil;
   @synchronized(self) {
     NSAssert(!_started, @"Call already started.");
     NSAssert(!_canceled, @"Call already canceled.");
@@ -197,7 +194,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
     }
-    call = _call;
+    copiedCall = _call;
   }
 
   void (^valueHandler)(id value) = ^(id value) {
@@ -235,11 +232,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
   };
   id<GRXWriteable> responseWriteable =
       [[GRXWriteable alloc] initWithValueHandler:valueHandler completionHandler:completionHandler];
-  [call startWithWriteable:responseWriteable];
+  [copiedCall startWithWriteable:responseWriteable];
 }
 
 - (void)cancel {
-  GRPCCall *call = nil;
+  GRPCCall *copiedCall = nil;
   @synchronized(self) {
     if (_canceled) {
       return;
@@ -247,7 +244,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     _canceled = YES;
 
-    call = _call;
+    copiedCall = _call;
     _call = nil;
     _pipe = nil;
 
@@ -268,13 +265,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                                                         @"Canceled by app"
                                                                   }]];
       });
+    } else {
+      _handler = nil;
     }
   }
-  [call cancel];
+  [copiedCall cancel];
 }
 
 - (void)writeData:(NSData *)data {
-  GRXBufferedPipe *pipe = nil;
+  GRXBufferedPipe *copiedPipe = nil;
   @synchronized(self) {
     NSAssert(!_canceled, @"Call arleady canceled.");
     NSAssert(!_finished, @"Call is half-closed before sending data.");
@@ -286,14 +285,14 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
 
     if (_pipe) {
-      pipe = _pipe;
+      copiedPipe = _pipe;
     }
   }
-  [pipe writeValue:data];
+  [copiedPipe writeValue:data];
 }
 
 - (void)finish {
-  GRXBufferedPipe *pipe = nil;
+  GRXBufferedPipe *copiedPipe = nil;
   @synchronized(self) {
     NSAssert(_started, @"Call not started.");
     NSAssert(!_canceled, @"Call arleady canceled.");
@@ -309,12 +308,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
 
     if (_pipe) {
-      pipe = _pipe;
+      copiedPipe = _pipe;
       _pipe = nil;
     }
     _finished = YES;
   }
-  [pipe writesFinishedWithError:nil];
+  [copiedPipe writesFinishedWithError:nil];
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
@@ -322,11 +321,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     if (initialMetadata != nil &&
         [_handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> handler = nil;
+        id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
         }
-        [handler receivedInitialMetadata:initialMetadata];
+        [copiedHandler receivedInitialMetadata:initialMetadata];
       });
     }
   }
@@ -336,11 +335,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
   @synchronized(self) {
     if (message != nil && [_handler respondsToSelector:@selector(receivedRawMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> handler = nil;
+        id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
         }
-        [handler receivedRawMessage:message];
+        [copiedHandler receivedRawMessage:message];
       });
     }
   }
@@ -350,14 +349,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
   @synchronized(self) {
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> handler = nil;
+        id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
           // Clean up _handler so that no more responses are reported to the handler.
           self->_handler = nil;
         }
-        [handler closedWithTrailingMetadata:trailingMetadata error:error];
+        [copiedHandler closedWithTrailingMetadata:trailingMetadata error:error];
       });
+    } else {
+      _handler = nil;
     }
   }
 }

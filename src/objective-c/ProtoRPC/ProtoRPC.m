@@ -133,18 +133,18 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)cancel {
-  GRPCCall2 *call;
+  GRPCCall2 *copiedCall;
   @synchronized(self) {
-    call = _call;
+    copiedCall = _call;
     _call = nil;
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_handler.dispatchQueue, ^{
-        id<GRPCProtoResponseHandler> handler = nil;
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
           self->_handler = nil;
         }
-        [handler closedWithTrailingMetadata:nil
+        [copiedHandler closedWithTrailingMetadata:nil
                                       error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                 code:GRPCErrorCodeCancelled
                                                             userInfo:@{
@@ -152,9 +152,11 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                                                                   @"Canceled by app"
                                                             }]];
       });
+    } else {
+      _handler = nil;
     }
   }
-  [call cancel];
+  [copiedCall cancel];
 }
 
 - (void)writeMessage:(GPBMessage *)message {
@@ -182,11 +184,11 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   @synchronized(self) {
     if (initialMetadata != nil && [_handler respondsToSelector:@selector(initialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCProtoResponseHandler> handler = nil;
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
         }
-        [handler receivedInitialMetadata:initialMetadata];
+        [copiedHandler receivedInitialMetadata:initialMetadata];
       });
     }
   }
@@ -200,21 +202,21 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   @synchronized(self) {
     if (parsed && [_handler respondsToSelector:@selector(receivedProtoMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCProtoResponseHandler> handler = nil;
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
         }
-        [handler receivedProtoMessage:parsed];
+        [copiedHandler receivedProtoMessage:parsed];
       });
     } else if (!parsed &&
                [_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCProtoResponseHandler> handler = nil;
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
           self->_handler = nil;
         }
-        [handler closedWithTrailingMetadata:nil
+        [copiedHandler closedWithTrailingMetadata:nil
                                       error:ErrorForBadProto(message, _responseClass, error)];
       });
       [_call cancel];
@@ -227,12 +229,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   @synchronized(self) {
     if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
-        id<GRPCProtoResponseHandler> handler = nil;
+        id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
-          handler = self->_handler;
+          copiedHandler = self->_handler;
           self->_handler = nil;
         }
-        [handler closedWithTrailingMetadata:trailingMetadata error:error];
+        [copiedHandler closedWithTrailingMetadata:trailingMetadata error:error];
       });
     }
     _call = nil;
