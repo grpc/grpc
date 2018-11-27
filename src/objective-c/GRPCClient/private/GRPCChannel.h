@@ -51,7 +51,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** Acquire the dictionary of channel args with current configurations. */
 @property(copy, readonly) NSDictionary *channelArgs;
 
-- (nullable instancetype)initWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithHost:(NSString *)host
+                          callOptions:(GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 
 @end
 

@@ -41,14 +41,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype)new NS_UNAVAILABLE;
++ (nullable instancetype) new NS_UNAVAILABLE;
 
 /**
  * Initialize with an actual channel object \a channel and a reference to the channel pool.
  */
 - (nullable instancetype)initWithChannelConfiguration:
                              (GRPCChannelConfiguration *)channelConfiguration
-                                          channelPool:(GRPCChannelPool *)channelPool NS_DESIGNATED_INITIALIZER;
+                                          channelPool:(GRPCChannelPool *)channelPool
+    NS_DESIGNATED_INITIALIZER;
 
 /**
  * Create a grpc core call object (grpc_call) from this channel. If channel is disconnected, get a
@@ -91,7 +92,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-+ (nullable instancetype)new NS_UNAVAILABLE;
++ (nullable instancetype) new NS_UNAVAILABLE;
 
 /**
  * Get the global channel pool.

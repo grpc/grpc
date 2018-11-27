@@ -74,8 +74,9 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (void)dealloc {
-  NSAssert([_unmanagedCalls count] == 0 && _wrappedChannel == nil, @"Pooled channel should only be"
-           "destroyed after the wrapped channel is destroyed");
+  NSAssert([_unmanagedCalls count] == 0 && _wrappedChannel == nil,
+           @"Pooled channel should only be"
+            "destroyed after the wrapped channel is destroyed");
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
@@ -183,7 +184,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 + (instancetype)sharedInstance {
   dispatch_once(&gInitChannelPool, ^{
-    gChannelPool = [[GRPCChannelPool alloc] initInstanceWithDestroyDelay:kDefaultChannelDestroyDelay];
+    gChannelPool =
+        [[GRPCChannelPool alloc] initInstanceWithDestroyDelay:kDefaultChannelDestroyDelay];
     NSAssert(gChannelPool != nil, @"Cannot initialize global channel pool.");
   });
   return gChannelPool;

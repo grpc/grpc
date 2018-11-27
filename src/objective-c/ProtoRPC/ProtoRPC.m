@@ -145,12 +145,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
           self->_handler = nil;
         }
         [copiedHandler closedWithTrailingMetadata:nil
-                                      error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                code:GRPCErrorCodeCancelled
-                                                            userInfo:@{
-                                                              NSLocalizedDescriptionKey :
-                                                                  @"Canceled by app"
-                                                            }]];
+                                            error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                      code:GRPCErrorCodeCancelled
+                                                                  userInfo:@{
+                                                                    NSLocalizedDescriptionKey :
+                                                                        @"Canceled by app"
+                                                                  }]];
       });
     } else {
       _handler = nil;
@@ -217,7 +217,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
           self->_handler = nil;
         }
         [copiedHandler closedWithTrailingMetadata:nil
-                                      error:ErrorForBadProto(message, _responseClass, error)];
+                                            error:ErrorForBadProto(message, _responseClass, error)];
       });
       [_call cancel];
       _call = nil;
