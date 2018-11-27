@@ -36,14 +36,17 @@ SecureChannelCredentials::SecureChannelCredentials(
 
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
-  return CreateChannelWithInterceptors(target, args, nullptr);
+  return CreateChannelWithInterceptors(
+      target, args,
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
 
 std::shared_ptr<grpc::Channel>
 SecureChannelCredentials::CreateChannelWithInterceptors(
     const string& target, const grpc::ChannelArguments& args,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
@@ -228,9 +231,10 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
   }
   if (w->plugin_->IsBlocking()) {
     // Asynchronous return.
-    w->thread_pool_->Add(
-        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
-                  cb, user_data, nullptr, nullptr, nullptr, nullptr));
+    w->thread_pool_->Add([w, context, cb, user_data] {
+      w->MetadataCredentialsPluginWrapper::InvokePlugin(
+          context, cb, user_data, nullptr, nullptr, nullptr, nullptr);
+    });
     return 0;
   } else {
     // Synchronous return.

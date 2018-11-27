@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-out=$(readlink -f "${1:-coverage}")
+grpc_package(name = "test/core/debug")
 
-root=$(readlink -f "$(dirname "$0")/../../..")
-shift || true
-tmp=$(mktemp)
-cd "$root"
-tools/run_tests/run_tests.py -c gcov -l c c++ "$@" || true
-lcov --capture --directory . --output-file "$tmp"
-genhtml "$tmp" --output-directory "$out"
-rm "$tmp"
-if which xdg-open > /dev/null
-then
-  xdg-open "file://$out/index.html"
-fi
+licenses(["notice"])  # Apache v2
+
+grpc_cc_test(
+    name = "stats_test",
+    srcs = ["stats_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)

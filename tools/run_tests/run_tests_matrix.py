@@ -574,11 +574,8 @@ if __name__ == "__main__":
 
     print('Will run these tests:')
     for job in jobs:
-        if args.dry_run:
-            print('  %s: "%s"' % (job.shortname, ' '.join(job.cmdline)))
-        else:
-            print('  %s' % job.shortname)
-    print
+        print('  %s: "%s"' % (job.shortname, ' '.join(job.cmdline)))
+    print('')
 
     if args.dry_run:
         print('--dry_run was used, exiting')

@@ -22,9 +22,6 @@ cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
 cd -
 
-# Ensure existence of ccache directory
-mkdir -p /tmp/ccache
-
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
@@ -57,7 +54,6 @@ docker run \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
   -e "config=$config" \
   -e "arch=$arch" \
-  -e CCACHE_DIR=/tmp/ccache \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT="$git_root" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
@@ -73,7 +69,6 @@ docker run \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \
-  -v /tmp/ccache:/tmp/ccache \
   -v /tmp/npm-cache:/tmp/npm-cache \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \

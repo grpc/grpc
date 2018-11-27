@@ -31,9 +31,11 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 typedef struct grpc_linked_mdelem {
+  grpc_linked_mdelem() {}
+
   grpc_mdelem md;
-  struct grpc_linked_mdelem* next;
-  struct grpc_linked_mdelem* prev;
+  struct grpc_linked_mdelem* next = nullptr;
+  struct grpc_linked_mdelem* prev = nullptr;
   void* reserved;
 } grpc_linked_mdelem;
 

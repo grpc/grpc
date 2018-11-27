@@ -16,6 +16,7 @@
 import collections
 import threading
 import unittest
+import logging
 
 from grpc import _auth
 
@@ -77,4 +78,5 @@ class AccessTokenAuthMetadataPluginTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

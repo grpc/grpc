@@ -30,15 +30,18 @@
 
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -277,7 +280,61 @@ grpc_json* ServerNode::RenderJson() {
   return top_level_json;
 }
 
-SocketNode::SocketNode() : BaseNode(EntityType::kSocket) {}
+static void PopulateSocketAddressJson(grpc_json* json, const char* name,
+                                      const char* addr_str) {
+  if (addr_str == nullptr) return;
+  grpc_json* json_iterator = nullptr;
+  json_iterator = grpc_json_create_child(json_iterator, json, name, nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  grpc_uri* uri = grpc_uri_parse(addr_str, true);
+  if ((uri != nullptr) && ((strcmp(uri->scheme, "ipv4") == 0) ||
+                           (strcmp(uri->scheme, "ipv6") == 0))) {
+    const char* host_port = uri->path;
+    if (*host_port == '/') ++host_port;
+    char* host = nullptr;
+    char* port = nullptr;
+    GPR_ASSERT(gpr_split_host_port(host_port, &host, &port));
+    int port_num = -1;
+    if (port != nullptr) {
+      port_num = atoi(port);
+    }
+    char* b64_host = grpc_base64_encode(host, strlen(host), false, false);
+    json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    json = json_iterator;
+    json_iterator = nullptr;
+    json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                      "port", port_num);
+    json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
+                                           b64_host, GRPC_JSON_STRING, true);
+    gpr_free(host);
+    gpr_free(port);
+
+  } else if (uri != nullptr && strcmp(uri->scheme, "unix") == 0) {
+    json_iterator = grpc_json_create_child(json_iterator, json, "uds_address",
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    json = json_iterator;
+    json_iterator = nullptr;
+    json_iterator =
+        grpc_json_create_child(json_iterator, json, "filename",
+                               gpr_strdup(uri->path), GRPC_JSON_STRING, true);
+  } else {
+    json_iterator = grpc_json_create_child(json_iterator, json, "other_address",
+                                           nullptr, GRPC_JSON_OBJECT, false);
+    json = json_iterator;
+    json_iterator = nullptr;
+    json_iterator = grpc_json_create_child(json_iterator, json, "name",
+                                           addr_str, GRPC_JSON_STRING, false);
+  }
+  grpc_uri_destroy(uri);
+}
+
+SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote)
+    : BaseNode(EntityType::kSocket),
+      local_(std::move(local)),
+      remote_(std::move(remote)) {}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
@@ -315,6 +372,9 @@ grpc_json* SocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
+  json = top_level_json;
+  PopulateSocketAddressJson(json, "remote", remote_.get());
+  PopulateSocketAddressJson(json, "local", local_.get());
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
@@ -374,8 +434,8 @@ grpc_json* SocketNode::RenderJson() {
   return top_level_json;
 }
 
-ListenSocketNode::ListenSocketNode(UniquePtr<char> host, int port)
-    : BaseNode(EntityType::kSocket), host_(std::move(host)), port_(port) {}
+ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr)
+    : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -390,19 +450,7 @@ grpc_json* ListenSocketNode::RenderJson() {
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
   json = top_level_json;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "local", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "tcpip_address",
-                                         nullptr, GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator =
-      grpc_json_add_number_string_child(json, json_iterator, "port", port_);
-  json_iterator = grpc_json_create_child(json_iterator, json, "ip_address",
-                                         host_.get(), GRPC_JSON_STRING, false);
+  PopulateSocketAddressJson(json, "local", local_addr_.get());
 
   return top_level_json;
 }

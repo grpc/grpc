@@ -307,8 +307,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
         GPR_CODEGEN_ASSERT(ignored == tag);
-        // Ignore mutations by FinalizeResult: Pluck returns the C API status
-        return ev.success != 0;
+        return ok;
       }
     }
   }
@@ -380,12 +379,18 @@ class ServerCompletionQueue : public CompletionQueue {
   ServerCompletionQueue() : polling_type_(GRPC_CQ_DEFAULT_POLLING) {}
 
  private:
+  /// \param completion_type indicates whether this is a NEXT or CALLBACK
+  /// completion queue.
   /// \param polling_type Informs the GRPC library about the type of polling
   /// allowed on this completion queue. See grpc_cq_polling_type's description
   /// in grpc_types.h for more details.
-  ServerCompletionQueue(grpc_cq_polling_type polling_type)
+  /// \param shutdown_cb is the shutdown callback used for CALLBACK api queues
+  ServerCompletionQueue(grpc_cq_completion_type completion_type,
+                        grpc_cq_polling_type polling_type,
+                        grpc_experimental_completion_queue_functor* shutdown_cb)
       : CompletionQueue(grpc_completion_queue_attributes{
-            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type, nullptr}),
+            GRPC_CQ_CURRENT_VERSION, completion_type, polling_type,
+            shutdown_cb}),
         polling_type_(polling_type) {}
 
   grpc_cq_polling_type polling_type_;

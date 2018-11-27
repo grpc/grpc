@@ -34,6 +34,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 #include <gtest/gtest.h>
 
@@ -41,13 +42,38 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class ClientCallbackEnd2endTest : public ::testing::Test {
+class TestScenario {
+ public:
+  TestScenario(bool serve_callback) : callback_server(serve_callback) {}
+  void Log() const;
+  bool callback_server;
+};
+
+static std::ostream& operator<<(std::ostream& out,
+                                const TestScenario& scenario) {
+  return out << "TestScenario{callback_server="
+             << (scenario.callback_server ? "true" : "false") << "}";
+}
+
+void TestScenario::Log() const {
+  std::ostringstream out;
+  out << *this;
+  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
+}
+
+class ClientCallbackEnd2endTest
+    : public ::testing::TestWithParam<TestScenario> {
  protected:
-  ClientCallbackEnd2endTest() {}
+  ClientCallbackEnd2endTest() { GetParam().Log(); }
 
   void SetUp() override {
     ServerBuilder builder;
-    builder.RegisterService(&service_);
+
+    if (!GetParam().callback_server) {
+      builder.RegisterService(&service_);
+    } else {
+      builder.RegisterService(&callback_service_);
+    }
 
     server_ = builder.BuildAndStart();
     is_server_started_ = true;
@@ -75,11 +101,13 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
 
       test_string += "Hello world. ";
       request.set_message(test_string);
-
+      grpc::string val;
       if (with_binary_metadata) {
+        request.mutable_param()->set_echo_metadata(true);
         char bytes[8] = {'\0', '\1', '\2', '\3',
                          '\4', '\5', '\6', static_cast<char>(i)};
-        cli_ctx.AddMetadata("custom-bin", grpc::string(bytes, 8));
+        val = grpc::string(bytes, 8);
+        cli_ctx.AddMetadata("custom-bin", val);
       }
 
       cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
@@ -89,10 +117,18 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
       bool done = false;
       stub_->experimental_async()->Echo(
           &cli_ctx, &request, &response,
-          [&request, &response, &done, &mu, &cv](Status s) {
+          [&cli_ctx, &request, &response, &done, &mu, &cv, val,
+           with_binary_metadata](Status s) {
             GPR_ASSERT(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
+            if (with_binary_metadata) {
+              EXPECT_EQ(
+                  1u, cli_ctx.GetServerTrailingMetadata().count("custom-bin"));
+              EXPECT_EQ(val, ToString(cli_ctx.GetServerTrailingMetadata()
+                                          .find("custom-bin")
+                                          ->second));
+            }
             std::lock_guard<std::mutex> l(mu);
             done = true;
             cv.notify_one();
@@ -151,37 +187,38 @@ class ClientCallbackEnd2endTest : public ::testing::Test {
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
   TestServiceImpl service_;
+  CallbackTestServiceImpl callback_service_;
   std::unique_ptr<Server> server_;
 };
 
-TEST_F(ClientCallbackEnd2endTest, SimpleRpc) {
+TEST_P(ClientCallbackEnd2endTest, SimpleRpc) {
   ResetStub();
   SendRpcs(1, false);
 }
 
-TEST_F(ClientCallbackEnd2endTest, SequentialRpcs) {
+TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   ResetStub();
   SendRpcs(10, false);
 }
 
-TEST_F(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
+TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   SendRpcs(10, true);
 }
 
-TEST_F(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
+TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
   ResetStub();
   SendRpcsGeneric(10, false);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS
-TEST_F(ClientCallbackEnd2endTest, ExceptingRpc) {
+TEST_P(ClientCallbackEnd2endTest, ExceptingRpc) {
   ResetStub();
   SendRpcsGeneric(10, true);
 }
 #endif
 
-TEST_F(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
+TEST_P(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -193,7 +230,7 @@ TEST_F(ClientCallbackEnd2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   }
 }
 
-TEST_F(ClientCallbackEnd2endTest, MultipleRpcs) {
+TEST_P(ClientCallbackEnd2endTest, MultipleRpcs) {
   ResetStub();
   std::vector<std::thread> threads;
   threads.reserve(10);
@@ -205,7 +242,7 @@ TEST_F(ClientCallbackEnd2endTest, MultipleRpcs) {
   }
 }
 
-TEST_F(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
+TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -229,6 +266,11 @@ TEST_F(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
     cv.wait(l);
   }
 }
+
+TestScenario scenarios[] = {TestScenario{false}, TestScenario{true}};
+
+INSTANTIATE_TEST_CASE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
+                        ::testing::ValuesIn(scenarios));
 
 }  // namespace
 }  // namespace testing

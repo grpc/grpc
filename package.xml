@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.17.0dev</release>
-  <api>1.17.0dev</api>
+  <release>1.18.0dev</release>
+  <api>1.18.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -191,6 +191,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.h" role="src" />
@@ -249,7 +250,7 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_shared_resource.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h" role="src" />
@@ -286,7 +287,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/method_params.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
@@ -294,13 +294,12 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
@@ -445,6 +444,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
@@ -616,12 +616,14 @@
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/uri/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_goaway.cc" role="src" />
@@ -688,7 +690,7 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_shared_resource.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc" role="src" />
@@ -730,20 +732,18 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/method_params.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/request_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />

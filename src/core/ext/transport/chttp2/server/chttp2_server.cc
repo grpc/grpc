@@ -366,15 +366,10 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   grpc_resolved_addresses_destroy(resolved);
 
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
-  if (grpc_channel_arg_get_bool(arg, false)) {
-    char* host;
-    char* port;
-    gpr_split_host_port(addr, &host, &port);
-    // allocated host's ownership is passed to ListenSocketNode.
+  if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            grpc_core::UniquePtr<char>(host), *port_num);
-    gpr_free(port);
+            grpc_core::UniquePtr<char>(gpr_strdup(addr)));
     socket_uuid = state->channelz_listen_socket->uuid();
   }
 

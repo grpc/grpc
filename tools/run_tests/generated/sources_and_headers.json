@@ -3402,6 +3402,7 @@
     "name": "client_interceptors_end2end_test", 
     "src": [
       "test/cpp/end2end/client_interceptors_end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
@@ -3509,6 +3510,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "context_list_test", 
+    "src": [
+      "test/core/transport/chttp2/context_list_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++"
     ], 
@@ -3600,12 +3618,16 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "test/cpp/end2end/interceptors_util.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "end2end_test", 
     "src": [
-      "test/cpp/end2end/end2end_test.cc"
+      "test/cpp/end2end/end2end_test.cc", 
+      "test/cpp/end2end/interceptors_util.cc", 
+      "test/cpp/end2end/interceptors_util.h"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4736,6 +4758,7 @@
     "language": "c++", 
     "name": "server_interceptors_end2end_test", 
     "src": [
+      "test/cpp/end2end/interceptors_util.cc", 
       "test/cpp/end2end/interceptors_util.h", 
       "test/cpp/end2end/server_interceptors_end2end_test.cc"
     ], 
@@ -7880,6 +7903,7 @@
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/server_async.cc", 
+      "test/cpp/qps/server_callback.cc", 
       "test/cpp/qps/server_sync.cc", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/usage_timer.cc", 
@@ -9136,7 +9160,7 @@
       "src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h", 
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
       "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h", 
@@ -9167,8 +9191,8 @@
       "src/core/tsi/alts/frame_protector/frame_handler.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.cc", 
       "src/core/tsi/alts/handshaker/alts_handshaker_client.h", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.cc", 
-      "src/core/tsi/alts/handshaker/alts_tsi_event.h", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.cc", 
+      "src/core/tsi/alts/handshaker/alts_shared_resource.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h", 
@@ -9648,7 +9672,8 @@
       "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
-      "src/core/lib/transport/transport_op_string.cc"
+      "src/core/lib/transport/transport_op_string.cc", 
+      "src/core/lib/uri/uri_parser.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9805,7 +9830,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9956,7 +9982,8 @@
       "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
-      "src/core/lib/transport/transport_impl.h"
+      "src/core/lib/transport/transport_impl.h", 
+      "src/core/lib/uri/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10025,7 +10052,6 @@
       "src/core/ext/filters/client_channel/lb_policy.h", 
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
-      "src/core/ext/filters/client_channel/method_params.h", 
       "src/core/ext/filters/client_channel/parse_address.h", 
       "src/core/ext/filters/client_channel/proxy_mapper.h", 
       "src/core/ext/filters/client_channel/proxy_mapper_registry.h", 
@@ -10033,10 +10059,10 @@
       "src/core/ext/filters/client_channel/resolver.h", 
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -10066,8 +10092,6 @@
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.cc", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
-      "src/core/ext/filters/client_channel/method_params.cc", 
-      "src/core/ext/filters/client_channel/method_params.h", 
       "src/core/ext/filters/client_channel/parse_address.cc", 
       "src/core/ext/filters/client_channel/parse_address.h", 
       "src/core/ext/filters/client_channel/proxy_mapper.cc", 
@@ -10081,14 +10105,14 @@
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.cc", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.cc", 
+      "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.cc", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
-      "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h"
+      "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10732,6 +10756,7 @@
       "src/core/ext/transport/chttp2/transport/bin_decoder.h", 
       "src/core/ext/transport/chttp2/transport/bin_encoder.h", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/context_list.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
       "src/core/ext/transport/chttp2/transport/frame_data.h", 
@@ -10761,6 +10786,8 @@
       "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.cc", 
       "src/core/ext/transport/chttp2/transport/chttp2_transport.h", 
+      "src/core/ext/transport/chttp2/transport/context_list.cc", 
+      "src/core/ext/transport/chttp2/transport/context_list.h", 
       "src/core/ext/transport/chttp2/transport/flow_control.cc", 
       "src/core/ext/transport/chttp2/transport/flow_control.h", 
       "src/core/ext/transport/chttp2/transport/frame.h", 
@@ -11107,7 +11134,6 @@
       "tsi_interface"
     ], 
     "headers": [
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.h", 
       "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
@@ -11120,8 +11146,6 @@
     "language": "c", 
     "name": "tsi", 
     "src": [
-      "src/core/tsi/alts_transport_security.cc", 
-      "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.cc", 
       "src/core/tsi/fake_transport_security.h", 
       "src/core/tsi/local_transport_security.cc", 
@@ -11224,6 +11248,7 @@
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
@@ -11299,6 +11324,7 @@
       "include/grpcpp/impl/codegen/rpc_service_method.h", 
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
+      "include/grpcpp/impl/codegen/server_callback.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
       "include/grpcpp/impl/codegen/server_interface.h", 
@@ -11448,6 +11474,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11552,6 +11579,7 @@
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
+      "include/grpcpp/support/server_callback.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11561,6 +11589,7 @@
       "include/grpcpp/support/time.h", 
       "src/cpp/client/channel_cc.cc", 
       "src/cpp/client/client_context.cc", 
+      "src/cpp/client/client_interceptor.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
       "src/cpp/client/create_channel_internal.h", 

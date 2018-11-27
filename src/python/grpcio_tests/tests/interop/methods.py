@@ -23,7 +23,6 @@ from google.auth import environment_vars as google_auth_environment_vars
 from google.auth.transport import grpc as google_auth_transport_grpc
 from google.auth.transport import requests as google_auth_transport_requests
 import grpc
-from grpc.beta import implementations
 
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
@@ -377,7 +376,7 @@ def _unimplemented_service(unimplemented_service_stub):
 
 def _custom_metadata(stub):
     initial_metadata_value = "test_initial_metadata_value"
-    trailing_metadata_value = "\x0a\x0b\x0a\x0b\x0a\x0b"
+    trailing_metadata_value = b"\x0a\x0b\x0a\x0b\x0a\x0b"
     metadata = ((_INITIAL_METADATA_KEY, initial_metadata_value),
                 (_TRAILING_METADATA_KEY, trailing_metadata_value))
 
@@ -391,7 +390,7 @@ def _custom_metadata(stub):
         if trailing_metadata[_TRAILING_METADATA_KEY] != trailing_metadata_value:
             raise ValueError('expected trailing metadata %s, got %s' %
                              (trailing_metadata_value,
-                              initial_metadata[_TRAILING_METADATA_KEY]))
+                              trailing_metadata[_TRAILING_METADATA_KEY]))
 
     # Testing with UnaryCall
     request = messages_pb2.SimpleRequest(
@@ -422,7 +421,7 @@ def _compute_engine_creds(stub, args):
 
 def _oauth2_auth_token(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' % (wanted_email,
@@ -435,7 +434,7 @@ def _oauth2_auth_token(stub, args):
 
 def _jwt_token_creds(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' % (wanted_email,
@@ -444,7 +443,7 @@ def _jwt_token_creds(stub, args):
 
 def _per_rpc_creds(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     google_credentials, unused_project_id = google_auth.default(
         scopes=[args.oauth_scope])
     call_credentials = grpc.metadata_call_credentials(
@@ -455,6 +454,22 @@ def _per_rpc_creds(stub, args):
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' % (wanted_email,
                                                            response.username))
+
+
+def _special_status_message(stub, args):
+    details = b'\t\ntest with whitespace\r\nand Unicode BMP \xe2\x98\xba and non-BMP \xf0\x9f\x98\x88\t\n'.decode(
+        'utf-8')
+    code = 2
+    status = grpc.StatusCode.UNKNOWN  # code = 2
+
+    # Test with a UnaryCall
+    request = messages_pb2.SimpleRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        response_size=1,
+        payload=messages_pb2.Payload(body=b'\x00'),
+        response_status=messages_pb2.EchoStatus(code=code, message=details))
+    response_future = stub.UnaryCall.future(request)
+    _validate_status_code_and_details(response_future, status, details)
 
 
 @enum.unique
@@ -476,6 +491,7 @@ class TestCase(enum.Enum):
     JWT_TOKEN_CREDS = 'jwt_token_creds'
     PER_RPC_CREDS = 'per_rpc_creds'
     TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
+    SPECIAL_STATUS_MESSAGE = 'special_status_message'
 
     def test_interoperability(self, stub, args):
         if self is TestCase.EMPTY_UNARY:
@@ -512,6 +528,8 @@ class TestCase(enum.Enum):
             _jwt_token_creds(stub, args)
         elif self is TestCase.PER_RPC_CREDS:
             _per_rpc_creds(stub, args)
+        elif self is TestCase.SPECIAL_STATUS_MESSAGE:
+            _special_status_message(stub, args)
         else:
             raise NotImplementedError(
                 'Test case "%s" not implemented!' % self.name)

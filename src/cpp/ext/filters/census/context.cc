@@ -29,9 +29,15 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
                            absl::string_view primary_role,
                            absl::string_view method, CensusContext* context) {
   GrpcTraceContext trace_ctxt;
-  TraceContextEncoding::Decode(tracing, &trace_ctxt);
-  SpanContext parent_ctx = trace_ctxt.ToSpanContext();
-  new (context) CensusContext(method, parent_ctx);
+  if (TraceContextEncoding::Decode(tracing, &trace_ctxt) !=
+      TraceContextEncoding::kEncodeDecodeFailure) {
+    SpanContext parent_ctx = trace_ctxt.ToSpanContext();
+    if (parent_ctx.IsValid()) {
+      new (context) CensusContext(method, parent_ctx);
+      return;
+    }
+  }
+  new (context) CensusContext(method);
 }
 
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,

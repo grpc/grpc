@@ -94,9 +94,11 @@ class ClientRequestCreator<ByteBuffer> {
  public:
   ClientRequestCreator(ByteBuffer* req, const PayloadConfig& payload_config) {
     if (payload_config.has_bytebuf_params()) {
-      std::unique_ptr<char[]> buf(
-          new char[payload_config.bytebuf_params().req_size()]);
-      Slice slice(buf.get(), payload_config.bytebuf_params().req_size());
+      size_t req_sz =
+          static_cast<size_t>(payload_config.bytebuf_params().req_size());
+      std::unique_ptr<char[]> buf(new char[req_sz]);
+      memset(buf.get(), 0, req_sz);
+      Slice slice(buf.get(), req_sz);
       *req = ByteBuffer(&slice, 1);
     } else {
       GPR_ASSERT(false);  // not appropriate for this specialization

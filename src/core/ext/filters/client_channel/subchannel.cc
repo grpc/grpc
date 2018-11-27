@@ -34,7 +34,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define INTERNAL_REF_BITS 16
 #define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
@@ -162,12 +162,16 @@ struct grpc_subchannel {
 };
 
 struct grpc_subchannel_call {
+  grpc_subchannel_call(grpc_core::ConnectedSubchannel* connection,
+                       const grpc_core::ConnectedSubchannel::CallArgs& args)
+      : connection(connection), deadline(args.deadline) {}
+
   grpc_core::ConnectedSubchannel* connection;
-  grpc_closure* schedule_closure_after_destroy;
+  grpc_closure* schedule_closure_after_destroy = nullptr;
   // state needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata;
-  grpc_metadata_batch* recv_trailing_metadata;
+  grpc_metadata_batch* recv_trailing_metadata = nullptr;
   grpc_millis deadline;
 };
 
@@ -905,6 +909,7 @@ static void subchannel_call_destroy(void* call, grpc_error* error) {
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
   connection->Unref(DEBUG_LOCATION, "subchannel_call");
+  c->~grpc_subchannel_call();
 }
 
 void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
@@ -1102,14 +1107,12 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   const size_t allocation_size =
       GetInitialCallSizeEstimate(args.parent_data_size);
-  *call = static_cast<grpc_subchannel_call*>(
-      gpr_arena_alloc(args.arena, allocation_size));
+  *call = new (gpr_arena_alloc(args.arena, allocation_size))
+      grpc_subchannel_call(this, args);
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
-  (*call)->connection = this;
-  (*call)->deadline = args.deadline;
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */
@@ -1128,6 +1131,9 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     return error;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
+  if (channelz_subchannel_ != nullptr) {
+    channelz_subchannel_->RecordCallStarted();
+  }
   return GRPC_ERROR_NONE;
 }
 

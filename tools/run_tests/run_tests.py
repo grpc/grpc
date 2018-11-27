@@ -756,19 +756,23 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self.python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
 
-    def python_manager_name(self):
+    def _python_manager_name(self):
+        """Choose the docker image to use based on python version."""
         if self.args.compiler in [
                 'python2.7', 'python3.5', 'python3.6', 'python3.7'
         ]:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        else:
+        elif self.args.compiler == 'python3.4':
             return 'jessie'
+        else:
+            return 'stretch_3.7'
 
     def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
         if args.arch == 'x86':
             bits = '32'
         else:
@@ -844,7 +848,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
-                    python34_config,
+                    python37_config,
                 )
         elif args.compiler == 'python2.7':
             return (python27_config,)
@@ -1338,9 +1342,9 @@ argp.add_argument(
 argp.add_argument(
     '-l',
     '--language',
-    choices=['all'] + sorted(_LANGUAGES.keys()),
+    choices=sorted(_LANGUAGES.keys()),
     nargs='+',
-    default=['all'])
+    required=True)
 argp.add_argument(
     '-S', '--stop_on_failure', default=False, action='store_const', const=True)
 argp.add_argument(
@@ -1511,17 +1515,7 @@ build_config = run_config.build_config
 if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-if 'all' in args.language:
-    lang_list = _LANGUAGES.keys()
-else:
-    lang_list = args.language
-# We don't support code coverage on some languages
-if 'gcov' in args.config:
-    for bad in ['csharp', 'grpc-node', 'objc', 'sanity']:
-        if bad in lang_list:
-            lang_list.remove(bad)
-
-languages = set(_LANGUAGES[l] for l in lang_list)
+languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
     l.configure(run_config, args)
 
@@ -1533,7 +1527,7 @@ if any(language.make_options() for language in languages):
         )
         sys.exit(1)
     else:
-        # Combining make options is not clean and just happens to work. It allows C/C++ and C# to build
+        # Combining make options is not clean and just happens to work. It allows C & C++ to build
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
@@ -1719,9 +1713,9 @@ def _has_epollexclusive():
     try:
         subprocess.check_call(binary)
         return True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         return False
-    except OSError, e:
+    except OSError as e:
         # For languages other than C and Windows the binary won't exist
         return False
 

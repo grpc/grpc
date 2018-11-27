@@ -42,7 +42,7 @@ class InterceptedChannel : public ChannelInterface {
   }
 
  private:
-  InterceptedChannel(ChannelInterface* channel, int pos)
+  InterceptedChannel(ChannelInterface* channel, size_t pos)
       : channel_(channel), interceptor_pos_(pos) {}
 
   Call CreateCall(const RpcMethod& method, ClientContext* context,
@@ -70,7 +70,7 @@ class InterceptedChannel : public ChannelInterface {
   CompletionQueue* CallbackCQ() override { return channel_->CallbackCQ(); }
 
   ChannelInterface* channel_;
-  int interceptor_pos_;
+  size_t interceptor_pos_;
 
   friend class InterceptorBatchMethodsImpl;
 };

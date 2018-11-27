@@ -71,7 +71,20 @@ class Service {
 
   bool has_synchronous_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if (*it && (*it)->handler() != nullptr) {
+      if (*it &&
+          (*it)->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool has_callback_methods() const {
+    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
+      if (*it && ((*it)->api_type() ==
+                      internal::RpcServiceMethod::ApiType::CALL_BACK ||
+                  (*it)->api_type() ==
+                      internal::RpcServiceMethod::ApiType::RAW_CALL_BACK)) {
         return true;
       }
     }
@@ -88,6 +101,43 @@ class Service {
   }
 
  protected:
+  // TODO(vjpai): Promote experimental contents once callback API is accepted
+  class experimental_type {
+   public:
+    explicit experimental_type(Service* service) : service_(service) {}
+
+    void MarkMethodCallback(int index, internal::MethodHandler* handler) {
+      // This does not have to be a hard error, however no one has approached us
+      // with a use case yet. Please file an issue if you believe you have one.
+      size_t idx = static_cast<size_t>(index);
+      GPR_CODEGEN_ASSERT(
+          service_->methods_[idx].get() != nullptr &&
+          "Cannot mark the method as 'callback' because it has already been "
+          "marked as 'generic'.");
+      service_->methods_[idx]->SetHandler(handler);
+      service_->methods_[idx]->SetServerApiType(
+          internal::RpcServiceMethod::ApiType::CALL_BACK);
+    }
+
+    void MarkMethodRawCallback(int index, internal::MethodHandler* handler) {
+      // This does not have to be a hard error, however no one has approached us
+      // with a use case yet. Please file an issue if you believe you have one.
+      size_t idx = static_cast<size_t>(index);
+      GPR_CODEGEN_ASSERT(
+          service_->methods_[idx].get() != nullptr &&
+          "Cannot mark the method as 'raw callback' because it has already "
+          "been marked as 'generic'.");
+      service_->methods_[idx]->SetHandler(handler);
+      service_->methods_[idx]->SetServerApiType(
+          internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
+    }
+
+   private:
+    Service* service_;
+  };
+
+  experimental_type experimental() { return experimental_type(this); }
+
   template <class Message>
   void RequestAsyncUnary(int index, ServerContext* context, Message* request,
                          internal::ServerAsyncStreamingInterface* stream,
@@ -138,8 +188,7 @@ class Service {
         methods_[idx].get() != nullptr &&
         "Cannot mark the method as 'async' because it has already been "
         "marked as 'generic'.");
-    methods_[idx]->SetServerAsyncType(
-        internal::RpcServiceMethod::AsyncType::ASYNC);
+    methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::ASYNC);
   }
 
   void MarkMethodRaw(int index) {
@@ -149,8 +198,7 @@ class Service {
     GPR_CODEGEN_ASSERT(methods_[idx].get() != nullptr &&
                        "Cannot mark the method as 'raw' because it has already "
                        "been marked as 'generic'.");
-    methods_[idx]->SetServerAsyncType(
-        internal::RpcServiceMethod::AsyncType::RAW);
+    methods_[idx]->SetServerApiType(internal::RpcServiceMethod::ApiType::RAW);
   }
 
   void MarkMethodGeneric(int index) {

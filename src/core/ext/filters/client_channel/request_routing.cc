@@ -34,7 +34,6 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/method_params.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -461,23 +460,23 @@ RequestRouter::RequestRouter(
     grpc_channel_stack* owning_stack, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     grpc_pollset_set* interested_parties, TraceFlag* tracer,
-    ProcessServiceConfigCallback process_service_config,
-    void* process_service_config_user_data, const char* target_uri,
+    ProcessResolverResultCallback process_resolver_result,
+    void* process_resolver_result_user_data, const char* target_uri,
     const grpc_channel_args* args, grpc_error** error)
     : owning_stack_(owning_stack),
       combiner_(combiner),
       client_channel_factory_(client_channel_factory),
       interested_parties_(interested_parties),
       tracer_(tracer),
-      process_service_config_(process_service_config),
-      process_service_config_user_data_(process_service_config_user_data) {
+      process_resolver_result_(process_resolver_result),
+      process_resolver_result_user_data_(process_resolver_result_user_data) {
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
                     grpc_combiner_scheduler(combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "request_router");
   grpc_channel_args* new_args = nullptr;
-  if (process_service_config == nullptr) {
+  if (process_resolver_result == nullptr) {
     grpc_arg arg = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 0);
     new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
@@ -609,46 +608,19 @@ void RequestRouter::OnResolverShutdownLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// Returns the LB policy name from the resolver result.
-const char* RequestRouter::GetLbPolicyNameFromResolverResultLocked() {
-  // Find LB policy name in channel args.
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result_, GRPC_ARG_LB_POLICY_NAME);
-  const char* lb_policy_name = grpc_channel_arg_get_string(channel_arg);
-  // Special case: If at least one balancer address is present, we use
-  // the grpclb policy, regardless of what the resolver actually specified.
-  channel_arg = grpc_channel_args_find(resolver_result_, GRPC_ARG_LB_ADDRESSES);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
-      if (lb_policy_name != nullptr &&
-          gpr_stricmp(lb_policy_name, "grpclb") != 0) {
-        gpr_log(GPR_INFO,
-                "resolver requested LB policy %s but provided at least one "
-                "balancer address -- forcing use of grpclb LB policy",
-                lb_policy_name);
-      }
-      lb_policy_name = "grpclb";
-    }
-  }
-  // Use pick_first if nothing was specified and we didn't select grpclb
-  // above.
-  if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
-  return lb_policy_name;
-}
-
 // Creates a new LB policy, replacing any previous one.
 // If the new policy is created successfully, sets *connectivity_state and
 // *connectivity_error to its initial connectivity state; otherwise,
 // leaves them unchanged.
 void RequestRouter::CreateNewLbPolicyLocked(
-    const char* lb_policy_name, grpc_connectivity_state* connectivity_state,
+    const char* lb_policy_name, grpc_json* lb_config,
+    grpc_connectivity_state* connectivity_state,
     grpc_error** connectivity_error, TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner_;
   lb_policy_args.client_channel_factory = client_channel_factory_;
   lb_policy_args.args = resolver_result_;
+  lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
                                                              lb_policy_args);
@@ -788,9 +760,16 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
     if (self->tracer_->enabled()) {
       gpr_log(GPR_INFO, "request_router=%p: resolver transient failure", self);
     }
+    // Don't override connectivity state if we already have an LB policy.
+    if (self->lb_policy_ != nullptr) set_connectivity_state = false;
   } else {
-    const char* lb_policy_name =
-        self->GetLbPolicyNameFromResolverResultLocked();
+    // Parse the resolver result.
+    const char* lb_policy_name = nullptr;
+    grpc_json* lb_policy_config = nullptr;
+    const bool service_config_changed = self->process_resolver_result_(
+        self->process_resolver_result_user_data_, *self->resolver_result_,
+        &lb_policy_name, &lb_policy_config);
+    GPR_ASSERT(lb_policy_name != nullptr);
     // Check to see if we're already using the right LB policy.
     const bool lb_policy_name_changed =
         self->lb_policy_ == nullptr ||
@@ -802,23 +781,16 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
                 "request_router=%p: updating existing LB policy \"%s\" (%p)",
                 self, lb_policy_name, self->lb_policy_.get());
       }
-      self->lb_policy_->UpdateLocked(*self->resolver_result_);
+      self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
       // No need to set the channel's connectivity state; the existing
       // watch on the LB policy will take care of that.
       set_connectivity_state = false;
     } else {
       // Instantiate new LB policy.
-      self->CreateNewLbPolicyLocked(lb_policy_name, &connectivity_state,
-                                    &connectivity_error, &trace_strings);
+      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
+                                    &connectivity_state, &connectivity_error,
+                                    &trace_strings);
     }
-    // Process service config.
-    const grpc_arg* channel_arg =
-        grpc_channel_args_find(self->resolver_result_, GRPC_ARG_SERVICE_CONFIG);
-    const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
-    const bool service_config_changed = self->process_service_config_(
-        self->process_service_config_user_data_,
-        UniquePtr<char>(gpr_strdup(service_config_json)),
-        UniquePtr<char>(gpr_strdup(lb_policy_name)), *self->resolver_result_);
     // Add channel trace event.
     if (self->channelz_node_ != nullptr) {
       if (service_config_changed) {

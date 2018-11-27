@@ -21,11 +21,10 @@ set -ex
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
-# Get latest release of bazel
-# TODO(jtattermusch): replace by open-source installation of bazel
-temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-latest-release" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-latest-release"
+# Download bazel
+temp_dir="$(mktemp -d)"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-linux-x86_64 -O "${temp_dir}/bazel"
+chmod 755 "${temp_dir}/bazel"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel

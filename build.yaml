@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0-dev
-  g_stands_for: gizmo
-  version: 1.17.0-dev
+  g_stands_for: goose
+  version: 1.18.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -36,7 +36,7 @@ filegroups:
   - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
   - src/core/tsi/alts/frame_protector/frame_handler.h
   - src/core/tsi/alts/handshaker/alts_handshaker_client.h
-  - src/core/tsi/alts/handshaker/alts_tsi_event.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
   - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
   - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
   - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
@@ -56,7 +56,7 @@ filegroups:
   - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   - src/core/tsi/alts/frame_protector/frame_handler.cc
   - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  - src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
   - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
   - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
@@ -382,6 +382,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
+  - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
   filegroups:
@@ -538,6 +539,7 @@ filegroups:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
+  - src/core/lib/uri/uri_parser.h
   deps:
   - gpr
   uses:
@@ -578,7 +580,6 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
-  - src/core/ext/filters/client_channel/method_params.h
   - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
@@ -586,10 +587,10 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
+  - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
-  - src/core/ext/filters/client_channel/uri_parser.h
   src:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -604,17 +605,16 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy_factory.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
-  - src/core/ext/filters/client_channel/method_params.cc
   - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/request_routing.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
+  - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
-  - src/core/ext/filters/client_channel/uri_parser.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base
@@ -964,6 +964,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -986,6 +987,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame_data.cc
   - src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1148,7 +1150,6 @@ filegroups:
   - grpc
 - name: tsi
   headers:
-  - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
@@ -1157,7 +1158,6 @@ filegroups:
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
-  - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1167,7 +1167,6 @@ filegroups:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
-  plugin: grpc_tsi_alts
   secure: true
   uses:
   - tsi_interface
@@ -1247,6 +1246,7 @@ filegroups:
   - include/grpcpp/impl/codegen/rpc_service_method.h
   - include/grpcpp/impl/codegen/security/auth_context.h
   - include/grpcpp/impl/codegen/serialization_traits.h
+  - include/grpcpp/impl/codegen/server_callback.h
   - include/grpcpp/impl/codegen/server_context.h
   - include/grpcpp/impl/codegen/server_interceptor.h
   - include/grpcpp/impl/codegen/server_interface.h
@@ -1365,6 +1365,7 @@ filegroups:
   - include/grpcpp/support/config.h
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
+  - include/grpcpp/support/server_callback.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
   - include/grpcpp/support/status_code_enum.h
@@ -1382,6 +1383,7 @@ filegroups:
   src:
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
@@ -2036,6 +2038,7 @@ libs:
   - test/cpp/qps/qps_worker.cc
   - test/cpp/qps/report.cc
   - test/cpp/qps/server_async.cc
+  - test/cpp/qps/server_callback.cc
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
   deps:
@@ -4487,6 +4490,7 @@ targets:
   - gpr
 - name: client_channel_stress_test
   gtest: false
+  cpu_cost: 10.0
   build: test
   language: c++
   src:
@@ -4539,6 +4543,7 @@ targets:
   - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/client_interceptors_end2end_test.cc
+  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -4600,6 +4605,18 @@ targets:
   filegroups:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  uses_polling: false
+- name: context_list_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/chttp2/context_list_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
   uses_polling: false
 - name: credentials_test
   gtest: true
@@ -4665,8 +4682,11 @@ targets:
   cpu_cost: 0.5
   build: test
   language: c++
+  headers:
+  - test/cpp/end2end/interceptors_util.h
   src:
   - test/cpp/end2end/end2end_test.cc
+  - test/cpp/end2end/interceptors_util.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -5466,6 +5486,7 @@ targets:
   headers:
   - test/cpp/end2end/interceptors_util.h
   src:
+  - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   deps:
   - grpc++_test_util

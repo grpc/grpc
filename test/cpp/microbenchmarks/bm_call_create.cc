@@ -135,7 +135,8 @@ static void BM_LameChannelCallCreateCpp(benchmark::State& state) {
           "",
           grpc_lame_client_channel_create("localhost:1234",
                                           GRPC_STATUS_UNAUTHENTICATED, "blah"),
-          nullptr));
+          std::vector<std::unique_ptr<
+              grpc::experimental::ClientInterceptorFactoryInterface>>()));
   grpc::CompletionQueue cq;
   grpc::testing::EchoRequest send_request;
   grpc::testing::EchoResponse recv_response;
@@ -468,7 +469,7 @@ class NoOp {
 
 class SendEmptyMetadata {
  public:
-  SendEmptyMetadata() {
+  SendEmptyMetadata() : op_payload_(nullptr) {
     memset(&op_, 0, sizeof(op_));
     op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);

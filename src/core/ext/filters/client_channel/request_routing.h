@@ -92,15 +92,15 @@ class RequestRouter {
   // Synchronous callback that takes the service config JSON string and
   // LB policy name.
   // Returns true if the service config has changed since the last result.
-  typedef bool (*ProcessServiceConfigCallback)(
-      void* user_data, UniquePtr<char> service_config_json,
-      UniquePtr<char> lb_policy_name, const grpc_channel_args& args);
+  typedef bool (*ProcessResolverResultCallback)(
+      void* user_data, const grpc_channel_args& args,
+      const char** lb_policy_name, grpc_json** lb_policy_config);
 
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
                 grpc_client_channel_factory* client_channel_factory,
                 grpc_pollset_set* interested_parties, TraceFlag* tracer,
-                ProcessServiceConfigCallback process_service_config,
-                void* process_service_config_user_data, const char* target_uri,
+                ProcessResolverResultCallback process_resolver_result,
+                void* process_resolver_result_user_data, const char* target_uri,
                 const grpc_channel_args* args, grpc_error** error);
 
   ~RequestRouter();
@@ -130,8 +130,7 @@ class RequestRouter {
 
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
-  const char* GetLbPolicyNameFromResolverResultLocked();
-  void CreateNewLbPolicyLocked(const char* lb_policy_name,
+  void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
                                grpc_connectivity_state* connectivity_state,
                                grpc_error** connectivity_error,
                                TraceStringVector* trace_strings);
@@ -155,8 +154,8 @@ class RequestRouter {
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
-  ProcessServiceConfigCallback process_service_config_;
-  void* process_service_config_user_data_;
+  ProcessResolverResultCallback process_resolver_result_;
+  void* process_resolver_result_user_data_;
   bool started_resolving_ = false;
   grpc_channel_args* resolver_result_ = nullptr;
   bool previous_resolution_contained_addresses_ = false;

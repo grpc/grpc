@@ -43,89 +43,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsStreamingEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  EchoTestServiceStreamingImpl service_;
-  std::unique_ptr<Server> server_;
-};
-
-class ClientInterceptorsEnd2endTest : public ::testing::Test {
- protected:
-  ClientInterceptorsEnd2endTest() {
-    int port = grpc_pick_unused_port_or_die();
-
-    ServerBuilder builder;
-    server_address_ = "localhost:" + std::to_string(port);
-    builder.AddListeningPort(server_address_, InsecureServerCredentials());
-    builder.RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-  }
-
-  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
-
-  std::string server_address_;
-  TestServiceImpl service_;
-  std::unique_ptr<Server> server_;
-};
-
-/* This interceptor does nothing. Just keeps a global count on the number of
- * times it was invoked. */
-class DummyInterceptor : public experimental::Interceptor {
- public:
-  DummyInterceptor(experimental::ClientRpcInfo* info) {}
-
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
-    if (methods->QueryInterceptionHookPoint(
-            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      num_times_run_++;
-    } else if (methods->QueryInterceptionHookPoint(
-                   experimental::InterceptionHookPoints::
-                       POST_RECV_INITIAL_METADATA)) {
-      num_times_run_reverse_++;
-    }
-    methods->Proceed();
-  }
-
-  static void Reset() {
-    num_times_run_.store(0);
-    num_times_run_reverse_.store(0);
-  }
-
-  static int GetNumTimesRun() {
-    EXPECT_EQ(num_times_run_.load(), num_times_run_reverse_.load());
-    return num_times_run_.load();
-  }
-
- private:
-  static std::atomic<int> num_times_run_;
-  static std::atomic<int> num_times_run_reverse_;
-};
-
-std::atomic<int> DummyInterceptor::num_times_run_;
-std::atomic<int> DummyInterceptor::num_times_run_reverse_;
-
-class DummyInterceptorFactory
-    : public experimental::ClientInterceptorFactoryInterface {
- public:
-  virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
-    return new DummyInterceptor(info);
-  }
-};
-
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
@@ -422,18 +339,35 @@ class LoggingInterceptorFactory
   }
 };
 
+class ClientInterceptorsEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -446,20 +380,18 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLoggingTest) {
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
   // Add 20 dummy interceptors before hijacking interceptor
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
-  creators->push_back(std::unique_ptr<HijackingInterceptorFactory>(
+  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
       new HijackingInterceptorFactory()));
   // Add 20 dummy interceptors after hijacking interceptor
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -472,13 +404,11 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
 
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
   ChannelArguments args;
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
-  creators->push_back(std::unique_ptr<HijackingInterceptorFactory>(
+  creators.push_back(std::unique_ptr<HijackingInterceptorFactory>(
       new HijackingInterceptorFactory()));
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
@@ -490,21 +420,19 @@ TEST_F(ClientInterceptorsEnd2endTest,
        ClientInterceptorHijackingMakesAnotherCallTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
   // Add 5 dummy interceptors before hijacking interceptor
   for (auto i = 0; i < 5; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
-  creators->push_back(
+  creators.push_back(
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>(
           new HijackingInterceptorMakesAnotherCallFactory()));
   // Add 7 dummy interceptors after hijacking interceptor
   for (auto i = 0; i < 7; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
@@ -520,15 +448,13 @@ TEST_F(ClientInterceptorsEnd2endTest,
        ClientInterceptorLoggingTestWithCallback) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
@@ -538,18 +464,35 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
+class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
+ protected:
+  ClientInterceptorsStreamingEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientInterceptorsStreamingEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  EchoTestServiceStreamingImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -562,15 +505,13 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -583,15 +524,13 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   ChannelArguments args;
   DummyInterceptor::Reset();
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(std::unique_ptr<LoggingInterceptorFactory>(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
       new LoggingInterceptorFactory()));
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
@@ -599,6 +538,100 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   MakeBidiStreamingCall(channel);
   // Make sure all 20 dummy interceptors were run
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
+class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
+ protected:
+  ClientGlobalInterceptorEnd2endTest() {
+    int port = grpc_pick_unused_port_or_die();
+
+    ServerBuilder builder;
+    server_address_ = "localhost:" + std::to_string(port);
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~ClientGlobalInterceptorEnd2endTest() { server_->Shutdown(); }
+
+  std::string server_address_;
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_;
+};
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  DummyInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run with the global interceptor
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 21);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+}
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  LoggingInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
+}
+
+TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
+  // We should ideally be registering a global interceptor only once per
+  // process, but for the purposes of testing, it should be fine to modify the
+  // registered global interceptor when there are no ongoing gRPC operations
+  HijackingInterceptorFactory global_factory;
+  experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  // Add 20 dummy interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+  }
+  auto channel = experimental::CreateCustomChannelWithInterceptors(
+      server_address_, InsecureChannelCredentials(), args, std::move(creators));
+  MakeCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Reset the global interceptor. This is again 'safe' because there are no
+  // other ongoing gRPC operations
+  experimental::RegisterGlobalClientInterceptorFactory(nullptr);
 }
 
 }  // namespace

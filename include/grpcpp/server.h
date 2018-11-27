@@ -111,8 +111,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     /// interceptors
     std::shared_ptr<Channel> InProcessChannelWithInterceptors(
         const ChannelArguments& args,
-        std::unique_ptr<std::vector<
-            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+        std::vector<
+            std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
             interceptor_creators);
 
    private:
@@ -201,6 +201,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   friend class ServerInitializer;
 
   class SyncRequest;
+  class CallbackRequest;
   class UnimplementedAsyncRequest;
   class UnimplementedAsyncResponse;
 
@@ -223,6 +224,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     return max_receive_message_size_;
   };
 
+  CompletionQueue* CallbackCQ() override;
+
   ServerInitializer* initializer();
 
   // A vector of interceptor factory objects.
@@ -244,6 +247,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// List of \a ThreadManager instances (one for each cq in
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
+
+  /// Outstanding callback requests
+  std::vector<std::unique_ptr<CallbackRequest>> callback_reqs_;
 
   // Server status
   std::mutex mu_;
@@ -268,6 +274,13 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // A special handler for resource exhausted in sync case
   std::unique_ptr<internal::MethodHandler> resource_exhausted_handler_;
+
+  // callback_cq_ references the callbackable completion queue associated
+  // with this server (if any). It is set on the first call to CallbackCQ().
+  // It is _not owned_ by the server; ownership belongs with its internal
+  // shutdown callback tag (invoked when the CQ is fully shutdown).
+  // It is protected by mu_
+  CompletionQueue* callback_cq_ = nullptr;
 };
 
 }  // namespace grpc

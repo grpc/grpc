@@ -286,10 +286,9 @@ HealthCheckClient::CallState::CallState(
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(gpr_arena_create(health_check_client_->connected_subchannel_
-                                  ->GetInitialCallSizeEstimate(0))) {
-  memset(&call_combiner_, 0, sizeof(call_combiner_));
+                                  ->GetInitialCallSizeEstimate(0))),
+      payload_(context_) {
   grpc_call_combiner_init(&call_combiner_);
-  memset(context_, 0, sizeof(context_));
   gpr_atm_rel_store(&seen_response_, static_cast<gpr_atm>(0));
 }
 

@@ -1,3 +1,4 @@
+include _parallel_compile_patch.py
 include grpc_version.py
 include protoc_deps.py
 include protoc_lib_deps.py
