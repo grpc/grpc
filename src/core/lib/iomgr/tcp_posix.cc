@@ -261,9 +261,9 @@ static void notify_on_write(grpc_tcp* tcp) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
 
-  static bool event_engine_run_in_background =
+  static bool grpc_event_engine_run_in_background =
       grpc_event_engine_run_in_background();
-  if (event_engine_run_in_background) {
+  if (grpc_event_engine_run_in_background) {
     // If there is a polling engine always running in the background, there is
     // no need to run the backup poller.
     GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
