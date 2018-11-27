@@ -47,21 +47,13 @@ static char* get_http_proxy_server(char** user_cred) {
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Prefer using 'https_proxy'. Fallback on 'http_proxy' if it is not set. The
-   * fallback behavior can be removed if there's a demand for it.
+  /* Prefer using 'https_proxy'. Fallback on 'http_proxy' if it is not set
+   * or if it is invalid. The fallback behavior can be removed if there's a
+   * demand for it.
    */
-  char* uri_str = gpr_getenv("https_proxy");
-  if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
-  if (uri_str == nullptr) return nullptr;
-  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
-  if (uri == nullptr || uri->authority == nullptr) {
-    gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
-    goto done;
-  }
-  if (strcmp(uri->scheme, "http") != 0) {
-    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
-    goto done;
-  }
+  grpc_uri* uri = get_proxy_uri("https_proxy");
+  if (uri == nullptr) uri = get_proxy_uri("http_proxy");
+  if (uri == nullptr) return proxy_name;
   /* Split on '@' to separate user credentials from host */
   gpr_string_split(uri->authority, "@", &authority_strs, &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
@@ -81,10 +73,28 @@ static char* get_http_proxy_server(char** user_cred) {
     proxy_name = nullptr;
   }
   gpr_free(authority_strs);
-done:
-  gpr_free(uri_str);
   grpc_uri_destroy(uri);
   return proxy_name;
+}
+
+grpc_uri* get_proxy_uri(const char* proxy_env_var_key) {
+  const char* uri_str = gpr_getenv(proxy_env_var_key);
+  if (uri_str == nullptr) {
+    return nullptr;
+  }
+  grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
+  gpr_free(uri_str);
+  if (uri == nullptr || uri->authority == nullptr) {
+    gpr_log(GPR_ERROR, "cannot parse value of '%s' env var", proxy_env_var_key);
+    grpc_uri_destroy(uri);
+    return nullptr;
+  }
+  if (strcmp(uri->scheme, "http") != 0) {
+    gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
+    grpc_uri_destroy(uri);
+    return nullptr;
+  }
+  return uri;
 }
 
 /**
