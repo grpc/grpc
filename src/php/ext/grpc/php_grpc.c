@@ -170,12 +170,12 @@ void prefork() {
   acquire_persistent_locks();
 }
 
-void postfork_child() {
+void postfork_child(TSRMLS_D) {
   // loop through persistant list and destroy all underlying grpc_channel objs
   destroy_grpc_channels();
 
   // clear completion queue
-  grpc_php_shutdown_completion_queue();
+  grpc_php_shutdown_completion_queue(TSRMLS_C);
 
   // clean-up grpc_core
   grpc_shutdown();
@@ -187,7 +187,7 @@ void postfork_child() {
 
   // restart grpc_core
   grpc_init();
-  grpc_php_init_completion_queue();
+  grpc_php_init_completion_queue(TSRMLS_C);
 
   // re-create grpc_channel and point wrapped to it
   // unlock wrapped grpc channel mutex
