@@ -655,6 +655,37 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testCancelAfterFirstRequestWithV2API {
+  XCTAssertNotNil([[self class] host]);
+  __weak XCTestExpectation *completionExpectation =
+  [self expectationWithDescription:@"Call completed."];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = self.class.transportType;
+  options.PEMRootCertificates = self.class.PEMRootCertificates;
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  id request =
+  [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+
+  __block GRPCStreamingProtoCall *call = [_service
+                                          fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                                                             initWithInitialMetadataCallback:nil
+                                                                             messageCallback:^(id message) {
+                                                                               XCTFail(@"Received unexpected response.");
+                                                                             }
+                                                                             closeCallback:^(NSDictionary *trailingMetadata,
+                                                                                             NSError *error) {
+                                                                               XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                                                               [completionExpectation fulfill];
+                                                                             }]
+                                          callOptions:options];
+
+  [call writeMessage:request];
+  [call cancel];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 - (void)testRPCAfterClosingOpenConnections {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation =
