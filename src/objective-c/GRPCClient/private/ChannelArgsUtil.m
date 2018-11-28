@@ -78,7 +78,7 @@ grpc_channel_args *GRPCBuildChannelArgs(NSDictionary *dictionary) {
       int64_t value64 = [value longLongValue];
       if (value64 <= INT_MAX || value64 >= INT_MIN) {
         arg->type = GRPC_ARG_INTEGER;
-        arg->value.integer = [value intValue];
+        arg->value.integer = (int)value64;
         j++;
       }
     } else if (value != nil) {
