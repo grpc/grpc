@@ -33,6 +33,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc_common",
     ],
     data = [
