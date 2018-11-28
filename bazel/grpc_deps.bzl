@@ -9,6 +9,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "upblib",
+        actual = "@upb//:upb",
+    )
+
+    native.bind(
         name = "absl-base",
         actual = "@com_google_absl//absl/base",
     )
@@ -182,6 +187,13 @@ def grpc_deps():
             name = "io_opencensus_cpp",
             strip_prefix = "opencensus-cpp-fdf0f308b1631bb4a942e32ba5d22536a6170274",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fdf0f308b1631bb4a942e32ba5d22536a6170274.tar.gz",
+        )
+
+    if "upb" not in native.existing_rules():
+        native.http_archive(
+            name = "upb",
+            strip_prefix = "upb-9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3",
+            url = "https://github.com/google/upb/archive/9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3.tar.gz",
         )
 
 
