@@ -71,7 +71,8 @@ def grpc_cc_library(
         testonly = False,
         visibility = None,
         alwayslink = 0,
-        data = []):
+        data = [],
+        includes = []):
     copts = []
     if language.upper() == "C":
         copts = if_not_windows(["-std=c99"])
@@ -99,7 +100,7 @@ def grpc_cc_library(
         linkopts = if_not_windows(["-pthread"]),
         includes = [
             "include",
-        ],
+        ] + includes,
         alwayslink = alwayslink,
         data = data,
     )
