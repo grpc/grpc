@@ -428,7 +428,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._channelz_stub.GetServer(
                 channelz_pb2.GetServerRequest(server_id=10000))
         except BaseException as e:
-            self.assertIn('StatusCode.INVALID_ARGUMENT', str(e))
+            self.assertIn('StatusCode.NOT_FOUND', str(e))
         else:
             self.fail('Invalid query not detected')
 
@@ -437,7 +437,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._channelz_stub.GetChannel(
                 channelz_pb2.GetChannelRequest(channel_id=10000))
         except BaseException as e:
-            self.assertIn('StatusCode.INVALID_ARGUMENT', str(e))
+            self.assertIn('StatusCode.NOT_FOUND', str(e))
         else:
             self.fail('Invalid query not detected')
 
@@ -446,7 +446,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(subchannel_id=10000))
         except BaseException as e:
-            self.assertIn('StatusCode.INVALID_ARGUMENT', str(e))
+            self.assertIn('StatusCode.NOT_FOUND', str(e))
         else:
             self.fail('Invalid query not detected')
 
@@ -455,7 +455,7 @@ class ChannelzServicerTest(unittest.TestCase):
             self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(socket_id=10000))
         except BaseException as e:
-            self.assertIn('StatusCode.INVALID_ARGUMENT', str(e))
+            self.assertIn('StatusCode.NOT_FOUND', str(e))
         else:
             self.fail('Invalid query not detected')
 
@@ -467,7 +467,7 @@ class ChannelzServicerTest(unittest.TestCase):
                     start_socket_id=0,
                 ))
         except BaseException as e:
-            self.assertIn('StatusCode.INVALID_ARGUMENT', str(e))
+            self.assertIn('StatusCode.NOT_FOUND', str(e))
         else:
             self.fail('Invalid query not detected')
 

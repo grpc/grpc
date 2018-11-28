@@ -25,41 +25,44 @@ from google.protobuf import json_format
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""
 
-    # pylint: disable=no-self-use
-    def GetTopChannels(self, request, context):
+    @staticmethod
+    def GetTopChannels(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_top_channels(request.start_channel_id),
                 _channelz_pb2.GetTopChannelsResponse(),
             )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+        except (ValueError, json_format.ParseError) as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetServers(self, request, context):
+    @staticmethod
+    def GetServers(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_servers(request.start_server_id),
                 _channelz_pb2.GetServersResponse(),
             )
-        except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+        except (ValueError, json_format.ParseError) as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetServer(self, request, context):
+    @staticmethod
+    def GetServer(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_server(request.server_id),
                 _channelz_pb2.GetServerResponse(),
             )
         except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(str(e))
+        except json_format.ParseError as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetServerSockets(self, request, context):
+    @staticmethod
+    def GetServerSockets(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_server_sockets(request.server_id,
@@ -67,40 +70,52 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
                 _channelz_pb2.GetServerSocketsResponse(),
             )
         except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(str(e))
+        except json_format.ParseError as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetChannel(self, request, context):
+    @staticmethod
+    def GetChannel(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_channel(request.channel_id),
                 _channelz_pb2.GetChannelResponse(),
             )
         except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(str(e))
+        except json_format.ParseError as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetSubchannel(self, request, context):
+    @staticmethod
+    def GetSubchannel(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_subchannel(request.subchannel_id),
                 _channelz_pb2.GetSubchannelResponse(),
             )
         except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(str(e))
+        except json_format.ParseError as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
-    # pylint: disable=no-self-use
-    def GetSocket(self, request, context):
+    @staticmethod
+    def GetSocket(request, context):
         try:
             return json_format.Parse(
                 cygrpc.channelz_get_socket(request.socket_id),
                 _channelz_pb2.GetSocketResponse(),
             )
         except ValueError as e:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(str(e))
+        except json_format.ParseError as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
 
 
