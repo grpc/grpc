@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
@@ -76,12 +77,15 @@ class RefCount {
   constexpr explicit RefCount(Value init = 1) : value_(init) {}
 
   // Increases the ref-count by `n`.
-  void Ref(Value n = 1) { value_.fetch_add(n, std::memory_order_relaxed); }
+  void Ref(Value n = 1) {
+    GPR_ATM_INC_ADD_THEN(value_.fetch_add(n, std::memory_order_relaxed));
+  }
 
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
-    const Value prior = value_.fetch_add(1, std::memory_order_relaxed);
+    const Value prior =
+        GPR_ATM_INC_ADD_THEN(value_.fetch_add(1, std::memory_order_relaxed));
     assert(prior > 0);
 #else
     Ref();
@@ -90,7 +94,8 @@ class RefCount {
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
-    const Value prior = value_.fetch_sub(1, std::memory_order_acq_rel);
+    const Value prior =
+        GPR_ATM_INC_ADD_THEN(value_.fetch_sub(1, std::memory_order_acq_rel));
     GPR_DEBUG_ASSERT(prior > 0);
     return prior == 1;
   }
