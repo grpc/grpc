@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 /* Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -182,6 +183,10 @@ static void on_read(void* tcpp, grpc_error* error) {
   grpc_slice sub;
   grpc_winsocket_callback_info* info = &socket->read_info;
 
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
+  }
+
   GRPC_ERROR_REF(error);
 
   if (error == GRPC_ERROR_NONE) {
@@ -194,7 +199,21 @@ static void on_read(void* tcpp, grpc_error* error) {
       if (info->bytes_transfered != 0 && !tcp->shutting_down) {
         sub = grpc_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
         grpc_slice_buffer_add(tcp->read_slices, sub);
+
+        if (grpc_tcp_trace.enabled()) {
+          size_t i;
+          for (i = 0; i < tcp->read_slices->count; i++) {
+            char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
+                                         GPR_DUMP_HEX | GPR_DUMP_ASCII);
+            gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp, tcp->peer_string,
+                    dump);
+            gpr_free(dump);
+          }
+        }
       } else {
+        if (grpc_tcp_trace.enabled()) {
+          gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
+        }
         grpc_slice_unref_internal(tcp->read_slice);
         error = tcp->shutting_down
                     ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -218,6 +237,10 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   DWORD bytes_read = 0;
   DWORD flags = 0;
   WSABUF buffer;
+
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP:%p win_read", tcp);
+  }
 
   if (tcp->shutting_down) {
     GRPC_CLOSURE_SCHED(
@@ -275,6 +298,10 @@ static void on_write(void* tcpp, grpc_error* error) {
   grpc_winsocket_callback_info* info = &handle->write_info;
   grpc_closure* cb;
 
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
+  }
+
   GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&tcp->mu);
@@ -307,6 +334,16 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   WSABUF* allocated = NULL;
   WSABUF* buffers = local_buffers;
   size_t len;
+
+  if (grpc_tcp_trace.enabled()) {
+    size_t i;
+    for (i = 0; i < slices->count; i++) {
+      char* data =
+          grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
+      gpr_free(data);
+    }
+  }
 
   if (tcp->shutting_down) {
     GRPC_CLOSURE_SCHED(
