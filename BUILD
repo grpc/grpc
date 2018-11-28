@@ -66,9 +66,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "gizmo"
 
-core_version = "7.0.0-pre2"
+core_version = "7.0.0-pre3"
 
-version = "1.17.0-pre2"
+version = "1.17.0-pre3"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
