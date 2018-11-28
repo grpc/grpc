@@ -149,7 +149,7 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
 }
 
 size_t grpc_transport_stream_size(grpc_transport* transport) {
-  return transport->vtable->sizeof_stream;
+  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(transport->vtable->sizeof_stream);
 }
 
 void grpc_transport_destroy(grpc_transport* transport) {
