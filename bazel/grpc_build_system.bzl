@@ -163,6 +163,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     "$(location %s)" % name,
                 ] + args["args"],
                 tags = tags,
+                exec_compatible_with = exec_compatible_with,
             )
     else:
         native.cc_test(**args)
