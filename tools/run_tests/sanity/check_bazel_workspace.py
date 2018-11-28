@@ -42,6 +42,7 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = 'com_github_zopefoundation_zope_interf
 _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 
 _GRPC_DEP_NAMES = [
+    'upb',
     'boringssl',
     'com_github_madler_zlib',
     'com_google_protobuf',

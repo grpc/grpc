@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -58,6 +59,7 @@ void grpc_iomgr_init() {
   g_root_object.name = (char*)"root";
   grpc_network_status_init();
   grpc_iomgr_platform_init();
+  grpc_core::grpc_errqueue_init();
 }
 
 void grpc_iomgr_start() { grpc_timer_manager_init(); }

@@ -121,7 +121,6 @@ cdef extern from "grpc/grpc.h":
     GRPC_STATUS_DATA_LOSS
     GRPC_STATUS__DO_NOT_USE
 
-  const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
   const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
   const char *GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
@@ -189,12 +188,6 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_channel_args:
     size_t arguments_length "num_args"
     grpc_arg *arguments "args"
-
-  ctypedef enum grpc_compression_level:
-    GRPC_COMPRESS_LEVEL_NONE
-    GRPC_COMPRESS_LEVEL_LOW
-    GRPC_COMPRESS_LEVEL_MED
-    GRPC_COMPRESS_LEVEL_HIGH
 
   ctypedef enum grpc_stream_compression_level:
     GRPC_STREAM_COMPRESS_LEVEL_NONE

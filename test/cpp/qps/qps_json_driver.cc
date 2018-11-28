@@ -91,7 +91,7 @@ ConstructPerWorkerCredentialTypesMap() {
   // a map.
   std::string remaining = FLAGS_per_worker_credential_types;
   std::map<std::string, std::string> out;
-  while (remaining.size() > 0) {
+  while (!remaining.empty()) {
     size_t next_semicolon = remaining.find(';');
     std::string next_entry = remaining.substr(0, next_semicolon);
     if (next_semicolon == std::string::npos) {
