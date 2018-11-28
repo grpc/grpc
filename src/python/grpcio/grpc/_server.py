@@ -828,11 +828,7 @@ class _Server(grpc.Server):
         return _stop(self._state, grace)
 
     def __del__(self):
-        # TODO(lidiz): Depends on issue #17258 which is not solved yet
-        # The `_state` may not exist when object get deconstructed
-        if hasattr(self, '_state'):
-            _stop(self._state, None)
-            del self._state
+        _stop(self._state, None)
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
