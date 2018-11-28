@@ -260,10 +260,17 @@ static void notify_on_write(grpc_tcp* tcp) {
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
-  cover_self(tcp);
-  GRPC_CLOSURE_INIT(&tcp->write_done_closure,
-                    tcp_drop_uncovered_then_handle_write, tcp,
-                    grpc_schedule_on_exec_ctx);
+  if (grpc_event_engine_run_in_background()) {
+    // If there is a polling engine always running in the background, there is
+    // no need to run the backup poller.
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  } else {
+    cover_self(tcp);
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
+                      tcp_drop_uncovered_then_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  }
   grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_done_closure);
 }
 

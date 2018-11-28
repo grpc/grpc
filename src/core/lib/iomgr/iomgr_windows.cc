@@ -71,8 +71,11 @@ static void iomgr_platform_shutdown(void) {
   winsock_shutdown();
 }
 
+static void iomgr_platform_shutdown_background_closure(void) {}
+
 static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
+    iomgr_platform_shutdown_background_closure};
 
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_windows_tcp_client_vtable);
