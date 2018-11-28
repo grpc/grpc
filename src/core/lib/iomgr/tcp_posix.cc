@@ -740,7 +740,7 @@ static bool process_errors(grpc_tcp* tcp) {
         }
         return false;
       }
-      process_timestamp(tcp, &msg, cmsg);
+      cmsg = process_timestamp(tcp, &msg, cmsg);
     }
   }
 }
@@ -761,13 +761,11 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 
   /* We are still interested in collecting timestamps, so let's try reading
    * them. */
-  if (!process_errors(tcp)) {
-    /* This was not a timestamps error. This was an actual error. Set the
-     * read and write closures to be ready.
-     */
-    grpc_fd_set_readable(tcp->em_fd);
-    grpc_fd_set_writable(tcp->em_fd);
-  }
+  process_errors(tcp);
+  /* This might not a timestamps error. Set the read and write closures to be
+   * ready. */
+  grpc_fd_set_readable(tcp->em_fd);
+  grpc_fd_set_writable(tcp->em_fd);
   GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
                     grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
