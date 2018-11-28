@@ -52,6 +52,8 @@ Mac systems with Homebrew:
 brew install gflags
 ```
 
+Additionally, if your system already has protobuf installed, you may need to run `make` with the flag `HAS_SYSTEM_PROTOBUF=false`.
+
 Once the prerequisites are satisfied, you can build the command line tool with
 the command:
 
