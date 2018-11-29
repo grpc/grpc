@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -62,6 +63,7 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
 
+using grpc_core::ServerAddressList;
 using grpc_core::internal::ClientChannelMethodParams;
 using grpc_core::internal::ClientChannelMethodParamsTable;
 using grpc_core::internal::ProcessedResolverResult;
@@ -384,12 +386,12 @@ static void create_new_lb_policy_locked(
 static void maybe_add_trace_message_for_address_changes_locked(
     channel_data* chand, TraceStringVector* trace_strings) {
   int resolution_contains_addresses = false;
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
+  const grpc_arg* channel_arg = grpc_channel_args_find(
+      chand->resolver_result, GRPC_ARG_SERVER_ADDRESS_LIST);
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (addresses->num_addresses > 0) {
+    ServerAddressList* addresses =
+        static_cast<ServerAddressList*>(channel_arg->value.pointer.p);
+    if (addresses->size() > 0) {
       resolution_contains_addresses = true;
     }
   }
@@ -570,12 +572,6 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     } else {
       grpc_error* error = GRPC_ERROR_NONE;
       grpc_core::LoadBalancingPolicy::PickState pick_state;
-      pick_state.initial_metadata = nullptr;
-      pick_state.initial_metadata_flags = 0;
-      pick_state.on_complete = nullptr;
-      memset(&pick_state.subchannel_call_context, 0,
-             sizeof(pick_state.subchannel_call_context));
-      pick_state.user_data = nullptr;
       // Pick must return synchronously, because pick_state.on_complete is null.
       GPR_ASSERT(chand->lb_policy->PickLocked(&pick_state, &error));
       if (pick_state.connected_subchannel != nullptr) {

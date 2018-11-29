@@ -30,9 +30,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -114,11 +116,22 @@ void ProcessedResolverResult::ProcessLbPolicyName(
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
   const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result, GRPC_ARG_LB_ADDRESSES);
+      grpc_channel_args_find(resolver_result, GRPC_ARG_SERVER_ADDRESS_LIST);
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
+    ServerAddressList* addresses =
+        static_cast<ServerAddressList*>(channel_arg->value.pointer.p);
+    bool found_balancer_address = false;
+    for (size_t i = 0; i < addresses->size(); ++i) {
+      ServerAddress& address = (*addresses)[i];
+      if (grpc_channel_arg_get_bool(
+              grpc_channel_args_find(address.args(),
+                                     GRPC_ARG_ADDRESS_IS_BALANCER),
+              false)) {
+        found_balancer_address = true;
+        break;
+      }
+    }
+    if (found_balancer_address) {
       if (lb_policy_name != nullptr &&
           gpr_stricmp(lb_policy_name, "grpclb") != 0) {
         gpr_log(GPR_INFO,

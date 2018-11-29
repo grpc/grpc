@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -325,7 +325,7 @@ typedef struct addr_req {
   char* addr;
   grpc_closure* on_done;
   grpc_resolved_addresses** addrs;
-  grpc_lb_addresses** lb_addrs;
+  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses;
 } addr_req;
 
 static void finish_resolve(void* arg, grpc_error* error) {
@@ -340,11 +340,9 @@ static void finish_resolve(void* arg, grpc_error* error) {
           gpr_malloc(sizeof(*addrs->addrs)));
       addrs->addrs[0].len = 0;
       *r->addrs = addrs;
-    } else if (r->lb_addrs != nullptr) {
-      grpc_lb_addresses* lb_addrs = grpc_lb_addresses_create(1, nullptr);
-      grpc_lb_addresses_set_address(lb_addrs, 0, nullptr, 0, false, nullptr,
-                                    nullptr);
-      *r->lb_addrs = lb_addrs;
+    } else if (r->addresses != nullptr) {
+      *r->addresses = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
+      (*r->addresses)->emplace_back(nullptr, 0, nullptr);
     }
     GRPC_CLOSURE_SCHED(r->on_done, GRPC_ERROR_NONE);
   } else {
@@ -354,18 +352,17 @@ static void finish_resolve(void* arg, grpc_error* error) {
   }
 
   gpr_free(r->addr);
-  gpr_free(r);
+  grpc_core::Delete(r);
 }
 
 void my_resolve_address(const char* addr, const char* default_port,
                         grpc_pollset_set* interested_parties,
                         grpc_closure* on_done,
-                        grpc_resolved_addresses** addresses) {
-  addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
+                        grpc_resolved_addresses** addrs) {
+  addr_req* r = grpc_core::New<addr_req>();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
-  r->addrs = addresses;
-  r->lb_addrs = nullptr;
+  r->addrs = addrs;
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
@@ -377,13 +374,13 @@ static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
 grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner) {
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
+    bool check_grpclb, char** service_config_json, grpc_combiner* combiner) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = nullptr;
-  r->lb_addrs = lb_addrs;
+  r->addresses = addresses;
   grpc_timer_init(
       &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
