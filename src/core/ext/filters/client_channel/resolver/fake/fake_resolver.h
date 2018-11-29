@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
 #define GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR \
