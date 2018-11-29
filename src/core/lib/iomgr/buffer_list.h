@@ -38,7 +38,7 @@ struct Timestamps {
   gpr_timespec sent_time;
   gpr_timespec acked_time;
 
-  uint32_t length; /* The length of the buffer traced */
+  uint32_t byte_offset; /* byte offset relative to the start of the RPC */
 };
 
 /** TracedBuffer is a class to keep track of timestamps for a specific buffer in

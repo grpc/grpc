@@ -646,6 +646,8 @@ struct grpc_chttp2_stream {
   bool traced = false;
   /** gRPC header bytes that are already decompressed */
   size_t decompressed_header_bytes = 0;
+  /** Byte counter for number of bytes written */
+  size_t byte_counter = 0;
 };
 
 /** Transport writing call flow:

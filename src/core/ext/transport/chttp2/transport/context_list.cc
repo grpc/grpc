@@ -32,6 +32,7 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
   while (head != nullptr) {
     if (error == GRPC_ERROR_NONE && ts != nullptr) {
       if (write_timestamps_callback_g) {
+        ts->byte_offset = head->byte_offset_;
         write_timestamps_callback_g(head->s_->context, ts);
       }
     }
