@@ -175,8 +175,10 @@ void grpc_shutdown_internal(void* ignored) {
   }
   {
     grpc_core::ExecCtx exec_ctx(0);
+    grpc_iomgr_shutdown_background_closure();
     {
-      grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+      grpc_timer_manager_set_threading(
+          false);  // shutdown timer_manager thread
       grpc_executor_shutdown();
       for (i = g_number_of_plugins; i >= 0; i--) {
         if (g_all_of_the_plugins[i].destroy != nullptr) {
