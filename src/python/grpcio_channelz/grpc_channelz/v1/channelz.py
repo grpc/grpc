@@ -119,7 +119,7 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
             context.set_details(str(e))
 
 
-def enable_channelz(server):
+def add_channelz_servicer(server):
     """Enables Channelz on a server.
 
     Args:

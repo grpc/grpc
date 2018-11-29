@@ -69,7 +69,9 @@ class _ChannelServerPair(object):
 
     def __init__(self):
         # Server will enable channelz service
-        # Bind as attribute to make it gc properly
+        # Bind as attribute, so its `del` can be called explicitly, during
+        #   the destruction process. Otherwise, if the removal of server
+        #   rely on gc cycle, the test will become non-deterministic.
         self._server = grpc.server(
             futures.ThreadPoolExecutor(max_workers=3),
             options=_DISABLE_REUSE_PORT + _ENABLE_CHANNELZ)
@@ -134,10 +136,7 @@ class ChannelzServicerTest(unittest.TestCase):
             futures.ThreadPoolExecutor(max_workers=3),
             options=_DISABLE_REUSE_PORT + _DISABLE_CHANNELZ)
         port = self._server.add_insecure_port('[::]:0')
-        channelz_pb2_grpc.add_ChannelzServicer_to_server(
-            channelz.ChannelzServicer(),
-            self._server,
-        )
+        channelz.add_channelz_servicer(self._server)
         self._server.start()
 
         # This channel is used to fetch Channelz info only
@@ -150,6 +149,7 @@ class ChannelzServicerTest(unittest.TestCase):
         self._server.__del__()
         self._channel.close()
         # _pairs may not exist, if the test crashed during setup
+        # In 'invalid query' tests, _pairs may never get set
         if hasattr(self, '_pairs'):
             _clean_channel_server_pairs(self._pairs)
 
@@ -280,14 +280,20 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertEqual(gtc_resp.channel[i].data.calls_failed,
                              gsc_resp.subchannel.data.calls_failed)
 
-    @unittest.skip('Due to server destruction logic issue #17258')
+    @unittest.skip('Servers in core are not guaranteed to be destroyed ' \
+                   'immediately when the reference goes out of scope, so ' \
+                   'servers from multiple test cases are not hermetic. ' \
+                   'TODO(https://github.com/grpc/grpc/issues/17258)')
     def test_server_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
         resp = self._channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=0))
         self.assertEqual(len(resp.server), 1)
 
-    @unittest.skip('Due to server destruction logic issue #17258')
+    @unittest.skip('Servers in core are not guaranteed to be destroyed ' \
+                   'immediately when the reference goes out of scope, so ' \
+                   'servers from multiple test cases are not hermetic. ' \
+                   'TODO(https://github.com/grpc/grpc/issues/17258)')
     def test_get_one_server(self):
         self._pairs = _generate_channel_server_pairs(1)
         gss_resp = self._channelz_stub.GetServers(
@@ -299,7 +305,10 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(gss_resp.server[0].ref.server_id,
                          gs_resp.server.ref.server_id)
 
-    @unittest.skip('Due to server destruction logic issue #17258')
+    @unittest.skip('Servers in core are not guaranteed to be destroyed ' \
+                   'immediately when the reference goes out of scope, so ' \
+                   'servers from multiple test cases are not hermetic. ' \
+                   'TODO(https://github.com/grpc/grpc/issues/17258)')
     def test_server_call(self):
         self._pairs = _generate_channel_server_pairs(1)
         k_success = 23
@@ -394,7 +403,10 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(gs_resp.socket.data.messages_received,
                          test_constants.STREAM_LENGTH)
 
-    @unittest.skip('Due to server destruction logic issue #17258')
+    @unittest.skip('Servers in core are not guaranteed to be destroyed ' \
+                   'immediately when the reference goes out of scope, so ' \
+                   'servers from multiple test cases are not hermetic. ' \
+                   'TODO(https://github.com/grpc/grpc/issues/17258)')
     def test_server_sockets(self):
         self._pairs = _generate_channel_server_pairs(1)
         self._send_successful_unary_unary(0)
@@ -413,7 +425,10 @@ class ChannelzServicerTest(unittest.TestCase):
         # If the RPC call failed, it will raise a grpc.RpcError
         # So, if there is no exception raised, considered pass
 
-    @unittest.skip('Due to server destruction logic issue #17258')
+    @unittest.skip('Servers in core are not guaranteed to be destroyed ' \
+                   'immediately when the reference goes out of scope, so ' \
+                   'servers from multiple test cases are not hermetic. ' \
+                   'TODO(https://github.com/grpc/grpc/issues/17258)')
     def test_server_listen_sockets(self):
         self._pairs = _generate_channel_server_pairs(1)
 
