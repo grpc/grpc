@@ -37,6 +37,8 @@ struct Timestamps {
   gpr_timespec scheduled_time;
   gpr_timespec sent_time;
   gpr_timespec acked_time;
+
+  uint32_t length; /* The length of the buffer traced */
 };
 
 /** TracedBuffer is a class to keep track of timestamps for a specific buffer in
@@ -56,7 +58,7 @@ class TracedBuffer {
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
   static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          void* arg);
+                          uint32_t length, void* arg);
 
   /** Processes a received timestamp based on sock_extended_err and
    * scm_timestamping structures. It will invoke the timestamps callback if the
@@ -73,7 +75,7 @@ class TracedBuffer {
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
-  TracedBuffer(int seq_no, void* arg)
+  TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
 
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */

@@ -30,9 +30,10 @@
 
 namespace grpc_core {
 void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
-                               void* arg) {
+                               uint32_t length, void* arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
+  new_elem->ts_.length = length;
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time = gpr_now(GPR_CLOCK_REALTIME);
   if (*head == nullptr) {
