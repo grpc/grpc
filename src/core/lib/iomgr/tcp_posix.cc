@@ -686,11 +686,9 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
 }
 
 /** For linux platforms, reads the socket's error queue and processes error
- * messages from the queue. Returns true if all the errors processed were
- * timestamps. Returns false if any of the errors were not timestamps. For
- * non-linux platforms, error processing is not used/enabled currently.
+ * messages from the queue.
  */
-static bool process_errors(grpc_tcp* tcp) {
+static void process_errors(grpc_tcp* tcp) {
   while (true) {
     struct iovec iov;
     iov.iov_base = nullptr;
@@ -719,10 +717,10 @@ static bool process_errors(grpc_tcp* tcp) {
     } while (r < 0 && saved_errno == EINTR);
 
     if (r == -1 && saved_errno == EAGAIN) {
-      return true; /* No more errors to process */
+      return; /* No more errors to process */
     }
     if (r == -1) {
-      return false;
+      return;
     }
     if (grpc_tcp_trace.enabled()) {
       if ((msg.msg_flags & MSG_CTRUNC) == 1) {
@@ -732,8 +730,9 @@ static bool process_errors(grpc_tcp* tcp) {
 
     if (msg.msg_controllen == 0) {
       /* There was no control message found. It was probably spurious. */
-      return true;
+      return;
     }
+    bool seen = false;
     for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg && cmsg->cmsg_len;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level != SOL_SOCKET ||
@@ -745,9 +744,13 @@ static bool process_errors(grpc_tcp* tcp) {
                   "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
         }
-        return false;
+        return;
       }
       cmsg = process_timestamp(tcp, &msg, cmsg);
+      seen = true;
+    }
+    if (!seen) {
+      return;
     }
   }
 }
