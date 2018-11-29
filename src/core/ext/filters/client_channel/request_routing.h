@@ -64,11 +64,11 @@ class RequestRouter {
     friend class RequestRouter;
 
     class ResolverResultWaiter;
+    class AsyncPickCanceller;
 
     void ProcessServiceConfigAndStartLbPickLocked();
     void StartLbPickLocked();
     static void LbPickDoneLocked(void* arg, grpc_error* error);
-    static void LbPickCancelLocked(void* arg, grpc_error* error);
 
     void MaybeAddCallToInterestedPartiesLocked();
     void MaybeRemoveCallFromInterestedPartiesLocked();
@@ -86,7 +86,7 @@ class RequestRouter {
     RequestRouter* request_router_ = nullptr;
     bool pollent_added_to_interested_parties_ = false;
     grpc_closure on_pick_done_;
-    grpc_closure on_cancel_;
+    AsyncPickCanceller* pick_canceller_ = nullptr;
   };
 
   // Synchronous callback that takes the service config JSON string and

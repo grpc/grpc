@@ -215,6 +215,61 @@ class RequestRouter::Request::ResolverResultWaiter {
 };
 
 //
+// RequestRouter::Request::AsyncPickCanceller
+//
+
+// Handles the call combiner cancellation callback for an async LB pick.
+class RequestRouter::Request::AsyncPickCanceller {
+ public:
+  explicit AsyncPickCanceller(Request* request)
+      : request_router_(request->request_router_),
+        request_(request),
+        tracer_enabled_(request_router_->tracer_->enabled()) {
+    GRPC_CALL_STACK_REF(request->owning_call_, "pick_callback_cancel");
+    // Set cancellation closure, so that we abort if the call is cancelled.
+    GRPC_CLOSURE_INIT(&cancel_closure_, &CancelLocked, this,
+                      grpc_combiner_scheduler(request_router_->combiner_));
+    grpc_call_combiner_set_notify_on_cancel(request->call_combiner_,
+                                            &cancel_closure_);
+  }
+
+  void MarkFinishedLocked() { finished_ = true; }
+
+ private:
+  // Invoked when the call is cancelled.
+  // Note: This runs under the client_channel combiner, but will NOT be
+  // holding the call combiner.
+  static void CancelLocked(void* arg, grpc_error* error) {
+    AsyncPickCanceller* self = static_cast<AsyncPickCanceller*>(arg);
+    Request* request = self->request_;
+    RequestRouter* request_router = self->request_router_;
+    if (!self->finished_) {
+      // Note: request_router->lb_policy_ may have changed since we started our
+      // pick, in which case we will be cancelling the pick on a policy other
+      // than the one we started it on.  However, this will just be a no-op.
+      if (error != GRPC_ERROR_NONE && request_router->lb_policy_ != nullptr) {
+        if (self->tracer_enabled_) {
+          gpr_log(GPR_INFO,
+                  "request_router=%p request=%p: cancelling pick from LB "
+                  "policy %p",
+                  request_router, request, request_router->lb_policy_.get());
+        }
+        request_router->lb_policy_->CancelPickLocked(&request->pick_,
+                                                     GRPC_ERROR_REF(error));
+      }
+    }
+    GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
+    Delete(self);
+  }
+
+  RequestRouter* request_router_;
+  Request* request_;
+  const bool tracer_enabled_;
+  grpc_closure cancel_closure_;
+  bool finished_ = false;
+};
+
+//
 // RequestRouter::Request
 //
 
@@ -302,10 +357,11 @@ void RequestRouter::Request::StartLbPickLocked() {
     // under it.  It will be removed in LbPickDoneLocked().
     MaybeAddCallToInterestedPartiesLocked();
     // Request notification on call cancellation.
-    GRPC_CALL_STACK_REF(owning_call_, "pick_callback_cancel");
-    GRPC_CLOSURE_INIT(&on_cancel_, &LbPickCancelLocked, this,
-                      grpc_combiner_scheduler(request_router_->combiner_));
-    grpc_call_combiner_set_notify_on_cancel(call_combiner_, &on_cancel_);
+    // We allocate a separate object to track cancellation, since the
+    // cancellation callback might not be scheduled by the call combiner
+    // until after this Request object is destroyed (e.g., in the case
+    // of a retry).
+    pick_canceller_ = New<AsyncPickCanceller>(this);
   }
 }
 
@@ -320,28 +376,9 @@ void RequestRouter::Request::LbPickDoneLocked(void* arg, grpc_error* error) {
             request_router, self);
   }
   self->MaybeRemoveCallFromInterestedPartiesLocked();
+  self->pick_canceller_->MarkFinishedLocked();
   GRPC_CLOSURE_RUN(self->on_route_done_, GRPC_ERROR_REF(error));
   GRPC_CALL_STACK_UNREF(self->owning_call_, "pick_callback");
-}
-
-// Note: This runs under the client_channel combiner, but will NOT be
-// holding the call combiner.
-void RequestRouter::Request::LbPickCancelLocked(void* arg, grpc_error* error) {
-  Request* self = static_cast<Request*>(arg);
-  RequestRouter* request_router = self->request_router_;
-  // Note: request_router->lb_policy_ may have changed since we started our
-  // pick, in which case we will be cancelling the pick on a policy other than
-  // the one we started it on.  However, this will just be a no-op.
-  if (error != GRPC_ERROR_NONE && request_router->lb_policy_ != nullptr) {
-    if (request_router->tracer_->enabled()) {
-      gpr_log(GPR_INFO,
-              "request_router=%p request=%p: cancelling pick from LB policy %p",
-              request_router, self, request_router->lb_policy_.get());
-    }
-    request_router->lb_policy_->CancelPickLocked(&self->pick_,
-                                                 GRPC_ERROR_REF(error));
-  }
-  GRPC_CALL_STACK_UNREF(self->owning_call_, "pick_callback_cancel");
 }
 
 //
