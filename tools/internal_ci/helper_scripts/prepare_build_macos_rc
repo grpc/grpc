@@ -91,3 +91,6 @@ mkdir -p /tmpfs/DerivedData
 rm -rf ~/Library/Developer/Xcode/DerivedData
 mkdir -p ~/Library/Developer/Xcode
 ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
+
+# PHP tests currently require using an older version of PHPUnit
+ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit
