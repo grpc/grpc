@@ -635,7 +635,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::AddNewEntry(
         &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        static_cast<uint32_t>(length), tcp->outgoing_buffer_arg);
+        tcp->outgoing_buffer_arg);
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }

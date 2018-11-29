@@ -58,7 +58,7 @@ class TracedBuffer {
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
   static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          uint32_t length, void* arg);
+                          void* arg);
 
   /** Processes a received timestamp based on sock_extended_err and
    * scm_timestamping structures. It will invoke the timestamps callback if the
