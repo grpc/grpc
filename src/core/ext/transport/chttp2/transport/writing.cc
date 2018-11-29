@@ -363,6 +363,7 @@ class DataSendContext {
     grpc_chttp2_encode_data(s_->id, &s_->compressed_data_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
     s_->flow_control->SentData(send_bytes);
+    s_->byte_counter += send_bytes;
     if (s_->compressed_data_buffer.length == 0) {
       s_->sending_bytes += s_->uncompressed_data_size;
     }
@@ -488,9 +489,6 @@ class StreamWriteContext {
       return;  // early out: nothing to do
     }
 
-    if (s_->traced && grpc_endpoint_can_track_err(t_->ep)) {
-      grpc_core::ContextList::Append(&t_->cl, s_);
-    }
     while ((s_->flow_controlled_buffer.length > 0 ||
             s_->compressed_data_buffer.length > 0) &&
            data_send_context.max_outgoing() > 0) {
@@ -499,6 +497,9 @@ class StreamWriteContext {
       } else {
         data_send_context.CompressMoreBytes();
       }
+    }
+    if (s_->traced && grpc_endpoint_can_track_err(t_->ep)) {
+      grpc_core::ContextList::Append(&t_->cl, s_);
     }
     write_context_->ResetPingClock();
     if (data_send_context.is_last_frame()) {
