@@ -12,7 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProtoBuf Include="..\..\..\protos\route_guide.proto" Link="protos\route_guide.proto" />
+    <Protobuf Include="..\..\..\protos\route_guide.proto" Link="protos\route_guide.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="route_guide_db.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
