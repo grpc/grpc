@@ -732,12 +732,9 @@ static void process_errors(grpc_tcp* tcp) {
       /* There was no control message found. It was probably spurious. */
       return;
     }
-    auto cmsg = CMSG_FIRSTHDR(&msg);
-    if (cmsg == nullptr || cmsg->cmsg_len == 0) {
-      /* No control message found. */
-      return;
-    }
-    do {
+    bool seen = false;
+    for (auto cmsg = CMSG_FIRSTHDR(&msg); cmsg && cmsg->cmsg_len;
+         cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level != SOL_SOCKET ||
           cmsg->cmsg_type != SCM_TIMESTAMPING) {
         /* Got a control message that is not a timestamp. Don't know how to
@@ -749,8 +746,12 @@ static void process_errors(grpc_tcp* tcp) {
         }
         return;
       }
-      cmsg = CMSG_NXTHDR(&msg, process_timestamp(tcp, &msg, cmsg));
-    } while (cmsg && cmsg->cmsg_len);
+      cmsg = process_timestamp(tcp, &msg, cmsg);
+      seen = true;
+    }
+    if (!seen) {
+      return;
+    }
   }
 }
 
