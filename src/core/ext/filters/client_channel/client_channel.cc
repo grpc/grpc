@@ -25,6 +25,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <atomic>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -910,11 +911,7 @@ struct subchannel_call_retry_state {
   grpc_error* recv_message_error = GRPC_ERROR_NONE;
   subchannel_batch_data* recv_trailing_metadata_internal_batch = nullptr;
   // State for callback processing.
-  // NOTE: Do not move this next to the metadata bitfields above. That would
-  //       save space but will also result in a data race because compiler will
-  //       generate a 2 byte store which overwrites the meta-data fields upon
-  //       setting this field.
-  bool retry_dispatched : 1;
+  std::atomic<bool> retry_dispatched;
 };
 
 // Pending batches stored in call data.
@@ -1479,7 +1476,9 @@ static void do_retry(grpc_call_element* elem,
                     grpc_combiner_scheduler(chand->combiner));
   grpc_timer_init(&calld->retry_timer, next_attempt_time, &calld->pick_closure);
   // Update bookkeeping.
-  if (retry_state != nullptr) retry_state->retry_dispatched = true;
+  if (retry_state != nullptr) {
+    retry_state->retry_dispatched.store(true, std::memory_order_relaxed);
+  }
 }
 
 // Returns true if the call is being retried.
@@ -1502,7 +1501,7 @@ static bool maybe_retry(grpc_call_element* elem,
     retry_state = static_cast<subchannel_call_retry_state*>(
         grpc_connected_subchannel_call_get_parent_data(
             batch_data->subchannel_call));
-    if (retry_state->retry_dispatched) {
+    if (retry_state->retry_dispatched.load(std::memory_order_relaxed)) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: retry already dispatched", chand,
                 calld);
@@ -1718,7 +1717,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   retry_state->completed_recv_initial_metadata = true;
   // If a retry was already dispatched, then we're not going to use the
   // result of this recv_initial_metadata op, so do nothing.
-  if (retry_state->retry_dispatched) {
+  if (retry_state->retry_dispatched.load(std::memory_order_relaxed)) {
     GRPC_CALL_COMBINER_STOP(
         calld->call_combiner,
         "recv_initial_metadata_ready after retry dispatched");
@@ -1809,7 +1808,7 @@ static void recv_message_ready(void* arg, grpc_error* error) {
   ++retry_state->completed_recv_message_count;
   // If a retry was already dispatched, then we're not going to use the
   // result of this recv_message op, so do nothing.
-  if (retry_state->retry_dispatched) {
+  if (retry_state->retry_dispatched.load(std::memory_order_relaxed)) {
     GRPC_CALL_COMBINER_STOP(calld->call_combiner,
                             "recv_message_ready after retry dispatched");
     return;
@@ -2177,7 +2176,7 @@ static void on_complete(void* arg, grpc_error* error) {
   // If a retry was already dispatched, that means we saw
   // recv_trailing_metadata before this, so we do nothing here.
   // Otherwise, invoke the callback to return the result to the surface.
-  if (!retry_state->retry_dispatched) {
+  if (!retry_state->retry_dispatched.load(std::memory_order_relaxed)) {
     // Add closure for the completed pending batch, if any.
     add_closure_for_completed_pending_batch(elem, batch_data, retry_state,
                                             GRPC_ERROR_REF(error), &closures);
