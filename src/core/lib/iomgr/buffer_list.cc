@@ -35,6 +35,9 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time = gpr_now(GPR_CLOCK_REALTIME);
+  new_elem->ts_.scheduled_time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.sent_time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.acked_time = gpr_inf_past(GPR_CLOCK_REALTIME);
   if (*head == nullptr) {
     *head = new_elem;
     return;
