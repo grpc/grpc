@@ -34,7 +34,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-const int kByteOffset = 123;
+const uint32_t kByteOffset = 123;
 
 void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts) {
   ASSERT_NE(arg, nullptr);
