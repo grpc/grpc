@@ -69,6 +69,22 @@ void CheckServerAuthContext(
     EXPECT_EQ(expected_client_identity, identity[0]);
   }
 }
+
+// Returns the number of pairs in metadata that exactly match the given
+// key-value pair. Returns -1 if the pair wasn't found.
+int MetadataMatchCount(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const grpc::string& key, const grpc::string& value) {
+  int count = 0;
+  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
+           metadata.begin();
+       iter != metadata.end(); ++iter) {
+    if (ToString(iter->first) == key && ToString(iter->second) == value) {
+      count++;
+    }
+  }
+  return count;
+}
 }  // namespace
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
@@ -163,6 +179,19 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
     response->mutable_param()->set_peer(context->peer());
   }
   return Status::OK;
+}
+
+void CallbackTestServiceImpl::CheckClientInitialMetadata(
+    ServerContext* context, const SimpleRequest* request,
+    SimpleResponse* response,
+    experimental::ServerCallbackRpcController* controller) {
+  EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
+                               kCheckClientInitialMetadataKey,
+                               kCheckClientInitialMetadataVal),
+            1);
+  EXPECT_EQ(1u,
+            context->client_metadata().count(kCheckClientInitialMetadataKey));
+  controller->Finish(Status::OK);
 }
 
 void CallbackTestServiceImpl::Echo(

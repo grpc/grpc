@@ -201,6 +201,40 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcs) {
   SendRpcs(10, false);
 }
 
+TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
+  ResetStub();
+  SimpleRequest request;
+  SimpleResponse response;
+  ClientContext cli_ctx;
+
+  cli_ctx.AddMetadata(kCheckClientInitialMetadataKey,
+                      kCheckClientInitialMetadataVal);
+
+  std::mutex mu;
+  std::condition_variable cv;
+  bool done = false;
+  stub_->experimental_async()->CheckClientInitialMetadata(
+      &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
+        std::cout << s.error_code() << std::endl;
+        gpr_log(GPR_ERROR, s.error_message().c_str());
+        gpr_log(GPR_ERROR, s.error_details().c_str());
+        GPR_ASSERT(s.ok());
+        std::lock_guard<std::mutex> l(mu);
+
+        done = true;
+        cv.notify_one();
+      });
+  std::unique_lock<std::mutex> l(mu);
+  while (!done) {
+    cv.wait(l);
+  }
+}
+
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcWithBinaryMetadata) {
+  ResetStub();
+  SendRpcs(1, true);
+}
+
 TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   SendRpcs(10, true);
