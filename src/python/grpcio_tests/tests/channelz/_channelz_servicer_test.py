@@ -130,6 +130,7 @@ class ChannelzServicerTest(unittest.TestCase):
         return resp.channel[idx].ref.channel_id
 
     def setUp(self):
+        self._pairs = []
         # This server is for Channelz info fetching only
         # It self should not enable Channelz
         self._server = grpc.server(
@@ -148,10 +149,7 @@ class ChannelzServicerTest(unittest.TestCase):
     def tearDown(self):
         self._server.__del__()
         self._channel.close()
-        # _pairs may not exist, if the test crashed during setup
-        # In 'invalid query' tests, _pairs may never get set
-        if hasattr(self, '_pairs'):
-            _clean_channel_server_pairs(self._pairs)
+        _clean_channel_server_pairs(self._pairs)
 
     def test_get_top_channels_basic(self):
         self._pairs = _generate_channel_server_pairs(1)
