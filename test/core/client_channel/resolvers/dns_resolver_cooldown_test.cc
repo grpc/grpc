@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/surface/init.h"
 #include "test/core/util/test_config.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
@@ -279,6 +280,7 @@ int main(int argc, char** argv) {
     GRPC_COMBINER_UNREF(g_combiner, "test");
   }
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;
 }

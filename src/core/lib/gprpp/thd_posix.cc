@@ -108,12 +108,13 @@ class ThreadInternalsPosix
                           }
                           gpr_mu_unlock(&arg.thread->mu_);
 
+                          if (!arg.joinable) {
+                            grpc_core::Delete(arg.thread);
+                          }
+
                           (*arg.body)(arg.arg);
                           if (arg.tracked) {
                             grpc_core::Fork::DecThreadCount();
-                          }
-                          if (!arg.joinable) {
-                            grpc_core::Delete(arg.thread);
                           }
                           return nullptr;
                         },
