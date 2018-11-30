@@ -1,6 +1,8 @@
 workspace(name="com_github_grpc_grpc")
 
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
 grpc_deps()
 grpc_test_only_deps()
 
