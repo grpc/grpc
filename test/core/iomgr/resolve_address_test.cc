@@ -271,7 +271,7 @@ int main(int argc, char** argv) {
     abort();
   }
   // Run the test.
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

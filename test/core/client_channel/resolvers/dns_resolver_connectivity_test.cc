@@ -145,7 +145,7 @@ static void call_resolver_next_after_locking(grpc_core::Resolver* resolver,
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   grpc_init();
   gpr_mu_init(&g_mu);

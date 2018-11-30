@@ -360,7 +360,7 @@ static void test_receive(int number_of_clients) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   if (grpc_is_socket_reuse_port_supported()) {
     g_num_listeners = 10;

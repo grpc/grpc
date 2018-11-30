@@ -34,7 +34,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   /* test adding prioritization data */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr,

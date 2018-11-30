@@ -138,7 +138,7 @@ static void test_format_post_request_content_type_override(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   test_format_get_request();
