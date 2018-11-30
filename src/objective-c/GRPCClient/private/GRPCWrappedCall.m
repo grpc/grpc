@@ -237,37 +237,21 @@
 #pragma mark GRPCWrappedCall
 
 @implementation GRPCWrappedCall {
-  GRPCCompletionQueue *_queue;
-  GRPCPooledChannel *_channel;
+  __weak GRPCPooledChannel *_channel;
   grpc_call *_call;
 }
 
-- (instancetype)init {
-  return [self initWithHost:nil path:nil callOptions:[[GRPCCallOptions alloc] init]];
-}
-
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path
-                 callOptions:(GRPCCallOptions *)callOptions {
-  NSAssert(host.length != 0 && path.length != 0, @"path and host cannot be nil.");
+- (instancetype)initWithUnmanagedCall:(grpc_call *)unmanagedCall
+                        pooledChannel:(GRPCPooledChannel *)pooledChannel {
+  NSAssert(unmanagedCall != NULL, @"unmanagedCall cannot be empty.");
+  NSAssert(pooledChannel != nil, @"pooledChannel cannot be empty.");
+  if (unmanagedCall == NULL || pooledChannel == nil) {
+    return nil;
+  }
 
   if ((self = [super init])) {
-    // Each completion queue consumes one thread. There's a trade to be made between creating and
-    // consuming too many threads and having contention of multiple calls in a single completion
-    // queue. Currently we use a singleton queue.
-    _queue = [GRPCCompletionQueue completionQueue];
-    _channel = [[GRPCChannelPool sharedInstance] channelWithHost:host callOptions:callOptions];
-    if (_channel == nil) {
-      NSAssert(_channel != nil, @"Failed to get a channel for the host.");
-      NSLog(@"Failed to get a channel for the host.");
-      return nil;
-    }
-    _call = [_channel unmanagedCallWithPath:path completionQueue:_queue callOptions:callOptions];
-    if (_call == nil) {
-      NSAssert(_channel != nil, @"Failed to get a channel for the host.");
-      NSLog(@"Failed to create a call.");
-      return nil;
-    }
+    _call = unmanagedCall;
+    _channel = pooledChannel;
   }
   return self;
 }
@@ -283,42 +267,67 @@
   [GRPCOpBatchLog addOpBatchToLog:operations];
 #endif
 
-  size_t nops = operations.count;
-  grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
-  size_t i = 0;
-  for (GRPCOperation *operation in operations) {
-    ops_array[i++] = operation.op;
-  }
-  grpc_call_error error =
-      grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
-                              if (!success) {
-                                if (errorHandler) {
-                                  errorHandler();
-                                } else {
-                                  return;
-                                }
-                              }
-                              for (GRPCOperation *operation in operations) {
-                                [operation finish];
-                              }
-                            }),
-                            NULL);
-  gpr_free(ops_array);
+  @synchronized (self) {
+    if (_call != NULL) {
+      size_t nops = operations.count;
+      grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
+      size_t i = 0;
+      for (GRPCOperation *operation in operations) {
+        ops_array[i++] = operation.op;
+      }
+      grpc_call_error error;
+      error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
+        if (!success) {
+          if (errorHandler) {
+            errorHandler();
+          } else {
+            return;
+          }
+        }
+        for (GRPCOperation *operation in operations) {
+          [operation finish];
+        }
+      }),
+                                    NULL);
+      gpr_free(ops_array);
 
-  if (error != GRPC_CALL_OK) {
-    [NSException
+      if (error != GRPC_CALL_OK) {
+        [NSException
          raise:NSInternalInconsistencyException
-        format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i", error];
+         format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i", error];
+      }
+    }
   }
 }
 
 - (void)cancel {
-  grpc_call_cancel(_call, NULL);
+  @synchronized (self) {
+    if (_call != NULL) {
+      grpc_call_cancel(_call, NULL);
+    }
+  }
+}
+
+- (void)channelDisconnected {
+  @synchronized (self) {
+    if (_call != NULL) {
+      grpc_call_unref(_call);
+      _call = NULL;
+    }
+  }
 }
 
 - (void)dealloc {
-  [_channel destroyUnmanagedCall:_call];
-  _channel = nil;
+  @synchronized (self) {
+    if (_call != NULL) {
+      grpc_call_unref(_call);
+      _call = NULL;
+    }
+  }
+  __strong GRPCPooledChannel *channel = _channel;
+  if (channel != nil) {
+    [channel notifyWrappedCallDealloc:self];
+  }
 }
 
 @end

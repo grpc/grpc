@@ -36,6 +36,8 @@
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
 #import "private/utilities.h"
+#import "private/GRPCChannelPool.h"
+#import "private/GRPCCompletionQueue.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -819,8 +821,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
   _responseWriteable =
       [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
-  GRPCWrappedCall *wrappedCall =
-      [[GRPCWrappedCall alloc] initWithHost:_host path:_path callOptions:_callOptions];
+  GRPCPooledChannel *channel = [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
+  GRPCWrappedCall *wrappedCall = [channel wrappedCallWithPath:_path
+                                              completionQueue:[GRPCCompletionQueue completionQueue]
+                                                  callOptions:_callOptions];
+
   if (wrappedCall == nil) {
     [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                    code:GRPCErrorCodeUnavailable
@@ -837,12 +842,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   [self sendHeaders];
   [self invokeCall];
-
-  // Connectivity monitor is not required for CFStream
-  char *enableCFStream = getenv(kCFStreamVarName);
-  if (enableCFStream == nil || enableCFStream[0] != '1') {
-    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-  }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {

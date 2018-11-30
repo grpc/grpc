@@ -32,10 +32,13 @@ NS_ASSUME_NONNULL_BEGIN
 @class GRPCChannelPool;
 @class GRPCCompletionQueue;
 @class GRPCChannelConfiguration;
+@class GRPCWrappedCall;
 
 /**
- * Channel proxy that can be retained and automatically reestablish connection when the channel is
- * disconnected.
+ * A proxied channel object that can be retained and creates GRPCWrappedCall object from. If a
+ * raw channel is not present (i.e. no tcp connection to the server) when a GRPCWrappedCall object
+ * is requested, it issues a connection/reconnection. The behavior of this object is to mimic that
+ * of gRPC core's channel object.
  */
 @interface GRPCPooledChannel : NSObject
 
@@ -47,24 +50,21 @@ NS_ASSUME_NONNULL_BEGIN
  * Initialize with an actual channel object \a channel and a reference to the channel pool.
  */
 - (nullable instancetype)initWithChannelConfiguration:
-                             (GRPCChannelConfiguration *)channelConfiguration
-                                          channelPool:(GRPCChannelPool *)channelPool
-    NS_DESIGNATED_INITIALIZER;
+                             (GRPCChannelConfiguration *)channelConfiguration;
 
 /**
- * Create a grpc core call object (grpc_call) from this channel. If channel is disconnected, get a
+ * Create a GRPCWrappedCall object (grpc_call) from this channel. If channel is disconnected, get a
  * new channel object from the channel pool.
  */
-- (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
-                              completionQueue:(GRPCCompletionQueue *)queue
-                                  callOptions:(GRPCCallOptions *)callOptions;
+- (nullable GRPCWrappedCall *)wrappedCallWithPath:(NSString *)path
+                                  completionQueue:(GRPCCompletionQueue *)queue
+                                      callOptions:(GRPCCallOptions *)callOptions;
 
 /**
- * Return ownership and destroy the grpc_call object created by
- * \a unmanagedCallWithPath:completionQueue:callOptions: and decrease channel refcount. If refcount
- * of the channel becomes 0, return the channel object to channel pool.
+ * Notify the pooled channel that a wrapped call object is no longer referenced and will be
+ * dealloc'ed.
  */
-- (void)destroyUnmanagedCall:(grpc_call *)unmanagedCall;
+- (void)notifyWrappedCallDealloc:(GRPCWrappedCall *)wrappedCall;
 
 /**
  * Force the channel to disconnect immediately. Subsequent calls to unmanagedCallWithPath: will
@@ -76,6 +76,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Test-only interface for \a GRPCPooledChannel. */
 @interface GRPCPooledChannel (Test)
+
+/**
+ * Initialize a pooled channel with non-default destroy delay for testing purpose.
+ */
+- (nullable instancetype)initWithChannelConfiguration:
+(GRPCChannelConfiguration *)channelConfiguration
+                                         destroyDelay:(NSTimeInterval)destroyDelay;
 
 /**
  * Return the pointer to the raw channel wrapped.
@@ -118,7 +125,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Get an instance of pool isolated from the global shared pool with channels' destroy delay being
  * \a destroyDelay.
  */
-- (nullable instancetype)initTestPoolWithDestroyDelay:(NSTimeInterval)destroyDelay;
+- (nullable instancetype)initTestPool;
 
 @end
 

@@ -37,11 +37,6 @@
                BlueprintName = "ChannelTests"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
-            <SkippedTests>
-               <Test
-                  Identifier = "ChannelTests">
-               </Test>
-            </SkippedTests>
          </TestableReference>
       </Testables>
       <AdditionalOptions>
