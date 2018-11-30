@@ -99,6 +99,7 @@ def grpc_cc_library(
         linkopts = if_not_windows(["-pthread"]),
         includes = [
             "include",
+            "src/core/ext/upb-generated",
         ],
         alwayslink = alwayslink,
         data = data,

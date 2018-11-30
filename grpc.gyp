@@ -2639,6 +2639,25 @@
       ],
     },
     {
+      'target_name': 'upb',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/upb/google/protobuf/descriptor.upb.c',
+        'third_party/upb/upb/decode.c',
+        'third_party/upb/upb/def.c',
+        'third_party/upb/upb/encode.c',
+        'third_party/upb/upb/handlers.c',
+        'third_party/upb/upb/msg.c',
+        'third_party/upb/upb/msgfactory.c',
+        'third_party/upb/upb/refcounted.c',
+        'third_party/upb/upb/sink.c',
+        'third_party/upb/upb/table.c',
+        'third_party/upb/upb/upb.c',
+      ],
+    },
+    {
       'target_name': 'z',
       'type': 'static_library',
       'dependencies': [
