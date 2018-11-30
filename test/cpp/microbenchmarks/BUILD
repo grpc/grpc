@@ -53,11 +53,12 @@ grpc_cc_test(
     uses_polling = False,
 )
 
-grpc_cc_test(
+# TODO(https://github.com/grpc/grpc/pull/16882): make this a test target
+# right now it OOMs
+grpc_cc_binary(
     name = "bm_arena",
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -67,7 +68,9 @@ grpc_cc_test(
     uses_polling = False,
 )
 
-grpc_cc_test(
+# TODO(https://github.com/grpc/grpc/pull/16882): make this a test target
+# right now it fails UBSAN
+grpc_cc_binary(
     name = "bm_call_create",
     srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
@@ -160,6 +163,18 @@ grpc_cc_test(
     srcs = ["bm_chttp2_hpack.cc"],
     deps = [":helpers"],
     uses_polling = False,
+)
+
+grpc_cc_test(
+    name = "bm_chttp2_transport",
+    srcs = ["bm_chttp2_transport.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_test(
+    name = "bm_pollset",
+    srcs = ["bm_pollset.cc"],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
