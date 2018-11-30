@@ -553,10 +553,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return status;
   }
 
-  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000) {
+  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+                      bool wait_for_ready = false) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
-      const Status status = SendRpc(&response, timeout_ms);
+      const Status status = SendRpc(&response, timeout_ms, wait_for_ready);
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
       EXPECT_EQ(response.message(), kRequestMessage_);
@@ -717,10 +718,9 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       kServerlistDelayMs);
-
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
-  CheckRpcSendOk(1, kCallDeadlineMs);
+  CheckRpcSendOk(1, kCallDeadlineMs, true /* wait_for_ready */);
   const auto ellapsed_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           system_clock::now() - t0);

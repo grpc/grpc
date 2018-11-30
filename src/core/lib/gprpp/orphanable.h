@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -89,8 +90,8 @@ class InternallyRefCounted : public Orphanable {
   template <typename T>
   friend class RefCountedPtr;
 
-  InternallyRefCounted() { gpr_ref_init(&refs_, 1); }
-  virtual ~InternallyRefCounted() {}
+  InternallyRefCounted() = default;
+  virtual ~InternallyRefCounted() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
@@ -98,15 +99,15 @@ class InternallyRefCounted : public Orphanable {
   }
 
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (refs_.Unref()) {
       Delete(static_cast<Child*>(this));
     }
   }
 
  private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { refs_.Ref(); }
 
-  gpr_refcount refs_;
+  grpc_core::RefCount refs_;
 };
 
 // An alternative version of the InternallyRefCounted base class that
@@ -137,16 +138,14 @@ class InternallyRefCountedWithTracing : public Orphanable {
       : InternallyRefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
 
   explicit InternallyRefCountedWithTracing(TraceFlag* trace_flag)
-      : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
-  }
+      : trace_flag_(trace_flag) {}
 
 #ifdef NDEBUG
   explicit InternallyRefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
       : InternallyRefCountedWithTracing() {}
 #endif
 
-  virtual ~InternallyRefCountedWithTracing() {}
+  virtual ~InternallyRefCountedWithTracing() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
@@ -156,7 +155,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
   RefCountedPtr<Child> Ref(const DebugLocation& location,
                            const char* reason) GRPC_MUST_USE_RESULT {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
+      const grpc_core::RefCount::Value old_refs = refs_.get();
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
               old_refs, old_refs + 1, reason);
@@ -170,14 +169,14 @@ class InternallyRefCountedWithTracing : public Orphanable {
   // friend of this class.
 
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (refs_.Unref()) {
       Delete(static_cast<Child*>(this));
     }
   }
 
   void Unref(const DebugLocation& location, const char* reason) {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
+      const grpc_core::RefCount::Value old_refs = refs_.get();
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
               old_refs, old_refs - 1, reason);
@@ -186,10 +185,10 @@ class InternallyRefCountedWithTracing : public Orphanable {
   }
 
  private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
+  void IncrementRefCount() { refs_.Ref(); }
 
   TraceFlag* trace_flag_ = nullptr;
-  gpr_refcount refs_;
+  grpc_core::RefCount refs_;
 };
 
 }  // namespace grpc_core

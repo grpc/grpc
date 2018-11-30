@@ -129,6 +129,8 @@ cdef class SSLSessionCacheLRU:
 cdef class SSLChannelCredentials(ChannelCredentials):
 
   def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+    if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
+      raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain

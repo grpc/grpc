@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.17.0-dev
+PROJECT_NUMBER         = 1.18.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/environment_variables.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \

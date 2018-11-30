@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.17.0-dev")
+set(PACKAGE_VERSION   "1.18.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -588,6 +588,7 @@ add_dependencies(buildtests_cxx client_interceptors_end2end_test)
 add_dependencies(buildtests_cxx client_lb_end2end_test)
 add_dependencies(buildtests_cxx codegen_test_full)
 add_dependencies(buildtests_cxx codegen_test_minimal)
+add_dependencies(buildtests_cxx context_list_test)
 add_dependencies(buildtests_cxx credentials_test)
 add_dependencies(buildtests_cxx cxx_byte_buffer_test)
 add_dependencies(buildtests_cxx cxx_slice_test)
@@ -1132,6 +1133,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1240,18 +1242,17 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/client_channel/health/health.pb.c
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1556,6 +1557,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1592,12 +1594,12 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -1675,7 +1677,6 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1964,12 +1965,12 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -1982,6 +1983,7 @@ add_library(grpc_test_util
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -2283,12 +2285,12 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -2301,6 +2303,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -2574,6 +2577,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -2615,12 +2619,12 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -3278,6 +3282,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame_data.cc
   src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -3466,12 +3471,12 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
+  src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
@@ -12695,6 +12700,45 @@ target_link_libraries(codegen_test_minimal
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_core_stats
   grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(context_list_test
+  test/core/transport/chttp2/context_list_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(context_list_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(context_list_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )

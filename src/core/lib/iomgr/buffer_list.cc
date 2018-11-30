@@ -35,6 +35,9 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time = gpr_now(GPR_CLOCK_REALTIME);
+  new_elem->ts_.scheduled_time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.sent_time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.acked_time = gpr_inf_past(GPR_CLOCK_REALTIME);
   if (*head == nullptr) {
     *head = new_elem;
     return;
@@ -55,10 +58,16 @@ void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
+void default_timestamps_callback(void* arg, grpc_core::Timestamps* ts,
+                                 grpc_error* shudown_err) {
+  gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
+}
+
 /** The saved callback function that will be invoked when we get all the
  * timestamps that we are going to get for a TracedBuffer. */
 void (*timestamps_callback)(void*, grpc_core::Timestamps*,
-                            grpc_error* shutdown_err);
+                            grpc_error* shutdown_err) =
+    default_timestamps_callback;
 } /* namespace */
 
 void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
@@ -99,18 +108,20 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
   }
 }
 
-void TracedBuffer::Shutdown(TracedBuffer** head, grpc_error* shutdown_err) {
+void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
+                            grpc_error* shutdown_err) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* elem = *head;
   while (elem != nullptr) {
-    if (timestamps_callback) {
-      timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    }
+    timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
     auto* next = elem->next_;
     Delete<TracedBuffer>(elem);
     elem = next;
   }
   *head = nullptr;
+  if (remaining != nullptr) {
+    timestamps_callback(remaining, nullptr, shutdown_err);
+  }
   GRPC_ERROR_UNREF(shutdown_err);
 }
 

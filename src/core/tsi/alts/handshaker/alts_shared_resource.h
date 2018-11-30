@@ -37,6 +37,8 @@ typedef struct alts_shared_resource_dedicated {
   grpc_completion_queue* cq;
   grpc_pollset_set* interested_parties;
   grpc_cq_completion storage;
+  gpr_mu mu;
+  grpc_channel* channel;
 } alts_shared_resource_dedicated;
 
 /* This method returns the address of alts_shared_resource_dedicated
@@ -64,7 +66,8 @@ void grpc_alts_shared_resource_dedicated_init();
  * The API will be invoked by the caller in a lazy manner. That is,
  * it will get invoked when ALTS TSI handshake occurs for the first time.
  */
-void grpc_alts_shared_resource_dedicated_start();
+void grpc_alts_shared_resource_dedicated_start(
+    const char* handshaker_service_url);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_SHARED_RESOURCE_H \
         */

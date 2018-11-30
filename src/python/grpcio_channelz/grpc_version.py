@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/grpc_version.py.template`!!!
 
-out=$(readlink -f "${1:-coverage}")
-
-root=$(readlink -f "$(dirname "$0")/../../..")
-shift || true
-tmp=$(mktemp)
-cd "$root"
-tools/run_tests/run_tests.py -c gcov -l c c++ "$@" || true
-lcov --capture --directory . --output-file "$tmp"
-genhtml "$tmp" --output-directory "$out"
-rm "$tmp"
-if which xdg-open > /dev/null
-then
-  xdg-open "file://$out/index.html"
-fi
+VERSION = '1.18.0.dev0'

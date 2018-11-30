@@ -213,10 +213,10 @@ tsi_result tsi_handshaker_next(
 
 void tsi_handshaker_shutdown(tsi_handshaker* self) {
   if (self == nullptr || self->vtable == nullptr) return;
-  self->handshake_shutdown = true;
   if (self->vtable->shutdown != nullptr) {
     self->vtable->shutdown(self);
   }
+  self->handshake_shutdown = true;
 }
 
 void tsi_handshaker_destroy(tsi_handshaker* self) {

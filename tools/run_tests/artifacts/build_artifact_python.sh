@@ -24,7 +24,8 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
-export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=2
+# Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
 
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
@@ -106,6 +107,11 @@ then
   # Build grpcio_testing source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py sdist
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_channelz source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
+      preprocess build_package_protos sdist
+  cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \

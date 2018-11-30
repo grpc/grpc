@@ -56,6 +56,12 @@ function is_linux() {
   fi
 }
 
+function inside_venv() {
+  if [[ -n "${VIRTUAL_ENV}" ]]; then
+    echo true
+  fi
+}
+
 # Associated virtual environment name for the given python command.
 function venv() {
   $1 -c "import sys; print('py{}{}'.format(*sys.version_info[:2]))"
@@ -134,10 +140,14 @@ fi
 # Perform build operations #
 ############################
 
-# Instantiate the virtualenv from the Python version passed in.
-$PYTHON -m pip install --user virtualenv
-$PYTHON -m virtualenv "$VENV"
-VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+if [[ "$(inside_venv)" ]]; then
+  VENV_PYTHON="$PYTHON"
+else
+  # Instantiate the virtualenv from the Python version passed in.
+  $PYTHON -m pip install --user virtualenv
+  $PYTHON -m virtualenv "$VENV"
+  VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+fi
 
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
 # on pip to upgrade itself because if pip is too old, it may not have the required
@@ -178,6 +188,11 @@ pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir "$ROOT/tools/distrib/python/grpcio_tools"
+
+# Build/install Channelz
+$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
+$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" build_package_protos
+pip_install_dir "$ROOT/src/python/grpcio_channelz"
 
 # Build/install health checking
 $VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" preprocess

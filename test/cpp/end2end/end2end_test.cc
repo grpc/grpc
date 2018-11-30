@@ -272,6 +272,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
           creators;
       // Add 20 dummy server interceptors
+      creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
         creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
             new DummyInterceptorFactory()));

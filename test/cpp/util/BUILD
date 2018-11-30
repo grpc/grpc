@@ -185,6 +185,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["nomsan"],  # death tests seem to be incompatible with msan
     deps = [
         ":grpc_cli_libs",
         ":test_util",
