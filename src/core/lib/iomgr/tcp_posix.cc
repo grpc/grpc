@@ -589,7 +589,7 @@ ssize_t tcp_send(int fd, const struct msghdr* msg) {
  */
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length, grpc_error** error);
+                                      ssize_t* sent_length);
 
 /** The callback function to be invoked when we get an error on the socket. */
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
@@ -597,13 +597,11 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
 #ifdef GRPC_LINUX_ERRQUEUE
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
-                                      grpc_error** error) {
+                                      ssize_t* sent_length) {
   if (!tcp->socket_ts_enabled) {
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "setsockopt"), tcp);
       grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
       if (grpc_tcp_trace.enabled()) {
         gpr_log(GPR_ERROR, "Failed to set timestamping options on the socket.");
@@ -781,8 +779,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
 #else  /* GRPC_LINUX_ERRQUEUE */
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
-                                      ssize_t* sent_length,
-                                      grpc_error** error) {
+                                      ssize_t* sent_length) {
   gpr_log(GPR_ERROR, "Write with timestamps not supported for this platform");
   GPR_ASSERT(0);
   return false;
@@ -801,7 +798,7 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::Shutdown(
         &tcp->tb_head, tcp->outgoing_buffer_arg,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("endpoint destroyed"));
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("TracedBuffer list shutdown"));
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -852,13 +849,17 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
+    bool tried_sending_message = false;
     if (tcp->outgoing_buffer_arg != nullptr) {
-      if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     error)) {
+      if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length)) {
+        /* We could not set socket options to collect Fathom timestamps.
+         * Fallback on writing without timestamps. */
         tcp_shutdown_buffer_list(tcp);
-        return true; /* something went wrong with timestamps */
+      } else {
+        tried_sending_message = true;
       }
-    } else {
+    }
+    if (!tried_sending_message) {
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
 
