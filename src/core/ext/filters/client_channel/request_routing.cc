@@ -258,6 +258,7 @@ class RequestRouter::Request::AsyncPickCanceller {
                                                      GRPC_ERROR_REF(error));
       }
     }
+    request->pick_canceller_ = nullptr;
     GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
     Delete(self);
   }
@@ -376,7 +377,9 @@ void RequestRouter::Request::LbPickDoneLocked(void* arg, grpc_error* error) {
             request_router, self);
   }
   self->MaybeRemoveCallFromInterestedPartiesLocked();
-  self->pick_canceller_->MarkFinishedLocked();
+  if (self->pick_canceller_ != nullptr) {
+    self->pick_canceller_->MarkFinishedLocked();
+  }
   GRPC_CLOSURE_RUN(self->on_route_done_, GRPC_ERROR_REF(error));
   GRPC_CALL_STACK_UNREF(self->owning_call_, "pick_callback");
 }
