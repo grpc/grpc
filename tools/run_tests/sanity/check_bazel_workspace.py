@@ -110,6 +110,8 @@ bazel_file += '\ngrpc_deps()\n'
 bazel_file += '\ngrpc_test_only_deps()\n'
 build_rules = {
     'native': eval_state,
+    'http_archive': lambda **args: eval_state.http_archive(**args),
+    'load': lambda a, b: None,
 }
 exec bazel_file in build_rules
 for name in _GRPC_DEP_NAMES:
@@ -149,6 +151,8 @@ for name in _GRPC_DEP_NAMES:
         names_and_urls_with_overridden_name, overridden_name=name)
     rules = {
         'native': state,
+        'http_archive': lambda **args: state.http_archive(**args),
+        'load': lambda a, b: None,
     }
     exec bazel_file in rules
     assert name not in names_and_urls_with_overridden_name.keys()
