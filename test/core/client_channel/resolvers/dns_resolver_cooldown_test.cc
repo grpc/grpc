@@ -41,7 +41,7 @@ static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner);
+    int query_timeout_ms, grpc_combiner* combiner);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -91,10 +91,10 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner) {
+    int query_timeout_ms, grpc_combiner* combiner) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done, addrs,
-      check_grpclb, service_config_json, combiner);
+      check_grpclb, service_config_json, query_timeout_ms, combiner);
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   if (last_resolution_time == 0) {
