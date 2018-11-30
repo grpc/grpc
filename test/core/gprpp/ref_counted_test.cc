@@ -74,9 +74,9 @@ TEST(RefCountedNonPolymorphic, ExtraRef) {
 // things build properly in both debug and non-debug cases.
 DebugOnlyTraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
+class FooWithTracing : public RefCounted<FooWithTracing> {
  public:
-  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
+  FooWithTracing() : RefCounted(&foo_tracer) {}
 };
 
 TEST(RefCountedWithTracing, Basic) {
@@ -92,10 +92,9 @@ TEST(RefCountedWithTracing, Basic) {
 }
 
 class FooNonPolymorphicWithTracing
-    : public RefCountedWithTracing<FooNonPolymorphicWithTracing,
-                                   NonPolymorphicRefCount> {
+    : public RefCounted<FooNonPolymorphicWithTracing, NonPolymorphicRefCount> {
  public:
-  FooNonPolymorphicWithTracing() : RefCountedWithTracing(&foo_tracer) {}
+  FooNonPolymorphicWithTracing() : RefCounted(&foo_tracer) {}
 };
 
 TEST(RefCountedNonPolymorphicWithTracing, Basic) {

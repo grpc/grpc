@@ -207,29 +207,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   gpr_free(peer_string);
 }
 
-#ifndef NDEBUG
-void grpc_chttp2_unref_transport(grpc_chttp2_transport* t, const char* reason,
-                                 const char* file, int line) {
-  if (grpc_trace_chttp2_refcount.enabled()) {
-    const grpc_core::RefCount::Value val = t->refs.get();
-    gpr_log(GPR_DEBUG, "chttp2:unref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
-            t, val, val - 1, reason, file, line);
-  }
-  if (!t->refs.Unref()) return;
-  grpc_core::Delete(t);
-}
-
-void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
-                               const char* file, int line) {
-  if (grpc_trace_chttp2_refcount.enabled()) {
-    const grpc_core::RefCount::Value val = t->refs.get();
-    gpr_log(GPR_DEBUG, "chttp2:  ref:%p %" PRIdPTR "->%" PRIdPTR " %s [%s:%d]",
-            t, val, val + 1, reason, file, line);
-  }
-  t->refs.Ref();
-}
-#endif
-
 static const grpc_transport_vtable* get_vtable(void);
 
 /* Returns whether bdp is enabled */
@@ -481,7 +458,8 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
     grpc_resource_user* resource_user)
-    : ep(ep),
+    : refs(1, &grpc_trace_chttp2_refcount),
+      ep(ep),
       peer_string(grpc_endpoint_get_peer(ep)),
       resource_user(resource_user),
       combiner(grpc_combiner_create()),

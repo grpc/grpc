@@ -792,10 +792,17 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) \
   grpc_chttp2_unref_transport(t, r, __FILE__, __LINE__)
-void grpc_chttp2_unref_transport(grpc_chttp2_transport* t, const char* reason,
-                                 const char* file, int line);
-void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
-                               const char* file, int line);
+inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
+                                        const char* reason, const char* file,
+                                        int line) {
+  if (!t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) return;
+  grpc_core::Delete(t);
+}
+inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
+                                      const char* reason, const char* file,
+                                      int line) {
+  t->refs.Ref(grpc_core::DebugLocation(file, line), reason);
+}
 #else
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) grpc_chttp2_ref_transport(t)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)

@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
+DebugOnlyTraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
 namespace {
 
@@ -94,7 +94,7 @@ class PickFirst : public LoadBalancingPolicy {
       : public SubchannelList<PickFirstSubchannelList,
                               PickFirstSubchannelData> {
    public:
-    PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
+    PickFirstSubchannelList(PickFirst* policy, DebugOnlyTraceFlag* tracer,
                             const grpc_lb_addresses* addresses,
                             grpc_combiner* combiner,
                             grpc_client_channel_factory* client_channel_factory,

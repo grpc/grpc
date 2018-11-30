@@ -45,7 +45,7 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_round_robin_trace(false, "round_robin");
+DebugOnlyTraceFlag grpc_lb_round_robin_trace(false, "round_robin");
 
 namespace {
 
@@ -136,7 +136,7 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelList(
-        RoundRobin* policy, TraceFlag* tracer,
+        RoundRobin* policy, DebugOnlyTraceFlag* tracer,
         const grpc_lb_addresses* addresses, grpc_combiner* combiner,
         grpc_client_channel_factory* client_channel_factory,
         const grpc_channel_args& args)

@@ -27,7 +27,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 namespace grpc_core {
 
 LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
-    : InternallyRefCountedWithTracing(&grpc_trace_lb_policy_refcount),
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
       interested_parties_(grpc_pollset_set_create()),
@@ -39,7 +39,7 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
 }
 
 void LoadBalancingPolicy::TryReresolutionLocked(
-    grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
+    grpc_core::DebugOnlyTraceFlag* grpc_lb_trace, grpc_error* error) {
   if (request_reresolution_ != nullptr) {
     GRPC_CLOSURE_SCHED(request_reresolution_, error);
     request_reresolution_ = nullptr;
