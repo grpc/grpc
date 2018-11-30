@@ -188,7 +188,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
     }
     ServerAddressList& addresses = **r->addresses_out;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-      grpc_core::InlinedVector<grpc_arg, 3> args_to_add;
+      grpc_core::InlinedVector<grpc_arg, 2> args_to_add;
       if (hr->is_balancer) {
         args_to_add.emplace_back(grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_ADDRESS_IS_BALANCER), 1));
