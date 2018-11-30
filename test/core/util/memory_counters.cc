@@ -122,9 +122,9 @@ LeakDetector::LeakDetector(bool enable) : enabled_(enable) {
 }
 
 LeakDetector::~LeakDetector() {
+  // Wait for grpc_shutdown() to finish its async work.
+  grpc_maybe_wait_for_async_shutdown();
   if (enabled_) {
-    // Wait for grpc_shutdown() to finish its async work.
-    grpc_maybe_wait_for_async_shutdown();
     struct grpc_memory_counters counters = grpc_memory_counters_snapshot();
     if (counters.total_size_relative != 0) {
       gpr_log(GPR_ERROR, "Leaking %" PRIuPTR " bytes",

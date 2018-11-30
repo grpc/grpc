@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -1200,5 +1201,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_resource_quota_unref(g_resource_quota);
 
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
   return 0;
 }
