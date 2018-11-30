@@ -55,6 +55,10 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override;
 
+  Status CheckClientInitialMetadata(
+      ServerContext* context, const SimpleRequest* request,
+      SimpleResponse* response) override;
+
   // Unimplemented is left unimplemented to test the returned error.
 
   Status RequestStream(ServerContext* context,

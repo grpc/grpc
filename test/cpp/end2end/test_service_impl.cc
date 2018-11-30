@@ -181,17 +181,16 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
-void CallbackTestServiceImpl::CheckClientInitialMetadata(
+Status TestServiceImpl::CheckClientInitialMetadata(
     ServerContext* context, const SimpleRequest* request,
-    SimpleResponse* response,
-    experimental::ServerCallbackRpcController* controller) {
+    SimpleResponse* response) {
   EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
                                kCheckClientInitialMetadataKey,
                                kCheckClientInitialMetadataVal),
             1);
   EXPECT_EQ(1u,
             context->client_metadata().count(kCheckClientInitialMetadataKey));
-  controller->Finish(Status::OK);
+  return Status::OK;
 }
 
 void CallbackTestServiceImpl::Echo(
@@ -210,6 +209,19 @@ void CallbackTestServiceImpl::Echo(
   } else {
     EchoNonDelayed(context, request, response, controller);
   }
+}
+
+void CallbackTestServiceImpl::CheckClientInitialMetadata(
+    ServerContext* context, const SimpleRequest* request,
+    SimpleResponse* response,
+    experimental::ServerCallbackRpcController* controller) {
+  EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
+                               kCheckClientInitialMetadataKey,
+                               kCheckClientInitialMetadataVal),
+            1);
+  EXPECT_EQ(1u,
+            context->client_metadata().count(kCheckClientInitialMetadataKey));
+  controller->Finish(Status::OK);
 }
 
 void CallbackTestServiceImpl::EchoNonDelayed(
