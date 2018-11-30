@@ -401,11 +401,11 @@ void grpc_test_init(int argc, char** argv) {
 namespace grpc {
 namespace testing {
 
-TestEnvironment::TestEnvironment(int argc, char **argv) {
+TestEnvironment::TestEnvironment(int argc, char** argv) {
   grpc_test_init(argc, argv);
 }
 
 TestEnvironment::~TestEnvironment() {}
 
-} // namespace testing
-} // namespace grpc
+}  // namespace testing
+}  // namespace grpc
