@@ -157,7 +157,7 @@ template <class Request, class Response>
 class ClientBidiReactor {
  public:
   virtual ~ClientBidiReactor() {}
-  virtual void OnDone(Status s) {}
+  virtual void OnDone(const Status& s) {}
   virtual void OnReadInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
   virtual void OnWriteDone(bool ok) {}
@@ -186,7 +186,7 @@ template <class Response>
 class ClientReadReactor {
  public:
   virtual ~ClientReadReactor() {}
-  virtual void OnDone(Status s) {}
+  virtual void OnDone(const Status& s) {}
   virtual void OnReadInitialMetadataDone(bool ok) {}
   virtual void OnReadDone(bool ok) {}
 
@@ -203,7 +203,7 @@ template <class Request>
 class ClientWriteReactor {
  public:
   virtual ~ClientWriteReactor() {}
-  virtual void OnDone(Status s) {}
+  virtual void OnDone(const Status& s) {}
   virtual void OnReadInitialMetadataDone(bool ok) {}
   virtual void OnWriteDone(bool ok) {}
   virtual void OnWritesDoneDone(bool ok) {}
@@ -255,7 +255,7 @@ class ClientCallbackReaderWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(std::move(finish_status_));
+      reactor_->OnDone(finish_status_);
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);
@@ -450,7 +450,7 @@ class ClientCallbackReaderImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(std::move(finish_status_));
+      reactor_->OnDone(finish_status_);
       auto* call = call_.call();
       this->~ClientCallbackReaderImpl();
       g_core_codegen_interface->grpc_call_unref(call);
@@ -576,7 +576,7 @@ class ClientCallbackWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(std::move(finish_status_));
+      reactor_->OnDone(finish_status_);
       auto* call = call_.call();
       this->~ClientCallbackWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);

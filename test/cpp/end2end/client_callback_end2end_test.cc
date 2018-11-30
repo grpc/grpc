@@ -206,7 +206,7 @@ class ClientCallbackEnd2endTest
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
           EXPECT_EQ(request_.message(), response.message());
         };
-        void OnDone(Status s) override {
+        void OnDone(const Status& s) override {
           EXPECT_TRUE(s.ok());
           std::unique_lock<std::mutex> l(mu_);
           done_ = true;
@@ -345,7 +345,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
         StartWriteLast(&request_, WriteOptions());
       }
     }
-    void OnDone(Status s) override {
+    void OnDone(const Status& s) override {
       EXPECT_TRUE(s.ok());
       EXPECT_EQ(response_.message(), "Hello server.Hello server.Hello server.");
       std::unique_lock<std::mutex> l(mu_);
@@ -398,7 +398,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
         StartRead(&response_);
       }
     }
-    void OnDone(Status s) override {
+    void OnDone(const Status& s) override {
       EXPECT_TRUE(s.ok());
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
@@ -458,7 +458,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
         StartWrite(&request_);
       }
     }
-    void OnDone(Status s) override {
+    void OnDone(const Status& s) override {
       EXPECT_TRUE(s.ok());
       std::unique_lock<std::mutex> l(mu_);
       done_ = true;
