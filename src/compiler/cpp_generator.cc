@@ -582,22 +582,21 @@ void PrintHeaderClientMethodCallbackInterfaces(
                    "std::function<void(::grpc::Status)>) = 0;\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(*vars,
-                   "virtual ::grpc::experimental::ClientCallbackWriter< "
-                   "$Request$>* $Method$(::grpc::ClientContext* context, "
+                   "virtual void $Method$(::grpc::ClientContext* context, "
                    "$Response$* response, "
-                   "::grpc::experimental::ClientWriteReactor* reactor) = 0;\n");
+                   "::grpc::experimental::ClientWriteReactor< $Request$>* "
+                   "reactor) = 0;\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(*vars,
-                   "virtual ::grpc::experimental::ClientCallbackReader< "
-                   "$Response$>* $Method$(::grpc::ClientContext* context, "
+                   "virtual void $Method$(::grpc::ClientContext* context, "
                    "$Request$* request, "
-                   "::grpc::experimental::ClientReadReactor* reactor) = 0;\n");
+                   "::grpc::experimental::ClientReadReactor< $Response$>* "
+                   "reactor) = 0;\n");
   } else if (method->BidiStreaming()) {
-    printer->Print(
-        *vars,
-        "virtual ::grpc::experimental::ClientCallbackReaderWriter< $Request$, "
-        "$Response$>* $Method$(::grpc::ClientContext* context, "
-        "::grpc::experimental::ClientBidiReactor* reactor) = 0;\n");
+    printer->Print(*vars,
+                   "virtual void $Method$(::grpc::ClientContext* context, "
+                   "::grpc::experimental::ClientBidiReactor< "
+                   "$Request$,$Response$>* reactor) = 0;\n");
   }
 }
 
@@ -644,26 +643,23 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
                    "const $Request$* request, $Response$* response, "
                    "std::function<void(::grpc::Status)>) override;\n");
   } else if (ClientOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "::grpc::experimental::ClientCallbackWriter< $Request$>* "
-        "$Method$(::grpc::ClientContext* context, "
-        "$Response$* response, "
-        "::grpc::experimental::ClientWriteReactor* reactor) override;\n");
+    printer->Print(*vars,
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "$Response$* response, "
+                   "::grpc::experimental::ClientWriteReactor< $Request$>* "
+                   "reactor) override;\n");
   } else if (ServerOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "::grpc::experimental::ClientCallbackReader< $Response$>* "
-        "$Method$(::grpc::ClientContext* context, "
-        "$Request$* request, "
-        "::grpc::experimental::ClientReadReactor* reactor) override;\n");
+    printer->Print(*vars,
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "$Request$* request, "
+                   "::grpc::experimental::ClientReadReactor< $Response$>* "
+                   "reactor) override;\n");
 
   } else if (method->BidiStreaming()) {
-    printer->Print(
-        *vars,
-        "::grpc::experimental::ClientCallbackReaderWriter< $Request$, "
-        "$Response$>* $Method$(::grpc::ClientContext* context, "
-        "::grpc::experimental::ClientBidiReactor* reactor) override;\n");
+    printer->Print(*vars,
+                   "void $Method$(::grpc::ClientContext* context, "
+                   "::grpc::experimental::ClientBidiReactor< "
+                   "$Request$,$Response$>* reactor) override;\n");
   }
 }
 
@@ -1637,13 +1633,12 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
 
     printer->Print(
         *vars,
-        "::grpc::experimental::ClientCallbackWriter< $Request$>* "
-        "$ns$$Service$::"
+        "void $ns$$Service$::"
         "Stub::experimental_async::$Method$(::grpc::ClientContext* context, "
         "$Response$* response, "
-        "::grpc::experimental::ClientWriteReactor* reactor) {\n");
+        "::grpc::experimental::ClientWriteReactor< $Request$>* reactor) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::internal::ClientCallbackWriterFactory< "
+                   "  ::grpc::internal::ClientCallbackWriterFactory< "
                    "$Request$>::Create("
                    "stub_->channel_.get(), "
                    "stub_->rpcmethod_$Method$_, "
@@ -1682,14 +1677,14 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         "context, request);\n"
         "}\n\n");
 
+    printer->Print(
+        *vars,
+        "void $ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
+        "ClientContext* context, "
+        "$Request$* request, "
+        "::grpc::experimental::ClientReadReactor< $Response$>* reactor) {\n");
     printer->Print(*vars,
-                   "::grpc::experimental::ClientCallbackReader< $Response$>* "
-                   "$ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
-                   "ClientContext* context, "
-                   "$Request$* request, "
-                   "::grpc::experimental::ClientReadReactor* reactor) {\n");
-    printer->Print(*vars,
-                   "  return ::grpc::internal::ClientCallbackReaderFactory< "
+                   "  ::grpc::internal::ClientCallbackReaderFactory< "
                    "$Response$>::Create("
                    "stub_->channel_.get(), "
                    "stub_->rpcmethod_$Method$_, "
@@ -1728,20 +1723,19 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
                    "context);\n"
                    "}\n\n");
 
-    printer->Print(*vars,
-                   "::grpc::experimental::ClientCallbackReaderWriter< "
-                   "$Request$,$Response$>* "
-                   "$ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
-                   "ClientContext* context, "
-                   "::grpc::experimental::ClientBidiReactor* reactor) {\n");
     printer->Print(
         *vars,
-        "  return ::grpc::internal::ClientCallbackReaderWriterFactory< "
-        "$Request$,$Response$>::Create("
-        "stub_->channel_.get(), "
-        "stub_->rpcmethod_$Method$_, "
-        "context, reactor);\n"
-        "}\n\n");
+        "void $ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
+        "ClientContext* context, "
+        "::grpc::experimental::ClientBidiReactor< $Request$,$Response$>* "
+        "reactor) {\n");
+    printer->Print(*vars,
+                   "  ::grpc::internal::ClientCallbackReaderWriterFactory< "
+                   "$Request$,$Response$>::Create("
+                   "stub_->channel_.get(), "
+                   "stub_->rpcmethod_$Method$_, "
+                   "context, reactor);\n"
+                   "}\n\n");
 
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;

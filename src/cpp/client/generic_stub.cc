@@ -72,16 +72,13 @@ void GenericStub::experimental_type::UnaryCall(
       context, request, response, std::move(on_completion));
 }
 
-experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
-GenericStub::experimental_type::PrepareBidiStreamingCall(
+void GenericStub::experimental_type::PrepareBidiStreamingCall(
     ClientContext* context, const grpc::string& method,
-    experimental::ClientBidiReactor* reactor) {
-  return internal::ClientCallbackReaderWriterFactory<
-      ByteBuffer, ByteBuffer>::Create(stub_->channel_.get(),
-                                      internal::RpcMethod(
-                                          method.c_str(),
-                                          internal::RpcMethod::BIDI_STREAMING),
-                                      context, reactor);
+    experimental::ClientBidiReactor<ByteBuffer, ByteBuffer>* reactor) {
+  internal::ClientCallbackReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
+      stub_->channel_.get(),
+      internal::RpcMethod(method.c_str(), internal::RpcMethod::BIDI_STREAMING),
+      context, reactor);
 }
 
 }  // namespace grpc

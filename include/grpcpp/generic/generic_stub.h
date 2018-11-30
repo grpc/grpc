@@ -77,9 +77,9 @@ class GenericStub final {
                    const ByteBuffer* request, ByteBuffer* response,
                    std::function<void(Status)> on_completion);
 
-    experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
-    PrepareBidiStreamingCall(ClientContext* context, const grpc::string& method,
-                             experimental::ClientBidiReactor* reactor);
+    void PrepareBidiStreamingCall(
+        ClientContext* context, const grpc::string& method,
+        experimental::ClientBidiReactor<ByteBuffer, ByteBuffer>* reactor);
 
    private:
     GenericStub* stub_;

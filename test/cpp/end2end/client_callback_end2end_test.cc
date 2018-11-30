@@ -187,20 +187,20 @@ class ClientCallbackEnd2endTest
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
-      class Client : public grpc::experimental::ClientBidiReactor {
+      class Client : public grpc::experimental::ClientBidiReactor<ByteBuffer,
+                                                                  ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const grpc::string& method_name,
                const grpc::string& test_str) {
-          stream_ =
-              test->generic_stub_->experimental().PrepareBidiStreamingCall(
-                  &cli_ctx_, method_name, this);
+          test->generic_stub_->experimental().PrepareBidiStreamingCall(
+              &cli_ctx_, method_name, this);
           request_.set_message(test_str);
           send_buf_ = SerializeToByteBuffer(&request_);
-          stream_->Write(send_buf_.get());
-          stream_->Read(&recv_buf_);
-          stream_->StartCall();
+          StartWrite(send_buf_.get());
+          StartRead(&recv_buf_);
+          StartCall();
         }
-        void OnWriteDone(bool ok) override { stream_->WritesDone(); }
+        void OnWriteDone(bool ok) override { StartWritesDone(); }
         void OnReadDone(bool ok) override {
           EchoResponse response;
           EXPECT_TRUE(ParseFromByteBuffer(&recv_buf_, &response));
@@ -223,8 +223,6 @@ class ClientCallbackEnd2endTest
         std::unique_ptr<ByteBuffer> send_buf_;
         ByteBuffer recv_buf_;
         ClientContext cli_ctx_;
-        experimental::ClientCallbackReaderWriter<ByteBuffer, ByteBuffer>*
-            stream_;
         std::mutex mu_;
         std::condition_variable cv_;
         bool done_ = false;
@@ -330,22 +328,21 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
   }
 
   ResetStub();
-  class Client : public grpc::experimental::ClientWriteReactor {
+  class Client : public grpc::experimental::ClientWriteReactor<EchoRequest> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       context_.set_initial_metadata_corked(true);
-      stream_ = stub->experimental_async()->RequestStream(&context_, &response_,
-                                                          this);
-      stream_->StartCall();
+      stub->experimental_async()->RequestStream(&context_, &response_, this);
+      StartCall();
       request_.set_message("Hello server.");
-      stream_->Write(&request_);
+      StartWrite(&request_);
     }
     void OnWriteDone(bool ok) override {
       writes_left_--;
       if (writes_left_ > 1) {
-        stream_->Write(&request_);
+        StartWrite(&request_);
       } else if (writes_left_ == 1) {
-        stream_->WriteLast(&request_, WriteOptions());
+        StartWriteLast(&request_, WriteOptions());
       }
     }
     void OnDone(Status s) override {
@@ -363,7 +360,6 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
     }
 
    private:
-    ::grpc::experimental::ClientCallbackWriter<EchoRequest>* stream_;
     EchoRequest request_;
     EchoResponse response_;
     ClientContext context_;
@@ -383,14 +379,13 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
   }
 
   ResetStub();
-  class Client : public grpc::experimental::ClientReadReactor {
+  class Client : public grpc::experimental::ClientReadReactor<EchoResponse> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello client ");
-      stream_ = stub->experimental_async()->ResponseStream(&context_, &request_,
-                                                           this);
-      stream_->StartCall();
-      stream_->Read(&response_);
+      stub->experimental_async()->ResponseStream(&context_, &request_, this);
+      StartCall();
+      StartRead(&response_);
     }
     void OnReadDone(bool ok) override {
       if (!ok) {
@@ -400,7 +395,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
         EXPECT_EQ(response_.message(),
                   request_.message() + grpc::to_string(reads_complete_));
         reads_complete_++;
-        stream_->Read(&response_);
+        StartRead(&response_);
       }
     }
     void OnDone(Status s) override {
@@ -417,7 +412,6 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
     }
 
    private:
-    ::grpc::experimental::ClientCallbackReader<EchoResponse>* stream_;
     EchoRequest request_;
     EchoResponse response_;
     ClientContext context_;
@@ -436,14 +430,15 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
     return;
   }
   ResetStub();
-  class Client : public grpc::experimental::ClientBidiReactor {
+  class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
+                                                              EchoResponse> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello fren ");
-      stream_ = stub->experimental_async()->BidiStream(&context_, this);
-      stream_->StartCall();
-      stream_->Read(&response_);
-      stream_->Write(&request_);
+      stub->experimental_async()->BidiStream(&context_, this);
+      StartCall();
+      StartRead(&response_);
+      StartWrite(&request_);
     }
     void OnReadDone(bool ok) override {
       if (!ok) {
@@ -452,15 +447,15 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
         EXPECT_LE(reads_complete_, kServerDefaultResponseStreamsToSend);
         EXPECT_EQ(response_.message(), request_.message());
         reads_complete_++;
-        stream_->Read(&response_);
+        StartRead(&response_);
       }
     }
     void OnWriteDone(bool ok) override {
       EXPECT_TRUE(ok);
       if (++writes_complete_ == kServerDefaultResponseStreamsToSend) {
-        stream_->WritesDone();
+        StartWritesDone();
       } else {
-        stream_->Write(&request_);
+        StartWrite(&request_);
       }
     }
     void OnDone(Status s) override {
@@ -477,8 +472,6 @@ TEST_P(ClientCallbackEnd2endTest, BidiStream) {
     }
 
    private:
-    ::grpc::experimental::ClientCallbackReaderWriter<EchoRequest, EchoResponse>*
-        stream_;
     EchoRequest request_;
     EchoResponse response_;
     ClientContext context_;
