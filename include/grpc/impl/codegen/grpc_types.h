@@ -350,6 +350,11 @@ typedef struct {
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
+/** If set, determines the number of milliseconds that the c-ares based
+ * DNS resolver will wait on queries before cancelling them. The default value
+ * is 10000. Setting this to "0" will disable c-ares query timeouts
+ * entirely. */
+#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

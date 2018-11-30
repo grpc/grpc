@@ -48,7 +48,7 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addresses, bool check_grpclb,
-    char** service_config_json, grpc_combiner* combiner);
+    char** service_config_json, int query_timeout_ms, grpc_combiner* combiner);
 
 static void (*iomgr_cancel_ares_request_locked)(grpc_ares_request* request);
 
@@ -104,11 +104,11 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner) {
+    int query_timeout_ms, grpc_combiner* combiner) {
   if (0 != strcmp(addr, "test")) {
     return iomgr_dns_lookup_ares_locked(
         dns_server, addr, default_port, interested_parties, on_done, lb_addrs,
-        check_grpclb, service_config_json, combiner);
+        check_grpclb, service_config_json, query_timeout_ms, combiner);
   }
 
   grpc_error* error = GRPC_ERROR_NONE;
