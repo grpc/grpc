@@ -126,6 +126,7 @@ struct grpc_tcp {
   int bytes_counter;
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
                            */
+  bool ts_capable;        /* Cache whether we can set timestamping options */
   gpr_atm
       stop_error_notification; /* Set to 1 if we do not want to be notified on
                                   errors anymore */
@@ -851,9 +852,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
     msg.msg_flags = 0;
     bool tried_sending_message = false;
     if (tcp->outgoing_buffer_arg != nullptr) {
-      if (!tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length)) {
+      if (!tcp->ts_capable ||
+          !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length)) {
         /* We could not set socket options to collect Fathom timestamps.
          * Fallback on writing without timestamps. */
+        tcp->ts_capable = false;
         tcp_shutdown_buffer_list(tcp);
       } else {
         tried_sending_message = true;
@@ -1115,6 +1118,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->is_first_read = true;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
+  tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
