@@ -270,13 +270,12 @@ class ClientCallbackReaderWriterImpl
     // 4. Any write backlog
     started_ = true;
 
-    start_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
-          MaybeFinish();
-        },
-        &start_ops_);
+    start_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnReadInitialMetadataDone(ok);
+                     MaybeFinish();
+                   },
+                   &start_ops_);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -287,29 +286,27 @@ class ClientCallbackReaderWriterImpl
 
     // Also set up the read and write tags so that they don't have to be set up
     // each time
-    write_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnWriteDone(ok);
-          MaybeFinish();
-        },
-        &write_ops_);
+    write_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnWriteDone(ok);
+                     MaybeFinish();
+                   },
+                   &write_ops_);
     write_ops_.set_core_cq_tag(&write_tag_);
 
-    read_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnReadDone(ok);
-          MaybeFinish();
-        },
-        &read_ops_);
+    read_tag_.Set(call_.call(),
+                  [this](bool ok) {
+                    reactor_->OnReadDone(ok);
+                    MaybeFinish();
+                  },
+                  &read_ops_);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
     }
 
-    finish_tag_.Set(
-        call_.call(), [this](bool ok) { MaybeFinish(); }, &finish_ops_);
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -360,13 +357,12 @@ class ClientCallbackReaderWriterImpl
       start_corked_ = false;
     }
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnWritesDoneDone(ok);
-          MaybeFinish();
-        },
-        &writes_done_ops_);
+    writes_done_tag_.Set(call_.call(),
+                         [this](bool ok) {
+                           reactor_->OnWritesDoneDone(ok);
+                           MaybeFinish();
+                         },
+                         &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_++;
     if (started_) {
@@ -468,13 +464,12 @@ class ClientCallbackReaderImpl
     // 3. Recv trailing metadata, on_completion callback
     started_ = true;
 
-    start_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
-          MaybeFinish();
-        },
-        &start_ops_);
+    start_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnReadInitialMetadataDone(ok);
+                     MaybeFinish();
+                   },
+                   &start_ops_);
     start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
@@ -482,20 +477,19 @@ class ClientCallbackReaderImpl
     call_.PerformOps(&start_ops_);
 
     // Also set up the read tag so it doesn't have to be set up each time
-    read_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnReadDone(ok);
-          MaybeFinish();
-        },
-        &read_ops_);
+    read_tag_.Set(call_.call(),
+                  [this](bool ok) {
+                    reactor_->OnReadDone(ok);
+                    MaybeFinish();
+                  },
+                  &read_ops_);
     read_ops_.set_core_cq_tag(&read_tag_);
     if (read_ops_at_start_) {
       call_.PerformOps(&read_ops_);
     }
 
-    finish_tag_.Set(
-        call_.call(), [this](bool ok) { MaybeFinish(); }, &finish_ops_);
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -596,13 +590,12 @@ class ClientCallbackWriterImpl
     // 3. Any backlog
     started_ = true;
 
-    start_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
-          MaybeFinish();
-        },
-        &start_ops_);
+    start_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnReadInitialMetadataDone(ok);
+                     MaybeFinish();
+                   },
+                   &start_ops_);
     if (!start_corked_) {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
@@ -613,17 +606,16 @@ class ClientCallbackWriterImpl
 
     // Also set up the read and write tags so that they don't have to be set up
     // each time
-    write_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnWriteDone(ok);
-          MaybeFinish();
-        },
-        &write_ops_);
+    write_tag_.Set(call_.call(),
+                   [this](bool ok) {
+                     reactor_->OnWriteDone(ok);
+                     MaybeFinish();
+                   },
+                   &write_ops_);
     write_ops_.set_core_cq_tag(&write_tag_);
 
-    finish_tag_.Set(
-        call_.call(), [this](bool ok) { MaybeFinish(); }, &finish_ops_);
+    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+                    &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
     call_.PerformOps(&finish_ops_);
@@ -664,13 +656,12 @@ class ClientCallbackWriterImpl
       start_corked_ = false;
     }
     writes_done_ops_.ClientSendClose();
-    writes_done_tag_.Set(
-        call_.call(),
-        [this](bool ok) {
-          reactor_->OnWritesDoneDone(ok);
-          MaybeFinish();
-        },
-        &writes_done_ops_);
+    writes_done_tag_.Set(call_.call(),
+                         [this](bool ok) {
+                           reactor_->OnWritesDoneDone(ok);
+                           MaybeFinish();
+                         },
+                         &writes_done_ops_);
     writes_done_ops_.set_core_cq_tag(&writes_done_tag_);
     callbacks_outstanding_++;
     if (started_) {
