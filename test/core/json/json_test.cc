@@ -184,7 +184,7 @@ static void test_atypical() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_pairs();
   test_atypical();
   gpr_log(GPR_INFO, "json_test success");

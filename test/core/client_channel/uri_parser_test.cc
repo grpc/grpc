@@ -119,7 +119,7 @@ static void test_query_parts() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_succeeds("http://www.google.com", "http", "www.google.com", "", "", "");
   test_succeeds("dns:///foo", "dns", "", "/foo", "", "");

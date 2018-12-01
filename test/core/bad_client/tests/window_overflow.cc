@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 #define FRAME_SIZE (MESSAGES_PER_FRAME * 5)
 #define SEND_SIZE (4 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);

@@ -145,7 +145,7 @@ static void destroy_pops(void* p, grpc_error* error) {
 
 int main(int argc, char** argv) {
   gpr_subprocess* server;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
     grpc_closure destroyed;
