@@ -322,11 +322,6 @@ TEST_P(ClientCallbackEnd2endTest, CancelRpcBeforeStart) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, RequestStream) {
-  // TODO(vjpai): test with callback server once supported
-  if (GetParam().callback_server) {
-    return;
-  }
-
   ResetStub();
   class Client : public grpc::experimental::ClientWriteReactor<EchoRequest> {
    public:
@@ -373,11 +368,6 @@ TEST_P(ClientCallbackEnd2endTest, RequestStream) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
-  // TODO(vjpai): test with callback server once supported
-  if (GetParam().callback_server) {
-    return;
-  }
-
   ResetStub();
   class Client : public grpc::experimental::ClientReadReactor<EchoResponse> {
    public:
@@ -425,10 +415,6 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStream) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, BidiStream) {
-  // TODO(vjpai): test with callback server once supported
-  if (GetParam().callback_server) {
-    return;
-  }
   ResetStub();
   class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
                                                               EchoResponse> {
