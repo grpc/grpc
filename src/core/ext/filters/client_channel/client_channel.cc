@@ -1438,6 +1438,7 @@ static void do_retry(grpc_call_element* elem,
                      grpc_millis server_pushback_ms) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  calld->call_combiner->TsanLock();
   GPR_ASSERT(calld->method_params != nullptr);
   const ClientChannelMethodParams::RetryPolicy* retry_policy =
       calld->method_params->retry_policy();
@@ -1480,6 +1481,7 @@ static void do_retry(grpc_call_element* elem,
   grpc_timer_init(&calld->retry_timer, next_attempt_time, &calld->pick_closure);
   // Update bookkeeping.
   if (retry_state != nullptr) retry_state->retry_dispatched = true;
+  calld->call_combiner->TsanUnlock();
 }
 
 // Returns true if the call is being retried.
@@ -2147,6 +2149,7 @@ static void on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = batch_data->elem;
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  calld->call_combiner->TsanLock();
   if (grpc_client_channel_trace.enabled()) {
     char* batch_str = grpc_transport_stream_op_batch_string(&batch_data->batch);
     gpr_log(GPR_INFO, "chand=%p calld=%p: got on_complete, error=%s, batch=%s",
@@ -2188,6 +2191,7 @@ static void on_complete(void* arg, grpc_error* error) {
                                                   &closures);
     }
   }
+  calld->call_combiner->TsanUnlock();
   // Track number of pending subchannel send batches and determine if this
   // was the last one.
   --calld->num_pending_retriable_subchannel_send_batches;

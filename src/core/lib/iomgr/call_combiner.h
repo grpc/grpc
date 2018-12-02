@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <grpc/support/atm.h>
+#include <grpc/support/dynamic_annotations.h>
 
 #include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
@@ -40,14 +41,23 @@
 
 extern grpc_core::TraceFlag grpc_call_combiner_trace;
 
-typedef struct {
+struct grpc_call_combiner {
+  // TSAN cannot correctly understand the synchronization primitive implemented
+  // by the call combiner. To educate TSAN about mutually exlusive, synchronized
+  // regions in callbacks, use TsanLock and TsanUnlock, as you would lock and
+  // unlock a mutex.
+  //
+  // On builds without TSAN these two functions are no-ops.
+  void TsanLock() const { TSAN_ANNOTATE_RWLOCK_ACQUIRED(this, true); }
+  void TsanUnlock() const { TSAN_ANNOTATE_RWLOCK_RELEASED(this, true); }
+
   gpr_atm size = 0;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
   // Either 0 (if not cancelled and no cancellation closure set),
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
   gpr_atm cancel_state = 0;
-} grpc_call_combiner;
+};
 
 // Assumes memory was initialized to zero.
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner);

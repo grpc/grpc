@@ -40,6 +40,7 @@ static gpr_atm encode_cancel_state_error(grpc_error* error) {
 }
 
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
+  TSAN_ANNOTATE_RWLOCK_CREATE(call_combiner);
   gpr_atm_no_barrier_store(&call_combiner->cancel_state, 0);
   gpr_atm_no_barrier_store(&call_combiner->size, 0);
   gpr_mpscq_init(&call_combiner->queue);
@@ -48,6 +49,7 @@ void grpc_call_combiner_init(grpc_call_combiner* call_combiner) {
 void grpc_call_combiner_destroy(grpc_call_combiner* call_combiner) {
   gpr_mpscq_destroy(&call_combiner->queue);
   GRPC_ERROR_UNREF(decode_cancel_state_error(call_combiner->cancel_state));
+  TSAN_ANNOTATE_RWLOCK_DESTROY(call_combiner);
 }
 
 #ifndef NDEBUG
