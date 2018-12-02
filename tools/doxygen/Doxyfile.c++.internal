@@ -1084,6 +1084,7 @@ src/core/lib/iomgr/buffer_list.h \
 src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
+src/core/lib/iomgr/dynamic_annotations.h \
 src/core/lib/iomgr/endpoint.h \
 src/core/lib/iomgr/endpoint_pair.h \
 src/core/lib/iomgr/error.h \
