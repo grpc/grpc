@@ -32,6 +32,8 @@ namespace grpc {
 namespace internal {
 
 /// An exception-safe way of invoking a user-specified callback function
+// TODO(vjpai): decide whether it is better for this to take a const lvalue
+//              parameter or an rvalue parameter, or if it even matters
 template <class Func, class... Args>
 void CatchingCallback(Func&& func, Args&&... args) {
 #if GRPC_ALLOW_EXCEPTIONS
@@ -42,6 +44,20 @@ void CatchingCallback(Func&& func, Args&&... args) {
   }
 #else   // GRPC_ALLOW_EXCEPTIONS
   func(std::forward<Args>(args)...);
+#endif  // GRPC_ALLOW_EXCEPTIONS
+}
+
+template <class ReturnType, class Func, class... Args>
+ReturnType* CatchingReactorCreator(Func&& func, Args&&... args) {
+#if GRPC_ALLOW_EXCEPTIONS
+  try {
+    return func(std::forward<Args>(args)...);
+  } catch (...) {
+    // fail the RPC, don't crash the library
+    return nullptr;
+  }
+#else   // GRPC_ALLOW_EXCEPTIONS
+  return func(std::forward<Args>(args)...);
 #endif  // GRPC_ALLOW_EXCEPTIONS
 }
 
@@ -185,8 +201,9 @@ class CallbackWithSuccessTag
     void* ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
+    auto* ops = ops_;
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
-    GPR_CODEGEN_ASSERT(ignored == ops_);
+    GPR_CODEGEN_ASSERT(ignored == ops);
 
     if (do_callback) {
       CatchingCallback(func_, ok);
