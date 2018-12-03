@@ -219,7 +219,7 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
         gpr_log(GPR_ERROR, s.error_message().c_str());
         gpr_log(GPR_ERROR, s.error_details().c_str());
         GPR_ASSERT(s.ok());
-        
+
         std::lock_guard<std::mutex> l(mu);
         done = true;
         cv.notify_one();

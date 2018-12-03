@@ -181,9 +181,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
-Status TestServiceImpl::CheckClientInitialMetadata(
-    ServerContext* context, const SimpleRequest* request,
-    SimpleResponse* response) {
+Status TestServiceImpl::CheckClientInitialMetadata(ServerContext* context,
+                                                   const SimpleRequest* request,
+                                                   SimpleResponse* response) {
   EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
                                kCheckClientInitialMetadataKey,
                                kCheckClientInitialMetadataVal),
