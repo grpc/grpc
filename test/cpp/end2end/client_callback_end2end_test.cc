@@ -215,9 +215,6 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
   bool done = false;
   stub_->experimental_async()->CheckClientInitialMetadata(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
-        std::cout << s.error_code() << std::endl;
-        gpr_log(GPR_ERROR, s.error_message().c_str());
-        gpr_log(GPR_ERROR, s.error_details().c_str());
         GPR_ASSERT(s.ok());
 
         std::lock_guard<std::mutex> l(mu);
