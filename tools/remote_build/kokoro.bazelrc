@@ -26,7 +26,6 @@ build --auth_credentials=/tmpfs/src/keystore/4321_grpc-testing-service
 build --auth_scope=https://www.googleapis.com/auth/cloud-source-tools
 
 build --bes_backend=buildeventservice.googleapis.com
-build --bes_best_effort=false
 build --bes_timeout=600s
 build --project_id=grpc-testing
 
