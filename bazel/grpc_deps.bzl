@@ -71,7 +71,9 @@ def grpc_deps():
         native.http_archive(
             name = "boringssl",
             # on the master-with-bazel branch
-            url = "https://boringssl.googlesource.com/boringssl/+archive/886e7d75368e3f4fab3f4d0d3584e4abfc557755.tar.gz",
+            #url = "https://boringssl.googlesource.com/boringssl/+archive/886e7d75368e3f4fab3f4d0d3584e4abfc557755.tar.gz",
+            url = "https://github.com/google/boringssl/archive/master-with-bazel.zip",
+            sha256 = "574c2478ffe75960d73aa1e01123c790aef3dfdd348dd473378303aecbd44fb5",
         )
 
     if "com_github_madler_zlib" not in native.existing_rules():
