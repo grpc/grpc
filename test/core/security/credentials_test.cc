@@ -1206,7 +1206,7 @@ static void test_auth_metadata_context(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_empty_md_array();
   test_add_to_empty_md_array();

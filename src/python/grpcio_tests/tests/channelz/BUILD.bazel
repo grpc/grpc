@@ -1,0 +1,15 @@
+package(default_visibility = ["//visibility:public"])
+
+py_test(
+    name = "channelz_servicer_test",
+    srcs = ["_channelz_servicer_test.py"],
+    main = "_channelz_servicer_test.py",
+    size = "small",
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+        "//src/python/grpcio_tests/tests/unit/framework/common:common",
+    ],
+    imports = ["../../",],
+)

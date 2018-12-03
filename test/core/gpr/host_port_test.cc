@@ -50,7 +50,7 @@ static void test_join_host_port_garbage(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   test_join_host_port();
   test_join_host_port_garbage();

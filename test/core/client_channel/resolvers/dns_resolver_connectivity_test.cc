@@ -64,7 +64,8 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, grpc_combiner* combiner) {
+    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    grpc_combiner* combiner) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
@@ -144,7 +145,7 @@ static void call_resolver_next_after_locking(grpc_core::Resolver* resolver,
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   grpc_init();
   gpr_mu_init(&g_mu);

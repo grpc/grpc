@@ -191,7 +191,7 @@ static const test_fixture secure_test = {
 };
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   run_timeouts_test(&insecure_test);
   run_timeouts_test(&secure_test);

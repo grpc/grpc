@@ -331,7 +331,7 @@ void RegisterFilter() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::RegisterFilter();
   return RUN_ALL_TESTS();

@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
   grpc_poll_function = maybe_assert_non_blocking_poll;
 #endif  // GRPC_POSIX_SOCKET
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

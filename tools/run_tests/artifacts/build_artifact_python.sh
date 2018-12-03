@@ -108,6 +108,11 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py sdist
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
+  # Build grpcio_channelz source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
+      preprocess build_package_protos sdist
+  cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
+
   # Build grpcio_health_checking source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos sdist

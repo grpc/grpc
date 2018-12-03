@@ -331,7 +331,7 @@ class ClientChannelStressTest {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::ClientChannelStressTest test;
   test.Run();
   grpc_shutdown();

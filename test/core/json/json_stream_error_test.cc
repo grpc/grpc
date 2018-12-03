@@ -49,7 +49,7 @@ static void read_error() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   read_error();
   gpr_log(GPR_INFO, "json_stream_error success");
   return 0;
