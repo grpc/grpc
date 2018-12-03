@@ -37,6 +37,8 @@ struct Timestamps {
   gpr_timespec scheduled_time;
   gpr_timespec sent_time;
   gpr_timespec acked_time;
+
+  uint32_t byte_offset; /* byte offset relative to the start of the RPC */
 };
 
 /** TracedBuffer is a class to keep track of timestamps for a specific buffer in
@@ -73,7 +75,7 @@ class TracedBuffer {
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
-  TracedBuffer(int seq_no, void* arg)
+  TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
 
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */

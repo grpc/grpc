@@ -132,7 +132,12 @@ class TestGevent(setuptools.Command):
         'unit.beta._beta_features_test',
         # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
         # This test will stuck while running higher version of gevent
-        'unit._auth_context_test.AuthContextTest.testSessionResumption')
+        'unit._auth_context_test.AuthContextTest.testSessionResumption',
+        # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc'
+    )
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 

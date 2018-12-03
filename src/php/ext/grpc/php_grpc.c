@@ -170,7 +170,9 @@ void prefork() {
   acquire_persistent_locks();
 }
 
-void postfork_child(TSRMLS_D) {
+void postfork_child() {
+  TSRMLS_FETCH();
+
   // loop through persistant list and destroy all underlying grpc_channel objs
   destroy_grpc_channels();
 

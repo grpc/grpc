@@ -215,7 +215,7 @@ static void test_overflow() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_set_get_int();
   test_set_get_str();

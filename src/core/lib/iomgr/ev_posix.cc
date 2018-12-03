@@ -244,6 +244,10 @@ bool grpc_event_engine_can_track_errors(void) {
   return false;
 }
 
+bool grpc_event_engine_run_in_background(void) {
+  return g_event_engine->run_in_background;
+}
+
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
@@ -393,6 +397,10 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
                          grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
+}
+
+void grpc_shutdown_background_closure(void) {
+  g_event_engine->shutdown_background_closure();
 }
 
 #endif  // GRPC_POSIX_SOCKET_EV

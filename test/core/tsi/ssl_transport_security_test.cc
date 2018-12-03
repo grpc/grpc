@@ -777,7 +777,7 @@ void ssl_tsi_test_handshaker_factory_internals() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   ssl_tsi_test_do_handshake_tiny_handshake_buffer();
