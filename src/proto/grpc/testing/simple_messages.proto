@@ -18,9 +18,7 @@ syntax = "proto3";
 package grpc.testing;
 
 message SimpleRequest {
-  string message = 1;
 }
 
 message SimpleResponse {
-  string message = 1;
 }
