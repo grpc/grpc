@@ -418,7 +418,6 @@ void AresDnsResolver::StartResolvingLocked() {
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
-      request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
 }
