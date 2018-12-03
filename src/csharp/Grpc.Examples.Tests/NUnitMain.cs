@@ -34,7 +34,7 @@ namespace Grpc.Examples.Tests
         {
             // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
             GrpcEnvironment.SetLogger(new ConsoleLogger());
-#if NETCOREAPP1_0
+#if NETCOREAPP1_1 || NETCOREAPP2_1
             return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args, new ExtendedTextWrapper(Console.Out), Console.In);
 #else
             return new AutoRun().Execute(args);
