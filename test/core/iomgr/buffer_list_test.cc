@@ -97,7 +97,7 @@ static void TestTcpBufferList() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   TestTcpBufferList();
   grpc_shutdown();

@@ -12,6 +12,7 @@ pyx_library(
         "_cygrpc/grpc_string.pyx.pxi",
         "_cygrpc/arguments.pyx.pxi",
         "_cygrpc/call.pyx.pxi",
+        "_cygrpc/channelz.pyx.pxi",
         "_cygrpc/channel.pyx.pxi",
         "_cygrpc/credentials.pyx.pxi",
         "_cygrpc/completion_queue.pyx.pxi",

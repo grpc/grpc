@@ -4,7 +4,7 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
     <AssemblyName>Grpc.IntegrationTesting.Server</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.IntegrationTesting.Server</PackageId>
@@ -19,7 +19,7 @@
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Compile Include="..\Grpc.Core\Version.cs" />
   </ItemGroup>

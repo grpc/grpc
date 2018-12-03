@@ -156,7 +156,7 @@ void test_decoding_fails(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_encoding();
   test_decoding();
   test_decoding_fails();

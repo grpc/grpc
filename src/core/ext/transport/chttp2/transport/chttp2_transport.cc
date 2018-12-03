@@ -1390,6 +1390,7 @@ static void perform_stream_op_locked(void* stream_op,
   GRPC_STATS_INC_HTTP2_OP_BATCHES();
 
   s->context = op->payload->context;
+  s->traced = op->is_traced;
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
     gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
