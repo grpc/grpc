@@ -116,12 +116,13 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
             "cb is nullptr in alts_tsi_handshaker_handle_response()");
     return;
   }
-  if (handshaker == nullptr || recv_buffer == nullptr) {
+  if (handshaker == nullptr) {
     gpr_log(GPR_ERROR,
-            "Invalid arguments to alts_tsi_handshaker_handle_response()");
+            "handshaker is nullptr in alts_tsi_handshaker_handle_response()");
     cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
+  /* TSI handshake has been shutdown. */
   if (alts_tsi_handshaker_has_shutdown(handshaker)) {
     gpr_log(GPR_ERROR, "TSI handshake shutdown");
     cb(TSI_HANDSHAKE_SHUTDOWN, user_data, nullptr, 0, nullptr);
@@ -130,6 +131,12 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   /* Failed grpc call check. */
   if (!is_ok || status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "grpc call made to handshaker service failed");
+    cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
+    return;
+  }
+  if (recv_buffer == nullptr) {
+    gpr_log(GPR_ERROR,
+            "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()");
     cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
