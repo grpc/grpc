@@ -102,8 +102,9 @@ typedef TraceFlag DebugOnlyTraceFlag;
 #else
 class DebugOnlyTraceFlag {
  public:
-  DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
-  bool enabled() { return false; }
+  constexpr DebugOnlyTraceFlag(bool default_enabled, const char* name) {}
+  constexpr bool enabled() const { return false; }
+  constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
 
  private:
   void set_enabled(bool enabled) {}
