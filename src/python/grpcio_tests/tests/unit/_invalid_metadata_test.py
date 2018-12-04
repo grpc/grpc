@@ -130,6 +130,9 @@ class InvalidMetadataTest(unittest.TestCase):
             self._stream_stream(request_iterator, metadata=metadata)
         self.assertIn(expected_error_details, str(exception_context.exception))
 
+    def testInvalidMetadata(self):
+        self.assertRaises(TypeError, self._unary_unary, b'', metadata=42)
+
 
 if __name__ == '__main__':
     logging.basicConfig()
