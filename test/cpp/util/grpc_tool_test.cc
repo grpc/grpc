@@ -48,6 +48,7 @@ using grpc::testing::EchoResponse;
 
 #define ECHO_TEST_SERVICE_SUMMARY \
   "Echo\n"                        \
+  "CheckClientInitialMetadata\n"  \
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
@@ -59,6 +60,8 @@ using grpc::testing::EchoResponse;
   "service EchoTestService {\n"                                               \
   "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
   "{}\n"                                                                      \
+  "  rpc CheckClientInitialMetadata(grpc.testing.SimpleRequest) returns "     \
+  "(grpc.testing.SimpleResponse) {}\n"                                        \
   "  rpc RequestStream(stream grpc.testing.EchoRequest) returns "             \
   "(grpc.testing.EchoResponse) {}\n"                                          \
   "  rpc ResponseStream(grpc.testing.EchoRequest) returns (stream "           \
