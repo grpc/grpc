@@ -35,11 +35,11 @@ void (*g_grpc_debug_timer_manager_stats)(
     int64_t timer_manager_init_count, int64_t timer_manager_shutdown_count,
     int64_t fork_count, int64_t timer_wait_err, int64_t timer_cv_value,
     int64_t timer_mu_value, int64_t abstime_sec_value,
-    int64_t abstime_nsec_value, int64_t abs_deadline_sec_value, int64_t abs_deadline_nsec_value, int64_t now1_sec_value,
-    int64_t now1_nsec_value, int64_t now2_sec_value,
-    int64_t now2_nsec_value, int64_t add_result_sec_value,
-    int64_t add_result_nsec_value, int64_t sub_result_sec_value,
-    int64_t sub_result_nsec_value) = nullptr;
+    int64_t abstime_nsec_value, int64_t abs_deadline_sec_value,
+    int64_t abs_deadline_nsec_value, int64_t now1_sec_value,
+    int64_t now1_nsec_value, int64_t now2_sec_value, int64_t now2_nsec_value,
+    int64_t add_result_sec_value, int64_t add_result_nsec_value,
+    int64_t sub_result_sec_value, int64_t sub_result_nsec_value) = nullptr;
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
@@ -108,12 +108,9 @@ void gpr_cv_destroy(gpr_cv* cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
 // For debug of the timer manager crash only.
 // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
-static gpr_timespec gpr_convert_clock_type_debug_timespec(gpr_timespec t,
-                                                          gpr_clock_type clock_type,
-                                                          gpr_timespec &now1,
-                                                          gpr_timespec &now2,
-                                                          gpr_timespec &add_result,
-                                                          gpr_timespec &sub_result) {
+static gpr_timespec gpr_convert_clock_type_debug_timespec(
+    gpr_timespec t, gpr_clock_type clock_type, gpr_timespec& now1,
+    gpr_timespec& now2, gpr_timespec& add_result, gpr_timespec& sub_result) {
   if (t.clock_type == clock_type) {
     return t;
   }
@@ -138,9 +135,14 @@ static gpr_timespec gpr_convert_clock_type_debug_timespec(gpr_timespec t,
   return add_result;
 }
 
-#define gpr_convert_clock_type_debug(t, clock_type, now1, now2, add_result, sub_result) gpr_convert_clock_type_debug_timespec((t), (clock_type), (now1), (now2), (add_result), (sub_result))
+#define gpr_convert_clock_type_debug(t, clock_type, now1, now2, add_result, \
+                                     sub_result)                            \
+  gpr_convert_clock_type_debug_timespec((t), (clock_type), (now1), (now2),  \
+                                        (add_result), (sub_result))
 #else
-#define gpr_convert_clock_type_debug(t, clock_type, now1, now2, add_result, sub_result) gpr_convert_clock_type((t), (clock_type))
+#define gpr_convert_clock_type_debug(t, clock_type, now1, now2, add_result, \
+                                     sub_result)                            \
+  gpr_convert_clock_type((t), (clock_type))
 #endif
 
 int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
@@ -166,9 +168,11 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   } else {
     struct timespec abs_deadline_ts;
 #if GPR_LINUX
-    abs_deadline = gpr_convert_clock_type_debug(abs_deadline, GPR_CLOCK_MONOTONIC, now1, now2, add_result, sub_result);
+    abs_deadline = gpr_convert_clock_type_debug(
+        abs_deadline, GPR_CLOCK_MONOTONIC, now1, now2, add_result, sub_result);
 #else
-    abs_deadline = gpr_convert_clock_type_debug(abs_deadline, GPR_CLOCK_REALTIME, now1, now2, add_result, sub_result);
+    abs_deadline = gpr_convert_clock_type_debug(
+        abs_deadline, GPR_CLOCK_REALTIME, now1, now2, add_result, sub_result);
 #endif  // GPR_LINUX
     abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
@@ -209,7 +213,7 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
           g_now2_sec_value, g_now2_nsec_value, g_add_result_sec_value,
           g_add_result_nsec_value, g_sub_result_sec_value,
           g_sub_result_nsec_value);
-      }
+    }
   }
 #endif
   GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
