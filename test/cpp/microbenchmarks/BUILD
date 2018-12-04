@@ -29,7 +29,6 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "helpers",
-    testonly = 1,
     srcs = ["helpers.cc"],
     hdrs = [
         "fullstack_context_mutators.h",
@@ -47,67 +46,67 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_closure",
-    testonly = 1,
     srcs = ["bm_closure.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
+# TODO(https://github.com/grpc/grpc/pull/16882): make this a test target
+# right now it OOMs
 grpc_cc_binary(
     name = "bm_arena",
-    testonly = 1,
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_channel",
-    testonly = 1,
     srcs = ["bm_channel.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
+# TODO(https://github.com/grpc/grpc/pull/16882): make this a test target
+# right now it fails UBSAN
 grpc_cc_binary(
     name = "bm_call_create",
-    testonly = 1,
     srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_cq",
-    testonly = 1,
     srcs = ["bm_cq.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_cq_multiple_threads",
-    testonly = 1,
     srcs = ["bm_cq_multiple_threads.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_error",
-    testonly = 1,
     srcs = ["bm_error.cc"],
     deps = [":helpers"],
+    uses_polling = False,
 )
 
 grpc_cc_library(
     name = "fullstack_streaming_ping_pong_h",
-    testonly = 1,
     hdrs = [
         "fullstack_streaming_ping_pong.h",
     ],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_fullstack_streaming_ping_pong",
-    testonly = 1,
     srcs = [
         "bm_fullstack_streaming_ping_pong.cc",
     ],
@@ -116,16 +115,14 @@ grpc_cc_binary(
 
 grpc_cc_library(
     name = "fullstack_streaming_pump_h",
-    testonly = 1,
     hdrs = [
         "fullstack_streaming_pump.h",
     ],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_fullstack_streaming_pump",
-    testonly = 1,
     srcs = [
         "bm_fullstack_streaming_pump.cc",
     ],
@@ -134,40 +131,49 @@ grpc_cc_binary(
 
 grpc_cc_binary(
     name = "bm_fullstack_trickle",
-    testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     deps = [":helpers"],
 )
 
 grpc_cc_library(
     name = "fullstack_unary_ping_pong_h",
-    testonly = 1,
     hdrs = [
         "fullstack_unary_ping_pong.h",
     ],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_fullstack_unary_ping_pong",
-    testonly = 1,
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
     ],
     deps = [":fullstack_unary_ping_pong_h"],
 )
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "bm_metadata",
-    testonly = 1,
     srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
+    uses_polling = False,
+)
+
+grpc_cc_test(
+    name = "bm_chttp2_hpack",
+    srcs = ["bm_chttp2_hpack.cc"],
+    deps = [":helpers"],
+    uses_polling = False,
+)
+
+grpc_cc_test(
+    name = "bm_chttp2_transport",
+    srcs = ["bm_chttp2_transport.cc"],
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
-    name = "bm_chttp2_hpack",
-    testonly = 1,
-    srcs = ["bm_chttp2_hpack.cc"],
+grpc_cc_test(
+    name = "bm_pollset",
+    srcs = ["bm_pollset.cc"],
     deps = [":helpers"],
 )
 
