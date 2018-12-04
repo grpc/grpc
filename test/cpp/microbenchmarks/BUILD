@@ -29,7 +29,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "helpers",
-    testonly=1,
+    testonly = 1,
     srcs = ["helpers.cc"],
     hdrs = [
         "fullstack_context_mutators.h",
@@ -58,7 +58,7 @@ grpc_cc_test(
 # right now it OOMs
 grpc_cc_binary(
     name = "bm_arena",
-    testonly=1,
+    testonly = 1,
     srcs = ["bm_arena.cc"],
     deps = [":helpers"],
 )
@@ -74,7 +74,7 @@ grpc_cc_test(
 # right now it fails UBSAN
 grpc_cc_binary(
     name = "bm_call_create",
-    testonly=1,
+    testonly = 1,
     srcs = ["bm_call_create.cc"],
     deps = [":helpers"],
 )
@@ -102,7 +102,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "fullstack_streaming_ping_pong_h",
-    testonly=1,
+    testonly = 1,
     hdrs = [
         "fullstack_streaming_ping_pong.h",
     ],
@@ -119,7 +119,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "fullstack_streaming_pump_h",
-    testonly=1,
+    testonly = 1,
     hdrs = [
         "fullstack_streaming_pump.h",
     ],
@@ -136,14 +136,14 @@ grpc_cc_test(
 
 grpc_cc_binary(
     name = "bm_fullstack_trickle",
-    testonly=1,
+    testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     deps = [":helpers"],
 )
 
 grpc_cc_library(
     name = "fullstack_unary_ping_pong_h",
-    testonly=1,
+    testonly = 1,
     hdrs = [
         "fullstack_unary_ping_pong.h",
     ],
