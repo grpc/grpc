@@ -8,11 +8,12 @@ grpc_deps()
 grpc_test_only_deps()
 
 register_execution_platforms(
-    "//third_party/toolchains:all",
+    "//third_party/toolchains:rbe_ubuntu1604",
+    "//third_party/toolchains:rbe_ubuntu1604_large",
 )
 
 register_toolchains(
-    "//third_party/toolchains:all",
+    "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
 )
 
 new_http_archive(
