@@ -887,12 +887,12 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 
 void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel) {
   gpr_mu_lock(&subchannel->mu);
+  subchannel->backoff->Reset();
   if (subchannel->have_alarm) {
     subchannel->deferred_reset_backoff = true;
     grpc_timer_cancel(&subchannel->alarm);
   } else {
     subchannel->backoff_begun = false;
-    subchannel->backoff->Reset();
     maybe_start_connecting_locked(subchannel);
   }
   gpr_mu_unlock(&subchannel->mu);

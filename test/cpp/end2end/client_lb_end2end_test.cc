@@ -507,6 +507,46 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   EXPECT_LT(waited_ms, kInitialBackOffMs);
 }
 
+TEST_F(ClientLbEnd2endTest,
+       PickFirstResetConnectionBackoffNextAttemptStartsImmediately) {
+  ChannelArguments args;
+  constexpr int kInitialBackOffMs = 1000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  auto channel = BuildChannel("pick_first", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  // Wait for connect, which should fail ~immediately, because the server
+  // is not up.
+  gpr_log(GPR_INFO, "=== INITIAL CONNECTION ATTEMPT");
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Reset connection backoff.
+  gpr_log(GPR_INFO, "=== RESETTING BACKOFF");
+  experimental::ChannelResetConnectionBackoff(channel.get());
+  // Trigger a second connection attempt.  This should also fail
+  // ~immediately, but the retry should be scheduled for
+  // kInitialBackOffMs instead of applying the multiplier.
+  gpr_log(GPR_INFO, "=== TRIGGERING SECOND CONNECTION ATTEMPT");
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Bring up a server on the chosen port.
+  gpr_log(GPR_INFO, "=== STARTING BACKEND");
+  StartServers(1, ports);
+  // Wait for connect.  Should happen within kInitialBackOffMs.
+  gpr_log(GPR_INFO, "=== TRIGGERING THIRD CONNECTION ATTEMPT");
+  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs)));
+  const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
+  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
+  // Give an extra 100ms for timing slack.
+  // (This is still far less than the 1.6x increase we would see if the
+  // backoff state was not reset properly.)
+  EXPECT_LT(waited_ms, kInitialBackOffMs + 100);
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
