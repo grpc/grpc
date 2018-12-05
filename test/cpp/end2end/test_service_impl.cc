@@ -34,8 +34,22 @@ using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
-namespace {
 
+int MetadataMatchCount(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const grpc::string& key, const grpc::string& value) {
+  int count = 0;
+  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
+           metadata.begin();
+       iter != metadata.end(); ++iter) {
+    if (ToString(iter->first) == key && ToString(iter->second) == value) {
+      count++;
+    }
+  }
+  return count;
+}
+
+namespace {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
 void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
@@ -70,24 +84,6 @@ void CheckServerAuthContext(
   }
 }
 
-// Returns the number of pairs in metadata that exactly match the given
-// key-value pair. Returns -1 if the pair wasn't found.
-int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value) {
-  int count = 0;
-  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-           metadata.begin();
-       iter != metadata.end(); ++iter) {
-    if (ToString(iter->first) == key && ToString(iter->second) == value) {
-      count++;
-    }
-  }
-  return count;
-}
-}  // namespace
-
-namespace {
 int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
@@ -233,6 +229,14 @@ Status TestServiceImpl::CheckClientInitialMetadata(ServerContext* context,
   return Status::OK;
 }
 
+Status TestServiceImpl::CheckServerInitialMetadata(ServerContext* context,
+                                                   const SimpleRequest* request,
+                                                   SimpleResponse* response) {
+  context->AddInitialMetadata(kCheckServerInitialMetadataKey,
+                              kCheckServerInitialMetadataVal);
+  return Status::OK;
+}
+
 void CallbackTestServiceImpl::Echo(
     ServerContext* context, const EchoRequest* request, EchoResponse* response,
     experimental::ServerCallbackRpcController* controller) {
@@ -261,6 +265,15 @@ void CallbackTestServiceImpl::CheckClientInitialMetadata(
             1);
   EXPECT_EQ(1u,
             context->client_metadata().count(kCheckClientInitialMetadataKey));
+  controller->Finish(Status::OK);
+}
+
+void CallbackTestServiceImpl::CheckServerInitialMetadata(
+    ServerContext* context, const SimpleRequest* request,
+    SimpleResponse* response,
+    experimental::ServerCallbackRpcController* controller) {
+  context->AddInitialMetadata(kCheckServerInitialMetadataKey,
+                              kCheckServerInitialMetadataVal);
   controller->Finish(Status::OK);
 }
 

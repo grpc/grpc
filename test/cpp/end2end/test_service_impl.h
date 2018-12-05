@@ -38,6 +38,14 @@ const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";
 const char* const kCheckClientInitialMetadataKey = "custom_client_metadata";
 const char* const kCheckClientInitialMetadataVal = "Value for client metadata";
+const char* const kCheckServerInitialMetadataKey = "custom_server_metadata";
+const char* const kCheckServerInitialMetadataVal = "Value for server metadata";
+
+// Returns the number of pairs in metadata that exactly match the given
+// key-value pair. Returns -1 if the pair wasn't found.
+int MetadataMatchCount(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const grpc::string& key, const grpc::string& value);
 
 typedef enum {
   DO_NOT_CANCEL = 0,
@@ -56,6 +64,10 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
               EchoResponse* response) override;
 
   Status CheckClientInitialMetadata(ServerContext* context,
+                                    const SimpleRequest* request,
+                                    SimpleResponse* response) override;
+
+  Status CheckServerInitialMetadata(ServerContext* context,
                                     const SimpleRequest* request,
                                     SimpleResponse* response) override;
 
@@ -95,6 +107,11 @@ class CallbackTestServiceImpl
             experimental::ServerCallbackRpcController* controller) override;
 
   void CheckClientInitialMetadata(
+      ServerContext* context, const SimpleRequest* request,
+      SimpleResponse* response,
+      experimental::ServerCallbackRpcController* controller) override;
+
+  void CheckServerInitialMetadata(
       ServerContext* context, const SimpleRequest* request,
       SimpleResponse* response,
       experimental::ServerCallbackRpcController* controller) override;
