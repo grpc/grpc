@@ -189,6 +189,11 @@ pip_install_dir "$ROOT"
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir "$ROOT/tools/distrib/python/grpcio_tools"
 
+# Build/install Channelz
+$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
+$VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" build_package_protos
+pip_install_dir "$ROOT/src/python/grpcio_channelz"
+
 # Build/install health checking
 $VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_health_checking/setup.py" build_package_protos

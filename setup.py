@@ -87,6 +87,7 @@ CLASSIFIERS = [
 # present, then it will still attempt to use Cython.
 BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 
+
 # Export this variable to use the system installation of openssl. You need to
 # have the header files installed (in /usr/include/openssl) and during
 # runtime, the shared library must be installed
@@ -104,6 +105,21 @@ BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
                                          False)
+
+# For local development use only: This skips building gRPC Core and its
+# dependencies, including protobuf and boringssl. This allows "incremental"
+# compilation by first building gRPC Core using make, then building only the
+# Python/Cython layers here.
+#
+# Note that this requires libboringssl.a in the libs/{dbg,opt}/ directory, which
+# may require configuring make to not use the system openssl implementation:
+#
+#    make HAS_SYSTEM_OPENSSL_ALPN=0
+#
+# TODO(ericgribkoff) Respect the BUILD_WITH_SYSTEM_* flags alongside this option
+USE_PREBUILT_GRPC_CORE = os.environ.get(
+    'GRPC_PYTHON_USE_PREBUILT_GRPC_CORE', False)
+
 
 # If this environmental variable is set, GRPC will not try to be compatible with
 # libc versions old than the one it was compiled against.
@@ -249,7 +265,7 @@ def cython_extensions_and_necessity():
                   for name in CYTHON_EXTENSION_MODULE_NAMES]
   config = os.environ.get('CONFIG', 'opt')
   prefix = 'libs/' + config + '/'
-  if "darwin" in sys.platform:
+  if "darwin" in sys.platform or USE_PREBUILT_GRPC_CORE:
     extra_objects = [prefix + 'libares.a',
                      prefix + 'libboringssl.a',
                      prefix + 'libgpr.a',

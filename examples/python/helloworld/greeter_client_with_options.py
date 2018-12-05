@@ -14,6 +14,7 @@
 """The Python implementation of the GRPC helloworld.Greeter client with channel options and call timeout parameters."""
 
 from __future__ import print_function
+import logging
 
 import grpc
 
@@ -41,4 +42,5 @@ def run():
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     run()

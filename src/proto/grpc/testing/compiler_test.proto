@@ -20,6 +20,9 @@
 syntax = "proto3";
 
 // Ignored detached comment
+// The comments in this file are not meant for readability
+// but rather to test to make sure that the code generator
+// properly preserves comments on files, services, and RPCs
 
 // Ignored package leading comment
 package grpc.testing;

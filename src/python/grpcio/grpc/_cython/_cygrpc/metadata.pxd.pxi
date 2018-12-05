@@ -14,10 +14,10 @@
 
 
 cdef void _store_c_metadata(
-    metadata, grpc_metadata **c_metadata, size_t *c_count)
+    metadata, grpc_metadata **c_metadata, size_t *c_count) except *
 
 
-cdef void _release_c_metadata(grpc_metadata *c_metadata, int count)
+cdef void _release_c_metadata(grpc_metadata *c_metadata, int count) except *
 
 
 cdef tuple _metadatum(grpc_slice key_slice, grpc_slice value_slice)

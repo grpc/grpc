@@ -842,7 +842,7 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver);
   }
   gpr_free(resolver);
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   // Test sequential and nested inits and shutdowns.

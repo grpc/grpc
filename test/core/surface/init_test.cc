@@ -67,7 +67,7 @@ static void test_repeatedly() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test(1);
   test(2);
   test(3);

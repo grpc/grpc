@@ -33,8 +33,12 @@
 namespace grpc_core {
 namespace testing {
 namespace {
+
+const uint32_t kByteOffset = 123;
+
 void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts) {
-  GPR_ASSERT(arg != nullptr);
+  ASSERT_NE(arg, nullptr);
+  EXPECT_EQ(ts->byte_offset, kByteOffset);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
@@ -43,7 +47,7 @@ void discard_write(grpc_slice slice) {}
 
 /** Tests that all ContextList elements in the list are flushed out on
  * execute.
- * Also tests that arg is passed correctly.
+ * Also tests that arg and byte_counter are passed correctly.
  */
 TEST(ContextList, ExecuteFlushesList) {
   grpc_core::ContextList* list = nullptr;
@@ -68,14 +72,14 @@ TEST(ContextList, ExecuteFlushesList) {
                                reinterpret_cast<grpc_stream*>(s[i]), &ref,
                                nullptr, nullptr);
     s[i]->context = &verifier_called[i];
+    s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
     grpc_core::ContextList::Append(&list, s[i]);
   }
   grpc_core::Timestamps ts;
   grpc_core::ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
   for (auto i = 0; i < kNumElems; i++) {
-    GPR_ASSERT(gpr_atm_acq_load(&verifier_called[i]) ==
-               static_cast<gpr_atm>(1));
+    EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
                                   reinterpret_cast<grpc_stream*>(s[i]),
                                   nullptr);
@@ -91,7 +95,7 @@ TEST(ContextList, ExecuteFlushesList) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

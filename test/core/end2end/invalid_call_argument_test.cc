@@ -609,7 +609,7 @@ static void test_invalid_initial_metadata_reserved_key() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();
