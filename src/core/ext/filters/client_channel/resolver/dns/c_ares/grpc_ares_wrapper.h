@@ -26,6 +26,8 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 10000
+
 extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 
 extern grpc_core::TraceFlag grpc_trace_cares_resolver;
@@ -60,7 +62,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addresses, bool check_grpclb,
-    char** service_config_json, grpc_combiner* combiner);
+    char** service_config_json, int query_timeout_ms, grpc_combiner* combiner);
 
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
