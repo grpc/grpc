@@ -61,6 +61,7 @@ cdef int _get_metadata(
 
 cdef void _destroy(void *state) with gil:
   cpython.Py_DECREF(<object>state)
+  grpc_shutdown()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -76,6 +77,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    fork_handlers_and_grpc_init()
     return grpc_metadata_credentials_create_from_plugin(c_metadata_plugin, NULL)
 
 
