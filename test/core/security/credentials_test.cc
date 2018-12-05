@@ -919,6 +919,22 @@ static void test_google_default_creds_refresh_token(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
+static int default_creds_metadata_server_detection_httpcli_get_success_override(
+    const grpc_httpcli_request* request, grpc_millis deadline,
+    grpc_closure* on_done, grpc_httpcli_response* response) {
+  *response = http_response(200, "");
+  grpc_http_header* headers =
+      static_cast<grpc_http_header*>(gpr_malloc(sizeof(*headers) * 1));
+  headers[0].key = gpr_strdup("Metadata-Flavor");
+  headers[0].value = gpr_strdup("Google");
+  response->hdr_count = 1;
+  response->hdrs = headers;
+  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
+  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
 static char* null_well_known_creds_path_getter(void) { return nullptr; }
 
 static bool test_gce_tenancy_checker(void) {
@@ -963,26 +979,73 @@ static void test_google_default_creds_gce(void) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
+static void test_google_default_creds_non_gce(void) {
+  grpc_core::ExecCtx exec_ctx;
+  expected_md emd[] = {
+      {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
+  request_metadata_state* state =
+      make_request_metadata_state(GRPC_ERROR_NONE, emd, GPR_ARRAY_SIZE(emd));
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
+                                            nullptr, nullptr};
+  grpc_flush_cached_google_default_credentials();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = false;
+  /* Simulate a successful detection of metadata server. */
+  grpc_httpcli_set_override(
+      default_creds_metadata_server_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
+  grpc_composite_channel_credentials* creds =
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create());
+  /* Verify that the default creds actually embeds a GCE creds. */
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(creds->call_creds != nullptr);
+  grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
+                            httpcli_post_should_not_be_called);
+  run_request_metadata_test(creds->call_creds, auth_md_ctx, state);
+  grpc_core::ExecCtx::Get()->Flush();
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
+  /* Cleanup. */
+  grpc_channel_credentials_unref(&creds->base);
+  grpc_httpcli_set_override(nullptr, nullptr);
+  grpc_override_well_known_credentials_path_getter(nullptr);
+}
+
+static int default_creds_gce_detection_httpcli_get_failure_override(
+    const grpc_httpcli_request* request, grpc_millis deadline,
+    grpc_closure* on_done, grpc_httpcli_response* response) {
+  /* No magic header. */
+  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
+  *response = http_response(200, "");
+  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  return 1;
+}
+
 static void test_no_google_default_creds(void) {
   grpc_flush_cached_google_default_credentials();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
-
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = false;
-
+  grpc_httpcli_set_override(
+      default_creds_gce_detection_httpcli_get_failure_override,
+      httpcli_post_should_not_be_called);
   /* Simulate a successful detection of GCE. */
   GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
-
-  /* Try a second one. GCE detection should not occur anymore. */
+  /* Try a second one. GCE detection should occur again. */
   g_test_gce_tenancy_checker_called = false;
   GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
-  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
-
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
   /* Cleanup. */
   grpc_override_well_known_credentials_path_getter(nullptr);
+  grpc_httpcli_set_override(nullptr, nullptr);
 }
 
 typedef enum {
@@ -1233,6 +1296,7 @@ int main(int argc, char** argv) {
   test_google_default_creds_auth_key();
   test_google_default_creds_refresh_token();
   test_google_default_creds_gce();
+  test_google_default_creds_non_gce();
   test_no_google_default_creds();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();

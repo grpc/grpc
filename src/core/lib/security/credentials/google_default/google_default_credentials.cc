@@ -49,9 +49,11 @@
 
 /* -- Default credentials. -- */
 
-static int g_compute_engine_detection_done = 0;
-static int g_need_compute_engine_creds = 0;
+static int g_metadata_server_detection_done = 0;
+static int g_metadata_server_available = 0;
+static int g_is_on_gce = 0;
 static gpr_mu g_state_mu;
+static gpr_mu* g_polling_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
     grpc_alts_is_running_on_gcp;
@@ -89,15 +91,20 @@ static grpc_security_status google_default_create_security_connector(
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   grpc_security_status status = GRPC_SECURITY_ERROR;
+  /* Return failure if ALTS is selected but not running on GCE. */
+  if (use_alts && !g_is_on_gce) {
+    goto end;
+  }
   status = use_alts ? c->alts_creds->vtable->create_security_connector(
                           c->alts_creds, call_creds, target, args, sc, new_args)
                     : c->ssl_creds->vtable->create_security_connector(
                           c->ssl_creds, call_creds, target, args, sc, new_args);
-  /* grpclb-specific channel args are removed from the channel args set
-   * to ensure backends and fallback adresses will have the same set of channel
-   * args. By doing that, it guarantees the connections to backends will not be
-   * torn down and re-connected when switching in and out of fallback mode.
-   */
+/* grpclb-specific channel args are removed from the channel args set
+ * to ensure backends and fallback adresses will have the same set of channel
+ * args. By doing that, it guarantees the connections to backends will not be
+ * torn down and re-connected when switching in and out of fallback mode.
+ */
+end:
   if (use_alts) {
     static const char* args_to_remove[] = {
         GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
@@ -112,6 +119,93 @@ static grpc_security_status google_default_create_security_connector(
 static grpc_channel_credentials_vtable google_default_credentials_vtable = {
     google_default_credentials_destruct,
     google_default_create_security_connector, nullptr};
+
+static void on_metadata_server_detection_http_response(void* user_data,
+                                                       grpc_error* error) {
+  compute_engine_detector* detector =
+      static_cast<compute_engine_detector*>(user_data);
+  if (error == GRPC_ERROR_NONE && detector->response.status == 200 &&
+      detector->response.hdr_count > 0) {
+    /* Internet providers can return a generic response to all requests, so
+       it is necessary to check that metadata header is present also. */
+    size_t i;
+    for (i = 0; i < detector->response.hdr_count; i++) {
+      grpc_http_header* header = &detector->response.hdrs[i];
+      if (strcmp(header->key, "Metadata-Flavor") == 0 &&
+          strcmp(header->value, "Google") == 0) {
+        detector->success = 1;
+        break;
+      }
+    }
+  }
+  gpr_mu_lock(g_polling_mu);
+  detector->is_done = 1;
+  GRPC_LOG_IF_ERROR(
+      "Pollset kick",
+      grpc_pollset_kick(grpc_polling_entity_pollset(&detector->pollent),
+                        nullptr));
+  gpr_mu_unlock(g_polling_mu);
+}
+
+static void destroy_pollset(void* p, grpc_error* e) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
+}
+
+static int is_metadata_server_reachable() {
+  compute_engine_detector detector;
+  grpc_httpcli_request request;
+  grpc_httpcli_context context;
+  grpc_closure destroy_closure;
+  /* The http call is local. If it takes more than one sec, it is for sure not
+     on compute engine. */
+  grpc_millis max_detection_delay = GPR_MS_PER_SEC;
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset_init(pollset, &g_polling_mu);
+  detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
+  detector.is_done = 0;
+  detector.success = 0;
+  memset(&detector.response, 0, sizeof(detector.response));
+  memset(&request, 0, sizeof(grpc_httpcli_request));
+  request.host = (char*)GRPC_COMPUTE_ENGINE_DETECTION_HOST;
+  request.http.path = (char*)"/";
+  grpc_httpcli_context_init(&context);
+  grpc_resource_quota* resource_quota =
+      grpc_resource_quota_create("google_default_credentials");
+  grpc_httpcli_get(
+      &context, &detector.pollent, resource_quota, &request,
+      grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
+      GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
+                          grpc_schedule_on_exec_ctx),
+      &detector.response);
+  grpc_resource_quota_unref_internal(resource_quota);
+  grpc_core::ExecCtx::Get()->Flush();
+  /* Block until we get the response. This is not ideal but this should only be
+    called once for the lifetime of the process by the default credentials. */
+  gpr_mu_lock(g_polling_mu);
+  while (!detector.is_done) {
+    grpc_pollset_worker* worker = nullptr;
+    if (!GRPC_LOG_IF_ERROR(
+            "pollset_work",
+            grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
+                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+      detector.is_done = 1;
+      detector.success = 0;
+    }
+  }
+  gpr_mu_unlock(g_polling_mu);
+  grpc_httpcli_context_destroy(&context);
+  GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
+                    grpc_polling_entity_pollset(&detector.pollent),
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(grpc_polling_entity_pollset(&detector.pollent),
+                        &destroy_closure);
+  g_polling_mu = nullptr;
+  grpc_core::ExecCtx::Get()->Flush();
+  gpr_free(grpc_polling_entity_pollset(&detector.pollent));
+  grpc_http_response_destroy(&detector.response);
+  return detector.success;
+}
 
 /* Takes ownership of creds_path if not NULL. */
 static grpc_error* create_default_creds_from_path(
@@ -182,7 +276,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Failed to create Google credentials");
   grpc_error* err;
-  int need_compute_engine_creds = 0;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
@@ -202,16 +295,25 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   error = grpc_error_add_child(error, err);
 
   gpr_mu_lock(&g_state_mu);
-  /* At last try to see if we're on compute engine (do the detection only once
-     since it requires a network test). */
-  if (!g_compute_engine_detection_done) {
-    g_need_compute_engine_creds = g_gce_tenancy_checker();
-    g_compute_engine_detection_done = 1;
+
+  /* Try a platform-provided hint for GCE. */
+  if (!g_metadata_server_detection_done) {
+    g_is_on_gce = g_gce_tenancy_checker();
+    g_metadata_server_detection_done = g_is_on_gce;
+    g_metadata_server_available = g_is_on_gce;
   }
-  need_compute_engine_creds = g_need_compute_engine_creds;
+  /* TODO: Add a platform-provided hint for GAE. */
+
+  /* Do a network test for metadata server. */
+  if (!g_metadata_server_detection_done) {
+    bool detected = is_metadata_server_reachable();
+    /* Do not cache detecion result if netowrk test returns false. */
+    g_metadata_server_detection_done = detected;
+    g_metadata_server_available = detected;
+  }
   gpr_mu_unlock(&g_state_mu);
 
-  if (need_compute_engine_creds) {
+  if (g_metadata_server_available) {
     call_creds = grpc_google_compute_engine_credentials_create(nullptr);
     if (call_creds == nullptr) {
       error = grpc_error_add_child(
@@ -259,7 +361,7 @@ void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
-  g_compute_engine_detection_done = 0;
+  g_metadata_server_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
 }
 
