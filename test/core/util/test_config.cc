@@ -406,9 +406,7 @@ TestEnvironment::TestEnvironment(int argc, char** argv) {
   grpc_test_init(argc, argv);
 }
 
-TestEnvironment::~TestEnvironment() {
-  grpc_maybe_wait_for_async_shutdown();
-}
+TestEnvironment::~TestEnvironment() { grpc_maybe_wait_for_async_shutdown(); }
 
 }  // namespace testing
 }  // namespace grpc
