@@ -36,7 +36,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db3
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   set +x
   brew update
-  brew install jq
+  brew install jq || brew upgrade jq
   ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 
