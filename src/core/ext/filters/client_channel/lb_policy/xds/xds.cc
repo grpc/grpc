@@ -1811,7 +1811,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(addresses, args));
   }
 
-  const char* name() const override { return "xds"; }
+  const char* name() const override { return "xds_experimental"; }
 };
 
 }  // namespace
