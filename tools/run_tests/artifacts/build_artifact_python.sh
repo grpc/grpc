@@ -105,7 +105,8 @@ then
   "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_testing source distribution
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py sdist
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess \
+      sdist
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
