@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -120,7 +120,7 @@ $(function() {
 <ul>
 <li><b>Length-Prefixed-Message</b> → Compressed-Flag Message-Length Message</li>
 <li><a class="anchor" id="compressed-flag"></a>**Compressed-Flag** → 0 / 1 # encoded as 1 byte unsigned integer</li>
-<li><b>Message-Length</b> → {<em>length of Message</em>} # encoded as 4 byte unsigned integer</li>
+<li><b>Message-Length</b> → {<em>length of Message</em>} # encoded as 4 byte unsigned integer (big endian)</li>
 <li><b>Message</b> → *{binary octet}</li>
 </ul>
 <p>A <b>Compressed-Flag</b> value of 1 indicates that the binary octet sequence of <b>Message</b> is compressed using the mechanism declared by the <b>Message-Encoding</b> header. A value of 0 indicates that no encoding of <b>Message</b> bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the <b>Message-Encoding</b> header is omitted then the <b>Compressed-Flag</b> must be 0.</p>
@@ -215,7 +215,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

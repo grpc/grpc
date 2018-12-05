@@ -3,6 +3,8 @@ var searchData=
   ['call',['call',['../structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e0e2ef7ba90888f51dafe804ecffe6a',1,'grpc::internal::MethodHandler::HandlerParameter']]],
   ['call_5f',['call_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a54c3a6173cfd54c784475f95d20a77d8',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['call_5fcq_5f',['call_cq_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a1372192c43404f40e7046aab632569ab',1,'grpc::ServerInterface::BaseAsyncRequest']]],
+  ['call_5frequester',['call_requester',['../structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a1043accc7322d61b5fdb8c3d2531278a',1,'grpc::internal::MethodHandler::HandlerParameter']]],
+  ['call_5fwrapper_5f',['call_wrapper_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a594460cdad36b78336172808f543cb54',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['cancelled',['cancelled',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__close__on__server.html#a9245c801a7d3efc4ded0a04d680f9088',1,'grpc_op::grpc_op_data::grpc_op_recv_close_on_server::cancelled()'],['../classgrpc_1_1_status.html#a9994ffe95a0495915d82481c2ec594ab',1,'grpc::Status::CANCELLED()']]],
   ['capacity',['capacity',['../structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97',1,'grpc_metadata_array::capacity()'],['../structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833',1,'grpc_slice_buffer::capacity()']]],
   ['cert_5fchain',['cert_chain',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad58d2824d15cc6a1d646b8bef0b8352e',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]],
@@ -15,7 +17,7 @@ var searchData=
   ['count',['count',['../structgrpc__metadata__array.html#a314ce51b22a5934cc672f3736d44b9e4',1,'grpc_metadata_array::count()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata.html#adb1b8160a56a0a3328bb1f199fb27f0b',1,'grpc_op::grpc_op_data::grpc_op_send_initial_metadata::count()'],['../structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc',1,'grpc_slice_buffer::count()'],['../structgpr__refcount.html#ae1e2d58344b59ff6c0db0dc4f2953470',1,'gpr_refcount::count()']]],
   ['cq_5fcompletion_5ftype',['cq_completion_type',['../structgrpc__completion__queue__attributes.html#a088c45a02ce2162ac11979e453939f6e',1,'grpc_completion_queue_attributes']]],
   ['cq_5fpolling_5ftype',['cq_polling_type',['../structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575',1,'grpc_completion_queue_attributes']]],
-  ['cq_5fshutdown_5fcb',['cq_shutdown_cb',['../structgrpc__completion__queue__attributes.html#a70f7b7706b732d72a2707b743ed80b4c',1,'grpc_completion_queue_attributes']]],
+  ['cq_5fshutdown_5fcb',['cq_shutdown_cb',['../structgrpc__completion__queue__attributes.html#a0f38aa6990e86d316925b9b9a7db473a',1,'grpc_completion_queue_attributes']]],
   ['creds',['creds',['../structgrpc_1_1_server_builder_1_1_port.html#a36fb3427af1ad1971cbf63cfa6378973',1,'grpc::ServerBuilder::Port']]],
   ['cs',['cs',['../structgpr__mu.html#abab5a72a693be27488fb7a9b2cb23e5c',1,'gpr_mu']]],
   ['current',['current',['../structgrpc__byte__buffer__reader.html#ab4b5af3d89b38da03dfde50c50e9e199',1,'grpc_byte_buffer_reader']]]

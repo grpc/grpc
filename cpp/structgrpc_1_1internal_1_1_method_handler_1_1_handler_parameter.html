@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -75,8 +75,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6b6bb1c549f011b5e2c99558b730715b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a6b6bb1c549f011b5e2c99558b730715b">HandlerParameter</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> *c, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req)</td></tr>
-<tr class="separator:a6b6bb1c549f011b5e2c99558b730715b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c9713a659a71272145146108920291"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a38c9713a659a71272145146108920291">HandlerParameter</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> *c, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, void *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> req_status, std::function&lt; void()&gt; requester)</td></tr>
+<tr class="memdesc:a38c9713a659a71272145146108920291"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a>.  <a href="#a38c9713a659a71272145146108920291">More...</a><br /></td></tr>
+<tr class="separator:a38c9713a659a71272145146108920291"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a455c0525b872fe921620c353285f7c45"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a455c0525b872fe921620c353285f7c45">~HandlerParameter</a> ()</td></tr>
 <tr class="separator:a455c0525b872fe921620c353285f7c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -86,12 +87,16 @@ Data Fields</h2></td></tr>
 <tr class="separator:a3e0e2ef7ba90888f51dafe804ecffe6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e6c2bce4e404620dc42c9f2c336a6c6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e6c2bce4e404620dc42c9f2c336a6c6">server_context</a></td></tr>
 <tr class="separator:a3e6c2bce4e404620dc42c9f2c336a6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0020f2f7c0af73e88624e8f87c0c23df"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a0020f2f7c0af73e88624e8f87c0c23df">request</a></td></tr>
-<tr class="separator:a0020f2f7c0af73e88624e8f87c0c23df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f0e94d92cebbf12013daeb1867c507a"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a5f0e94d92cebbf12013daeb1867c507a">request</a></td></tr>
+<tr class="separator:a5f0e94d92cebbf12013daeb1867c507a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91d23f2c60d59ee82c36a63034ad8f1e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a91d23f2c60d59ee82c36a63034ad8f1e">status</a></td></tr>
+<tr class="separator:a91d23f2c60d59ee82c36a63034ad8f1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1043accc7322d61b5fdb8c3d2531278a"><td class="memItemLeft" align="right" valign="top">std::function&lt; void()&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a1043accc7322d61b5fdb8c3d2531278a">call_requester</a></td></tr>
+<tr class="separator:a1043accc7322d61b5fdb8c3d2531278a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a6b6bb1c549f011b5e2c99558b730715b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6b6bb1c549f011b5e2c99558b730715b">&#9670;&nbsp;</a></span>HandlerParameter()</h2>
+<a id="a38c9713a659a71272145146108920291"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38c9713a659a71272145146108920291">&#9670;&nbsp;</a></span>HandlerParameter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -114,8 +119,20 @@ Data Fields</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td>
-          <td class="paramname"><em>req</em>&#160;</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>req</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td>
+          <td class="paramname"><em>req_status</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::function&lt; void()&gt;&#160;</td>
+          <td class="paramname"><em>requester</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -129,6 +146,18 @@ Data Fields</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Constructor for <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">c</td><td>: the gRPC <a class="el" href="classgrpc_1_1internal_1_1_call.html" title="Straightforward wrapping of the C call object. ">Call</a> structure for this server call </td></tr>
+    <tr><td class="paramname">context</td><td>: the <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> structure for this server call </td></tr>
+    <tr><td class="paramname">req</td><td>: the request payload, if appropriate for this RPC </td></tr>
+    <tr><td class="paramname">req_status</td><td>: the request status after any interceptors have run </td></tr>
+    <tr><td class="paramname">rpc_requester</td><td>: used only by the callback API. It is a function called by the RPC Controller to request another RPC (and also to set up the state required to make that request possible) </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -172,14 +201,28 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="a0020f2f7c0af73e88624e8f87c0c23df"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0020f2f7c0af73e88624e8f87c0c23df">&#9670;&nbsp;</a></span>request</h2>
+<a id="a1043accc7322d61b5fdb8c3d2531278a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1043accc7322d61b5fdb8c3d2531278a">&#9670;&nbsp;</a></span>call_requester</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> grpc::internal::MethodHandler::HandlerParameter::request</td>
+          <td class="memname">std::function&lt;void()&gt; grpc::internal::MethodHandler::HandlerParameter::call_requester</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a5f0e94d92cebbf12013daeb1867c507a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f0e94d92cebbf12013daeb1867c507a">&#9670;&nbsp;</a></span>request</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void* grpc::internal::MethodHandler::HandlerParameter::request</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -200,13 +243,27 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a id="a91d23f2c60d59ee82c36a63034ad8f1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a91d23f2c60d59ee82c36a63034ad8f1e">&#9670;&nbsp;</a></span>status</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::MethodHandler::HandlerParameter::status</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2rpc__service__method_8h_source.html">rpc_service_method.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

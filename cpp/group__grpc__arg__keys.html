@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -220,9 +220,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga9e1054f78a26481931b10aa0b33f52b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga9e1054f78a26481931b10aa0b33f52b7">GRPC_ARG_SOCKET_FACTORY</a>&#160;&#160;&#160;&quot;grpc.socket_factory&quot;</td></tr>
 <tr class="memdesc:ga9e1054f78a26481931b10aa0b33f52b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The grpc_socket_factory instance to create and bind sockets.  <a href="#ga9e1054f78a26481931b10aa0b33f52b7">More...</a><br /></td></tr>
 <tr class="separator:ga9e1054f78a26481931b10aa0b33f52b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae4baf9476091b1f1cda04fbfd19da456"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gae4baf9476091b1f1cda04fbfd19da456">GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE</a>&#160;&#160;&#160;&quot;grpc.max_channel_trace_events_per_node&quot;</td></tr>
-<tr class="memdesc:gae4baf9476091b1f1cda04fbfd19da456"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum number of trace events to keep in the tracer for each channel or subchannel.  <a href="#gae4baf9476091b1f1cda04fbfd19da456">More...</a><br /></td></tr>
-<tr class="separator:gae4baf9476091b1f1cda04fbfd19da456"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad20a36039729599902ba6ce82882da2c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad20a36039729599902ba6ce82882da2c">GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE</a>&#160;&#160;&#160;&quot;grpc.max_channel_trace_event_memory_per_node&quot;</td></tr>
+<tr class="memdesc:gad20a36039729599902ba6ce82882da2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum amount of memory used by trace events per channel trace node.  <a href="#gad20a36039729599902ba6ce82882da2c">More...</a><br /></td></tr>
+<tr class="separator:gad20a36039729599902ba6ce82882da2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga169f04dc1fa795c27b0daeda33c16999"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga169f04dc1fa795c27b0daeda33c16999">GRPC_ARG_ENABLE_CHANNELZ</a>&#160;&#160;&#160;&quot;grpc.enable_channelz&quot;</td></tr>
 <tr class="memdesc:ga169f04dc1fa795c27b0daeda33c16999"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, gRPC library will track stats and information at at per channel level.  <a href="#ga169f04dc1fa795c27b0daeda33c16999">More...</a><br /></td></tr>
 <tr class="separator:ga169f04dc1fa795c27b0daeda33c16999"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -267,6 +267,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga37014e47791a777718aac4250180d92e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga37014e47791a777718aac4250180d92e">GRPC_ARG_SURFACE_USER_AGENT</a>&#160;&#160;&#160;&quot;grpc.surface_user_agent&quot;</td></tr>
 <tr class="memdesc:ga37014e47791a777718aac4250180d92e"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to non zero, surfaces the user agent string to the server.  <a href="#ga37014e47791a777718aac4250180d92e">More...</a><br /></td></tr>
 <tr class="separator:ga37014e47791a777718aac4250180d92e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga523b3b4f16b1016108cbeee9ef81fd50"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga523b3b4f16b1016108cbeee9ef81fd50">GRPC_ARG_INHIBIT_HEALTH_CHECKING</a>&#160;&#160;&#160;&quot;grpc.inhibit_health_checking&quot;</td></tr>
+<tr class="memdesc:ga523b3b4f16b1016108cbeee9ef81fd50"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, inhibits health checking (which may be enabled via the service config.)  <a href="#ga523b3b4f16b1016108cbeee9ef81fd50">More...</a><br /></td></tr>
+<tr class="separator:ga523b3b4f16b1016108cbeee9ef81fd50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -712,6 +715,22 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga523b3b4f16b1016108cbeee9ef81fd50"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga523b3b4f16b1016108cbeee9ef81fd50">&#9670;&nbsp;</a></span>GRPC_ARG_INHIBIT_HEALTH_CHECKING</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_INHIBIT_HEALTH_CHECKING&#160;&#160;&#160;&quot;grpc.inhibit_health_checking&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If set, inhibits health checking (which may be enabled via the service config.) </p>
+
+</div>
+</div>
 <a id="gaedb26c5ca7d3d279b81d12d9bf6dabc6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#gaedb26c5ca7d3d279b81d12d9bf6dabc6">&#9670;&nbsp;</a></span>GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS</h2>
 
@@ -795,20 +814,20 @@ Macros</h2></td></tr>
 
 </div>
 </div>
-<a id="gae4baf9476091b1f1cda04fbfd19da456"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#gae4baf9476091b1f1cda04fbfd19da456">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE</h2>
+<a id="gad20a36039729599902ba6ce82882da2c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad20a36039729599902ba6ce82882da2c">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE&#160;&#160;&#160;&quot;grpc.max_channel_trace_events_per_node&quot;</td>
+          <td class="memname">#define GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE&#160;&#160;&#160;&quot;grpc.max_channel_trace_event_memory_per_node&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>The maximum number of trace events to keep in the tracer for each channel or subchannel. </p>
-<p>The default is 10. If set to 0, channel tracing is disabled. </p>
+<p>The maximum amount of memory used by trace events per channel trace node. </p>
+<p>Once the maximum is reached, subsequent events will evict the oldest events from the buffer. The unit for this knob is bytes. Setting it to zero causes channel tracing to be disabled. </p>
 
 </div>
 </div>
@@ -1378,7 +1397,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

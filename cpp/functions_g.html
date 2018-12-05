@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -80,6 +80,11 @@ $(function() {
 <li>GetHealthCheckService()
 : <a class="el" href="classgrpc_1_1_server.html#a8ca33dab1210bf57468e44d000b138ee">grpc::Server</a>
 </li>
+<li>GetInterceptedChannel()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a993f12c0d1a9e5dce038b66c58728e82">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a5103bca2f3826d43182436e3e736bd7b">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a1e23ff14548292c4ae13e383d0232800">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
 <li>GetLoadBalancingPolicyName()
 : <a class="el" href="classgrpc_1_1_channel.html#a2cfba5ae4aae03ca016f902b2070a8a8">grpc::Channel</a>
 </li>
@@ -91,6 +96,46 @@ $(function() {
 </li>
 <li>GetPeerIdentityPropertyName()
 : <a class="el" href="classgrpc_1_1_auth_context.html#ad7b2e589590246b953decd05cdaa4465">grpc::AuthContext</a>
+</li>
+<li>GetRecvInitialMetadata()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a8f123307653591e63ded55d8cea9ad8b">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a1f7cb8407197de0a0d179ed94d1d5b25">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a74068ad08786cda92a3c53d8561c6646">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetRecvMessage()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a3b267515d6afd29afadba454aa913505">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a12909a13d7cecdceeffc794c06ff6896">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a4f8a66ad270d639eec1228205c4bc812">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetRecvStatus()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#ac60304da4f2c2737bcc259bac19e858d">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a3ce51320fa84af6b2a00815305257b4e">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a37e9cdd09aa90c5c54eb5ba3387d179d">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetRecvTrailingMetadata()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a661e6372647f1639783b046d728599fa">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4dc85e0f1a3cdb0c95f04994d443f81f">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#afe82d67dfd4604d3e97c5fa12392058d">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetSendInitialMetadata()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a0ccf0466aa5e7827ba465e8e23aee89b">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aeb89be1a0a160c39a1e6bf94429d5b10">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#adc297879e70dbafe36fbad92fc074bd3">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetSendMessage()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a15b93c5fc95a699f52eb98dcb5e7e36e">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ababe0a8a54704e1556403ac8d1a848e1">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ada3c2ab7c1aee32e2b93477ed8a0ca80">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetSendStatus()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a2792ab543f8b46262ee6e69289b436ab">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a847d3514928d17070c30430fcbf9630c">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a2973701f908f54161019ab84451a08b5">grpc::internal::InterceptorBatchMethodsImpl</a>
+</li>
+<li>GetSendTrailingMetadata()
+: <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#aa6ae91237f0ab16e1bbf7e748cf7cf42">grpc::experimental::InterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4d1a0a5461cbc9173cffd81fe0c8b80d">grpc::internal::CancelInterceptorBatchMethods</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a375ebbb919a41bc8348697a2a812ec8e">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>GetServerInitialMetadata()
 : <a class="el" href="classgrpc_1_1_client_context.html#a068592f22fe0866293c8d1e5ac22ed20">grpc::ClientContext</a>
@@ -107,6 +152,7 @@ $(function() {
 <li>GetState()
 : <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>
 , <a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>
 </li>
 <li>GetType()
 : <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html#ad9a7f5fb8a373bf3680938511cedaf7c">grpc::MetadataCredentialsPlugin</a>
@@ -157,6 +203,12 @@ $(function() {
 <li>gpr_time_0()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a9e0b243dbf1acc21dc123c2d3160026d">grpc::CoreCodegenInterface</a>
 </li>
+<li>grpc::ClientContext
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a4448f28a609bbb75bd1e539a4bd04e41">grpc::experimental::ClientRpcInfo</a>
+</li>
+<li>grpc::ServerContext
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a126374990f90927736f4efdcce92c569">grpc::experimental::ServerRpcInfo</a>
+</li>
 <li>grpc_byte_buffer_copy()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a27c53b8e68493908593016bf8951f4a0">grpc::CoreCodegenInterface</a>
 </li>
@@ -183,6 +235,9 @@ $(function() {
 </li>
 <li>grpc_call_ref()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a715e4e7dfab8362f01a8199489215404">grpc::CoreCodegenInterface</a>
+</li>
+<li>grpc_call_start_batch()
+: <a class="el" href="classgrpc_1_1_core_codegen_interface.html#afb1b9c470647c82b8f6e5a206d8f287d">grpc::CoreCodegenInterface</a>
 </li>
 <li>grpc_call_unref()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a40df30e7435089121f7fa03f76031124">grpc::CoreCodegenInterface</a>
@@ -269,7 +324,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

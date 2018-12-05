@@ -29,6 +29,7 @@ var searchData=
   ['grpc_5fcompletion_5ftype',['grpc_completion_type',['../grpc__types_8h.html#a70454b2958c92c1cd8feeaa45f157b74',1,'grpc_types.h']]],
   ['grpc_5fcompression_5foptions',['grpc_compression_options',['../compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde',1,'compression_types.h']]],
   ['grpc_5fevent',['grpc_event',['../grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7',1,'grpc_types.h']]],
+  ['grpc_5fexperimental_5fcompletion_5fqueue_5ffunctor',['grpc_experimental_completion_queue_functor',['../grpc__types_8h.html#a457c7ceade487b2722b2753615e12611',1,'grpc_types.h']]],
   ['grpc_5fmetadata',['grpc_metadata',['../grpc__types_8h.html#a1da84eaead787d991c5a0c87aed7c30b',1,'grpc_types.h']]],
   ['grpc_5fop',['grpc_op',['../grpc__types_8h.html#a6556a58ca45ad5132b89c770cf875215',1,'grpc_types.h']]],
   ['grpc_5fresource_5fquota',['grpc_resource_quota',['../grpc__types_8h.html#a16d58b8d7c93609d01311b869f4a8d05',1,'grpc_types.h']]],

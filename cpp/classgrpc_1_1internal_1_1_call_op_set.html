@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -73,44 +73,54 @@ $(function() {
 <p>Primary implementation of <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html" title="An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...">CallOpSetInterface</a>.  
  <a href="classgrpc_1_1internal_1_1_call_op_set.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a6f4d72d5d59ffeaa488c167928743ccc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a6f4d72d5d59ffeaa488c167928743ccc">CallOpSet</a> ()</td></tr>
 <tr class="separator:a6f4d72d5d59ffeaa488c167928743ccc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ed145392889b213ee0d51871ae5df32"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a7ed145392889b213ee0d51871ae5df32">FillOps</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__op.html">grpc_op</a> *ops, size_t *nops) override</td></tr>
-<tr class="memdesc:a7ed145392889b213ee0d51871ae5df32"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#a7ed145392889b213ee0d51871ae5df32">More...</a><br /></td></tr>
-<tr class="separator:a7ed145392889b213ee0d51871ae5df32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02821cda89011348338e7f20b3dfdc62"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a02821cda89011348338e7f20b3dfdc62">CallOpSet</a> (const <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a> &amp;other)</td></tr>
+<tr class="separator:a02821cda89011348338e7f20b3dfdc62"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a367a19c23a5d5a57c5fed7e95909ec45"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a367a19c23a5d5a57c5fed7e95909ec45">operator=</a> (const <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a> &amp;other)</td></tr>
+<tr class="separator:a367a19c23a5d5a57c5fed7e95909ec45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab1d4740f44f766ef5a1b91cba017a25"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#aab1d4740f44f766ef5a1b91cba017a25">FillOps</a> (<a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> *call) override</td></tr>
+<tr class="memdesc:aab1d4740f44f766ef5a1b91cba017a25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards.  <a href="#aab1d4740f44f766ef5a1b91cba017a25">More...</a><br /></td></tr>
+<tr class="separator:aab1d4740f44f766ef5a1b91cba017a25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e3652f782b9b3d832bd21740f22a78d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a0e3652f782b9b3d832bd21740f22a78d">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
 <tr class="memdesc:a0e3652f782b9b3d832bd21740f22a78d"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="#a0e3652f782b9b3d832bd21740f22a78d">More...</a><br /></td></tr>
 <tr class="separator:a0e3652f782b9b3d832bd21740f22a78d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a626c528eb250e4811aa9c98b87a994ce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a626c528eb250e4811aa9c98b87a994ce">set_output_tag</a> (void *return_tag)</td></tr>
 <tr class="separator:a626c528eb250e4811aa9c98b87a994ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac16c507a72c1b6aa8ab368caf7af5333"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">cq_tag</a> () override</td></tr>
-<tr class="memdesc:ac16c507a72c1b6aa8ab368caf7af5333"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the tag to be used at the core completion queue.  <a href="#ac16c507a72c1b6aa8ab368caf7af5333">More...</a><br /></td></tr>
-<tr class="separator:ac16c507a72c1b6aa8ab368caf7af5333"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96446999130cd3402a1c0e0e6d3ecb27"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a96446999130cd3402a1c0e0e6d3ecb27">set_cq_tag</a> (void *<a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#ac16c507a72c1b6aa8ab368caf7af5333">cq_tag</a>)</td></tr>
-<tr class="memdesc:a96446999130cd3402a1c0e0e6d3ecb27"><td class="mdescLeft">&#160;</td><td class="mdescRight">set_cq_tag is used to provide a different core CQ tag than "this".  <a href="#a96446999130cd3402a1c0e0e6d3ecb27">More...</a><br /></td></tr>
-<tr class="separator:a96446999130cd3402a1c0e0e6d3ecb27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3eb067a042c699b545051fcae5c6c2f4"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a3eb067a042c699b545051fcae5c6c2f4">core_cq_tag</a> () override</td></tr>
+<tr class="memdesc:a3eb067a042c699b545051fcae5c6c2f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the tag to be used at the core completion queue.  <a href="#a3eb067a042c699b545051fcae5c6c2f4">More...</a><br /></td></tr>
+<tr class="separator:a3eb067a042c699b545051fcae5c6c2f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a449a33a6877ac4710dc40fccaf786c35"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">set_core_cq_tag</a> (void *<a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a3eb067a042c699b545051fcae5c6c2f4">core_cq_tag</a>)</td></tr>
+<tr class="memdesc:a449a33a6877ac4710dc40fccaf786c35"><td class="mdescLeft">&#160;</td><td class="mdescRight">set_core_cq_tag is used to provide a different core CQ tag than "this".  <a href="#a449a33a6877ac4710dc40fccaf786c35">More...</a><br /></td></tr>
+<tr class="separator:a449a33a6877ac4710dc40fccaf786c35"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afad2bd7afd13037835057c0be9ab14cf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#afad2bd7afd13037835057c0be9ab14cf">SetHijackingState</a> () override</td></tr>
+<tr class="separator:afad2bd7afd13037835057c0be9ab14cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9bd70eb135466481368ded47b6918e53"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a9bd70eb135466481368ded47b6918e53">ContinueFillOpsAfterInterception</a> () override</td></tr>
+<tr class="separator:a9bd70eb135466481368ded47b6918e53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34053b2ef99eb724000da2ed556ae854"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a34053b2ef99eb724000da2ed556ae854">ContinueFinalizeResultAfterInterception</a> () override</td></tr>
+<tr class="separator:a34053b2ef99eb724000da2ed556ae854"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a></td></tr>
 <tr class="memitem:a53fa1b2f86702495363df0b8edef8758 inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_completion_queue_tag.html#a53fa1b2f86702495363df0b8edef8758">~CompletionQueueTag</a> ()</td></tr>
 <tr class="separator:a53fa1b2f86702495363df0b8edef8758 inherit pub_methods_classgrpc_1_1internal_1_1_completion_queue_tag"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt;<br />
+<div class="textblock"><h3>template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt;<br />
 class grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</h3>
 
 <p>Primary implementation of <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html" title="An abstract collection of call ops, used to generate the grpc_call_op structure to pass down to the l...">CallOpSetInterface</a>. </p>
 <p>Since we cannot use variadic templates, we declare slots up to the maximum count of ops we'll need in a set. We leverage the empty base class optimization to slim this class (especially when there are many unused slots used). To avoid duplicate base classes, the template parmeter for <a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html" title="Default argument for CallOpSet. ">CallNoOp</a> is varied by argument position. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a6f4d72d5d59ffeaa488c167928743ccc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6f4d72d5d59ffeaa488c167928743ccc">&#9670;&nbsp;</a></span>CallOpSet()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f4d72d5d59ffeaa488c167928743ccc">&#9670;&nbsp;</a></span>CallOpSet() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -131,20 +141,106 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="ac16c507a72c1b6aa8ab368caf7af5333"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac16c507a72c1b6aa8ab368caf7af5333">&#9670;&nbsp;</a></span>cq_tag()</h2>
+<a id="a02821cda89011348338e7f20b3dfdc62"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02821cda89011348338e7f20b3dfdc62">&#9670;&nbsp;</a></span>CallOpSet() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void* <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::cq_tag </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::<a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a> </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt; &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a9bd70eb135466481368ded47b6918e53"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9bd70eb135466481368ded47b6918e53">&#9670;&nbsp;</a></span>ContinueFillOpsAfterInterception()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::ContinueFillOpsAfterInterception </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a5b3641829d7082f83146d17157f1bf38">grpc::internal::CallOpSetInterface</a>.</p>
+
+</div>
+</div>
+<a id="a34053b2ef99eb724000da2ed556ae854"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34053b2ef99eb724000da2ed556ae854">&#9670;&nbsp;</a></span>ContinueFinalizeResultAfterInterception()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::ContinueFinalizeResultAfterInterception </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a6218c0c884e8bfd7fa440ee6d15b2397">grpc::internal::CallOpSetInterface</a>.</p>
+
+</div>
+</div>
+<a id="a3eb067a042c699b545051fcae5c6c2f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3eb067a042c699b545051fcae5c6c2f4">&#9670;&nbsp;</a></span>core_cq_tag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void* <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::core_cq_tag </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -158,19 +254,19 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 </div><div class="memdoc">
 
 <p>Get the tag to be used at the core completion queue. </p>
-<p>Generally, the value of cq_tag will be "this". However, it can be overridden if we want core to process the tag differently (e.g., as a core callback) </p>
+<p>Generally, the value of core_cq_tag will be "this". However, it can be overridden if we want core to process the tag differently (e.g., as a core callback) </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a32bcbbd3c7b0cbf7b8f950e6c14f615c">grpc::internal::CallOpSetInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a20c76c26f622d29b2bc1a064123fe68c">grpc::internal::CallOpSetInterface</a>.</p>
 
 </div>
 </div>
-<a id="a7ed145392889b213ee0d51871ae5df32"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ed145392889b213ee0d51871ae5df32">&#9670;&nbsp;</a></span>FillOps()</h2>
+<a id="aab1d4740f44f766ef5a1b91cba017a25"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab1d4740f44f766ef5a1b91cba017a25">&#9670;&nbsp;</a></span>FillOps()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -178,25 +274,9 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::FillOps </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
-          <td class="paramname"><em>call</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structgrpc__op.html">grpc_op</a> *&#160;</td>
-          <td class="paramname"><em>ops</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t *&#160;</td>
-          <td class="paramname"><em>nops</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -208,7 +288,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 
 <p>Fills in <a class="el" href="structgrpc__op.html" title="Operation data: one field for each op type (except SEND_CLOSE_FROM_CLIENT which has no arguments) ...">grpc_op</a>, starting from ops[*nops] and moving upwards. </p>
 
-<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#ad1c584d78ab0d75edc5608490c101db8">grpc::internal::CallOpSetInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#aa054715a74b57c71cf3437caa01b138a">grpc::internal::CallOpSetInterface</a>.</p>
 
 </div>
 </div>
@@ -218,7 +298,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -262,22 +342,22 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 
 </div>
 </div>
-<a id="a96446999130cd3402a1c0e0e6d3ecb27"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96446999130cd3402a1c0e0e6d3ecb27">&#9670;&nbsp;</a></span>set_cq_tag()</h2>
+<a id="a367a19c23a5d5a57c5fed7e95909ec45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a367a19c23a5d5a57c5fed7e95909ec45">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::set_cq_tag </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a>&amp; <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::operator= </td>
           <td>(</td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>cq_tag</em></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt; &amp;&#160;</td>
+          <td class="paramname"><em>other</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -288,7 +368,35 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 </table>
 </div><div class="memdoc">
 
-<p>set_cq_tag is used to provide a different core CQ tag than "this". </p>
+</div>
+</div>
+<a id="a449a33a6877ac4710dc40fccaf786c35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a449a33a6877ac4710dc40fccaf786c35">&#9670;&nbsp;</a></span>set_core_cq_tag()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::set_core_cq_tag </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>core_cq_tag</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>set_core_cq_tag is used to provide a different core CQ tag than "this". </p>
 <p>This is used for callback-based tags, where the core tag is the core callback function. It does not change the use or behavior of any other function (such as FinalizeResult) </p>
 
 </div>
@@ -299,7 +407,7 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class Op3 = CallNoOp&lt;3&gt;, class Op4 = CallNoOp&lt;4&gt;, class Op5 = CallNoOp&lt;5&gt;, class Op6 = CallNoOp&lt;6&gt;&gt; </div>
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -321,13 +429,42 @@ template&lt;class Op1 = CallNoOp&lt;1&gt;, class Op2 = CallNoOp&lt;2&gt;, class 
 
 </div>
 </div>
+<a id="afad2bd7afd13037835057c0be9ab14cf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afad2bd7afd13037835057c0be9ab14cf">&#9670;&nbsp;</a></span>SetHijackingState()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Op1, class Op2, class Op3, class Op4, class Op5, class Op6&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html">grpc::internal::CallOpSet</a>&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;::SetHijackingState </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html#a284de4e60b1546872c64d051c85c2977">grpc::internal::CallOpSetInterface</a>.</p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

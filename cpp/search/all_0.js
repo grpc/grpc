@@ -2,6 +2,7 @@ var searchData=
 [
   ['blockingunarycallimpl',['BlockingUnaryCallImpl',['../classgrpc_1_1_channel_interface.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::ChannelInterface::BlockingUnaryCallImpl()'],['../classgrpc_1_1_client_context.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::ClientContext::BlockingUnaryCallImpl()'],['../classgrpc_1_1_completion_queue.html#ad26a823fee699f97244d581f400fe39a',1,'grpc::CompletionQueue::BlockingUnaryCallImpl()']]],
   ['callbackunarycallimpl',['CallbackUnaryCallImpl',['../classgrpc_1_1_channel_interface.html#a039f3a4023eccbecbb5c9925722e9ef7',1,'grpc::ChannelInterface::CallbackUnaryCallImpl()'],['../classgrpc_1_1_client_context.html#a039f3a4023eccbecbb5c9925722e9ef7',1,'grpc::ClientContext::CallbackUnaryCallImpl()']]],
+  ['callbackunaryhandler',['CallbackUnaryHandler',['../classgrpc_1_1_server_context.html#aa338f99365bb9921a529358ad243041d',1,'grpc::ServerContext']]],
   ['callopclientrecvstatus',['CallOpClientRecvStatus',['../classgrpc_1_1_client_context.html#a506d0cd94cc911153c6ceb814a59524b',1,'grpc::ClientContext']]],
   ['calloprecvinitialmetadata',['CallOpRecvInitialMetadata',['../classgrpc_1_1_client_context.html#a3b165df6c09402c7753da14140c836cf',1,'grpc::ClientContext']]],
   ['channel',['Channel',['../classgrpc_1_1_completion_queue.html#a82418631373400a3f110c97c937a9533',1,'grpc::CompletionQueue']]],
@@ -19,6 +20,7 @@ var searchData=
   ['clientstreaminghandler',['ClientStreamingHandler',['../classgrpc_1_1_completion_queue.html#aee2bfad715a7c61f2839cdc9b5be6ef5',1,'grpc::CompletionQueue::ClientStreamingHandler()'],['../classgrpc_1_1_server_context.html#aee2bfad715a7c61f2839cdc9b5be6ef5',1,'grpc::ServerContext::ClientStreamingHandler()']]],
   ['clientwriter',['ClientWriter',['../classgrpc_1_1_channel_interface.html#a4498fada67d531d99a8642f47d746544',1,'grpc::ChannelInterface::ClientWriter()'],['../classgrpc_1_1_client_context.html#a4498fada67d531d99a8642f47d746544',1,'grpc::ClientContext::ClientWriter()'],['../classgrpc_1_1_completion_queue.html#a4498fada67d531d99a8642f47d746544',1,'grpc::CompletionQueue::ClientWriter()']]],
   ['errormethodhandler',['ErrorMethodHandler',['../classgrpc_1_1_completion_queue.html#a388eaf44b2f41899396d4b5b05cf857c',1,'grpc::CompletionQueue']]],
+  ['interceptedchannel',['InterceptedChannel',['../classgrpc_1_1_channel_interface.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac',1,'grpc::ChannelInterface']]],
   ['interopclientcontextinspector',['InteropClientContextInspector',['../classgrpc_1_1_client_context.html#ac4ab4e2d21681704cee0f6e741cc813c',1,'grpc::ClientContext']]],
   ['interopservercontextinspector',['InteropServerContextInspector',['../classgrpc_1_1_server_context.html#a23b6c885fa0656c25c2a46ab22e99270',1,'grpc::ServerContext']]],
   ['rpcmethod',['RpcMethod',['../classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2',1,'grpc::ChannelInterface']]],

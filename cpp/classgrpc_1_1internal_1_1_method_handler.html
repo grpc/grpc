@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -87,6 +87,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6c9896af1ffd8b22d0bc197fbd946a33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b91173bcf71a512a80947a5413c6c6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a61b91173bcf71a512a80947a5413c6c6">RunHandler</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a> &amp;param)=0</td></tr>
 <tr class="separator:a61b91173bcf71a512a80947a5413c6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad8e17c26246ffadbc4fdbc2d184e3aef"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#ad8e17c26246ffadbc4fdbc2d184e3aef">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> *status)</td></tr>
+<tr class="separator:ad8e17c26246ffadbc4fdbc2d184e3aef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Base class for running an RPC handler. </p>
@@ -117,6 +119,50 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad8e17c26246ffadbc4fdbc2d184e3aef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad8e17c26246ffadbc4fdbc2d184e3aef">&#9670;&nbsp;</a></span>Deserialize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void* grpc::internal::MethodHandler::Deserialize </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td>
+          <td class="paramname"><em>req</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">Status</a> *&#160;</td>
+          <td class="paramname"><em>status</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a03c5cb1f399b46cb79c4668664b91f25">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a237d4c4e6305997a31c4e7ecfc618d4f">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a81b29e17de2f6d5e384c392932931659">grpc::internal::CallbackUnaryHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#aa3a05b22e984ccb6628ed4b58e5b6a26">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>.</p>
+
+</div>
+</div>
 <a id="a61b91173bcf71a512a80947a5413c6c6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a61b91173bcf71a512a80947a5413c6c6">&#9670;&nbsp;</a></span>RunHandler()</h2>
 
@@ -141,7 +187,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a9b33799ed0523968ae533c0d26acc688">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerUnaryStreamer&lt; RequestType, ResponseType &gt;, true &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerReaderWriter&lt; ResponseType, RequestType &gt;, false &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerSplitStreamer&lt; RequestType, ResponseType &gt;, false &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a1c932932aaccfa13c7777bbcdfa3f89e">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html#ac633b61b307a63b0b2709605ce9e04fd">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#aea7618c2fa08638d40ee4edf620ef695">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a9b33799ed0523968ae533c0d26acc688">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerUnaryStreamer&lt; RequestType, ResponseType &gt;, true &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerReaderWriter&lt; ResponseType, RequestType &gt;, false &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">grpc::internal::TemplatedBidiStreamingHandler&lt; ServerSplitStreamer&lt; RequestType, ResponseType &gt;, false &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a1c932932aaccfa13c7777bbcdfa3f89e">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html#ac633b61b307a63b0b2709605ce9e04fd">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a41ded2aa0c9018e3e608ffe277c3986e">grpc::internal::CallbackUnaryHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#aea7618c2fa08638d40ee4edf620ef695">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>.</p>
 
 </div>
 </div>
@@ -151,7 +197,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

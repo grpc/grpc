@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -83,9 +83,6 @@ Functions</h2></td></tr>
 <tr class="memitem:a9a7bbbb272a485556cf84f96905b1c78"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__posix_8h.html#a9a7bbbb272a485556cf84f96905b1c78">grpc_server_add_insecure_channel_from_fd</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, void *reserved, int fd)</td></tr>
 <tr class="memdesc:a9a7bbbb272a485556cf84f96905b1c78"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the connected communication channel based on file descriptor 'fd' to the 'server'.  <a href="#a9a7bbbb272a485556cf84f96905b1c78">More...</a><br /></td></tr>
 <tr class="separator:a9a7bbbb272a485556cf84f96905b1c78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0dd4f6903c0919775d45189990067d14"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__posix_8h.html#a0dd4f6903c0919775d45189990067d14">grpc_use_signal</a> (int signum)</td></tr>
-<tr class="memdesc:a0dd4f6903c0919775d45189990067d14"><td class="mdescLeft">&#160;</td><td class="mdescRight">GRPC Core POSIX library may internally use signals to optimize some work.  <a href="#a0dd4f6903c0919775d45189990067d14">More...</a><br /></td></tr>
-<tr class="separator:a0dd4f6903c0919775d45189990067d14"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ae01dba904905ef6ad2298f4a85233a41"></a>
@@ -163,34 +160,10 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a0dd4f6903c0919775d45189990067d14"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0dd4f6903c0919775d45189990067d14">&#9670;&nbsp;</a></span>grpc_use_signal()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_use_signal </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>signum</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>GRPC Core POSIX library may internally use signals to optimize some work. </p>
-<p>The library uses (SIGRTMIN + 6) signal by default. Use this API to instruct the library to use a different signal i.e 'signum' instead. Note:</p><ul>
-<li>To prevent GRPC library from using any signals, pass a 'signum' of -1</li>
-<li>This API is optional but if called, it MUST be called before <a class="el" href="grpc_8h.html#a573aed8e200997856a227c7eb798a185" title="Initialize the grpc library. ">grpc_init()</a> </li>
-</ul>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

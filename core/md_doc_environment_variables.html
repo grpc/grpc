@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -89,6 +89,7 @@ $(function() {
 <li>fd_trace - traces fd create(), shutdown() and close() calls for channel fds. Also traces epoll fd create()/close() calls in epollex polling engine traces epoll-fd creation/close calls for epollex polling engine</li>
 <li>glb - traces the grpclb load balancer</li>
 <li>handshaker - traces handshaking state</li>
+<li>health_check_client - traces health checking client code</li>
 <li>http - traces state in the http2 transport engine</li>
 <li>http2_stream_state - traces all http2 stream state mutations.</li>
 <li>http1 - traces HTTP/1.x operations performed by gRPC</li>
@@ -148,12 +149,19 @@ $(function() {
 </li>
 <li>GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS Default: 5000 Declares the interval between two backup polls on client channels. These polls are run in the timer thread so that gRPC can process connection failures while there is no active polling thread. They help reconnect disconnected client channels (mostly due to idleness), so that the next RPC on this channel won't fail. Set to 0 to turn off the backup polls.</li>
 <li>GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL if set, flow control will be effectively disabled. Max out all values and assume the remote peer does the same. Thus we can ignore any flow control bookkeeping, error checking, and decision making</li>
-<li>grpc_cfstream set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined. </li>
+<li>grpc_cfstream set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.</li>
+<li><p class="startli">GRPC_ARENA_INIT_STRATEGY Selects the initialization strategy for blocks allocated in the arena. Valid values are:</p><ul>
+<li>no_init (default): Do not inialize the arena block.</li>
+<li>zero_init: Initialize the arena blocks with 0.</li>
+<li>non_zero_init: Initialize the arena blocks with a non-zero value.</li>
+</ul>
+<p class="startli">NOTE: This environment variable is experimental and will be removed. Thus, it should not be relied upon. </p>
+</li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

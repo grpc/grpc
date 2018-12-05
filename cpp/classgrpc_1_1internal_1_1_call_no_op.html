@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -73,7 +73,7 @@ $(function() {
 <p>Default argument for <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html" title="Primary implementation of CallOpSetInterface. ">CallOpSet</a>.  
  <a href="classgrpc_1_1internal_1_1_call_no_op.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -81,6 +81,12 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a51eab70032336202abb423ac048b1ff3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af9265054e7a1097aa3d5bacd0f257e59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html#af9265054e7a1097aa3d5bacd0f257e59">FinishOp</a> (bool *status)</td></tr>
 <tr class="separator:af9265054e7a1097aa3d5bacd0f257e59"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a8cccf74cb89e556f3ac0f6b880a8cb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html#a4a8cccf74cb89e556f3ac0f6b880a8cb">SetInterceptionHookPoint</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:a4a8cccf74cb89e556f3ac0f6b880a8cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a412ea04accf100c1a7717e02030c6fb3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html#a412ea04accf100c1a7717e02030c6fb3">SetFinishInterceptionHookPoint</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:a412ea04accf100c1a7717e02030c6fb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af640d41d94ecc2437c04f962f5762599"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html#af640d41d94ecc2437c04f962f5762599">SetHijackingState</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:af640d41d94ecc2437c04f962f5762599"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;int I&gt;<br />
@@ -155,13 +161,97 @@ template&lt;int I&gt; </div>
 
 </div>
 </div>
+<a id="a412ea04accf100c1a7717e02030c6fb3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a412ea04accf100c1a7717e02030c6fb3">&#9670;&nbsp;</a></span>SetFinishInterceptionHookPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int I&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html">grpc::internal::CallNoOp</a>&lt; I &gt;::SetFinishInterceptionHookPoint </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af640d41d94ecc2437c04f962f5762599"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af640d41d94ecc2437c04f962f5762599">&#9670;&nbsp;</a></span>SetHijackingState()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int I&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html">grpc::internal::CallNoOp</a>&lt; I &gt;::SetHijackingState </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a4a8cccf74cb89e556f3ac0f6b880a8cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4a8cccf74cb89e556f3ac0f6b880a8cb">&#9670;&nbsp;</a></span>SetInterceptionHookPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int I&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_call_no_op.html">grpc::internal::CallNoOp</a>&lt; I &gt;::SetInterceptionHookPoint </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

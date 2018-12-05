@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -571,7 +571,7 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#a9915a0aad4c5b287af506f1ebe3ad505">grpc_security.h</a>
 </li>
 <li>grpc_alts_credentials_client_options_create()
-: <a class="el" href="grpc__security_8h.html#a2f7a9d868aed28dae93e41ea1ee053cd">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#adfe1c1af2f1ad4c241748f77b7f83585">grpc_security.h</a>
 </li>
 <li>grpc_alts_credentials_create()
 : <a class="el" href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">grpc_security.h</a>
@@ -583,7 +583,7 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">grpc_security.h</a>
 </li>
 <li>grpc_alts_credentials_server_options_create()
-: <a class="el" href="grpc__security_8h.html#a005a0d762b53293959d3137f576f2617">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a2d689961c79ceaf254e7ba211ebe9b34">grpc_security.h</a>
 </li>
 <li>grpc_alts_server_credentials_create()
 : <a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_security.h</a>
@@ -672,6 +672,9 @@ $(function() {
 <li>GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE
 : <a class="el" href="group__grpc__arg__keys.html#ga8ee81850446e587a7410df5ab640c565">grpc_types.h</a>
 </li>
+<li>GRPC_ARG_INHIBIT_HEALTH_CHECKING
+: <a class="el" href="group__grpc__arg__keys.html#ga523b3b4f16b1016108cbeee9ef81fd50">grpc_types.h</a>
+</li>
 <li>GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS
 : <a class="el" href="group__grpc__arg__keys.html#gaedb26c5ca7d3d279b81d12d9bf6dabc6">grpc_types.h</a>
 </li>
@@ -690,8 +693,8 @@ $(function() {
 <li>GRPC_ARG_LB_POLICY_NAME
 : <a class="el" href="group__grpc__arg__keys.html#ga72c2b475e218ecfd36bb7d3551d0295b">grpc_types.h</a>
 </li>
-<li>GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE
-: <a class="el" href="group__grpc__arg__keys.html#gae4baf9476091b1f1cda04fbfd19da456">grpc_types.h</a>
+<li>GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE
+: <a class="el" href="group__grpc__arg__keys.html#gad20a36039729599902ba6ce82882da2c">grpc_types.h</a>
 </li>
 <li>GRPC_ARG_MAX_CONCURRENT_STREAMS
 : <a class="el" href="group__grpc__arg__keys.html#ga5bb9256d0b457cab219f4d9d765148b6">grpc_types.h</a>
@@ -1026,8 +1029,17 @@ $(function() {
 <li>grpc_channelz_get_channel()
 : <a class="el" href="grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c">grpc.h</a>
 </li>
+<li>grpc_channelz_get_server()
+: <a class="el" href="grpc_8h.html#ab0f2e2c55348873010ee6cbe25a1a288">grpc.h</a>
+</li>
+<li>grpc_channelz_get_server_sockets()
+: <a class="el" href="grpc_8h.html#aa77175d74575442ab2fdb76861beb0e2">grpc.h</a>
+</li>
 <li>grpc_channelz_get_servers()
 : <a class="el" href="grpc_8h.html#a4581bf691bc258f4280c1da8c79f817d">grpc.h</a>
+</li>
+<li>grpc_channelz_get_socket()
+: <a class="el" href="grpc_8h.html#aa3c7622a98ff25d48db43ef2871aa37f">grpc.h</a>
 </li>
 <li>grpc_channelz_get_subchannel()
 : <a class="el" href="grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a">grpc.h</a>
@@ -1045,7 +1057,7 @@ $(function() {
 : <a class="el" href="grpc_8h.html#aa47ec388be96d8b90e5dd6812234664c">grpc.h</a>
 </li>
 <li>grpc_completion_queue_create_for_callback()
-: <a class="el" href="grpc_8h.html#a5d4dc2583e43faef74613f77c30bee61">grpc.h</a>
+: <a class="el" href="grpc_8h.html#a1ef5d5be00b9d30818ab15026d0eecf3">grpc.h</a>
 </li>
 <li>grpc_completion_queue_create_for_next()
 : <a class="el" href="grpc_8h.html#a687672b2c261e965286e36f66e3adbef">grpc.h</a>
@@ -1214,6 +1226,9 @@ $(function() {
 </li>
 <li>grpc_event
 : <a class="el" href="grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7">grpc_types.h</a>
+</li>
+<li>grpc_experimental_completion_queue_functor
+: <a class="el" href="grpc__types_8h.html#a457c7ceade487b2722b2753615e12611">grpc_types.h</a>
 </li>
 <li>grpc_fork_handlers_auto_register()
 : <a class="el" href="impl_2codegen_2fork_8h.html#af297152d9157a027414989e892531fc0">fork.h</a>
@@ -1599,11 +1614,11 @@ $(function() {
 <li>GRPC_SLICE_LENGTH
 : <a class="el" href="impl_2codegen_2slice_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">slice.h</a>
 </li>
-<li>grpc_slice_malloc()
-: <a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
-</li>
 <li>GRPC_SLICE_MALLOC
 : <a class="el" href="slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
+</li>
+<li>grpc_slice_malloc()
+: <a class="el" href="slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
 </li>
 <li>grpc_slice_malloc_large()
 : <a class="el" href="slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">slice.h</a>
@@ -1860,9 +1875,6 @@ $(function() {
 <li>GRPC_UNUSED
 : <a class="el" href="impl_2codegen_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8">port_platform.h</a>
 </li>
-<li>grpc_use_signal()
-: <a class="el" href="grpc__posix_8h.html#a0dd4f6903c0919775d45189990067d14">grpc_posix.h</a>
-</li>
 <li>grpc_version_string()
 : <a class="el" href="grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3">grpc.h</a>
 </li>
@@ -1900,7 +1912,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

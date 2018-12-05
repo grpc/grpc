@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -64,6 +64,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
@@ -77,6 +78,11 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2service__type_8h_source.html">service_type.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aacae94e74fed99c259fddd89f94536c8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">Service</a> ()</td></tr>
@@ -87,11 +93,15 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:afd88c22cee74172b5fe1d88f03a2d7f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aed30c12de2f309ae0716c3e436bdcb51"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#aed30c12de2f309ae0716c3e436bdcb51">has_synchronous_methods</a> () const</td></tr>
 <tr class="separator:aed30c12de2f309ae0716c3e436bdcb51"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55e060ebe445c6a76d3e27159914192d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a55e060ebe445c6a76d3e27159914192d">has_callback_methods</a> () const</td></tr>
+<tr class="separator:a55e060ebe445c6a76d3e27159914192d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab340c5134060a9c5ace7e02189c22cf1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#ab340c5134060a9c5ace7e02189c22cf1">has_generic_methods</a> () const</td></tr>
 <tr class="separator:ab340c5134060a9c5ace7e02189c22cf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:ab87fcf0e67cf1d927f86475652afe4a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#ab87fcf0e67cf1d927f86475652afe4a8">experimental</a> ()</td></tr>
+<tr class="separator:ab87fcf0e67cf1d927f86475652afe4a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c5b290a7c22430d3f34ef9a153fa1ef"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
 <tr class="memitem:a5c5b290a7c22430d3f34ef9a153fa1ef"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_service.html#a5c5b290a7c22430d3f34ef9a153fa1ef">RequestAsyncUnary</a> (int index, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, Message *request, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag)</td></tr>
 <tr class="separator:a5c5b290a7c22430d3f34ef9a153fa1ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -200,6 +210,31 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="ab87fcf0e67cf1d927f86475652afe4a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab87fcf0e67cf1d927f86475652afe4a8">&#9670;&nbsp;</a></span>experimental()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_service_1_1experimental__type.html">experimental_type</a> grpc::Service::experimental </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="afd88c22cee74172b5fe1d88f03a2d7f5"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afd88c22cee74172b5fe1d88f03a2d7f5">&#9670;&nbsp;</a></span>has_async_methods()</h2>
 
@@ -211,6 +246,31 @@ Friends</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">bool grpc::Service::has_async_methods </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a55e060ebe445c6a76d3e27159914192d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a55e060ebe445c6a76d3e27159914192d">&#9670;&nbsp;</a></span>has_callback_methods()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::Service::has_callback_methods </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -696,7 +756,7 @@ template&lt;class Message &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -78,9 +78,9 @@ Data Fields</h2></td></tr>
 <tr class="separator:a088c45a02ce2162ac11979e453939f6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9cfd2d6b5b395d9d8f8592b994c30575"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343">grpc_cq_polling_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a9cfd2d6b5b395d9d8f8592b994c30575">cq_polling_type</a></td></tr>
 <tr class="separator:a9cfd2d6b5b395d9d8f8592b994c30575"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a70f7b7706b732d72a2707b743ed80b4c"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a70f7b7706b732d72a2707b743ed80b4c">cq_shutdown_cb</a></td></tr>
-<tr class="memdesc:a70f7b7706b732d72a2707b743ed80b4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">When creating a callbackable CQ, pass in a functor to get invoked when shutdown is complete.  <a href="#a70f7b7706b732d72a2707b743ed80b4c">More...</a><br /></td></tr>
-<tr class="separator:a70f7b7706b732d72a2707b743ed80b4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f38aa6990e86d316925b9b9a7db473a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue__attributes.html#a0f38aa6990e86d316925b9b9a7db473a">cq_shutdown_cb</a></td></tr>
+<tr class="memdesc:a0f38aa6990e86d316925b9b9a7db473a"><td class="mdescLeft">&#160;</td><td class="mdescRight">When creating a callbackable CQ, pass in a functor to get invoked when shutdown is complete.  <a href="#a0f38aa6990e86d316925b9b9a7db473a">More...</a><br /></td></tr>
+<tr class="separator:a0f38aa6990e86d316925b9b9a7db473a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a id="a088c45a02ce2162ac11979e453939f6e"></a>
@@ -113,14 +113,14 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a id="a70f7b7706b732d72a2707b743ed80b4c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a70f7b7706b732d72a2707b743ed80b4c">&#9670;&nbsp;</a></span>cq_shutdown_cb</h2>
+<a id="a0f38aa6990e86d316925b9b9a7db473a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f38aa6990e86d316925b9b9a7db473a">&#9670;&nbsp;</a></span>cq_shutdown_cb</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void* grpc_completion_queue_attributes::cq_shutdown_cb</td>
+          <td class="memname"><a class="el" href="structgrpc__experimental__completion__queue__functor.html">grpc_experimental_completion_queue_functor</a>* grpc_completion_queue_attributes::cq_shutdown_cb</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -152,7 +152,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -91,13 +91,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aa08a9e9e4b371d94638b9345ff417637 inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a <em><a class="el" href="structgpr__timespec.html" title="Analogous to struct timespec. ">gpr_timespec</a></em> representation of the server call's deadline.  <a href="classgrpc_1_1_server_context.html#aa08a9e9e4b371d94638b9345ff417637">More...</a><br /></td></tr>
 <tr class="separator:aa08a9e9e4b371d94638b9345ff417637 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae3371f0adf8521c7097eee437fc4ca4f inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f">AddInitialMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
-<tr class="memdesc:ae3371f0adf8521c7097eee437fc4ca4f inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call.  <a href="classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f">More...</a><br /></td></tr>
+<tr class="memdesc:ae3371f0adf8521c7097eee437fc4ca4f inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>key</em>, <em>value</em>) pair to the initial metadata associated with a server call.  <a href="classgrpc_1_1_server_context.html#ae3371f0adf8521c7097eee437fc4ca4f">More...</a><br /></td></tr>
 <tr class="separator:ae3371f0adf8521c7097eee437fc4ca4f inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">AddTrailingMetadata</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
-<tr class="memdesc:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>meta_key</em>, <em>meta_value</em>) pair to the initial metadata associated with a server call.  <a href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">More...</a><br /></td></tr>
+<tr class="memdesc:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the (<em>key</em>, <em>value</em>) pair to the initial metadata associated with a server call.  <a href="classgrpc_1_1_server_context.html#ac30e12c4ee3ca008522b24157f4f886c">More...</a><br /></td></tr>
 <tr class="separator:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acea4ed6d22ccf89185194310935e2966 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966">IsCancelled</a> () const</td></tr>
-<tr class="memdesc:acea4ed6d22ccf89185194310935e2966 inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">IsCancelled is always safe to call when using sync API.  <a href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966">More...</a><br /></td></tr>
+<tr class="memdesc:acea4ed6d22ccf89185194310935e2966 inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">IsCancelled is always safe to call when using sync or callback API.  <a href="classgrpc_1_1_server_context.html#acea4ed6d22ccf89185194310935e2966">More...</a><br /></td></tr>
 <tr class="separator:acea4ed6d22ccf89185194310935e2966 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8569c71704f03f3b1089745228c70e3b inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a8569c71704f03f3b1089745228c70e3b">TryCancel</a> () const</td></tr>
 <tr class="memdesc:a8569c71704f03f3b1089745228c70e3b inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Cancel the Call from the server.  <a href="classgrpc_1_1_server_context.html#a8569c71704f03f3b1089745228c70e3b">More...</a><br /></td></tr>
@@ -109,7 +109,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a5d25b4bd8d9c8d716188f3984502bee3 inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the compression algorithm to be used by the server call.  <a href="classgrpc_1_1_server_context.html#a5d25b4bd8d9c8d716188f3984502bee3">More...</a><br /></td></tr>
 <tr class="separator:a5d25b4bd8d9c8d716188f3984502bee3 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accfdf160f46aa20eda843443c3eea91d inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#accfdf160f46aa20eda843443c3eea91d">set_compression_level</a> (<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level)</td></tr>
-<tr class="memdesc:accfdf160f46aa20eda843443c3eea91d inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>algorithm</em> to be the compression algorithm used for the server call.  <a href="classgrpc_1_1_server_context.html#accfdf160f46aa20eda843443c3eea91d">More...</a><br /></td></tr>
+<tr class="memdesc:accfdf160f46aa20eda843443c3eea91d inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>level</em> to be the compression level used for the server call.  <a href="classgrpc_1_1_server_context.html#accfdf160f46aa20eda843443c3eea91d">More...</a><br /></td></tr>
 <tr class="separator:accfdf160f46aa20eda843443c3eea91d inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8e42bfddefcc7ae2b39eb54dfd828d8 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ab8e42bfddefcc7ae2b39eb54dfd828d8">compression_level_set</a> () const</td></tr>
 <tr class="memdesc:ab8e42bfddefcc7ae2b39eb54dfd828d8 inherit pub_methods_classgrpc_1_1_server_context"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a bool indicating whether the compression level for this call has been set (either implicitly or through a previous call to <em>set_compression_level</em>.  <a href="classgrpc_1_1_server_context.html#ab8e42bfddefcc7ae2b39eb54dfd828d8">More...</a><br /></td></tr>
@@ -248,7 +248,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

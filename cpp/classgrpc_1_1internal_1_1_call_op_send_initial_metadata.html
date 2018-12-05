@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -72,14 +72,14 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a44eb107dcf2f6a92adc17e9a4d86d1c4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a44eb107dcf2f6a92adc17e9a4d86d1c4">CallOpSendInitialMetadata</a> ()</td></tr>
 <tr class="separator:a44eb107dcf2f6a92adc17e9a4d86d1c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4660cd394f3e799e5b2435924d759d14"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a4660cd394f3e799e5b2435924d759d14">SendInitialMetadata</a> (const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;metadata, uint32_t flags)</td></tr>
-<tr class="separator:a4660cd394f3e799e5b2435924d759d14"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a30a1fb7816a99c49fcec52f473f72a65"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a30a1fb7816a99c49fcec52f473f72a65">SendInitialMetadata</a> (std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *metadata, uint32_t flags)</td></tr>
+<tr class="separator:a30a1fb7816a99c49fcec52f473f72a65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4deee928e2a0765fa6a9f84f31da034d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a4deee928e2a0765fa6a9f84f31da034d">set_compression_level</a> (<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a00956f94efecb56df5d49ba24c39af77">level</a>)</td></tr>
 <tr class="separator:a4deee928e2a0765fa6a9f84f31da034d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -89,15 +89,25 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a90b21715d7d97942a836a6d501060ce1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a77104665d8e746d37ab71e032b601a6c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a77104665d8e746d37ab71e032b601a6c">FinishOp</a> (bool *status)</td></tr>
 <tr class="separator:a77104665d8e746d37ab71e032b601a6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a997a18094d23cd31a215c96c5cde8558"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a997a18094d23cd31a215c96c5cde8558">SetInterceptionHookPoint</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:a997a18094d23cd31a215c96c5cde8558"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83a7531cd79c94eecbab600ecb405d21"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a83a7531cd79c94eecbab600ecb405d21">SetFinishInterceptionHookPoint</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:a83a7531cd79c94eecbab600ecb405d21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34bab34199cbbe930f86b13297bb2c79"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a34bab34199cbbe930f86b13297bb2c79">SetHijackingState</a> (<a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *interceptor_methods)</td></tr>
+<tr class="separator:a34bab34199cbbe930f86b13297bb2c79"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
+<tr class="memitem:afbe70b09f5da1ddb9c01779de8fb672d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#afbe70b09f5da1ddb9c01779de8fb672d">hijacked_</a> = false</td></tr>
+<tr class="separator:afbe70b09f5da1ddb9c01779de8fb672d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a20cdbc5d2db285e523f700ff4f535268"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a20cdbc5d2db285e523f700ff4f535268">send_</a></td></tr>
 <tr class="separator:a20cdbc5d2db285e523f700ff4f535268"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafc22ee8442d98b2846fd8e5275fb44e"><td class="memItemLeft" align="right" valign="top">uint32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#aafc22ee8442d98b2846fd8e5275fb44e">flags_</a></td></tr>
 <tr class="separator:aafc22ee8442d98b2846fd8e5275fb44e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a443dbb8ab7f851e7326f3311f1f96d77"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a443dbb8ab7f851e7326f3311f1f96d77">initial_metadata_count_</a></td></tr>
 <tr class="separator:a443dbb8ab7f851e7326f3311f1f96d77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8973d9bbd5bd42c1a7905cbb9834d5d"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#aa8973d9bbd5bd42c1a7905cbb9834d5d">metadata_map_</a></td></tr>
+<tr class="separator:aa8973d9bbd5bd42c1a7905cbb9834d5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa91deb7d45d66dfeeac65d8964e927f1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#aa91deb7d45d66dfeeac65d8964e927f1">initial_metadata_</a></td></tr>
 <tr class="separator:aa91deb7d45d66dfeeac65d8964e927f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b381ee80701927b95e52d41df86d3b2"><td class="memItemLeft" >struct {</td></tr>
@@ -197,8 +207,8 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
-<a id="a4660cd394f3e799e5b2435924d759d14"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4660cd394f3e799e5b2435924d759d14">&#9670;&nbsp;</a></span>SendInitialMetadata()</h2>
+<a id="a30a1fb7816a99c49fcec52f473f72a65"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a30a1fb7816a99c49fcec52f473f72a65">&#9670;&nbsp;</a></span>SendInitialMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -209,7 +219,7 @@ Protected Attributes</h2></td></tr>
         <tr>
           <td class="memname">void grpc::internal::CallOpSendInitialMetadata::SendInitialMetadata </td>
           <td>(</td>
-          <td class="paramtype">const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;&#160;</td>
+          <td class="paramtype">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td>
           <td class="paramname"><em>metadata</em>, </td>
         </tr>
         <tr>
@@ -259,6 +269,84 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a83a7531cd79c94eecbab600ecb405d21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83a7531cd79c94eecbab600ecb405d21">&#9670;&nbsp;</a></span>SetFinishInterceptionHookPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CallOpSendInitialMetadata::SetFinishInterceptionHookPoint </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a34bab34199cbbe930f86b13297bb2c79"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a34bab34199cbbe930f86b13297bb2c79">&#9670;&nbsp;</a></span>SetHijackingState()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CallOpSendInitialMetadata::SetHijackingState </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a997a18094d23cd31a215c96c5cde8558"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a997a18094d23cd31a215c96c5cde8558">&#9670;&nbsp;</a></span>SetInterceptionHookPoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CallOpSendInitialMetadata::SetInterceptionHookPoint </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a> *&#160;</td>
+          <td class="paramname"><em>interceptor_methods</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Field Documentation</h2>
 <a id="aafc22ee8442d98b2846fd8e5275fb44e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aafc22ee8442d98b2846fd8e5275fb44e">&#9670;&nbsp;</a></span>flags_</h2>
@@ -271,6 +359,28 @@ Protected Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">uint32_t grpc::internal::CallOpSendInitialMetadata::flags_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="afbe70b09f5da1ddb9c01779de8fb672d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afbe70b09f5da1ddb9c01779de8fb672d">&#9670;&nbsp;</a></span>hijacked_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::internal::CallOpSendInitialMetadata::hijacked_ = false</td>
         </tr>
       </table>
   </td>
@@ -368,6 +478,28 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="aa8973d9bbd5bd42c1a7905cbb9834d5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8973d9bbd5bd42c1a7905cbb9834d5d">&#9670;&nbsp;</a></span>metadata_map_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::multimap&lt;<a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&gt;* grpc::internal::CallOpSendInitialMetadata::metadata_map_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a20cdbc5d2db285e523f700ff4f535268"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a20cdbc5d2db285e523f700ff4f535268">&#9670;&nbsp;</a></span>send_</h2>
 
@@ -391,12 +523,12 @@ Protected Attributes</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">call.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="call__op__set_8h_source.html">call_op_set.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

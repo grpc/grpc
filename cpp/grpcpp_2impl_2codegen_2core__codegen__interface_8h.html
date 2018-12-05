@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ Macros</h2></td></tr>
 <tr class="memitem:a39c1421e7081b57c503487659e2653a5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(x)</td></tr>
 <tr class="memdesc:a39c1421e7081b57c503487659e2653a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Codegen specific version of <em>GPR_ASSERT</em>.  <a href="#a39c1421e7081b57c503487659e2653a5">More...</a><br /></td></tr>
 <tr class="separator:a39c1421e7081b57c503487659e2653a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6fb226b396826c0da32ee421603c9c1e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a6fb226b396826c0da32ee421603c9c1e">GPR_CODEGEN_DEBUG_ASSERT</a>(x)&#160;&#160;&#160;<a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(x)</td></tr>
+<tr class="memdesc:a6fb226b396826c0da32ee421603c9c1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Codegen specific version of <em>GPR_DEBUG_ASSERT</em>.  <a href="#a6fb226b396826c0da32ee421603c9c1e">More...</a><br /></td></tr>
+<tr class="separator:a6fb226b396826c0da32ee421603c9c1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a39c1421e7081b57c503487659e2653a5"></a>
@@ -114,16 +117,36 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">do</span> {                                                                     \</div><div class="line">    if (!(x)) {                                                            <a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">\</a></div><div class="line"><a class="code" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">      grpc::g_core_codegen_interface</a>-&gt;<a class="code" href="classgrpc_1_1_core_codegen_interface.html#a15cf8da5fe356167811e101ffa1fbf2c">assert_fail</a>(#x, __FILE__, __LINE__); \</div><div class="line">    }                                                                      \</div><div class="line">  } <span class="keywordflow">while</span> (0)</div><div class="ttc" id="classgrpc_1_1_core_codegen_interface_html_a15cf8da5fe356167811e101ffa1fbf2c"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a15cf8da5fe356167811e101ffa1fbf2c">grpc::CoreCodegenInterface::assert_fail</a></div><div class="ttdeci">virtual void assert_fail(const char *failed_assertion, const char *file, int line)=0</div><div class="ttdoc">Upon a failed assertion, log the error. </div></div>
-<div class="ttc" id="namespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> call.h:46</div></div>
+<div class="ttc" id="namespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> call_op_set.h:50</div></div>
 </div><!-- fragment -->
 <p>Codegen specific version of <em>GPR_ASSERT</em>. </p>
+
+</div>
+</div>
+<a id="a6fb226b396826c0da32ee421603c9c1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6fb226b396826c0da32ee421603c9c1e">&#9670;&nbsp;</a></span>GPR_CODEGEN_DEBUG_ASSERT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GPR_CODEGEN_DEBUG_ASSERT</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">x</td><td>)</td>
+          <td>&#160;&#160;&#160;<a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a>(x)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Codegen specific version of <em>GPR_DEBUG_ASSERT</em>. </p>
 
 </div>
 </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

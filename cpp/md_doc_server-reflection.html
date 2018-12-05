@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -94,7 +94,18 @@ $(function() {
 <p>One potential issue with naive reverse proxies is that, while any individual server will have a consistent and valid picture of the proto DB which is sufficient to handle incoming requests, incompatibilities will arise if the backend servers have a mix of builds. For example, if a given message is moved from foo.proto to bar.proto, and the client requests foo.proto from an old server and bar.proto from a new server, the resulting database will have a double definition.</p>
 <p>To solve this problem, the protocol is structured as a bidirectional stream, ensuring all related requests go to a single server. This has the additional benefit that overlapping recursive requests don’t require sending a lot of redundant information, because there is a single stream to maintain context between queries.</p>
 <div class="fragment"><div class="line">package grpc.reflection.v1alpha;</div><div class="line">message DescriptorDatabaseRequest {</div><div class="line">  string host = 1;</div><div class="line">  oneof message_request {</div><div class="line">    string files_for_file_name = 3;</div><div class="line">    string files_for_symbol_name = 4;</div><div class="line">    FileContainingExtensionRequest file_containing_extension = 5;</div><div class="line">    string list_all_extensions_of_type = 6;</div><div class="line">  }</div><div class="line">}</div><div class="line"></div><div class="line">message FileContainingExtensionRequest {</div><div class="line">  string base_message = 1;</div><div class="line">  int64 extension_id = 2;</div><div class="line">}</div><div class="line"></div><div class="line">message DescriptorDatabaseResponse {</div><div class="line">  string valid_host = 1;</div><div class="line">  DescriptorDatabaseRequest original_request = 2;</div><div class="line">  oneof message_response {</div><div class="line">    // These are proto2 type google.protobuf.FileDescriptorProto, but</div><div class="line">    // we avoid taking a dependency on descriptor.proto, which uses</div><div class="line">    // proto2 only features, by making them opaque</div><div class="line">    // bytes instead</div><div class="line">    repeated bytes fd_proto = 4;</div><div class="line">    ListAllExtensionsResponse extensions_response = 5;</div><div class="line">    // Notably includes error code 5, NOT FOUND</div><div class="line">    int32 error_code = 6;</div><div class="line">  }</div><div class="line">}</div><div class="line"></div><div class="line">message ListAllExtensionsResponse {</div><div class="line">  string base_type_name;</div><div class="line">  repeated int64 extension_number;</div><div class="line">}</div><div class="line"></div><div class="line">service ProtoDescriptorDatabase {</div><div class="line">  rpc DescriptorDatabaseInfo(stream DescriptorDatabaseRequest) returns (stream DescriptorDatabaseResponse);</div><div class="line">}</div></div><!-- fragment --><p>Any given request must either result in an error code or an answer, usually in the form of a series of FileDescriptorProtos with the requested file itself and all previously unsent transitive imports of that file. Servers may track which FileDescriptorProtos have been sent on a given stream, for a given value of valid_host, and avoid sending them repeatedly for overlapping requests.</p>
-<p>| message_request message | Result | | files_for_file_name | transitive closure of file name | | files_for_symbol_name | transitive closure file containing symbol | | file_containing_extension | transitive closure of file containing a given extension number of a given symbol | | list_all_extensions_of_type | ListAllExtensionsResponse containing all known extension numbers of a given type |</p>
+<table class="doxtable">
+<tr>
+<th>message_request message </th><th>Result  </th></tr>
+<tr>
+<td>files_for_file_name </td><td>transitive closure of file name </td></tr>
+<tr>
+<td>files_for_symbol_name </td><td>transitive closure file containing symbol </td></tr>
+<tr>
+<td>file_containing_extension </td><td>transitive closure of file containing a given extension number of a given symbol </td></tr>
+<tr>
+<td>list_all_extensions_of_type </td><td>ListAllExtensionsResponse containing all known extension numbers of a given type </td></tr>
+</table>
 <p>At some point it would make sense to additionally also support any.proto’s format. Note that known any.proto messages can be queried by symbol using this protocol even without any such support, by parsing the url and extracting the symbol name from it.</p>
 <h2>Language specific implementation thoughts</h2>
 <p>All of the information needed to implement Proto reflection is available to the code generator, but I’m not certain we actually generate this in every language. If the proto implementation in the language doesn’t have something like google::protobuf::DescriptorPool the grpc implementation for that language will need to index those FileDescriptorProtos by file and symbol and imports.</p>
@@ -113,7 +124,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

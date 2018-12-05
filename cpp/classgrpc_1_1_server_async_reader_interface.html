@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -142,6 +142,7 @@ template&lt;class W , class R &gt; </div>
 <li>all messages from the client have been received (either known implictly, or explicitly because a previous <em>AsyncReaderInterface::Read</em> operation with a non-ok result, e.g., cq-&gt;Next(&amp;read_tag, &amp;ok) filled in 'ok' with 'false').</li>
 </ul>
 <p>This operation will end when the server has finished sending out initial metadata (if not sent already), response message, and status, or if some failure occurred when trying to do so.</p>
+<p>gRPC doesn't take ownership or a reference to <em>msg</em> or <em>status</em>, so it is safe to to deallocate once Finish returns.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
@@ -195,6 +196,7 @@ template&lt;class W , class R &gt; </div>
 <p>Request notification for when the server has sent the appropriate signals to the client to end the call. Should not be used concurrently with other operations.</p>
 <p>This call is meant to end the call with some error, and can be called at any point that the server would like to "fail" the call (though note this shouldn't be called concurrently with any other "sending" call, like <em>AsyncWriterInterface::Write</em>).</p>
 <p>This operation will end when the server has finished sending out initial metadata (if not sent already), and status, or if some failure occurred when trying to do so.</p>
+<p>gRPC doesn't take ownership or a reference to <em>status</em>, so it is safe to to deallocate once FinishWithError returns.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
@@ -216,7 +218,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

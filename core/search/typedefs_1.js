@@ -30,6 +30,7 @@ var searchData=
   ['grpc_5fcompression_5foptions',['grpc_compression_options',['../compression__types_8h.html#a074a1aa6fb56901a795fe53c2adeefde',1,'compression_types.h']]],
   ['grpc_5fcredentials_5fplugin_5fmetadata_5fcb',['grpc_credentials_plugin_metadata_cb',['../grpc__security_8h.html#a08c13ff956af9e64b514c4af434faba2',1,'grpc_security.h']]],
   ['grpc_5fevent',['grpc_event',['../grpc__types_8h.html#a07990645ca218f6965fd83edf3f421b7',1,'grpc_types.h']]],
+  ['grpc_5fexperimental_5fcompletion_5fqueue_5ffunctor',['grpc_experimental_completion_queue_functor',['../grpc__types_8h.html#a457c7ceade487b2722b2753615e12611',1,'grpc_types.h']]],
   ['grpc_5fmetadata',['grpc_metadata',['../grpc__types_8h.html#a1da84eaead787d991c5a0c87aed7c30b',1,'grpc_types.h']]],
   ['grpc_5fop',['grpc_op',['../grpc__types_8h.html#a6556a58ca45ad5132b89c770cf875215',1,'grpc_types.h']]],
   ['grpc_5fprocess_5fauth_5fmetadata_5fdone_5fcb',['grpc_process_auth_metadata_done_cb',['../grpc__security_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4',1,'grpc_security.h']]],

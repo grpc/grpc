@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -363,9 +363,9 @@ template&lt;typename T &gt; </div>
 <p>Both <em>tag</em> and <em>ok</em> are updated upon success (if an event is available within the <em>deadline</em>). A <em>tag</em> points to an arbitrary location usually employed to uniquely identify an event.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">tag[out]</td><td>Upon sucess, updated to point to the event's tag. </td></tr>
-    <tr><td class="paramname">ok[out]</td><td>Upon sucess, true if a successful event, false otherwise See documentation for <a class="el" href="classgrpc_1_1_completion_queue.html#a86d9810ced694e50f7987ac90b9f8c1a" title="Read from the queue, blocking until an event is available or the queue is shutting down...">CompletionQueue::Next</a> for explanation of ok </td></tr>
-    <tr><td class="paramname">deadline[in]</td><td>How long to block in wait for an event.</td></tr>
+    <tr><td class="paramname">tag</td><td>[out] Upon sucess, updated to point to the event's tag. </td></tr>
+    <tr><td class="paramname">ok</td><td>[out] Upon sucess, true if a successful event, false otherwise See documentation for <a class="el" href="classgrpc_1_1_completion_queue.html#a86d9810ced694e50f7987ac90b9f8c1a" title="Read from the queue, blocking until an event is available or the queue is shutting down...">CompletionQueue::Next</a> for explanation of ok </td></tr>
+    <tr><td class="paramname">deadline</td><td>[in] How long to block in wait for an event.</td></tr>
   </table>
   </dd>
 </dl>
@@ -453,10 +453,10 @@ template&lt;typename T , typename F &gt; </div>
 <p>Both <em>tag</em> and <em>ok</em> are updated upon success (if an event is available within the <em>deadline</em>). A <em>tag</em> points to an arbitrary location usually employed to uniquely identify an event.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">F[in]</td><td>Function to execute before calling AsyncNext on this queue. </td></tr>
-    <tr><td class="paramname">tag[out]</td><td>Upon sucess, updated to point to the event's tag. </td></tr>
-    <tr><td class="paramname">ok[out]</td><td>Upon sucess, true if read a regular event, false otherwise. </td></tr>
-    <tr><td class="paramname">deadline[in]</td><td>How long to block in wait for an event.</td></tr>
+    <tr><td class="paramname">f</td><td>[in] Function to execute before calling AsyncNext on this queue. </td></tr>
+    <tr><td class="paramname">tag</td><td>[out] Upon sucess, updated to point to the event's tag. </td></tr>
+    <tr><td class="paramname">ok</td><td>[out] Upon sucess, true if read a regular event, false otherwise. </td></tr>
+    <tr><td class="paramname">deadline</td><td>[in] How long to block in wait for an event.</td></tr>
   </table>
   </dd>
 </dl>
@@ -501,8 +501,8 @@ template&lt;typename T , typename F &gt; </div>
 <p>Read from the queue, blocking until an event is available or the queue is shutting down. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">tag[out]</td><td>Updated to point to the read event's tag. </td></tr>
-    <tr><td class="paramname">ok[out]</td><td>true if read a successful event, false otherwise.</td></tr>
+    <tr><td class="paramname">tag</td><td>[out] Updated to point to the read event's tag. </td></tr>
+    <tr><td class="paramname">ok</td><td>[out] true if read a successful event, false otherwise.</td></tr>
   </table>
   </dd>
 </dl>
@@ -921,7 +921,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

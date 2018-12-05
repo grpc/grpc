@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -127,6 +127,8 @@ Friends</h2></td></tr>
 <tr class="separator:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afdfab4a69fd00ee5bffe02b9fd2718a2"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2">::grpc::internal::RpcMethod</a></td></tr>
 <tr class="separator:afdfab4a69fd00ee5bffe02b9fd2718a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac">::grpc::internal::InterceptedChannel</a></td></tr>
+<tr class="separator:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Codegen interface for <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">grpc::Channel</a></em>. </p>
@@ -184,7 +186,7 @@ Friends</h2></td></tr>
 <p>Get the current channel state. </p>
 <p>If the channel is in IDLE and <em>try_to_connect</em> is set to true, try to connect. </p>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>, and <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>.</p>
 
 </div>
 </div>
@@ -529,6 +531,28 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
+<a id="a9a23a8cfcee9fd9658ecd8bb1a3193ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9a23a8cfcee9fd9658ecd8bb1a3193ac">&#9670;&nbsp;</a></span>::grpc::internal::InterceptedChannel</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="afdfab4a69fd00ee5bffe02b9fd2718a2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afdfab4a69fd00ee5bffe02b9fd2718a2">&#9670;&nbsp;</a></span>::grpc::internal::RpcMethod</h2>
 
@@ -557,7 +581,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

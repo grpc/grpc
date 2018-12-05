@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -72,6 +72,7 @@ $(function() {
 <div class="contents">
 <div class="textblock"><code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2channel_8h_source.html">grpcpp/channel.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="client__interceptor_8h_source.html">grpcpp/impl/codegen/client_interceptor.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2security_2credentials_8h_source.html">grpcpp/security/credentials.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2channel__arguments_8h_source.html">grpcpp/support/channel_arguments.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2config_8h_source.html">grpcpp/support/config.h</a>&gt;</code><br />
@@ -83,6 +84,8 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespacegrpc"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html">grpc</a></td></tr>
 <tr class="memdesc:namespacegrpc"><td class="mdescLeft">&#160;</td><td class="mdescRight">An <a class="el" href="classgrpc_1_1_alarm.html" title="A thin wrapper around grpc_alarm (see / / src/core/surface/alarm.h). ">Alarm</a> posts the user provided tag to its associated completion queue upon expiry or cancellation. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacegrpc_1_1experimental"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html">grpc::experimental</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -92,11 +95,14 @@ Functions</h2></td></tr>
 <tr class="memitem:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Channel &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3">grpc::CreateCustomChannel</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; ChannelCredentials &gt; &amp;creds, const ChannelArguments &amp;args)</td></tr>
 <tr class="memdesc:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em>.  <a href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3">More...</a><br /></td></tr>
 <tr class="separator:a4a5c8a2c77389604feaa5d38cdd7b8d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add75d935f9366cf23255959e0baaeff5"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Channel &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#add75d935f9366cf23255959e0baaeff5">grpc::experimental::CreateCustomChannelWithInterceptors</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; ChannelCredentials &gt; &amp;creds, const ChannelArguments &amp;args, std::vector&lt; std::unique_ptr&lt; experimental::ClientInterceptorFactoryInterface &gt;&gt; interceptor_creators)</td></tr>
+<tr class="memdesc:add75d935f9366cf23255959e0baaeff5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em> with <em>interceptors</em> being invoked per call.  <a href="namespacegrpc_1_1experimental.html#add75d935f9366cf23255959e0baaeff5">More...</a><br /></td></tr>
+<tr class="separator:add75d935f9366cf23255959e0baaeff5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

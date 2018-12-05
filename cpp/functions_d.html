@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -89,8 +89,13 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a4d7982938885fca52a1c4547208f40b8">grpc::ServerInterface::BaseAsyncRequest</a>
 </li>
 <li>Deserialize()
-: <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func.html#adc5d764822f82dbe6452e3faed4a0c95">grpc::internal::DeserializeFunc</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a81b29e17de2f6d5e384c392932931659">grpc::internal::CallbackUnaryHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func.html#adc5d764822f82dbe6452e3faed4a0c95">grpc::internal::DeserializeFunc</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_deserialize_func_type.html#a75143cf9a39f6334b15a546cdd593b9c">grpc::internal::DeserializeFuncType&lt; R &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a03c5cb1f399b46cb79c4668664b91f25">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#ad8e17c26246ffadbc4fdbc2d184e3aef">grpc::internal::MethodHandler</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#aa3a05b22e984ccb6628ed4b58e5b6a26">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a237d4c4e6305997a31c4e7ecfc618d4f">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc_1_1_serialization_traits_3_01_byte_buffer_00_01void_01_4.html#a11eb353a98d86bab2fa1a1bfd5df9393">grpc::SerializationTraits&lt; ByteBuffer, void &gt;</a>
 </li>
 <li>DeserializeFuncType()
@@ -114,6 +119,9 @@ $(function() {
 <li>disable_deadline_propagation()
 : <a class="el" href="classgrpc_1_1_propagation_options.html#af163720df9f2f2772e397fa31ac74bd7">grpc::PropagationOptions</a>
 </li>
+<li>done_intercepting_
+: <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a6e2125fceb15e9c6673b02ad870a0025">grpc::ServerInterface::BaseAsyncRequest</a>
+</li>
 <li>DoThenAsyncNext()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#af935df99ccd14bcfb674e89f0c077a8c">grpc::CompletionQueue</a>
 </li>
@@ -127,7 +135,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

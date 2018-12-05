@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['nextstatus',['NextStatus',['../classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572',1,'grpc::CompletionQueue']]]
+  ['interceptionhookpoints',['InterceptionHookPoints',['../namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1',1,'grpc::experimental']]]
 ];

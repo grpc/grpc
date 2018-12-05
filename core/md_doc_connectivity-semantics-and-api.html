@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0-dev</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,10 +68,10 @@ $(function() {
 <p>gRPC Channels provide the abstraction over which clients can communicate with servers.The client-side channel object can be constructed using little more than a DNS name. Channels encapsulate a range of functionality including name resolution, establishing a TCP connection (with retries and backoff) and TLS handshakes. Channels can also handle errors on established connections and reconnect, or in the case of HTTP/2 GO_AWAY, re-resolve the name and reconnect.</p>
 <p>To hide the details of all this activity from the user of the gRPC API (i.e., application code) while exposing meaningful information about the state of a channel, we use a state machine with five states, defined below:</p>
 <p>CONNECTING: The channel is trying to establish a connection and is waiting to make progress on one of the steps involved in name resolution, TCP connection establishment or TLS handshake. This may be used as the initial state for channels upon creation.</p>
-<p>READY: The channel has successfully established a connection all the way through TLS handshake (or equivalent) and all subsequent attempt to communicate have succeeded (or are pending without any known failure ).</p>
+<p>READY: The channel has successfully established a connection all the way through TLS handshake (or equivalent) and protocol-level (HTTP/2, etc) handshaking, and all subsequent attempt to communicate have succeeded (or are pending without any known failure).</p>
 <p>TRANSIENT_FAILURE: There has been some transient failure (such as a TCP 3-way handshake timing out or a socket error). Channels in this state will eventually switch to the CONNECTING state and try to establish a connection again. Since retries are done with exponential backoff, channels that fail to connect will start out spending very little time in this state but as the attempts fail repeatedly, the channel will spend increasingly large amounts of time in this state. For many non-fatal failures (e.g., TCP connection attempts timing out because the server is not yet available), the channel may spend increasingly large amounts of time in this state.</p>
 <p>IDLE: This is the state where the channel is not even trying to create a connection because of a lack of new or pending RPCs. New RPCs MAY be created in this state. Any attempt to start an RPC on the channel will push the channel out of this state to connecting. When there has been no RPC activity on a channel for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this period, channels that are READY or CONNECTING switch to IDLE. Additionaly, channels that receive a GOAWAY when there are no active or pending RPCs should also switch to IDLE to avoid connection overload at servers that are attempting to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).</p>
-<p>SHUTDOWN: This channel has started shutting down. Any new RPCs should fail immediately. Pending RPCs may continue running till the application cancels them. Channels may enter this state either because the application explicitly requested a shutdown or if a non-recoverable error has happened during attempts to connect communicate . (As of 6/12/2015, there are no known errors (while connecting or communicating) that are classified as non-recoverable) Channels that enter this state never leave this state.</p>
+<p>SHUTDOWN: This channel has started shutting down. Any new RPCs should fail immediately. Pending RPCs may continue running till the application cancels them. Channels may enter this state either because the application explicitly requested a shutdown or if a non-recoverable error has happened during attempts to connect communicate . (As of 6/12/2015, there are no known errors (while connecting or communicating) that are classified as non-recoverable.) Channels that enter this state never leave this state.</p>
 <p>The following table lists the legal transitions from one state to another and corresponding reasons. Empty cells denote disallowed transitions.</p>
 <table style="border: 1px solid black">
 <tr>
@@ -98,7 +98,7 @@ upon receiving a GOAWAY while there are no pending RPCs. </td><td>Shutdown trigg
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:34 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

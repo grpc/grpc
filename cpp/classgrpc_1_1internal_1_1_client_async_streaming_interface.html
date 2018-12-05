@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -158,7 +158,7 @@ Public Member Functions</h2></td></tr>
 <li>the client side has no more message to send (this can be declared implicitly by calling this method, or explicitly through an earlier call to the <em>WritesDone</em> method of the class in use, e.g. <em><a class="el" href="classgrpc_1_1_client_async_writer_interface.html#a488d42d85f8e34902401e013572ff822" title="Signal the client is done with the writes (half-close the client stream). ">ClientAsyncWriterInterface::WritesDone</a></em> or <em><a class="el" href="classgrpc_1_1_client_async_reader_writer_interface.html#a878193880df68ab969b697f1fcd7dbc3" title="Signal the client is done with the writes (half-close the client stream). ">ClientAsyncReaderWriterInterface::WritesDone</a></em>).</li>
 <li>there are no more messages to be received from the server (this can be known implicitly by the calling code, or explicitly from an earlier call to <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> that yielded a failed result, e.g. cq-&gt;Next(&amp;read_tag, &amp;ok) filled in 'ok' with 'false').</li>
 </ul>
-<p>This function will return when either:</p><ul>
+<p>The tag will be returned when either:</p><ul>
 <li>all incoming messages have been read and the server has returned a status.</li>
 <li>the server has returned a non-OK status.</li>
 <li>the call failed for some reason and the library generated a status.</li>
@@ -249,7 +249,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

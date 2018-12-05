@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.16.0-dev</span>
+   &#160;<span id="projectnumber">1.17.0</span>
    </div>
   </td>
  </tr>
@@ -161,6 +161,7 @@ template&lt;class W &gt; </div>
 
 <p>Request the writing of <em>msg</em> with identifying tag <em>tag</em>. </p>
 <p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. This is thread-safe with respect to <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> </p>
+<p>gRPC doesn't take ownership or a reference to <em>msg</em>, so it is safe to to deallocate once Write returns.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -217,6 +218,7 @@ template&lt;class W &gt; </div>
 
 <p>Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>. </p>
 <p>Only one write may be outstanding at any given time. This means that after calling Write, one must wait to receive <em>tag</em> from the completion queue BEFORE calling Write again. <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> is used to set the write options of this message. This is thread-safe with respect to <em><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#adf87c602036d69158950b7299d0aae70" title="Read a message of type R into msg. ">AsyncReaderInterface::Read</a></em> </p>
+<p>gRPC doesn't take ownership or a reference to <em>msg</em>, so it is safe to to deallocate once Write returns.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -274,6 +276,7 @@ template&lt;class W &gt; </div>
 
 <p>Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options. ">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>. </p>
 <p>For client, WriteLast is equivalent of performing Write and WritesDone in a single step. For server, WriteLast buffers the <em>msg</em>. The writing of <em>msg</em> is held until Finish is called, where <em>msg</em> and trailing metadata are coalesced and write is initiated. Note that WriteLast can only buffer <em>msg</em> up to the flow control window size. If <em>msg</em> size is larger than the window size, it will be sent on wire without buffering.</p>
+<p>gRPC doesn't take ownership or a reference to <em>msg</em>, so it is safe to to deallocate once Write returns.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">msg</td><td>The message to be written. </td></tr>
@@ -291,7 +294,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Sep 18 2018 11:18:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
