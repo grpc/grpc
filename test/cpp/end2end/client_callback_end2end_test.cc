@@ -183,6 +183,10 @@ class ClientCallbackEnd2endTest
   }
 
   void SendGenericEchoAsBidi(int num_rpcs) {
+    // TODO(vjpai): re-enable this test once our RBE-MSAN issues are sorted
+    if (GetParam().callback_server) {
+      return;
+    }
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
