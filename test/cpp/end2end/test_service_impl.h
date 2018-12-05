@@ -36,6 +36,8 @@ const char* const kServerTryCancelRequest = "server_try_cancel";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";
+const char* const kCheckClientInitialMetadataKey = "custom_client_metadata";
+const char* const kCheckClientInitialMetadataVal = "Value for client metadata";
 
 typedef enum {
   DO_NOT_CANCEL = 0,
@@ -52,6 +54,10 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override;
+
+  Status CheckClientInitialMetadata(ServerContext* context,
+                                    const SimpleRequest* request,
+                                    SimpleResponse* response) override;
 
   // Unimplemented is left unimplemented to test the returned error.
 
@@ -87,6 +93,11 @@ class CallbackTestServiceImpl
   void Echo(ServerContext* context, const EchoRequest* request,
             EchoResponse* response,
             experimental::ServerCallbackRpcController* controller) override;
+
+  void CheckClientInitialMetadata(
+      ServerContext* context, const SimpleRequest* request,
+      SimpleResponse* response,
+      experimental::ServerCallbackRpcController* controller) override;
 
   experimental::ServerReadReactor<EchoRequest, EchoResponse>* RequestStream()
       override;
