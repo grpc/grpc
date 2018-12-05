@@ -776,7 +776,7 @@ def cloud_to_prod_jobspec(language,
     container_name = None
     cmdargs = [
         '--server_host=%s' % server_host,
-        '--server_host_override=%s' % server_host, '--server_port=443',
+        '--server_port=443',
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
