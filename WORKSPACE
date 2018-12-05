@@ -1,5 +1,6 @@
 workspace(name = "com_github_grpc_grpc")
 
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
@@ -16,7 +17,7 @@ register_toolchains(
     "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
 )
 
-new_http_archive(
+http_archive(
     name = "cython",
     build_file = "//third_party:cython.BUILD",
     sha256 = "d68138a2381afbdd0876c3cb2a22389043fa01c4badede1228ee073032b07a27",
