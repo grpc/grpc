@@ -50,6 +50,8 @@ _EMPTY_FLAGS = 0
 
 _UNEXPECTED_EXIT_SERVER_GRACE = 1.0
 
+_GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+
 
 def _serialized_request(request_event):
     return request_event.batch_operations[0].message()
@@ -298,6 +300,16 @@ class _Context(grpc.ServicerContext):
     def set_details(self, details):
         with self._state.condition:
             self._state.details = _common.encode(details)
+
+    def set_status(self, code, message, details=None):
+        with self._state.condition:
+            self._state.code = code
+            self._state.details = _common.encode(message)
+            if details is not None:
+                trailing_metadata = ((_GRPC_DETAILS_METADATA_KEY, details),)
+                if self._state.trailing_metadata is not None:
+                    trailing_metadata += self._state.trailing_metadata
+                self._state.trailing_metadata = trailing_metadata
 
 
 class _RequestIterator(object):

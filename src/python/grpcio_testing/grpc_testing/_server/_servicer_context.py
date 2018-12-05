@@ -75,3 +75,6 @@ class ServicerContext(grpc.ServicerContext):
 
     def set_details(self, details):
         self._rpc.set_details(details)
+
+    def set_status(self, code, message, details=None):
+        self._rpc.set_status(code, message, details)

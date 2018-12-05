@@ -21,6 +21,8 @@ from grpc_testing import _common
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
+_GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+
 
 class Rpc(object):
 
@@ -153,3 +155,12 @@ class Rpc(object):
     def set_details(self, details):
         with self._condition:
             self._pending_details = details
+
+    def set_status(self, code, message, details=None):
+        with self._condition:
+            self._pending_code = code
+            self._pending_details = message
+            trailing_metadata = ((_GRPC_DETAILS_METADATA_KEY, details),)
+            if self._pending_trailing_metadata is not None:
+                trailing_metadata += self._pending_trailing_metadata
+            self._pending_trailing_metadata = trailing_metadata

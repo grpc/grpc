@@ -354,7 +354,7 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def code(self):
-        """Accesses the status code sent by the server.
+        """Accesses the :term:`status code` sent by the server.
 
         This method blocks until the value is available.
 
@@ -365,12 +365,26 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def details(self):
-        """Accesses the details sent by the server.
+        """Accesses the :term:`status message` sent by the server.
 
         This method blocks until the value is available.
 
         Returns:
-          The details string of the RPC.
+          The status message string of the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def status(self):
+        """Accesses the status of the RPC. The status includes :term:`status code`,
+        :term:`status message`, and :term:`status details`.
+
+        This method blocks until the value is available.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          An instance of *namedtuple('Status', ['code', 'message', 'details'])*
         """
         raise NotImplementedError()
 
@@ -666,7 +680,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         Raises:
           RpcError: Indicating that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
-            metadata, status code, and details.
+            metadata, status code, message and details.
         """
         raise NotImplementedError()
 
@@ -695,7 +709,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         Raises:
           RpcError: Indicating that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
-            metadata, status code, and details.
+            metadata, status code, message and details.
         """
         raise NotImplementedError()
 
@@ -818,7 +832,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         Raises:
           RpcError: Indicating that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
-            metadata, status code, and details.
+            metadata, status code, message and details.
         """
         raise NotImplementedError()
 
@@ -1109,8 +1123,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         Args:
           code: A StatusCode object to be sent to the client.
             It must not be StatusCode.OK.
-          details: An ASCII-encodable string to be sent to the client upon
-            termination of the RPC.
+          details: A :term:`status message` string to be sent to the client
+            upon termination of the RPC.
 
         Raises:
           Exception: An exception is always raised to signal the abortion the
@@ -1120,7 +1134,7 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_code(self, code):
-        """Sets the value to be used as status code upon RPC completion.
+        """Sets the value to be used as :term:`status code` upon RPC completion.
 
         This method need not be called by method implementations if they wish
         the gRPC runtime to determine the status code of the RPC.
@@ -1132,14 +1146,34 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     @abc.abstractmethod
     def set_details(self, details):
-        """Sets the value to be used as detail string upon RPC completion.
+        """Sets the value to be used as :term:`status message` upon RPC
+        completion.
 
         This method need not be called by method implementations if they have
         no details to transmit.
 
         Args:
-          details: An ASCII-encodable string to be sent to the client upon
-            termination of the RPC.
+          details: A :term:`status message` string to be sent to the client
+            upon termination of the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def set_status(self, code, message, details=None):
+        """Sets all status-related values to be used upon RPC completionself.
+
+        This method need not be called by method implementations if they wish
+        the gRPC runtime to determine the status code of the RPC or have no
+        message to transmit.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          code: A StatusCode object to be sent to the client.
+          message: A :term:`status message` string to be sent to the client
+            upon termination of the RPC.
+          details: A binary :term:`status details` string to be sent to the
+            client upon termination of the RPC.
         """
         raise NotImplementedError()
 

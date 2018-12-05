@@ -14,12 +14,16 @@
 
 import logging
 import threading
+import collections
 
 import grpc
 
 _NOT_YET_OBSERVED = object()
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
+
+_GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+_Status = collections.namedtuple('Status', ['code', 'message', 'details'])
 
 
 def _cancel(handler):
@@ -57,6 +61,18 @@ def _details(handler):
     return details
 
 
+def _status(handler):
+    trailing_metadata, code, message = handler.termination()
+    for metadatum in trailing_metadata:
+        if metadatum.key == _GRPC_DETAILS_METADATA_KEY:
+            details = metadatum.value
+    return _Status(
+        code=code,
+        message=message,
+        details=details,
+    )
+
+
 class _Call(grpc.Call):
 
     def __init__(self, handler):
@@ -85,6 +101,9 @@ class _Call(grpc.Call):
 
     def details(self):
         return _details(self._handler)
+
+    def status(self):
+        return _status(self._handler)
 
 
 class _RpcErrorCall(grpc.RpcError, grpc.Call):
@@ -115,6 +134,9 @@ class _RpcErrorCall(grpc.RpcError, grpc.Call):
 
     def details(self):
         return _details(self._handler)
+
+    def status(self):
+        return _status(self._handler)
 
 
 def _next(handler):
@@ -235,6 +257,9 @@ class _FutureCall(grpc.Future, grpc.Call):
     def details(self):
         return _details(self._handler)
 
+    def status(self):
+        return _status(self._handler)
+
 
 def consume_requests(request_iterator, handler):
 
@@ -322,3 +347,6 @@ class ResponseIteratorCall(grpc.Call):
 
     def details(self):
         return _details(self._handler)
+
+    def status(self):
+        return _status(self._handler)

@@ -99,6 +99,10 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):
     def details(self):
         return 'Exception raised while intercepting the RPC'
 
+    def status(self):
+        return (grpc.StatusCode.INTERNAL,
+                'Exception raised while intercepting the RPC', None)
+
     def cancel(self):
         return False
 
@@ -156,6 +160,9 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
 
     def details(self):
         return self._call.details()
+
+    def status(self):
+        return self._call.status()
 
     def is_active(self):
         return self._call.is_active()

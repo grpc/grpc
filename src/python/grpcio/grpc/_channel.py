@@ -17,6 +17,7 @@ import logging
 import sys
 import threading
 import time
+import collections
 
 import grpc
 from grpc import _common
@@ -70,6 +71,9 @@ _NON_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
                                   '\tdetails = "{}"\n'
                                   '\tdebug_error_string = "{}"\n'
                                   '>')
+
+_GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
+_Status = collections.namedtuple('Status', ['code', 'message', 'details'])
 
 
 def _deadline(timeout):
@@ -406,6 +410,22 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
             while self._state.details is None:
                 self._state.condition.wait()
             return _common.decode(self._state.details)
+
+    def status(self):
+        with self._state.condition:
+            while self._state.code is None \
+                or self._state.details is None \
+                or self._state.trailing_metadata is None:
+                self._state.condition.wait()
+            details = None
+            for metadatum in self._state.trailing_metadata:
+                if metadatum.key == _GRPC_DETAILS_METADATA_KEY:
+                    details = metadatum.value
+            return _Status(
+                code=self._state.code,
+                message=_common.decode(self._state.details),
+                details=details,
+            )
 
     def debug_error_string(self):
         with self._state.condition:

@@ -14,3 +14,12 @@ Glossary
 
   metadata
     A sequence of metadatum.
+
+  status code
+    The gRPC status code defined in https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
+
+  status message
+    A text (unicode allowed) field that indicates the status of the RPC call and it is intended to be read by the developers.
+
+  status details
+    A encoded *google.rpc.status.Status* proto message that serves as rich status error details about the RPC Call.
