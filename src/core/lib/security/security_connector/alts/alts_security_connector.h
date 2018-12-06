@@ -38,10 +38,10 @@
  *
  * It returns GRPC_SECURITY_OK on success, and an error stauts code on failure.
  */
-grpc_security_status grpc_alts_channel_security_connector_create(
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_alts_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target_name,
-    grpc_channel_security_connector** sc);
+    grpc_call_credentials* request_metadata_creds, const char* target_name);
 
 /**
  * This method creates an ALTS server security connector.
@@ -52,15 +52,16 @@ grpc_security_status grpc_alts_channel_security_connector_create(
  *
  * It returns GRPC_SECURITY_OK on success, and an error status code on failure.
  */
-grpc_security_status grpc_alts_server_security_connector_create(
-    grpc_server_credentials* server_creds, grpc_server_security_connector** sc);
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_alts_server_security_connector_create(
+    grpc_server_credentials* server_creds);
 
 namespace grpc_core {
 namespace internal {
 
 /* Exposed only for testing. */
-grpc_security_status grpc_alts_auth_context_from_tsi_peer(
-    const tsi_peer* peer, grpc_auth_context** ctx);
+grpc_core::RefCountedPtr<grpc_auth_context>
+grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer);
 
 }  // namespace internal
 }  // namespace grpc_core
