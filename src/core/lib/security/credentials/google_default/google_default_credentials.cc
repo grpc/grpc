@@ -49,11 +49,16 @@
 
 /* -- Default credentials. -- */
 
-static int g_metadata_server_detection_done = 0;
+/* A sticky bit that will be set only if the result of metadata server detection
+ * is positive. We do not set the bit if the result is negative. Because it
+ * means the detection is done via network test that is unreliable and the
+ * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
 static int g_is_on_gce = 0;
 static gpr_mu g_state_mu;
-static gpr_mu* g_polling_mu;
+/* Protect a metadata_server_detector instance that can be modified by more than
+ * one gRPC threads */
+.static gpr_mu* g_polling_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
     grpc_alts_is_running_on_gcp;
@@ -65,7 +70,7 @@ typedef struct {
   int is_done;
   int success;
   grpc_http_response response;
-} compute_engine_detector;
+} metadata_server_detector;
 
 static void google_default_credentials_destruct(
     grpc_channel_credentials* creds) {
@@ -93,7 +98,7 @@ static grpc_security_status google_default_create_security_connector(
   grpc_security_status status = GRPC_SECURITY_ERROR;
   /* Return failure if ALTS is selected but not running on GCE. */
   if (use_alts && !g_is_on_gce) {
-    goto end;
+    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.") goto end;
   }
   status = use_alts ? c->alts_creds->vtable->create_security_connector(
                           c->alts_creds, call_creds, target, args, sc, new_args)
@@ -122,8 +127,8 @@ static grpc_channel_credentials_vtable google_default_credentials_vtable = {
 
 static void on_metadata_server_detection_http_response(void* user_data,
                                                        grpc_error* error) {
-  compute_engine_detector* detector =
-      static_cast<compute_engine_detector*>(user_data);
+  metadata_server_detector* detector =
+      static_cast<metadata_server_detector*>(user_data);
   if (error == GRPC_ERROR_NONE && detector->response.status == 200 &&
       detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
@@ -152,7 +157,7 @@ static void destroy_pollset(void* p, grpc_error* e) {
 }
 
 static int is_metadata_server_reachable() {
-  compute_engine_detector detector;
+  metadata_server_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
   grpc_closure destroy_closure;
@@ -297,19 +302,15 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   gpr_mu_lock(&g_state_mu);
 
   /* Try a platform-provided hint for GCE. */
-  if (!g_metadata_server_detection_done) {
+  if (!g_metadata_server_available) {
     g_is_on_gce = g_gce_tenancy_checker();
-    g_metadata_server_detection_done = g_is_on_gce;
     g_metadata_server_available = g_is_on_gce;
   }
   /* TODO: Add a platform-provided hint for GAE. */
 
   /* Do a network test for metadata server. */
-  if (!g_metadata_server_detection_done) {
-    bool detected = is_metadata_server_reachable();
-    /* Do not cache detecion result if netowrk test returns false. */
-    g_metadata_server_detection_done = detected;
-    g_metadata_server_available = detected;
+  if (!g_metadata_server_available) {
+    g_metadata_server_available = is_metadata_server_reachable();
   }
   gpr_mu_unlock(&g_state_mu);
 
@@ -361,7 +362,7 @@ void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
-  g_metadata_server_detection_done = 0;
+  g_metadata_server_available = 0;
   gpr_mu_unlock(&g_state_mu);
 }
 
