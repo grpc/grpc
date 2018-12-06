@@ -158,13 +158,13 @@ extern NSString *const kGRPCTrailersKey;
 /**
  * Issued when initial metadata is received from the server.
  */
-- (void)receivedInitialMetadata:(nullable NSDictionary *)initialMetadata;
+- (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization.
  */
-- (void)receivedRawMessage:(nullable NSData *)message;
+- (void)didReceiveRawMessage:(nullable NSData *)message;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -172,7 +172,7 @@ extern NSString *const kGRPCTrailersKey;
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
-- (void)closedWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+- (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                              error:(nullable NSError *)error;
 
 @required
@@ -247,7 +247,7 @@ extern NSString *const kGRPCTrailersKey;
 
 /**
  * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
- * should be cancelled, and issue closedWithTrailingMetadata:error: callback with error code
+ * should be cancelled, and issue didCloseWithTrailingMetadata:error: callback with error code
  * CANCELED if no other error code has already been issued.
  */
 - (void)cancel;

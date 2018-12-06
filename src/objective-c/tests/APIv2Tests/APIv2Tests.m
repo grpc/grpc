@@ -81,19 +81,19 @@ static const NSTimeInterval kTestTimeout = 16;
   return self;
 }
 
-- (void)receivedInitialMetadata:(NSDictionary *)initialMetadata {
+- (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   if (self->_initialMetadataCallback) {
     self->_initialMetadataCallback(initialMetadata);
   }
 }
 
-- (void)receivedRawMessage:(GPBMessage *)message {
+- (void)didReceiveRawMessage:(GPBMessage *)message {
   if (self->_messageCallback) {
     self->_messageCallback(message);
   }
 }
 
-- (void)closedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (self->_closeCallback) {
     self->_closeCallback(trailingMetadata, error);
   }

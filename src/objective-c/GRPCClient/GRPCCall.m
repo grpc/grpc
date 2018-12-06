@@ -250,7 +250,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _call = nil;
     _pipe = nil;
 
-    if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
         // Copy to local so that block is freed after cancellation completes.
         id<GRPCResponseHandler> copiedHandler = nil;
@@ -259,7 +259,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
           self->_handler = nil;
         }
 
-        [copiedHandler closedWithTrailingMetadata:nil
+        [copiedHandler didCloseWithTrailingMetadata:nil
                                             error:[NSError errorWithDomain:kGRPCErrorDomain
                                                                       code:GRPCErrorCodeCancelled
                                                                   userInfo:@{
@@ -321,13 +321,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
   @synchronized(self) {
     if (initialMetadata != nil &&
-        [_handler respondsToSelector:@selector(receivedInitialMetadata:)]) {
+        [_handler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
           copiedHandler = self->_handler;
         }
-        [copiedHandler receivedInitialMetadata:initialMetadata];
+        [copiedHandler didReceiveInitialMetadata:initialMetadata];
       });
     }
   }
@@ -335,13 +335,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueMessage:(id)message {
   @synchronized(self) {
-    if (message != nil && [_handler respondsToSelector:@selector(receivedRawMessage:)]) {
+    if (message != nil && [_handler respondsToSelector:@selector(didReceiveRawMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
           copiedHandler = self->_handler;
         }
-        [copiedHandler receivedRawMessage:message];
+        [copiedHandler didReceiveRawMessage:message];
       });
     }
   }
@@ -349,7 +349,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   @synchronized(self) {
-    if ([_handler respondsToSelector:@selector(closedWithTrailingMetadata:error:)]) {
+    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCResponseHandler> copiedHandler = nil;
         @synchronized(self) {
@@ -357,7 +357,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
           // Clean up _handler so that no more responses are reported to the handler.
           self->_handler = nil;
         }
-        [copiedHandler closedWithTrailingMetadata:trailingMetadata error:error];
+        [copiedHandler didCloseWithTrailingMetadata:trailingMetadata error:error];
       });
     } else {
       _handler = nil;
