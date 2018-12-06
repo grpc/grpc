@@ -255,10 +255,12 @@ class ClientCallbackReaderWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
@@ -450,10 +452,12 @@ class ClientCallbackReaderImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackReaderImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
@@ -576,10 +580,12 @@ class ClientCallbackWriterImpl
 
   void MaybeFinish() {
     if (--callbacks_outstanding_ == 0) {
-      reactor_->OnDone(finish_status_);
+      Status s = std::move(finish_status_);
+      auto* reactor = reactor_;
       auto* call = call_.call();
       this->~ClientCallbackWriterImpl();
       g_core_codegen_interface->grpc_call_unref(call);
+      reactor->OnDone(s);
     }
   }
 
