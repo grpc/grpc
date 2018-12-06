@@ -25,16 +25,37 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-/* Main struct for grpc local channel credential. */
-typedef struct grpc_local_credentials {
-  grpc_channel_credentials base;
-  grpc_local_connect_type connect_type;
-} grpc_local_credentials;
+/* Main class for grpc local channel credential. */
+class grpc_local_credentials final : public grpc_channel_credentials {
+ public:
+  explicit grpc_local_credentials(grpc_local_connect_type connect_type);
+  ~grpc_local_credentials() override = default;
 
-/* Main struct for grpc local server credential. */
-typedef struct grpc_local_server_credentials {
-  grpc_server_credentials base;
-  grpc_local_connect_type connect_type;
-} grpc_local_server_credentials;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
+
+  grpc_local_connect_type connect_type() const { return connect_type_; }
+
+ private:
+  grpc_local_connect_type connect_type_;
+};
+
+/* Main class for grpc local server credential. */
+class grpc_local_server_credentials final : public grpc_server_credentials {
+ public:
+  explicit grpc_local_server_credentials(grpc_local_connect_type connect_type);
+  ~grpc_local_server_credentials() override = default;
+
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() override;
+
+  grpc_local_connect_type connect_type() const { return connect_type_; }
+
+ private:
+  grpc_local_connect_type connect_type_;
+};
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_LOCAL_LOCAL_CREDENTIALS_H */
