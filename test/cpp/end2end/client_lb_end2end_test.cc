@@ -116,7 +116,10 @@ class MyTestServiceImpl : public TestServiceImpl {
 class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
-      : server_host_("localhost"), kRequestMessage_("Live long and prosper.") {
+      : server_host_("localhost"),
+        kRequestMessage_("Live long and prosper."),
+        creds_(new SecureChannelCredentials(
+            grpc_fake_transport_security_credentials_create())) {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "1");
@@ -215,9 +218,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    std::shared_ptr<ChannelCredentials> creds(new SecureChannelCredentials(
-        grpc_fake_transport_security_credentials_create()));
-    return CreateCustomChannel("fake:///", std::move(creds), args);
+    return CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(
@@ -265,6 +266,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     MyTestServiceImpl service_;
     std::unique_ptr<std::thread> thread_;
     bool server_ready_ = false;
+    bool started_ = false;
 
     explicit ServerData(int port = 0) {
       port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
@@ -272,6 +274,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     void Start(const grpc::string& server_host) {
       gpr_log(GPR_INFO, "starting server on port %d", port_);
+      started_ = true;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -297,9 +300,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
       cond->notify_one();
     }
 
-    void Shutdown(bool join = true) {
+    void Shutdown() {
+      if (!started_) return;
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-      if (join) thread_->join();
+      thread_->join();
+      started_ = false;
     }
 
     void SetServingStatus(const grpc::string& service, bool serving) {
@@ -378,6 +383,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
   const grpc::string kRequestMessage_;
+  std::shared_ptr<ChannelCredentials> creds_;
 };
 
 TEST_F(ClientLbEnd2endTest, PickFirst) {
@@ -420,6 +426,30 @@ TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
   auto second_stub = BuildStub(second_channel);
   SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(second_stub, DEBUG_LOCATION);
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstSelectsReadyAtStartup) {
+  ChannelArguments args;
+  constexpr int kInitialBackOffMs = 5000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  // Create 2 servers, but start only the second one.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die()};
+  CreateServers(2, ports);
+  StartServer(1);
+  auto channel1 = BuildChannel("pick_first", args);
+  auto stub1 = BuildStub(channel1);
+  SetNextResolution(ports);
+  // Wait for second server to be ready.
+  WaitForServer(stub1, 1, DEBUG_LOCATION);
+  // Create a second channel with the same addresses.  Its PF instance
+  // should immediately pick the second subchannel, since it's already
+  // in READY state.
+  auto channel2 = BuildChannel("pick_first", args);
+  SetNextResolution(ports);
+  // Check that the channel reports READY without waiting for the
+  // initial backoff.
+  EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1 /* timeout_seconds */));
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
@@ -899,7 +929,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   servers_[0]->service_.ResetCounters();
 
   // Shutdown one of the servers to be sent in the update.
-  servers_[1]->Shutdown(false);
+  servers_[1]->Shutdown();
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
   SetNextResolution(ports);
@@ -958,7 +988,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Kill all servers
   gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
   for (size_t i = 0; i < servers_.size(); ++i) {
-    servers_[i]->Shutdown(true);
+    servers_[i]->Shutdown();
   }
   gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
   gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
@@ -1006,7 +1036,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   }
   const auto pre_death = servers_[0]->service_.request_count();
   // Kill the first server.
-  servers_[0]->Shutdown(true);
+  servers_[0]->Shutdown();
   // Client request still succeed. May need retrying if RR had returned a pick
   // before noticing the change in the server's connectivity.
   while (!SendRpc(stub)) {
