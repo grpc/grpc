@@ -195,3 +195,7 @@ int grpc_is_initialized(void) {
   gpr_mu_unlock(&g_init_mu);
   return r;
 }
+
+void grpc_test_x(void) {
+  gpr_log(GPR_ERROR, "X");
+}
