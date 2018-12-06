@@ -388,7 +388,6 @@ def grpc_end2end_tests():
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
-                "//test/core/util:gpr_test_util",
                 "//:gpr",
             ],
         )
@@ -440,7 +439,6 @@ def grpc_end2end_nosec_tests():
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
                 "//:grpc_unsecure",
-                "//test/core/util:gpr_test_util",
                 "//:gpr",
             ],
         )
