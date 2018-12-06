@@ -96,11 +96,11 @@
     return out
 
   def grpc_test_util_files(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("src", "headers"))
     return out
 
   def grpc_test_util_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("headers",))
+    out = grpc_lib_files(libs, ("grpc_test_util",), ("headers",))
     return out
 
   # Tests subspec is currently disabled since the tests currently use `grpc++` include style instead of `grpcpp`.
