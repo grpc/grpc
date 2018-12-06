@@ -775,8 +775,7 @@ def cloud_to_prod_jobspec(language,
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
-        '--server_host=%s' % server_host,
-        '--server_port=443',
+        '--server_host=%s' % server_host, '--server_port=443',
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
