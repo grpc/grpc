@@ -47,6 +47,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 @implementation GRPCUnaryProtoCall {
   GRPCStreamingProtoCall *_call;
+  GPBMessage *_message;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -54,15 +55,22 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
+  NSAssert(message != nil, @"message cannot be empty.");
+  NSAssert(responseClass != nil, @"responseClass cannot be empty.");
   if ((self = [super init])) {
     _call = [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
                                                    responseHandler:handler
                                                        callOptions:callOptions
                                                      responseClass:responseClass];
-    [_call writeMessage:message];
-    [_call finish];
+    _message = [message copy];
   }
   return self;
+}
+
+- (void)start {
+  [_call start];
+  [_call writeMessage:_message];
+  [_call finish];
 }
 
 - (void)cancel {
@@ -120,15 +128,14 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     }
     dispatch_set_target_queue(_dispatchQueue, handler.dispatchQueue);
 
-    [self start];
+    _call = [[GRPCCall2 alloc] initWithRequestOptions:_requestOptions
+                                      responseHandler:self
+                                          callOptions:_callOptions];
   }
   return self;
 }
 
 - (void)start {
-  _call = [[GRPCCall2 alloc] initWithRequestOptions:_requestOptions
-                                    responseHandler:self
-                                        callOptions:_callOptions];
   [_call start];
 }
 

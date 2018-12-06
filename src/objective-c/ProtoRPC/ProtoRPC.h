@@ -77,6 +77,11 @@ NS_ASSUME_NONNULL_BEGIN
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
+ * Start the call. This function must only be called once for each instance.
+ */
+- (void)start;
+
+/**
  * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
  * should be cancelled, and issue closedWithTrailingMetadata:error: callback with error code
  * CANCELED if no other error code has already been issued.
@@ -100,6 +105,11 @@ NS_ASSUME_NONNULL_BEGIN
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(nullable GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
+
+/**
+ * Start the call. This function must only be called once for each instance.
+ */
+- (void)start;
 
 /**
  * Cancel the request of this call at best effort. It attempts to notify the server that the RPC

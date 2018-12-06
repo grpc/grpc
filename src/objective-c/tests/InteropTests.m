@@ -197,7 +197,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testEmptyUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnaryWithV2API"];
 
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -205,7 +205,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
 
-  [_service
+  GRPCUnaryProtoCall *call = [_service
       emptyCallWithMessage:request
            responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                                messageCallback:^(id message) {
@@ -219,6 +219,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                  XCTAssertNil(error, @"Unexpected error: %@", error);
                                }]
                callOptions:options];
+  [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
@@ -243,6 +244,44 @@ BOOL isRemoteInteropTest(NSString *host) {
                            [expectation fulfill];
                          }];
 
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testLargeUnaryRPCWithV2API {
+  XCTAssertNotNil([[self class] host]);
+  __weak XCTestExpectation *expectRecvMessage = [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
+  __weak XCTestExpectation *expectRecvComplete = [self expectationWithDescription:@"LargeUnaryWithV2API received complete"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 314159;
+  request.payload.body = [NSMutableData dataWithLength:271828];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  GRPCUnaryProtoCall *call = [_service
+                              unaryCallWithMessage:request
+                              responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                                                                                  messageCallback:^(id message) {
+                                                                                                    XCTAssertNotNil(message);
+                                                                                                    if (message) {
+                                                                                                      RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+                                                                                                      expectedResponse.payload.type = RMTPayloadType_Compressable;
+                                                                                                      expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+                                                                                                      XCTAssertEqualObjects(message, expectedResponse);
+
+                                                                                                      [expectRecvMessage fulfill];
+                                                                                                    }
+                                                                                                  }
+                                                                                                    closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                                                                                      XCTAssertNil(error, @"Unexpected error: %@", error);
+                                                                                                      [expectRecvComplete fulfill];
+                                                                                                    }]
+                              callOptions:options];
+  [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
@@ -473,7 +512,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testPingPongRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPongWithV2API"];
 
   NSArray *requests = @[ @27182, @8, @1828, @45904 ];
   NSArray *responses = @[ @31415, @9, @2653, @58979 ];
@@ -517,6 +556,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                               [expectation fulfill];
                                             }]
                             callOptions:options];
+  [call start];
   [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -562,7 +602,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testCancelAfterBeginRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBegin"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
 
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   __block GRPCStreamingProtoCall *call = [_service
@@ -577,6 +617,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                                   [expectation fulfill];
                                                 }]
                                 callOptions:nil];
+  [call start];
   [call cancel];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -650,7 +691,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                               [completionExpectation fulfill];
                                             }]
                             callOptions:options];
-
+  [call start];
   [call writeMessage:request];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
@@ -680,7 +721,7 @@ BOOL isRemoteInteropTest(NSString *host) {
                                                                                [completionExpectation fulfill];
                                                                              }]
                                           callOptions:options];
-
+  [call start];
   [call writeMessage:request];
   [call cancel];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
