@@ -236,8 +236,12 @@ class Chttp2IncomingByteStream : public ByteStream {
   // alone for now.  We can revisit this once we're able to link against
   // libc++, at which point we can eliminate New<> and Delete<> and
   // switch to std::shared_ptr<>.
-  void Ref();
-  void Unref();
+  void Ref() { refs_.Ref(); }
+  void Unref() {
+    if (refs_.Unref()) {
+      grpc_core::Delete(this);
+    }
+  }
 
   void PublishError(grpc_error* error);
 
@@ -256,7 +260,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 
-  gpr_refcount refs_;
+  grpc_core::RefCount refs_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
@@ -290,7 +294,7 @@ struct grpc_chttp2_transport {
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
-  gpr_refcount refs;
+  grpc_core::RefCount refs;
   grpc_endpoint* ep;
   char* peer_string;
 
@@ -638,10 +642,12 @@ struct grpc_chttp2_stream {
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed = false;
-  /** gRPC header bytes that are already decompressed */
-  size_t decompressed_header_bytes = 0;
   /** Whether the bytes needs to be traced using Fathom */
   bool traced = false;
+  /** gRPC header bytes that are already decompressed */
+  size_t decompressed_header_bytes = 0;
+  /** Byte counter for number of bytes written */
+  size_t byte_counter = 0;
 };
 
 /** Transport writing call flow:
@@ -786,15 +792,29 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s);
   grpc_chttp2_ref_transport(t, r, __FILE__, __LINE__)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) \
   grpc_chttp2_unref_transport(t, r, __FILE__, __LINE__)
-void grpc_chttp2_unref_transport(grpc_chttp2_transport* t, const char* reason,
-                                 const char* file, int line);
-void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
-                               const char* file, int line);
+inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
+                                        const char* reason, const char* file,
+                                        int line) {
+  if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
+    grpc_core::Delete(t);
+  }
+}
+inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
+                                      const char* reason, const char* file,
+                                      int line) {
+  t->refs.Ref(grpc_core::DebugLocation(file, line), reason);
+}
 #else
 #define GRPC_CHTTP2_REF_TRANSPORT(t, r) grpc_chttp2_ref_transport(t)
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
-void grpc_chttp2_unref_transport(grpc_chttp2_transport* t);
-void grpc_chttp2_ref_transport(grpc_chttp2_transport* t);
+inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
+  if (t->refs.Unref()) {
+    grpc_core::Delete(t);
+  }
+}
+inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
+  t->refs.Ref();
+}
 #endif
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);

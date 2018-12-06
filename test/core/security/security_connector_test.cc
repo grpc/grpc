@@ -430,7 +430,7 @@ static void test_default_ssl_roots(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   test_unauthenticated_ssl_peer();

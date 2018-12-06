@@ -232,8 +232,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                     credentials=new_credentials,
                     wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
-            except grpc.RpcError:
-                raise
+            except grpc.RpcError as rpc_error:
+                return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
@@ -354,8 +354,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                     credentials=new_credentials,
                     wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
-            except grpc.RpcError:
-                raise
+            except grpc.RpcError as rpc_error:
+                return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 

@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
   g_fixture_slowdown_factor = 10;
 #endif
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

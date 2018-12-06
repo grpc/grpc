@@ -24,3 +24,10 @@ grpc_proto_library(
     has_services = True,
     well_known_protos = True,
 )
+
+filegroup(
+    name = "channelz_proto_file",
+    srcs = [
+        "channelz.proto",
+    ],
+)

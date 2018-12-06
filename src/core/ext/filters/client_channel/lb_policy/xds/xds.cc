@@ -114,7 +114,7 @@ TraceFlag grpc_lb_xds_trace(false, "xds");
 
 namespace {
 
-constexpr char kXds[] = "xds";
+constexpr char kXds[] = "xds_experimental";
 
 class XdsLb : public LoadBalancingPolicy {
  public:
@@ -170,8 +170,7 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   /// Contains a call to the LB server and all the data related to the call.
-  class BalancerCallState
-      : public InternallyRefCountedWithTracing<BalancerCallState> {
+  class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy);
@@ -492,7 +491,7 @@ grpc_lb_addresses* ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
 
 XdsLb::BalancerCallState::BalancerCallState(
     RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy)
-    : InternallyRefCountedWithTracing<BalancerCallState>(&grpc_lb_xds_trace),
+    : InternallyRefCounted<BalancerCallState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(parent_xdslb_policy)) {
   GPR_ASSERT(xdslb_policy_ != nullptr);
   GPR_ASSERT(!xdslb_policy()->shutting_down_);

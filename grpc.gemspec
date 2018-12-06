@@ -340,6 +340,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/call_combiner.h )
   s.files += %w( src/core/lib/iomgr/closure.h )
   s.files += %w( src/core/lib/iomgr/combiner.h )
+  s.files += %w( src/core/lib/iomgr/dynamic_annotations.h )
   s.files += %w( src/core/lib/iomgr/endpoint.h )
   s.files += %w( src/core/lib/iomgr/endpoint_pair.h )
   s.files += %w( src/core/lib/iomgr/error.h )

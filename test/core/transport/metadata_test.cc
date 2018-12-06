@@ -370,7 +370,7 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_no_op();
   for (int k = 0; k <= 1; k++) {

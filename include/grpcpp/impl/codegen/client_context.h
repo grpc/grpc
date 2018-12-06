@@ -71,6 +71,12 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
+template <class Request, class Response>
+class ClientCallbackReaderWriterImpl;
+template <class Response>
+class ClientCallbackReaderImpl;
+template <class Request>
+class ClientCallbackWriterImpl;
 }  // namespace internal
 
 template <class R>
@@ -162,6 +168,8 @@ class InteropClientContextInspector;
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
+/// \warning The ClientContext instance used for creating an rpc must remain
+///          alive and valid for the lifetime of the rpc.
 class ClientContext {
  public:
   ClientContext();
@@ -394,6 +402,12 @@ class ClientContext {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
+  template <class Request, class Response>
+  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
+  template <class Response>
+  friend class ::grpc::internal::ClientCallbackReaderImpl;
+  template <class Request>
+  friend class ::grpc::internal::ClientCallbackWriterImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {

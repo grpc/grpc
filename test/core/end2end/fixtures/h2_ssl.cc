@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */

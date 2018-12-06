@@ -124,6 +124,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",

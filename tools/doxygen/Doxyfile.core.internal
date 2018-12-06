@@ -784,6 +784,7 @@ doc/environment_variables.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -1183,6 +1184,7 @@ src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.cc \
 src/core/lib/iomgr/combiner.h \
+src/core/lib/iomgr/dynamic_annotations.h \
 src/core/lib/iomgr/endpoint.cc \
 src/core/lib/iomgr/endpoint.h \
 src/core/lib/iomgr/endpoint_pair.h \
