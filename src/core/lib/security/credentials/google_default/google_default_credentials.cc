@@ -58,7 +58,7 @@ static int g_is_on_gce = 0;
 static gpr_mu g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
-.static gpr_mu* g_polling_mu;
+static gpr_mu* g_polling_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
     grpc_alts_is_running_on_gcp;
@@ -98,7 +98,8 @@ static grpc_security_status google_default_create_security_connector(
   grpc_security_status status = GRPC_SECURITY_ERROR;
   /* Return failure if ALTS is selected but not running on GCE. */
   if (use_alts && !g_is_on_gce) {
-    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.") goto end;
+    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
+    goto end;
   }
   status = use_alts ? c->alts_creds->vtable->create_security_connector(
                           c->alts_creds, call_creds, target, args, sc, new_args)
