@@ -1,4 +1,3 @@
-#region Copyright notice and license
 
 // Copyright 2018 gRPC authors.
 //
@@ -14,16 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#endregion
+syntax = "proto3";
 
-using System.Reflection;
-using NUnitLite;
+package grpc.testing;
 
-namespace Grpc.Tools.Tests
-{
-    static class NUnitMain
-    {
-        public static int Main(string[] args) =>
-            new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
-    };
+message SimpleRequest {
+}
+
+message SimpleResponse {
 }

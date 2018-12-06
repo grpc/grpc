@@ -42,8 +42,7 @@ namespace grpc_core {
 ///
 /// Any I/O done by the LB policy should be done under the pollset_set
 /// returned by \a interested_parties().
-class LoadBalancingPolicy
-    : public InternallyRefCountedWithTracing<LoadBalancingPolicy> {
+class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
   struct Args {
     /// The combiner under which all LB policy calls will be run.

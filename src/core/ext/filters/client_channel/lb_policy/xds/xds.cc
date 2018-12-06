@@ -164,8 +164,7 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   /// Contains a call to the LB server and all the data related to the call.
-  class BalancerCallState
-      : public InternallyRefCountedWithTracing<BalancerCallState> {
+  class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy);
@@ -415,7 +414,7 @@ UniquePtr<ServerAddressList> ProcessServerlist(
 
 XdsLb::BalancerCallState::BalancerCallState(
     RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy)
-    : InternallyRefCountedWithTracing<BalancerCallState>(&grpc_lb_xds_trace),
+    : InternallyRefCounted<BalancerCallState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(parent_xdslb_policy)) {
   GPR_ASSERT(xdslb_policy_ != nullptr);
   GPR_ASSERT(!xdslb_policy()->shutting_down_);
@@ -1661,7 +1660,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(args));
   }
 
-  const char* name() const override { return "xds"; }
+  const char* name() const override { return "xds_experimental"; }
 };
 
 }  // namespace

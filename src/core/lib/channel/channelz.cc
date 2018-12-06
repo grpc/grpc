@@ -208,11 +208,7 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   ChildRefsList socket_refs;
-  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserved). However, we want to support requests coming in with
-  // start_server_id=0, which signifies "give me everything."
-  size_t start_idx = start_socket_id == 0 ? 0 : start_socket_id - 1;
-  grpc_server_populate_server_sockets(server_, &socket_refs, start_idx);
+  grpc_server_populate_server_sockets(server_, &socket_refs, start_socket_id);
   if (!socket_refs.empty()) {
     // create list of socket refs
     grpc_json* array_parent = grpc_json_create_child(

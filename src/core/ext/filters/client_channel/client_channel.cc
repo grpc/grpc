@@ -491,9 +491,9 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     // taking a lock on chand->info_mu, because this function is the
     // only thing that modifies its value, and it can only be invoked
     // once at any given time.
-    bool lb_policy_name_changed = chand->info_lb_policy_name == nullptr ||
-                                  gpr_stricmp(chand->info_lb_policy_name.get(),
-                                              lb_policy_name.get()) != 0;
+    bool lb_policy_name_changed =
+        chand->info_lb_policy_name == nullptr ||
+        strcmp(chand->info_lb_policy_name.get(), lb_policy_name.get()) != 0;
     if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
       if (grpc_client_channel_trace.enabled()) {

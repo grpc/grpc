@@ -163,9 +163,9 @@ TEST(MakeRefCounted, Args) {
 
 TraceFlag foo_tracer(true, "foo");
 
-class FooWithTracing : public RefCountedWithTracing<FooWithTracing> {
+class FooWithTracing : public RefCounted<FooWithTracing> {
  public:
-  FooWithTracing() : RefCountedWithTracing(&foo_tracer) {}
+  FooWithTracing() : RefCounted(&foo_tracer) {}
 };
 
 TEST(RefCountedPtr, RefCountedWithTracing) {
