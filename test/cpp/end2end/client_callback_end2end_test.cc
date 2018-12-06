@@ -182,7 +182,7 @@ class ClientCallbackEnd2endTest
     }
   }
 
-  void SendGenericEchoAsBidi(int num_rpcs) {
+  void SendGenericEchoAsBidi(int num_rpcs, int reuses) {
     const grpc::string kMethodName("/grpc.testing.EchoTestService/Echo");
     grpc::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
@@ -191,14 +191,26 @@ class ClientCallbackEnd2endTest
                                                                   ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const grpc::string& method_name,
-               const grpc::string& test_str) {
-          test->generic_stub_->experimental().PrepareBidiStreamingCall(
-              &cli_ctx_, method_name, this);
-          request_.set_message(test_str);
-          send_buf_ = SerializeToByteBuffer(&request_);
-          StartWrite(send_buf_.get());
-          StartRead(&recv_buf_);
-          StartCall();
+               const grpc::string& test_str, int reuses)
+            : reuses_remaining_(reuses) {
+          activate_ = [this, test, method_name, test_str] {
+            if (reuses_remaining_ > 0) {
+              cli_ctx_.reset(new ClientContext);
+              reuses_remaining_--;
+              test->generic_stub_->experimental().PrepareBidiStreamingCall(
+                  cli_ctx_.get(), method_name, this);
+              request_.set_message(test_str);
+              send_buf_ = SerializeToByteBuffer(&request_);
+              StartWrite(send_buf_.get());
+              StartRead(&recv_buf_);
+              StartCall();
+            } else {
+              std::unique_lock<std::mutex> l(mu_);
+              done_ = true;
+              cv_.notify_one();
+            }
+          };
+          activate_();
         }
         void OnWriteDone(bool ok) override { StartWritesDone(); }
         void OnReadDone(bool ok) override {
@@ -208,9 +220,7 @@ class ClientCallbackEnd2endTest
         };
         void OnDone(const Status& s) override {
           EXPECT_TRUE(s.ok());
-          std::unique_lock<std::mutex> l(mu_);
-          done_ = true;
-          cv_.notify_one();
+          activate_();
         }
         void Await() {
           std::unique_lock<std::mutex> l(mu_);
@@ -222,11 +232,13 @@ class ClientCallbackEnd2endTest
         EchoRequest request_;
         std::unique_ptr<ByteBuffer> send_buf_;
         ByteBuffer recv_buf_;
-        ClientContext cli_ctx_;
+        std::unique_ptr<ClientContext> cli_ctx_;
+        int reuses_remaining_;
+        std::function<void()> activate_;
         std::mutex mu_;
         std::condition_variable cv_;
         bool done_ = false;
-      } rpc{this, kMethodName, test_string};
+      } rpc{this, kMethodName, test_string, reuses};
 
       rpc.Await();
     }
@@ -293,7 +305,12 @@ TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
   ResetStub();
-  SendGenericEchoAsBidi(10);
+  SendGenericEchoAsBidi(10, 1);
+}
+
+TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidiWithReactorReuse) {
+  ResetStub();
+  SendGenericEchoAsBidi(10, 10);
 }
 
 #if GRPC_ALLOW_EXCEPTIONS
