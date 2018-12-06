@@ -237,7 +237,7 @@
 #pragma mark GRPCWrappedCall
 
 @implementation GRPCWrappedCall {
-  __weak GRPCPooledChannel *_channel;
+  GRPCPooledChannel *_pooledChannel;
   grpc_call *_call;
 }
 
@@ -251,7 +251,7 @@
 
   if ((self = [super init])) {
     _call = unmanagedCall;
-    _channel = pooledChannel;
+    _pooledChannel = pooledChannel;
   }
   return self;
 }
@@ -324,10 +324,8 @@
       _call = NULL;
     }
   }
-  __strong GRPCPooledChannel *channel = _channel;
-  if (channel != nil) {
-    [channel notifyWrappedCallDealloc:self];
-  }
+  __strong GRPCPooledChannel *channel = _pooledChannel;
+  [channel notifyWrappedCallDealloc:self];
 }
 
 @end

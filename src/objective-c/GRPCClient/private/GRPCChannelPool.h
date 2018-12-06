@@ -67,8 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)notifyWrappedCallDealloc:(GRPCWrappedCall *)wrappedCall;
 
 /**
- * Force the channel to disconnect immediately. Subsequent calls to unmanagedCallWithPath: will
- * attempt to reconnect to the remote channel.
+ * Force the channel to disconnect immediately. GRPCWrappedCall objects previously created with
+ * \a wrappedCallWithPath are failed if not already finished. Subsequent calls to
+ * unmanagedCallWithPath: will attempt to reconnect to the remote channel.
  */
 - (void)disconnect;
 

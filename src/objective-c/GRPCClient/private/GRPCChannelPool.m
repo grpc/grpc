@@ -57,7 +57,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (void)dealloc {
-  if ([_wrappedCalls objectEnumerator].allObjects.count != 0) {
+  // Disconnect GRPCWrappedCall objects created but not yet removed
+  if (_wrappedCalls.allObjects.count != 0) {
     NSEnumerator *enumerator = [_wrappedCalls objectEnumerator];
     GRPCWrappedCall *wrappedCall;
     while ((wrappedCall = [enumerator nextObject])) {
@@ -111,13 +112,17 @@ callOptions:(GRPCCallOptions *)callOptions {
     return;
   }
   @synchronized(self) {
-    if ([_wrappedCalls objectEnumerator].allObjects.count == 0) {
+    // Detect if all objects weakly referenced in _wrappedCalls are (implicitly) removed. In such
+    // case the channel is no longer referenced by a grpc_call object and can be destroyed after
+    // a certain delay.
+    if (_wrappedCalls.allObjects.count == 0) {
       NSDate *now = [NSDate date];
+      NSAssert(now != nil, @"Unable to create NSDate object 'now'.");
       _lastTimedDestroy = now;
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * NSEC_PER_SEC),
                      _timerQueue, ^{
                        @synchronized(self) {
-                         if (self->_lastTimedDestroy == now) {
+                         if (now != nil && self->_lastTimedDestroy == now) {
                            self->_wrappedChannel = nil;
                            self->_lastTimedDestroy = nil;
                          }
@@ -128,17 +133,15 @@ callOptions:(GRPCCallOptions *)callOptions {
 }
 
 - (void)disconnect {
-  NSHashTable<GRPCWrappedCall *> *copiedWrappedCalls = nil;
+  NSArray<GRPCWrappedCall *> *copiedWrappedCalls = nil;
   @synchronized(self) {
     if (_wrappedChannel != nil) {
       _wrappedChannel = nil;
-      copiedWrappedCalls = [_wrappedCalls copy];
+      copiedWrappedCalls = _wrappedCalls.allObjects;
       [_wrappedCalls removeAllObjects];
     }
   }
-  NSEnumerator *enumerator = [copiedWrappedCalls objectEnumerator];
-  GRPCWrappedCall *wrappedCall;
-  while ((wrappedCall = [enumerator nextObject])) {
+  for (GRPCWrappedCall *wrappedCall in copiedWrappedCalls) {
     [wrappedCall channelDisconnected];
   }
 }
@@ -155,9 +158,9 @@ callOptions:(GRPCCallOptions *)callOptions {
   }
 
   if ((self = [super init])) {
-    _channelConfiguration = channelConfiguration;
+    _channelConfiguration = [channelConfiguration copy];
     _destroyDelay = destroyDelay;
-    _wrappedCalls = [[NSHashTable alloc] initWithOptions:NSHashTableWeakMemory capacity:1];
+    _wrappedCalls = [NSHashTable weakObjectsHashTable];
     _wrappedChannel = nil;
     _lastTimedDestroy = nil;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
@@ -187,7 +190,7 @@ callOptions:(GRPCCallOptions *)callOptions {
 
 @interface GRPCChannelPool ()
 
-- (instancetype)initInstance NS_DESIGNATED_INITIALIZER;
+- (instancetype)initPrivate NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -198,13 +201,13 @@ callOptions:(GRPCCallOptions *)callOptions {
 + (instancetype)sharedInstance {
   dispatch_once(&gInitChannelPool, ^{
     gChannelPool =
-        [[GRPCChannelPool alloc] initInstance];
+        [[GRPCChannelPool alloc] initPrivate];
     NSAssert(gChannelPool != nil, @"Cannot initialize global channel pool.");
   });
   return gChannelPool;
 }
 
-- (instancetype)initInstance {
+- (instancetype)initPrivate {
   if ((self = [super init])) {
     _channelPool = [NSMutableDictionary dictionary];
 
@@ -242,15 +245,15 @@ callOptions:(GRPCCallOptions *)callOptions {
 }
 
 - (void)disconnectAllChannels {
-  NSDictionary *copiedPooledChannels;
+  NSArray<GRPCPooledChannel *> *copiedPooledChannels;
   @synchronized(self) {
-    copiedPooledChannels = [NSDictionary dictionaryWithDictionary:_channelPool];
+    copiedPooledChannels = _channelPool.allValues;
   }
 
   // Disconnect pooled channels.
-  [copiedPooledChannels enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key, id  _Nonnull obj, BOOL * _Nonnull stop) {
-    [obj disconnect];
-  }];
+  for (GRPCPooledChannel *pooledChannel in copiedPooledChannels) {
+    [pooledChannel disconnect];
+  }
 }
 
 - (void)connectivityChange:(NSNotification *)note {
@@ -262,7 +265,7 @@ callOptions:(GRPCCallOptions *)callOptions {
 @implementation GRPCChannelPool (Test)
 
 - (instancetype)initTestPool {
-  return [self initInstance];
+  return [self initPrivate];
 }
 
 @end
