@@ -816,7 +816,7 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
     // Check to see if we're already using the right LB policy.
     const bool lb_policy_name_changed =
         self->lb_policy_ == nullptr ||
-        gpr_stricmp(self->lb_policy_->name(), lb_policy_name) != 0;
+        strcmp(self->lb_policy_->name(), lb_policy_name) != 0;
     if (self->lb_policy_ != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
       if (self->tracer_->enabled()) {
