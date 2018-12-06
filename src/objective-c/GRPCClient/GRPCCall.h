@@ -282,6 +282,8 @@ NS_ASSUME_NONNULL_END
  */
 @interface GRPCCall : GRXWriter
 
+- (instancetype)init NS_UNAVAILABLE;
+
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
  * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
@@ -306,7 +308,7 @@ NS_ASSUME_NONNULL_END
  *
  * The property is initialized to an empty NSMutableDictionary.
  */
-@property(nullable, atomic, readonly) NSMutableDictionary *requestHeaders;
+@property(nonnull, atomic, readonly) NSMutableDictionary *requestHeaders;
 
 /**
  * This dictionary is populated with the HTTP headers received from the server. This happens before
@@ -339,9 +341,9 @@ NS_ASSUME_NONNULL_END
  * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-- (nullable instancetype)initWithHost:(nullable NSString *)host
-                                 path:(nullable NSString *)path
-                       requestsWriter:(nullable GRXWriter *)requestWriter;
+- (nullable instancetype)initWithHost:(nonnull NSString *)host
+                                 path:(nonnull NSString *)path
+                       requestsWriter:(nonnull GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -353,11 +355,11 @@ NS_ASSUME_NONNULL_END
  * The following methods are deprecated.
  */
 + (void)setCallSafety:(GRPCCallSafety)callSafety
-                 host:(nullable NSString *)host
-                 path:(nullable NSString *)path;
+                 host:(nonnull NSString *)host
+                 path:(nonnull NSString *)path;
 @property(nullable, atomic, copy, readwrite) NSString *serverName;
 @property NSTimeInterval timeout;
-- (void)setResponseDispatchQueue:(nullable dispatch_queue_t)queue;
+- (void)setResponseDispatchQueue:(nonnull dispatch_queue_t)queue;
 
 @end
 
@@ -368,11 +370,11 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
-- (nullable id)objectForKeyedSubscript:(nullable id)key;
-- (void)setObject:(nullable id)obj forKeyedSubscript:(nullable id)key;
+- (nullable id)objectForKeyedSubscript:(nonnull id)key;
+- (void)setObject:(nullable id)obj forKeyedSubscript:(nonnull id)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(nullable id)key;
+- (void)removeObjectForKey:(nonnull id)key;
 @end
 
 #pragma clang diagnostic push

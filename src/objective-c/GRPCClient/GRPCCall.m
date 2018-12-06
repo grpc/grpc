@@ -445,6 +445,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 + (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path {
+  if (host.length == 0 || path.length == 0) {
+    return;
+  }
   NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
   switch (callSafety) {
     case GRPCCallSafetyDefault:
@@ -464,10 +467,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 + (uint32_t)callFlagsForHost:(NSString *)host path:(NSString *)path {
   NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
   return [callFlags[hostAndPath] intValue];
-}
-
-- (instancetype)init {
-  return [self initWithHost:nil path:nil requestsWriter:nil];
 }
 
 // Designated initializer
