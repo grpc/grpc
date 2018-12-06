@@ -75,23 +75,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-/** Test-only interface for \a GRPCPooledChannel. */
-@interface GRPCPooledChannel (Test)
-
-/**
- * Initialize a pooled channel with non-default destroy delay for testing purpose.
- */
-- (nullable instancetype)initWithChannelConfiguration:
-(GRPCChannelConfiguration *)channelConfiguration
-                                         destroyDelay:(NSTimeInterval)destroyDelay;
-
-/**
- * Return the pointer to the raw channel wrapped.
- */
-@property(atomic, readonly) GRPCChannel *wrappedChannel;
-
-@end
-
 /**
  * Manage the pool of connected channels. When a channel is no longer referenced by any call,
  * destroy the channel after a certain period of time elapsed.
@@ -116,17 +99,6 @@ NS_ASSUME_NONNULL_BEGIN
  * Disconnect all channels in this pool.
  */
 - (void)disconnectAllChannels;
-
-@end
-
-/** Test-only interface for \a GRPCChannelPool. */
-@interface GRPCChannelPool (Test)
-
-/**
- * Get an instance of pool isolated from the global shared pool with channels' destroy delay being
- * \a destroyDelay.
- */
-- (nullable instancetype)initTestPool;
 
 @end
 

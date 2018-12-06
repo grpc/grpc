@@ -21,6 +21,7 @@
 #import "../../GRPCClient/GRPCCallOptions.h"
 #import "../../GRPCClient/private/GRPCChannel.h"
 #import "../../GRPCClient/private/GRPCChannelPool.h"
+#import "../../GRPCClient/private/GRPCChannelPool+Test.h"
 #import "../../GRPCClient/private/GRPCCompletionQueue.h"
 #import "../../GRPCClient/private/GRPCWrappedCall.h"
 

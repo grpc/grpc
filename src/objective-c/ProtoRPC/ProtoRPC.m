@@ -75,7 +75,6 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)cancel {
   [_call cancel];
-  _call = nil;
 }
 
 @end
@@ -124,7 +123,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 #else
     {
 #endif
-      _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
     dispatch_set_target_queue(_dispatchQueue, handler.dispatchQueue);
 
@@ -145,7 +144,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     copiedCall = _call;
     _call = nil;
     if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-      dispatch_async(_handler.dispatchQueue, ^{
+      dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
           copiedHandler = self->_handler;

@@ -19,7 +19,7 @@
 #import <XCTest/XCTest.h>
 
 #import "../../GRPCClient/private/GRPCChannel.h"
-#import "../../GRPCClient/private/GRPCChannelPool.h"
+#import "../../GRPCClient/private/GRPCChannelPool+Test.h"
 #import "../../GRPCClient/private/GRPCCompletionQueue.h"
 
 #define TEST_TIMEOUT 32

@@ -22,6 +22,7 @@
 #import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
+#import "GRPCChannelPool+Test.h"
 #import "GRPCConnectivityMonitor.h"
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
@@ -59,9 +60,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 - (void)dealloc {
   // Disconnect GRPCWrappedCall objects created but not yet removed
   if (_wrappedCalls.allObjects.count != 0) {
-    NSEnumerator *enumerator = [_wrappedCalls objectEnumerator];
-    GRPCWrappedCall *wrappedCall;
-    while ((wrappedCall = [enumerator nextObject])) {
+    for (GRPCWrappedCall *wrappedCall in _wrappedCalls.allObjects) {
       [wrappedCall channelDisconnected];
     };
   }
@@ -73,7 +72,7 @@ callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(path.length > 0, @"path must not be empty.");
   NSAssert(queue != nil, @"completionQueue must not be empty.");
   NSAssert(callOptions, @"callOptions must not be empty.");
-  if (path.length == 0 || queue == nil || callOptions == nil) return NULL;
+  if (path.length == 0 || queue == nil || callOptions == nil) return nil;
 
   GRPCWrappedCall *call = nil;
 

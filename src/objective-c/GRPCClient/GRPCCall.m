@@ -856,9 +856,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   _retainSelf = self;
 
   if (_callOptions == nil) {
-    GRPCMutableCallOptions *callOptions;
-
-    callOptions = [[GRPCHost callOptionsForHost:_host] mutableCopy];
+    GRPCMutableCallOptions *callOptions = [[GRPCHost callOptionsForHost:_host] mutableCopy];
     if (_serverName.length != 0) {
       callOptions.serverAuthority = _serverName;
     }

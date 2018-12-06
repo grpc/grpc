@@ -153,6 +153,14 @@ extern NSString *const kGRPCTrailersKey;
 /** An object can implement this protocol to receive responses from server from a call. */
 @protocol GRPCResponseHandler<NSObject>
 
+@required
+
+/**
+ * All the responses must be issued to a user-provided dispatch queue. This property specifies the
+ * dispatch queue to be used for issuing the notifications.
+ */
+@property(atomic, readonly) dispatch_queue_t dispatchQueue;
+
 @optional
 
 /**
@@ -174,14 +182,6 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                              error:(nullable NSError *)error;
-
-@required
-
-/**
- * All the responses must be issued to a user-provided dispatch queue. This property specifies the
- * dispatch queue to be used for issuing the notifications.
- */
-@property(atomic, readonly) dispatch_queue_t dispatchQueue;
 
 @end
 
