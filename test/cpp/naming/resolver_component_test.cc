@@ -383,12 +383,8 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   EXPECT_EQ(err, GRPC_ERROR_NONE);
   ArgsStruct* args = (ArgsStruct*)argsp;
   grpc_channel_args* channel_args = args->channel_args;
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVER_ADDRESS_LIST);
-  GPR_ASSERT(channel_arg != nullptr);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
   grpc_core::ServerAddressList* addresses =
-      static_cast<grpc_core::ServerAddressList*>(channel_arg->value.pointer.p);
+      grpc_core::FindServerAddressListChannelArg(channel_args);
   gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
           addresses->size(), args->expected_addrs.size());
   GPR_ASSERT(addresses->size() == args->expected_addrs.size());
@@ -398,10 +394,8 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
     char* str;
     grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
     gpr_log(GPR_INFO, "%s", str);
-    const bool is_balancer = grpc_channel_arg_get_bool(
-        grpc_channel_args_find(addr.args(), GRPC_ARG_ADDRESS_IS_BALANCER),
-        false);
-    found_lb_addrs.emplace_back(GrpcLBAddress(std::string(str), is_balancer));
+    found_lb_addrs.emplace_back(GrpcLBAddress(std::string(str),
+                                addr.IsBalancer()));
     gpr_free(str);
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {

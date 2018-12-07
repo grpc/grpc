@@ -85,7 +85,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
     size_t parent_data_size;
   };
 
-  explicit ConnectedSubchannel(
+  ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
           channelz_subchannel,

@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include "src/core/ext/filters/client_channel/server_address.h"
+
+#include <string.h>
 
 namespace grpc_core {
 

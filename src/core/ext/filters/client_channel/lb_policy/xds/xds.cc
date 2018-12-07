@@ -881,9 +881,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   // Make any necessary modifications for security.
-  new_args = grpc_lb_policy_xds_modify_lb_channel_args(new_args);
-  // Done.
-  return new_args;
+  return grpc_lb_policy_xds_modify_lb_channel_args(new_args);
 }
 
 //

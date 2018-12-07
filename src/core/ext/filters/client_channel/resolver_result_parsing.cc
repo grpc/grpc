@@ -109,10 +109,7 @@ void ProcessedResolverResult::ProcessLbPolicyName(
     bool found_balancer_address = false;
     for (size_t i = 0; i < addresses->size(); ++i) {
       ServerAddress& address = (*addresses)[i];
-      if (grpc_channel_arg_get_bool(
-              grpc_channel_args_find(address.args(),
-                                     GRPC_ARG_ADDRESS_IS_BALANCER),
-              false)) {
+      if (address.IsBalancer()) {
         found_balancer_address = true;
         break;
       }
