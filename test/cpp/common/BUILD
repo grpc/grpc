@@ -26,7 +26,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++_unsecure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
