@@ -22,7 +22,6 @@
 
 #import "ChannelArgsUtil.h"
 #import "GRPCChannel.h"
-#import "utilities.h"
 
 @implementation GRPCSecureChannelFactory {
   grpc_channel_credentials *_channelCreds;
@@ -116,6 +115,10 @@
 }
 
 - (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
+  NSAssert(host.length != 0, @"host cannot be empty");
+  if (host.length == 0) {
+    return NULL;
+  }
   grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
   grpc_channel *unmanagedChannel =
       grpc_secure_channel_create(_channelCreds, host.UTF8String, coreChannelArgs, NULL);

@@ -28,7 +28,6 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "utilities.h"
 #import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -63,8 +62,9 @@
         factory = [GRPCSecureChannelFactory
             factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
                                 privateKey:_callOptions.PEMPrivateKey
-                                 certChain:_callOptions.PEMCertChain
+                                 certChain:_callOptions.PEMCertificateChain
                                      error:&error];
+        NSAssert(factory != nil, @"Failed to create secure channel factory");
         if (factory == nil) {
           NSLog(@"Error creating secure channel factory: %@", error);
         }
@@ -114,8 +114,8 @@
         [NSNumber numberWithUnsignedInteger:(NSUInteger)(_callOptions.keepaliveTimeout * 1000)];
   }
 
-  if (_callOptions.retryEnabled == NO) {
-    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:_callOptions.retryEnabled];
+  if (!_callOptions.retryEnabled) {
+    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:_callOptions.retryEnabled ? 1 : 0];
   }
 
   if (_callOptions.connectMinTimeout > 0) {

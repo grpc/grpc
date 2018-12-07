@@ -29,7 +29,10 @@ struct grpc_channel_credentials;
 
 NS_ASSUME_NONNULL_BEGIN
 
-/** Caching signature of a channel. */
+/**
+ * Signature for the channel. If two channel's signatures are the same and connect to the same
+ * remote, they share the same underlying \a GRPCChannel object.
+ */
 @interface GRPCChannelConfiguration : NSObject<NSCopying>
 
 - (instancetype)init NS_UNAVAILABLE;

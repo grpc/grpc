@@ -27,7 +27,6 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "utilities.h"
 #import "version.h"
 #import "GRPCWrappedCall.h"
 #import "GRPCCompletionQueue.h"
@@ -57,98 +56,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   return [self initWithChannelConfiguration:channelConfiguration destroyDelay:kDefaultChannelDestroyDelay];
 }
 
-- (void)dealloc {
-  // Disconnect GRPCWrappedCall objects created but not yet removed
-  if (_wrappedCalls.allObjects.count != 0) {
-    for (GRPCWrappedCall *wrappedCall in _wrappedCalls.allObjects) {
-      [wrappedCall channelDisconnected];
-    };
-  }
-}
-
-- (GRPCWrappedCall *)wrappedCallWithPath:(NSString *)path
-completionQueue:(GRPCCompletionQueue *)queue
-callOptions:(GRPCCallOptions *)callOptions {
-  NSAssert(path.length > 0, @"path must not be empty.");
-  NSAssert(queue != nil, @"completionQueue must not be empty.");
-  NSAssert(callOptions, @"callOptions must not be empty.");
-  if (path.length == 0 || queue == nil || callOptions == nil) return nil;
-
-  GRPCWrappedCall *call = nil;
-
-  @synchronized(self) {
-    if (_wrappedChannel == nil) {
-      _wrappedChannel = [[GRPCChannel alloc] initWithChannelConfiguration:_channelConfiguration];
-      if (_wrappedChannel == nil) {
-        NSAssert(_wrappedChannel != nil, @"Unable to get a raw channel for proxy.");
-        return nil;
-      }
-    }
-    _lastTimedDestroy = nil;
-
-    grpc_call *unmanagedCall = [_wrappedChannel unmanagedCallWithPath:path
-                                                      completionQueue:[GRPCCompletionQueue completionQueue]
-                                                          callOptions:callOptions];
-    if (unmanagedCall == NULL) {
-      NSAssert(unmanagedCall != NULL, @"Unable to create grpc_call object");
-      return nil;
-    }
-
-    call = [[GRPCWrappedCall alloc] initWithUnmanagedCall:unmanagedCall pooledChannel:self];
-    if (call == nil) {
-      NSAssert(call != nil, @"Unable to create GRPCWrappedCall object");
-      return nil;
-    }
-
-    [_wrappedCalls addObject:call];
-  }
-  return call;
-}
-
-- (void)notifyWrappedCallDealloc:(GRPCWrappedCall *)wrappedCall {
-  NSAssert(wrappedCall != nil, @"wrappedCall cannot be empty.");
-  if (wrappedCall == nil) {
-    return;
-  }
-  @synchronized(self) {
-    // Detect if all objects weakly referenced in _wrappedCalls are (implicitly) removed. In such
-    // case the channel is no longer referenced by a grpc_call object and can be destroyed after
-    // a certain delay.
-    if (_wrappedCalls.allObjects.count == 0) {
-      NSDate *now = [NSDate date];
-      NSAssert(now != nil, @"Unable to create NSDate object 'now'.");
-      _lastTimedDestroy = now;
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * NSEC_PER_SEC),
-                     _timerQueue, ^{
-                       @synchronized(self) {
-                         if (now != nil && self->_lastTimedDestroy == now) {
-                           self->_wrappedChannel = nil;
-                           self->_lastTimedDestroy = nil;
-                         }
-                       }
-                     });
-    }
-  }
-}
-
-- (void)disconnect {
-  NSArray<GRPCWrappedCall *> *copiedWrappedCalls = nil;
-  @synchronized(self) {
-    if (_wrappedChannel != nil) {
-      _wrappedChannel = nil;
-      copiedWrappedCalls = _wrappedCalls.allObjects;
-      [_wrappedCalls removeAllObjects];
-    }
-  }
-  for (GRPCWrappedCall *wrappedCall in copiedWrappedCalls) {
-    [wrappedCall channelDisconnected];
-  }
-}
-
-@end
-
-@implementation GRPCPooledChannel (Test)
-
 - (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay {
   NSAssert(channelConfiguration != nil, @"channelConfiguration cannot be empty.");
@@ -175,6 +82,103 @@ callOptions:(GRPCCallOptions *)callOptions {
   }
 
   return self;
+}
+
+- (void)dealloc {
+  // Disconnect GRPCWrappedCall objects created but not yet removed
+  if (_wrappedCalls.allObjects.count != 0) {
+    for (GRPCWrappedCall *wrappedCall in _wrappedCalls.allObjects) {
+      [wrappedCall channelDisconnected];
+    };
+  }
+}
+
+- (GRPCWrappedCall *)wrappedCallWithPath:(NSString *)path
+                         completionQueue:(GRPCCompletionQueue *)queue
+                             callOptions:(GRPCCallOptions *)callOptions {
+  NSAssert(path.length > 0, @"path must not be empty.");
+  NSAssert(queue != nil, @"completionQueue must not be empty.");
+  NSAssert(callOptions, @"callOptions must not be empty.");
+  if (path.length == 0 || queue == nil || callOptions == nil) {
+    return nil;
+  }
+
+  GRPCWrappedCall *call = nil;
+
+  @synchronized(self) {
+    if (_wrappedChannel == nil) {
+      _wrappedChannel = [[GRPCChannel alloc] initWithChannelConfiguration:_channelConfiguration];
+      if (_wrappedChannel == nil) {
+        NSAssert(_wrappedChannel != nil, @"Unable to get a raw channel for proxy.");
+        return nil;
+      }
+    }
+    _lastTimedDestroy = nil;
+
+    grpc_call *unmanagedCall = [_wrappedChannel unmanagedCallWithPath:path
+                                                      completionQueue:[GRPCCompletionQueue completionQueue]
+                                                          callOptions:callOptions];
+    if (unmanagedCall == NULL) {
+      NSAssert(unmanagedCall != NULL, @"Unable to create grpc_call object");
+      return nil;
+    }
+
+    call = [[GRPCWrappedCall alloc] initWithUnmanagedCall:unmanagedCall pooledChannel:self];
+    if (call == nil) {
+      NSAssert(call != nil, @"Unable to create GRPCWrappedCall object");
+      grpc_call_unref(unmanagedCall);
+      return nil;
+    }
+
+    [_wrappedCalls addObject:call];
+  }
+  return call;
+}
+
+- (void)notifyWrappedCallDealloc:(GRPCWrappedCall *)wrappedCall {
+  NSAssert(wrappedCall != nil, @"wrappedCall cannot be empty.");
+  if (wrappedCall == nil) {
+    return;
+  }
+  @synchronized(self) {
+    // Detect if all objects weakly referenced in _wrappedCalls are (implicitly) removed.
+    // _wrappedCalls.count does not work here since the hash table may include deallocated weak
+    // references. _wrappedCalls.allObjects forces removal of those objects.
+    if (_wrappedCalls.allObjects.count == 0) {
+      // No more call has reference to this channel. We may start the timer for destroying the
+      // channel now.
+      NSDate *now = [NSDate date];
+      NSAssert(now != nil, @"Unable to create NSDate object 'now'.");
+      _lastTimedDestroy = now;
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)_destroyDelay * NSEC_PER_SEC),
+                     _timerQueue, ^{
+                       @synchronized(self) {
+                         // Check _lastTimedDestroy against now in case more calls are created (and
+                         // maybe destroyed) after this dispatch_async. In that case the current
+                         // dispatch_after block should be discarded; the channel should be
+                         // destroyed in a later dispatch_after block.
+                         if (now != nil && self->_lastTimedDestroy == now) {
+                           self->_wrappedChannel = nil;
+                           self->_lastTimedDestroy = nil;
+                         }
+                       }
+                     });
+    }
+  }
+}
+
+- (void)disconnect {
+  NSArray<GRPCWrappedCall *> *copiedWrappedCalls = nil;
+  @synchronized(self) {
+    if (_wrappedChannel != nil) {
+      _wrappedChannel = nil;
+      copiedWrappedCalls = _wrappedCalls.allObjects;
+      [_wrappedCalls removeAllObjects];
+    }
+  }
+  for (GRPCWrappedCall *wrappedCall in copiedWrappedCalls) {
+    [wrappedCall channelDisconnected];
+  }
 }
 
 - (GRPCChannel *)wrappedChannel {

@@ -40,8 +40,8 @@
 }
 
 - (instancetype)initWithEngine:(stream_engine *)engine {
+  NSAssert(engine != NULL, @"Cronet engine cannot be empty.");
   if (!engine) {
-    [NSException raise:NSInvalidArgumentException format:@"Cronet engine is NULL. Set it first."];
     return nil;
   }
   if ((self = [super init])) {
@@ -65,14 +65,12 @@
 @implementation GRPCCronetChannelFactory
 
 + (instancetype)sharedInstance {
-  [NSException raise:NSInvalidArgumentException
-              format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
+  NSAssert(NO, @"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel.");
   return nil;
 }
 
 - (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
-  [NSException raise:NSInvalidArgumentException
-              format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
+  NSAssert(NO, @"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel.");
   return NULL;
 }
 

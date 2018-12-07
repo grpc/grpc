@@ -35,7 +35,6 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
-#import "private/utilities.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
 
@@ -277,7 +276,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (void)writeData:(NSData *)data {
   GRXBufferedPipe *copiedPipe = nil;
   @synchronized(self) {
-    NSAssert(!_canceled, @"Call arleady canceled.");
+    NSAssert(!_canceled, @"Call already canceled.");
     NSAssert(!_finished, @"Call is half-closed before sending data.");
     if (_canceled) {
       return;
@@ -297,7 +296,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRXBufferedPipe *copiedPipe = nil;
   @synchronized(self) {
     NSAssert(_started, @"Call not started.");
-    NSAssert(!_canceled, @"Call arleady canceled.");
+    NSAssert(!_canceled, @"Call already canceled.");
     NSAssert(!_finished, @"Call already half-closed.");
     if (!_started) {
       return;

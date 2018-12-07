@@ -35,7 +35,7 @@ static const NSTimeInterval kDefaultConnectMaxBackoff = 0;
 static NSDictionary *const kDefaultAdditionalChannelArgs = nil;
 static NSString *const kDefaultPEMRootCertificates = nil;
 static NSString *const kDefaultPEMPrivateKey = nil;
-static NSString *const kDefaultPEMCertChain = nil;
+static NSString *const kDefaultPEMCertificateChain = nil;
 static NSString *const kDefaultOauth2AccessToken = nil;
 static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
@@ -74,7 +74,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSDictionary *_additionalChannelArgs;
   NSString *_PEMRootCertificates;
   NSString *_PEMPrivateKey;
-  NSString *_PEMCertChain;
+  NSString *_PEMCertificateChain;
   GRPCTransportType _transportType;
   NSString *_hostNameOverride;
   id<NSObject> _logContext;
@@ -99,7 +99,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize additionalChannelArgs = _additionalChannelArgs;
 @synthesize PEMRootCertificates = _PEMRootCertificates;
 @synthesize PEMPrivateKey = _PEMPrivateKey;
-@synthesize PEMCertChain = _PEMCertChain;
+@synthesize PEMCertificateChain = _PEMCertificateChain;
 @synthesize transportType = _transportType;
 @synthesize hostNameOverride = _hostNameOverride;
 @synthesize logContext = _logContext;
@@ -124,7 +124,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
                    PEMRootCertificates:kDefaultPEMRootCertificates
                          PEMPrivateKey:kDefaultPEMPrivateKey
-                          PEMCertChain:kDefaultPEMCertChain
+                   PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
@@ -149,7 +149,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                   additionalChannelArgs:(NSDictionary *)additionalChannelArgs
                     PEMRootCertificates:(NSString *)PEMRootCertificates
                           PEMPrivateKey:(NSString *)PEMPrivateKey
-                           PEMCertChain:(NSString *)PEMCertChain
+                    PEMCertificateChain:(NSString *)PEMCertificateChain
                           transportType:(GRPCTransportType)transportType
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
@@ -174,7 +174,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
         [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
     _PEMPrivateKey = [PEMPrivateKey copy];
-    _PEMCertChain = [PEMCertChain copy];
+    _PEMCertificateChain = [PEMCertificateChain copy];
     _transportType = transportType;
     _hostNameOverride = [hostNameOverride copy];
     _logContext = logContext;
@@ -203,7 +203,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                               additionalChannelArgs:_additionalChannelArgs
                                                 PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
-                                                       PEMCertChain:_PEMCertChain
+                                                PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
@@ -233,7 +233,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                              copyItems:YES]
           PEMRootCertificates:[_PEMRootCertificates copy]
                 PEMPrivateKey:[_PEMPrivateKey copy]
-                 PEMCertChain:[_PEMCertChain copy]
+                 PEMCertificateChain:[_PEMCertificateChain copy]
                 transportType:_transportType
              hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
@@ -256,7 +256,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!areObjectsEqual(callOptions.additionalChannelArgs, _additionalChannelArgs)) return NO;
   if (!areObjectsEqual(callOptions.PEMRootCertificates, _PEMRootCertificates)) return NO;
   if (!areObjectsEqual(callOptions.PEMPrivateKey, _PEMPrivateKey)) return NO;
-  if (!areObjectsEqual(callOptions.PEMCertChain, _PEMCertChain)) return NO;
+  if (!areObjectsEqual(callOptions.PEMCertificateChain, _PEMCertificateChain)) return NO;
   if (!areObjectsEqual(callOptions.hostNameOverride, _hostNameOverride)) return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
   if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
@@ -280,7 +280,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   result ^= _additionalChannelArgs.hash;
   result ^= _PEMRootCertificates.hash;
   result ^= _PEMPrivateKey.hash;
-  result ^= _PEMCertChain.hash;
+  result ^= _PEMCertificateChain.hash;
   result ^= _hostNameOverride.hash;
   result ^= _transportType;
   result ^= _logContext.hash;
@@ -311,7 +311,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic additionalChannelArgs;
 @dynamic PEMRootCertificates;
 @dynamic PEMPrivateKey;
-@dynamic PEMCertChain;
+@dynamic PEMCertificateChain;
 @dynamic transportType;
 @dynamic hostNameOverride;
 @dynamic logContext;
@@ -336,7 +336,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
                    PEMRootCertificates:kDefaultPEMRootCertificates
                          PEMPrivateKey:kDefaultPEMPrivateKey
-                          PEMCertChain:kDefaultPEMCertChain
+                          PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
@@ -363,7 +363,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                               additionalChannelArgs:_additionalChannelArgs
                                                 PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
-                                                       PEMCertChain:_PEMCertChain
+                                                       PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
@@ -391,7 +391,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
         additionalChannelArgs:[_additionalChannelArgs copy]
           PEMRootCertificates:_PEMRootCertificates
                 PEMPrivateKey:_PEMPrivateKey
-                 PEMCertChain:_PEMCertChain
+                 PEMCertificateChain:_PEMCertificateChain
                 transportType:_transportType
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
@@ -493,8 +493,8 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _PEMPrivateKey = [PEMPrivateKey copy];
 }
 
-- (void)setPEMCertChain:(NSString *)PEMCertChain {
-  _PEMCertChain = [PEMCertChain copy];
+- (void)setPEMCertificateChain:(NSString *)PEMCertificateChain {
+  _PEMCertificateChain = [PEMCertificateChain copy];
 }
 
 - (void)setTransportType:(GRPCTransportType)transportType {

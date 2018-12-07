@@ -32,7 +32,6 @@
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
-#import "utilities.h"
 #import "version.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -42,7 +41,7 @@ static NSMutableDictionary *gHostCache;
 @implementation GRPCHost {
   NSString *_PEMRootCertificates;
   NSString *_PEMPrivateKey;
-  NSString *_pemCertChain;
+  NSString *_PEMCertificateChain;
 }
 
 + (nullable instancetype)hostWithAddress:(NSString *)address {
@@ -96,7 +95,7 @@ static NSMutableDictionary *gHostCache;
                      error:(NSError **)errorPtr {
   _PEMRootCertificates = [pemRootCerts copy];
   _PEMPrivateKey = [pemPrivateKey copy];
-  _pemCertChain = [pemCertChain copy];
+  _PEMCertificateChain = [pemCertChain copy];
   return YES;
 }
 
@@ -113,7 +112,7 @@ static NSMutableDictionary *gHostCache;
   options.connectMaxBackoff = (NSTimeInterval)_maxConnectBackoff / 1000;
   options.PEMRootCertificates = _PEMRootCertificates;
   options.PEMPrivateKey = _PEMPrivateKey;
-  options.PEMCertChain = _pemCertChain;
+  options.PEMCertificateChain = _PEMCertificateChain;
   options.hostNameOverride = _hostNameOverride;
 #ifdef GRPC_COMPILE_WITH_CRONET
   // By old API logic, insecure channel precedes Cronet channel; Cronet channel preceeds default

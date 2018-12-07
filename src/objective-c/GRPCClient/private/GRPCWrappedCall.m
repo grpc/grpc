@@ -30,7 +30,6 @@
 #import "NSData+GRPC.h"
 #import "NSDictionary+GRPC.h"
 #import "NSError+GRPC.h"
-#import "utilities.h"
 
 #import "GRPCOpBatchLog.h"
 
@@ -237,6 +236,7 @@
 #pragma mark GRPCWrappedCall
 
 @implementation GRPCWrappedCall {
+  // pooledChannel holds weak reference to this object so this is ok
   GRPCPooledChannel *_pooledChannel;
   grpc_call *_call;
 }
@@ -275,8 +275,7 @@
       for (GRPCOperation *operation in operations) {
         ops_array[i++] = operation.op;
       }
-      grpc_call_error error;
-      error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
+      grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
         if (!success) {
           if (errorHandler) {
             errorHandler();
@@ -291,11 +290,7 @@
                                     NULL);
       gpr_free(ops_array);
 
-      if (error != GRPC_CALL_OK) {
-        [NSException
-         raise:NSInternalInconsistencyException
-         format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i", error];
-      }
+      NSAssert(error == GRPC_CALL_OK, @"Error starting a batch of operations: %i", error);
     }
   }
 }

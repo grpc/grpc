@@ -170,7 +170,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readonly, nullable) NSString *PEMCertChain;
+@property(copy, readonly, nullable) NSString *PEMCertificateChain;
 
 /**
  * Select the transport type to be used for this call.
@@ -314,7 +314,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * PEM format certificate chain for client authentication, if required by the server.
  */
-@property(copy, readwrite, nullable) NSString *PEMCertChain;
+@property(copy, readwrite, nullable) NSString *PEMCertificateChain;
 
 /**
  * Select the transport type to be used for this call.

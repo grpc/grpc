@@ -16,11 +16,6 @@
  *
  */
 
-/**
- * Signature for the channel. If two channel's signatures are the same, they share the same
- * underlying \a GRPCChannel object.
- */
-
 #import <GRPCClient/GRPCCallOptions.h>
 
 #import "GRPCChannelFactory.h"
@@ -35,10 +30,10 @@ NS_ASSUME_NONNULL_BEGIN
 @class GRPCWrappedCall;
 
 /**
- * A proxied channel object that can be retained and creates GRPCWrappedCall object from. If a
- * raw channel is not present (i.e. no tcp connection to the server) when a GRPCWrappedCall object
- * is requested, it issues a connection/reconnection. The behavior of this object is to mimic that
- * of gRPC core's channel object.
+ * A proxied channel object that can be retained and used to create GRPCWrappedCall object
+ * regardless of the current connection status. If a connection is not established when a
+ * GRPCWrappedCall object is requested, it issues a connection/reconnection. This behavior is to
+ * follow that of gRPC core's channel object.
  */
 @interface GRPCPooledChannel : NSObject
 
