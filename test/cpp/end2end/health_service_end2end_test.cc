@@ -211,14 +211,16 @@ class HealthServiceEnd2endTest : public ::testing::Test {
   // 1. unary client will see NOT_SERVING.
   // 2. unary client still sees NOT_SERVING after a SetServing(true) is called.
   // 3. streaming (Watch) client will see an update.
+  // 4. setting a new service to serving after shutdown will add the service
+  // name but return NOT_SERVING to client.
   // This has to be called last.
   void VerifyHealthCheckServiceShutdown() {
-    const grpc::string kServiceName("service_name");
     HealthCheckServiceInterface* service = server_->GetHealthCheckService();
     EXPECT_TRUE(service != nullptr);
     const grpc::string kHealthyService("healthy_service");
     const grpc::string kUnhealthyService("unhealthy_service");
     const grpc::string kNotRegisteredService("not_registered");
+    const grpc::string kNewService("add_after_shutdown");
     service->SetServingStatus(kHealthyService, true);
     service->SetServingStatus(kUnhealthyService, false);
 
@@ -227,17 +229,11 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     // Start Watch for service.
     ClientContext context;
     HealthCheckRequest request;
-    request.set_service(kServiceName);
+    request.set_service(kHealthyService);
     std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
         hc_stub_->Watch(&context, request);
 
-    // Initial response will be SERVICE_UNKNOWN.
     HealthCheckResponse response;
-    EXPECT_TRUE(reader->Read(&response));
-    EXPECT_EQ(response.SERVICE_UNKNOWN, response.status());
-
-    // Set service to SERVING and make sure we get an update.
-    service->SetServingStatus(kServiceName, true);
     EXPECT_TRUE(reader->Read(&response));
     EXPECT_EQ(response.SERVING, response.status());
 
@@ -248,6 +244,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
                        HealthCheckResponse::NOT_SERVING);
     SendHealthCheckRpc(kNotRegisteredService,
                        Status(StatusCode::NOT_FOUND, ""));
+    SendHealthCheckRpc(kNewService, Status(StatusCode::NOT_FOUND, ""));
 
     // Shutdown health check service.
     service->Shutdown();
@@ -269,6 +266,12 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     // Setting status after Shutdown has no effect.
     service->SetServingStatus(kHealthyService, true);
     SendHealthCheckRpc(kHealthyService, Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
+
+    // Adding serving status for a new service after shutdown will return
+    // NOT_SERVING.
+    service->SetServingStatus(kNewService, true);
+    SendHealthCheckRpc(kNewService, Status::OK,
                        HealthCheckResponse::NOT_SERVING);
   }
 

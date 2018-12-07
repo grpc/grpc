@@ -37,6 +37,7 @@ Status HealthCheckServiceImpl::Check(ServerContext* context,
   response->set_status(iter->second);
   return Status::OK;
 }
+
 Status HealthCheckServiceImpl::Watch(
     ServerContext* context, const HealthCheckRequest* request,
     ::grpc::ServerWriter<HealthCheckResponse>* writer) {
@@ -66,7 +67,7 @@ void HealthCheckServiceImpl::SetStatus(
     HealthCheckResponse::ServingStatus status) {
   std::lock_guard<std::mutex> lock(mu_);
   if (shutdown_) {
-    return;
+    status = HealthCheckResponse::NOT_SERVING;
   }
   status_map_[service_name] = status;
 }

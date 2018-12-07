@@ -43,7 +43,8 @@ void DefaultHealthCheckService::SetServingStatus(
     const grpc::string& service_name, bool serving) {
   std::unique_lock<std::mutex> lock(mu_);
   if (shutdown_) {
-    return;
+    // Set to NOT_SERVING in case service_name is not in the map.
+    serving = false;
   }
   services_map_[service_name].SetServingStatus(serving ? SERVING : NOT_SERVING);
 }
