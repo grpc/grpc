@@ -3145,11 +3145,11 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 
 static const grpc_transport_vtable* get_vtable(void) { return &vtable; }
 
-grpc_core::channelz::SocketNode* grpc_chttp2_transport_get_socket_node(
-    grpc_transport* transport) {
+grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
+grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
-  return t->channelz_socket.get();
+  return t->channelz_socket;
 }
 
 grpc_transport* grpc_create_chttp2_transport(

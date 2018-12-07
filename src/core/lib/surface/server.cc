@@ -109,7 +109,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
-  grpc_core::channelz::SocketNode* socket_node;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node;
 };
 
 typedef struct shutdown_tag {
@@ -462,6 +462,9 @@ static void finish_destroy_channel(void* cd, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(cd);
   grpc_server* server = chand->server;
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
+  if (chand->socket_node != nullptr) {
+    chand->socket_node->Unref();
+  }
   server_unref(server);
 }
 
@@ -1155,11 +1158,11 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
   *pollsets = server->pollsets;
 }
 
-void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args,
-                                 grpc_core::channelz::SocketNode* socket_node,
-                                 grpc_resource_user* resource_user) {
+void grpc_server_setup_transport(
+    grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
+    const grpc_channel_args* args,
+    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1261,9 +1264,8 @@ void grpc_server_populate_server_sockets(
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
-    grpc_core::channelz::SocketNode* socket_node = c->socket_node;
-    if (socket_node && socket_node->uuid() >= start_idx) {
-      server_sockets->push_back(socket_node);
+    if (c->socket_node != nullptr && c->socket_node->uuid() >= start_idx) {
+      server_sockets->push_back(c->socket_node.get());
     }
   }
   gpr_mu_unlock(&s->mu_global);

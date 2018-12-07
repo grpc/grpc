@@ -260,7 +260,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   gpr_free(json);
 
   json = channelz_server->RenderServerSockets(0);
-  GPR_ASSERT(nullptr != strstr(json, "\"socketRef\":"));
+  GPR_ASSERT(nullptr != strstr(json, "\"end\":true"));
   gpr_free(json);
 
   end_test(&f);
