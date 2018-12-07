@@ -314,12 +314,12 @@ class ServerContext {
   uint32_t initial_metadata_flags() const { return 0; }
 
   experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method,
+      const char* method, internal::RpcMethod::RpcType type,
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     if (creators.size() != 0) {
-      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_ = new experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;

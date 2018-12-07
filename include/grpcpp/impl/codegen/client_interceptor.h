@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpcpp/impl/codegen/interceptor.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
 namespace grpc {
@@ -52,23 +53,56 @@ extern experimental::ClientInterceptorFactoryInterface*
 namespace experimental {
 class ClientRpcInfo {
  public:
-  ClientRpcInfo() {}
+  // TODO(yashykt): Stop default-constructing ClientRpcInfo and remove UNKNOWN
+  //                from the list of possible Types.
+  enum class Type {
+    UNARY,
+    CLIENT_STREAMING,
+    SERVER_STREAMING,
+    BIDI_STREAMING,
+    UNKNOWN  // UNKNOWN is not API and will be removed later
+  };
 
   ~ClientRpcInfo(){};
 
   ClientRpcInfo(const ClientRpcInfo&) = delete;
   ClientRpcInfo(ClientRpcInfo&&) = default;
-  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
 
   // Getter methods
-  const char* method() { return method_; }
+  const char* method() const { return method_; }
   ChannelInterface* channel() { return channel_; }
   grpc::ClientContext* client_context() { return ctx_; }
+  Type type() const { return type_; }
 
  private:
-  ClientRpcInfo(grpc::ClientContext* ctx, const char* method,
-                grpc::ChannelInterface* channel)
-      : ctx_(ctx), method_(method), channel_(channel) {}
+  static_assert(Type::UNARY ==
+                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+                "violated expectation about Type enum");
+  static_assert(Type::CLIENT_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::SERVER_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::BIDI_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
+                "violated expectation about Type enum");
+
+  // Default constructor should only be used by ClientContext
+  ClientRpcInfo() = default;
+
+  // Constructor will only be called from ClientContext
+  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
+                const char* method, grpc::ChannelInterface* channel)
+      : ctx_(ctx),
+        type_(static_cast<Type>(type)),
+        method_(method),
+        channel_(channel) {}
+
+  // Move assignment should only be used by ClientContext
+  // TODO(yashykt): Delete move assignment
+  ClientRpcInfo& operator=(ClientRpcInfo&&) = default;
+
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
@@ -97,6 +131,8 @@ class ClientRpcInfo {
   }
 
   grpc::ClientContext* ctx_ = nullptr;
+  // TODO(yashykt): make type_ const once move-assignment is deleted
+  Type type_{Type::UNKNOWN};
   const char* method_ = nullptr;
   grpc::ChannelInterface* channel_ = nullptr;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;

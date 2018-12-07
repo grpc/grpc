@@ -46,6 +46,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -418,12 +419,13 @@ class ClientContext {
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::ChannelInterface* channel,
+      const char* method, internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
       const std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
           creators,
       size_t interceptor_pos) {
-    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_ = experimental::ClientRpcInfo(this, type, method, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }

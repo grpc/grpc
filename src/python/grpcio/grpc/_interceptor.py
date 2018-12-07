@@ -135,8 +135,11 @@ class _FailureOutcome(grpc.RpcError, grpc.Future, grpc.Call):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         raise self._exception
+
+    def next(self):
+        return self.__next__()
 
 
 class _UnaryOutcome(grpc.Call, grpc.Future):
