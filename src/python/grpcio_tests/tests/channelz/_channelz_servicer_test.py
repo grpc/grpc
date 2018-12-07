@@ -88,8 +88,6 @@ def _generate_channel_server_pairs(n):
 def _close_channel_server_pairs(pairs):
     for pair in pairs:
         pair.server.stop(None)
-        # TODO(ericgribkoff) This del should not be required
-        del pair.server
         pair.channel.close()
 
 
