@@ -719,7 +719,7 @@ void RequestRouter::CreateNewLbPolicyLocked(
 
 void RequestRouter::MaybeAddTraceMessagesForAddressChangesLocked(
     TraceStringVector* trace_strings) {
-  ServerAddressList* addresses =
+  const ServerAddressList* addresses =
       FindServerAddressListChannelArg(resolver_result_);
   const bool resolution_contains_addresses =
       addresses != nullptr && addresses->size() > 0;
