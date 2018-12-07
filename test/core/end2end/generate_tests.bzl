@@ -370,6 +370,7 @@ def grpc_end2end_tests():
             "tests/cancel_test_helpers.h",
             "end2end_tests.h",
         ],
+        visibility = ["//visibility:public"],
         language = "C++",
         deps = [
             ":cq_verifier",
