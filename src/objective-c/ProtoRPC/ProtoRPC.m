@@ -97,14 +97,13 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
-  if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
-    [NSException raise:NSInvalidArgumentException format:@"Neither host nor path can be nil."];
-  }
-  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
-    [NSException raise:NSInvalidArgumentException format:@"Invalid call safety value."];
+  NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0 && requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid callOptions.");
+  NSAssert(handler != nil, @"handler cannot be empty.");
+  if (requestOptions.host.length == 0 || requestOptions.path.length == 0 || requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+    return nil;
   }
   if (handler == nil) {
-    [NSException raise:NSInvalidArgumentException format:@"Response handler required."];
+    return nil;
   }
 
   if ((self = [super init])) {
@@ -166,8 +165,10 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)writeMessage:(GPBMessage *)message {
+  NSAssert([message isKindOfClass:[GPBMessage class]]);
   if (![message isKindOfClass:[GPBMessage class]]) {
-    [NSException raise:NSInvalidArgumentException format:@"Data must be a valid protobuf type."];
+    NSLog(@"Failed to send a message that is non-proto.");
+    return;
   }
 
   GRPCCall2 *call;

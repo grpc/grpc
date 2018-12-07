@@ -50,16 +50,17 @@
 }
 
 - (id<GRPCChannelFactory>)channelFactory {
-  NSError *error;
-  id<GRPCChannelFactory> factory;
   GRPCTransportType type = _callOptions.transportType;
   switch (type) {
     case GRPCTransportTypeChttp2BoringSSL:
       // TODO (mxyan): Remove when the API is deprecated
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {
+#else
+        {
 #endif
-        factory = [GRPCSecureChannelFactory
+        NSError *error;
+        id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
             factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
                                 privateKey:_callOptions.PEMPrivateKey
                                  certChain:_callOptions.PEMCertificateChain
@@ -69,9 +70,7 @@
           NSLog(@"Error creating secure channel factory: %@", error);
         }
         return factory;
-#ifdef GRPC_COMPILE_WITH_CRONET
       }
-#endif
       // fallthrough
     case GRPCTransportTypeCronet:
       return [GRPCCronetChannelFactory sharedInstance];
@@ -164,7 +163,7 @@
 }
 
 - (NSUInteger)hash {
-  NSUInteger result = 0;
+  NSUInteger result = 31;
   result ^= _host.hash;
   result ^= _callOptions.channelOptionsHash;
 
@@ -230,10 +229,7 @@
   NSTimeInterval timeout = callOptions.timeout;
   NSAssert(timeout >= 0, @"Invalid timeout");
   if (timeout < 0) return NULL;
-  grpc_slice host_slice = grpc_empty_slice();
-  if (serverAuthority) {
-    host_slice = grpc_slice_from_copied_string(serverAuthority.UTF8String);
-  }
+                           grpc_slice host_slice = serverAuthority ? grpc_slice_from_copied_string(serverAuthority.UTF8String) : grpc_empty_slice();
   grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
   gpr_timespec deadline_ms =
       timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
