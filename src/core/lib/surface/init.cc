@@ -196,6 +196,4 @@ int grpc_is_initialized(void) {
   return r;
 }
 
-void grpc_test_x(void) {
-  gpr_log(GPR_ERROR, "X");
-}
+void grpc_test_x(void) { gpr_log(GPR_ERROR, "X"); }
