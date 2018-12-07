@@ -153,7 +153,7 @@ struct grpc_subchannel {
   /** have we started the backoff loop */
   bool backoff_begun;
   // reset_backoff() was called while alarm was pending
-  bool deferred_reset_backoff;
+  bool retry_immediately;
   /** our alarm */
   grpc_timer alarm;
 
@@ -709,8 +709,8 @@ static void on_alarm(void* arg, grpc_error* error) {
   if (c->disconnected) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
                                                              &error, 1);
-  } else if (c->deferred_reset_backoff) {
-    c->deferred_reset_backoff = false;
+  } else if (c->retry_immediately) {
+    c->retry_immediately = false;
     error = GRPC_ERROR_NONE;
   } else {
     GRPC_ERROR_REF(error);
@@ -887,12 +887,12 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 
 void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel) {
   gpr_mu_lock(&subchannel->mu);
+  subchannel->backoff->Reset();
   if (subchannel->have_alarm) {
-    subchannel->deferred_reset_backoff = true;
+    subchannel->retry_immediately = true;
     grpc_timer_cancel(&subchannel->alarm);
   } else {
     subchannel->backoff_begun = false;
-    subchannel->backoff->Reset();
     maybe_start_connecting_locked(subchannel);
   }
   gpr_mu_unlock(&subchannel->mu);
