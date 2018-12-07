@@ -462,9 +462,7 @@ static void finish_destroy_channel(void* cd, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(cd);
   grpc_server* server = chand->server;
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
-  if (chand->socket_node != nullptr) {
-    chand->socket_node->Unref();
-  }
+  chand->socket_node.reset();
   server_unref(server);
 }
 
