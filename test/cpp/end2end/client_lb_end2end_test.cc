@@ -35,7 +35,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
@@ -156,24 +158,22 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   grpc_channel_args* BuildFakeResults(const std::vector<int>& ports) {
-    grpc_lb_addresses* addresses =
-        grpc_lb_addresses_create(ports.size(), nullptr);
-    for (size_t i = 0; i < ports.size(); ++i) {
+    grpc_core::ServerAddressList addresses;
+    for (const int& port : ports) {
       char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
+      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", port);
       grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
       GPR_ASSERT(lb_uri != nullptr);
-      grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
-                                             false /* is balancer */,
-                                             "" /* balancer name */, nullptr);
+      grpc_resolved_address address;
+      GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
+      addresses.emplace_back(address.addr, address.len, nullptr /* args */);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
     const grpc_arg fake_addresses =
-        grpc_lb_addresses_create_channel_arg(addresses);
+        CreateServerAddressListChannelArg(&addresses);
     grpc_channel_args* fake_results =
         grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
-    grpc_lb_addresses_destroy(addresses);
     return fake_results;
   }
 

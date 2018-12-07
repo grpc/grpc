@@ -37,6 +37,7 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -718,16 +719,10 @@ void RequestRouter::CreateNewLbPolicyLocked(
 
 void RequestRouter::MaybeAddTraceMessagesForAddressChangesLocked(
     TraceStringVector* trace_strings) {
-  bool resolution_contains_addresses = false;
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result_, GRPC_ARG_LB_ADDRESSES);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (addresses->num_addresses > 0) {
-      resolution_contains_addresses = true;
-    }
-  }
+  ServerAddressList* addresses =
+      FindServerAddressListChannelArg(resolver_result_);
+  const bool resolution_contains_addresses =
+      addresses != nullptr && addresses->size() > 0;
   if (!resolution_contains_addresses &&
       previous_resolution_contained_addresses_) {
     trace_strings->push_back(gpr_strdup("Address list became empty"));
