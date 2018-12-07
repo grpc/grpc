@@ -109,7 +109,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
-  intptr_t socket_uuid;
+  grpc_core::channelz::SocketNode* socket_node;
 };
 
 typedef struct shutdown_tag {
@@ -1158,7 +1158,7 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
 void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args,
-                                 intptr_t socket_uuid,
+                                 grpc_core::channelz::SocketNode* socket_node,
                                  grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
@@ -1180,7 +1180,7 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_uuid = socket_uuid;
+  chand->socket_node = socket_node;
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
@@ -1256,14 +1256,14 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
 }
 
 void grpc_server_populate_server_sockets(
-    grpc_server* s, grpc_core::channelz::ChildRefsList* server_sockets,
+    grpc_server* s, grpc_core::channelz::ChildSocketsList* server_sockets,
     intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
-    intptr_t socket_uuid = c->socket_uuid;
-    if (socket_uuid >= start_idx) {
-      server_sockets->push_back(socket_uuid);
+    grpc_core::channelz::SocketNode* socket_node = c->socket_node;
+    if (socket_node && socket_node->uuid() >= start_idx) {
+      server_sockets->push_back(socket_node);
     }
   }
   gpr_mu_unlock(&s->mu_global);

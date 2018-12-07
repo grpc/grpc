@@ -59,6 +59,9 @@ namespace channelz {
 // add human readable names as in the channelz.proto
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
 
+class SocketNode;
+typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
+
 namespace testing {
 class CallCountingHelperPeer;
 class ChannelNodePeer;
@@ -250,6 +253,8 @@ class SocketNode : public BaseNode {
   void RecordKeepaliveSent() {
     gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
   }
+
+  const char* remote() { return remote_.get(); }
 
  private:
   gpr_atm streams_started_ = 0;

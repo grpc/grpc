@@ -207,18 +207,20 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  ChildRefsList socket_refs;
+  ChildSocketsList socket_refs;
   grpc_server_populate_server_sockets(server_, &socket_refs, start_socket_id);
   if (!socket_refs.empty()) {
     // create list of socket refs
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
     for (size_t i = 0; i < socket_refs.size(); ++i) {
-      json_iterator =
+      grpc_json* socket_ref_json =
           grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
                                  GRPC_JSON_OBJECT, false);
-      grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
-                                        socket_refs[i]);
+      json_iterator = grpc_json_add_number_string_child(
+          socket_ref_json, nullptr, "socketId", socket_refs[i]->uuid());
+      grpc_json_create_child(json_iterator, socket_ref_json, "name",
+                             socket_refs[i]->remote(), GRPC_JSON_STRING, false);
     }
   }
   // For now we do not have any pagination rules. In the future we could
