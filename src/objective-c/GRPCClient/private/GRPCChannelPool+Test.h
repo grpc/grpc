@@ -25,7 +25,7 @@
  * Initialize a pooled channel with non-default destroy delay for testing purpose.
  */
 - (nullable instancetype)initWithChannelConfiguration:
-(GRPCChannelConfiguration *)channelConfiguration
+                             (GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay;
 
 /**
@@ -45,5 +45,3 @@
 - (nullable instancetype)initTestPool;
 
 @end
-
-

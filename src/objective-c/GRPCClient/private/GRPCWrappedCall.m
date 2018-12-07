@@ -267,7 +267,7 @@
   [GRPCOpBatchLog addOpBatchToLog:operations];
 #endif
 
-  @synchronized (self) {
+  @synchronized(self) {
     if (_call != NULL) {
       size_t nops = operations.count;
       grpc_op *ops_array = gpr_malloc(nops * sizeof(grpc_op));
@@ -275,19 +275,20 @@
       for (GRPCOperation *operation in operations) {
         ops_array[i++] = operation.op;
       }
-      grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
-        if (!success) {
-          if (errorHandler) {
-            errorHandler();
-          } else {
-            return;
-          }
-        }
-        for (GRPCOperation *operation in operations) {
-          [operation finish];
-        }
-      }),
-                                    NULL);
+      grpc_call_error error =
+          grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
+                                  if (!success) {
+                                    if (errorHandler) {
+                                      errorHandler();
+                                    } else {
+                                      return;
+                                    }
+                                  }
+                                  for (GRPCOperation *operation in operations) {
+                                    [operation finish];
+                                  }
+                                }),
+                                NULL);
       gpr_free(ops_array);
 
       NSAssert(error == GRPC_CALL_OK, @"Error starting a batch of operations: %i", error);
@@ -296,7 +297,7 @@
 }
 
 - (void)cancel {
-  @synchronized (self) {
+  @synchronized(self) {
     if (_call != NULL) {
       grpc_call_cancel(_call, NULL);
     }
@@ -304,7 +305,7 @@
 }
 
 - (void)channelDisconnected {
-  @synchronized (self) {
+  @synchronized(self) {
     if (_call != NULL) {
       grpc_call_unref(_call);
       _call = NULL;
@@ -313,7 +314,7 @@
 }
 
 - (void)dealloc {
-  @synchronized (self) {
+  @synchronized(self) {
     if (_call != NULL) {
       grpc_call_unref(_call);
       _call = NULL;

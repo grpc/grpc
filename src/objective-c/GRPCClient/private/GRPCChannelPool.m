@@ -21,15 +21,15 @@
 #import "../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
-#import "GRPCChannelPool.h"
 #import "GRPCChannelPool+Test.h"
+#import "GRPCChannelPool.h"
+#import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "version.h"
 #import "GRPCWrappedCall.h"
-#import "GRPCCompletionQueue.h"
+#import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>
@@ -53,10 +53,12 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
-  return [self initWithChannelConfiguration:channelConfiguration destroyDelay:kDefaultChannelDestroyDelay];
+  return [self initWithChannelConfiguration:channelConfiguration
+                               destroyDelay:kDefaultChannelDestroyDelay];
 }
 
-- (nullable instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration
+- (nullable instancetype)initWithChannelConfiguration:
+                             (GRPCChannelConfiguration *)channelConfiguration
                                          destroyDelay:(NSTimeInterval)destroyDelay {
   NSAssert(channelConfiguration != nil, @"channelConfiguration cannot be empty.");
   if (channelConfiguration == nil) {
@@ -71,8 +73,8 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     _lastTimedDestroy = nil;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
-      _timerQueue = dispatch_queue_create(NULL,
-                                          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+      _timerQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(
+                                                    DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
 #else
     {
@@ -115,9 +117,10 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     }
     _lastTimedDestroy = nil;
 
-    grpc_call *unmanagedCall = [_wrappedChannel unmanagedCallWithPath:path
-                                                      completionQueue:[GRPCCompletionQueue completionQueue]
-                                                          callOptions:callOptions];
+    grpc_call *unmanagedCall =
+        [_wrappedChannel unmanagedCallWithPath:path
+                               completionQueue:[GRPCCompletionQueue completionQueue]
+                                   callOptions:callOptions];
     if (unmanagedCall == NULL) {
       NSAssert(unmanagedCall != NULL, @"Unable to create grpc_call object");
       return nil;
@@ -203,8 +206,7 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 
 + (instancetype)sharedInstance {
   dispatch_once(&gInitChannelPool, ^{
-    gChannelPool =
-        [[GRPCChannelPool alloc] initPrivate];
+    gChannelPool = [[GRPCChannelPool alloc] initPrivate];
     NSAssert(gChannelPool != nil, @"Cannot initialize global channel pool.");
   });
   return gChannelPool;

@@ -249,8 +249,10 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testLargeUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectRecvMessage = [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
-  __weak XCTestExpectation *expectRecvComplete = [self expectationWithDescription:@"LargeUnaryWithV2API received complete"];
+  __weak XCTestExpectation *expectRecvMessage =
+      [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
+  __weak XCTestExpectation *expectRecvComplete =
+      [self expectationWithDescription:@"LargeUnaryWithV2API received complete"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
@@ -263,24 +265,26 @@ BOOL isRemoteInteropTest(NSString *host) {
   options.hostNameOverride = [[self class] hostNameOverride];
 
   GRPCUnaryProtoCall *call = [_service
-                              unaryCallWithMessage:request
-                              responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                                                                                  messageCallback:^(id message) {
-                                                                                                    XCTAssertNotNil(message);
-                                                                                                    if (message) {
-                                                                                                      RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
-                                                                                                      expectedResponse.payload.type = RMTPayloadType_Compressable;
-                                                                                                      expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
-                                                                                                      XCTAssertEqualObjects(message, expectedResponse);
+      unaryCallWithMessage:request
+           responseHandler:[[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                               messageCallback:^(id message) {
+                                 XCTAssertNotNil(message);
+                                 if (message) {
+                                   RMTSimpleResponse *expectedResponse =
+                                       [RMTSimpleResponse message];
+                                   expectedResponse.payload.type = RMTPayloadType_Compressable;
+                                   expectedResponse.payload.body =
+                                       [NSMutableData dataWithLength:314159];
+                                   XCTAssertEqualObjects(message, expectedResponse);
 
-                                                                                                      [expectRecvMessage fulfill];
-                                                                                                    }
-                                                                                                  }
-                                                                                                    closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                                                                                      XCTAssertNil(error, @"Unexpected error: %@", error);
-                                                                                                      [expectRecvComplete fulfill];
-                                                                                                    }]
-                              callOptions:options];
+                                   [expectRecvMessage fulfill];
+                                 }
+                               }
+                               closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                 XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [expectRecvComplete fulfill];
+                               }]
+               callOptions:options];
   [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
@@ -602,7 +606,8 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testCancelAfterBeginRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
+  __weak XCTestExpectation *expectation =
+      [self expectationWithDescription:@"CancelAfterBeginWithV2API"];
 
   // A buffered pipe to which we never write any value acts as a writer that just hangs.
   __block GRPCStreamingProtoCall *call = [_service
@@ -699,7 +704,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 - (void)testCancelAfterFirstRequestWithV2API {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *completionExpectation =
-  [self expectationWithDescription:@"Call completed."];
+      [self expectationWithDescription:@"Call completed."];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = self.class.transportType;
@@ -707,20 +712,20 @@ BOOL isRemoteInteropTest(NSString *host) {
   options.hostNameOverride = [[self class] hostNameOverride];
 
   id request =
-  [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
+      [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782 requestedResponseSize:@31415];
 
   __block GRPCStreamingProtoCall *call = [_service
-                                          fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                                                             initWithInitialMetadataCallback:nil
-                                                                             messageCallback:^(id message) {
-                                                                               XCTFail(@"Received unexpected response.");
-                                                                             }
-                                                                             closeCallback:^(NSDictionary *trailingMetadata,
-                                                                                             NSError *error) {
-                                                                               XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
-                                                                               [completionExpectation fulfill];
-                                                                             }]
-                                          callOptions:options];
+      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                            initWithInitialMetadataCallback:nil
+                                            messageCallback:^(id message) {
+                                              XCTFail(@"Received unexpected response.");
+                                            }
+                                            closeCallback:^(NSDictionary *trailingMetadata,
+                                                            NSError *error) {
+                                              XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
+                                              [completionExpectation fulfill];
+                                            }]
+                            callOptions:options];
   [call start];
   [call writeMessage:request];
   [call cancel];

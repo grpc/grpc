@@ -28,6 +28,8 @@
 #include <grpc/support/time.h>
 
 #import "GRPCCallOptions.h"
+#import "private/GRPCChannelPool.h"
+#import "private/GRPCCompletionQueue.h"
 #import "private/GRPCConnectivityMonitor.h"
 #import "private/GRPCHost.h"
 #import "private/GRPCRequestHeaders.h"
@@ -35,8 +37,6 @@
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
 #import "private/NSError+GRPC.h"
-#import "private/GRPCChannelPool.h"
-#import "private/GRPCCompletionQueue.h"
 
 // At most 6 ops can be in an op batch for a client: SEND_INITIAL_METADATA,
 // SEND_MESSAGE, SEND_CLOSE_FROM_CLIENT, RECV_INITIAL_METADATA, RECV_MESSAGE,
@@ -259,12 +259,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
         }
 
         [copiedHandler didCloseWithTrailingMetadata:nil
-                                            error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                      code:GRPCErrorCodeCancelled
-                                                                  userInfo:@{
-                                                                    NSLocalizedDescriptionKey :
-                                                                        @"Canceled by app"
-                                                                  }]];
+                                              error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                        code:GRPCErrorCodeCancelled
+                                                                    userInfo:@{
+                                                                      NSLocalizedDescriptionKey :
+                                                                          @"Canceled by app"
+                                                                    }]];
       });
     } else {
       _handler = nil;
@@ -819,7 +819,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
   _responseWriteable =
       [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
-  GRPCPooledChannel *channel = [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
+  GRPCPooledChannel *channel =
+      [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
   GRPCWrappedCall *wrappedCall = [channel wrappedCallWithPath:_path
                                               completionQueue:[GRPCCompletionQueue completionQueue]
                                                   callOptions:_callOptions];

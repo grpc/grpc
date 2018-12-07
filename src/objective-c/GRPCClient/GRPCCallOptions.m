@@ -233,7 +233,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                              copyItems:YES]
           PEMRootCertificates:[_PEMRootCertificates copy]
                 PEMPrivateKey:[_PEMPrivateKey copy]
-                 PEMCertificateChain:[_PEMCertificateChain copy]
+          PEMCertificateChain:[_PEMCertificateChain copy]
                 transportType:_transportType
              hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
@@ -336,7 +336,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                  additionalChannelArgs:kDefaultAdditionalChannelArgs
                    PEMRootCertificates:kDefaultPEMRootCertificates
                          PEMPrivateKey:kDefaultPEMPrivateKey
-                          PEMCertificateChain:kDefaultPEMCertificateChain
+                   PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
@@ -363,7 +363,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                               additionalChannelArgs:_additionalChannelArgs
                                                 PEMRootCertificates:_PEMRootCertificates
                                                       PEMPrivateKey:_PEMPrivateKey
-                                                       PEMCertificateChain:_PEMCertificateChain
+                                                PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
@@ -391,7 +391,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
         additionalChannelArgs:[_additionalChannelArgs copy]
           PEMRootCertificates:_PEMRootCertificates
                 PEMPrivateKey:_PEMPrivateKey
-                 PEMCertificateChain:_PEMCertificateChain
+          PEMCertificateChain:_PEMCertificateChain
                 transportType:_transportType
              hostNameOverride:_hostNameOverride
                    logContext:_logContext

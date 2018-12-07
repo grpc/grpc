@@ -97,9 +97,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
-  NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0 && requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid callOptions.");
+  NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0 &&
+               requestOptions.safety <= GRPCCallSafetyCacheableRequest,
+           @"Invalid callOptions.");
   NSAssert(handler != nil, @"handler cannot be empty.");
-  if (requestOptions.host.length == 0 || requestOptions.path.length == 0 || requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+  if (requestOptions.host.length == 0 || requestOptions.path.length == 0 ||
+      requestOptions.safety > GRPCCallSafetyCacheableRequest) {
     return nil;
   }
   if (handler == nil) {
@@ -150,12 +153,12 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
           self->_handler = nil;
         }
         [copiedHandler didCloseWithTrailingMetadata:nil
-                                            error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                      code:GRPCErrorCodeCancelled
-                                                                  userInfo:@{
-                                                                    NSLocalizedDescriptionKey :
-                                                                        @"Canceled by app"
-                                                                  }]];
+                                              error:[NSError errorWithDomain:kGRPCErrorDomain
+                                                                        code:GRPCErrorCodeCancelled
+                                                                    userInfo:@{
+                                                                      NSLocalizedDescriptionKey :
+                                                                          @"Canceled by app"
+                                                                    }]];
       });
     } else {
       _handler = nil;
@@ -223,8 +226,9 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
           copiedHandler = self->_handler;
           self->_handler = nil;
         }
-        [copiedHandler didCloseWithTrailingMetadata:nil
-                                            error:ErrorForBadProto(message, _responseClass, error)];
+        [copiedHandler
+            didCloseWithTrailingMetadata:nil
+                                   error:ErrorForBadProto(message, _responseClass, error)];
       });
       [_call cancel];
       _call = nil;

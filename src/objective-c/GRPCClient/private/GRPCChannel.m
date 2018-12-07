@@ -57,7 +57,7 @@
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (![GRPCCall isUsingCronet]) {
 #else
-        {
+    {
 #endif
         NSError *error;
         id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
@@ -229,7 +229,9 @@
   NSTimeInterval timeout = callOptions.timeout;
   NSAssert(timeout >= 0, @"Invalid timeout");
   if (timeout < 0) return NULL;
-                           grpc_slice host_slice = serverAuthority ? grpc_slice_from_copied_string(serverAuthority.UTF8String) : grpc_empty_slice();
+  grpc_slice host_slice = serverAuthority
+                              ? grpc_slice_from_copied_string(serverAuthority.UTF8String)
+                              : grpc_empty_slice();
   grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
   gpr_timespec deadline_ms =
       timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)

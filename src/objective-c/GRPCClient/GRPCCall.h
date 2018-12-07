@@ -181,7 +181,7 @@ extern NSString *const kGRPCTrailersKey;
  * error descriptions.
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
-                             error:(nullable NSError *)error;
+                               error:(nullable NSError *)error;
 
 @end
 
