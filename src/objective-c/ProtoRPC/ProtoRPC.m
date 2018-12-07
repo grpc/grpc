@@ -168,7 +168,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)writeMessage:(GPBMessage *)message {
-  NSAssert([message isKindOfClass:[GPBMessage class]]);
+  NSAssert([message isKindOfClass:[GPBMessage class]], @"Parameter message must be a GPBMessage");
   if (![message isKindOfClass:[GPBMessage class]]) {
     NSLog(@"Failed to send a message that is non-proto.");
     return;
