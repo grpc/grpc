@@ -50,6 +50,7 @@ class HijackingInterceptor : public experimental::Interceptor {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
+    EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
