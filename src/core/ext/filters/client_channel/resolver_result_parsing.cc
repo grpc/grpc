@@ -101,14 +101,12 @@ void ProcessedResolverResult::ProcessLbPolicyName(
   }
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    ServerAddressList* addresses =
-        static_cast<ServerAddressList*>(channel_arg->value.pointer.p);
+  const ServerAddressList* addresses =
+      FindServerAddressListChannelArg(resolver_result);
+  if (addresses != nullptr) {
     bool found_balancer_address = false;
     for (size_t i = 0; i < addresses->size(); ++i) {
-      ServerAddress& address = (*addresses)[i];
+      const ServerAddress& address = (*addresses)[i];
       if (address.IsBalancer()) {
         found_balancer_address = true;
         break;

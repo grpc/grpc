@@ -643,10 +643,9 @@ void RoundRobin::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args,
                               grpc_json* lb_config) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_SERVER_ADDRESS_LIST);
   AutoChildRefsUpdater guard(this);
-  if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
+  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
+  if (addresses == nullptr) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
     // Otherwise, keep using the current subchannel list (ignore this update).
@@ -658,8 +657,6 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
     }
     return;
   }
-  ServerAddressList* addresses =
-      static_cast<ServerAddressList*>(arg->value.pointer.p);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
             this, addresses->size());

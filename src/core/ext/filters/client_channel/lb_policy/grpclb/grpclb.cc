@@ -1240,9 +1240,8 @@ UniquePtr<ServerAddressList> ExtractBackendAddresses(
 }
 
 void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
+  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
+  if (addresses == nullptr) {
     // Ignore this update.
     gpr_log(
         GPR_ERROR,
@@ -1250,8 +1249,6 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
         this);
     return;
   }
-  const ServerAddressList* addresses =
-      static_cast<const ServerAddressList*>(arg->value.pointer.p);
   // Update fallback address list.
   fallback_backend_addresses_ = ExtractBackendAddresses(*addresses);
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
@@ -1801,13 +1798,9 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       const LoadBalancingPolicy::Args& args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
-    const grpc_arg* arg =
-        grpc_channel_args_find(args.args, GRPC_ARG_SERVER_ADDRESS_LIST);
-    if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
-      return nullptr;
-    }
-    ServerAddressList* addresses =
-        static_cast<ServerAddressList*>(arg->value.pointer.p);
+    const ServerAddressList* addresses =
+        FindServerAddressListChannelArg(args.args);
+    if (addresses == nullptr) return nullptr;
     bool found_balancer = false;
     for (size_t i = 0; i < addresses->size(); ++i) {
       if ((*addresses)[i].IsBalancer()) {

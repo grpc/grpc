@@ -336,9 +336,8 @@ void PickFirst::UpdateChildRefsLocked() {
 void PickFirst::UpdateLocked(const grpc_channel_args& args,
                              grpc_json* lb_config) {
   AutoChildRefsUpdater guard(this);
-  const grpc_arg* arg =
-      grpc_channel_args_find(&args, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
+  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
+  if (addresses == nullptr) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
       grpc_connectivity_state_set(
@@ -354,8 +353,6 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
     }
     return;
   }
-  const ServerAddressList* addresses =
-      static_cast<const ServerAddressList*>(arg->value.pointer.p);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,

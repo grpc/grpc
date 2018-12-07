@@ -385,16 +385,10 @@ static void create_new_lb_policy_locked(
 
 static void maybe_add_trace_message_for_address_changes_locked(
     channel_data* chand, TraceStringVector* trace_strings) {
-  int resolution_contains_addresses = false;
-  const grpc_arg* channel_arg = grpc_channel_args_find(
-      chand->resolver_result, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    ServerAddressList* addresses =
-        static_cast<ServerAddressList*>(channel_arg->value.pointer.p);
-    if (addresses->size() > 0) {
-      resolution_contains_addresses = true;
-    }
-  }
+  const ServerAddressList* addresses =
+      grpc_core::FindServerAddressListChannelArg(chand->resolver_result);
+  const bool resolution_contains_addresses =
+      addresses != nullptr && addresses->size() > 0;
   if (!resolution_contains_addresses &&
       chand->previous_resolution_contained_addresses) {
     trace_strings->push_back(gpr_strdup("Address list became empty"));
