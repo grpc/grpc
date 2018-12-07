@@ -394,8 +394,8 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
     char* str;
     grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
     gpr_log(GPR_INFO, "%s", str);
-    found_lb_addrs.emplace_back(GrpcLBAddress(std::string(str),
-                                addr.IsBalancer()));
+    found_lb_addrs.emplace_back(
+        GrpcLBAddress(std::string(str), addr.IsBalancer()));
     gpr_free(str);
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {
