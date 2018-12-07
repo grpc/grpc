@@ -522,13 +522,15 @@ TEST_F(ClientLbEnd2endTest,
   EXPECT_FALSE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
   // Reset connection backoff.
+  // Note that the time at which the third attempt will be started is
+  // actually computed at this point, so we record the start time here.
   gpr_log(GPR_INFO, "=== RESETTING BACKOFF");
+  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   experimental::ChannelResetConnectionBackoff(channel.get());
   // Trigger a second connection attempt.  This should also fail
   // ~immediately, but the retry should be scheduled for
   // kInitialBackOffMs instead of applying the multiplier.
   gpr_log(GPR_INFO, "=== POLLING FOR SECOND CONNECTION ATTEMPT");
-  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   EXPECT_FALSE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
   // Bring up a server on the chosen port.
