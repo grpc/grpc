@@ -41,12 +41,6 @@ const char* const kCheckClientInitialMetadataVal = "Value for client metadata";
 const char* const kCheckServerInitialMetadataKey = "custom_server_metadata";
 const char* const kCheckServerInitialMetadataVal = "Value for server metadata";
 
-// Returns the number of pairs in metadata that exactly match the given
-// key-value pair. Returns -1 if the pair wasn't found.
-int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value);
-
 typedef enum {
   DO_NOT_CANCEL = 0,
   CANCEL_BEFORE_PROCESSING,

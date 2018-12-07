@@ -27,6 +27,7 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/end2end/utils_common.h"
 
 #include <gtest/gtest.h>
 
@@ -34,21 +35,6 @@ using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
-
-int MetadataMatchCount(
-    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
-    const grpc::string& key, const grpc::string& value) {
-  int count = 0;
-  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-           metadata.begin();
-       iter != metadata.end(); ++iter) {
-    if (ToString(iter->first) == key && ToString(iter->second) == value) {
-      count++;
-    }
-  }
-  return count;
-}
-
 namespace {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
