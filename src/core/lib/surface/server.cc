@@ -28,6 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <utility>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
@@ -1181,7 +1183,7 @@ void grpc_server_setup_transport(
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_node = socket_node;
+  chand->socket_node = std::move(socket_node);
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
