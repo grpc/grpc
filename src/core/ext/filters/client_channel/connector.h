@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -49,7 +48,7 @@ typedef struct {
   /** channel arguments (to be passed to the filters) */
   grpc_channel_args* channel_args;
 
-  /** socket node of the connected transport. 0 if not availible */
+  /** socket uuid of the connected transport. 0 if not available */
   intptr_t socket_uuid;
 } grpc_connect_out_args;
 

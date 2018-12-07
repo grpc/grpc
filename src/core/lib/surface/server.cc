@@ -462,9 +462,6 @@ static void finish_destroy_channel(void* cd, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(cd);
   grpc_server* server = chand->server;
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
-  if (chand->socket_node != nullptr) {
-    chand->socket_node->Unref();
-  }
   server_unref(server);
 }
 
@@ -1161,7 +1158,7 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
 void grpc_server_setup_transport(
     grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    grpc_core::channelz::SocketNode* socket_node,
     grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
@@ -1183,7 +1180,7 @@ void grpc_server_setup_transport(
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_node = socket_node;
+  chand->socket_node = socket_node->Ref();
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {

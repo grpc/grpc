@@ -47,7 +47,7 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
 void grpc_server_setup_transport(
     grpc_server* server, grpc_transport* transport,
     grpc_pollset* accepting_pollset, const grpc_channel_args* args,
-    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    grpc_core::channelz::SocketNode* socket_node,
     grpc_resource_user* resource_user = nullptr);
 
 /* fills in the uuids of all sockets used for connections on this server */
