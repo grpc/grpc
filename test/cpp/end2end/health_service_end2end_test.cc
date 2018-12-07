@@ -90,18 +90,36 @@ class HealthCheckServiceImpl : public ::grpc::health::v1::Health::Service {
   void SetStatus(const grpc::string& service_name,
                  HealthCheckResponse::ServingStatus status) {
     std::lock_guard<std::mutex> lock(mu_);
+    if (shutdown_) {
+      return;
+    }
     status_map_[service_name] = status;
   }
 
   void SetAll(HealthCheckResponse::ServingStatus status) {
     std::lock_guard<std::mutex> lock(mu_);
+    if (shutdown_) {
+      return;
+    }
     for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
       iter->second = status;
     }
   }
 
+  void Shutdown() {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (shutdown_) {
+      return;
+    }
+    shutdown_ = true;
+    for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
+      iter->second = HealthCheckResponse::NOT_SERVING;
+    }
+  }
+
  private:
   std::mutex mu_;
+  bool shutdown_ = false;
   std::map<const grpc::string, HealthCheckResponse::ServingStatus> status_map_;
 };
 
@@ -124,6 +142,8 @@ class CustomHealthCheckService : public HealthCheckServiceInterface {
     impl_->SetAll(serving ? HealthCheckResponse::SERVING
                           : HealthCheckResponse::NOT_SERVING);
   }
+
+  void Shutdown() override { impl_->Shutdown(); }
 
  private:
   HealthCheckServiceImpl* impl_;  // not owned
@@ -260,6 +280,71 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     context.TryCancel();
   }
 
+  // Verify that after HealthCheckServiceInterface::Shutdown is called
+  // 1. unary client will see NOT_SERVING.
+  // 2. unary client still sees NOT_SERVING after a SetServing(true) is called.
+  // 3. streaming (Watch) client will see an update.
+  // This has to be called last.
+  void VerifyHealthCheckServiceShutdown() {
+    const grpc::string kServiceName("service_name");
+    HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+    EXPECT_TRUE(service != nullptr);
+    const grpc::string kHealthyService("healthy_service");
+    const grpc::string kUnhealthyService("unhealthy_service");
+    const grpc::string kNotRegisteredService("not_registered");
+    service->SetServingStatus(kHealthyService, true);
+    service->SetServingStatus(kUnhealthyService, false);
+
+    ResetStubs();
+
+    // Start Watch for service.
+    ClientContext context;
+    HealthCheckRequest request;
+    request.set_service(kServiceName);
+    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
+        hc_stub_->Watch(&context, request);
+
+    // Initial response will be SERVICE_UNKNOWN.
+    HealthCheckResponse response;
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.SERVICE_UNKNOWN, response.status());
+
+    // Set service to SERVING and make sure we get an update.
+    service->SetServingStatus(kServiceName, true);
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.SERVING, response.status());
+
+    SendHealthCheckRpc("", Status::OK, HealthCheckResponse::SERVING);
+    SendHealthCheckRpc(kHealthyService, Status::OK,
+                       HealthCheckResponse::SERVING);
+    SendHealthCheckRpc(kUnhealthyService, Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc(kNotRegisteredService,
+                       Status(StatusCode::NOT_FOUND, ""));
+
+    // Shutdown health check service.
+    service->Shutdown();
+
+    // Watch client gets another update.
+    EXPECT_TRUE(reader->Read(&response));
+    EXPECT_EQ(response.NOT_SERVING, response.status());
+    // Finish Watch call.
+    context.TryCancel();
+
+    SendHealthCheckRpc("", Status::OK, HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc(kHealthyService, Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc(kUnhealthyService, Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
+    SendHealthCheckRpc(kNotRegisteredService,
+                       Status(StatusCode::NOT_FOUND, ""));
+
+    // Setting status after Shutdown has no effect.
+    service->SetServingStatus(kHealthyService, true);
+    SendHealthCheckRpc(kHealthyService, Status::OK,
+                       HealthCheckResponse::NOT_SERVING);
+  }
+
   TestServiceImpl echo_test_service_;
   HealthCheckServiceImpl health_check_service_impl_;
   std::unique_ptr<Health::Stub> hc_stub_;
@@ -295,6 +380,13 @@ TEST_F(HealthServiceEnd2endTest, DefaultHealthService) {
                      Status(StatusCode::INVALID_ARGUMENT, ""));
 }
 
+TEST_F(HealthServiceEnd2endTest, DefaultHealthServiceShutdown) {
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+  SetUpServer(true, false, false, nullptr);
+  VerifyHealthCheckServiceShutdown();
+}
+
 // Provide an empty service to disable the default service.
 TEST_F(HealthServiceEnd2endTest, ExplicitlyDisableViaOverride) {
   EnableDefaultHealthCheckService(true);
@@ -324,6 +416,21 @@ TEST_F(HealthServiceEnd2endTest, ExplicitlyOverride) {
 
   VerifyHealthCheckService();
   VerifyHealthCheckServiceStreaming();
+}
+
+TEST_F(HealthServiceEnd2endTest, ExplicitlyHealthServiceShutdown) {
+  EnableDefaultHealthCheckService(true);
+  EXPECT_TRUE(DefaultHealthCheckServiceEnabled());
+  std::unique_ptr<HealthCheckServiceInterface> override_service(
+      new CustomHealthCheckService(&health_check_service_impl_));
+  HealthCheckServiceInterface* underlying_service = override_service.get();
+  SetUpServer(false, false, true, std::move(override_service));
+  HealthCheckServiceInterface* service = server_->GetHealthCheckService();
+  EXPECT_TRUE(service == underlying_service);
+
+  ResetStubs();
+
+  VerifyHealthCheckServiceShutdown();
 }
 
 }  // namespace
