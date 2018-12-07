@@ -36,6 +36,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "test_health_check_service_impl",
+    testonly = True,
+    srcs = ["test_health_check_service_impl.cc"],
+    hdrs = ["test_health_check_service_impl.h"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/health/v1:health_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
     srcs = ["interceptors_util.cc"],
@@ -283,6 +295,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":test_health_check_service_impl",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",

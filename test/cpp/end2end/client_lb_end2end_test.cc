@@ -537,6 +537,51 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   EXPECT_LT(waited_ms, kInitialBackOffMs);
 }
 
+TEST_F(ClientLbEnd2endTest,
+       PickFirstResetConnectionBackoffNextAttemptStartsImmediately) {
+  ChannelArguments args;
+  constexpr int kInitialBackOffMs = 1000;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
+  auto channel = BuildChannel("pick_first", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution(ports);
+  // Wait for connect, which should fail ~immediately, because the server
+  // is not up.
+  gpr_log(GPR_INFO, "=== INITIAL CONNECTION ATTEMPT");
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Reset connection backoff.
+  // Note that the time at which the third attempt will be started is
+  // actually computed at this point, so we record the start time here.
+  gpr_log(GPR_INFO, "=== RESETTING BACKOFF");
+  const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
+  experimental::ChannelResetConnectionBackoff(channel.get());
+  // Trigger a second connection attempt.  This should also fail
+  // ~immediately, but the retry should be scheduled for
+  // kInitialBackOffMs instead of applying the multiplier.
+  gpr_log(GPR_INFO, "=== POLLING FOR SECOND CONNECTION ATTEMPT");
+  EXPECT_FALSE(
+      channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
+  // Bring up a server on the chosen port.
+  gpr_log(GPR_INFO, "=== STARTING BACKEND");
+  StartServers(1, ports);
+  // Wait for connect.  Should happen within kInitialBackOffMs.
+  // Give an extra 100ms to account for the time spent in the second and
+  // third connection attempts themselves (since what we really want to
+  // measure is the time between the two).  As long as this is less than
+  // the 1.6x increase we would see if the backoff state was not reset
+  // properly, the test is still proving that the backoff was reset.
+  constexpr int kWaitMs = kInitialBackOffMs + 100;
+  gpr_log(GPR_INFO, "=== POLLING FOR THIRD CONNECTION ATTEMPT");
+  EXPECT_TRUE(channel->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kWaitMs)));
+  const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
+  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
+  EXPECT_LT(waited_ms, kWaitMs);
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
