@@ -37,6 +37,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include <gtest/gtest.h>
@@ -48,80 +49,6 @@ using grpc::health::v1::HealthCheckResponse;
 namespace grpc {
 namespace testing {
 namespace {
-
-// A sample sync implementation of the health checking service. This does the
-// same thing as the default one.
-class HealthCheckServiceImpl : public ::grpc::health::v1::Health::Service {
- public:
-  Status Check(ServerContext* context, const HealthCheckRequest* request,
-               HealthCheckResponse* response) override {
-    std::lock_guard<std::mutex> lock(mu_);
-    auto iter = status_map_.find(request->service());
-    if (iter == status_map_.end()) {
-      return Status(StatusCode::NOT_FOUND, "");
-    }
-    response->set_status(iter->second);
-    return Status::OK;
-  }
-
-  Status Watch(ServerContext* context, const HealthCheckRequest* request,
-               ::grpc::ServerWriter<HealthCheckResponse>* writer) override {
-    auto last_state = HealthCheckResponse::UNKNOWN;
-    while (!context->IsCancelled()) {
-      {
-        std::lock_guard<std::mutex> lock(mu_);
-        HealthCheckResponse response;
-        auto iter = status_map_.find(request->service());
-        if (iter == status_map_.end()) {
-          response.set_status(response.SERVICE_UNKNOWN);
-        } else {
-          response.set_status(iter->second);
-        }
-        if (response.status() != last_state) {
-          writer->Write(response, ::grpc::WriteOptions());
-        }
-      }
-      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                   gpr_time_from_millis(1000, GPR_TIMESPAN)));
-    }
-    return Status::OK;
-  }
-
-  void SetStatus(const grpc::string& service_name,
-                 HealthCheckResponse::ServingStatus status) {
-    std::lock_guard<std::mutex> lock(mu_);
-    if (shutdown_) {
-      return;
-    }
-    status_map_[service_name] = status;
-  }
-
-  void SetAll(HealthCheckResponse::ServingStatus status) {
-    std::lock_guard<std::mutex> lock(mu_);
-    if (shutdown_) {
-      return;
-    }
-    for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
-      iter->second = status;
-    }
-  }
-
-  void Shutdown() {
-    std::lock_guard<std::mutex> lock(mu_);
-    if (shutdown_) {
-      return;
-    }
-    shutdown_ = true;
-    for (auto iter = status_map_.begin(); iter != status_map_.end(); ++iter) {
-      iter->second = HealthCheckResponse::NOT_SERVING;
-    }
-  }
-
- private:
-  std::mutex mu_;
-  bool shutdown_ = false;
-  std::map<const grpc::string, HealthCheckResponse::ServingStatus> status_map_;
-};
 
 // A custom implementation of the health checking service interface. This is
 // used to test that it prevents the server from creating a default service and
