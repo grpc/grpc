@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -61,9 +61,8 @@ extern void (*grpc_resolve_address_ares)(const char* name,
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner);
+    grpc_lb_addresses** addresses, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms, grpc_combiner* combiner);
 
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
@@ -90,12 +89,10 @@ bool grpc_ares_query_ipv6();
  * Returns a bool indicating whether or not such an action was performed.
  * See https://github.com/grpc/grpc/issues/15158. */
 bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs);
+    const char* name, const char* default_port, grpc_lb_addresses** addrs);
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
-void grpc_cares_wrapper_address_sorting_sort(
-    grpc_core::ServerAddressList* addresses);
+void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */
