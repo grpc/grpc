@@ -44,9 +44,10 @@
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName
                  callOptions:(GRPCCallOptions *)callOptions {
-  if (!host || !serviceName) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"Neither host nor serviceName can be nil."];
+  NSAssert(host.length != 0 && packageName.length != 0 && serviceName.length != 0,
+           @"Invalid parameter.");
+  if (host.length == 0 || packageName.length == 0 || serviceName.length == 0) {
+    return nil;
   }
   if ((self = [super init])) {
     _host = [host copy];

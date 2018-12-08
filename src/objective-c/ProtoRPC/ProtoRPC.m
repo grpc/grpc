@@ -57,6 +57,9 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
                          responseClass:(Class)responseClass {
   NSAssert(message != nil, @"message cannot be empty.");
   NSAssert(responseClass != nil, @"responseClass cannot be empty.");
+  if (message == nil || responseClass == nil) {
+    return nil;
+  }
   if ((self = [super init])) {
     _call = [[GRPCStreamingProtoCall alloc] initWithRequestOptions:requestOptions
                                                    responseHandler:handler

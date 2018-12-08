@@ -70,11 +70,11 @@ NS_ASSUME_NONNULL_BEGIN
  * Users should not use this initializer directly. Call objects will be created, initialized, and
  * returned to users by methods of the generated service.
  */
-- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                               message:(GPBMessage *)message
-                       responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(nullable GRPCCallOptions *)callOptions
-                         responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                                        message:(GPBMessage *)message
+                                responseHandler:(id<GRPCProtoResponseHandler>)handler
+                                    callOptions:(nullable GRPCCallOptions *)callOptions
+                                  responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
  * Start the call. This function must only be called once for each instance.
@@ -101,10 +101,10 @@ NS_ASSUME_NONNULL_BEGIN
  * Users should not use this initializer directly. Call objects will be created, initialized, and
  * returned to users by methods of the generated service.
  */
-- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                       responseHandler:(id<GRPCProtoResponseHandler>)handler
-                           callOptions:(nullable GRPCCallOptions *)callOptions
-                         responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                                responseHandler:(id<GRPCProtoResponseHandler>)handler
+                                    callOptions:(nullable GRPCCallOptions *)callOptions
+                                  responseClass:(Class)responseClass NS_DESIGNATED_INITIALIZER;
 
 /**
  * Start the call. This function must only be called once for each instance.
