@@ -44,11 +44,12 @@ class grpc_fake_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
   grpc_fake_channel_security_connector(
-      grpc_channel_credentials* channel_creds,
-      grpc_call_credentials* request_metadata_creds, const char* target,
-      const grpc_channel_args* args)
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target, const grpc_channel_args* args)
       : grpc_channel_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
-                                        channel_creds, request_metadata_creds),
+                                        std::move(channel_creds),
+                                        std::move(request_metadata_creds)),
         target_(gpr_strdup(target)),
         expected_targets_(
             gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
@@ -258,9 +259,10 @@ void grpc_fake_channel_security_connector::check_peer(
 class grpc_fake_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_fake_server_security_connector(grpc_server_credentials* server_creds)
+  grpc_fake_server_security_connector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
-                                       server_creds) {}
+                                       std::move(server_creds)) {}
   ~grpc_fake_server_security_connector() override = default;
 
   void check_peer(tsi_peer peer,
@@ -286,16 +288,17 @@ class grpc_fake_server_security_connector
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target,
-    const grpc_channel_args* args) {
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target, const grpc_channel_args* args) {
   return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
-      channel_creds, request_metadata_creds, target, args);
+      std::move(channel_creds), std::move(request_metadata_creds), target,
+      args);
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_fake_server_security_connector_create(
-    grpc_server_credentials* server_creds) {
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   return grpc_core::MakeRefCounted<grpc_fake_server_security_connector>(
-      server_creds);
+      std::move(server_creds));
 }

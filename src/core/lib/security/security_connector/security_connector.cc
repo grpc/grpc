@@ -42,16 +42,18 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
 
 grpc_server_security_connector::grpc_server_security_connector(
-    const char* url_scheme, grpc_server_credentials* server_creds)
-    : grpc_security_connector(url_scheme), server_creds_(server_creds->Ref()) {}
+    const char* url_scheme,
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+    : grpc_security_connector(url_scheme),
+      server_creds_(std::move(server_creds)) {}
 
 grpc_channel_security_connector::grpc_channel_security_connector(
-    const char* url_scheme, grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds)
+    const char* url_scheme,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
     : grpc_security_connector(url_scheme),
-      channel_creds_(channel_creds ? channel_creds->Ref() : nullptr),
-      request_metadata_creds_(
-          request_metadata_creds ? request_metadata_creds->Ref() : nullptr) {}
+      channel_creds_(std::move(channel_creds)),
+      request_metadata_creds_(std::move(request_metadata_creds)) {}
 grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
 int grpc_security_connector_cmp(const grpc_security_connector* sc,

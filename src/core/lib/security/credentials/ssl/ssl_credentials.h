@@ -33,9 +33,10 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   ~grpc_ssl_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override;
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
 
  private:
   void build_config(const char* pem_root_certs,

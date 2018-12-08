@@ -42,11 +42,12 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
   ~grpc_fake_channel_credentials() override = default;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override {
-    return grpc_fake_channel_security_connector_create(this, call_creds, target,
-                                                       args);
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override {
+    return grpc_fake_channel_security_connector_create(
+        this->Ref(), std::move(call_creds), target, args);
   }
 };
 
@@ -59,7 +60,7 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() override {
-    return grpc_fake_server_security_connector_create(this);
+    return grpc_fake_server_security_connector_create(this->Ref());
   }
 };
 }  // namespace

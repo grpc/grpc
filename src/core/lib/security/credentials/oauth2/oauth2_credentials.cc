@@ -295,7 +295,7 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(grpc_credentials_metadata_request_create(this),
+    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
                  &httpcli_context_, &pollent_,
                  on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);

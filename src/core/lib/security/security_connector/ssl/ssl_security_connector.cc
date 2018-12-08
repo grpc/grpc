@@ -73,12 +73,13 @@ class grpc_ssl_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
   grpc_ssl_channel_security_connector(
-      grpc_channel_credentials* channel_creds,
-      grpc_call_credentials* request_metadata_creds,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const grpc_ssl_config* config, const char* target_name,
       const char* overridden_target_name)
-      : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME, channel_creds,
-                                        request_metadata_creds),
+      : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
+                                        std::move(channel_creds),
+                                        std::move(request_metadata_creds)),
         overridden_target_name_(overridden_target_name == nullptr
                                     ? nullptr
                                     : gpr_strdup(overridden_target_name)),
@@ -230,8 +231,10 @@ class grpc_ssl_channel_security_connector final
 class grpc_ssl_server_security_connector
     : public grpc_server_security_connector {
  public:
-  grpc_ssl_server_security_connector(grpc_server_credentials* server_creds)
-      : grpc_server_security_connector(GRPC_SSL_URL_SCHEME, server_creds) {}
+  grpc_ssl_server_security_connector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+      : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
+                                       std::move(server_creds)) {}
 
   ~grpc_ssl_server_security_connector() override {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
@@ -397,8 +400,8 @@ class grpc_ssl_server_security_connector
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name,
     tsi_ssl_session_cache* ssl_session_cache) {
@@ -424,8 +427,8 @@ grpc_ssl_channel_security_connector_create(
 
   grpc_core::RefCountedPtr<grpc_ssl_channel_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_channel_security_connector>(
-          channel_creds, request_metadata_creds, config, target_name,
-          overridden_target_name);
+          std::move(channel_creds), std::move(request_metadata_creds), config,
+          target_name, overridden_target_name);
   const grpc_security_status result = c->InitializeHandshakerFactory(
       config, pem_root_certs, root_store, ssl_session_cache);
   if (result != GRPC_SECURITY_OK) {
@@ -436,15 +439,11 @@ grpc_ssl_channel_security_connector_create(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
-    grpc_server_credentials* server_credentials) {
-  grpc_ssl_server_credentials* ssl_server_credentials =
-      reinterpret_cast<grpc_ssl_server_credentials*>(server_credentials);
-
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
   GPR_ASSERT(server_credentials != nullptr);
-
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
-          ssl_server_credentials);
+          std::move(server_credentials));
   const grpc_security_status retval = c->InitializeHandshakerFactory();
   if (retval != GRPC_SECURITY_OK) {
     return nullptr;

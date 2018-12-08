@@ -51,14 +51,14 @@ struct grpc_auth_context
     : public grpc_core::RefCounted<grpc_auth_context,
                                    grpc_core::NonPolymorphicRefCount> {
  public:
-  explicit grpc_auth_context(grpc_auth_context* chained = nullptr)
+  explicit grpc_auth_context(
+      grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
                               grpc_core::NonPolymorphicRefCount>(
             &grpc_trace_auth_context_refcount),
-        chained_(chained != nullptr ? chained->Ref(DEBUG_LOCATION, "chained")
-                                    : nullptr) {
-    if (chained != nullptr) {
-      peer_identity_property_name_ = chained->peer_identity_property_name_;
+        chained_(std::move(chained)) {
+    if (chained_ != nullptr) {
+      peer_identity_property_name_ = chained_->peer_identity_property_name_;
     }
   }
 
@@ -110,8 +110,9 @@ struct grpc_security_context_extension {
    Internal client-side security context. */
 
 struct grpc_client_security_context {
-  explicit grpc_client_security_context(grpc_call_credentials* creds)
-      : creds(creds != nullptr ? creds->Ref() : nullptr) {}
+  explicit grpc_client_security_context(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
+      : creds(std::move(creds)) {}
   ~grpc_client_security_context();
 
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;

@@ -62,8 +62,9 @@ grpc_ssl_credentials::~grpc_ssl_credentials() {
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_credentials::create_security_connector(
-    grpc_call_credentials* call_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   const char* overridden_target_name = nullptr;
   tsi_ssl_session_cache* ssl_session_cache = nullptr;
   for (size_t i = 0; args && i < args->num_args; i++) {
@@ -79,9 +80,9 @@ grpc_ssl_credentials::create_security_connector(
     }
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      grpc_ssl_channel_security_connector_create(this, call_creds, &config_,
-                                                 target, overridden_target_name,
-                                                 ssl_session_cache);
+      grpc_ssl_channel_security_connector_create(
+          this->Ref(), std::move(call_creds), &config_, target,
+          overridden_target_name, ssl_session_cache);
   if (sc == nullptr) {
     return sc;
   }
@@ -163,7 +164,7 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector() {
-  return grpc_ssl_server_security_connector_create(this);
+  return grpc_ssl_server_security_connector_create(this->Ref());
 }
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(

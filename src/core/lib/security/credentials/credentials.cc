@@ -39,16 +39,6 @@
 
 /* -- Common. -- */
 
-grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
-    grpc_call_credentials* creds) {
-  return grpc_core::New<grpc_credentials_metadata_request>(creds);
-}
-
-void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r) {
-  grpc_core::Delete(r);
-}
-
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;

@@ -89,15 +89,14 @@ static void test_simple_context(void) {
 static void test_chained_context(void) {
   grpc_core::RefCountedPtr<grpc_auth_context> chained =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  grpc_auth_context* chained_ptr = chained.get();
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_core::MakeRefCounted<grpc_auth_context>(chained.get());
+      grpc_core::MakeRefCounted<grpc_auth_context>(std::move(chained));
 
   grpc_auth_property_iterator it;
   size_t i;
 
   gpr_log(GPR_INFO, "test_chained_context");
-  grpc_auth_context* chained_ptr = chained.get();
-  chained.reset(DEBUG_LOCATION, "test");
   grpc_auth_context_add_cstring_property(chained_ptr, "name", "padapo");
   grpc_auth_context_add_cstring_property(chained_ptr, "foo", "baz");
   grpc_auth_context_add_cstring_property(ctx.get(), "name", "chapi");

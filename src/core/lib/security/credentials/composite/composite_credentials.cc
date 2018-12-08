@@ -106,10 +106,10 @@ static void composite_call_metadata_cb(void* arg, grpc_error* error) {
     const grpc_call_credentials_array& inner = ctx->composite_creds->inner();
     /* See if we need to get some more metadata. */
     if (ctx->creds_index < inner.size()) {
-      grpc_call_credentials* inner_creds = inner.get(ctx->creds_index++);
-      if (inner_creds->get_request_metadata(
-              ctx->pollent, ctx->auth_md_context, ctx->md_array,
-              &ctx->internal_on_request_metadata, &error)) {
+      if (inner.get(ctx->creds_index++)
+              ->get_request_metadata(
+                  ctx->pollent, ctx->auth_md_context, ctx->md_array,
+                  &ctx->internal_on_request_metadata, &error)) {
         // Synchronous response, so call ourselves recursively.
         composite_call_metadata_cb(arg, error);
         GRPC_ERROR_UNREF(error);
@@ -132,10 +132,10 @@ bool grpc_composite_call_credentials::get_request_metadata(
   bool synchronous = true;
   const grpc_call_credentials_array& inner = ctx->composite_creds->inner();
   while (ctx->creds_index < inner.size()) {
-    grpc_call_credentials* inner_creds = inner.get(ctx->creds_index++);
-    if (inner_creds->get_request_metadata(
-            ctx->pollent, ctx->auth_md_context, ctx->md_array,
-            &ctx->internal_on_request_metadata, error)) {
+    if (inner.get(ctx->creds_index++)
+            ->get_request_metadata(ctx->pollent, ctx->auth_md_context,
+                                   ctx->md_array,
+                                   &ctx->internal_on_request_metadata, error)) {
       if (*error != GRPC_ERROR_NONE) break;
     } else {
       synchronous = false;  // Async return.
@@ -154,36 +154,49 @@ void grpc_composite_call_credentials::cancel_get_request_metadata(
   GRPC_ERROR_UNREF(error);
 }
 
-static grpc_call_credentials_array get_creds_array(
-    grpc_call_credentials* creds) {
-  if (strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0) {
-    return static_cast<const grpc_composite_call_credentials*>(creds)->inner();
+static size_t get_creds_array_size(const grpc_call_credentials* creds,
+                                   bool is_composite) {
+  return is_composite
+             ? static_cast<const grpc_composite_call_credentials*>(creds)
+                   ->inner()
+                   .size()
+             : 1;
+}
+
+void grpc_composite_call_credentials::push_to_inner(
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds, bool is_composite) {
+  if (!is_composite) {
+    inner_.push_back(std::move(creds));
+    return;
   }
-  grpc_call_credentials_array result;
-  result.reserve(1);
-  result.push_back(creds);
-  return result;
+  auto composite_creds =
+      static_cast<grpc_composite_call_credentials*>(creds.get());
+  for (size_t i = 0; i < composite_creds->inner().size(); ++i) {
+    inner_.push_back(std::move(composite_creds->inner_.get_mutable(i)));
+  }
 }
 
 grpc_composite_call_credentials::grpc_composite_call_credentials(
-    grpc_call_credentials* creds1, grpc_call_credentials* creds2)
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds2)
     : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) {
-  grpc_call_credentials_array creds1_array = get_creds_array(creds1);
-  grpc_call_credentials_array creds2_array = get_creds_array(creds2);
-  inner_.reserve(creds1_array.size() + creds2_array.size());
-  for (size_t i = 0; i < creds1_array.size(); i++) {
-    inner_.push_back(creds1_array.get(i));
-  }
-  for (size_t i = 0; i < creds2_array.size(); i++) {
-    inner_.push_back(creds2_array.get(i));
-  }
+  const bool creds1_is_composite =
+      strcmp(creds1->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+  const bool creds2_is_composite =
+      strcmp(creds2->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+  const size_t size = get_creds_array_size(creds1.get(), creds1_is_composite) +
+                      get_creds_array_size(creds2.get(), creds2_is_composite);
+  inner_.reserve(size);
+  push_to_inner(std::move(creds1), creds1_is_composite);
+  push_to_inner(std::move(creds2), creds2_is_composite);
 }
 
 static grpc_core::RefCountedPtr<grpc_call_credentials>
-composite_call_credentials_create(grpc_call_credentials* creds1,
-                                  grpc_call_credentials* creds2) {
-  return grpc_core::MakeRefCounted<grpc_composite_call_credentials>(creds1,
-                                                                    creds2);
+composite_call_credentials_create(
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds2) {
+  return grpc_core::MakeRefCounted<grpc_composite_call_credentials>(
+      std::move(creds1), std::move(creds2));
 }
 
 grpc_call_credentials* grpc_composite_call_credentials_create(
@@ -197,46 +210,27 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   GPR_ASSERT(creds1 != nullptr);
   GPR_ASSERT(creds2 != nullptr);
 
-  return composite_call_credentials_create(creds1, creds2).release();
-}
-
-grpc_call_credentials* grpc_credentials_contains_type(
-    grpc_call_credentials* creds, const char* type,
-    grpc_call_credentials** composite_creds) {
-  size_t i;
-  if (strcmp(creds->type(), type) == 0) {
-    if (composite_creds != nullptr) *composite_creds = nullptr;
-    return creds;
-  } else if (strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0) {
-    const grpc_call_credentials_array& inner_creds_array =
-        static_cast<grpc_composite_call_credentials*>(creds)->inner();
-    for (i = 0; i < inner_creds_array.size(); i++) {
-      if (strcmp(type, inner_creds_array.get(i)->type()) == 0) {
-        if (composite_creds != nullptr) *composite_creds = creds;
-        return inner_creds_array.get(i);
-      }
-    }
-  }
-  return nullptr;
+  return composite_call_credentials_create(creds1->Ref(), creds2->Ref())
+      .release();
 }
 
 /* -- Composite channel credentials. -- */
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
-    grpc_call_credentials* call_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   GPR_ASSERT(inner_creds_ != nullptr && call_creds_ != nullptr);
   /* If we are passed a call_creds, create a call composite to pass it
      downstream. */
   if (call_creds != nullptr) {
-    grpc_core::RefCountedPtr<grpc_call_credentials> composite_call_creds =
-        composite_call_credentials_create(call_creds_.get(), call_creds);
-    return inner_creds_->create_security_connector(composite_call_creds.get(),
-                                                   target, args, new_args);
+    return inner_creds_->create_security_connector(
+        composite_call_credentials_create(call_creds_, std::move(call_creds)),
+        target, args, new_args);
   } else {
-    return inner_creds_->create_security_connector(call_creds_.get(), target,
-                                                   args, new_args);
+    return inner_creds_->create_security_connector(call_creds_, target, args,
+                                                   new_args);
   }
 }
 

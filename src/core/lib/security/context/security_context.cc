@@ -104,7 +104,7 @@ grpc_client_security_context::~grpc_client_security_context() {
 grpc_client_security_context* grpc_client_security_context_create(
     gpr_arena* arena, grpc_call_credentials* creds) {
   return new (gpr_arena_alloc(arena, sizeof(grpc_client_security_context)))
-      grpc_client_security_context(creds);
+      grpc_client_security_context(creds != nullptr ? creds->Ref() : nullptr);
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
