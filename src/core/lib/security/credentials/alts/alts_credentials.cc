@@ -49,10 +49,11 @@ grpc_alts_credentials::~grpc_alts_credentials() {
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_credentials::create_security_connector(
-    grpc_call_credentials* request_metadata_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target_name, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   return grpc_alts_channel_security_connector_create(
-      this, request_metadata_creds, target_name);
+      this->Ref(), std::move(call_creds), target_name);
 }
 
 grpc_alts_server_credentials::grpc_alts_server_credentials(
@@ -66,7 +67,7 @@ grpc_alts_server_credentials::grpc_alts_server_credentials(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_credentials::create_security_connector() {
-  return grpc_alts_server_security_connector_create(this);
+  return grpc_alts_server_security_connector_create(this->Ref());
 }
 
 grpc_alts_server_credentials::~grpc_alts_server_credentials() {

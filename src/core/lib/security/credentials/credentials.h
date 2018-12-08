@@ -105,9 +105,14 @@ struct grpc_channel_credentials
   // returned non NULL. In that case the caller is responsible for destroying
   // new_args after channel creation.
   virtual grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) GRPC_ABSTRACT;
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) {
+    // Tell clang-tidy that call_creds cannot be passed as const-ref.
+    call_creds.reset();
+    GRPC_ABSTRACT;
+  }
 
   // Creates a version of the channel credentials without any attached call
   // credentials. This can be used in order to open a channel to a non-trusted
@@ -241,8 +246,9 @@ grpc_server_credentials* grpc_find_server_credentials_in_args(
 /* -- Credentials Metadata Request. -- */
 
 struct grpc_credentials_metadata_request {
-  explicit grpc_credentials_metadata_request(grpc_call_credentials* creds)
-      : creds(creds->Ref()) {}
+  explicit grpc_credentials_metadata_request(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
+      : creds(std::move(creds)) {}
   ~grpc_credentials_metadata_request() {
     grpc_http_response_destroy(&response);
   }
@@ -251,10 +257,15 @@ struct grpc_credentials_metadata_request {
   grpc_http_response response;
 };
 
-grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
-    grpc_call_credentials* creds);
+inline grpc_credentials_metadata_request*
+grpc_credentials_metadata_request_create(
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
+  return grpc_core::New<grpc_credentials_metadata_request>(std::move(creds));
+}
 
-void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r);
+inline void grpc_credentials_metadata_request_destroy(
+    grpc_credentials_metadata_request* r) {
+  grpc_core::Delete(r);
+}
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

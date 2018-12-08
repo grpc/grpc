@@ -36,12 +36,13 @@
  * - sc: address of ALTS channel security connector instance to be returned from
  *   the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error stauts code on failure.
+ * It returns nullptr on failure.
  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target_name);
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name);
 
 /**
  * This method creates an ALTS server security connector.
@@ -50,11 +51,11 @@ grpc_alts_channel_security_connector_create(
  * - sc: address of ALTS server security connector instance to be returned from
  *   the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error status code on failure.
+ * It returns nullptr on failure.
  */
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_security_connector_create(
-    grpc_server_credentials* server_creds);
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
 namespace grpc_core {
 namespace internal {

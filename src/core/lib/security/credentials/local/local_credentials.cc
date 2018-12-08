@@ -31,15 +31,16 @@
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(
-    grpc_call_credentials* request_metadata_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   return grpc_local_channel_security_connector_create(
-      this, request_metadata_creds, args, target_name);
+      this->Ref(), std::move(request_metadata_creds), args, target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_credentials::create_security_connector() {
-  return grpc_local_server_security_connector_create(this);
+  return grpc_local_server_security_connector_create(this->Ref());
 }
 
 grpc_local_credentials::grpc_local_credentials(

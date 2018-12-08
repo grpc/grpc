@@ -38,8 +38,8 @@
  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_channel_args* args, const char* target_name);
 
 /**
@@ -53,7 +53,7 @@ grpc_local_channel_security_connector_create(
  */
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_security_connector_create(
-    grpc_server_credentials* server_creds);
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOCAL_LOCAL_SECURITY_CONNECTOR_H \
         */

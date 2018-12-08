@@ -66,13 +66,15 @@ class grpc_alts_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
   grpc_alts_channel_security_connector(
-      grpc_channel_credentials* channel_creds,
-      grpc_call_credentials* request_metadata_creds, const char* target_name)
-      : grpc_channel_security_connector(/*url_scheme=*/nullptr, channel_creds,
-                                        request_metadata_creds),
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name)
+      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+                                        std::move(channel_creds),
+                                        std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {
     grpc_alts_credentials* creds =
-        static_cast<grpc_alts_credentials*>(channel_creds);
+        static_cast<grpc_alts_credentials*>(mutable_channel_creds());
     alts_set_rpc_protocol_versions(&creds->mutable_options()->rpc_versions);
   }
 
@@ -127,10 +129,12 @@ class grpc_alts_channel_security_connector final
 class grpc_alts_server_security_connector final
     : public grpc_server_security_connector {
  public:
-  grpc_alts_server_security_connector(grpc_server_credentials* server_creds)
-      : grpc_server_security_connector(/*url_scheme=*/nullptr, server_creds) {
+  grpc_alts_server_security_connector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+      : grpc_server_security_connector(/*url_scheme=*/nullptr,
+                                       std::move(server_creds)) {
     grpc_alts_server_credentials* creds =
-        reinterpret_cast<grpc_alts_server_credentials*>(server_creds);
+        reinterpret_cast<grpc_alts_server_credentials*>(mutable_server_creds());
     alts_set_rpc_protocol_versions(&creds->mutable_options()->rpc_versions);
   }
   ~grpc_alts_server_security_connector() override = default;
@@ -233,8 +237,9 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_alts_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target_name) {
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
     gpr_log(
         GPR_ERROR,
@@ -242,12 +247,12 @@ grpc_alts_channel_security_connector_create(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_channel_security_connector>(
-      channel_creds, request_metadata_creds, target_name);
+      std::move(channel_creds), std::move(request_metadata_creds), target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_security_connector_create(
-    grpc_server_credentials* server_creds) {
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
     gpr_log(
         GPR_ERROR,
@@ -255,5 +260,5 @@ grpc_alts_server_security_connector_create(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_alts_server_security_connector>(
-      server_creds);
+      std::move(server_creds));
 }

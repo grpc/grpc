@@ -34,10 +34,10 @@ class grpc_alts_credentials final : public grpc_channel_credentials {
   ~grpc_alts_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* request_metadata_creds,
-                            const char* target_name,
-                            const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override;
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target_name, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
 
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }

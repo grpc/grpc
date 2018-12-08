@@ -74,10 +74,12 @@ class grpc_local_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
   grpc_local_channel_security_connector(
-      grpc_channel_credentials* channel_creds,
-      grpc_call_credentials* request_metadata_creds, const char* target_name)
-      : grpc_channel_security_connector(GRPC_UDS_URL_SCHEME, channel_creds,
-                                        request_metadata_creds),
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char* target_name)
+      : grpc_channel_security_connector(GRPC_UDS_URL_SCHEME,
+                                        std::move(channel_creds),
+                                        std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
 
   ~grpc_local_channel_security_connector() override { gpr_free(target_name_); }
@@ -130,8 +132,10 @@ class grpc_local_channel_security_connector final
 class grpc_local_server_security_connector final
     : public grpc_server_security_connector {
  public:
-  grpc_local_server_security_connector(grpc_server_credentials* server_creds)
-      : grpc_server_security_connector(GRPC_UDS_URL_SCHEME, server_creds) {}
+  grpc_local_server_security_connector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
+      : grpc_server_security_connector(GRPC_UDS_URL_SCHEME,
+                                       std::move(server_creds)) {}
   ~grpc_local_server_security_connector() override = default;
 
   void add_handshakers(grpc_pollset_set* interested_parties,
@@ -158,8 +162,8 @@ class grpc_local_server_security_connector final
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_channel_args* args, const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
     gpr_log(
@@ -169,7 +173,7 @@ grpc_local_channel_security_connector_create(
   }
   // Check if local_connect_type is UDS. Only UDS is supported for now.
   grpc_local_credentials* creds =
-      reinterpret_cast<grpc_local_credentials*>(channel_creds);
+      static_cast<grpc_local_credentials*>(channel_creds.get());
   if (creds->connect_type() != UDS) {
     gpr_log(GPR_ERROR,
             "Invalid local channel type to "
@@ -193,7 +197,7 @@ grpc_local_channel_security_connector_create(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_security_connector_create(
-    grpc_server_credentials* server_creds) {
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
     gpr_log(
         GPR_ERROR,
@@ -201,8 +205,8 @@ grpc_local_server_security_connector_create(
     return nullptr;
   }
   // Check if local_connect_type is UDS. Only UDS is supported for now.
-  grpc_local_server_credentials* creds =
-      reinterpret_cast<grpc_local_server_credentials*>(server_creds);
+  const grpc_local_server_credentials* creds =
+      static_cast<const grpc_local_server_credentials*>(server_creds.get());
   if (creds->connect_type() != UDS) {
     gpr_log(GPR_ERROR,
             "Invalid local server type to "
@@ -210,5 +214,5 @@ grpc_local_server_security_connector_create(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_local_server_security_connector>(
-      server_creds);
+      std::move(server_creds));
 }

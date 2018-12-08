@@ -35,15 +35,19 @@ class grpc_call_credentials_array {
   void reserve(size_t capacity);
 
   // Must reserve before pushing any data.
-  void push_back(grpc_call_credentials* cred) {
+  void push_back(grpc_core::RefCountedPtr<grpc_call_credentials> cred) {
     GPR_DEBUG_ASSERT(capacity_ > num_creds_);
     new (&creds_array_[num_creds_++])
-        grpc_core::RefCountedPtr<grpc_call_credentials>(cred->Ref());
+        grpc_core::RefCountedPtr<grpc_call_credentials>(std::move(cred));
   }
 
-  grpc_call_credentials* get(size_t i) const {
+  const grpc_core::RefCountedPtr<grpc_call_credentials>& get(size_t i) const {
     GPR_DEBUG_ASSERT(i < num_creds_);
-    return creds_array_[i].get();
+    return creds_array_[i];
+  }
+  grpc_core::RefCountedPtr<grpc_call_credentials>& get_mutable(size_t i) {
+    GPR_DEBUG_ASSERT(i < num_creds_);
+    return creds_array_[i];
   }
 
   size_t size() const { return num_creds_; }
@@ -53,14 +57,6 @@ class grpc_call_credentials_array {
   size_t num_creds_ = 0;
   size_t capacity_ = 0;
 };
-
-/* Returns creds if creds is of the specified type or the inner creds of the
-   specified type (if found), if the creds is of type COMPOSITE.
-   If composite_creds is not NULL, *composite_creds will point to creds if of
-   type COMPOSITE in case of success. */
-grpc_call_credentials* grpc_credentials_contains_type(
-    grpc_call_credentials* creds, const char* type,
-    grpc_call_credentials** composite_creds);
 
 /* -- Composite channel credentials. -- */
 
@@ -80,9 +76,10 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   }
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override;
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -99,8 +96,9 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
-  grpc_composite_call_credentials(grpc_call_credentials* creds1,
-                                  grpc_call_credentials* creds2);
+  grpc_composite_call_credentials(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
@@ -115,6 +113,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   const grpc_call_credentials_array& inner() const { return inner_; }
 
  private:
+  void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
+                     bool is_composite);
+
   grpc_call_credentials_array inner_;
 };
 

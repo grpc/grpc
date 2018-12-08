@@ -411,9 +411,10 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
   ~check_channel_oauth2() override = default;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override {
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override {
     GPR_ASSERT(strcmp(type(), "mock") == 0);
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
@@ -483,15 +484,16 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
   ~check_channel_oauth2_google_iam() override = default;
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(grpc_call_credentials* call_creds,
-                            const char* target, const grpc_channel_args* args,
-                            grpc_channel_args** new_args) override {
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override {
     GPR_ASSERT(strcmp(type(), "mock") == 0);
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(
         strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
     const grpc_call_credentials_array& creds_array =
-        static_cast<const grpc_composite_call_credentials*>(call_creds)
+        static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
     GPR_ASSERT(strcmp(creds_array.get(0)->type(),
                       GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);

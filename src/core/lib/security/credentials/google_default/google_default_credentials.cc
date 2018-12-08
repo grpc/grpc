@@ -68,8 +68,9 @@ typedef struct {
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
-    grpc_call_credentials* call_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_args** new_args) {
   bool is_grpclb_load_balancer = grpc_channel_arg_get_bool(
       grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER),
       false);
@@ -221,7 +222,8 @@ end:
     grpc_alts_credentials_options_destroy(options);
     auto creds =
         grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
-            alts_creds, ssl_creds);
+            alts_creds != nullptr ? alts_creds->Ref() : nullptr,
+            ssl_creds != nullptr ? ssl_creds->Ref() : nullptr);
     if (ssl_creds) ssl_creds->Unref();
     if (alts_creds) alts_creds->Unref();
     result = grpc_composite_channel_credentials_create(

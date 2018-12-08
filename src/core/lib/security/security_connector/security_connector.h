@@ -88,8 +88,9 @@ grpc_security_connector* grpc_security_connector_find_in_args(
 class grpc_channel_security_connector : public grpc_security_connector {
  public:
   grpc_channel_security_connector(
-      const char* url_scheme, grpc_channel_credentials* channel_creds,
-      grpc_call_credentials* request_metadata_creds);
+      const char* url_scheme,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds);
   ~grpc_channel_security_connector() override;
 
   /// Checks that the host that will be set for a call is acceptable.
@@ -111,6 +112,9 @@ class grpc_channel_security_connector : public grpc_security_connector {
       GRPC_ABSTRACT;
 
   const grpc_channel_credentials* channel_creds() const {
+    return channel_creds_.get();
+  }
+  grpc_channel_credentials* mutable_channel_creds() {
     return channel_creds_.get();
   }
   const grpc_call_credentials* request_metadata_creds() const {
@@ -139,8 +143,9 @@ class grpc_channel_security_connector : public grpc_security_connector {
 
 class grpc_server_security_connector : public grpc_security_connector {
  public:
-  grpc_server_security_connector(const char* url_scheme,
-                                 grpc_server_credentials* server_creds);
+  grpc_server_security_connector(
+      const char* url_scheme,
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override = default;
 
   virtual void add_handshakers(grpc_pollset_set* interested_parties,
