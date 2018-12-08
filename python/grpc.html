@@ -6,14 +6,13 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.16.0 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.17.1rc1 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="gRPC Health Checking" href="grpc_health_checking.html" />
@@ -33,7 +32,7 @@
 
 
 
-<p class="blurb">1.16.0</p>
+<p class="blurb">1.17.1rc1</p>
 
 
 
@@ -1316,6 +1315,13 @@ the service-side of the RPC.</p>
 <dd><p>An optional CallCredentials for the RPC.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="grpc.ClientCallDetails.wait_for_ready">
+<code class="descname">wait_for_ready</code><a class="headerlink" href="#grpc.ClientCallDetails.wait_for_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is an EXPERIMENTAL argument. An optional flag t
+enable wait for ready mechanism.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -1856,7 +1862,7 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 <dd><p>Affords invoking a unary-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1869,6 +1875,8 @@ for the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -1886,7 +1894,7 @@ metadata, status code, and details.</p>
 
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.future">
-<code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<code class="descname">future</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1899,6 +1907,8 @@ the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -1915,7 +1925,7 @@ the returned Call-Future’s exception value will be an RpcError.</p>
 
 <dl class="method">
 <dt id="grpc.UnaryUnaryMultiCallable.with_call">
-<code class="descname">with_call</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<code class="descname">with_call</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1928,6 +1938,8 @@ the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -1951,7 +1963,7 @@ metadata, status code, and details.</p>
 <dd><p>Affords invoking a unary-stream RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.UnaryStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.UnaryStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1964,6 +1976,8 @@ the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – An optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -1985,7 +1999,7 @@ RPC with non-OK status.</p>
 <dd><p>Affords invoking a stream-unary RPC from client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1999,6 +2013,8 @@ the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -2016,7 +2032,7 @@ such as metadata, code, and details.</p>
 
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.future">
-<code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
+<code class="descname">future</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.future"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.future" title="Permalink to this definition">¶</a></dt>
 <dd><p>Asynchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2029,6 +2045,8 @@ the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -2045,7 +2063,7 @@ be an RpcError.</p>
 
 <dl class="method">
 <dt id="grpc.StreamUnaryMultiCallable.with_call">
-<code class="descname">with_call</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
+<code class="descname">with_call</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryMultiCallable.with_call"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamUnaryMultiCallable.with_call" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synchronously invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2059,6 +2077,8 @@ the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
@@ -2082,7 +2102,7 @@ metadata, status code, and details.</p>
 <dd><p>Affords invoking a stream-stream RPC on client-side.</p>
 <dl class="method">
 <dt id="grpc.StreamStreamMultiCallable.__call__">
-<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__call__</code><span class="sig-paren">(</span><em>request_iterator</em>, <em>timeout=None</em>, <em>metadata=None</em>, <em>credentials=None</em>, <em>wait_for_ready=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamMultiCallable.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.StreamStreamMultiCallable.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invokes the underlying RPC on the client.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -2095,6 +2115,8 @@ the RPC. If not specified, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
 <li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
+flag to enable wait for ready mechanism</li>
 </ul>
 </td>
 </tr>
