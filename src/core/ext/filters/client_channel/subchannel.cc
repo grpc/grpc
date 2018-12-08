@@ -837,7 +837,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
 
   /* publish */
   c->connected_subchannel.reset(grpc_core::New<grpc_core::ConnectedSubchannel>(
-      stk, c->args, c->channelz_subchannel, socket_uuid));
+      stk, c->channelz_subchannel, socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 
@@ -1068,18 +1068,16 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 namespace grpc_core {
 
 ConnectedSubchannel::ConnectedSubchannel(
-    grpc_channel_stack* channel_stack, const grpc_channel_args* args,
+    grpc_channel_stack* channel_stack,
     grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
         channelz_subchannel,
     intptr_t socket_uuid)
     : RefCounted<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack),
-      args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)),
       socket_uuid_(socket_uuid) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
-  grpc_channel_args_destroy(args_);
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
 }
 

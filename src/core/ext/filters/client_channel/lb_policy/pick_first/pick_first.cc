@@ -24,7 +24,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -76,9 +75,11 @@ class PickFirst : public LoadBalancingPolicy {
     PickFirstSubchannelData(
         SubchannelList<PickFirstSubchannelList, PickFirstSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, grpc_subchannel* subchannel,
+        const grpc_lb_user_data_vtable* user_data_vtable,
+        const grpc_lb_address& address, grpc_subchannel* subchannel,
         grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
+        : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
+                         combiner) {}
 
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state, grpc_error* error) override;
@@ -94,7 +95,7 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
-                            const ServerAddressList& addresses,
+                            const grpc_lb_addresses* addresses,
                             grpc_combiner* combiner,
                             grpc_client_channel_factory* client_channel_factory,
                             const grpc_channel_args& args)
@@ -336,8 +337,8 @@ void PickFirst::UpdateChildRefsLocked() {
 void PickFirst::UpdateLocked(const grpc_channel_args& args,
                              grpc_json* lb_config) {
   AutoChildRefsUpdater guard(this);
-  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
-  if (addresses == nullptr) {
+  const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
       grpc_connectivity_state_set(
@@ -353,17 +354,19 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
     }
     return;
   }
+  const grpc_lb_addresses* addresses =
+      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
-            addresses->size());
+            addresses->num_addresses);
   }
   grpc_arg new_arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add(&args, &new_arg, 1);
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, *addresses, combiner(),
+      this, &grpc_lb_pick_first_trace, addresses, combiner(),
       client_channel_factory(), *new_args);
   grpc_channel_args_destroy(new_args);
   if (subchannel_list->num_subchannels() == 0) {

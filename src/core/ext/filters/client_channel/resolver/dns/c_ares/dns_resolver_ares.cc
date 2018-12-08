@@ -33,7 +33,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -118,7 +117,7 @@ class AresDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  UniquePtr<ServerAddressList> addresses_;
+  grpc_lb_addresses* lb_addresses_ = nullptr;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
@@ -315,13 +314,13 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   r->resolving_ = false;
   gpr_free(r->pending_request_);
   r->pending_request_ = nullptr;
-  if (r->addresses_ != nullptr) {
+  if (r->lb_addresses_ != nullptr) {
     static const char* args_to_remove[1];
     size_t num_args_to_remove = 0;
     grpc_arg args_to_add[2];
     size_t num_args_to_add = 0;
     args_to_add[num_args_to_add++] =
-        CreateServerAddressListChannelArg(r->addresses_.get());
+        grpc_lb_addresses_create_channel_arg(r->lb_addresses_);
     char* service_config_string = nullptr;
     if (r->service_config_json_ != nullptr) {
       service_config_string = ChooseServiceConfig(r->service_config_json_);
@@ -338,7 +337,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
         r->channel_args_, args_to_remove, num_args_to_remove, args_to_add,
         num_args_to_add);
     gpr_free(service_config_string);
-    r->addresses_.reset();
+    grpc_lb_addresses_destroy(r->lb_addresses_);
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();
@@ -413,10 +412,11 @@ void AresDnsResolver::StartResolvingLocked() {
   self.release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
+  lb_addresses_ = nullptr;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &on_resolved_, &addresses_, true /* check_grpclb */,
+      &on_resolved_, &lb_addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
