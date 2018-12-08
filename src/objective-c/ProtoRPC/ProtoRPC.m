@@ -140,7 +140,11 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 }
 
 - (void)start {
-  [_call start];
+  GRPCCall2 *copiedCall;
+  @synchronized(self) {
+    copiedCall = _call;
+  }
+  [copiedCall start];
 }
 
 - (void)cancel {
@@ -177,20 +181,20 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
     return;
   }
 
-  GRPCCall2 *call;
+  GRPCCall2 *copiedCall;
   @synchronized(self) {
-    call = _call;
+    copiedCall = _call;
   }
-  [call writeData:[message data]];
+  [copiedCall writeData:[message data]];
 }
 
 - (void)finish {
-  GRPCCall2 *call;
+  GRPCCall2 *copiedCall;
   @synchronized(self) {
-    call = _call;
+    copiedCall = _call;
     _call = nil;
   }
-  [call finish];
+  [copiedCall finish];
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {

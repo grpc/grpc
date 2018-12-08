@@ -320,6 +320,7 @@
       _call = NULL;
     }
   }
+  // Explicitly converting weak reference _pooledChannel to strong.
   __strong GRPCPooledChannel *channel = _pooledChannel;
   [channel notifyWrappedCallDealloc:self];
 }
