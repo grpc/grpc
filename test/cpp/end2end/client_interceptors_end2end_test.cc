@@ -384,6 +384,7 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 dummy interceptors before hijacking interceptor
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -424,6 +425,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 5 dummy interceptors before hijacking interceptor
+  creators.reserve(5);
   for (auto i = 0; i < 5; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -571,6 +573,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 dummy interceptors
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -596,6 +599,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 dummy interceptors
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -621,6 +625,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   // Add 20 dummy interceptors
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));

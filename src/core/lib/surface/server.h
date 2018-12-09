@@ -44,15 +44,15 @@ void grpc_server_add_listener(grpc_server* server, void* listener,
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
-void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args,
-                                 intptr_t socket_uuid,
-                                 grpc_resource_user* resource_user = nullptr);
+void grpc_server_setup_transport(
+    grpc_server* server, grpc_transport* transport,
+    grpc_pollset* accepting_pollset, const grpc_channel_args* args,
+    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    grpc_resource_user* resource_user = nullptr);
 
 /* fills in the uuids of all sockets used for connections on this server */
 void grpc_server_populate_server_sockets(
-    grpc_server* server, grpc_core::channelz::ChildRefsList* server_sockets,
+    grpc_server* server, grpc_core::channelz::ChildSocketsList* server_sockets,
     intptr_t start_idx);
 
 /* fills in the uuids of all listen sockets on this server */

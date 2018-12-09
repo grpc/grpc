@@ -28,6 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include <utility>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
@@ -109,7 +111,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
-  intptr_t socket_uuid;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node;
 };
 
 typedef struct shutdown_tag {
@@ -950,6 +952,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 static void destroy_channel_elem(grpc_channel_element* elem) {
   size_t i;
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  chand->socket_node.reset();
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       grpc_slice_unref_internal(chand->registered_methods[i].method);
@@ -1155,11 +1158,11 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
   *pollsets = server->pollsets;
 }
 
-void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
-                                 grpc_pollset* accepting_pollset,
-                                 const grpc_channel_args* args,
-                                 intptr_t socket_uuid,
-                                 grpc_resource_user* resource_user) {
+void grpc_server_setup_transport(
+    grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
+    const grpc_channel_args* args,
+    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
   registered_method* rm;
@@ -1180,7 +1183,7 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_uuid = socket_uuid;
+  chand->socket_node = std::move(socket_node);
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
@@ -1256,14 +1259,13 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
 }
 
 void grpc_server_populate_server_sockets(
-    grpc_server* s, grpc_core::channelz::ChildRefsList* server_sockets,
+    grpc_server* s, grpc_core::channelz::ChildSocketsList* server_sockets,
     intptr_t start_idx) {
   gpr_mu_lock(&s->mu_global);
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
-    intptr_t socket_uuid = c->socket_uuid;
-    if (socket_uuid >= start_idx) {
-      server_sockets->push_back(socket_uuid);
+    if (c->socket_node != nullptr && c->socket_node->uuid() >= start_idx) {
+      server_sockets->push_back(c->socket_node.get());
     }
   }
   gpr_mu_unlock(&s->mu_global);

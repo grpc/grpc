@@ -149,7 +149,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
       grpc_server_setup_transport(
           connection_state->svr_state->server, transport,
           connection_state->accepting_pollset, args->args,
-          grpc_chttp2_transport_get_socket_uuid(transport), resource_user);
+          grpc_chttp2_transport_get_socket_node(transport), resource_user);
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
       connection_state->transport =
