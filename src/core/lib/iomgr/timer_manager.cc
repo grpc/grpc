@@ -194,8 +194,8 @@ static bool wait_until(grpc_millis next) {
       gpr_log(GPR_INFO, "sleep until kicked");
     }
 
-    // For debug of the timer manager crash only.
-    // TODO (mxyan): remove after bug is fixed.
+      // For debug of the timer manager crash only.
+      // TODO (mxyan): remove after bug is fixed.
 #ifdef GRPC_DEBUG_TIMER_MANAGER
     g_next_value = next;
 #endif
