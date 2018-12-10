@@ -41,6 +41,8 @@ namespace Grpc.Core
         {
             this.serializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.deserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
+            // contextual serialization/deserialization is emulated to make the marshaller
+            // usable with the grpc library (required for backward compatibility).
             this.contextualSerializer = EmulateContextualSerializer;
             this.contextualDeserializer = EmulateContextualDeserializer;
         }
@@ -57,10 +59,10 @@ namespace Grpc.Core
         {
             this.contextualSerializer = GrpcPreconditions.CheckNotNull(serializer, nameof(serializer));
             this.contextualDeserializer = GrpcPreconditions.CheckNotNull(deserializer, nameof(deserializer));
-            // TODO(jtattermusch): once gRPC C# library switches to using contextual (de)serializer,
-            // emulating the simple (de)serializer will become unnecessary.
-            this.serializer = EmulateSimpleSerializer;
-            this.deserializer = EmulateSimpleDeserializer;
+            // gRPC only uses contextual serializer/deserializer internally, so emulating the legacy
+            // (de)serializer is not necessary.
+            this.serializer = (msg) => { throw new NotImplementedException(); };
+            this.deserializer = (payload) => { throw new NotImplementedException(); };
         }
 
         /// <summary>
@@ -85,25 +87,6 @@ namespace Grpc.Core
         /// </summary>
         public Func<DeserializationContext, T> ContextualDeserializer => this.contextualDeserializer;
 
-        // for backward compatibility, emulate the simple serializer using the contextual one
-        private byte[] EmulateSimpleSerializer(T msg)
-        {
-            // TODO(jtattermusch): avoid the allocation by passing a thread-local instance
-            // This code will become unnecessary once gRPC C# library switches to using contextual (de)serializer.
-            var context = new EmulatedSerializationContext();
-            this.contextualSerializer(msg, context);
-            return context.GetPayload();
-        }
-
-        // for backward compatibility, emulate the simple deserializer using the contextual one
-        private T EmulateSimpleDeserializer(byte[] payload)
-        {
-            // TODO(jtattermusch): avoid the allocation by passing a thread-local instance
-            // This code will become unnecessary once gRPC C# library switches to using contextual (de)serializer.
-            var context = new EmulatedDeserializationContext(payload);
-            return this.contextualDeserializer(context);
-        }
-
         // for backward compatibility, emulate the contextual serializer using the simple one
         private void EmulateContextualSerializer(T message, SerializationContext context)
         {
@@ -115,44 +98,6 @@ namespace Grpc.Core
         private T EmulateContextualDeserializer(DeserializationContext context)
         {
             return this.deserializer(context.PayloadAsNewBuffer());
-        }
-
-        internal class EmulatedSerializationContext : SerializationContext
-        {
-            bool isComplete;
-            byte[] payload;
-
-            public override void Complete(byte[] payload)
-            {
-                GrpcPreconditions.CheckState(!isComplete);
-                this.isComplete = true;
-                this.payload = payload;
-            }
-
-            internal byte[] GetPayload()
-            {
-                return this.payload;
-            }
-        }
-
-        internal class EmulatedDeserializationContext : DeserializationContext
-        {
-            readonly byte[] payload;
-            bool alreadyCalledPayloadAsNewBuffer;
-
-            public EmulatedDeserializationContext(byte[] payload)
-            {
-                this.payload = GrpcPreconditions.CheckNotNull(payload);
-            }
-
-            public override int PayloadLength => payload.Length;
-
-            public override byte[] PayloadAsNewBuffer()
-            {
-                GrpcPreconditions.CheckState(!alreadyCalledPayloadAsNewBuffer);
-                alreadyCalledPayloadAsNewBuffer = true;
-                return payload;
-            }
         }
     }
 

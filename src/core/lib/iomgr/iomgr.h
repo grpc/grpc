@@ -35,6 +35,10 @@ void grpc_iomgr_start();
  * exec_ctx. */
 void grpc_iomgr_shutdown();
 
+/** Signals the intention to shutdown all the closures registered in the
+ * background poller. */
+void grpc_iomgr_shutdown_background_closure();
+
 /* Exposed only for testing */
 size_t grpc_iomgr_count_objects_for_testing();
 

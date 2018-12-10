@@ -562,6 +562,7 @@ static Status ProcessGenericRPC(const PayloadConfig& payload_config,
   request->Clear();
   int resp_size = payload_config.bytebuf_params().resp_size();
   std::unique_ptr<char[]> buf(new char[resp_size]);
+  memset(buf.get(), 0, static_cast<size_t>(resp_size));
   Slice slice(buf.get(), resp_size);
   *response = ByteBuffer(&slice, 1);
   return Status::OK;

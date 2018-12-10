@@ -224,6 +224,11 @@ void ValidateServer(ServerNode* server, validate_channel_data_args args) {
   grpc::testing::ValidateServerProtoJsonTranslation(json_str);
   ValidateCounters(json_str, args);
   gpr_free(json_str);
+  // also check that the core API formats this the correct way
+  char* core_api_json_str = grpc_channelz_get_server(server->uuid());
+  grpc::testing::ValidateGetServerResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
 }
 
 grpc_millis GetLastCallStartedMillis(CallCountingHelper* channel) {
@@ -536,7 +541,7 @@ INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

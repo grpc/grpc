@@ -1782,6 +1782,8 @@ static void global_cv_fd_table_shutdown() {
  * event engine binding
  */
 
+static void shutdown_background_closure(void) {}
+
 static void shutdown_engine(void) {
   pollset_global_shutdown();
   if (grpc_cv_wakeup_fds_enabled()) {
@@ -1795,6 +1797,7 @@ static void shutdown_engine(void) {
 
 static const grpc_event_engine_vtable vtable = {
     sizeof(grpc_pollset),
+    false,
     false,
 
     fd_create,
@@ -1825,6 +1828,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    shutdown_background_closure,
     shutdown_engine,
 };
 

@@ -315,6 +315,8 @@ char* CFStreamGetPeer(grpc_endpoint* ep) {
 
 int CFStreamGetFD(grpc_endpoint* ep) { return 0; }
 
+bool CFStreamCanTrackErr(grpc_endpoint* ep) { return false; }
+
 void CFStreamAddToPollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 void CFStreamAddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
 void CFStreamDeleteFromPollsetSet(grpc_endpoint* ep,
@@ -329,7 +331,8 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamDestroy,
                                             CFStreamGetResourceUser,
                                             CFStreamGetPeer,
-                                            CFStreamGetFD};
+                                            CFStreamGetFD,
+                                            CFStreamCanTrackErr};
 
 grpc_endpoint* grpc_cfstream_endpoint_create(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream,

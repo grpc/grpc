@@ -539,22 +539,25 @@ class GrpclbEnd2endTest : public ::testing::Test {
     balancers_.at(i)->add_response(response, delay_ms);
   }
 
-  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000) {
+  Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
+                 bool wait_for_ready = false) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
     request.set_message(kRequestMessage_);
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
+    if (wait_for_ready) context.set_wait_for_ready(true);
     Status status = stub_->Echo(&context, request, response);
     if (local_response) delete response;
     return status;
   }
 
-  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000) {
+  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000,
+                      bool wait_for_ready = false) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
-      const Status status = SendRpc(&response, timeout_ms);
+      const Status status = SendRpc(&response, timeout_ms, wait_for_ready);
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
       EXPECT_EQ(response.message(), kRequestMessage_);
@@ -715,10 +718,9 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   ScheduleResponseForBalancer(
       0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
       kServerlistDelayMs);
-
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
-  CheckRpcSendOk(1, kCallDeadlineMs);
+  CheckRpcSendOk(1, kCallDeadlineMs, true /* wait_for_ready */);
   const auto ellapsed_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           system_clock::now() - t0);
@@ -1366,7 +1368,7 @@ TEST_F(SingleBalancerTest, DropAllFirst) {
           {}, {{"rate_limiting", num_of_drop_by_rate_limiting_addresses},
                {"load_balancing", num_of_drop_by_load_balancing_addresses}}),
       0);
-  const Status status = SendRpc();
+  const Status status = SendRpc(nullptr, 1000, true);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
 }
@@ -1391,7 +1393,7 @@ TEST_F(SingleBalancerTest, DropAll) {
   // fail.
   Status status;
   do {
-    status = SendRpc();
+    status = SendRpc(nullptr, 1000, true);
   } while (status.ok());
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.error_message(), "Call dropped by load balancing policy");
@@ -1516,7 +1518,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

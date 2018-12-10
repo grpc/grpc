@@ -181,16 +181,19 @@ grpc_cc_test(
     data = [
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
+        "//src/proto/grpc/testing:simple_messages.proto",
     ],
     external_deps = [
         "gtest",
     ],
+    tags = ["nomsan"],  # death tests seem to be incompatible with msan
     deps = [
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],

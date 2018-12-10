@@ -35,9 +35,32 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH sizeof(EXPECTED_CONTENT_TYPE) - 1
 
+static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err);
+static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err);
+static void hs_recv_message_ready(void* user_data, grpc_error* err);
+
 namespace {
 
 struct call_data {
+  call_data(grpc_call_element* elem, const grpc_call_element_args& args)
+      : call_combiner(args.call_combiner) {
+    GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
+                      hs_recv_initial_metadata_ready, elem,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&recv_message_ready, hs_recv_message_ready, elem,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
+                      hs_recv_trailing_metadata_ready, elem,
+                      grpc_schedule_on_exec_ctx);
+  }
+
+  ~call_data() {
+    GRPC_ERROR_UNREF(recv_initial_metadata_ready_error);
+    if (have_read_stream) {
+      read_stream->Orphan();
+    }
+  }
+
   grpc_call_combiner* call_combiner;
 
   // Outgoing headers to add to send_initial_metadata.
@@ -47,27 +70,27 @@ struct call_data {
   // If we see the recv_message contents in the GET query string, we
   // store it here.
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> read_stream;
-  bool have_read_stream;
+  bool have_read_stream = false;
 
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
-  grpc_error* recv_initial_metadata_ready_error;
+  grpc_error* recv_initial_metadata_ready_error = GRPC_ERROR_NONE;
   grpc_closure* original_recv_initial_metadata_ready;
-  grpc_metadata_batch* recv_initial_metadata;
+  grpc_metadata_batch* recv_initial_metadata = nullptr;
   uint32_t* recv_initial_metadata_flags;
-  bool seen_recv_initial_metadata_ready;
+  bool seen_recv_initial_metadata_ready = false;
 
   // State for intercepting recv_message.
   grpc_closure* original_recv_message_ready;
   grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  bool seen_recv_message_ready;
+  bool seen_recv_message_ready = false;
 
   // State for intercepting recv_trailing_metadata
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
   grpc_error* recv_trailing_metadata_ready_error;
-  bool seen_recv_trailing_metadata_ready;
+  bool seen_recv_trailing_metadata_ready = false;
 };
 
 struct channel_data {
@@ -431,16 +454,7 @@ static void hs_start_transport_stream_op_batch(
 /* Constructor for call_data */
 static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                    hs_recv_initial_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->recv_message_ready, hs_recv_message_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
-                    hs_recv_trailing_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
+  new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
@@ -449,10 +463,7 @@ static void hs_destroy_call_elem(grpc_call_element* elem,
                                  const grpc_call_final_info* final_info,
                                  grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  GRPC_ERROR_UNREF(calld->recv_initial_metadata_ready_error);
-  if (calld->have_read_stream) {
-    calld->read_stream->Orphan();
-  }
+  calld->~call_data();
 }
 
 /* Constructor for channel_data */

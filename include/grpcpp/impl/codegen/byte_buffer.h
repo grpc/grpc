@@ -45,11 +45,20 @@ template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 template <class R>
 class DeserializeFuncType;
 class GrpcByteBufferPeer;
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+
 }  // namespace internal
 /// A sequence of bytes.
 class ByteBuffer final {
@@ -141,11 +150,18 @@ class ByteBuffer final {
   template <class R>
   friend class internal::CallOpRecvMessage;
   friend class internal::CallOpGenericRecvMessage;
-  friend class internal::MethodHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class RpcMethodHandler;
+  template <class ServiceType, class RequestType, class ResponseType>
+  friend class ServerStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class internal::CallbackUnaryHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackServerStreamingHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>

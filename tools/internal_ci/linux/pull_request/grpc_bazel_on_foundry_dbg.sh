@@ -13,5 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXTRA_FLAGS="-c dbg --test_timeout=300,450,1200,3600"
+set -ex
+
+EXTRA_FLAGS="--config=dbg --test_timeout=300,450,1200,3600"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"

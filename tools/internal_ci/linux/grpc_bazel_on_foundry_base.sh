@@ -15,31 +15,35 @@
 
 set -ex
 
-# A temporary solution to give Kokoro credentials. 
-# The file name 4321_grpc-testing-service needs to match auth_credential in 
+# A temporary solution to give Kokoro credentials.
+# The file name 4321_grpc-testing-service needs to match auth_credential in
 # the build config.
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
-temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-latest-release" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-latest-release"
+# Download bazel
+temp_dir="$(mktemp -d)"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.17.1/bazel-0.17.1-linux-x86_64 -O "${temp_dir}/bazel"
+chmod 755 "${temp_dir}/bazel"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
-chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export KOKORO_FOUNDRY_PROJECT_ID="projects/grpc-testing/instances/default_instance"
+# to get "bazel" link for kokoro build, we need to generate
+# invocation UUID, set a flag for bazel to use it
+# and upload "bazel_invocation_ids" file as artifact.
+BAZEL_INVOCATION_ID="$(uuidgen)"
+echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
 
-# TODO(adelez): implement size for test targets and change test_timeout back
-"${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
+bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
+  --invocation_id="${BAZEL_INVOCATION_ID}" \
   $@ \
   -- //test/... || FAILED="true"
 

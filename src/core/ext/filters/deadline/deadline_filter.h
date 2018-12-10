@@ -22,19 +22,23 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
-typedef enum grpc_deadline_timer_state {
+enum grpc_deadline_timer_state {
   GRPC_DEADLINE_STATE_INITIAL,
   GRPC_DEADLINE_STATE_PENDING,
   GRPC_DEADLINE_STATE_FINISHED
-} grpc_deadline_timer_state;
+};
 
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
-typedef struct grpc_deadline_state {
+struct grpc_deadline_state {
+  grpc_deadline_state(grpc_call_element* elem, grpc_call_stack* call_stack,
+                      grpc_call_combiner* call_combiner, grpc_millis deadline);
+  ~grpc_deadline_state();
+
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
   grpc_call_combiner* call_combiner;
-  grpc_deadline_timer_state timer_state;
+  grpc_deadline_timer_state timer_state = GRPC_DEADLINE_STATE_INITIAL;
   grpc_timer timer;
   grpc_closure timer_callback;
   // Closure to invoke when we receive trailing metadata.
@@ -43,20 +47,12 @@ typedef struct grpc_deadline_state {
   // The original recv_trailing_metadata_ready closure, which we chain to
   // after our own closure is invoked.
   grpc_closure* original_recv_trailing_metadata_ready;
-} grpc_deadline_state;
+};
 
 //
 // NOTE: All of these functions require that the first field in
 // elem->call_data is a grpc_deadline_state.
 //
-
-// assumes elem->call_data is zero'd
-void grpc_deadline_state_init(grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline);
-
-void grpc_deadline_state_destroy(grpc_call_element* elem);
 
 // Cancels the existing timer and starts a new one with new_deadline.
 //

@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init(1, fake_argv);
+  grpc::testing::TestEnvironment env(1, fake_argv);
 
   grpc_init();
   srand(static_cast<unsigned>(clock()));
@@ -292,9 +292,9 @@ int main(int argc, char** argv) {
                 send_status(&calls[k]);
               }
             }
+          /* fallthrough */
           // no break here since we want to continue to case
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
-          /* fallthrough */
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
             grpc_byte_buffer_destroy(payload_buffer);
             grpc_byte_buffer_destroy(terminal_buffer);

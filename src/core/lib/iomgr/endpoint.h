@@ -47,6 +47,7 @@ struct grpc_endpoint_vtable {
   grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
   char* (*get_peer)(grpc_endpoint* ep);
   int (*get_fd)(grpc_endpoint* ep);
+  bool (*can_track_err)(grpc_endpoint* ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
@@ -94,6 +95,8 @@ void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set);
 
 grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
+
+bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;

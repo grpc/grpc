@@ -127,12 +127,20 @@
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+
+  def modify_podspec_version_string(pod_version, grpc_version):
+    # Append -preX when it is a pre-release
+    if len(str(grpc_version).split('-')) > 1:
+      return pod_version + '-' + str(grpc_version).split('-')[-1]
+    else:
+      return pod_version
+
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '0.0.3'
+    version = '${modify_podspec_version_string('0.0.6', settings.version)}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
@@ -176,6 +184,9 @@
     s.libraries = 'c++'
 
     s.default_subspecs = 'Interface', 'Implementation'
+
+    # Certificates, to be able to establish TLS connections:
+    s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 
     s.header_mappings_dir = 'include/grpcpp'
 

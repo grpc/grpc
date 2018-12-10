@@ -142,8 +142,8 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
 /* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
-  grpc_mdelem* md;
-  size_t size;
+  grpc_mdelem* md = nullptr;
+  size_t size = 0;
 } grpc_credentials_mdelem_array;
 
 /// Takes a new ref to \a md.

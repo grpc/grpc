@@ -130,7 +130,7 @@ static void test_chained_context(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_empty_context();
   test_simple_context();
   test_chained_context();

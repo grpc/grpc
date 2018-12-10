@@ -378,7 +378,7 @@ grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
-    grpc_combiner* combiner) {
+    int query_timeout, grpc_combiner* combiner) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -420,7 +420,7 @@ static void do_connect(void* arg, grpc_error* error) {
 
     grpc_transport* transport =
         grpc_create_chttp2_transport(nullptr, server, false);
-    grpc_server_setup_transport(g_server, transport, nullptr, nullptr, 0);
+    grpc_server_setup_transport(g_server, transport, nullptr, nullptr, nullptr);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
     GRPC_CLOSURE_SCHED(fc->closure, GRPC_ERROR_NONE);

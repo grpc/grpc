@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.17.0-dev
+PROJECT_NUMBER         = 1.18.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/environment_variables.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -943,6 +944,8 @@ include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
 include/grpcpp/impl/codegen/call_hook.h \
+include/grpcpp/impl/codegen/call_op_set.h \
+include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \
 include/grpcpp/impl/codegen/channel_interface.h \
 include/grpcpp/impl/codegen/client_callback.h \
@@ -957,7 +960,9 @@ include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/grpc_library.h \
+include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
+include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
@@ -967,7 +972,9 @@ include/grpcpp/impl/codegen/rpc_method.h \
 include/grpcpp/impl/codegen/rpc_service_method.h \
 include/grpcpp/impl/codegen/security/auth_context.h \
 include/grpcpp/impl/codegen/serialization_traits.h \
+include/grpcpp/impl/codegen/server_callback.h \
 include/grpcpp/impl/codegen/server_context.h \
+include/grpcpp/impl/codegen/server_interceptor.h \
 include/grpcpp/impl/codegen/server_interface.h \
 include/grpcpp/impl/codegen/service_type.h \
 include/grpcpp/impl/codegen/slice.h \
@@ -1003,6 +1010,7 @@ include/grpcpp/support/client_callback.h \
 include/grpcpp/support/config.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
+include/grpcpp/support/server_callback.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
 include/grpcpp/support/status_code_enum.h \

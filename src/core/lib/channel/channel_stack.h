@@ -79,11 +79,11 @@ typedef struct {
 } grpc_call_stats;
 
 /** Information about the call upon completion. */
-typedef struct {
+struct grpc_call_final_info {
   grpc_call_stats stats;
-  grpc_status_code final_status;
-  const char* error_string;
-} grpc_call_final_info;
+  grpc_status_code final_status = GRPC_STATUS_OK;
+  const char* error_string = nullptr;
+};
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX

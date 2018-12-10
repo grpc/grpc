@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gizmo"
+g_stands_for = "goose"
 
-core_version = "6.0.0-dev"
+core_version = "7.0.0-dev"
 
-version = "1.17.0-dev"
+version = "1.18.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -113,6 +113,7 @@ GRPC_SECURE_PUBLIC_HDRS = [
 GRPCXX_SRCS = [
     "src/cpp/client/channel_cc.cc",
     "src/cpp/client/client_context.cc",
+    "src/cpp/client/client_interceptor.cc",
     "src/cpp/client/create_channel.cc",
     "src/cpp/client/create_channel_internal.cc",
     "src/cpp/client/create_channel_posix.cc",
@@ -245,6 +246,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
+    "include/grpcpp/support/server_callback.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
@@ -645,6 +647,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_trace",
+        "ref_counted",
         "ref_counted_ptr",
     ],
 )
@@ -820,6 +823,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
+        "src/core/lib/uri/uri_parser.cc",
     ],
     hdrs = [
         "src/core/lib/avl/avl.h",
@@ -852,6 +856,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_pair.h",
         "src/core/lib/iomgr/error.h",
@@ -954,6 +959,7 @@ grpc_cc_library(
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
+        "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
         "zlib",
@@ -1044,16 +1050,15 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy_factory.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
-        "src/core/ext/filters/client_channel/method_params.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
-        "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1067,17 +1072,16 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
-        "src/core/ext/filters/client_channel/method_params.h",
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
-        "src/core/ext/filters/client_channel/uri_parser.h",
     ],
     language = "c++",
     deps = [
@@ -1085,11 +1089,11 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
+        "health_proto",
         "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "health_proto",
     ],
 )
 
@@ -1587,8 +1591,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/security/security_connector/security_connector.cc",
-        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
+        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1621,8 +1625,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.h",
         "src/core/lib/security/security_connector/local/local_security_connector.h",
         "src/core/lib/security/security_connector/security_connector.h",
-        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
+        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -1648,6 +1652,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
+        "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
@@ -1671,6 +1676,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
+        "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
@@ -1957,10 +1963,9 @@ grpc_cc_library(
     name = "tsi",
     srcs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.cc",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.cc",
-        "src/core/tsi/alts_transport_security.cc",
         "src/core/tsi/fake_transport_security.cc",
         "src/core/tsi/local_transport_security.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
@@ -1971,11 +1976,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/tsi/alts/handshaker/alts_handshaker_client.h",
-        "src/core/tsi/alts/handshaker/alts_tsi_event.h",
+        "src/core/tsi/alts/handshaker/alts_shared_resource.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h",
         "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h",
         "src/core/tsi/alts/handshaker/alts_tsi_utils.h",
-        "src/core/tsi/alts_transport_security.h",
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/local_transport_security.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
@@ -2065,6 +2069,8 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/byte_buffer.h",
         "include/grpcpp/impl/codegen/call.h",
         "include/grpcpp/impl/codegen/call_hook.h",
+        "include/grpcpp/impl/codegen/call_op_set.h",
+        "include/grpcpp/impl/codegen/call_op_set_interface.h",
         "include/grpcpp/impl/codegen/callback_common.h",
         "include/grpcpp/impl/codegen/channel_interface.h",
         "include/grpcpp/impl/codegen/client_callback.h",
@@ -2077,14 +2083,18 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
+        "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",
+        "include/grpcpp/impl/codegen/interceptor_common.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
         "include/grpcpp/impl/codegen/rpc_service_method.h",
         "include/grpcpp/impl/codegen/security/auth_context.h",
         "include/grpcpp/impl/codegen/serialization_traits.h",
+        "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
         "include/grpcpp/impl/codegen/slice.h",
