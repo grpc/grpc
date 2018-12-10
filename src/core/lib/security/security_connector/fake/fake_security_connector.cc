@@ -157,6 +157,7 @@ end:
 }
 
 static void fake_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                                    grpc_endpoint* ep,
                                     grpc_auth_context** auth_context,
                                     grpc_closure* on_peer_checked) {
   fake_check_peer(sc, peer, auth_context, on_peer_checked);
@@ -166,6 +167,7 @@ static void fake_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
 }
 
 static void fake_server_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                                   grpc_endpoint* ep,
                                    grpc_auth_context** auth_context,
                                    grpc_closure* on_peer_checked) {
   fake_check_peer(sc, peer, auth_context, on_peer_checked);

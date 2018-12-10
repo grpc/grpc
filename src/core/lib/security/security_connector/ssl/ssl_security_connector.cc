@@ -231,6 +231,7 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
 }
 
 static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                                   grpc_endpoint* ep,
                                    grpc_auth_context** auth_context,
                                    grpc_closure* on_peer_checked) {
   grpc_ssl_channel_security_connector* c =
@@ -268,6 +269,7 @@ static void ssl_channel_check_peer(grpc_security_connector* sc, tsi_peer peer,
 }
 
 static void ssl_server_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                                  grpc_endpoint* ep,
                                   grpc_auth_context** auth_context,
                                   grpc_closure* on_peer_checked) {
   grpc_error* error = ssl_check_peer(sc, nullptr, &peer, auth_context);

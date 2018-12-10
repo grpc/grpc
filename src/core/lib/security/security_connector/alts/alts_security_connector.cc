@@ -177,7 +177,7 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
 }  // namespace grpc_core
 
 static void alts_check_peer(grpc_security_connector* sc, tsi_peer peer,
-                            grpc_auth_context** auth_context,
+                            grpc_endpoint* ep, grpc_auth_context** auth_context,
                             grpc_closure* on_peer_checked) {
   grpc_security_status status;
   status = grpc_core::internal::grpc_alts_auth_context_from_tsi_peer(
