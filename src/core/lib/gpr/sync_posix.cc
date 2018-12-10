@@ -39,7 +39,8 @@ void (*g_grpc_debug_timer_manager_stats)(
     int64_t abs_deadline_nsec_value, int64_t now1_sec_value,
     int64_t now1_nsec_value, int64_t now2_sec_value, int64_t now2_nsec_value,
     int64_t add_result_sec_value, int64_t add_result_nsec_value,
-    int64_t sub_result_sec_value, int64_t sub_result_nsec_value) = nullptr;
+    int64_t sub_result_sec_value, int64_t sub_result_nsec_value,
+    int64_t next_value, int64_t start_time_sec, int64_t start_time_nsec) = nullptr;
 int64_t g_timer_manager_init_count = 0;
 int64_t g_timer_manager_shutdown_count = 0;
 int64_t g_fork_count = 0;
@@ -58,6 +59,9 @@ int64_t g_add_result_sec_value = -1;
 int64_t g_add_result_nsec_value = -1;
 int64_t g_sub_result_sec_value = -1;
 int64_t g_sub_result_nsec_value = -1;
+int64_t g_next_value = -1;
+int64_t g_start_time_sec = -1;
+int64_t g_start_time_nsec = -1;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
@@ -212,7 +216,7 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
           g_abs_deadline_nsec_value, g_now1_sec_value, g_now1_nsec_value,
           g_now2_sec_value, g_now2_nsec_value, g_add_result_sec_value,
           g_add_result_nsec_value, g_sub_result_sec_value,
-          g_sub_result_nsec_value);
+          g_sub_result_nsec_value, g_next_value, g_start_time_sec, g_start_time_nsec);
     }
   }
 #endif
