@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
+#ifndef GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H
+#define GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H
 
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_LINUX
 
-namespace grpc_core {
+namespace tsi {
 
 // Creates a bundle slice containing the contents of all certificate files in
 // a directory.
@@ -37,8 +37,8 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory);
 void GetAbsoluteFilePath(const char* valid_file_dir,
                          const char* file_entry_name, char* path_buffer);
 
-}  // namespace grpc_core
+}  // namespace tsi
 
 #endif /* GPR_LINUX */
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
+#endif /* GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_LINUX_H \
         */

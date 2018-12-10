@@ -24,7 +24,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security_util.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -161,24 +162,6 @@ static grpc_security_status ssl_server_create_security_connector(
 static grpc_server_credentials_vtable ssl_server_vtable = {
     ssl_server_destruct, ssl_server_create_security_connector};
 
-tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
-    const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs) {
-  tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
-  if (num_key_cert_pairs > 0) {
-    GPR_ASSERT(pem_key_cert_pairs != nullptr);
-    tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
-  }
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(pem_key_cert_pairs[i].private_key != nullptr);
-    GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != nullptr);
-    tsi_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
-    tsi_pairs[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
-  }
-  return tsi_pairs;
-}
-
 static void ssl_build_server_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,
@@ -188,7 +171,7 @@ static void ssl_build_server_config(
   if (pem_root_certs != nullptr) {
     config->pem_root_certs = gpr_strdup(pem_root_certs);
   }
-  config->pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
+  config->pem_key_cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
       pem_key_cert_pairs, num_key_cert_pairs);
   config->num_key_cert_pairs = num_key_cert_pairs;
 }

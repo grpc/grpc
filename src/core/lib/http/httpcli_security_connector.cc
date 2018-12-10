@@ -33,7 +33,8 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security_util.h"
 
 typedef struct {
   grpc_channel_security_connector base;
@@ -174,10 +175,9 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   on_done_closure* c = static_cast<on_done_closure*>(gpr_malloc(sizeof(*c)));
-  const char* pem_root_certs =
-      grpc_core::DefaultSslRootStore::GetPemRootCerts();
+  const char* pem_root_certs = tsi::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =
-      grpc_core::DefaultSslRootStore::GetRootStore();
+      tsi::DefaultSslRootStore::GetRootStore();
   if (root_store == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
     on_done(arg, nullptr);

@@ -378,6 +378,8 @@ static void security_handshaker_shutdown(grpc_handshaker* handshaker,
   if (!h->shutdown) {
     h->shutdown = true;
     tsi_handshaker_shutdown(h->handshaker);
+    grpc_channel_security_connector_cancel_server_authorization_check(
+        reinterpret_cast<grpc_channel_security_connector*>(h->connector));
     grpc_endpoint_shutdown(h->args->endpoint, GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(h);
   }

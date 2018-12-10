@@ -28,6 +28,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "ssl_transport_security_test_common",
+    srcs = ["ssl_transport_security_test_common.cc"],
+    hdrs = ["ssl_transport_security_test_common.h"],
+    deps = [
+        ":transport_security_test_lib",
+        "//test/core/util:gpr_test_util",
+        "//:grpc",
+        "//:gpr",
+    ],
+)
+
 grpc_cc_test(
     name = "fake_transport_security_test",
     srcs = ["fake_transport_security_test.cc"],
@@ -74,6 +86,34 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
+        ":ssl_transport_security_test_common",
+        ":transport_security_test_lib",
+        "//:grpc",
+        "//:gpr",
+        "//:tsi",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_transport_security_test",
+    srcs = ["tls_transport_security_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:badserver.key",
+        "//src/core/tsi/test_creds:badserver.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    language = "C++",
+    deps = [
+        ":ssl_transport_security_test_common",
         ":transport_security_test_lib",
         "//:grpc",
         "//:gpr",

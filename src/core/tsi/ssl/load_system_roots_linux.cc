@@ -19,11 +19,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice_buffer.h>
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#include "src/core/tsi/ssl/load_system_roots_linux.h"
 
 #ifdef GPR_LINUX
 
-#include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/tsi/ssl/load_system_roots.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -44,7 +44,7 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/load_file.h"
 
-namespace grpc_core {
+namespace tsi {
 namespace {
 
 const char* kLinuxCertFiles[] = {
@@ -95,7 +95,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     char path[MAXPATHLEN];
     off_t size;
   };
-  InlinedVector<FileData, 2> roots_filenames;
+  grpc_core::InlinedVector<FileData, 2> roots_filenames;
   size_t total_bundle_size = 0;
   struct dirent* directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
@@ -160,6 +160,6 @@ grpc_slice LoadSystemRootCerts() {
   return result;
 }
 
-}  // namespace grpc_core
+}  // namespace tsi
 
 #endif /* GPR_LINUX */

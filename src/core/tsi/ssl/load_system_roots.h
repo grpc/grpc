@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
+#ifndef GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_H
+#define GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_H
 
-namespace grpc_core {
+namespace tsi {
 
 // Returns a slice containing roots from the OS trust store
 grpc_slice LoadSystemRootCerts();
 
-}  // namespace grpc_core
+}  // namespace tsi
 
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H */
+#endif /* GRPC_CORE_TSI_SSL_LOAD_SYSTEM_ROOTS_H */

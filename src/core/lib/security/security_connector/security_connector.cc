@@ -34,8 +34,8 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/tsi/ssl/load_system_roots.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
@@ -126,6 +126,14 @@ void grpc_channel_security_connector_cancel_check_call_host(
     return;
   }
   sc->cancel_check_call_host(sc, on_call_host_checked, error);
+}
+
+void grpc_channel_security_connector_cancel_server_authorization_check(
+    grpc_channel_security_connector* sc) {
+  if (sc == nullptr || sc->cancel_server_authorization_check == nullptr) {
+    return;
+  }
+  sc->cancel_server_authorization_check(sc);
 }
 
 #ifndef NDEBUG

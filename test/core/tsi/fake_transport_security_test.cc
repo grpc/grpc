@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/tsi/fake_transport_security.h"
+#include "src/core/tsi/fake/fake_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"

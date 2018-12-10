@@ -31,11 +31,11 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/load_system_roots.h"
+#include "src/core/tsi/ssl/load_system_roots_linux.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
@@ -48,17 +48,17 @@ TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
   char result_path[MAXPATHLEN];
-  grpc_core::GetAbsoluteFilePath(directory, filename, result_path);
+  tsi::GetAbsoluteFilePath(directory, filename, result_path);
   EXPECT_STREQ(result_path, "nonexistent/test/directory/doesnotexist.txt");
 }
 
 TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
   // Test that CreateRootCertsBundle returns an empty slice for null or
   // nonexistent cert directories.
-  grpc_slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
+  grpc_slice result_slice = tsi::CreateRootCertsBundle(nullptr);
   EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
   grpc_slice_unref(result_slice);
-  result_slice = grpc_core::CreateRootCertsBundle("does/not/exist");
+  result_slice = tsi::CreateRootCertsBundle("does/not/exist");
   EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
   grpc_slice_unref(result_slice);
 }
@@ -71,7 +71,7 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
       grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
   // result_slice should have the same content as roots_bundle.
   grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
+      tsi::CreateRootCertsBundle("test/core/security/etc/test_roots");
   char* result_str = grpc_slice_to_c_string(result_slice);
   char* bundle_str = grpc_slice_to_c_string(roots_bundle);
   EXPECT_STREQ(result_str, bundle_str);

@@ -16,11 +16,12 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
+#ifndef GRPC_CORE_TSI_SSL_SSL_TRANSPORT_SECURITY_H
+#define GRPC_CORE_TSI_SSL_SSL_TRANSPORT_SECURITY_H
 
 #include <grpc/support/port_platform.h>
 
+#include "include/grpc/grpc_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
@@ -30,6 +31,8 @@
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
+#define TSI_X509_SUBJECT_ALTERNATIVE_NAME_URI_PEER_PROPERTY \
+  "x509_subject_alternative_name_uri"
 #define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
 
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
@@ -152,7 +155,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory);
 
-/* Creates a client handshaker.
+/* Creates an SSL client handshaker.
   - self is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is
     trying to connect to which will be relayed to the server using the SNI
@@ -164,6 +167,28 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* self, const char* server_name_indication,
     tsi_handshaker** handshaker);
+
+/* Creates a TLS handshaker.
+  - server_name_indication indicates the name of the server the client is
+    trying to connect to which will be relayed to the server using the SNI
+    extension.
+  - session_cache: SSL session cache for sessions resumption.
+  - options: TLS credential options instance.
+  - reload_arg: credential reload arg instance to be passed to API's in config.
+  - is_client: a boolean flag indicating if the handshaker will be used at
+    the client (is_client = true) or server (is_client = false) side.
+  - handshaker is the address of the handshaker pointer to be created.
+
+  - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
+    where a parameter is invalid. Note that some fields of handshaker will be
+    populated once credential reload is finished. */
+
+tsi_result tls_tsi_handshaker_create(const char* server_name_indication,
+                                     tsi_ssl_session_cache* session_cache,
+                                     grpc_tls_credentials_options* options,
+                                     grpc_tls_credential_reload_arg* reload_arg,
+                                     bool is_client,
+                                     tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
@@ -267,7 +292,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     const tsi_ssl_server_handshaker_options* options,
     tsi_ssl_server_handshaker_factory** factory);
 
-/* Creates a server handshaker.
+/* Creates an SSL server handshaker.
   - self is the factory from which the handshaker will be created.
   - handshaker is the address of the handshaker pointer to be created.
 
@@ -311,4 +336,25 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable);
 
-#endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+namespace grpc_core {
+namespace internal {
+
+void tls_tsi_handshaker_set_session_cache_for_testing(
+    tsi_handshaker* handshaker, tsi_ssl_session_cache* session_cache);
+
+void tls_tsi_handshaker_set_session_ticket_key_for_testing(
+    tsi_handshaker* handshaker, const char* session_ticket_key,
+    size_t session_ticket_key_size);
+
+void tls_tsi_handshaker_set_alpn_protocols_for_testing(
+    tsi_handshaker* handshaker, const char** alpn_protocols,
+    size_t num_alpn_protocols);
+
+void tls_tsi_handshaker_set_pem_root_for_testing(
+    tsi_handshaker* handshaker, const char* pem_root_certs,
+    tsi_ssl_root_certs_store* root_store);
+
+}  // namespace internal
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_TSI_SSL_SSL_TRANSPORT_SECURITY_H */

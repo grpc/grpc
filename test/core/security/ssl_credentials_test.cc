@@ -24,7 +24,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/ssl/ssl_transport_security_util.h"
 #include "test/core/util/test_config.h"
 
 static void test_convert_grpc_to_tsi_cert_pairs() {
@@ -35,13 +36,13 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
 
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
-        grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
+        tsi_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
     GPR_ASSERT(tsi_pairs == nullptr);
   }
 
   {
     tsi_ssl_pem_key_cert_pair* tsi_pairs =
-        grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
+        tsi_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
 
     GPR_ASSERT(tsi_pairs != nullptr);
     for (size_t i = 0; i < num_pairs; i++) {

@@ -42,8 +42,7 @@ static void notification_wait(tsi_test_fixture* fixture) {
   fixture->notified = false;
   gpr_mu_unlock(&fixture->mu);
 }
-
-typedef struct handshaker_args {
+struct tsi_test_handshaker_args {
   tsi_test_fixture* fixture;
   unsigned char* handshake_buffer;
   size_t handshake_buffer_size;
@@ -51,14 +50,14 @@ typedef struct handshaker_args {
   bool transferred_data;
   bool appended_unused_bytes;
   grpc_error* error;
-} handshaker_args;
+};
 
-static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
-                                               bool is_client) {
+static tsi_test_handshaker_args* handshaker_args_create(
+    tsi_test_fixture* fixture, bool is_client) {
   GPR_ASSERT(fixture != nullptr);
   GPR_ASSERT(fixture->config != nullptr);
-  handshaker_args* args =
-      static_cast<handshaker_args*>(gpr_zalloc(sizeof(*args)));
+  tsi_test_handshaker_args* args =
+      static_cast<tsi_test_handshaker_args*>(gpr_zalloc(sizeof(*args)));
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
   args->handshake_buffer =
@@ -68,13 +67,13 @@ static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
   return args;
 }
 
-static void handshaker_args_destroy(handshaker_args* args) {
+static void handshaker_args_destroy(tsi_test_handshaker_args* args) {
   gpr_free(args->handshake_buffer);
   GRPC_ERROR_UNREF(args->error);
   gpr_free(args);
 }
 
-static void do_handshaker_next(handshaker_args* args);
+static void do_handshaker_next(tsi_test_handshaker_args* args);
 
 static void setup_handshakers(tsi_test_fixture* fixture) {
   GPR_ASSERT(fixture != nullptr);
@@ -140,7 +139,7 @@ static void send_bytes_to_peer(tsi_test_channel* test_channel,
   *bytes_written += buf_size;
 }
 
-static void maybe_append_unused_bytes(handshaker_args* args) {
+static void maybe_append_unused_bytes(tsi_test_handshaker_args* args) {
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
@@ -292,7 +291,8 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
                                    const unsigned char* bytes_to_send,
                                    size_t bytes_to_send_size,
                                    tsi_handshaker_result* handshaker_result) {
-  handshaker_args* args = static_cast<handshaker_args*>(user_data);
+  tsi_test_handshaker_args* args =
+      static_cast<tsi_test_handshaker_args*>(user_data);
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
@@ -331,12 +331,13 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  handshaker_args* args = static_cast<handshaker_args*>(user_data);
+  tsi_test_handshaker_args* args =
+      static_cast<tsi_test_handshaker_args*>(user_data);
   args->error = on_handshake_next_done(result, user_data, bytes_to_send,
                                        bytes_to_send_size, handshaker_result);
 }
 
-static bool is_handshake_finished_properly(handshaker_args* args) {
+static bool is_handshake_finished_properly(tsi_test_handshaker_args* args) {
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
@@ -347,7 +348,7 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
   return false;
 }
 
-static void do_handshaker_next(handshaker_args* args) {
+static void do_handshaker_next(tsi_test_handshaker_args* args) {
   /* Initialization. */
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
@@ -388,10 +389,8 @@ static void do_handshaker_next(handshaker_args* args) {
 void tsi_test_do_handshake(tsi_test_fixture* fixture) {
   /* Initializaiton. */
   setup_handshakers(fixture);
-  handshaker_args* client_args =
-      handshaker_args_create(fixture, true /* is_client */);
-  handshaker_args* server_args =
-      handshaker_args_create(fixture, false /* is_client */);
+  tsi_test_handshaker_args* client_args = fixture->client_args;
+  tsi_test_handshaker_args* server_args = fixture->server_args;
   /* Do handshake. */
   do {
     client_args->transferred_data = false;
@@ -404,14 +403,10 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     if (server_args->error != GRPC_ERROR_NONE) {
       break;
     }
-    GPR_ASSERT(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
   /* Verify handshake results. */
   check_handshake_results(fixture);
-  /* Cleanup. */
-  handshaker_args_destroy(client_args);
-  handshaker_args_destroy(server_args);
 }
 
 static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
@@ -468,27 +463,29 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   /* Perform handshake. */
   tsi_test_do_handshake(fixture);
   /* Create frame protectors.*/
-  size_t client_max_output_protected_frame_size =
-      config->client_max_output_protected_frame_size;
-  GPR_ASSERT(tsi_handshaker_result_create_frame_protector(
-                 fixture->client_result,
-                 client_max_output_protected_frame_size == 0
-                     ? nullptr
-                     : &client_max_output_protected_frame_size,
-                 &client_frame_protector) == TSI_OK);
-  size_t server_max_output_protected_frame_size =
-      config->server_max_output_protected_frame_size;
-  GPR_ASSERT(tsi_handshaker_result_create_frame_protector(
-                 fixture->server_result,
-                 server_max_output_protected_frame_size == 0
-                     ? nullptr
-                     : &server_max_output_protected_frame_size,
-                 &server_frame_protector) == TSI_OK);
-  tsi_test_do_ping_pong(config, fixture->channel, client_frame_protector,
-                        server_frame_protector);
-  /* Destroy server and client frame protectors. */
-  tsi_frame_protector_destroy(client_frame_protector);
-  tsi_frame_protector_destroy(server_frame_protector);
+  if (fixture->client_result != nullptr && fixture->server_result != nullptr) {
+    size_t client_max_output_protected_frame_size =
+        config->client_max_output_protected_frame_size;
+    GPR_ASSERT(tsi_handshaker_result_create_frame_protector(
+                   fixture->client_result,
+                   client_max_output_protected_frame_size == 0
+                       ? nullptr
+                       : &client_max_output_protected_frame_size,
+                   &client_frame_protector) == TSI_OK);
+    size_t server_max_output_protected_frame_size =
+        config->server_max_output_protected_frame_size;
+    GPR_ASSERT(tsi_handshaker_result_create_frame_protector(
+                   fixture->server_result,
+                   server_max_output_protected_frame_size == 0
+                       ? nullptr
+                       : &server_max_output_protected_frame_size,
+                   &server_frame_protector) == TSI_OK);
+    tsi_test_do_ping_pong(config, fixture->channel, client_frame_protector,
+                          server_frame_protector);
+    /* Destroy server and client frame protectors. */
+    tsi_frame_protector_destroy(client_frame_protector);
+    tsi_frame_protector_destroy(server_frame_protector);
+  }
 }
 
 static unsigned char* generate_random_message(size_t size) {
@@ -617,6 +614,8 @@ void tsi_test_fixture_init(tsi_test_fixture* fixture) {
   gpr_mu_init(&fixture->mu);
   gpr_cv_init(&fixture->cv);
   fixture->notified = false;
+  fixture->client_args = handshaker_args_create(fixture, true);
+  fixture->server_args = handshaker_args_create(fixture, false);
 }
 
 void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
@@ -634,6 +633,8 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   fixture->vtable->destruct(fixture);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
+  handshaker_args_destroy(fixture->client_args);
+  handshaker_args_destroy(fixture->server_args);
   gpr_free(fixture);
 }
 

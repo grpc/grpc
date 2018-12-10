@@ -76,6 +76,7 @@ filegroups:
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/tsi/alts/handshaker/alts_handshaker_service_api.h
   - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h
   - src/core/tsi/alts/handshaker/alts_tsi_utils.h
@@ -88,6 +89,7 @@ filegroups:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
   - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
@@ -828,14 +830,15 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+  - src/core/lib/security/credentials/tls/spiffe_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
-  - src/core/lib/security/security_connector/load_system_roots.h
-  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
+  - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
@@ -860,14 +863,15 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  - src/core/lib/security/credentials/tls/spiffe_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
-  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
+  - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
@@ -1139,6 +1143,14 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: ssl_transport_security_test_common
+  build: test
+  headers:
+  - test/core/tsi/ssl_transport_security_test_common.h
+  src:
+  - test/core/tsi/ssl_transport_security_test_common.cc
+  deps:
+  - grpc
 - name: transport_security_test_lib
   build: test
   headers:
@@ -1149,20 +1161,26 @@ filegroups:
   - grpc
 - name: tsi
   headers:
-  - src/core/tsi/fake_transport_security.h
-  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/fake/fake_transport_security.h
+  - src/core/tsi/local/local_transport_security.h
+  - src/core/tsi/ssl/load_system_roots.h
+  - src/core/tsi/ssl/load_system_roots_linux.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
-  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl/ssl_transport_security.h
+  - src/core/tsi/ssl/ssl_transport_security_util.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
-  - src/core/tsi/fake_transport_security.cc
-  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/fake/fake_transport_security.cc
+  - src/core/tsi/local/local_transport_security.cc
+  - src/core/tsi/ssl/load_system_roots_fallback.cc
+  - src/core/tsi/ssl/load_system_roots_linux.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/ssl/ssl_transport_security.cc
+  - src/core/tsi/ssl/ssl_transport_security_util.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
@@ -3558,6 +3576,7 @@ targets:
   - gpr
   - grpc
   filegroups:
+  - ssl_transport_security_test_common
   - transport_security_test_lib
   platforms:
   - linux
@@ -3719,6 +3738,22 @@ targets:
   exclude_iomgrs:
   - uv
   uses_polling: false
+- name: tls_transport_security_test
+  build: test
+  language: c
+  src:
+  - test/core/tsi/tls_transport_security_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - ssl_transport_security_test_common
+  - transport_security_test_lib
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: transport_connectivity_state_test
   build: test
   language: c
