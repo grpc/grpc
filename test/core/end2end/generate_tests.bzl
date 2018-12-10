@@ -380,6 +380,7 @@ def grpc_end2end_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        visibility = ["//visibility:public"],
         deps = [
             ":cq_verifier",
             ":ssl_test_data",

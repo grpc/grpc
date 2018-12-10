@@ -186,6 +186,26 @@
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
+#elif defined(__ASYLO__)
+#define GPR_ARCH_64 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_TLS 1
+#define GPR_PLATFORM_STRING "asylo"
+#define GPR_GCC_SYNC 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_TIME 1
+#define GPR_POSIX_ENV 1
+#define GPR_ASYLO 1
+#define GRPC_POSIX_SOCKET 1
+#define GRPC_POSIX_SOCKETADDR
+#define GRPC_POSIX_SOCKETUTILS 1
+#define GRPC_TIMER_USE_GENERIC 1
+#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
+#define GRPC_POSIX_WAKEUP_FD 1
+#define GRPC_ARES 0
+#define GPR_NO_AUTODETECT_PLATFORM 1
 #elif defined(__APPLE__)
 #include <Availability.h>
 #include <TargetConditionals.h>
