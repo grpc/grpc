@@ -282,7 +282,7 @@ NS_ASSUME_NONNULL_END
  */
 @interface GRPCCall : GRXWriter
 
-- (instancetype)init NS_UNAVAILABLE;
+- (nullable instancetype)init NS_UNAVAILABLE;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
