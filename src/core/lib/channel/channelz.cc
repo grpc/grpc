@@ -203,8 +203,10 @@ ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
 
 ServerNode::~ServerNode() {}
 
-char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
-  const int kPaginationLimit = 100;
+char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
+                                      intptr_t max_results) {
+  // if user does not set max_results, we choose 500.
+  int pagination_limit = max_results == 0 ? 500 : max_results;
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
@@ -219,8 +221,8 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id) {
     for (size_t i = 0; i < socket_refs.size(); ++i) {
       // check if we are over pagination limit to determine if we need to set
       // the "end" element. If we don't go through this block, we know that
-      // when the loop terminates, we have <= to kPaginationLimit.
-      if (sockets_added == kPaginationLimit) {
+      // when the loop terminates, we have <= to pagination_limit.
+      if (sockets_added == pagination_limit) {
         reached_pagination_limit = true;
         break;
       }
