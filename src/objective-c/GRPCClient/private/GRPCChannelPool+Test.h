@@ -18,6 +18,8 @@
 
 #import "GRPCChannelPool.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 /** Test-only interface for \a GRPCPooledChannel. */
 @interface GRPCPooledChannel (Test)
 
@@ -31,7 +33,7 @@
 /**
  * Return the pointer to the raw channel wrapped.
  */
-@property(atomic, readonly) GRPCChannel *wrappedChannel;
+@property(atomic, readonly, nullable) GRPCChannel *wrappedChannel;
 
 @end
 
@@ -45,3 +47,5 @@
 - (nullable instancetype)initTestPool;
 
 @end
+
+NS_ASSUME_NONNULL_END
