@@ -236,6 +236,21 @@ class Client {
     return 0;
   }
 
+  bool IsClosedLoop() { return closed_loop_; }
+
+  gpr_timespec NextIssueTime(int thread_idx) {
+    const gpr_timespec result = next_time_[thread_idx];
+    next_time_[thread_idx] =
+        gpr_time_add(next_time_[thread_idx],
+                     gpr_time_from_nanos(interarrival_timer_.next(thread_idx),
+                                         GPR_TIMESPAN));
+    return result;
+  }
+
+  bool ThreadCompleted() {
+    return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
+  }
+
  protected:
   bool closed_loop_;
   gpr_atm thread_pool_done_;
@@ -289,14 +304,6 @@ class Client {
     }
   }
 
-  gpr_timespec NextIssueTime(int thread_idx) {
-    const gpr_timespec result = next_time_[thread_idx];
-    next_time_[thread_idx] =
-        gpr_time_add(next_time_[thread_idx],
-                     gpr_time_from_nanos(interarrival_timer_.next(thread_idx),
-                                         GPR_TIMESPAN));
-    return result;
-  }
   std::function<gpr_timespec()> NextIssuer(int thread_idx) {
     return closed_loop_ ? std::function<gpr_timespec()>()
                         : std::bind(&Client::NextIssueTime, this, thread_idx);
@@ -380,10 +387,6 @@ class Client {
     double interval_start_time_;
   };
 
-  bool ThreadCompleted() {
-    return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
-  }
-
   virtual void ThreadFunc(size_t thread_idx, Client::Thread* t) = 0;
 
   std::vector<std::unique_ptr<Thread>> threads_;
@@ -442,6 +445,7 @@ class ClientImpl : public Client {
                                                  config.payload_config());
   }
   virtual ~ClientImpl() {}
+  const RequestType* request() { return &request_; }
 
  protected:
   const int cores_;
