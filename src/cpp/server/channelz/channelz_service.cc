@@ -79,8 +79,8 @@ Status ChannelzService::GetServer(ServerContext* unused,
 Status ChannelzService::GetServerSockets(
     ServerContext* unused, const channelz::v1::GetServerSocketsRequest* request,
     channelz::v1::GetServerSocketsResponse* response) {
-  char* json_str = grpc_channelz_get_server_sockets(request->server_id(),
-                                                    request->start_socket_id());
+  char* json_str = grpc_channelz_get_server_sockets(
+      request->server_id(), request->start_socket_id(), request->max_results());
   if (json_str == nullptr) {
     return Status(StatusCode::INTERNAL,
                   "grpc_channelz_get_server_sockets returned null");
