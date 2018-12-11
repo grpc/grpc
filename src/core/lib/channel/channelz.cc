@@ -205,28 +205,20 @@ ServerNode::~ServerNode() {}
 
 char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                       intptr_t max_results) {
-  // if user does not set max_results, we choose 500.
-  int pagination_limit = max_results == 0 ? 500 : max_results;
+  // if user does not set max_results, we choose 1000.
+  size_t pagination_limit = max_results == 0 ? 500 : max_results;
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
   ChildSocketsList socket_refs;
   grpc_server_populate_server_sockets(server_, &socket_refs, start_socket_id);
-  int sockets_added = 0;
-  bool reached_pagination_limit = false;
+  // declared early so it can be used outside of the loop.
+  size_t i = 0;
   if (!socket_refs.empty()) {
     // create list of socket refs
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    for (size_t i = 0; i < socket_refs.size(); ++i) {
-      // check if we are over pagination limit to determine if we need to set
-      // the "end" element. If we don't go through this block, we know that
-      // when the loop terminates, we have <= to pagination_limit.
-      if (sockets_added == pagination_limit) {
-        reached_pagination_limit = true;
-        break;
-      }
-      sockets_added++;
+    for (i = 0; i < GPR_MIN(socket_refs.size(), pagination_limit); ++i) {
       grpc_json* socket_ref_json =
           grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
                                  GRPC_JSON_OBJECT, false);
@@ -236,7 +228,7 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
                              socket_refs[i]->remote(), GRPC_JSON_STRING, false);
     }
   }
-  if (!reached_pagination_limit) {
+  if (i == socket_refs.size()) {
     json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
                                            GRPC_JSON_TRUE, false);
   }
