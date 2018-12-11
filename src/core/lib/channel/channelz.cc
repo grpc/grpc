@@ -205,7 +205,7 @@ ServerNode::~ServerNode() {}
 
 char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                       intptr_t max_results) {
-  // if user does not set max_results, we choose 1000.
+  // if user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
@@ -219,9 +219,8 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
     for (i = 0; i < GPR_MIN(socket_refs.size(), pagination_limit); ++i) {
-      grpc_json* socket_ref_json =
-          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
-                                 GRPC_JSON_OBJECT, false);
+      grpc_json* socket_ref_json = grpc_json_create_child(
+          nullptr, array_parent, nullptr, nullptr, GRPC_JSON_OBJECT, false);
       json_iterator = grpc_json_add_number_string_child(
           socket_ref_json, nullptr, "socketId", socket_refs[i]->uuid());
       grpc_json_create_child(json_iterator, socket_ref_json, "name",
