@@ -25,7 +25,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #define XDS_SERVICE_NAME_MAX_LENGTH 128
 
