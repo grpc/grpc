@@ -15,6 +15,7 @@
 
 set +ex
 
+# shellcheck disable=SC1090
 . "$HOME/.nvm/nvm.sh"
 
 nvm install 10

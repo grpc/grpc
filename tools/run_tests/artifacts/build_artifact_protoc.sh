@@ -14,6 +14,7 @@
 # limitations under the License.
 
 # Use devtoolset environment that has GCC 4.8 before set -ex
+# shellcheck disable=SC1091
 source scl_source enable devtoolset-2
 
 set -ex

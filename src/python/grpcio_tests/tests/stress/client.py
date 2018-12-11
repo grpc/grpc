@@ -132,9 +132,9 @@ def run_test(args):
     server.start()
 
     for test_server_target in test_server_targets:
-        for _ in xrange(args.num_channels_per_server):
+        for _ in range(args.num_channels_per_server):
             channel = _get_channel(test_server_target, args)
-            for _ in xrange(args.num_stubs_per_channel):
+            for _ in range(args.num_stubs_per_channel):
                 stub = test_pb2_grpc.TestServiceStub(channel)
                 runner = test_runner.TestRunner(stub, test_cases, hist,
                                                 exception_queue, stop_event)

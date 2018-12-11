@@ -1,3 +1,7 @@
+[MASTER]
+ignore-patterns=
+	.+?(beta|framework).+?\.py
+
 [VARIABLES]
 
 # TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
@@ -115,3 +119,5 @@ disable=
 	# if:/else: and for:/else:.
 	useless-else-on-loop,
 	no-else-return,
+	# NOTE(lidiz): Python 3 make object inheritance default, but not PY2
+	useless-object-inheritance,
