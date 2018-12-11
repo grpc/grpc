@@ -480,43 +480,51 @@ def _status(rpc_event, state, serialized_response):
 
 def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
                             request_deserializer, response_serializer):
-    argument = argument_thunk()
-    if argument is not None:
-        response, proceed = _call_behavior(rpc_event, state, behavior, argument,
-                                           request_deserializer)
-        if proceed:
-            serialized_response = _serialize_response(
-                rpc_event, state, response, response_serializer)
-            if serialized_response is not None:
-                _status(rpc_event, state, serialized_response)
+    cygrpc.install_census_context_from_call(rpc_event.call)
+    try:
+        argument = argument_thunk()
+        if argument is not None:
+            response, proceed = _call_behavior(rpc_event, state, behavior,
+                                               argument, request_deserializer)
+            if proceed:
+                serialized_response = _serialize_response(
+                    rpc_event, state, response, response_serializer)
+                if serialized_response is not None:
+                    _status(rpc_event, state, serialized_response)
+    finally:
+        cygrpc.uninstall_context()
 
 
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
-    argument = argument_thunk()
-    if argument is not None:
-        response_iterator, proceed = _call_behavior(
-            rpc_event, state, behavior, argument, request_deserializer)
-        if proceed:
-            while True:
-                response, proceed = _take_response_from_response_iterator(
-                    rpc_event, state, response_iterator)
-                if proceed:
-                    if response is None:
-                        _status(rpc_event, state, None)
-                        break
-                    else:
-                        serialized_response = _serialize_response(
-                            rpc_event, state, response, response_serializer)
-                        if serialized_response is not None:
-                            proceed = _send_response(rpc_event, state,
-                                                     serialized_response)
-                            if not proceed:
-                                break
-                        else:
+    cygrpc.install_census_context_from_call(rpc_event.call)
+    try:
+        argument = argument_thunk()
+        if argument is not None:
+            response_iterator, proceed = _call_behavior(
+                rpc_event, state, behavior, argument, request_deserializer)
+            if proceed:
+                while True:
+                    response, proceed = _take_response_from_response_iterator(
+                        rpc_event, state, response_iterator)
+                    if proceed:
+                        if response is None:
+                            _status(rpc_event, state, None)
                             break
-                else:
-                    break
+                        else:
+                            serialized_response = _serialize_response(
+                                rpc_event, state, response, response_serializer)
+                            if serialized_response is not None:
+                                proceed = _send_response(
+                                    rpc_event, state, serialized_response)
+                                if not proceed:
+                                    break
+                            else:
+                                break
+                    else:
+                        break
+    finally:
+        cygrpc.uninstall_context()
 
 
 def _handle_unary_unary(rpc_event, state, method_handler, thread_pool):

@@ -12,21 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-cdef object _custom_op_on_c_call(int op, grpc_call *call):
-  raise NotImplementedError("No custom hooks are implemented")
-
-def install_census_context_from_call(Call call):
-  pass
-
-def uninstall_context():
-  pass
-
-def build_context():
-  pass
-
-cdef class CensusContext:
-  pass
-
-def set_census_context_on_call(_CallState call_state, CensusContext census_ctx):
-  pass
+class PropagationConstants:
+    GRPC_PROPAGATE_DEADLINE = _GRPC_PROPAGATE_DEADLINE
+    GRPC_PROPAGATE_CENSUS_STATS_CONTEXT = _GRPC_PROPAGATE_CENSUS_STATS_CONTEXT
+    GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT = _GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT
+    GRPC_PROPAGATE_CANCELLATION = _GRPC_PROPAGATE_CANCELLATION
+    GRPC_PROPAGATE_DEFAULTS = _GRPC_PROPAGATE_DEFAULTS
