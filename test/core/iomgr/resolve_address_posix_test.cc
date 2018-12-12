@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
     // c-ares resolver doesn't support UDS (ability for native DNS resolver
     // to handle this is only expected to be used by servers, which
     // unconditionally use the native DNS resolver).
-    if (resolver_env != nullptr && gpr_stricmp(resolver_env, "native") == 0) {
+    if (resolver_env == nullptr || gpr_stricmp(resolver_env, "native") == 0) {
       test_unix_socket();
       test_unix_socket_path_name_too_long();
     }
