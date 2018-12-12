@@ -18,7 +18,8 @@
 
 set -e
 
-export CONFIG=${config:?}
+# shellcheck disable=SC2154
+export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
