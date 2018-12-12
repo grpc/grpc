@@ -165,20 +165,6 @@ KNOWN_BAD = set([
     'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
     'include/grpc++/ext/reflection.grpc.pb.h',
     'include/grpc++/ext/reflection.pb.h',
-
-    # Upb generated code
-    'src/core/ext/upb-generated/google/protobuf/any.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/any.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/duration.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/struct.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/timestamp.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
 ])
 
 grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"
