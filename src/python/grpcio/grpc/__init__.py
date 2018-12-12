@@ -266,6 +266,23 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, 'unauthenticated')
 
 
+#############################  gRPC Status  ################################
+
+
+class Status(six.with_metaclass(abc.ABCMeta)):
+    """Describes the status of an RPC.
+
+    This is an EXPERIMENTAL API.
+
+    Attributes:
+      code: A StatusCode object to be sent to the client.
+        It must not be StatusCode.OK.
+      details: An ASCII-encodable string to be sent to the client upon
+        termination of the RPC.
+      trailing_metadata: The trailing :term:`metadata` in the RPC.
+    """
+
+
 #############################  gRPC Exceptions  ################################
 
 
@@ -1119,6 +1136,24 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def abort_with_status(self, status):
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The status passed as argument will supercede any existing status code,
+        status message and trailing metadata.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          status: A grpc.Status object.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def set_code(self, code):
         """Sets the value to be used as status code upon RPC completion.
 
@@ -1747,6 +1782,7 @@ __all__ = (
     'Future',
     'ChannelConnectivity',
     'StatusCode',
+    'Status',
     'RpcError',
     'RpcContext',
     'Call',

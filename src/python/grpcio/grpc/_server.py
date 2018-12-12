@@ -291,6 +291,10 @@ class _Context(grpc.ServicerContext):
             self._state.abortion = Exception()
             raise self._state.abortion
 
+    def abort_with_status(self, status):
+        self._state.trailing_metadata = status.trailing_metadata
+        self.abort(status.code, status.details)
+
     def set_code(self, code):
         with self._state.condition:
             self._state.code = code
