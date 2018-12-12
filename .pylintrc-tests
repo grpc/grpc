@@ -1,7 +1,3 @@
-[MASTER]
-ignore-patterns=
-	.+?(beta|framework).+?\.py
-
 [VARIABLES]
 
 # TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
