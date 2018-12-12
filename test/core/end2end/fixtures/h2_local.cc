@@ -79,8 +79,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_tcp_ipv4(
   grpc_end2end_test_fixture f = chttp2_create_fixture_fullstack();
   int port = grpc_pick_unused_port_or_die();
   gpr_join_host_port(
-      &static_cast<fullstack_fixture_data*>(f.fixture_data)->localaddr, "[::1]",
-      port);
+      &static_cast<fullstack_fixture_data*>(f.fixture_data)->localaddr,
+      "127.0.0.1", port);
   return f;
 }
 
