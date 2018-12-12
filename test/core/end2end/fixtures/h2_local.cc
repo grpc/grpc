@@ -45,32 +45,65 @@ typedef struct fullstack_fixture_data {
 
 static int unique = 1;
 
-static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack() {
   grpc_end2end_test_fixture f;
   fullstack_fixture_data* ffd = static_cast<fullstack_fixture_data*>(
       gpr_malloc(sizeof(fullstack_fixture_data)));
   memset(&f, 0, sizeof(f));
-
-  gpr_asprintf(&ffd->localaddr, "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(),
-               unique++);
-
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-
   return f;
 }
 
-void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* client_args) {
-  grpc_channel_credentials* creds = grpc_local_credentials_create(UDS);
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  grpc_end2end_test_fixture f = chttp2_create_fixture_fullstack();
+  gpr_asprintf(&static_cast<fullstack_fixture_data*>(f.fixture_data)->localaddr,
+               "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(), unique++);
+  return f;
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_tcp_ipv6(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  grpc_end2end_test_fixture f = chttp2_create_fixture_fullstack();
+  int port = grpc_pick_unused_port_or_die();
+  gpr_join_host_port(
+      &static_cast<fullstack_fixture_data*>(f.fixture_data)->localaddr, "[::1]",
+      port);
+  return f;
+}
+
+static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_tcp_ipv4(
+    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+  grpc_end2end_test_fixture f = chttp2_create_fixture_fullstack();
+  int port = grpc_pick_unused_port_or_die();
+  gpr_join_host_port(
+      &static_cast<fullstack_fixture_data*>(f.fixture_data)->localaddr,
+      "127.0.0.1", port);
+  return f;
+}
+
+static void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
+                                         grpc_channel_args* client_args,
+                                         grpc_local_connect_type type) {
+  grpc_channel_credentials* creds = grpc_local_credentials_create(type);
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   f->client =
       grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
+}
+
+static void chttp2_init_client_fullstack_uds(grpc_end2end_test_fixture* f,
+                                             grpc_channel_args* client_args) {
+  chttp2_init_client_fullstack(f, client_args, UDS);
+}
+
+static void chttp2_init_client_fullstack_tcp_loopback(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  chttp2_init_client_fullstack(f, client_args, LOCAL_TCP);
 }
 
 /*
@@ -98,9 +131,10 @@ static void process_auth_failure(void* state, grpc_auth_context* ctx,
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
-void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
-                                  grpc_channel_args* server_args) {
-  grpc_server_credentials* creds = grpc_local_server_credentials_create(UDS);
+static void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
+                                         grpc_channel_args* server_args,
+                                         grpc_local_connect_type type) {
+  grpc_server_credentials* creds = grpc_local_server_credentials_create(type);
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   if (f->server) {
@@ -119,7 +153,17 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_server_start(f->server);
 }
 
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
+static void chttp2_init_server_fullstack_uds(grpc_end2end_test_fixture* f,
+                                             grpc_channel_args* client_args) {
+  chttp2_init_server_fullstack(f, client_args, UDS);
+}
+
+static void chttp2_init_server_fullstack_tcp_loopback(
+    grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
+  chttp2_init_server_fullstack(f, client_args, LOCAL_TCP);
+}
+
+static void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   gpr_free(ffd->localaddr);
@@ -128,14 +172,30 @@ void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/fullstack_local",
+    {"chttp2/fullstack_local_uds",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
-     nullptr, chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
-     chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
-};
+     nullptr, chttp2_create_fixture_fullstack_uds,
+     chttp2_init_client_fullstack_uds, chttp2_init_server_fullstack_uds,
+     chttp2_tear_down_fullstack},
+    {"chttp2/fullstack_local_tcp_ipv4",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+     nullptr, chttp2_create_fixture_fullstack_tcp_ipv4,
+     chttp2_init_client_fullstack_tcp_loopback,
+     chttp2_init_server_fullstack_tcp_loopback, chttp2_tear_down_fullstack},
+    {"chttp2/fullstack_local_tcp_ipv6",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER |
+         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
+     nullptr, chttp2_create_fixture_fullstack_tcp_ipv6,
+     chttp2_init_client_fullstack_tcp_loopback,
+     chttp2_init_server_fullstack_tcp_loopback, chttp2_tear_down_fullstack}};
 
 int main(int argc, char** argv) {
   size_t i;

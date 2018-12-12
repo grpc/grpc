@@ -59,7 +59,7 @@ void grpc_server_security_connector_add_handshakers(
 }
 
 void grpc_security_connector_check_peer(grpc_security_connector* sc,
-                                        tsi_peer peer,
+                                        tsi_peer peer, grpc_endpoint* ep,
                                         grpc_auth_context** auth_context,
                                         grpc_closure* on_peer_checked) {
   if (sc == nullptr) {
@@ -68,7 +68,7 @@ void grpc_security_connector_check_peer(grpc_security_connector* sc,
                            "cannot check peer -- no security connector"));
     tsi_peer_destruct(&peer);
   } else {
-    sc->vtable->check_peer(sc, peer, auth_context, on_peer_checked);
+    sc->vtable->check_peer(sc, peer, ep, auth_context, on_peer_checked);
   }
 }
 

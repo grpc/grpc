@@ -50,7 +50,7 @@ typedef struct grpc_security_connector grpc_security_connector;
 typedef struct {
   void (*destroy)(grpc_security_connector* sc);
   void (*check_peer)(grpc_security_connector* sc, tsi_peer peer,
-                     grpc_auth_context** auth_context,
+                     grpc_endpoint* ep, grpc_auth_context** auth_context,
                      grpc_closure* on_peer_checked);
   int (*cmp)(grpc_security_connector* sc, grpc_security_connector* other);
 } grpc_security_connector_vtable;
@@ -84,7 +84,7 @@ void grpc_security_connector_unref(grpc_security_connector* policy);
 /* Check the peer. Callee takes ownership of the peer object.
    When done, sets *auth_context and invokes on_peer_checked. */
 void grpc_security_connector_check_peer(grpc_security_connector* sc,
-                                        tsi_peer peer,
+                                        tsi_peer peer, grpc_endpoint* ep,
                                         grpc_auth_context** auth_context,
                                         grpc_closure* on_peer_checked);
 

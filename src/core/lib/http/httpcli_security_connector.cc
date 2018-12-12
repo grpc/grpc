@@ -71,6 +71,7 @@ static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
 }
 
 static void httpcli_ssl_check_peer(grpc_security_connector* sc, tsi_peer peer,
+                                   grpc_endpoint* ep,
                                    grpc_auth_context** auth_context,
                                    grpc_closure* on_peer_checked) {
   grpc_httpcli_ssl_channel_security_connector* c =
