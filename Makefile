@@ -5340,6 +5340,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -5933,6 +5934,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -6835,6 +6837,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
