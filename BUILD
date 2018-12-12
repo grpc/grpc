@@ -2276,7 +2276,7 @@ grpc_cc_library(
 
 # TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
-    name = "xds_api",
+    name = "upb_xds_api",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/percent.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
@@ -2294,16 +2294,16 @@ grpc_cc_library(
         "upb_lib",
     ],
     deps = [
-        ":gogoproto",
-        ":validate_proto",
-        ":google_api",
-        ":google_rpc",
-        ":google_protobuf",
+        ":upb_gogoproto",
+        ":upb_validate_proto",
+        ":upb_google_api",
+        ":upb_google_rpc",
+        ":upb_google_protobuf",
     ],
 )
 
 grpc_cc_library(
-    name = "gogoproto",
+    name = "upb_gogoproto",
     srcs = [
         "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
     ],
@@ -2315,12 +2315,12 @@ grpc_cc_library(
         "upb_lib",
     ],
     deps = [
-        ":google_protobuf",
+        ":upb_google_protobuf",
     ],
 )
 
 grpc_cc_library(
-    name = "validate_proto",
+    name = "upb_validate_proto",
     srcs = [
         "src/core/ext/upb-generated/validate/validate.upb.c",
     ],
@@ -2332,12 +2332,12 @@ grpc_cc_library(
         "upb_lib",
     ],
     deps = [
-        ":google_protobuf",
+        ":upb_google_protobuf",
     ],
 )
 
 grpc_cc_library(
-    name = "google_api",
+    name = "upb_google_api",
     srcs = [
         "src/core/ext/upb-generated/google/api/http.upb.c",
         "src/core/ext/upb-generated/google/api/annotations.upb.c",
@@ -2351,12 +2351,12 @@ grpc_cc_library(
         "upb_lib",
     ],
     deps = [
-        ":google_protobuf",
+        ":upb_google_protobuf",
     ],
 )
 
 grpc_cc_library(
-    name = "google_rpc",
+    name = "upb_google_rpc",
     srcs = [
         "src/core/ext/upb-generated/google/rpc/status.upb.c",
     ],
@@ -2368,12 +2368,12 @@ grpc_cc_library(
         "upb_lib",
     ],
     deps = [
-        ":google_protobuf",
+        ":upb_google_protobuf",
     ],
 )
 
 grpc_cc_library(
-    name = "google_protobuf",
+    name = "upb_google_protobuf",
     srcs = [
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
         "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
