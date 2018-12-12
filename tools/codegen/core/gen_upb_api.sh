@@ -30,7 +30,20 @@ proto_files=( \
   "google/protobuf/wrappers.proto" \
   "google/protobuf/descriptor.proto" \
   "google/protobuf/duration.proto" \
-  "google/protobuf/timestamp.proto" )
+  "google/protobuf/timestamp.proto" \
+  "google/rpc/status.proto" \
+  "google/api/http.proto" \
+  "google/api/annotations.proto" \
+  "gogoproto/gogo.proto" \
+  "validate/validate.proto" \
+  "envoy/type/percent.proto" \
+  "envoy/api/v2/core/address.proto" \
+  "envoy/api/v2/core/health_check.proto" \
+  "envoy/api/v2/core/base.proto" \
+  "envoy/api/v2/endpoint/endpoint.proto" \
+  "envoy/api/v2/discovery.proto" \
+  "envoy/api/v2/eds.proto" \
+  "envoy/service/discovery/v2/ads.proto" )
 
 for i in "${proto_files[@]}"
 do

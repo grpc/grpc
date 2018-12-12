@@ -2276,6 +2276,103 @@ grpc_cc_library(
 
 # TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
+    name = "xds_api",
+    srcs = [
+        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
+        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":gogoproto",
+        ":validate_proto",
+        ":google_api",
+        ":google_rpc",
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "gogoproto",
+    srcs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "validate_proto",
+    srcs = [
+        "src/core/ext/upb-generated/validate/validate.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/validate/validate.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "google_api",
+    srcs = [
+        "src/core/ext/upb-generated/google/api/http.upb.c",
+        "src/core/ext/upb-generated/google/api/annotations.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/google/api/http.upb.h",
+        "src/core/ext/upb-generated/google/api/annotations.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "google_rpc",
+    srcs = [
+        "src/core/ext/upb-generated/google/rpc/status.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/google/rpc/status.upb.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "upb_lib",
+    ],
+    deps = [
+        ":google_protobuf",
+    ],
+)
+
+grpc_cc_library(
     name = "google_protobuf",
     srcs = [
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
