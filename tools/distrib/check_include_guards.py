@@ -167,6 +167,7 @@ KNOWN_BAD = set([
     'include/grpc++/ext/reflection.pb.h',
 
     # Upb generated code
+    'src/core/ext/upb-generated/',
     'src/core/ext/upb-generated/google/protobuf/any.upb.h',
     'src/core/ext/upb-generated/google/protobuf/any.upb.c',
     'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
@@ -180,6 +181,9 @@ KNOWN_BAD = set([
     'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
     'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
 ])
+
+# Upb generated source
+UPB_GEN_DIR = 'src/core/ext/upb-generated/'
 
 grep_filter = r"grep -E '^(include|src/core)/.*\.h$'"
 if args.precommit:
@@ -204,6 +208,7 @@ validator = GuardValidator()
 
 for filename in filename_list:
     if filename in KNOWN_BAD: continue
+    if filename.startswith(UPB_GEN_DIR): continue
     ok = ok and validator.check(filename, args.fix)
 
 sys.exit(0 if ok else 1)

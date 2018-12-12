@@ -104,21 +104,10 @@ _EXEMPT = frozenset((
     # Designer-generated source
     'examples/csharp/HelloworldXamarin/Droid/Resources/Resource.designer.cs',
     'examples/csharp/HelloworldXamarin/iOS/ViewController.designer.cs',
-
-    # Upb generated source
-    'src/core/ext/upb-generated/google/protobuf/any.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/any.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/duration.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/struct.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/timestamp.upb.c',
-    'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
-    'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
 ))
+
+# Upb generated source
+UPB_GEN_DIR = 'src/core/ext/upb-generated/'
 
 RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
 RE_LICENSE = dict(
@@ -167,6 +156,8 @@ except subprocess.CalledProcessError:
 
 for filename in filename_list:
     if filename in _EXEMPT:
+        continue
+    if filename.startswith(UPB_GEN_DIR):
         continue
     ext = os.path.splitext(filename)[1]
     base = os.path.basename(filename)
