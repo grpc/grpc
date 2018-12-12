@@ -356,6 +356,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
+                      'src/core/ext/filters/client_channel/server_address.h',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_index.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
