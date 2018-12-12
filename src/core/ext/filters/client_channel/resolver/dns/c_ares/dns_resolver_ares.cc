@@ -465,11 +465,8 @@ static grpc_error* blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
-bool should_use_ares(const char* resolver_env) {
-  if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
-    return true;
-  }
-  return false;
+static bool should_use_ares(const char* resolver_env) {
+  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
 }
 
 void grpc_resolver_dns_ares_init() {
