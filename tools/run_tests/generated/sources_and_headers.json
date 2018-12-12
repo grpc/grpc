@@ -8834,6 +8834,27 @@
   {
     "deps": [], 
     "headers": [
+      "third_party/upb/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/upb/decode.h", 
+      "third_party/upb/upb/def.h", 
+      "third_party/upb/upb/encode.h", 
+      "third_party/upb/upb/handlers.h", 
+      "third_party/upb/upb/msg.h", 
+      "third_party/upb/upb/msgfactory.h", 
+      "third_party/upb/upb/refcounted.h", 
+      "third_party/upb/upb/sink.h", 
+      "third_party/upb/upb/upb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "upb", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
