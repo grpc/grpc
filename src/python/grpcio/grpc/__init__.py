@@ -276,7 +276,6 @@ class Status(six.with_metaclass(abc.ABCMeta)):
 
     Attributes:
       code: A StatusCode object to be sent to the client.
-        It must not be StatusCode.OK.
       details: An ASCII-encodable string to be sent to the client upon
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
@@ -1145,7 +1144,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         This is an EXPERIMENTAL API.
 
         Args:
-          status: A grpc.Status object.
+          status: A grpc.Status object. The status code in it must not be
+            StatusCode.OK.
 
         Raises:
           Exception: An exception is always raised to signal the abortion the
