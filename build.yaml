@@ -5896,8 +5896,6 @@ defaults:
       -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
-  upb:
-    CFLAGS: -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

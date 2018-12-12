@@ -12,7 +12,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "upb_lib",
+        name = "upblib",
         actual = "@upb//:upb",
     )
 
@@ -195,8 +195,8 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            strip_prefix = "upb-fb6f7e96895c3a9a8ae2e66516160937e7ac1779",
-            url = "https://github.com/google/upb/archive/fb6f7e96895c3a9a8ae2e66516160937e7ac1779.tar.gz",
+            strip_prefix = "upb-9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3",
+            url = "https://github.com/google/upb/archive/9ce4a77f61c134bbed28bfd5be5cd7dc0e80f5e3.tar.gz",
         )
 
 
