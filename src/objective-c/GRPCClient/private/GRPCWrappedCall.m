@@ -307,6 +307,10 @@
 - (void)channelDisconnected {
   @synchronized(self) {
     if (_call != NULL) {
+      // Unreference the call will lead to its cancellation in the core. Note that since
+      // this function is only called with a network state change, any existing GRPCCall object will
+      // also receive the same notification and cancel themselves with GRPCErrorCodeUnavailable, so
+      // the user gets GRPCErrorCodeUnavailable in this case.
       grpc_call_unref(_call);
       _call = NULL;
     }

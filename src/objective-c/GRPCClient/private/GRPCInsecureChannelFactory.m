@@ -33,7 +33,7 @@
 }
 
 - (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
-  grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs([args copy]);
+  grpc_channel_args *coreChannelArgs = GRPCBuildChannelArgs(args);
   grpc_channel *unmanagedChannel =
       grpc_insecure_channel_create(host.UTF8String, coreChannelArgs, NULL);
   GRPCFreeChannelArgs(coreChannelArgs);
