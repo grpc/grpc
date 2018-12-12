@@ -64,7 +64,7 @@ struct grpc_channel_credentials;
              withCertChain:(nullable NSString *)pemCertChain
                      error:(NSError **)errorPtr;
 
-@property(atomic, readwrite) GRPCTransportType transportType;
+@property(atomic) GRPCTransportType transportType;
 
 + (GRPCCallOptions *)callOptionsForHost:(NSString *)host;
 
