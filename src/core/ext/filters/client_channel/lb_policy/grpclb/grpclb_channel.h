@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
+#include <grpc/impl/codegen/grpc_types.h>
 
 /// Makes any necessary modifications to \a args for use in the grpclb
 /// balancer channel.
