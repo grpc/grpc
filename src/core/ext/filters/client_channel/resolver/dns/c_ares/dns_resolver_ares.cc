@@ -465,11 +465,16 @@ static grpc_error* blocking_resolve_address_ares(
 static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
+static bool should_use_ares(const char* resolver_env) {
+  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
+}
+
 void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
-  if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+  if (should_use_ares(resolver_env)) {
+    gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
@@ -489,7 +494,7 @@ void grpc_resolver_dns_ares_init() {
 
 void grpc_resolver_dns_ares_shutdown() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+  if (should_use_ares(resolver_env)) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
