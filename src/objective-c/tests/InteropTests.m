@@ -197,7 +197,8 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testEmptyUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnaryWithV2API"];
+  __weak XCTestExpectation *expectReceive = [self expectationWithDescription:@"EmptyUnaryWithV2API received message"];
+  __weak XCTestExpectation *expectComplete = [self expectationWithDescription:@"EmptyUnaryWithV2API completed"];
 
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -212,11 +213,12 @@ BOOL isRemoteInteropTest(NSString *host) {
                                  if (message) {
                                    id expectedResponse = [GPBEmpty message];
                                    XCTAssertEqualObjects(message, expectedResponse);
-                                   [expectation fulfill];
+                                   [expectReceive fulfill];
                                  }
                                }
                                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                  XCTAssertNil(error, @"Unexpected error: %@", error);
+                                 [expectComplete fulfill];
                                }]
                callOptions:options];
   [call start];
@@ -249,9 +251,9 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testLargeUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectRecvMessage =
+  __weak XCTestExpectation *expectReceive =
       [self expectationWithDescription:@"LargeUnaryWithV2API received message"];
-  __weak XCTestExpectation *expectRecvComplete =
+  __weak XCTestExpectation *expectComplete =
       [self expectationWithDescription:@"LargeUnaryWithV2API received complete"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -277,12 +279,12 @@ BOOL isRemoteInteropTest(NSString *host) {
                                        [NSMutableData dataWithLength:314159];
                                    XCTAssertEqualObjects(message, expectedResponse);
 
-                                   [expectRecvMessage fulfill];
+                                   [expectReceive fulfill];
                                  }
                                }
                                closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                  XCTAssertNil(error, @"Unexpected error: %@", error);
-                                 [expectRecvComplete fulfill];
+                                 [expectComplete fulfill];
                                }]
                callOptions:options];
   [call start];
