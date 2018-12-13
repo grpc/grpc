@@ -170,7 +170,7 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
 }
 
 AresDnsResolver::~AresDnsResolver() {
-  gpr_log(GPR_DEBUG, "destroying AresDnsResolver");
+  GRPC_CARES_TRACE_LOG("resolver:%p destroying AresDnsResolver", this);
   if (resolved_result_ != nullptr) {
     grpc_channel_args_destroy(resolved_result_);
   }
@@ -182,7 +182,8 @@ AresDnsResolver::~AresDnsResolver() {
 
 void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
                                  grpc_closure* on_complete) {
-  gpr_log(GPR_DEBUG, "AresDnsResolver::NextLocked() is called.");
+  GRPC_CARES_TRACE_LOG("resolver:%p AresDnsResolver::NextLocked() is called.",
+                       this);
   GPR_ASSERT(next_completion_ == nullptr);
   next_completion_ = on_complete;
   target_result_ = target_result;
@@ -225,12 +226,14 @@ void AresDnsResolver::ShutdownLocked() {
 void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_CARES_TRACE_LOG(
-      "%p re-resolution timer fired. error: %s. shutdown_initiated_: %d", r,
-      grpc_error_string(error), r->shutdown_initiated_);
+      "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
+      "%d",
+      r, grpc_error_string(error), r->shutdown_initiated_);
   r->have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !r->shutdown_initiated_) {
     if (!r->resolving_) {
-      GRPC_CARES_TRACE_LOG("%p start resolving due to re-resolution timer", r);
+      GRPC_CARES_TRACE_LOG(
+          "resolver:%p start resolving due to re-resolution timer", r);
       r->StartResolvingLocked();
     }
   }
@@ -327,8 +330,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
       service_config_string = ChooseServiceConfig(r->service_config_json_);
       gpr_free(r->service_config_json_);
       if (service_config_string != nullptr) {
-        gpr_log(GPR_INFO, "selected service config choice: %s",
-                service_config_string);
+        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
+                             r, service_config_string);
         args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
         args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
             (char*)GRPC_ARG_SERVICE_CONFIG, service_config_string);
@@ -344,11 +347,11 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     r->backoff_.Reset();
   } else if (!r->shutdown_initiated_) {
     const char* msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
+    GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", r, msg);
     grpc_millis next_try = r->backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
-    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
-            grpc_error_string(error));
+    GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
+                         r, grpc_error_string(error));
     GPR_ASSERT(!r->have_next_resolution_timer_);
     r->have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
@@ -357,9 +360,10 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     RefCountedPtr<Resolver> self = r->Ref(DEBUG_LOCATION, "retry-timer");
     self.release();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds", timeout);
+      GRPC_CARES_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds",
+                           r, timeout);
     } else {
-      gpr_log(GPR_DEBUG, "retrying immediately");
+      GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", r);
     }
     grpc_timer_init(&r->next_resolution_timer_, next_try,
                     &r->on_next_resolution_);
@@ -385,10 +389,10 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
     if (ms_until_next_resolution > 0) {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
-      gpr_log(GPR_DEBUG,
-              "In cooldown from last resolution (from %" PRId64
-              " ms ago). Will resolve again in %" PRId64 " ms",
-              last_resolution_ago, ms_until_next_resolution);
+      GRPC_CARES_TRACE_LOG(
+          "resolver:%p In cooldown from last resolution (from %" PRId64
+          " ms ago). Will resolve again in %" PRId64 " ms",
+          this, last_resolution_ago, ms_until_next_resolution);
       have_next_resolution_timer_ = true;
       // TODO(roth): We currently deal with this ref manually.  Once the
       // new closure API is done, find a way to track this ref with the timer
@@ -405,7 +409,6 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
 }
 
 void AresDnsResolver::StartResolvingLocked() {
-  gpr_log(GPR_DEBUG, "Start resolving.");
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
@@ -420,6 +423,8 @@ void AresDnsResolver::StartResolvingLocked() {
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
+  GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
+                       this, pending_request_);
 }
 
 void AresDnsResolver::MaybeFinishNextLocked() {
@@ -427,7 +432,8 @@ void AresDnsResolver::MaybeFinishNextLocked() {
     *target_result_ = resolved_result_ == nullptr
                           ? nullptr
                           : grpc_channel_args_copy(resolved_result_);
-    gpr_log(GPR_DEBUG, "AresDnsResolver::MaybeFinishNextLocked()");
+    GRPC_CARES_TRACE_LOG("resolver:%p AresDnsResolver::MaybeFinishNextLocked()",
+                         this);
     GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
     published_version_ = resolved_version_;

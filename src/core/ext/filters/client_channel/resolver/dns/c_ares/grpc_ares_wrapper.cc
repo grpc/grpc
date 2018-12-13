@@ -96,11 +96,11 @@ static void log_address_sorting_list(const ServerAddressList& addresses,
   for (size_t i = 0; i < addresses.size(); i++) {
     char* addr_str;
     if (grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true)) {
-      gpr_log(GPR_DEBUG, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
+      gpr_log(GPR_INFO, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
               input_output_str, i, addr_str);
       gpr_free(addr_str);
     } else {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "c-ares address sorting: %s[%" PRIuPTR "]=<unprintable>",
               input_output_str, i);
     }
@@ -209,10 +209,10 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           addresses.emplace_back(&addr, addr_len, args);
           char output[INET6_ADDRSTRLEN];
           ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-          gpr_log(GPR_DEBUG,
-                  "c-ares resolver gets a AF_INET6 result: \n"
-                  "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-                  output, ntohs(hr->port), addr.sin6_scope_id);
+          GRPC_CARES_TRACE_LOG(
+              "request:%p c-ares resolver gets a AF_INET6 result: \n"
+              "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
+              r, output, ntohs(hr->port), addr.sin6_scope_id);
           break;
         }
         case AF_INET: {
@@ -226,10 +226,10 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
           addresses.emplace_back(&addr, addr_len, args);
           char output[INET_ADDRSTRLEN];
           ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-          gpr_log(GPR_DEBUG,
-                  "c-ares resolver gets a AF_INET result: \n"
-                  "  addr: %s\n  port: %d\n",
-                  output, ntohs(hr->port));
+          GRPC_CARES_TRACE_LOG(
+              "request:%p c-ares resolver gets a AF_INET result: \n"
+              "  addr: %s\n  port: %d\n",
+              r, output, ntohs(hr->port));
           break;
         }
       }
@@ -252,9 +252,9 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
 static void on_srv_query_done_locked(void* arg, int status, int timeouts,
                                      unsigned char* abuf, int alen) {
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  gpr_log(GPR_DEBUG, "on_query_srv_done_locked");
+  GRPC_CARES_TRACE_LOG("request:%p on_query_srv_done_locked", r);
   if (status == ARES_SUCCESS) {
-    gpr_log(GPR_DEBUG, "on_query_srv_done_locked ARES_SUCCESS");
+    GRPC_CARES_TRACE_LOG("request:%p on_query_srv_done_locked ARES_SUCCESS", r);
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     if (parse_status == ARES_SUCCESS) {
@@ -297,9 +297,9 @@ static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
 static void on_txt_done_locked(void* arg, int status, int timeouts,
                                unsigned char* buf, int len) {
-  gpr_log(GPR_DEBUG, "on_txt_done_locked");
   char* error_msg;
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
+  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked", r);
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
@@ -332,7 +332,8 @@ static void on_txt_done_locked(void* arg, int status, int timeouts,
       service_config_len += result->length;
     }
     (*r->service_config_json_out)[service_config_len] = '\0';
-    gpr_log(GPR_INFO, "found service config: %s", *r->service_config_json_out);
+    GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
+                         *r->service_config_json_out);
   }
   // Clean up.
   ares_free_data(reply);
@@ -358,12 +359,6 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   ares_channel* channel = nullptr;
-  /* TODO(zyc): Enable tracing after #9603 is checked in */
-  /* if (grpc_dns_trace) {
-      gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
-              name, default_port);
-     } */
-
   /* parse name, splitting it into host and port parts */
   char* host;
   char* port;
@@ -388,7 +383,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
   if (dns_server != nullptr) {
-    gpr_log(GPR_INFO, "Using DNS server %s", dns_server);
+    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r, dns_server);
     grpc_resolved_address addr;
     if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
       r->dns_server_addr.family = AF_INET;
@@ -513,7 +508,7 @@ static bool resolve_as_ip_literal_locked(
 static bool target_matches_localhost_inner(const char* name, char** host,
                                            char** port) {
   if (!gpr_split_host_port(name, host, port)) {
-    gpr_log(GPR_INFO, "Unable to split host and port for name: %s", name);
+    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
   }
   if (gpr_stricmp(*host, "localhost") == 0) {
@@ -547,6 +542,10 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->success = false;
   r->error = GRPC_ERROR_NONE;
   r->pending_queries = 0;
+  GRPC_CARES_TRACE_LOG(
+      "request:%p c-ares grpc_dns_lookup_ares_locked_impl name=%s, "
+      "default_port=%s",
+      r, name, default_port);
   // Early out if the target is an ipv4 or ipv6 literal.
   if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
     GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
