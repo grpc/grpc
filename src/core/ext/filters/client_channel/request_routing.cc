@@ -198,7 +198,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       }
       // Note: Although we are not in the call combiner here, we are
       // basically stealing the call combiner from the pending pick, so
-      // it's safe to call pick_done_locked() here -- we are essentially
+      // it's safe to run on_route_done_ here -- we are essentially
       // calling it here instead of calling it in DoneLocked().
       GRPC_CLOSURE_RUN(request->on_route_done_,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

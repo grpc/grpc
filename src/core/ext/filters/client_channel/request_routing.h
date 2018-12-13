@@ -112,6 +112,8 @@ class RequestRouter {
 
   void RouteCallLocked(Request* request);
 
+  // TODO(roth): Add methods to cancel picks.
+
   void ShutdownLocked(grpc_error* error);
 
   void ExitIdleLocked();
