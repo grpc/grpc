@@ -2384,6 +2384,12 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
   // list, as set by get_batch_index() above.
+  // TODO(roth): What if the LB policy needs to add something to the
+  // call's initial metadata, and then there's a retry?  We don't want
+  // the new metadata to be added twice.  We might need to somehow
+  // allocate the subchannel batch earlier so that we can give the
+  // subchannel's copy of the metadata batch (which is copied for each
+  // attempt) to the LB policy instead the one from the parent channel.
   grpc_metadata_batch* initial_metadata =
       calld->seen_send_initial_metadata
           ? &calld->send_initial_metadata
