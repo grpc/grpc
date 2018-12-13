@@ -197,8 +197,10 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testEmptyUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectReceive = [self expectationWithDescription:@"EmptyUnaryWithV2API received message"];
-  __weak XCTestExpectation *expectComplete = [self expectationWithDescription:@"EmptyUnaryWithV2API completed"];
+  __weak XCTestExpectation *expectReceive =
+      [self expectationWithDescription:@"EmptyUnaryWithV2API received message"];
+  __weak XCTestExpectation *expectComplete =
+      [self expectationWithDescription:@"EmptyUnaryWithV2API completed"];
 
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
