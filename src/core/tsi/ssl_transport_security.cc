@@ -953,7 +953,10 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   if (impl->buffer != nullptr) gpr_free(impl->buffer);
-  if (impl->ssl != nullptr) SSL_free(impl->ssl);
+  if (impl->ssl != nullptr) {
+    SSL_shutdown(impl->ssl);
+    SSL_free(impl->ssl);
+  }
   if (impl->network_io != nullptr) BIO_free(impl->network_io);
   gpr_free(self);
 }
@@ -1654,6 +1657,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
+  SSL_CTX_set_quiet_shutdown(ssl_context, 1);
 
   impl = static_cast<tsi_ssl_client_handshaker_factory*>(
       gpr_zalloc(sizeof(*impl)));
@@ -1812,6 +1816,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
+      SSL_CTX_set_quiet_shutdown(impl->ssl_contexts[i], 1);
       result = populate_ssl_context(impl->ssl_contexts[i],
                                     &options->pem_key_cert_pairs[i],
                                     options->cipher_suites);
