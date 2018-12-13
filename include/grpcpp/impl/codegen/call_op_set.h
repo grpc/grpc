@@ -213,6 +213,7 @@ class CallNoOp {
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {}
   void FinishOp(bool* status) {}
+  void ResetOp() {}
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {}
   void SetFinishInterceptionHookPoint(
@@ -257,7 +258,8 @@ class CallOpSendInitialMetadata {
           maybe_compression_level_.level;
     }
   }
-  void FinishOp(bool* status) {
+  void FinishOp(bool* status) {}
+  void ResetOp() {
     if (!send_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
@@ -314,7 +316,8 @@ class CallOpSendMessage {
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status) { send_buf_.Clear(); }
+  void FinishOp(bool* status) {}
+  void ResetOp() { send_buf_.Clear(); }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -401,8 +404,8 @@ class CallOpRecvMessage {
         *status = false;
       }
     }
-    message_ = nullptr;
   }
+  void ResetOp() { message_ = nullptr; }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -498,6 +501,7 @@ class CallOpGenericRecvMessage {
     }
     deserialize_.reset();
   }
+  void ResetOp() {}
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -539,7 +543,8 @@ class CallOpClientSendClose {
     op->flags = 0;
     op->reserved = NULL;
   }
-  void FinishOp(bool* status) { send_ = false; }
+  void FinishOp(bool* status) {}
+  void ResetOp() { send_ = false; }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -592,7 +597,8 @@ class CallOpServerSendStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* status) {}
+  void ResetOp() {
     if (!send_status_available_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
@@ -646,9 +652,8 @@ class CallOpRecvInitialMetadata {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
-    if (metadata_map_ == nullptr || hijacked_) return;
-  }
+  void FinishOp(bool* status) {}
+  void ResetOp() {}
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -717,6 +722,7 @@ class CallOpClientRecvStatus {
       g_core_codegen_interface->gpr_free((void*)debug_error_string_);
     }
   }
+  void ResetOp() {}
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -808,6 +814,12 @@ class CallOpSet : public CallOpSetInterface,
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
+      this->Op1::ResetOp();
+      this->Op2::ResetOp();
+      this->Op3::ResetOp();
+      this->Op4::ResetOp();
+      this->Op5::ResetOp();
+      this->Op6::ResetOp();
       *tag = return_tag_;
       *status = saved_status_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
@@ -822,6 +834,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op6::FinishOp(status);
     saved_status_ = *status;
     if (RunInterceptorsPostRecv()) {
+      this->Op1::ResetOp();
+      this->Op2::ResetOp();
+      this->Op3::ResetOp();
+      this->Op4::ResetOp();
+      this->Op5::ResetOp();
+      this->Op6::ResetOp();
       *tag = return_tag_;
       g_core_codegen_interface->grpc_call_unref(call_.call());
       return true;

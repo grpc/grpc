@@ -120,7 +120,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      EXPECT_TRUE(resp->message().find("Hello") == 0);
+      EXPECT_EQ(resp->message().find("Hello"), 0u);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_CLOSE)) {
