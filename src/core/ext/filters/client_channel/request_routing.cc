@@ -258,8 +258,8 @@ class RequestRouter::Request::AsyncPickCanceller {
         request_router->lb_policy_->CancelPickLocked(&request->pick_,
                                                      GRPC_ERROR_REF(error));
       }
+      request->pick_canceller_ = nullptr;
     }
-    request->pick_canceller_ = nullptr;
     GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
     Delete(self);
   }
@@ -360,9 +360,9 @@ void RequestRouter::Request::StartLbPickLocked() {
     MaybeAddCallToInterestedPartiesLocked();
     // Request notification on call cancellation.
     // We allocate a separate object to track cancellation, since the
-    // cancellation callback might not be scheduled by the call combiner
-    // until after this Request object is destroyed (e.g., in the case
-    // of a retry).
+    // cancellation closure might still be pending when we need to reuse
+    // the memory in which this Request object is stored for a subsequent
+    // retry attempt.
     pick_canceller_ = New<AsyncPickCanceller>(this);
   }
 }
