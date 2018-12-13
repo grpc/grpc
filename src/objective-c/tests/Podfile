@@ -150,7 +150,9 @@ post_install do |installer|
     end
 
     # Enable NSAssert on gRPC
-    if target.name == 'gRPC' || target.name == 'ProtoRPC' || target.name == 'RxLibrary'
+    if target.name == 'gRPC' || target.name.start_with?('gRPC.') ||
+        target.name == 'ProtoRPC' || target.name.start_with?('ProtoRPC.') ||
+        target.name == 'RxLibrary' || target.name.start_with?('RxLibrary.') 
       target.build_configurations.each do |config|
         if config.name != 'Release'
           config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'
