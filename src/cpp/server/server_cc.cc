@@ -77,14 +77,8 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* context) override {}
 };
 
-std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
-gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
-
-void InitGlobalCallbacks() {
-  if (!g_callbacks) {
-    g_callbacks.reset(new DefaultGlobalCallbacks());
-  }
-}
+DefaultGlobalCallbacks g_default_callbacks;
+Server::GlobalCallbacks* g_callbacks = &g_default_callbacks;
 
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
@@ -420,7 +414,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
               ctx_.set_server_rpc_info(method_->name(), method_->method_type(),
                                        server->interceptor_creators_)),
           server_(server),
-          global_callbacks_(nullptr),
           resources_(false) {
       ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
@@ -435,9 +428,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
       }
     }
 
-    void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks,
-             bool resources) {
-      global_callbacks_ = global_callbacks;
+    void Run(bool resources) {
       resources_ = resources;
 
       interceptor_methods_.SetCall(&call_);
@@ -473,13 +464,13 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     void ContinueRunAfterInterception() {
       {
         ctx_.BeginCompletionOp(&call_, nullptr, nullptr);
-        global_callbacks_->PreSynchronousRequest(&ctx_);
+        grpc::g_callbacks->PreSynchronousRequest(&ctx_);
         auto* handler = resources_ ? method_->handler()
                                    : server_->resource_exhausted_handler_.get();
         handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
             &call_, &ctx_, request_, request_status_, nullptr, nullptr));
         request_ = nullptr;
-        global_callbacks_->PostSynchronousRequest(&ctx_);
+        grpc::g_callbacks->PostSynchronousRequest(&ctx_);
 
         cq_.Shutdown();
 
@@ -503,7 +494,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     grpc::internal::RpcServiceMethod* const method_;
     grpc::internal::Call call_;
     Server* server_;
-    std::shared_ptr<GlobalCallbacks> global_callbacks_;
     bool resources_;
     grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
   };
@@ -814,14 +804,12 @@ const char* Server::CallbackRequest<grpc::GenericServerContext>::method_name()
 class Server::SyncRequestThreadManager : public grpc::ThreadManager {
  public:
   SyncRequestThreadManager(Server* server, grpc::CompletionQueue* server_cq,
-                           std::shared_ptr<GlobalCallbacks> global_callbacks,
                            grpc_resource_quota* rq, int min_pollers,
                            int max_pollers, int cq_timeout_msec)
       : ThreadManager("SyncServer", rq, min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
-        cq_timeout_msec_(cq_timeout_msec),
-        global_callbacks_(std::move(global_callbacks)) {}
+        cq_timeout_msec_(cq_timeout_msec) {}
 
   WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
@@ -864,7 +852,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd->Run(global_callbacks_, resources);
+      cd->Run(resources);
     }
     // TODO (sreek) If ok is false here (which it isn't in case of
     // grpc_request_registered_call), we should still re-queue the request
@@ -927,7 +915,6 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
   std::unique_ptr<grpc::internal::RpcServiceMethod> unknown_method_;
-  std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
@@ -950,9 +937,7 @@ Server::Server(
       server_initializer_(new grpc_impl::ServerInitializer(this)),
       health_check_service_disabled_(false) {
   g_gli_initializer.summon();
-  gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
-  global_callbacks_ = grpc::g_callbacks;
-  global_callbacks_->UpdateArguments(args);
+  grpc::g_callbacks->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
@@ -965,8 +950,8 @@ Server::Server(
 
     for (const auto& it : *sync_server_cqs_) {
       sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-          this, it.get(), global_callbacks_, server_rq, min_pollers,
-          max_pollers, sync_cq_timeout_msec));
+          this, it.get(), server_rq, min_pollers, max_pollers,
+          sync_cq_timeout_msec));
     }
 
     if (default_rq_created) {
@@ -1022,9 +1007,10 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(!grpc::g_callbacks);
+  GPR_ASSERT(grpc::g_callbacks == &g_default_callbacks);
   GPR_ASSERT(callbacks);
-  grpc::g_callbacks.reset(callbacks);
+  GPR_ASSERT(callbacks != &g_default_callbacks);
+  grpc::g_callbacks = callbacks;
 }
 
 grpc_server* Server::c_server() { return server_; }
@@ -1156,13 +1142,13 @@ int Server::AddListeningPort(const grpc::string& addr,
                              grpc::ServerCredentials* creds) {
   GPR_ASSERT(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, addr, creds, port);
+  grpc::g_callbacks->AddPort(this, addr, creds, port);
   return port;
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
-  global_callbacks_->PreServerStart(this);
+  grpc::g_callbacks->PreServerStart(this);
   started_ = true;
 
   // Only create default health check service when user did not provide an

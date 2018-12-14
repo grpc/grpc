@@ -322,8 +322,6 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   grpc::internal::CondVar callback_reqs_done_cv_;
   std::atomic_int callback_reqs_outstanding_{0};
 
-  std::shared_ptr<GlobalCallbacks> global_callbacks_;
-
   std::vector<grpc::string> services_;
   bool has_async_generic_service_{false};
   bool has_callback_generic_service_{false};
