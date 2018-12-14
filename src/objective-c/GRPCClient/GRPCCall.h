@@ -370,11 +370,11 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
-- (id)objectForKeyedSubscript:(id)key;
-- (void)setObject:(id)obj forKeyedSubscript:(id)key;
+- (nullable id)objectForKeyedSubscript:(nonnull id)key;
+- (void)setObject:(nonnull id)obj forKeyedSubscript:(nonnull id)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(id)key;
+- (void)removeObjectForKey:(nonnull id)key;
 @end
 
 #pragma clang diagnostic push
