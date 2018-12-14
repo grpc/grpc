@@ -234,7 +234,10 @@ class RequestRouter::Request::AsyncPickCanceller {
                                             &cancel_closure_);
   }
 
-  void MarkFinishedLocked() { finished_ = true; }
+  void MarkFinishedLocked() {
+    finished_ = true;
+    GRPC_CALL_STACK_UNREF(request_->owning_call_, "pick_callback_cancel");
+  }
 
  private:
   // Invoked when the call is cancelled.
@@ -259,8 +262,8 @@ class RequestRouter::Request::AsyncPickCanceller {
                                                      GRPC_ERROR_REF(error));
       }
       request->pick_canceller_ = nullptr;
+      GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
     }
-    GRPC_CALL_STACK_UNREF(request->owning_call_, "pick_callback_cancel");
     Delete(self);
   }
 
