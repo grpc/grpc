@@ -63,12 +63,18 @@ INSTALL_REQUIRES = (
     'googleapis-common-protos>=1.5.5',
 )
 
-SETUP_REQUIRES = ()
-COMMAND_CLASS = {
-    # wire up commands to no-op not to break the external dependencies
-    'preprocess': _NoOpCommand,
-    'build_package_protos': _NoOpCommand,
-}
+try:
+    import status_commands as _status_commands
+    # we are in the build environment, otherwise the above import fails
+    COMMAND_CLASS = {
+        # Run preprocess from the repository *before* doing any packaging!
+        'preprocess': _status_commands.Preprocess,
+    }
+except ImportError:
+    COMMAND_CLASS = {
+        # wire up commands to no-op not to break the external dependencies
+        'preprocess': _NoOpCommand,
+    }
 
 setuptools.setup(
     name='grpcio-status',
@@ -82,5 +88,4 @@ setuptools.setup(
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS)

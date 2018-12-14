@@ -126,7 +126,7 @@ then
 
   # Build grpcio_status source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
-      preprocess build_package_protos sdist
+      preprocess sdist
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 fi
 
