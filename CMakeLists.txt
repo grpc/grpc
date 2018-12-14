@@ -96,6 +96,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 add_definitions(-DPB_FIELD_16BIT)
 
+if (MINGW)
+  add_definitions(-D_WIN32_WINNT=0x600)
+endif()
+
 if (MSVC)
   include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -157,7 +161,7 @@ elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
 
-if(WIN32 AND MSVC)
+if(WIN32 AND (MSVC OR MINGW))
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32)
 endif()
 
