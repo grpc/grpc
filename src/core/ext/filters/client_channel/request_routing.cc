@@ -120,7 +120,7 @@ class RequestRouter::Request::ResolverResultWaiter {
     }
     // Otherwise, process the resolver result.
     Request* request = self->request_;
-    if (error != GRPC_ERROR_NONE) {
+    if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p request=%p: resolver failed to return data",
