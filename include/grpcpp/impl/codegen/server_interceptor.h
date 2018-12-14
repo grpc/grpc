@@ -50,8 +50,8 @@ class ServerRpcInfo {
   ~ServerRpcInfo(){};
 
   ServerRpcInfo(const ServerRpcInfo&) = delete;
-  ServerRpcInfo(ServerRpcInfo&&) = default;
-  ServerRpcInfo& operator=(ServerRpcInfo&&) = default;
+  ServerRpcInfo(ServerRpcInfo&&) = delete;
+  ServerRpcInfo& operator=(ServerRpcInfo&&) = delete;
 
   // Getter methods
   const char* method() const { return method_; }
