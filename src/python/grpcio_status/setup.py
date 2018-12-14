@@ -69,11 +69,13 @@ try:
     COMMAND_CLASS = {
         # Run preprocess from the repository *before* doing any packaging!
         'preprocess': _status_commands.Preprocess,
+        'build_package_protos': _NoOpCommand,
     }
 except ImportError:
     COMMAND_CLASS = {
         # wire up commands to no-op not to break the external dependencies
         'preprocess': _NoOpCommand,
+        'build_package_protos': _NoOpCommand,
     }
 
 setuptools.setup(
