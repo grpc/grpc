@@ -45,6 +45,8 @@ def _code_to_grpc_status_code(code):
 def from_call(call):
     """Returns a google.rpc.status.Status message corresponding to a given grpc.Call.
 
+    This is an EXPERIMENTAL API.
+
     Args:
       call: A grpc.Call instance.
 
@@ -52,8 +54,8 @@ def from_call(call):
       A google.rpc.status.Status message representing the status of the RPC.
 
     Raises:
-      ValueError: If the status code, status message is inconsistent with the rich status
-        inside of the google.rpc.status.Status.
+      ValueError: If the gRPC call's code or details are inconsistent with the
+        status code and message inside of the google.rpc.status.Status.
     """
     for key, value in call.trailing_metadata():
         if key == _GRPC_DETAILS_METADATA_KEY:
@@ -74,12 +76,14 @@ def from_call(call):
 def to_status(status):
     """Convert a google.rpc.status.Status message to grpc.Status.
 
+    This is an EXPERIMENTAL API.
+
     Args:
       status: a google.rpc.status.Status message representing the non-OK status
         to terminate the RPC with and communicate it to the client.
 
     Returns:
-      A grpc.Status instance.
+      A grpc.Status instance representing the input google.rpc.status.Status message.
     """
     return _Status(
         code=_code_to_grpc_status_code(status.code),
