@@ -954,7 +954,7 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   if (impl->buffer != nullptr) gpr_free(impl->buffer);
   if (impl->ssl != nullptr) {
-    SSL_shutdown(impl->ssl);
+    //SSL_shutdown(impl->ssl);
     SSL_free(impl->ssl);
   }
   if (impl->network_io != nullptr) BIO_free(impl->network_io);
@@ -1121,6 +1121,7 @@ static tsi_result ssl_handshaker_result_get_unused_bytes(
 static void ssl_handshaker_result_destroy(tsi_handshaker_result* self) {
   tsi_ssl_handshaker_result* impl =
       reinterpret_cast<tsi_ssl_handshaker_result*>(self);
+  //SSL_shutdown(impl->ssl);
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->unused_bytes);
@@ -1240,6 +1241,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
+  //SSL_shutdown(impl->ssl);
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->outgoing_bytes_buffer);

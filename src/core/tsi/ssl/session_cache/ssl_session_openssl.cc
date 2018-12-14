@@ -37,30 +37,17 @@ namespace {
 
 class OpenSslCachedSession : public SslCachedSession {
  public:
-  OpenSslCachedSession(SslSessionPtr session) {
-    int size = i2d_SSL_SESSION(session.get(), nullptr);
-    GPR_ASSERT(size > 0);
-    grpc_slice slice = grpc_slice_malloc(size_t(size));
-    unsigned char* start = GRPC_SLICE_START_PTR(slice);
-    int second_size = i2d_SSL_SESSION(session.get(), &start);
-    GPR_ASSERT(size == second_size);
-    serialized_session_ = slice;
-  }
-
-  virtual ~OpenSslCachedSession() { grpc_slice_unref(serialized_session_); }
+  OpenSslCachedSession(SslSessionPtr session)
+      : session_(std::move(session)) {}
 
   SslSessionPtr CopySession() const override {
-    const unsigned char* data = GRPC_SLICE_START_PTR(serialized_session_);
-    size_t length = GRPC_SLICE_LENGTH(serialized_session_);
-    SSL_SESSION* session = d2i_SSL_SESSION(nullptr, &data, length);
-    if (session == nullptr) {
-      return SslSessionPtr();
-    }
-    return SslSessionPtr(session);
+    // SslSessionPtr will dereference on destruction.
+    SSL_SESSION_up_ref(session_.get());
+    return SslSessionPtr(session_.get());
   }
 
  private:
-  grpc_slice serialized_session_;
+  SslSessionPtr session_;
 };
 
 }  // namespace
