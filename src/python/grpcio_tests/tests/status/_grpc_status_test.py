@@ -54,7 +54,7 @@ def _error_details_unary_unary(request, servicer_context):
     details.Pack(
         error_details_pb2.DebugInfo(
             stack_entries=traceback.format_stack(),
-            detail='Intensionally invoked'))
+            detail='Intentionally invoked'))
     rich_status = status_pb2.Status(
         code=code_pb2.INTERNAL,
         message=_STATUS_DETAILS,
@@ -118,10 +118,8 @@ class StatusTest(unittest.TestCase):
         self._channel.close()
 
     def test_status_ok(self):
-        try:
-            _, call = self._channel.unary_unary(_STATUS_OK).with_call(_REQUEST)
-        except grpc.RpcError as rpc_error:
-            self.fail(rpc_error)
+        _, call = self._channel.unary_unary(_STATUS_OK).with_call(_REQUEST)
+
         # Succeed RPC doesn't have status
         status = rpc_status.from_call(call)
         self.assertIs(status, None)
