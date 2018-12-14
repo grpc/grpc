@@ -22,9 +22,9 @@ import requests
 import jwt
 
 _GITHUB_API_PREFIX = 'https://api.github.com'
-_GITHUB_REPO = 'lidizheng/grpc'
-_GITHUB_APP_ID = 22288
-_INSTALLATION_ID = 516307
+_GITHUB_REPO = 'grpc/grpc'
+_GITHUB_APP_ID = 22338
+_INSTALLATION_ID = 519109
 _GITHUB_APP_KEY = open(
     os.environ['HOME'] + '/.ssh/google-grpc-checker.2018-12-13.private-key.pem',
     'r').read()
