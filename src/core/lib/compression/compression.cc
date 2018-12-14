@@ -31,7 +31,7 @@
 
 int grpc_compression_algorithm_is_message(
     grpc_compression_algorithm algorithm) {
-  return (algorithm >= GRPC_COMPRESS_DEFLATE && algorithm <= GRPC_COMPRESS_GZIP)
+  return (algorithm >= GRPC_COMPRESS_GZIP && algorithm <= GRPC_COMPRESS_DEFLATE)
              ? 1
              : 0;
 }

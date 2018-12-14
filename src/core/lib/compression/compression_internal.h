@@ -29,8 +29,8 @@ extern "C" {
 
 typedef enum {
   GRPC_MESSAGE_COMPRESS_NONE = 0,
-  GRPC_MESSAGE_COMPRESS_DEFLATE,
   GRPC_MESSAGE_COMPRESS_GZIP,
+  GRPC_MESSAGE_COMPRESS_DEFLATE,
   /* TODO(ctiller): snappy */
   GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT
 } grpc_message_compression_algorithm;
