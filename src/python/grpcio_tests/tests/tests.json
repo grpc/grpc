@@ -57,6 +57,7 @@
   "unit._reconnect_test.ReconnectTest",
   "unit._resource_exhausted_test.ResourceExhaustedTest",
   "unit._rpc_test.RPCTest",
+  "unit._server_shutdown_test.ServerShutdown",
   "unit._server_ssl_cert_config_test.ServerSSLCertConfigFetcherParamsChecks",
   "unit._server_ssl_cert_config_test.ServerSSLCertReloadTestCertConfigReuse",
   "unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithClientAuth",
