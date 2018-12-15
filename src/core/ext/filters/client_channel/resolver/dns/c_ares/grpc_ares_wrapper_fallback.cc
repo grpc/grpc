@@ -20,13 +20,7 @@
 
 #if GRPC_ARES != 1 || defined(GRPC_UV)
 
-#include <ares.h>
-
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-
-struct grpc_ares_request {
-  char val;
-};
 
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     ares_channel c_ares_channel, const char* dns_server, const char* name,

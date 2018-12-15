@@ -21,7 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#if GRPC_ARES == 1 && !defined(GRPC_UV)
 #include <ares.h>
+#else
+// If we can't include ares.h, fake up struct definitions so this header can
+// compile.
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.h"
+#endif
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
