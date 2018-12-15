@@ -128,8 +128,9 @@ cdef class Server:
       with nogil:
         grpc_server_cancel_all_calls(self.c_server)
 
-  # TODO(ericgribkoff) Determine what, if any, portion of this is safe to call
-  # from __dealloc__, and potentially remove backup_shutdown_queue.
+  # TODO(https://github.com/grpc/grpc/issues/17515) Determine what, if any,
+  # portion of this is safe to call from __dealloc__, and potentially remove
+  # backup_shutdown_queue.
   def destroy(self):
     if self.c_server != NULL:
       if not self.is_started:
