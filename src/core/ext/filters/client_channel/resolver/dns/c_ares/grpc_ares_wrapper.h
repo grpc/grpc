@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -37,7 +39,32 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
     gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
   }
 
-typedef struct grpc_ares_request grpc_ares_request;
+// TODO(apolcyn): after merging grpc_ares_ev_driver and
+// grpc_ares_request, all definitions can move to grpc_ares_wrapper.cc
+typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
+
+typedef struct grpc_ares_request {
+  /** indicates the DNS server to use, if specified */
+  struct ares_addr_port_node dns_server_addr;
+  /** following members are set in grpc_resolve_address_ares_impl */
+  /** closure to call when the request completes */
+  grpc_closure* on_done;
+  /** the pointer to receive the resolved addresses */
+  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out;
+  /** the pointer to receive the service config in JSON */
+  char** service_config_json_out;
+  /** the evernt driver used by this request */
+  grpc_ares_ev_driver* ev_driver;
+  /** number of ongoing queries */
+  size_t pending_queries;
+
+  /** is there at least one successful query, set in on_done_cb */
+  bool success;
+  /** the errors explaining the request failure, set in on_done_cb */
+  grpc_error* error;
+  /** c-ares channel that queries are performed on */
+  ares_channel c_ares_channel;
+} grpc_ares_request;
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()
@@ -59,8 +86,9 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   being held by the caller. The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    ares_channel channel, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner);
@@ -96,6 +124,10 @@ bool grpc_ares_maybe_resolve_localhost_manually_locked(
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(
     grpc_core::ServerAddressList* addresses);
+
+/** Initializes a c-ares channel with proper settings for gRPC use.
+ * Sets c_ares_channel to nullptr upon failure. */
+void grpc_init_c_ares_channel(ares_channel* c_ares_channel);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

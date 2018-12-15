@@ -20,6 +20,8 @@
 
 #if GRPC_ARES != 1 || defined(GRPC_UV)
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 struct grpc_ares_request {
@@ -27,8 +29,9 @@ struct grpc_ares_request {
 };
 
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    ares_channel c_ares_channel, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) {
@@ -36,8 +39,9 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
 }
 
 grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
-    const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    ares_channel c_ares_channel, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;

@@ -59,8 +59,6 @@ typedef struct fd_node {
 } fd_node;
 
 struct grpc_ares_ev_driver {
-  /** the ares_channel owned by this event driver */
-  ares_channel channel;
   /** pollset set for driving the IO events of the channel */
   grpc_pollset_set* pollset_set;
   /** refcount of the event driver */
@@ -104,7 +102,8 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
                          ev_driver);
     GPR_ASSERT(ev_driver->fds == nullptr);
     GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
-    ares_destroy(ev_driver->channel);
+    // close fd's
+    ares_set_servers(ev_driver->request->c_ares_channel, nullptr);
     grpc_ares_complete_request_locked(ev_driver->request);
     grpc_core::Delete(ev_driver);
   }
@@ -135,21 +134,8 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               int query_timeout_ms,
                                               grpc_combiner* combiner,
                                               grpc_ares_request* request) {
-  *ev_driver = grpc_core::New<grpc_ares_ev_driver>();
-  ares_options opts;
-  memset(&opts, 0, sizeof(opts));
-  opts.flags |= ARES_FLAG_STAYOPEN;
-  int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
-  if (status != ARES_SUCCESS) {
-    char* err_msg;
-    gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
-                 ares_strerror(status));
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_msg);
-    gpr_free(err_msg);
-    gpr_free(*ev_driver);
-    return err;
-  }
+  *ev_driver = grpc_core::New<grpc_ares_ev_driver>();
   (*ev_driver)->combiner = GRPC_COMBINER_REF(combiner, "ares event driver");
   gpr_ref_init(&(*ev_driver)->refs, 1);
   (*ev_driver)->pollset_set = pollset_set;
@@ -160,7 +146,8 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   (*ev_driver)->polled_fd_factory =
       grpc_core::NewGrpcPolledFdFactory((*ev_driver)->combiner);
   (*ev_driver)
-      ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
+      ->polled_fd_factory->ConfigureAresChannelLocked(
+          (*ev_driver)->request->c_ares_channel);
   GRPC_CLOSURE_INIT(&(*ev_driver)->on_timeout_locked, on_timeout_locked,
                     *ev_driver, grpc_combiner_scheduler(combiner));
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
@@ -225,7 +212,7 @@ static void on_readable_locked(void* arg, grpc_error* error) {
                        fdn->grpc_polled_fd->GetName());
   if (error == GRPC_ERROR_NONE) {
     do {
-      ares_process_fd(ev_driver->channel, as, ARES_SOCKET_BAD);
+      ares_process_fd(ev_driver->request->c_ares_channel, as, ARES_SOCKET_BAD);
     } while (fdn->grpc_polled_fd->IsFdStillReadableLocked());
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
@@ -234,7 +221,7 @@ static void on_readable_locked(void* arg, grpc_error* error) {
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // ev_driver will be cleaned up in the follwing
     // grpc_ares_notify_on_event_locked().
-    ares_cancel(ev_driver->channel);
+    ares_cancel(ev_driver->request->c_ares_channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
   grpc_ares_ev_driver_unref(ev_driver);
@@ -248,7 +235,7 @@ static void on_writable_locked(void* arg, grpc_error* error) {
   GRPC_CARES_TRACE_LOG("request:%p writable on %s", ev_driver->request,
                        fdn->grpc_polled_fd->GetName());
   if (error == GRPC_ERROR_NONE) {
-    ares_process_fd(ev_driver->channel, ARES_SOCKET_BAD, as);
+    ares_process_fd(ev_driver->request->c_ares_channel, ARES_SOCKET_BAD, as);
   } else {
     // If error is not GRPC_ERROR_NONE, it means the fd has been shutdown or
     // timed out. The pending lookups made on this ev_driver will be cancelled
@@ -256,15 +243,10 @@ static void on_writable_locked(void* arg, grpc_error* error) {
     // with a status of ARES_ECANCELLED. The remaining file descriptors in this
     // ev_driver will be cleaned up in the follwing
     // grpc_ares_notify_on_event_locked().
-    ares_cancel(ev_driver->channel);
+    ares_cancel(ev_driver->request->c_ares_channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
   grpc_ares_ev_driver_unref(ev_driver);
-}
-
-ares_channel* grpc_ares_ev_driver_get_channel_locked(
-    grpc_ares_ev_driver* ev_driver) {
-  return &ev_driver->channel;
 }
 
 // Get the file descriptors used by the ev_driver's ares channel, register
@@ -273,8 +255,8 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   fd_node* new_list = nullptr;
   if (!ev_driver->shutting_down) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM];
-    int socks_bitmask =
-        ares_getsock(ev_driver->channel, socks, ARES_GETSOCK_MAXNUM);
+    int socks_bitmask = ares_getsock(ev_driver->request->c_ares_channel, socks,
+                                     ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
           ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {

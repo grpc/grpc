@@ -21,6 +21,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include <ares.h>
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -61,8 +63,9 @@ static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
 static grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    ares_channel c_ares_channel, const char* dns_server, const char* addr,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) {

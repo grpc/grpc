@@ -27,6 +27,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <ares.h>
+
 #include <address_sorting/address_sorting.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
@@ -125,6 +127,8 @@ class AresDnsResolver : public Resolver {
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
+  // c-ares channel to perform queries on
+  ares_channel c_ares_channel_;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -167,6 +171,7 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
   query_timeout_ms_ = grpc_channel_arg_get_integer(
       query_timeout_ms_arg,
       {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX});
+  grpc_init_c_ares_channel(&c_ares_channel_);
 }
 
 AresDnsResolver::~AresDnsResolver() {
@@ -178,6 +183,7 @@ AresDnsResolver::~AresDnsResolver() {
   gpr_free(dns_server_);
   gpr_free(name_to_resolve_);
   grpc_channel_args_destroy(channel_args_);
+  ares_destroy(c_ares_channel_);
 }
 
 void AresDnsResolver::NextLocked(grpc_channel_args** target_result,
@@ -418,8 +424,8 @@ void AresDnsResolver::StartResolvingLocked() {
   resolving_ = true;
   service_config_json_ = nullptr;
   pending_request_ = grpc_dns_lookup_ares_locked(
-      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      &on_resolved_, &addresses_, true /* check_grpclb */,
+      c_ares_channel_, dns_server_, name_to_resolve_, kDefaultPort,
+      interested_parties_, &on_resolved_, &addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
