@@ -21,8 +21,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include <ares.h>
-
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
