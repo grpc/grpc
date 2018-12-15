@@ -18,6 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 /**
  * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
  */
@@ -66,7 +68,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * This method is called when gRPC is about to start the call. When OAuth token is acquired,
  * \a handler is expected to be called with \a token being the new token to be used for this call.
  */
-- (void)provideTokenToHandler:(void (^_Nullable)(NSString *_Nullable token))handler;
+- (void)provideTokenToHandler:(void (^)(NSString *_Nullable token))handler;
 
 /**
  * This method is deprecated. Please use \a provideTokenToHandler.
@@ -74,7 +76,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * This method is called when gRPC is about to start the call. When OAuth token is acquired,
  * \a handler is expected to be called with \a token being the new token to be used for this call.
  */
-- (void)getTokenWithHandler:(void (^_Nullable)(NSString *_Nullable token))handler;
+- (void)getTokenWithHandler:(void (^)(NSString *_Nullable token))handler;
 
 @end
 
@@ -210,7 +212,7 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 /**
  * Return if the channel options are equal to another object.
  */
-- (BOOL)hasChannelOptionsEqualTo:(nonnull GRPCCallOptions *)callOptions;
+- (BOOL)hasChannelOptionsEqualTo:(GRPCCallOptions *)callOptions;
 
 /**
  * Hash for channel options.
@@ -352,3 +354,5 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 @property(readwrite) NSUInteger channelID;
 
 @end
+
+NS_ASSUME_NONNULL_END
