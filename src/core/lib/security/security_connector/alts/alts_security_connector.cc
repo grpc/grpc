@@ -48,7 +48,7 @@ void alts_set_rpc_protocol_versions(
                                          GRPC_PROTOCOL_VERSION_MIN_MINOR);
 }
 
-void atls_check_peer(tsi_peer peer,
+void alts_check_peer(tsi_peer peer,
                      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                      grpc_closure* on_peer_checked) {
   *auth_context =
@@ -93,10 +93,10 @@ class grpc_alts_channel_security_connector final
         handshake_manager, grpc_security_handshaker_create(handshaker, this));
   }
 
-  void check_peer(tsi_peer peer,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    atls_check_peer(peer, auth_context, on_peer_checked);
+    alts_check_peer(peer, auth_context, on_peer_checked);
   }
 
   int cmp(const grpc_security_connector* other_sc) const override {
@@ -151,10 +151,10 @@ class grpc_alts_server_security_connector final
         handshake_manager, grpc_security_handshaker_create(handshaker, this));
   }
 
-  void check_peer(tsi_peer peer,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    atls_check_peer(peer, auth_context, on_peer_checked);
+    alts_check_peer(peer, auth_context, on_peer_checked);
   }
 
   int cmp(const grpc_security_connector* other) const override {

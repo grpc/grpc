@@ -71,7 +71,7 @@ class grpc_fake_channel_security_connector final
     if (target_name_override_ != nullptr) gpr_free(target_name_override_);
   }
 
-  void check_peer(tsi_peer peer,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
@@ -250,7 +250,8 @@ end:
 }
 
 void grpc_fake_channel_security_connector::check_peer(
-    tsi_peer peer, grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    tsi_peer peer, grpc_endpoint* ep,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   fake_check_peer(this, peer, auth_context, on_peer_checked);
   fake_secure_name_check();
@@ -265,7 +266,7 @@ class grpc_fake_server_security_connector
                                        std::move(server_creds)) {}
   ~grpc_fake_server_security_connector() override = default;
 
-  void check_peer(tsi_peer peer,
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     fake_check_peer(this, peer, auth_context, on_peer_checked);

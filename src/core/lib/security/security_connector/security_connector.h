@@ -56,7 +56,8 @@ class grpc_security_connector
   /* Check the peer. Callee takes ownership of the peer object.
      When done, sets *auth_context and invokes on_peer_checked. */
   virtual void check_peer(
-      tsi_peer peer, grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+      tsi_peer peer, grpc_endpoint* ep,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) GRPC_ABSTRACT;
 
   /* Compares two security connectors. */
