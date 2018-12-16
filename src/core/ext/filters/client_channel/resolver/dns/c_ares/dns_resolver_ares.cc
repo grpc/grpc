@@ -75,11 +75,14 @@ class AresDnsResolver : public Resolver {
   virtual ~AresDnsResolver();
 
   void MaybeStartResolvingLocked();
-  void StartResolvingLocked();
+  void ContinueStartResolvingLockedInner();
   void MaybeFinishNextLocked();
+  void EnterStartResolvingQueueLocked();
+  void ExitStartResolvingQueueLocked();
 
   static void OnNextResolutionLocked(void* arg, grpc_error* error);
   static void OnResolvedLocked(void* arg, grpc_error* error);
+  static void ContinueStartResolvingLocked(void* arg, grpc_error* error);
 
   /// DNS server to use (if not system default)
   char* dns_server_;
@@ -125,7 +128,17 @@ class AresDnsResolver : public Resolver {
   bool shutdown_initiated_ = false;
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
+  // closure that initiates a c-ares lookup
+  grpc_closure continue_start_resolving_locked_;
+  // This field is synchronized by the global start
+  // resolving queue's lock.
+  AresDnsResolver* start_resolving_queue_next_ = nullptr;
 };
+
+// start_resolving queue is a way to rate-limit c-ares resolution
+// initiations across all channels
+gpr_mu g_start_resolving_queue_mu;
+AresDnsResolver* g_start_resolving_queue_head;
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
     : Resolver(args.combiner),
@@ -167,6 +180,9 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
   query_timeout_ms_ = grpc_channel_arg_get_integer(
       query_timeout_ms_arg,
       {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX});
+  GRPC_CLOSURE_INIT(&continue_start_resolving_locked_,
+                    AresDnsResolver::ContinueStartResolvingLocked, this,
+                    grpc_combiner_scheduler(combiner()));
 }
 
 AresDnsResolver::~AresDnsResolver() {
@@ -234,7 +250,7 @@ void AresDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
     if (!r->resolving_) {
       GRPC_CARES_TRACE_LOG(
           "resolver:%p start resolving due to re-resolution timer", r);
-      r->StartResolvingLocked();
+      r->EnterStartResolvingQueueLocked();
     }
   }
   r->Unref(DEBUG_LOCATION, "next_resolution_timer");
@@ -405,18 +421,11 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       return;
     }
   }
-  StartResolvingLocked();
+  EnterStartResolvingQueueLocked();
 }
 
-void AresDnsResolver::StartResolvingLocked() {
-  // TODO(roth): We currently deal with this ref manually.  Once the
-  // new closure API is done, find a way to track this ref with the timer
-  // callback as part of the type system.
-  RefCountedPtr<Resolver> self = Ref(DEBUG_LOCATION, "dns-resolving");
-  self.release();
-  GPR_ASSERT(!resolving_);
-  resolving_ = true;
-  service_config_json_ = nullptr;
+void AresDnsResolver::ContinueStartResolvingLockedInner() {
+  GPR_ASSERT(resolving_);
   pending_request_ = grpc_dns_lookup_ares_locked(
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, true /* check_grpclb */,
@@ -438,6 +447,55 @@ void AresDnsResolver::MaybeFinishNextLocked() {
     next_completion_ = nullptr;
     published_version_ = resolved_version_;
   }
+}
+
+void AresDnsResolver::EnterStartResolvingQueueLocked() {
+  // TODO(roth): We currently deal with this ref manually.  Once the
+  // new closure API is done, find a way to track this ref with the timer
+  // callback as part of the type system.
+  RefCountedPtr<Resolver> self = Ref(DEBUG_LOCATION, "dns-resolving");
+  self.release();
+  GPR_ASSERT(!resolving_);
+  resolving_ = true;
+  service_config_json_ = nullptr;
+  gpr_mu_lock(&g_start_resolving_queue_mu);
+  GPR_ASSERT(start_resolving_queue_next_ == nullptr);
+  if (g_start_resolving_queue_head == nullptr) {
+    GRPC_CLOSURE_SCHED(&continue_start_resolving_locked_, GRPC_ERROR_NONE);
+    g_start_resolving_queue_head = this;
+  } else {
+    AresDnsResolver* cur = g_start_resolving_queue_head;
+    while (cur->start_resolving_queue_next_ != nullptr) {
+      cur = cur->start_resolving_queue_next_;
+    }
+    cur->start_resolving_queue_next_ = this;
+  }
+  gpr_mu_unlock(&g_start_resolving_queue_mu);
+}
+
+void AresDnsResolver::ExitStartResolvingQueueLocked() {
+  gpr_mu_lock(&g_start_resolving_queue_mu);
+  GPR_ASSERT(g_start_resolving_queue_head == this);
+  if (start_resolving_queue_next_ != nullptr) {
+    GRPC_CLOSURE_SCHED(
+        &start_resolving_queue_next_->continue_start_resolving_locked_,
+        GRPC_ERROR_NONE);
+  }
+  g_start_resolving_queue_head = start_resolving_queue_next_;
+  start_resolving_queue_next_ = nullptr;
+  gpr_mu_unlock(&g_start_resolving_queue_mu);
+}
+
+void AresDnsResolver::ContinueStartResolvingLocked(void* arg,
+                                                   grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  if (r->shutdown_initiated_) {
+    GRPC_CLOSURE_SCHED(&r->on_resolved_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                             "Shutdown initiated"));
+  } else {
+    r->ContinueStartResolvingLockedInner();
+  }
+  r->ExitStartResolvingQueueLocked();
 }
 
 //
@@ -490,6 +548,7 @@ void grpc_resolver_dns_ares_init() {
     if (default_resolver == nullptr) {
       default_resolver = grpc_resolve_address_impl;
     }
+    gpr_mu_init(&grpc_core::g_start_resolving_queue_mu);
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
@@ -503,6 +562,7 @@ void grpc_resolver_dns_ares_shutdown() {
   if (should_use_ares(resolver_env)) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
+    gpr_mu_destroy(&grpc_core::g_start_resolving_queue_mu);
   }
   gpr_free(resolver_env);
 }
