@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -42,22 +43,23 @@ int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
 }
 
 RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
-    grpc_lb_addresses* addresses) {
+    const ServerAddressList& addresses) {
   TargetAuthorityTable::Entry* target_authority_entries =
-      static_cast<TargetAuthorityTable::Entry*>(gpr_zalloc(
-          sizeof(*target_authority_entries) * addresses->num_addresses));
-  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+      static_cast<TargetAuthorityTable::Entry*>(
+          gpr_zalloc(sizeof(*target_authority_entries) * addresses.size()));
+  for (size_t i = 0; i < addresses.size(); ++i) {
     char* addr_str;
-    GPR_ASSERT(grpc_sockaddr_to_string(
-                   &addr_str, &addresses->addresses[i].address, true) > 0);
+    GPR_ASSERT(
+        grpc_sockaddr_to_string(&addr_str, &addresses[i].address(), true) > 0);
     target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
-    target_authority_entries[i].value.reset(
-        gpr_strdup(addresses->addresses[i].balancer_name));
     gpr_free(addr_str);
+    char* balancer_name = grpc_channel_arg_get_string(grpc_channel_args_find(
+        addresses[i].args(), GRPC_ARG_ADDRESS_BALANCER_NAME));
+    target_authority_entries[i].value.reset(gpr_strdup(balancer_name));
   }
   RefCountedPtr<TargetAuthorityTable> target_authority_table =
-      TargetAuthorityTable::Create(addresses->num_addresses,
-                                   target_authority_entries, BalancerNameCmp);
+      TargetAuthorityTable::Create(addresses.size(), target_authority_entries,
+                                   BalancerNameCmp);
   gpr_free(target_authority_entries);
   return target_authority_table;
 }
@@ -72,13 +74,12 @@ grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
   grpc_arg args_to_add[2];
   size_t num_args_to_add = 0;
   // Add arg for targets info table.
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses =
-      static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+  grpc_core::ServerAddressList* addresses =
+      grpc_core::FindServerAddressListChannelArg(args);
+  GPR_ASSERT(addresses != nullptr);
   grpc_core::RefCountedPtr<grpc_core::TargetAuthorityTable>
-      target_authority_table = grpc_core::CreateTargetAuthorityTable(addresses);
+      target_authority_table =
+          grpc_core::CreateTargetAuthorityTable(*addresses);
   args_to_add[num_args_to_add++] =
       grpc_core::CreateTargetAuthorityTableChannelArg(
           target_authority_table.get());
@@ -87,22 +88,18 @@ grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
   // bearer token credentials.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
-  grpc_channel_credentials* creds_sans_call_creds = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
   if (channel_credentials != nullptr) {
     creds_sans_call_creds =
-        grpc_channel_credentials_duplicate_without_call_credentials(
-            channel_credentials);
+        channel_credentials->duplicate_without_call_credentials();
     GPR_ASSERT(creds_sans_call_creds != nullptr);
     args_to_remove[num_args_to_remove++] = GRPC_ARG_CHANNEL_CREDENTIALS;
     args_to_add[num_args_to_add++] =
-        grpc_channel_credentials_to_arg(creds_sans_call_creds);
+        grpc_channel_credentials_to_arg(creds_sans_call_creds.get());
   }
   grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, num_args_to_remove, args_to_add, num_args_to_add);
   // Clean up.
   grpc_channel_args_destroy(args);
-  if (creds_sans_call_creds != nullptr) {
-    grpc_channel_credentials_unref(creds_sans_call_creds);
-  }
   return result;
 }

@@ -21,7 +21,6 @@
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpcpp/impl/codegen/call.h>
-#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 

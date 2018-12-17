@@ -39,120 +39,24 @@
 
 /* -- Common. -- */
 
-grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
-    grpc_call_credentials* creds) {
-  grpc_credentials_metadata_request* r =
-      static_cast<grpc_credentials_metadata_request*>(
-          gpr_zalloc(sizeof(grpc_credentials_metadata_request)));
-  r->creds = grpc_call_credentials_ref(creds);
-  return r;
-}
-
-void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r) {
-  grpc_call_credentials_unref(r->creds);
-  grpc_http_response_destroy(&r->response);
-  gpr_free(r);
-}
-
-grpc_channel_credentials* grpc_channel_credentials_ref(
-    grpc_channel_credentials* creds) {
-  if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
-  return creds;
-}
-
-void grpc_channel_credentials_unref(grpc_channel_credentials* creds) {
-  if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != nullptr) {
-      creds->vtable->destruct(creds);
-    }
-    gpr_free(creds);
-  }
-}
-
 void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   GRPC_API_TRACE("grpc_channel_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;
-  grpc_channel_credentials_unref(creds);
-}
-
-grpc_call_credentials* grpc_call_credentials_ref(grpc_call_credentials* creds) {
-  if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
-  return creds;
-}
-
-void grpc_call_credentials_unref(grpc_call_credentials* creds) {
-  if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != nullptr) {
-      creds->vtable->destruct(creds);
-    }
-    gpr_free(creds);
-  }
+  if (creds) creds->Unref();
 }
 
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
   GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;
-  grpc_call_credentials_unref(creds);
-}
-
-bool grpc_call_credentials_get_request_metadata(
-    grpc_call_credentials* creds, grpc_polling_entity* pollent,
-    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
-    grpc_closure* on_request_metadata, grpc_error** error) {
-  if (creds == nullptr || creds->vtable->get_request_metadata == nullptr) {
-    return true;
-  }
-  return creds->vtable->get_request_metadata(creds, pollent, context, md_array,
-                                             on_request_metadata, error);
-}
-
-void grpc_call_credentials_cancel_get_request_metadata(
-    grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
-    grpc_error* error) {
-  if (creds == nullptr ||
-      creds->vtable->cancel_get_request_metadata == nullptr) {
-    return;
-  }
-  creds->vtable->cancel_get_request_metadata(creds, md_array, error);
-}
-
-grpc_security_status grpc_channel_credentials_create_security_connector(
-    grpc_channel_credentials* channel_creds, const char* target,
-    const grpc_channel_args* args, grpc_channel_security_connector** sc,
-    grpc_channel_args** new_args) {
-  *new_args = nullptr;
-  if (channel_creds == nullptr) {
-    return GRPC_SECURITY_ERROR;
-  }
-  GPR_ASSERT(channel_creds->vtable->create_security_connector != nullptr);
-  return channel_creds->vtable->create_security_connector(
-      channel_creds, nullptr, target, args, sc, new_args);
-}
-
-grpc_channel_credentials*
-grpc_channel_credentials_duplicate_without_call_credentials(
-    grpc_channel_credentials* channel_creds) {
-  if (channel_creds != nullptr && channel_creds->vtable != nullptr &&
-      channel_creds->vtable->duplicate_without_call_credentials != nullptr) {
-    return channel_creds->vtable->duplicate_without_call_credentials(
-        channel_creds);
-  } else {
-    return grpc_channel_credentials_ref(channel_creds);
-  }
+  if (creds) creds->Unref();
 }
 
 static void credentials_pointer_arg_destroy(void* p) {
-  grpc_channel_credentials_unref(static_cast<grpc_channel_credentials*>(p));
+  static_cast<grpc_channel_credentials*>(p)->Unref();
 }
 
 static void* credentials_pointer_arg_copy(void* p) {
-  return grpc_channel_credentials_ref(
-      static_cast<grpc_channel_credentials*>(p));
+  return static_cast<grpc_channel_credentials*>(p)->Ref().release();
 }
 
 static int credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
@@ -191,63 +95,35 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
   return nullptr;
 }
 
-grpc_server_credentials* grpc_server_credentials_ref(
-    grpc_server_credentials* creds) {
-  if (creds == nullptr) return nullptr;
-  gpr_ref(&creds->refcount);
-  return creds;
-}
-
-void grpc_server_credentials_unref(grpc_server_credentials* creds) {
-  if (creds == nullptr) return;
-  if (gpr_unref(&creds->refcount)) {
-    if (creds->vtable->destruct != nullptr) {
-      creds->vtable->destruct(creds);
-    }
-    if (creds->processor.destroy != nullptr &&
-        creds->processor.state != nullptr) {
-      creds->processor.destroy(creds->processor.state);
-    }
-    gpr_free(creds);
-  }
-}
-
 void grpc_server_credentials_release(grpc_server_credentials* creds) {
   GRPC_API_TRACE("grpc_server_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;
-  grpc_server_credentials_unref(creds);
+  if (creds) creds->Unref();
 }
 
-grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials* creds, grpc_server_security_connector** sc) {
-  if (creds == nullptr || creds->vtable->create_security_connector == nullptr) {
-    gpr_log(GPR_ERROR, "Server credentials cannot create security context.");
-    return GRPC_SECURITY_ERROR;
-  }
-  return creds->vtable->create_security_connector(creds, sc);
-}
-
-void grpc_server_credentials_set_auth_metadata_processor(
-    grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
+void grpc_server_credentials::set_auth_metadata_processor(
+    const grpc_auth_metadata_processor& processor) {
   GRPC_API_TRACE(
       "grpc_server_credentials_set_auth_metadata_processor("
       "creds=%p, "
       "processor=grpc_auth_metadata_processor { process: %p, state: %p })",
-      3, (creds, (void*)(intptr_t)processor.process, processor.state));
-  if (creds == nullptr) return;
-  if (creds->processor.destroy != nullptr &&
-      creds->processor.state != nullptr) {
-    creds->processor.destroy(creds->processor.state);
-  }
-  creds->processor = processor;
+      3, (this, (void*)(intptr_t)processor.process, processor.state));
+  DestroyProcessor();
+  processor_ = processor;
+}
+
+void grpc_server_credentials_set_auth_metadata_processor(
+    grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
+  GPR_DEBUG_ASSERT(creds != nullptr);
+  creds->set_auth_metadata_processor(processor);
 }
 
 static void server_credentials_pointer_arg_destroy(void* p) {
-  grpc_server_credentials_unref(static_cast<grpc_server_credentials*>(p));
+  static_cast<grpc_server_credentials*>(p)->Unref();
 }
 
 static void* server_credentials_pointer_arg_copy(void* p) {
-  return grpc_server_credentials_ref(static_cast<grpc_server_credentials*>(p));
+  return static_cast<grpc_server_credentials*>(p)->Ref().release();
 }
 
 static int server_credentials_pointer_cmp(void* a, void* b) {

@@ -30,9 +30,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -40,32 +42,11 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-
-// Converts string format from JSON to proto.
-grpc_core::UniquePtr<char> ConvertCamelToSnake(const char* camel) {
-  const size_t size = strlen(camel);
-  char* snake = static_cast<char*>(gpr_malloc(size * 2));
-  size_t j = 0;
-  for (size_t i = 0; i < size; ++i) {
-    if (isupper(camel[i])) {
-      snake[j++] = '_';
-      snake[j++] = tolower(camel[i]);
-    } else {
-      snake[j++] = camel[i];
-    }
-  }
-  snake[j] = '\0';
-  return grpc_core::UniquePtr<char>(snake);
-}
-
-}  // namespace
-
 ProcessedResolverResult::ProcessedResolverResult(
     const grpc_channel_args* resolver_result, bool parse_retry) {
   ProcessServiceConfig(resolver_result, parse_retry);
   // If no LB config was found above, just find the LB policy name then.
-  if (lb_policy_config_ == nullptr) ProcessLbPolicyName(resolver_result);
+  if (lb_policy_name_ == nullptr) ProcessLbPolicyName(resolver_result);
 }
 
 void ProcessedResolverResult::ProcessServiceConfig(
@@ -98,41 +79,55 @@ void ProcessedResolverResult::ProcessServiceConfig(
 
 void ProcessedResolverResult::ProcessLbPolicyName(
     const grpc_channel_args* resolver_result) {
-  const char* lb_policy_name = nullptr;
   // Prefer the LB policy name found in the service config. Note that this is
   // checking the deprecated loadBalancingPolicy field, rather than the new
   // loadBalancingConfig field.
   if (service_config_ != nullptr) {
-    lb_policy_name = service_config_->GetLoadBalancingPolicyName();
+    lb_policy_name_.reset(
+        gpr_strdup(service_config_->GetLoadBalancingPolicyName()));
+    // Convert to lower-case.
+    if (lb_policy_name_ != nullptr) {
+      char* lb_policy_name = lb_policy_name_.get();
+      for (size_t i = 0; i < strlen(lb_policy_name); ++i) {
+        lb_policy_name[i] = tolower(lb_policy_name[i]);
+      }
+    }
   }
   // Otherwise, find the LB policy name set by the client API.
-  if (lb_policy_name == nullptr) {
+  if (lb_policy_name_ == nullptr) {
     const grpc_arg* channel_arg =
         grpc_channel_args_find(resolver_result, GRPC_ARG_LB_POLICY_NAME);
-    lb_policy_name = grpc_channel_arg_get_string(channel_arg);
+    lb_policy_name_.reset(gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
   }
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result, GRPC_ARG_LB_ADDRESSES);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
-      if (lb_policy_name != nullptr &&
-          gpr_stricmp(lb_policy_name, "grpclb") != 0) {
+  const ServerAddressList* addresses =
+      FindServerAddressListChannelArg(resolver_result);
+  if (addresses != nullptr) {
+    bool found_balancer_address = false;
+    for (size_t i = 0; i < addresses->size(); ++i) {
+      const ServerAddress& address = (*addresses)[i];
+      if (address.IsBalancer()) {
+        found_balancer_address = true;
+        break;
+      }
+    }
+    if (found_balancer_address) {
+      if (lb_policy_name_ != nullptr &&
+          strcmp(lb_policy_name_.get(), "grpclb") != 0) {
         gpr_log(GPR_INFO,
                 "resolver requested LB policy %s but provided at least one "
                 "balancer address -- forcing use of grpclb LB policy",
-                lb_policy_name);
+                lb_policy_name_.get());
       }
-      lb_policy_name = "grpclb";
+      lb_policy_name_.reset(gpr_strdup("grpclb"));
     }
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
-  if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
-  lb_policy_name_.reset(gpr_strdup(lb_policy_name));
+  if (lb_policy_name_ == nullptr) {
+    lb_policy_name_.reset(gpr_strdup("pick_first"));
+  }
 }
 
 void ProcessedResolverResult::ParseServiceConfig(
@@ -175,15 +170,13 @@ void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
       if (policy_content != nullptr) return;  // Violate "oneof" type.
       policy_content = field;
     }
-    grpc_core::UniquePtr<char> lb_policy_name =
-        ConvertCamelToSnake(policy_content->key);
-    if (!grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            lb_policy_name.get())) {
-      continue;
+    // If we support this policy, then select it.
+    if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+            policy_content->key)) {
+      lb_policy_name_.reset(gpr_strdup(policy_content->key));
+      lb_policy_config_ = policy_content->child;
+      return;
     }
-    lb_policy_name_ = std::move(lb_policy_name);
-    lb_policy_config_ = policy_content->child;
-    return;
   }
 }
 

@@ -1135,6 +1135,7 @@ auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
 backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
+bm_byte_buffer: $(BINDIR)/$(CONFIG)/bm_byte_buffer
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
 bm_channel: $(BINDIR)/$(CONFIG)/bm_channel
 bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
@@ -1641,6 +1642,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
+  $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_channel \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -1825,6 +1827,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/backoff_test \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
+  $(BINDIR)/$(CONFIG)/bm_byte_buffer \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_channel \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -2259,6 +2262,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_arena"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_byte_buffer"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_byte_buffer || ( echo test bm_byte_buffer failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_call_create || ( echo test bm_call_create failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_channel"
@@ -3710,7 +3715,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -3719,6 +3723,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -4056,7 +4061,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -4065,6 +4069,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -4421,7 +4426,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -4430,6 +4434,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -4728,7 +4733,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -4737,6 +4741,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -5035,7 +5040,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -5044,6 +5048,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -5333,6 +5338,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -5862,7 +5868,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
-    src/core/ext/filters/client_channel/lb_policy_factory.cc \
     src/core/ext/filters/client_channel/lb_policy_registry.cc \
     src/core/ext/filters/client_channel/parse_address.cc \
     src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -5871,6 +5876,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/resolver_result_parsing.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/server_address.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -5926,6 +5932,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -6416,6 +6423,7 @@ LIBGRPC++_TEST_UTIL_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc \
+    test/cpp/end2end/test_health_check_service_impl.cc \
     test/cpp/end2end/test_service_impl.cc \
     test/cpp/util/byte_buffer_proto_helper.cc \
     test/cpp/util/channel_trace_proto_helper.cc \
@@ -6568,6 +6576,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_UTIL_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_health_check_service_impl.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/channel_trace_proto_helper.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
@@ -6584,6 +6593,7 @@ LIBGRPC++_TEST_UTIL_UNSECURE_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc \
+    test/cpp/end2end/test_health_check_service_impl.cc \
     test/cpp/end2end/test_service_impl.cc \
     test/cpp/util/byte_buffer_proto_helper.cc \
     test/cpp/util/string_ref_helper.cc \
@@ -6733,6 +6743,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBGRPC++_TEST_UTIL_UNSECURE_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_health_check_service_impl.o: $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/test_service_impl.o: $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/byte_buffer_proto_helper.o: $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/test/cpp/util/string_ref_helper.o: $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc $(GENDIR)/src/proto/grpc/health/v1/health.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc $(GENDIR)/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/simple_messages.grpc.pb.cc
@@ -6830,6 +6841,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
     include/grpcpp/alarm.h \
+    include/grpcpp/alarm_impl.h \
     include/grpcpp/channel.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
@@ -16054,6 +16066,50 @@ endif
 endif
 
 
+BM_BYTE_BUFFER_SRC = \
+    test/cpp/microbenchmarks/bm_byte_buffer.cc \
+
+BM_BYTE_BUFFER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_BYTE_BUFFER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_byte_buffer: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bm_byte_buffer: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_byte_buffer: $(PROTOBUF_DEP) $(BM_BYTE_BUFFER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_BYTE_BUFFER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_byte_buffer
+
+endif
+
+endif
+
+$(BM_BYTE_BUFFER_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_byte_buffer.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_bm_byte_buffer: $(BM_BYTE_BUFFER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_BYTE_BUFFER_OBJS:.o=.dep)
+endif
+endif
+
+
 BM_CALL_CREATE_SRC = \
     test/cpp/microbenchmarks/bm_call_create.cc \
 
@@ -25119,6 +25175,7 @@ test/core/tsi/alts/crypt/gsec_test_util.cc: $(OPENSSL_DEP)
 test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc: $(OPENSSL_DEP)
 test/core/util/reconnect_server.cc: $(OPENSSL_DEP)
 test/core/util/test_tcp_server.cc: $(OPENSSL_DEP)
+test/cpp/end2end/test_health_check_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)
