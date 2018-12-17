@@ -63,7 +63,7 @@ class GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-def run_server(port_queue,):
+def run_server(port_queue):
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=10),
         options=(('grpc.so_reuseport', 0),))

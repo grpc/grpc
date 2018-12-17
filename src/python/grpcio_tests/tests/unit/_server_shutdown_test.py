@@ -74,6 +74,7 @@ class ServerShutdown(unittest.TestCase):
             stderr=sys.stderr)
         wait(process)
 
+    @unittest.skipIf(os.name == 'nt', 'fork not supported on windows')
     def test_server_fork_can_exit(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_server_shutdown_scenarios.SERVER_FORK_CAN_EXIT],
