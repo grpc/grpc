@@ -325,7 +325,11 @@ class CallOpSendMessage {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* interceptor_methods) {
+    // The contents of the SendMessage value that was previously set
+    // has had its references stolen by core's operations
+    interceptor_methods->SetSendMessage(nullptr);
+  }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
