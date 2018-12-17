@@ -71,6 +71,7 @@ def wait(process):
     process.wait()
 
 
+@unittest.skip('https://github.com/grpc/grpc/issues/7311')
 class ExitTest(unittest.TestCase):
 
     def test_unstarted_server(self):
@@ -129,8 +130,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_unary_unary_call(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_UNARY_CALL],
@@ -139,8 +138,6 @@ class ExitTest(unittest.TestCase):
         interrupt_and_wait(process)
 
     @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_unary_stream_call(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_UNARY_STREAM_CALL],
@@ -148,8 +145,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_stream_unary_call(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_UNARY_CALL],
@@ -158,8 +153,6 @@ class ExitTest(unittest.TestCase):
         interrupt_and_wait(process)
 
     @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_stream_stream_call(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_exit_scenarios.IN_FLIGHT_STREAM_STREAM_CALL],
@@ -168,8 +161,6 @@ class ExitTest(unittest.TestCase):
         interrupt_and_wait(process)
 
     @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_partial_unary_stream_call(self):
         process = subprocess.Popen(
             BASE_COMMAND +
@@ -178,8 +169,6 @@ class ExitTest(unittest.TestCase):
             stderr=sys.stderr)
         interrupt_and_wait(process)
 
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_partial_stream_unary_call(self):
         process = subprocess.Popen(
             BASE_COMMAND +
@@ -189,8 +178,6 @@ class ExitTest(unittest.TestCase):
         interrupt_and_wait(process)
 
     @unittest.skipIf(six.PY2, 'https://github.com/grpc/grpc/issues/6999')
-    @unittest.skipIf(os.name == 'nt',
-                     'os.kill does not have required permission on Windows')
     def test_in_flight_partial_stream_stream_call(self):
         process = subprocess.Popen(
             BASE_COMMAND +
