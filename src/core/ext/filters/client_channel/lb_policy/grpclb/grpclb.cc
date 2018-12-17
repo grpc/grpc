@@ -525,8 +525,7 @@ void GrpcLb::BalancerCallState::Orphan() {
 void GrpcLb::BalancerCallState::StartQuery() {
   GPR_ASSERT(lb_call_ != nullptr);
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] Starting LB call (lb_calld: %p, lb_call: %p)",
+    gpr_log(GPR_INFO, "[grpclb %p] lb_calld=%p: Starting LB call %p",
             grpclb_policy_.get(), this, lb_call_);
   }
   // Create the ops.
@@ -670,8 +669,9 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_closure_);
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR, "[grpclb %p] call_error=%d", grpclb_policy_.get(),
-            call_error);
+    gpr_log(GPR_ERROR,
+            "[grpclb %p] lb_calld=%p call_error=%d sending client load report",
+            grpclb_policy_.get(), this, call_error);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
 }
@@ -732,15 +732,17 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
                               &initial_response->client_stats_report_interval));
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "[grpclb %p] Received initial LB response message; "
-                "client load reporting interval = %" PRId64 " milliseconds",
-                grpclb_policy, lb_calld->client_stats_report_interval_);
+                "[grpclb %p] lb_calld=%p: Received initial LB response "
+                "message; client load reporting interval = %" PRId64
+                " milliseconds",
+                grpclb_policy, lb_calld,
+                lb_calld->client_stats_report_interval_);
       }
     } else if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[grpclb %p] Received initial LB response message; client load "
-              "reporting NOT enabled",
-              grpclb_policy);
+              "[grpclb %p] lb_calld=%p: Received initial LB response message; "
+              "client load reporting NOT enabled",
+              grpclb_policy, lb_calld);
     }
     grpc_grpclb_initial_response_destroy(initial_response);
     lb_calld->seen_initial_response_ = true;
@@ -750,15 +752,17 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     GPR_ASSERT(lb_calld->lb_call_ != nullptr);
     if (grpc_lb_glb_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "[grpclb %p] Serverlist with %" PRIuPTR " servers received",
-              grpclb_policy, serverlist->num_servers);
+              "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
+              " servers received",
+              grpclb_policy, lb_calld, serverlist->num_servers);
       for (size_t i = 0; i < serverlist->num_servers; ++i) {
         grpc_resolved_address addr;
         ParseServer(serverlist->servers[i], &addr);
         char* ipport;
         grpc_sockaddr_to_string(&ipport, &addr, false);
-        gpr_log(GPR_INFO, "[grpclb %p] Serverlist[%" PRIuPTR "]: %s",
-                grpclb_policy, i, ipport);
+        gpr_log(GPR_INFO,
+                "[grpclb %p] lb_calld=%p: Serverlist[%" PRIuPTR "]: %s",
+                grpclb_policy, lb_calld, i, ipport);
         gpr_free(ipport);
       }
     }
@@ -778,9 +782,9 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     if (grpc_grpclb_serverlist_equals(grpclb_policy->serverlist_, serverlist)) {
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "[grpclb %p] Incoming server list identical to current, "
-                "ignoring.",
-                grpclb_policy);
+                "[grpclb %p] lb_calld=%p: Incoming server list identical to "
+                "current, ignoring.",
+                grpclb_policy, lb_calld);
       }
       grpc_grpclb_destroy_serverlist(serverlist);
     } else {  // New serverlist.
@@ -806,8 +810,9 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     char* response_slice_str =
         grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
     gpr_log(GPR_ERROR,
-            "[grpclb %p] Invalid LB response received: '%s'. Ignoring.",
-            grpclb_policy, response_slice_str);
+            "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
+            "Ignoring.",
+            grpclb_policy, lb_calld, response_slice_str);
     gpr_free(response_slice_str);
   }
   grpc_slice_unref_internal(response_slice);
@@ -838,9 +843,9 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     char* status_details =
         grpc_slice_to_c_string(lb_calld->lb_call_status_details_);
     gpr_log(GPR_INFO,
-            "[grpclb %p] Status from LB server received. Status = %d, details "
-            "= '%s', (lb_calld: %p, lb_call: %p), error '%s'",
-            grpclb_policy, lb_calld->lb_call_status_, status_details, lb_calld,
+            "[grpclb %p] lb_calld=%p: Status from LB server received. "
+            "Status = %d, details = '%s', (lb_call: %p), error '%s'",
+            grpclb_policy, lb_calld, lb_calld->lb_call_status_, status_details,
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
@@ -1592,6 +1597,10 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
             this);
     return;
   }
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
+            rr_policy_.get());
+  }
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
   auto self = Ref(DEBUG_LOCATION, "on_rr_reresolution_requested");
@@ -1685,10 +1694,6 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
     CreateRoundRobinPolicyLocked(lb_policy_args);
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
-              rr_policy_.get());
-    }
   }
   grpc_channel_args_destroy(args);
 }
