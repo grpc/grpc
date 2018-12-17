@@ -85,7 +85,9 @@ END2END_FIXTURES = {
         client_channel = False,
     ),
     "h2_ssl": _fixture_options(secure = True),
-    "h2_local": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_uds": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
@@ -376,6 +378,7 @@ def grpc_end2end_tests():
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
+            ":local_util",
         ],
     )
 
@@ -425,6 +428,7 @@ def grpc_end2end_nosec_tests():
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
+            ":local_util",
         ],
     )
 

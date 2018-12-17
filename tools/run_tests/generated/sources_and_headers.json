@@ -6026,9 +6026,43 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_local_test", 
+    "name": "h2_local_ipv4_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_local.cc"
+      "test/core/end2end/fixtures/h2_local_ipv4.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_ipv6_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_ipv6.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_uds_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_uds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -10397,6 +10431,7 @@
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -10425,6 +10460,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.cc", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.cc", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.cc", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
