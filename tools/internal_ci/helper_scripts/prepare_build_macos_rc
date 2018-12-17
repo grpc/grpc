@@ -19,14 +19,6 @@
 launchctl limit maxfiles
 ulimit -a
 
-# synchronize the clock
-date
-sudo systemsetup -setusingnetworktime off
-sudo systemsetup -setnetworktimeserver "$( ipconfig getoption en0 server_identifier )"
-sudo systemsetup -settimezone America/Los_Angeles
-sudo systemsetup -setusingnetworktime on
-date
-
 # Add GCP credentials for BQ access
 pip install google-api-python-client oauth2client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
