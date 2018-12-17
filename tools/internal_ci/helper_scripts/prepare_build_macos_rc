@@ -19,14 +19,6 @@
 launchctl limit maxfiles
 ulimit -a
 
-# synchronize the clock
-date
-sudo systemsetup -setusingnetworktime off
-sudo systemsetup -setnetworktimeserver "$( ipconfig getoption en0 server_identifier )"
-sudo systemsetup -settimezone America/Los_Angeles
-sudo systemsetup -setusingnetworktime on
-date
-
 # Add GCP credentials for BQ access
 # pin google-api-python-client to avoid https://github.com/grpc/grpc/issues/15600
 pip install google-api-python-client==1.6.7 --user python
