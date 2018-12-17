@@ -11089,7 +11089,6 @@ target_link_libraries(bm_byte_buffer
   grpc_test_util_unsecure
   grpc++_unsecure
   grpc_unsecure
-  gpr_test_util
   gpr
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}

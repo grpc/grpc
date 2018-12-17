@@ -3904,7 +3904,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
