@@ -20,6 +20,7 @@ import time
 import logging
 
 import grpc
+from tests.unit import test_common
 
 from concurrent import futures
 from six.moves import queue
@@ -36,37 +37,24 @@ SERVER_FORK_CAN_EXIT = 'server_fork_can_exit'
 FORK_EXIT = '/test/ForkExit'
 
 
-class ForkExitHandler(object):
-
-    def unary_unary(self, request, servicer_context):
-        pid = os.fork()
-        if pid == 0:
-            os._exit(0)
-        return RESPONSE
-
-    def __init__(self):
-        self.request_streaming = None
-        self.response_streaming = None
-        self.request_deserializer = None
-        self.response_serializer = None
-        self.unary_stream = None
-        self.stream_unary = None
-        self.stream_stream = None
+def fork_and_exit(request, servicer_context):
+    pid = os.fork()
+    if pid == 0:
+        os._exit(0)
+    return RESPONSE
 
 
 class GenericHandler(grpc.GenericRpcHandler):
 
     def service(self, handler_call_details):
         if handler_call_details.method == FORK_EXIT:
-            return ForkExitHandler()
+            return grpc.unary_unary_rpc_method_handler(fork_and_exit)
         else:
             return None
 
 
 def run_server(port_queue):
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=10),
-        options=(('grpc.so_reuseport', 0),))
+    server = test_common.test_server()
     port = server.add_insecure_port('[::]:0')
     port_queue.put(port)
     server.add_generic_rpc_handlers((GenericHandler(),))
@@ -78,15 +66,11 @@ def run_server(port_queue):
 
 def run_test(args):
     if args.scenario == SERVER_RAISES_EXCEPTION:
-        server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=1),
-            options=(('grpc.so_reuseport', 0),))
+        server = test_common.test_server()
         server.start()
         raise Exception()
     elif args.scenario == SERVER_DEALLOCATED:
-        server = grpc.server(
-            futures.ThreadPoolExecutor(max_workers=1),
-            options=(('grpc.so_reuseport', 0),))
+        server = test_common.test_server()
         server.start()
         server.__del__()
         while server._state.stage != grpc._server._ServerStage.STOPPED:

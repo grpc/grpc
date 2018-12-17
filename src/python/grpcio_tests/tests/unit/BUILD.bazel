@@ -28,6 +28,7 @@ GRPCIO_TESTS_UNIT = [
     # TODO(ghostwriternr): To be added later.
     # "_server_ssl_cert_config_test.py",
     "_server_test.py",
+    "_server_shutdown_test.py",
     "_session_cache_test.py",
 ]
 

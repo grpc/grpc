@@ -60,6 +60,8 @@ def wait(process):
 
 class ServerShutdown(unittest.TestCase):
 
+    # Currently we shut down a server (if possible) after the Python server
+    # instance is garbage collected. This behavior may change in the future.
     def test_deallocated_server_stops(self):
         process = subprocess.Popen(
             BASE_COMMAND + [_server_shutdown_scenarios.SERVER_DEALLOCATED],
