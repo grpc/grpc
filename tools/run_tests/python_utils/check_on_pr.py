@@ -25,21 +25,21 @@ _GITHUB_API_PREFIX = 'https://api.github.com'
 _GITHUB_REPO = 'grpc/grpc'
 _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
-_GITHUB_APP_KEY = open(
-    os.path.join(os.environ['KOKORO_KEYSTORE_DIR'], '73836_grpc_checks_private_key'),
-    'rb').read()
 
 _ACCESS_TOKEN_CACHE = None
 
 
 def _jwt_token():
+    github_app_key = open(
+        os.path.join(os.environ['KOKORO_KEYSTORE_DIR'],
+                     '73836_grpc_checks_private_key'), 'rb').read()
     return jwt.encode(
         {
             'iat': int(time.time()),
             'exp': int(time.time() + 60 * 10),  # expire in 10 minutes
             'iss': _GITHUB_APP_ID,
         },
-        _GITHUB_APP_KEY,
+        github_app_key,
         algorithm='RS256')
 
 
@@ -90,25 +90,26 @@ def check_on_pr(name, summary, success=True):
       summary: A str in Markdown to be used as the detail information of the check.
       success: A bool indicates whether the check is succeed or not.
     """
-    if 'ghprbPullId' not in os.environ:
-        print('Missing ghprbPullId env var: not commenting')
+    if 'KOKORO_GIT_COMMIT' not in os.environ:
+        print('Missing KOKORO_GIT_COMMIT env var: not checking')
         return
-    commit = _latest_commit()
+    if 'KOKORO_KEYSTORE_DIR' not in os.environ:
+        print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
+        return
+    if 'ghprbPullId' not in os.environ:
+        print('Missing ghprbPullId env var: not checking')
+        return
+    completion_time = str(
+        datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
     resp = _call(
         '/repos/%s/check-runs' % _GITHUB_REPO,
         method='POST',
         json={
-            'name':
-            name,
-            'head_sha':
-            commit['sha'],
-            'status':
-            'completed',
-            'completed_at':
-            '%sZ' %
-            datetime.datetime.utcnow().replace(microsecond=0).isoformat(),
-            'conclusion':
-            'success' if success else 'failure',
+            'name': name,
+            'head_sha': os.environ['KOKORO_GIT_COMMIT'],
+            'status': 'completed',
+            'completed_at': completion_time,
+            'conclusion': 'success' if success else 'failure',
             'output': {
                 'title': name,
                 'summary': summary,
