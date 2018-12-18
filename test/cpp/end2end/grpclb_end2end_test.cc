@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <mutex>
+#include <set>
 #include <sstream>
 #include <thread>
 
@@ -145,6 +146,7 @@ class BackendServiceImpl : public BackendService {
     IncreaseRequestCount();
     const auto status = TestServiceImpl::Echo(context, request, response);
     IncreaseResponseCount();
+    AddClient(context->peer());
     return status;
   }
 
@@ -157,9 +159,21 @@ class BackendServiceImpl : public BackendService {
     return prev;
   }
 
+  std::set<grpc::string> clients() {
+    std::unique_lock<std::mutex> lock(clients_mu_);
+    return clients_;
+  }
+
  private:
+  void AddClient(const grpc::string& client) {
+    std::unique_lock<std::mutex> lock(clients_mu_);
+    clients_.insert(client);
+  }
+
   std::mutex mu_;
   bool shutdown_ = false;
+  std::mutex clients_mu_;
+  std::set<grpc::string> clients_;
 };
 
 grpc::string Ip4ToPackedString(const char* ip_str) {
@@ -303,6 +317,11 @@ class BalancerServiceImpl : public BalancerService {
       auto* server = response.mutable_server_list()->add_servers();
       server->set_ip_address(Ip4ToPackedString("127.0.0.1"));
       server->set_port(backend_port);
+      static int token_count = 0;
+      char* token;
+      gpr_asprintf(&token, "token%03d", ++token_count);
+      server->set_load_balance_token(token);
+      gpr_free(token);
     }
     return response;
   }
@@ -673,6 +692,28 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
+  SetNextResolutionAllBalancers();
+  // Same backend listed twice.
+  std::vector<int> ports;
+  ports.push_back(backend_servers_[0].port_);
+  ports.push_back(backend_servers_[0].port_);
+  const size_t kNumRpcsPerAddress = 10;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(ports, {}), 0);
+  // We need to wait for the backend to come online.
+  WaitForBackend(0);
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * ports.size());
+  // Backend should have gotten 20 requests.
+  EXPECT_EQ(kNumRpcsPerAddress * 2,
+            backend_servers_[0].service_->request_count());
+  // And they should have come from a single client port, because of
+  // subchannel sharing.
+  EXPECT_EQ(1UL, backends_[0]->clients().size());
+  balancers_[0]->NotifyDoneWithServerlists();
 }
 
 TEST_F(SingleBalancerTest, SecureNaming) {

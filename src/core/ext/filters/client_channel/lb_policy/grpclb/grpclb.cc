@@ -361,7 +361,9 @@ void lb_token_destroy(void* token) {
   }
 }
 int lb_token_cmp(void* token1, void* token2) {
-  return GPR_ICMP(token1, token2);
+  // Always indicate a match, since we don't want this channel arg to
+  // affect the subchannel's key in the index.
+  return 0;
 }
 const grpc_arg_pointer_vtable lb_token_arg_vtable = {
     lb_token_copy, lb_token_destroy, lb_token_cmp};
@@ -422,7 +424,7 @@ ServerAddressList ProcessServerlist(const grpc_grpclb_serverlist* serverlist) {
     grpc_resolved_address addr;
     ParseServer(server, &addr);
     // LB token processing.
-    void* lb_token;
+    grpc_mdelem lb_token;
     if (server->has_load_balance_token) {
       const size_t lb_token_max_length =
           GPR_ARRAY_SIZE(server->load_balance_token);
@@ -430,9 +432,7 @@ ServerAddressList ProcessServerlist(const grpc_grpclb_serverlist* serverlist) {
           strnlen(server->load_balance_token, lb_token_max_length);
       grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
           server->load_balance_token, lb_token_length);
-      lb_token =
-          (void*)grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr)
-              .payload;
+      lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
@@ -440,14 +440,16 @@ ServerAddressList ProcessServerlist(const grpc_grpclb_serverlist* serverlist) {
               "be used instead",
               uri);
       gpr_free(uri);
-      lb_token = (void*)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
+      lb_token = GRPC_MDELEM_LB_TOKEN_EMPTY;
     }
     // Add address.
     grpc_arg arg = grpc_channel_arg_pointer_create(
-        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN), lb_token,
-        &lb_token_arg_vtable);
+        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
+        (void*)lb_token.payload, &lb_token_arg_vtable);
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     addresses.emplace_back(addr, args);
+    // Clean up.
+    GRPC_MDELEM_UNREF(lb_token);
   }
   return addresses;
 }
