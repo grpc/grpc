@@ -54,4 +54,11 @@ class TestEnvironment {
 }  // namespace testing
 }  // namespace grpc
 
+// Utilities to determine what the build config is
+bool BuiltUnderValgrind();
+bool BuiltUnderTsan();
+bool BuiltUnderAsan();
+bool BuiltUnderMsan();
+bool BuiltUnderUbsan();
+
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

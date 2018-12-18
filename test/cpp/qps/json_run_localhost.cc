@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::SubProcess;
@@ -83,6 +84,13 @@ int main(int argc, char** argv) {
   std::ostringstream env;
   bool first = true;
 
+  // Under TSAN and with c-ares, the 600 channel scenario can take a long time
+  // for channels to connect (sanitizer scaling by
+  // grpc_timeout_seconds_to_deadline isn't enough).
+  if (BuiltUnderTsan()) {
+    gpr_setenv("QPS_WORKER_CHANNEL_CONNECT_TIMEOUT",
+               std::to_string(180).c_str());
+  }
   for (int i = 0; i < kNumWorkers; i++) {
     const auto port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
