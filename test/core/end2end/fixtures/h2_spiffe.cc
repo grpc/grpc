@@ -227,7 +227,7 @@ static grpc_server_credentials* create_spiffe_server_credentials(
   grpc_tls_credentials_options_destroy(options);
   return creds;
 }
-
+/*
 static void chttp2_init_client_spiffe_sync_reload_sync_authz(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
   grpc_channel_credentials* ssl_creds =
@@ -269,6 +269,7 @@ static void chttp2_init_client_spiffe_sync_reload_async_authz(
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
   grpc_channel_args_destroy(new_client_args);
 }
+*/
 
 static void chttp2_init_client_spiffe_async_reload_async_authz(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
@@ -295,7 +296,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
   }
   return 0;
 }
-
+/*
 static void chttp2_init_server_spiffe_sync_reload(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   grpc_server_credentials* ssl_creds = create_spiffe_server_credentials(true);
@@ -306,6 +307,8 @@ static void chttp2_init_server_spiffe_sync_reload(
   }
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
+*/
+
 static void chttp2_init_server_spiffe_async_reload(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
   grpc_server_credentials* ssl_creds = create_spiffe_server_credentials(false);
@@ -320,70 +323,77 @@ static void chttp2_init_server_spiffe_async_reload(
 
 static grpc_end2end_test_config configs[] = {
     /* client sync reload sync authz + server sync reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_sync_reload_sync_authz,
-     chttp2_init_server_spiffe_sync_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_sync_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client async reload sync authz + server sync reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_async_reload_sync_authz,
-     chttp2_init_server_spiffe_sync_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_sync_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client sync reload async authz + server sync reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_sync_reload_async_authz,
-     chttp2_init_server_spiffe_sync_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_sync_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client async reload async authz + server sync reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_async_reload_async_authz,
-     chttp2_init_server_spiffe_sync_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_sync_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client sync reload sync authz + server async reload. */
     /********************************************************/
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_sync_reload_sync_authz,
-     chttp2_init_server_spiffe_async_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_async_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /********************************************************/
     /* client async reload sync authz + server async reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_async_reload_sync_authz,
-     chttp2_init_server_spiffe_async_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_async_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client sync reload async authz + server async reload. */
-    {"chttp2/simple_ssl_fullstack",
+    /*{"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_spiffe_sync_reload_async_authz,
-     chttp2_init_server_spiffe_async_reload, chttp2_tear_down_secure_fullstack},
+     chttp2_init_server_spiffe_async_reload,
+     chttp2_tear_down_secure_fullstack},*/
     /* client async reload async authz + server async reload. */
     {"chttp2/simple_ssl_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |

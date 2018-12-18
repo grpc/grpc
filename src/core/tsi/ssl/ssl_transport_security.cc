@@ -162,9 +162,11 @@ typedef struct {
 /* Forward declarations. */
 
 /* --- Util functions to get peer certificate chain. --- */
-static char* get_cert_ASN1(X509* cert, int* len);
+/*static char* get_cert_ASN1(X509* cert, int* len);
 static char* get_cert_chain_ASN1_client(STACK_OF(X509) * cert_chain);
-static char* get_cert_chain_ASN1_server(X509* leaf_cert, STACK_OF(X509) * cert_chain);
+static char* get_cert_chain_ASN1_server(X509* leaf_cert, STACK_OF(X509) *
+cert_chain);
+*/
 
 /* --- Util functions to update SSL TSI handshakers. --- */
 static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
@@ -1077,22 +1079,29 @@ static tsi_result ssl_handshaker_result_extract_peer(
   unsigned int alpn_selected_len;
   const tsi_ssl_handshaker_result* impl =
       reinterpret_cast<const tsi_ssl_handshaker_result*>(self);
-  int cert_len = 0;
-  const char* pem_cert = nullptr;
-  if (sk_X509_num(SSL_get_peer_cert_chain(impl->ssl)) <= 0) {
-    pem_cert = get_cert_ASN1(SSL_get_peer_certificate(impl->ssl), &cert_len);
-  } else {
-    pem_cert =
-        impl->is_client
-            ? get_cert_chain_ASN1_client(SSL_get_peer_cert_chain(impl->ssl))
-            : get_cert_chain_ASN1_server(SSL_get_peer_certificate(impl->ssl),
-                                         SSL_get_peer_cert_chain(impl->ssl));
-  }
-  if (pem_cert != nullptr) {
-    result = extract_x509_subject_names_from_pem_cert(pem_cert, peer, 1);
-    gpr_free((void*)pem_cert);
+  X509* peer_cert = SSL_get_peer_certificate(impl->ssl);
+  if (peer_cert != nullptr) {
+    result = peer_from_x509(peer_cert, 1, peer);
+    X509_free(peer_cert);
     if (result != TSI_OK) return result;
   }
+    /*int cert_len = 0;
+    const char* pem_cert = nullptr;
+    if (sk_X509_num(SSL_get_peer_cert_chain(impl->ssl)) <= 0) {
+      pem_cert = get_cert_ASN1(SSL_get_peer_certificate(impl->ssl), &cert_len);
+    } else {
+      pem_cert =
+          impl->is_client
+              ? get_cert_chain_ASN1_client(SSL_get_peer_cert_chain(impl->ssl))
+              : get_cert_chain_ASN1_server(SSL_get_peer_certificate(impl->ssl),
+                                           SSL_get_peer_cert_chain(impl->ssl));
+    }
+    if (pem_cert != nullptr) {
+      result = extract_x509_subject_names_from_pem_cert(pem_cert, peer, 1);
+      gpr_free((void*)pem_cert);
+      if (result != TSI_OK) return result;
+    }
+    */
 #if TSI_OPENSSL_ALPN_SUPPORT
   SSL_get0_alpn_selected(impl->ssl, &alpn_selected, &alpn_selected_len);
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
@@ -2106,6 +2115,7 @@ tsi_result tls_tsi_handshaker_create(const char* server_name_indication,
   *handshaker = &impl->base;
   return TSI_OK;
 }
+/*
 static char* get_cert_ASN1(X509* cert, int* len) {
   if (cert == nullptr) {
     return nullptr;
@@ -2187,6 +2197,7 @@ static char* get_cert_chain_ASN1_server(X509* leaf_cert,
   }
   return result;
 }
+*/
 
 static tsi_result populate_ssl_handshaker(
     tsi_ssl_handshaker* handshaker, SSL_CTX* ctx, int is_client,
