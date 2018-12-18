@@ -40,61 +40,53 @@ struct grpc_tls_key_materials_config {
 /** TLS credential reload config. **/
 struct grpc_tls_credential_reload_config {
   /** config-specific, read-only user data that works for all channels created
-     with a credential using the config. */
+      with a credential using the config. */
   const void* config_user_data;
-
   /** callback function for invoking credential reload API. The implementation
-     of this method has to be non-blocking, but can be performed synchronously
-     or asynchronously.
+      of this method has to be non-blocking, but can be performed synchronously
+      or asynchronously.
       If processing occurs synchronously, it populates \a arg->key_materials, \a
       arg->status, and \a arg->error_details and returns zero.
       If processing occurs asynchronously, it returns a non-zero value.
-     Application then invokes \a arg->cb when processing is completed. Note that
-     \a arg->cb cannot be invoked before \a schedule returns.
+      Application then invokes \a arg->cb when processing is completed. Note
+     that \a arg->cb cannot be invoked before \a schedule returns.
   */
   int (*schedule)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-
   /** callback function for cancelling a credential reload request scheduled via
-     an asynchronous \a schedule. \a arg is used to pinpoint an exact reloading
+      an asynchronous \a schedule. \a arg is used to pinpoint an exact reloading
       request to be cancelled, and the operation may not have any effect if the
-     request has already been processed. */
+      request has already been processed. */
   void (*cancel)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-
   /** callback function for cleaning up any data associated with credential
-   * reload config. */
+      reload config. */
   void (*destruct)(void* config_user_data);
-
-  /* refcount for config. */
+  /* refcount. */
   gpr_refcount refcount;
 };
 
 /** TLS server authorization check config. **/
 struct grpc_tls_server_authorization_check_config {
   /** config-specific, read-only user data that works for all channels created
-     with a Credential using the config. */
+      with a Credential using the config. */
   const void* config_user_data;
-
   /** callback function for invoking server authorization check. The
-     implementation of this method has to be non-blocking, but can be performed
-     synchronously or asynchronously.
+      implementation of this method has to be non-blocking, but can be performed
+      synchronously or asynchronously.
       If processing occurs synchronously, it populates \a arg->result, \a
-     arg->status, and \a arg->error_details, and returns zero.
+      arg->status, and \a arg->error_details, and returns zero.
       If processing occurs asynchronously, it returns a non-zero value.
-     Application then invokes \a arg->cb when processing is completed. Note that
-     \a arg->cb cannot be invoked before \a schedule() returns.
+      Application then invokes \a arg->cb when processing is completed. Note
+     that \a arg->cb cannot be invoked before \a schedule() returns.
   */
   int (*schedule)(void* config_user_data,
                   grpc_tls_server_authorization_check_arg* arg);
-
   /** callback function for canceling a server authorization check request. */
   void (*cancel)(void* config_user_data,
                  grpc_tls_server_authorization_check_arg* arg);
-
   /** callback function for cleaning up any data associated with server
-     authorization check config. */
+      authorization check config. */
   void (*destruct)(void* config_user_data);
-
-  /* refcount for config. */
+  /* refcount. */
   gpr_refcount refcount;
 };
 
@@ -113,8 +105,7 @@ grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
 void grpc_tls_key_materials_config_destroy(
     grpc_tls_key_materials_config* config);
 
-/* API's for ref/unref credential reload and server authorization check configs.
- */
+/** Ref/Unref credential reload and server authorization check configs. */
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_ref(
     grpc_tls_credential_reload_config* config);
 

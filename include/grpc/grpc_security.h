@@ -625,44 +625,43 @@ typedef struct grpc_tls_server_authorization_check_config
 /** TLS credentials options. */
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
-/** Create an empty TLS credentials options. */
+/** Create an empty instance of TLS credentials options. */
 GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create();
 
-/** Set grpc_ssl_client_certificate_request_type field in credentials options
-    with the provided type. */
+/** Set grpc_ssl_client_certificate_request_type field in TLS credentials
+ * options. */
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
 
-/** Set grpc_tls_key_materials_config field in credentials options
-    with the provided config struct whose ownership is transferred. */
+/** Set grpc_tls_key_materials_config field in TLS credentials options
+    with config whose ownership is transferred. */
 GRPCAPI void grpc_tls_credentials_options_set_key_materials_config(
     grpc_tls_credentials_options* options,
     grpc_tls_key_materials_config* config);
 
-/** Set grpc_tls_credential_reload_config field in credentials options
-    with the provided config struct whose ownership is transferred. */
+/** Set grpc_tls_credential_reload_config field in TLS credentials options
+    with config whose ownership is transferred. */
 GRPCAPI void grpc_tls_credentials_options_set_credential_reload_config(
     grpc_tls_credentials_options* options,
     grpc_tls_credential_reload_config* config);
 
-/** Set grpc_tls_server_authorization_check_config field in credentials options
-    with the provided config struct whose ownership is transferred. */
+/** Set grpc_tls_server_authorization_check_config field in TLS credentials
+   options with config whose ownership is transferred. */
 GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,
     grpc_tls_server_authorization_check_config* config);
 
-/** Destroy a TLS credentials options. */
+/** Destroy a TLS credentials options instance. */
 GRPCAPI void grpc_tls_credentials_options_destroy(
     grpc_tls_credentials_options* options);
 
 /** --- TLS key materials config. --- **/
 
-/** Create an empty grpc_tls_key_materials_config instance. */
+/** Create an empty instance of grpc_tls_key_materials_config. */
 GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create();
 
-/** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
- */
+/** Set grpc_tls_key_materials_config instance with a TLS certificate. */
 GRPCAPI void grpc_tls_key_materials_config_set_key_materials(
     grpc_tls_key_materials_config* config,
     grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, const char* pem_root_certs,
@@ -679,8 +678,8 @@ typedef void (*grpc_tls_on_credential_reload_done_cb)(
     grpc_tls_credential_reload_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel
-    a credential reload request. cb and cb_user_data represent a gRPC-provided
-    callback and an argument passed to it. key_materials is an in/output
+   a credential reload request. cb and cb_user_data represent a gRPC-provided
+   callback and an argument passed to it. key_materials is an in/output
    parameter containing currently used/newly reloaded credentials. status and
    error_details are used to hold information about errors occurred when a
    credential reload request is scheduled/cancelled. */
@@ -731,7 +730,7 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
     grpc_tls_server_authorization_check_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel a server
-    authorization check request. cb and cb_user_data represent a gRPC-provided
+   authorization check request. cb and cb_user_data represent a gRPC-provided
    callback and an argument passed to it. result will store the result of server
    authorization check. target_name is the name of an endpoint the channel is
    connecting to and certificate represents a complete certificate chain
