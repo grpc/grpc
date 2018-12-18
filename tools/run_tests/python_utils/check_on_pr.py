@@ -26,8 +26,8 @@ _GITHUB_REPO = 'grpc/grpc'
 _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
 _GITHUB_APP_KEY = open(
-    os.environ['HOME'] + '/.ssh/google-grpc-checker.2018-12-13.private-key.pem',
-    'r').read()
+    os.path.join(os.environ['KOKORO_KEYSTORE_DIR'], '73836_grpc_checks_private_key'),
+    'rb').read()
 
 _ACCESS_TOKEN_CACHE = None
 
