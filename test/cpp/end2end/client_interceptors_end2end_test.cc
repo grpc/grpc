@@ -467,6 +467,28 @@ TEST_F(ClientInterceptorsEnd2endTest,
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 }
 
+TEST_F(ClientInterceptorsEnd2endTest,
+       ClientInterceptorFactoryAllowsNullptrReturn) {
+  ChannelArguments args;
+  DummyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(std::unique_ptr<LoggingInterceptorFactory>(
+      new LoggingInterceptorFactory()));
+  // Add 20 dummy interceptors and 20 null interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
+        new DummyInterceptorFactory()));
+    creators.push_back(
+        std::unique_ptr<NullInterceptorFactory>(new NullInterceptorFactory()));
+  }
+  auto channel = server_->experimental().InProcessChannelWithInterceptors(
+      args, std::move(creators));
+  MakeCallbackCall(channel);
+  // Make sure all 20 dummy interceptors were run
+  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+}
+
 class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
  protected:
   ClientInterceptorsStreamingEnd2endTest() {
