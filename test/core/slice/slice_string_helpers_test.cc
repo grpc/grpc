@@ -195,7 +195,7 @@ static void test_strsplit_nospace(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_dump_slice();
   test_strsplit();
   test_strsplit_nospace();

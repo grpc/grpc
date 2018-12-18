@@ -153,7 +153,7 @@ struct grpc_subchannel {
   /** have we started the backoff loop */
   bool backoff_begun;
   // reset_backoff() was called while alarm was pending
-  bool deferred_reset_backoff;
+  bool retry_immediately;
   /** our alarm */
   grpc_timer alarm;
 
@@ -709,8 +709,8 @@ static void on_alarm(void* arg, grpc_error* error) {
   if (c->disconnected) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
                                                              &error, 1);
-  } else if (c->deferred_reset_backoff) {
-    c->deferred_reset_backoff = false;
+  } else if (c->retry_immediately) {
+    c->retry_immediately = false;
     error = GRPC_ERROR_NONE;
   } else {
     GRPC_ERROR_REF(error);
@@ -837,7 +837,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
 
   /* publish */
   c->connected_subchannel.reset(grpc_core::New<grpc_core::ConnectedSubchannel>(
-      stk, c->channelz_subchannel, socket_uuid));
+      stk, c->args, c->channelz_subchannel, socket_uuid));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 
@@ -887,12 +887,12 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 
 void grpc_subchannel_reset_backoff(grpc_subchannel* subchannel) {
   gpr_mu_lock(&subchannel->mu);
+  subchannel->backoff->Reset();
   if (subchannel->have_alarm) {
-    subchannel->deferred_reset_backoff = true;
+    subchannel->retry_immediately = true;
     grpc_timer_cancel(&subchannel->alarm);
   } else {
     subchannel->backoff_begun = false;
-    subchannel->backoff->Reset();
     maybe_start_connecting_locked(subchannel);
   }
   gpr_mu_unlock(&subchannel->mu);
@@ -1068,16 +1068,18 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 namespace grpc_core {
 
 ConnectedSubchannel::ConnectedSubchannel(
-    grpc_channel_stack* channel_stack,
+    grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
         channelz_subchannel,
     intptr_t socket_uuid)
-    : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
+    : RefCounted<ConnectedSubchannel>(&grpc_trace_stream_refcount),
       channel_stack_(channel_stack),
+      args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)),
       socket_uuid_(socket_uuid) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
+  grpc_channel_args_destroy(args_);
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
 }
 

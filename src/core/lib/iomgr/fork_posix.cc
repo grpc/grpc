@@ -60,7 +60,7 @@ void grpc_prefork() {
   }
   if (strcmp(grpc_get_poll_strategy_name(), "epoll1") != 0 &&
       strcmp(grpc_get_poll_strategy_name(), "poll") != 0) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "Fork support is only compatible with the epoll1 and poll polling "
             "strategies");
   }

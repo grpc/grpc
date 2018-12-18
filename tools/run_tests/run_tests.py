@@ -942,7 +942,7 @@ class CSharpLanguage(object):
             self._cmake_arch_option = 'x64'
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'jessie'
+            self._docker_distro = 'stretch'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -954,7 +954,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp1.0'
+            assembly_subdir += '/netcoreapp1.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
@@ -1550,16 +1550,9 @@ if args.use_docker:
 
     dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
     if len(dockerfile_dirs) > 1:
-        if 'gcov' in args.config:
-            dockerfile_dir = 'tools/dockerfile/test/multilang_jessie_x64'
-            print(
-                'Using multilang_jessie_x64 docker image for code coverage for '
-                'all languages.')
-        else:
-            print(
-                'Languages to be tested require running under different docker '
-                'images.')
-            sys.exit(1)
+        print('Languages to be tested require running under different docker '
+              'images.')
+        sys.exit(1)
     else:
         dockerfile_dir = next(iter(dockerfile_dirs))
 

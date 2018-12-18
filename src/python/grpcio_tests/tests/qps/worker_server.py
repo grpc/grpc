@@ -39,7 +39,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         self._quit_event = threading.Event()
 
     def RunServer(self, request_iterator, context):
-        config = next(request_iterator).setup
+        config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
         server, port = self._create_server(config)
         cores = multiprocessing.cpu_count()
         server.start()
@@ -102,7 +102,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         return (server, port)
 
     def RunClient(self, request_iterator, context):
-        config = next(request_iterator).setup
+        config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
         client_runners = []
         qps_data = histogram.Histogram(config.histogram_params.resolution,
                                        config.histogram_params.max_possible)

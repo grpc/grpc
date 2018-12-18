@@ -2804,6 +2804,28 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_byte_buffer", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_byte_buffer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_call_create", 
     "src": [
       "test/cpp/microbenchmarks/bm_call_create.cc"
@@ -6219,9 +6241,45 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_local_test", 
+    "name": "h2_local_ipv4_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_local.cc"
+      "test/core/end2end/fixtures/h2_local_ipv4.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_ipv6_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_ipv6.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_uds_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_uds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7444,6 +7502,10 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.pb.h", 
+      "src/proto/grpc/testing/simple_messages_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/channel_trace_proto_helper.h", 
@@ -7456,6 +7518,8 @@
     "language": "c++", 
     "name": "grpc++_test_util", 
     "src": [
+      "test/cpp/end2end/test_health_check_service_impl.cc", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.cc", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
@@ -7497,6 +7561,10 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/simple_messages.pb.h", 
+      "src/proto/grpc/testing/simple_messages_mock.grpc.pb.h", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/string_ref_helper.h", 
@@ -7506,6 +7574,8 @@
     "language": "c++", 
     "name": "grpc++_test_util_unsecure", 
     "src": [
+      "test/cpp/end2end/test_health_check_service_impl.cc", 
+      "test/cpp/end2end/test_health_check_service_impl.h", 
       "test/cpp/end2end/test_service_impl.cc", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
@@ -9732,6 +9802,7 @@
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
+      "src/core/lib/iomgr/dynamic_annotations.h", 
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
@@ -9884,6 +9955,7 @@
       "src/core/lib/iomgr/call_combiner.h", 
       "src/core/lib/iomgr/closure.h", 
       "src/core/lib/iomgr/combiner.h", 
+      "src/core/lib/iomgr/dynamic_annotations.h", 
       "src/core/lib/iomgr/endpoint.h", 
       "src/core/lib/iomgr/endpoint_pair.h", 
       "src/core/lib/iomgr/error.h", 
@@ -10060,6 +10132,7 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
@@ -10087,7 +10160,6 @@
       "src/core/ext/filters/client_channel/http_proxy.h", 
       "src/core/ext/filters/client_channel/lb_policy.cc", 
       "src/core/ext/filters/client_channel/lb_policy.h", 
-      "src/core/ext/filters/client_channel/lb_policy_factory.cc", 
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.cc", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
@@ -10106,6 +10178,8 @@
       "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.cc", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.cc", 
+      "src/core/ext/filters/client_channel/server_address.h", 
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
@@ -10645,6 +10719,7 @@
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -10672,6 +10747,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.cc", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.cc", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.cc", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
@@ -11431,6 +11508,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
@@ -11536,6 +11614,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 

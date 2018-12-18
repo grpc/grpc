@@ -62,6 +62,13 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "bm_byte_buffer",
+    testonly = 1,
+    srcs = ["bm_byte_buffer.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
     name = "bm_channel",
     testonly = 1,
     srcs = ["bm_channel.cc"],

@@ -132,7 +132,7 @@ static void init_plugin(void) {
 static void destroy_plugin(void) {}
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_register_plugin(init_plugin, destroy_plugin);
   grpc_init();
   test_channel_stack_builder_filter_replace();

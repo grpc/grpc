@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
 
   grpc_allow_specialized_wakeup_fd = 0;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

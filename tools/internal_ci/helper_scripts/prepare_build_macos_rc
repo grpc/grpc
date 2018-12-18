@@ -28,15 +28,14 @@ sudo systemsetup -setusingnetworktime on
 date
 
 # Add GCP credentials for BQ access
-# pin google-api-python-client to avoid https://github.com/grpc/grpc/issues/15600
-pip install google-api-python-client==1.6.7 --user python
+pip install google-api-python-client oauth2client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   set +x
   brew update
-  brew install jq
+  brew install jq || brew upgrade jq
   ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
   export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"
 
@@ -91,3 +90,6 @@ mkdir -p /tmpfs/DerivedData
 rm -rf ~/Library/Developer/Xcode/DerivedData
 mkdir -p ~/Library/Developer/Xcode
 ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
+
+# PHP tests currently require using an older version of PHPUnit
+ln -sf /usr/local/bin/phpunit-5.7 /usr/local/bin/phpunit

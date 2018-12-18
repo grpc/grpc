@@ -27,7 +27,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 namespace grpc_core {
 
 LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
-    : InternallyRefCountedWithTracing(&grpc_trace_lb_policy_refcount),
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
       interested_parties_(grpc_pollset_set_create()),

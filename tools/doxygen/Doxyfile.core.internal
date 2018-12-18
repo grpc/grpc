@@ -784,6 +784,7 @@ doc/environment_variables.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -922,7 +923,6 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h \
-src/core/ext/filters/client_channel/lb_policy_factory.cc \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
@@ -958,6 +958,8 @@ src/core/ext/filters/client_channel/resolver_result_parsing.cc \
 src/core/ext/filters/client_channel/resolver_result_parsing.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
+src/core/ext/filters/client_channel/server_address.cc \
+src/core/ext/filters/client_channel/server_address.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \
@@ -1181,6 +1183,7 @@ src/core/lib/iomgr/call_combiner.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.cc \
 src/core/lib/iomgr/combiner.h \
+src/core/lib/iomgr/dynamic_annotations.h \
 src/core/lib/iomgr/endpoint.cc \
 src/core/lib/iomgr/endpoint.h \
 src/core/lib/iomgr/endpoint_pair.h \

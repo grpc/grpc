@@ -108,6 +108,7 @@ namespace Routeguide
             return features;
         }
 
+#pragma warning disable 0649  // Suppresses "Field 'x' is never assigned to".
         private class JsonFeature
         {
             public string name;
@@ -119,5 +120,6 @@ namespace Routeguide
             public int longitude;
             public int latitude;
         }
+#pragma warning restore 0649
     }
 }

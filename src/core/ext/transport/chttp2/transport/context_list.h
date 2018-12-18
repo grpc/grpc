@@ -50,6 +50,7 @@ class ContextList {
     /* Create a new element in the list and add it at the front */
     ContextList* elem = grpc_core::New<ContextList>();
     elem->s_ = s;
+    elem->byte_offset_ = s->byte_counter;
     elem->next_ = *head;
     *head = elem;
   }
@@ -61,6 +62,7 @@ class ContextList {
  private:
   grpc_chttp2_stream* s_ = nullptr;
   ContextList* next_ = nullptr;
+  size_t byte_offset_ = 0;
 };
 
 void grpc_http2_set_write_timestamps_callback(
