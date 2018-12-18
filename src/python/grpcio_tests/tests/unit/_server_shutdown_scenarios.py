@@ -81,7 +81,7 @@ def run_test(args):
         thread.daemon = True
         thread.start()
         port = port_queue.get()
-        channel = grpc.insecure_channel('[::]:%d' % port)
+        channel = grpc.insecure_channel('localhost:%d' % port)
         multi_callable = channel.unary_unary(FORK_EXIT)
         result, call = multi_callable.with_call(REQUEST, wait_for_ready=True)
         os.wait()
