@@ -44,9 +44,7 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ServerRpcInfo* info) {
-    info_ = info;
-
+  LoggingInterceptor(const experimental::ServerRpcInfo* info) {
     // Check the method name and compare to the type
     const char* method = info->method();
     experimental::ServerRpcInfo::Type type = info->type();
@@ -128,16 +126,13 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     methods->Proceed();
   }
-
- private:
-  experimental::ServerRpcInfo* info_;
 };
 
 class LoggingInterceptorFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+      const experimental::ServerRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
 };

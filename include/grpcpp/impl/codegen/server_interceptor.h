@@ -40,7 +40,7 @@ class ServerRpcInfo;
 class ServerInterceptorFactoryInterface {
  public:
   virtual ~ServerInterceptorFactoryInterface() {}
-  virtual Interceptor* CreateServerInterceptor(ServerRpcInfo* info) = 0;
+  virtual Interceptor* CreateServerInterceptor(const ServerRpcInfo* info) = 0;
 };
 
 class ServerRpcInfo {
@@ -56,7 +56,7 @@ class ServerRpcInfo {
   // Getter methods
   const char* method() const { return method_; }
   Type type() const { return type_; }
-  grpc::ServerContext* server_context() { return ctx_; }
+  grpc::ServerContext* server_context() const { return ctx_; }
 
  private:
   static_assert(Type::UNARY ==

@@ -41,7 +41,7 @@ class ClientRpcInfo;
 class ClientInterceptorFactoryInterface {
  public:
   virtual ~ClientInterceptorFactoryInterface() {}
-  virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
+  virtual Interceptor* CreateClientInterceptor(const ClientRpcInfo* info) = 0;
 };
 }  // namespace experimental
 
@@ -70,8 +70,8 @@ class ClientRpcInfo {
 
   // Getter methods
   const char* method() const { return method_; }
-  ChannelInterface* channel() { return channel_; }
-  grpc::ClientContext* client_context() { return ctx_; }
+  ChannelInterface* channel() const { return channel_; }
+  grpc::ClientContext* client_context() const { return ctx_; }
   Type type() const { return type_; }
 
  private:

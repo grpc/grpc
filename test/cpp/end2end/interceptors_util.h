@@ -72,12 +72,12 @@ class DummyInterceptorFactory
       public experimental::ServerInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      const experimental::ClientRpcInfo* info) override {
     return new DummyInterceptor();
   }
 
   virtual experimental::Interceptor* CreateServerInterceptor(
-      experimental::ServerRpcInfo* info) override {
+      const experimental::ServerRpcInfo* info) override {
     return new DummyInterceptor();
   }
 };

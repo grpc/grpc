@@ -46,8 +46,7 @@ namespace {
 /* Hijacks Echo RPC and fills in the expected values */
 class HijackingInterceptor : public experimental::Interceptor {
  public:
-  HijackingInterceptor(experimental::ClientRpcInfo* info) {
-    info_ = info;
+  HijackingInterceptor(const experimental::ClientRpcInfo* info) : info_(info) {
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
@@ -138,22 +137,22 @@ class HijackingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  const experimental::ClientRpcInfo* info_;
 };
 
 class HijackingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      const experimental::ClientRpcInfo* info) override {
     return new HijackingInterceptor(info);
   }
 };
 
 class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
  public:
-  HijackingInterceptorMakesAnotherCall(experimental::ClientRpcInfo* info) {
-    info_ = info;
+  HijackingInterceptorMakesAnotherCall(const experimental::ClientRpcInfo* info)
+      : info_(info) {
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
   }
@@ -253,7 +252,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  const experimental::ClientRpcInfo* info_;
   std::multimap<grpc::string, grpc::string> metadata_map_;
   ClientContext ctx_;
   EchoRequest req_;
@@ -265,14 +264,14 @@ class HijackingInterceptorMakesAnotherCallFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      const experimental::ClientRpcInfo* info) override {
     return new HijackingInterceptorMakesAnotherCall(info);
   }
 };
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ClientRpcInfo* info) { info_ = info; }
+  LoggingInterceptor(const experimental::ClientRpcInfo* info) : info_(info) {}
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
     if (methods->QueryInterceptionHookPoint(
@@ -328,14 +327,14 @@ class LoggingInterceptor : public experimental::Interceptor {
   }
 
  private:
-  experimental::ClientRpcInfo* info_;
+  const experimental::ClientRpcInfo* info_;
 };
 
 class LoggingInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateClientInterceptor(
-      experimental::ClientRpcInfo* info) override {
+      const experimental::ClientRpcInfo* info) override {
     return new LoggingInterceptor(info);
   }
 };
