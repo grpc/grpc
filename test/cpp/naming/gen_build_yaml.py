@@ -72,7 +72,6 @@ def main():
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,
-                  'gpr_test_util',
                   'grpc++' + unsecure_build_config_suffix,
                   'grpc' + unsecure_build_config_suffix,
                   'gpr',
@@ -91,7 +90,6 @@ def main():
               'deps': [
                   'grpc++_test_util',
                   'grpc_test_util',
-                  'gpr_test_util',
                   'grpc++',
                   'grpc',
                   'gpr',
@@ -114,7 +112,6 @@ def main():
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,
-                  'gpr_test_util',
                   'grpc++' + unsecure_build_config_suffix,
                   'grpc' + unsecure_build_config_suffix,
                   'gpr',
@@ -133,7 +130,6 @@ def main():
           'deps': [
               'grpc++_test_util',
               'grpc_test_util',
-              'gpr_test_util',
               'grpc++',
               'grpc',
               'gpr',
