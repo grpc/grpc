@@ -27,37 +27,40 @@
 @class GRPCStreamingProtoCall;
 @protocol GRPCProtoResponseCallbacks;
 
-NS_ASSUME_NONNULL_BEGIN
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
 
 __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService
     : NSObject
 
       -
-      (nullable instancetype)initWithHost : (NSString *)host packageName
-    : (NSString *)packageName serviceName : (NSString *)serviceName callOptions
+      (nullable instancetype)initWithHost : (nonnull NSString *)host packageName
+    : (nonnull NSString *)packageName serviceName : (nonnull NSString *)serviceName callOptions
     : (nullable GRPCCallOptions *)callOptions NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName;
 
-- (nullable GRPCProtoCall *)RPCToMethod:(NSString *)method
-                         requestsWriter:(GRXWriter *)requestsWriter
-                          responseClass:(Class)responseClass
-                     responsesWriteable:(id<GRXWriteable>)responsesWriteable;
+- (GRPCProtoCall *)RPCToMethod:(NSString *)method
+                requestsWriter:(GRXWriter *)requestsWriter
+                 responseClass:(Class)responseClass
+            responsesWriteable:(id<GRXWriteable>)responsesWriteable;
 
-- (nullable GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
-                                     message:(id)message
-                             responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+- (nullable GRPCUnaryProtoCall *)RPCToMethod:(nonnull NSString *)method
+                                     message:(nonnull id)message
+                             responseHandler:(nonnull id<GRPCProtoResponseCallbacks>)handler
                                  callOptions:(nullable GRPCCallOptions *)callOptions
-                               responseClass:(Class)responseClass;
+                               responseClass:(nonnull Class)responseClass;
 
-- (nullable GRPCStreamingProtoCall *)RPCToMethod:(NSString *)method
-                                 responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+- (nullable GRPCStreamingProtoCall *)RPCToMethod:(nonnull NSString *)method
+                                 responseHandler:(nonnull id<GRPCProtoResponseCallbacks>)handler
                                      callOptions:(nullable GRPCCallOptions *)callOptions
-                                   responseClass:(Class)responseClass;
+                                   responseClass:(nonnull Class)responseClass;
 
 @end
+
+#pragma clang diagnostic pop
 
 /**
  * This subclass is empty now. Eventually we'll remove ProtoService class
@@ -69,5 +72,3 @@ __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoServ
 #pragma clang diagnostic pop
 
                                   @end
-
-                                      NS_ASSUME_NONNULL_END

@@ -275,6 +275,9 @@ extern NSString *const kGRPCTrailersKey;
 
 NS_ASSUME_NONNULL_END
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
 /**
  * This interface is deprecated. Please use \a GRPCcall2.
  *
@@ -282,7 +285,7 @@ NS_ASSUME_NONNULL_END
  */
 @interface GRPCCall : GRXWriter
 
-- (nonnull instancetype)init NS_UNAVAILABLE;
+- (instancetype)init NS_UNAVAILABLE;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
@@ -308,7 +311,7 @@ NS_ASSUME_NONNULL_END
  *
  * The property is initialized to an empty NSMutableDictionary.
  */
-@property(nonnull, atomic, readonly) NSMutableDictionary *requestHeaders;
+@property(atomic, readonly) NSMutableDictionary *requestHeaders;
 
 /**
  * This dictionary is populated with the HTTP headers received from the server. This happens before
@@ -319,7 +322,7 @@ NS_ASSUME_NONNULL_END
  * The value of this property is nil until all response headers are received, and will change before
  * any of -writeValue: or -writesFinishedWithError: are sent to the writeable.
  */
-@property(nullable, atomic, readonly) NSDictionary *responseHeaders;
+@property(atomic, readonly) NSDictionary *responseHeaders;
 
 /**
  * Same as responseHeaders, but populated with the HTTP trailers received from the server before the
@@ -328,7 +331,7 @@ NS_ASSUME_NONNULL_END
  * The value of this property is nil until all response trailers are received, and will change
  * before -writesFinishedWithError: is sent to the writeable.
  */
-@property(nullable, atomic, readonly) NSDictionary *responseTrailers;
+@property(atomic, readonly) NSDictionary *responseTrailers;
 
 /**
  * The request writer has to write NSData objects into the provided Writeable. The server will
@@ -341,9 +344,9 @@ NS_ASSUME_NONNULL_END
  * host parameter should not contain the scheme (http:// or https://), only the name or IP addr
  * and the port number, for example @"localhost:5050".
  */
-- (nullable instancetype)initWithHost:(nonnull NSString *)host
-                                 path:(nonnull NSString *)path
-                       requestsWriter:(nonnull GRXWriter *)requestWriter;
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+              requestsWriter:(GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -354,12 +357,10 @@ NS_ASSUME_NONNULL_END
 /**
  * The following methods are deprecated.
  */
-+ (void)setCallSafety:(GRPCCallSafety)callSafety
-                 host:(nonnull NSString *)host
-                 path:(nonnull NSString *)path;
-@property(nullable, atomic, copy, readwrite) NSString *serverName;
++ (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
+@property(atomic, copy, readwrite) NSString *serverName;
 @property NSTimeInterval timeout;
-- (void)setResponseDispatchQueue:(nonnull dispatch_queue_t)queue;
+- (void)setResponseDispatchQueue:(dispatch_queue_t)queue;
 
 @end
 
@@ -370,11 +371,11 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
-- (nullable id)objectForKeyedSubscript:(nonnull id)key;
-- (void)setObject:(nonnull id)obj forKeyedSubscript:(nonnull id)key;
+- (id)objectForKeyedSubscript:(id)key;
+- (void)setObject:(id)obj forKeyedSubscript:(id)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(nonnull id)key;
+- (void)removeObjectForKey:(id)key;
 @end
 
 #pragma clang diagnostic push
@@ -382,4 +383,5 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 /** This is only needed for backwards-compatibility. */
 @interface NSMutableDictionary (GRPCRequestHeaders)<GRPCRequestHeaders>
 @end
+#pragma clang diagnostic pop
 #pragma clang diagnostic pop
