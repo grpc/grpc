@@ -71,8 +71,9 @@ def _call(url, method='GET', json=None):
 
 
 def _latest_commit():
-    resp = _call('/repos/%s/pulls/%s/commits' % (_GITHUB_REPO,
-                                                 os.environ['ghprbPullId']))
+    resp = _call('/repos/%s/pulls/%s/commits' %
+                 (_GITHUB_REPO,
+                  os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
     return resp.json()[-1]
 
 
@@ -82,7 +83,7 @@ def check_on_pr(name, summary, success=True):
     The check runs are aggregated by their name, so newer check will update the
     older check with the same name.
 
-    Requires environment variable 'ghprbPullId' to indicate which pull request
+    Requires environment variable 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' to indicate which pull request
     should be updated.
 
     Args:
@@ -96,8 +97,8 @@ def check_on_pr(name, summary, success=True):
     if 'KOKORO_KEYSTORE_DIR' not in os.environ:
         print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
         return
-    if 'ghprbPullId' not in os.environ:
-        print('Missing ghprbPullId env var: not checking')
+    if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
+        print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
         return
     completion_time = str(
         datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
