@@ -24,10 +24,10 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
