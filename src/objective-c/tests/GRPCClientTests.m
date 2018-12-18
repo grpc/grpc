@@ -365,7 +365,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   GRXWriter *writer = [GRXWriter writerWithValue:[NSData data]];
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
-    (void)[[GRPCCall alloc] initWithHost:@"" path:@"" requestsWriter:writer];
+    (void)[[GRPCCall alloc] initWithHost:nil path:nil requestsWriter:writer];
     XCTFail(@"Did not receive an exception when parameters are nil");
   } @catch (NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
