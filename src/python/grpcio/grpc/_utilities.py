@@ -16,12 +16,14 @@
 import collections
 import threading
 import time
+import logging
 
 import six
 
 import grpc
 from grpc import _common
-from grpc.framework.foundation import callable_util
+
+_LOGGER = logging.getLogger(__name__)
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!')
@@ -98,8 +100,10 @@ class _ChannelReadyFuture(grpc.Future):
                 return
 
         for done_callback in done_callbacks:
-            callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+            try:
+                done_callback(self)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception(_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE)
 
     def cancel(self):
         with self._condition:
@@ -113,8 +117,10 @@ class _ChannelReadyFuture(grpc.Future):
                 return False
 
         for done_callback in done_callbacks:
-            callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+            try:
+                done_callback(self)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception(_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE)
 
         return True
 
