@@ -50,11 +50,16 @@ extern experimental::ClientInterceptorFactoryInterface*
     g_global_client_interceptor_factory;
 }
 
+/// ClientRpcInfo represents the state of a particular RPC as it
+/// appears to an interceptor. It is created and owned by the library and
+/// passed to the CreateClientInterceptor method of the application's
+/// ClientInterceptorFactoryInterface implementation
 namespace experimental {
 class ClientRpcInfo {
  public:
   // TODO(yashykt): Stop default-constructing ClientRpcInfo and remove UNKNOWN
   //                from the list of possible Types.
+  /// Type categorizes RPCs by unary or streaming type
   enum class Type {
     UNARY,
     CLIENT_STREAMING,
@@ -65,13 +70,23 @@ class ClientRpcInfo {
 
   ~ClientRpcInfo(){};
 
+  // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
   ClientRpcInfo(ClientRpcInfo&&) = default;
 
   // Getter methods
+
+  /// Return the fully-specified method name
   const char* method() const { return method_; }
+
+  /// Return a pointer to the channel on which the RPC is being sent
   ChannelInterface* channel() { return channel_; }
+
+  /// Return a pointer to the underlying ClientContext structure associated
+  /// with the RPC to support features that apply to it
   grpc::ClientContext* client_context() { return ctx_; }
+
+  /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
 
  private:
