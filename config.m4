@@ -282,6 +282,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/security_connector/alts/alts_security_connector.cc \
     src/core/lib/security/security_connector/fake/fake_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
@@ -724,6 +725,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/fake)
