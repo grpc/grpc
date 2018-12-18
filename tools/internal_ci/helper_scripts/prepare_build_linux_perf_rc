@@ -35,8 +35,6 @@ fi
 sudo pip install tabulate
 
 # Python dependencies for tools/run_tests/python_utils/check_on_pr.py
-sudo -H pip install pyjwt cryptography requests
-
-ls -al "${KOKORO_KEYSTORE_DIR}/73836_grpc_checks_private_key"
+time python2.7 -m pip install pyjwt cryptography requests --user
 
 git submodule update --init
