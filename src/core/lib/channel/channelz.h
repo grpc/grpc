@@ -210,7 +210,8 @@ class ServerNode : public BaseNode {
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id);
+  char* RenderServerSockets(intptr_t start_socket_id,
+                            intptr_t pagination_limit);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, grpc_slice data) {

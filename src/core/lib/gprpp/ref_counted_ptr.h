@@ -50,7 +50,7 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr(RefCountedPtr<Y>&& other) {
-    value_ = other.value_;
+    value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
   }
 
@@ -77,7 +77,7 @@ class RefCountedPtr {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    value_ = other.value_;
+    value_ = static_cast<T*>(other.value_);
   }
 
   // Copy assignment.
@@ -118,7 +118,7 @@ class RefCountedPtr {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref();
-    value_ = value;
+    value_ = static_cast<T*>(value);
   }
   template <typename Y>
   void reset(const DebugLocation& location, const char* reason,
@@ -126,7 +126,7 @@ class RefCountedPtr {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref(location, reason);
-    value_ = value;
+    value_ = static_cast<T*>(value);
   }
 
   // TODO(roth): This method exists solely as a transition mechanism to allow

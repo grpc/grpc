@@ -36,6 +36,7 @@ include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
 include "_cygrpc/_hooks.pyx.pxi"
 include "_cygrpc/channelz.pyx.pxi"
+include "_cygrpc/propagation_bits.pyx.pxi"
 
 include "_cygrpc/grpc_gevent.pyx.pxi"
 

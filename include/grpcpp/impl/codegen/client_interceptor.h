@@ -38,9 +38,17 @@ class InterceptorBatchMethodsImpl;
 namespace experimental {
 class ClientRpcInfo;
 
+// A factory interface for creation of client interceptors. A vector of
+// factories can be provided at channel creation which will be used to create a
+// new vector of client interceptors per RPC. Client interceptor authors should
+// create a subclass of ClientInterceptorFactorInterface which creates objects
+// of their interceptors.
 class ClientInterceptorFactoryInterface {
  public:
   virtual ~ClientInterceptorFactoryInterface() {}
+  // Returns a pointer to an Interceptor object on successful creation, nullptr
+  // otherwise. If nullptr is returned, this server interceptor factory is
+  // ignored for the purposes of that RPC.
   virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
 };
 }  // namespace experimental
@@ -120,8 +128,11 @@ class ClientRpcInfo {
     }
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
-      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          (*it)->CreateClientInterceptor(this)));
+      auto* interceptor = (*it)->CreateClientInterceptor(this);
+      if (interceptor != nullptr) {
+        interceptors_.push_back(
+            std::unique_ptr<experimental::Interceptor>(interceptor));
+      }
     }
     if (internal::g_global_client_interceptor_factory != nullptr) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(

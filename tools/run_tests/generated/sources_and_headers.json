@@ -2823,6 +2823,28 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_byte_buffer", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_byte_buffer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_call_create", 
     "src": [
       "test/cpp/microbenchmarks/bm_call_create.cc"
@@ -6238,9 +6260,45 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_local_test", 
+    "name": "h2_local_ipv4_test", 
     "src": [
-      "test/core/end2end/fixtures/h2_local.cc"
+      "test/core/end2end/fixtures/h2_local_ipv4.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_ipv6_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_ipv6.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "h2_local_uds_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local_uds.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -10114,6 +10172,7 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.h"
     ], 
@@ -10141,7 +10200,6 @@
       "src/core/ext/filters/client_channel/http_proxy.h", 
       "src/core/ext/filters/client_channel/lb_policy.cc", 
       "src/core/ext/filters/client_channel/lb_policy.h", 
-      "src/core/ext/filters/client_channel/lb_policy_factory.cc", 
       "src/core/ext/filters/client_channel/lb_policy_factory.h", 
       "src/core/ext/filters/client_channel/lb_policy_registry.cc", 
       "src/core/ext/filters/client_channel/lb_policy_registry.h", 
@@ -10160,6 +10218,8 @@
       "src/core/ext/filters/client_channel/resolver_result_parsing.h", 
       "src/core/ext/filters/client_channel/retry_throttle.cc", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/server_address.cc", 
+      "src/core/ext/filters/client_channel/server_address.h", 
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
@@ -10702,6 +10762,7 @@
       "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h", 
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
@@ -10729,6 +10790,8 @@
       "test/core/end2end/cq_verifier.h", 
       "test/core/end2end/fixtures/http_proxy_fixture.cc", 
       "test/core/end2end/fixtures/http_proxy_fixture.h", 
+      "test/core/end2end/fixtures/local_util.cc", 
+      "test/core/end2end/fixtures/local_util.h", 
       "test/core/end2end/fixtures/proxy.cc", 
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.cc", 
@@ -11514,6 +11577,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
@@ -11551,10 +11615,13 @@
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/interceptor.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -11619,6 +11686,7 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "include/grpcpp/alarm.h", 
+      "include/grpcpp/alarm_impl.h", 
       "include/grpcpp/channel.h", 
       "include/grpcpp/client_context.h", 
       "include/grpcpp/completion_queue.h", 
@@ -11656,10 +11724,13 @@
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/interceptor.h", 
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 

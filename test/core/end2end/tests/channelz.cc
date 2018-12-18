@@ -259,7 +259,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
   gpr_free(json);
 
-  json = channelz_server->RenderServerSockets(0);
+  json = channelz_server->RenderServerSockets(0, 100);
   GPR_ASSERT(nullptr != strstr(json, "\"end\":true"));
   gpr_free(json);
 

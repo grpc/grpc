@@ -39,7 +39,6 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 
 /* --- security_connector object. ---
-
     A security connector object represents away to configure the underlying
     transport security mechanism and check the resulting trusted peer.  */
 
@@ -103,7 +102,6 @@ grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* args);
 
 /* --- channel_security_connector object. ---
-
     A channel security connector object represents a way to configure the
     underlying transport security mechanism on the client side.  */
 
@@ -158,7 +156,6 @@ void grpc_channel_security_connector_add_handshakers(
     grpc_handshake_manager* handshake_mgr);
 
 /* --- server_security_connector object. ---
-
     A server security connector object represents a way to configure the
     underlying transport security mechanism on the server side.  */
 
@@ -181,3 +178,4 @@ void grpc_server_security_connector_add_handshakers(
     grpc_handshake_manager* handshake_mgr);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */
+
