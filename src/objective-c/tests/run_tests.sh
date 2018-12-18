@@ -187,7 +187,7 @@ echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme APIv2Tests \
-    -destination name="iPhone 8" \
+    -destination name="iPhone X" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
