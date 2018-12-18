@@ -340,12 +340,11 @@ class CallOpSendMessage {
     if (send_buf_.Valid()) {
       interceptor_methods->AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_SEND_MESSAGE);
-      // We had already registered failed_send_ earlier. No need to do it again.
     }
     send_buf_.Clear();
     // The contents of the SendMessage value that was previously set
     // has had its references stolen by core's operations
-    interceptor_methods->SetSendMessage(nullptr);
+    interceptor_methods->SetSendMessage(nullptr, &failed_send_);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {

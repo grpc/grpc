@@ -580,11 +580,9 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   ChannelArguments args;
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  creators->push_back(
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(
       std::unique_ptr<ClientStreamingRpcHijackingInterceptorFactory>(
           new ClientStreamingRpcHijackingInterceptorFactory()));
   auto channel = experimental::CreateCustomChannelWithInterceptors(

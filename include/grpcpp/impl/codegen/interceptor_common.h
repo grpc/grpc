@@ -403,6 +403,7 @@ class CancelInterceptorBatchMethods
         false &&
         "It is illegal to call GetSendMessageStatus on a method which "
         "has a Cancel notification");
+    return false;
   }
 
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {
