@@ -134,6 +134,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 NS_ASSUME_NONNULL_END
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
 __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
     : GRPCCall
 
@@ -160,3 +163,5 @@ __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
 #pragma clang diagnostic pop
 
                                @end
+
+#pragma clang diagnostic pop

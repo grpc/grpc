@@ -61,7 +61,15 @@
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName {
-  return [self initWithHost:host packageName:packageName serviceName:serviceName callOptions:nil];
+  // Do not call designated initializer here due to nullability incompatibility. This method is from
+  // old API and does not assert on nullability of the parameters.
+  if ((self = [super init])) {
+    _host = [host copy];
+    _packageName = [packageName copy];
+    _serviceName = [serviceName copy];
+    _callOptions = nil;
+  }
+  return self;
 }
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method

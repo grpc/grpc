@@ -355,7 +355,7 @@ void PrintMethodImplementations(Printer* printer,
                   "@implementation $service_class$\n\n"
                   "// Designated initializer\n"
                   "- (instancetype)initWithHost:(NSString *)host "
-                  "callOptions:(GRPCCallOptions *_Nullable)callOptions{\n"
+                  "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
                   "  self = [super initWithHost:host\n"
                   "                 packageName:@\"$package$\"\n"
                   "                 serviceName:@\"$service_name$\"\n"
@@ -363,10 +363,9 @@ void PrintMethodImplementations(Printer* printer,
                   "  return self;\n"
                   "}\n\n"
                   "- (instancetype)initWithHost:(NSString *)host {\n"
-                  "  return [self initWithHost:host\n"
-                  "                packageName:@\"$package$\"\n"
-                  "                serviceName:@\"$service_name$\"\n"
-                  "                callOptions:nil];\n"
+                  "  return [super initWithHost:host\n"
+                  "                 packageName:@\"$package$\"\n"
+                  "                 serviceName:@\"$service_name$\"];\n"
                   "}\n\n");
 
     printer.Print(
@@ -381,7 +380,7 @@ void PrintMethodImplementations(Printer* printer,
     printer.Print(
         "#pragma mark - Class Methods\n\n"
         "+ (instancetype)serviceWithHost:(NSString *)host {\n"
-        "  return [self serviceWithHost:host callOptions:nil];\n"
+        "  return [[self alloc] initWithHost:host];\n"
         "}\n\n"
         "+ (instancetype)serviceWithHost:(NSString *)host "
         "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
