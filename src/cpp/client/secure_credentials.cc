@@ -36,14 +36,17 @@ SecureChannelCredentials::SecureChannelCredentials(
 
 std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannel(
     const string& target, const grpc::ChannelArguments& args) {
-  return CreateChannelWithInterceptors(target, args, nullptr);
+  return CreateChannelWithInterceptors(
+      target, args,
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 }
 
 std::shared_ptr<grpc::Channel>
 SecureChannelCredentials::CreateChannelWithInterceptors(
     const string& target, const grpc::ChannelArguments& args,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
@@ -258,10 +261,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_status_code* status_code, const char** error_details) {
   std::multimap<grpc::string, grpc::string> metadata;
 
-  // const_cast is safe since the SecureAuthContext does not take owndership and
-  // the object is passed as a const ref to plugin_->GetMetadata.
+  // const_cast is safe since the SecureAuthContext only inc/dec the refcount
+  // and the object is passed as a const ref to plugin_->GetMetadata.
   SecureAuthContext cpp_channel_auth_context(
-      const_cast<grpc_auth_context*>(context.channel_auth_context), false);
+      const_cast<grpc_auth_context*>(context.channel_auth_context));
 
   Status status = plugin_->GetMetadata(context.service_url, context.method_name,
                                        cpp_channel_auth_context, &metadata);

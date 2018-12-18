@@ -245,7 +245,7 @@ TEST(CachingByteStream, SharedCache) {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int retval = RUN_ALL_TESTS();
   grpc_shutdown();

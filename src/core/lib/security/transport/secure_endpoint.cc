@@ -416,6 +416,11 @@ static grpc_resource_user* endpoint_get_resource_user(
   return grpc_endpoint_get_resource_user(ep->wrapped_ep);
 }
 
+static bool endpoint_can_track_err(grpc_endpoint* secure_ep) {
+  secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  return grpc_endpoint_can_track_err(ep->wrapped_ep);
+}
+
 static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_write,
                                             endpoint_add_to_pollset,
@@ -425,7 +430,8 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_destroy,
                                             endpoint_get_resource_user,
                                             endpoint_get_peer,
-                                            endpoint_get_fd};
+                                            endpoint_get_fd,
+                                            endpoint_can_track_err};
 
 grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,

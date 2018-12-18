@@ -16,4 +16,4 @@
 cdef gpr_timespec _timespec_from_time(object time)
 
 
-cdef double _time_from_timespec(gpr_timespec timespec)
+cdef double _time_from_timespec(gpr_timespec timespec) except *

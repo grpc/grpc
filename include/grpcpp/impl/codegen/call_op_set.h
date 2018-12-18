@@ -343,6 +343,9 @@ class CallOpSendMessage {
       // We had already registered failed_send_ earlier. No need to do it again.
     }
     send_buf_.Clear();
+    // The contents of the SendMessage value that was previously set
+    // has had its references stolen by core's operations
+    interceptor_methods->SetSendMessage(nullptr);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {

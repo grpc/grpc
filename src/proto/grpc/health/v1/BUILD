@@ -29,4 +29,3 @@ filegroup(
         "health.proto",
     ],
 )
-

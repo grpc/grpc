@@ -72,7 +72,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Adds a definitions for a single request - single response method.
+            /// Adds a definition for a single request - single response method.
             /// </summary>
             /// <typeparam name="TRequest">The request message class.</typeparam>
             /// <typeparam name="TResponse">The response message class.</typeparam>
@@ -90,7 +90,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Adds a definitions for a client streaming method.
+            /// Adds a definition for a client streaming method.
             /// </summary>
             /// <typeparam name="TRequest">The request message class.</typeparam>
             /// <typeparam name="TResponse">The response message class.</typeparam>
@@ -108,7 +108,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Adds a definitions for a server streaming method.
+            /// Adds a definition for a server streaming method.
             /// </summary>
             /// <typeparam name="TRequest">The request message class.</typeparam>
             /// <typeparam name="TResponse">The response message class.</typeparam>
@@ -126,7 +126,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Adds a definitions for a bidirectional streaming method.
+            /// Adds a definition for a bidirectional streaming method.
             /// </summary>
             /// <typeparam name="TRequest">The request message class.</typeparam>
             /// <typeparam name="TResponse">The response message class.</typeparam>

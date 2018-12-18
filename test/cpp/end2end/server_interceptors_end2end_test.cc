@@ -44,7 +44,34 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ServerRpcInfo* info) { info_ = info; }
+  LoggingInterceptor(experimental::ServerRpcInfo* info) {
+    info_ = info;
+
+    // Check the method name and compare to the type
+    const char* method = info->method();
+    experimental::ServerRpcInfo::Type type = info->type();
+
+    // Check that we use one of our standard methods with expected type.
+    // Also allow the health checking service.
+    // We accept BIDI_STREAMING for Echo in case it's an AsyncGenericService
+    // being tested (the GenericRpc test).
+    // The empty method is for the Unimplemented requests that arise
+    // when draining the CQ.
+    EXPECT_TRUE(
+        strstr(method, "/grpc.health") == method ||
+        (strcmp(method, "/grpc.testing.EchoTestService/Echo") == 0 &&
+         (type == experimental::ServerRpcInfo::Type::UNARY ||
+          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING)) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/RequestStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::CLIENT_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/ResponseStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::SERVER_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/BidiStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING) ||
+        strcmp(method, "/grpc.testing.EchoTestService/Unimplemented") == 0 ||
+        (strcmp(method, "") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
+  }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
     if (methods->QueryInterceptionHookPoint(
@@ -577,7 +604,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

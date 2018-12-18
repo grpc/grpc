@@ -72,7 +72,7 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 namespace grpc_core {
 
-class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   struct CallArgs {
     grpc_polling_entity* pollent;
@@ -85,28 +85,31 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     size_t parent_data_size;
   };
 
-  explicit ConnectedSubchannel(
-      grpc_channel_stack* channel_stack,
+  ConnectedSubchannel(
+      grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
           channelz_subchannel,
       intptr_t socket_uuid);
   ~ConnectedSubchannel();
 
-  grpc_channel_stack* channel_stack() { return channel_stack_; }
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
-  channelz::SubchannelNode* channelz_subchannel() {
+
+  grpc_channel_stack* channel_stack() const { return channel_stack_; }
+  const grpc_channel_args* args() const { return args_; }
+  channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
-  intptr_t socket_uuid() { return socket_uuid_; }
+  intptr_t socket_uuid() const { return socket_uuid_; }
 
   size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
  private:
   grpc_channel_stack* channel_stack_;
+  grpc_channel_args* args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>

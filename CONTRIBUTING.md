@@ -81,7 +81,7 @@ How to get your contributions merged smoothly and quickly.
   copyright holder for the contribution (yourself, if you are signing the
   individual CLA, or your company, for corporate CLAs) in the same PR as your
   contribution.  This needs to be done only once, for each company, or
-  individual.
+  individual. Please keep this file in alphabetical order.
  
 - Maintain **clean commit history** and use **meaningful commit messages**.
   PRs with messy commit history are difficult to review and won't be merged.

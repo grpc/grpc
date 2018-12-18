@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
   uint32_t prev = 1;
   uint32_t tmp;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   test_no_op();
   test_empty_find();

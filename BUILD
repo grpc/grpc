@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gizmo"
+g_stands_for = "goose"
 
-core_version = "6.0.0-dev"
+core_version = "7.0.0-dev"
 
-version = "1.17.0-dev"
+version = "1.18.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -204,6 +204,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
     "include/grpcpp/alarm.h",
+    "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
@@ -647,6 +648,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_base",
         "grpc_trace",
+        "ref_counted",
         "ref_counted_ptr",
     ],
 )
@@ -855,6 +857,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/combiner.h",
+        "src/core/lib/iomgr/dynamic_annotations.h",
         "src/core/lib/iomgr/endpoint.h",
         "src/core/lib/iomgr/endpoint_pair.h",
         "src/core/lib/iomgr/error.h",
@@ -1046,15 +1049,15 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
-        "src/core/ext/filters/client_channel/lb_policy_factory.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
-        "src/core/ext/filters/client_channel/method_params.cc",
         "src/core/ext/filters/client_channel/parse_address.cc",
         "src/core/ext/filters/client_channel/proxy_mapper.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
+        "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
     ],
@@ -1070,14 +1073,15 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
-        "src/core/ext/filters/client_channel/method_params.h",
         "src/core/ext/filters/client_channel/parse_address.h",
         "src/core/ext/filters/client_channel/proxy_mapper.h",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.h",
         "src/core/ext/filters/client_channel/resolver.h",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
+        "src/core/ext/filters/client_channel/resolver_result_parsing.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
+        "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
     ],
@@ -1087,11 +1091,11 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
+        "health_proto",
         "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "health_proto",
     ],
 )
 
@@ -1589,8 +1593,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/security/security_connector/security_connector.cc",
-        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
+        "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
@@ -1623,8 +1627,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_linux.h",
         "src/core/lib/security/security_connector/local/local_security_connector.h",
         "src/core/lib/security/security_connector/security_connector.h",
-        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
+        "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
         "src/core/lib/security/transport/security_handshaker.h",
@@ -1650,6 +1654,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
+        "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
@@ -1673,6 +1678,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_decoder.h",
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
+        "src/core/ext/transport/chttp2/transport/context_list.h",
         "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",

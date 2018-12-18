@@ -26,6 +26,8 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
+#include <ext/spl/spl_exceptions.h>
+#include <zend_exceptions.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
@@ -86,6 +88,125 @@ ZEND_GET_MODULE(grpc)
    }
 */
 /* }}} */
+void create_new_channel(
+    wrapped_grpc_channel *channel,
+    char *target,
+    grpc_channel_args args,
+    wrapped_grpc_channel_credentials *creds) {
+  if (creds == NULL) {
+    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
+                                                             NULL);
+  } else {
+    channel->wrapper->wrapped =
+        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+  }
+}
+
+void acquire_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_lock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void release_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_unlock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void destroy_grpc_channels() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    wrapped_grpc_channel wrapped_channel;
+    wrapped_channel.wrapper = le->channel;
+    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
+    grpc_channel_destroy(channel->wrapped);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void restart_channels() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    wrapped_grpc_channel wrapped_channel;
+    wrapped_channel.wrapper = le->channel;
+    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
+    create_new_channel(&wrapped_channel, channel->target, channel->args,
+                       channel->creds);
+    gpr_mu_unlock(&channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void prefork() {
+  acquire_persistent_locks();
+}
+
+void postfork_child() {
+  TSRMLS_FETCH();
+
+  // loop through persistant list and destroy all underlying grpc_channel objs
+  destroy_grpc_channels();
+
+  // clear completion queue
+  grpc_php_shutdown_completion_queue(TSRMLS_C);
+
+  // clean-up grpc_core
+  grpc_shutdown();
+  if (grpc_is_initialized() > 0) {
+    zend_throw_exception(spl_ce_UnexpectedValueException,
+                         "Oops, failed to shutdown gRPC Core after fork()",
+                         1 TSRMLS_CC);
+  }
+
+  // restart grpc_core
+  grpc_init();
+  grpc_php_init_completion_queue(TSRMLS_C);
+
+  // re-create grpc_channel and point wrapped to it
+  // unlock wrapped grpc channel mutex
+  restart_channels();
+}
+
+void postfork_parent() {
+  release_persistent_locks();
+}
+
+void register_fork_handlers() {
+  if (getenv("GRPC_ENABLE_FORK_SUPPORT")) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  }
+}
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -265,6 +386,7 @@ PHP_MINFO_FUNCTION(grpc) {
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
     grpc_init();
+    register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);
     GRPC_G(initialized) = 1;
   }

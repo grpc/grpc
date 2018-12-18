@@ -437,7 +437,7 @@ int main(int argc, char** argv) {
   // Zalloc dst_addrs to avoid oversized frames.
   test_addrs* dst_addrs =
       static_cast<test_addrs*>(gpr_zalloc(sizeof(*dst_addrs)));
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

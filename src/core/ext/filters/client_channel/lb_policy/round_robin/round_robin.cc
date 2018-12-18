@@ -57,7 +57,8 @@ class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
 
-  void UpdateLocked(const grpc_channel_args& args) override;
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override;
   bool PickLocked(PickState* pick, grpc_error** error) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
@@ -81,8 +82,6 @@ class RoundRobin : public LoadBalancingPolicy {
 
   // Data for a particular subchannel in a subchannel list.
   // This subclass adds the following functionality:
-  // - Tracks user_data associated with each address, which will be
-  //   returned along with picks that select the subchannel.
   // - Tracks the previous connectivity state of the subchannel, so that
   //   we know how many subchannels are in each state.
   class RoundRobinSubchannelData
@@ -92,26 +91,9 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const grpc_lb_user_data_vtable* user_data_vtable,
-        const grpc_lb_address& address, grpc_subchannel* subchannel,
+        const ServerAddress& address, grpc_subchannel* subchannel,
         grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
-                         combiner),
-          user_data_vtable_(user_data_vtable),
-          user_data_(user_data_vtable_ != nullptr
-                         ? user_data_vtable_->copy(address.user_data)
-                         : nullptr) {}
-
-    void UnrefSubchannelLocked(const char* reason) override {
-      SubchannelData::UnrefSubchannelLocked(reason);
-      if (user_data_ != nullptr) {
-        GPR_ASSERT(user_data_vtable_ != nullptr);
-        user_data_vtable_->destroy(user_data_);
-        user_data_ = nullptr;
-      }
-    }
-
-    void* user_data() const { return user_data_; }
+        : SubchannelData(subchannel_list, address, subchannel, combiner) {}
 
     grpc_connectivity_state connectivity_state() const {
       return last_connectivity_state_;
@@ -124,8 +106,6 @@ class RoundRobin : public LoadBalancingPolicy {
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state, grpc_error* error) override;
 
-    const grpc_lb_user_data_vtable* user_data_vtable_;
-    void* user_data_ = nullptr;
     grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
   };
 
@@ -136,7 +116,7 @@ class RoundRobin : public LoadBalancingPolicy {
    public:
     RoundRobinSubchannelList(
         RoundRobin* policy, TraceFlag* tracer,
-        const grpc_lb_addresses* addresses, grpc_combiner* combiner,
+        const ServerAddressList& addresses, grpc_combiner* combiner,
         grpc_client_channel_factory* client_channel_factory,
         const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
@@ -232,7 +212,7 @@ RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "round_robin");
-  UpdateLocked(*args.args);
+  UpdateLocked(*args.args, args.lb_config);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels());
@@ -353,9 +333,6 @@ bool RoundRobin::DoPickLocked(PickState* pick) {
         subchannel_list_->subchannel(next_ready_index);
     GPR_ASSERT(sd->connected_subchannel() != nullptr);
     pick->connected_subchannel = sd->connected_subchannel()->Ref();
-    if (pick->user_data != nullptr) {
-      *pick->user_data = sd->user_data();
-    }
     if (grpc_lb_round_robin_trace.enabled()) {
       gpr_log(GPR_INFO,
               "[RR %p] Picked target <-- Subchannel %p (connected %p) (sl %p, "
@@ -664,10 +641,11 @@ void RoundRobin::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
                                                  notify);
 }
 
-void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
-  const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
+void RoundRobin::UpdateLocked(const grpc_channel_args& args,
+                              grpc_json* lb_config) {
   AutoChildRefsUpdater guard(this);
-  if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
+  const ServerAddressList* addresses = FindServerAddressListChannelArg(&args);
+  if (addresses == nullptr) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
     // Otherwise, keep using the current subchannel list (ignore this update).
@@ -679,11 +657,9 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
     }
     return;
   }
-  grpc_lb_addresses* addresses =
-      static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO, "[RR %p] received update with %" PRIuPTR " addresses",
-            this, addresses->num_addresses);
+            this, addresses->size());
   }
   // Replace latest_pending_subchannel_list_.
   if (latest_pending_subchannel_list_ != nullptr) {
@@ -694,7 +670,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
     }
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, addresses, combiner(),
+      this, &grpc_lb_round_robin_trace, *addresses, combiner(),
       client_channel_factory(), args);
   // If we haven't started picking yet or the new list is empty,
   // immediately promote the new list to the current list.

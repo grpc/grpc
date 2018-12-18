@@ -307,8 +307,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
         GPR_CODEGEN_ASSERT(ignored == tag);
-        // Ignore mutations by FinalizeResult: Pluck returns the C API status
-        return ev.success != 0;
+        return ok;
       }
     }
   }
