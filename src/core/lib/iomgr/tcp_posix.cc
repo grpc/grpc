@@ -818,7 +818,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
-  ssize_t sent_length;
+  ssize_t sent_length = 0;
   size_t sending_length;
   size_t trailing;
   size_t unwind_slice_idx;
