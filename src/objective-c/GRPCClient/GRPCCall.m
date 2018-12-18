@@ -484,8 +484,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
                   callSafety:(GRPCCallSafety)safety
               requestsWriter:(GRXWriter *)requestWriter
                  callOptions:(GRPCCallOptions *)callOptions {
-  // Purposely using pointer rather than length ([host length] == 0) for backwards compatibility.
-  NSAssert(host.length != 0 && path.length != 0, @"Neither host nor path can be nil.");
+  // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
+  NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
   NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
   NSAssert(requestWriter.state == GRXWriterStateNotStarted,
            @"The requests writer can't be already started.");
