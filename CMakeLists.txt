@@ -4873,6 +4873,11 @@ add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
 )
 
+if(_gRPC_PLATFORM_LINUX)
+  set_property(TARGET grpcpp_channelz PROPERTY VERSION ${CPP_VERSION})
+  set_property(TARGET grpcpp_channelz PROPERTY SOVERSION ${CPP_VERSION_MAJOR})
+endif()
+
 if(WIN32 AND MSVC)
   set_target_properties(grpcpp_channelz PROPERTIES COMPILE_PDB_NAME "grpcpp_channelz"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
