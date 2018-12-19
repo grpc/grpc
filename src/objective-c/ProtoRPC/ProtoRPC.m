@@ -199,7 +199,8 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   @synchronized(self) {
-    if (initialMetadata != nil && [_handler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
+    if (initialMetadata != nil &&
+        [_handler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
       dispatch_async(_dispatchQueue, ^{
         id<GRPCProtoResponseHandler> copiedHandler = nil;
         @synchronized(self) {
