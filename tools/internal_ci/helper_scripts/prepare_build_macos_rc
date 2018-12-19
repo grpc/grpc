@@ -55,7 +55,7 @@ time pod repo update  # needed by python
 
 # python
 time pip install virtualenv --user python
-time pip install -U Mako six tox setuptools twisted pyyaml --user python
+time pip install -U Mako six tox setuptools twisted pyyaml pyjwt cryptography requests --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # Install Python 3.7
