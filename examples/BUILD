@@ -66,3 +66,16 @@ cc_binary(
     deps = [":helloworld", "//:grpc++"],
 )
 
+cc_binary(
+    name = "lb_client",
+    srcs = ["cpp/load_balancing/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
+
+cc_binary(
+    name = "lb_server",
+    srcs = ["cpp/load_balancing/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
