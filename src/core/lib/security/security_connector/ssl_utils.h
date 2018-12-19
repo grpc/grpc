@@ -26,6 +26,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice_buffer.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -33,15 +34,16 @@
 #define GRPC_SSL_URL_SCHEME "https"
 
 /* Check peer information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer(grpc_security_connector* sc,
-                                const char* peer_name, const tsi_peer* peer,
-                                grpc_auth_context** auth_context);
+grpc_error* grpc_ssl_check_peer(
+    const char* peer_name, const tsi_peer* peer,
+    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context);
 
 /* Check peer information returned from SPIFFE SSL handshakes. */
 grpc_error* grpc_spiffe_check_peer_property(const tsi_peer* peer);
 
 /* Exposed for testing only. */
-grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer);
+grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
+    const tsi_peer* peer);
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);
