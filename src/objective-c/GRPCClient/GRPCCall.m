@@ -885,7 +885,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     @synchronized(self) {
       self.isWaitingForToken = YES;
     }
-    void (^tokenHandler)(NSString *token) = ^(NSString *token) {
+    [_callOptions.authTokenProvider getTokenWithHandler:^(NSString *token) {
       @synchronized(self) {
         if (self.isWaitingForToken) {
           if (token) {
@@ -895,17 +895,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
           self.isWaitingForToken = NO;
         }
       }
-    };
-    id<GRPCAuthorizationProtocol> authTokenProvider = _callOptions.authTokenProvider;
-    if ([authTokenProvider respondsToSelector:@selector(provideTokenToHandler:)]) {
-      [_callOptions.authTokenProvider provideTokenToHandler:tokenHandler];
-    } else {
-      NSAssert([authTokenProvider respondsToSelector:@selector(getTokenWithHandler:)],
-               @"authTokenProvider has no usable method");
-      if ([authTokenProvider respondsToSelector:@selector(getTokenWithHandler:)]) {
-        [_callOptions.authTokenProvider getTokenWithHandler:tokenHandler];
-      }
-    }
+    }];
   } else {
     [self startCallWithWriteable:writeable];
   }

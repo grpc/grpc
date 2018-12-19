@@ -241,7 +241,7 @@ static const NSTimeInterval kTestTimeout = 16;
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
-- (void)provideTokenToHandler:(void (^)(NSString *token))handler {
+- (void)getTokenWithHandler:(void (^)(NSString *token))handler {
   dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
   dispatch_sync(queue, ^{
     handler(@"test-access-token");
