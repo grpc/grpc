@@ -127,6 +127,8 @@ class Runner(object):
         """See setuptools' test_runner setup argument for information."""
         # only run test cases with id starting with given prefix
         testcase_filter = os.getenv('GRPC_PYTHON_TESTRUNNER_FILTER')
+        os.environ['GRPC_TRACE'] = 'all'
+        os.environ['GRPC_VERBOSITY'] = 'debug'
         filtered_cases = []
         for case in _loader.iterate_suite_cases(suite):
             if not testcase_filter or case.id().startswith(testcase_filter):
@@ -174,15 +176,15 @@ class Runner(object):
             except AttributeError:
                 pass
 
-        try_set_handler('SIGINT', sigint_handler)
-        try_set_handler('SIGSEGV', fault_handler)
-        try_set_handler('SIGBUS', fault_handler)
-        try_set_handler('SIGABRT', fault_handler)
-        try_set_handler('SIGFPE', fault_handler)
-        try_set_handler('SIGILL', fault_handler)
-        # Sometimes output will lag after a test has successfully finished; we
-        # ignore such writes to our pipes.
-        try_set_handler('SIGPIPE', signal.SIG_IGN)
+        # try_set_handler('SIGINT', sigint_handler)
+        # try_set_handler('SIGSEGV', fault_handler)
+        # try_set_handler('SIGBUS', fault_handler)
+        # try_set_handler('SIGABRT', fault_handler)
+        # try_set_handler('SIGFPE', fault_handler)
+        # try_set_handler('SIGILL', fault_handler)
+        # # Sometimes output will lag after a test has successfully finished; we
+        # # ignore such writes to our pipes.
+        # try_set_handler('SIGPIPE', signal.SIG_IGN)
 
         # Run the tests
         result.startTestRun()
@@ -197,7 +199,7 @@ class Runner(object):
                 case_thread = threading.Thread(
                     target=augmented_case.case.run, args=(result,))
                 try:
-                    with stdout_pipe, stderr_pipe:
+                    # with stdout_pipe, stderr_pipe:
                         case_thread.start()
                         while case_thread.is_alive():
                             check_kill_self()

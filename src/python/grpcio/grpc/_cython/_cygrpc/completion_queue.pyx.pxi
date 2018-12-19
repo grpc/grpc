@@ -72,6 +72,7 @@ cdef class CompletionQueue:
   def __cinit__(self, shutdown_cq=False):
     cdef grpc_completion_queue_attributes c_attrs
     fork_handlers_and_grpc_init()
+    grpc_completion_queue_shutdown(NULL)
     if shutdown_cq:
       c_attrs.version = 1
       c_attrs.cq_completion_type = GRPC_CQ_NEXT
