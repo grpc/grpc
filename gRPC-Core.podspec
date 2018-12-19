@@ -1204,9 +1204,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
 
-    ss.source_files = 'test/core/util/test_config.cc',
-                      'test/core/util/test_config.h',
-                      'test/core/end2end/data/client_certs.cc',
+    ss.source_files = 'test/core/end2end/data/client_certs.cc',
                       'test/core/end2end/data/server1_cert.cc',
                       'test/core/end2end/data/server1_key.cc',
                       'test/core/end2end/data/test_root_cert.cc',

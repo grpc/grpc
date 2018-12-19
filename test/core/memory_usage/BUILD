@@ -25,7 +25,6 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -37,24 +36,22 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
-        "//test/core/end2end:ssl_test_data"
     ],
 )
 
 grpc_cc_test(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
-    language = "C++",
     data = [
-    ":client",
-    ":server",
+        ":client",
+        ":server",
     ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
