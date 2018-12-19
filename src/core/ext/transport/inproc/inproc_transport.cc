@@ -1236,7 +1236,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
   grpc_server_setup_transport(server, server_transport, nullptr, server_args,
-                              0);
+                              nullptr);
   grpc_channel* channel = grpc_channel_create(
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 

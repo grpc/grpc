@@ -26,6 +26,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/memory_counters.h"
 
@@ -47,19 +48,18 @@ static void guard_free(void* vptr);
 #endif
 
 static void* guard_malloc(size_t size) {
-  size_t* ptr;
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.malloc_fn(size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  void* ptr = g_old_allocs.malloc_fn(
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  *static_cast<size_t*>(ptr) = size;
+  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void* guard_realloc(void* vptr, size_t size) {
-  size_t* ptr = static_cast<size_t*>(vptr);
   if (vptr == nullptr) {
     return guard_malloc(size);
   }
@@ -67,21 +67,25 @@ static void* guard_realloc(void* vptr, size_t size) {
     guard_free(vptr);
     return nullptr;
   }
-  --ptr;
+  void* ptr =
+      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
+                       -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.realloc_fn(ptr, size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  ptr = g_old_allocs.realloc_fn(
+      ptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  *static_cast<size_t*>(ptr) = size;
+  return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
 static void guard_free(void* vptr) {
-  size_t* ptr = static_cast<size_t*>(vptr);
-  if (!vptr) return;
-  --ptr;
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
+  if (vptr == nullptr) return;
+  void* ptr =
+      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
+                       -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
   g_old_allocs.free_fn(ptr);
 }

@@ -253,7 +253,8 @@ extern id const kGRPCTrailersKey;
 + (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
 
 /**
- * Set the dispatch queue to be used for callbacks.
+ * Set the dispatch queue to be used for callbacks. Current implementation requires \a queue to be a
+ * serial queue.
  *
  * This configuration is only effective before the call starts.
  */

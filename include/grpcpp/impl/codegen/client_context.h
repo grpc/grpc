@@ -46,6 +46,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -199,6 +200,13 @@ class ClientContext {
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
@@ -418,12 +426,13 @@ class ClientContext {
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::ChannelInterface* channel,
+      const char* method, internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
       const std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
           creators,
       size_t interceptor_pos) {
-    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_ = experimental::ClientRpcInfo(this, type, method, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }

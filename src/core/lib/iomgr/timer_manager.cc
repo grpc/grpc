@@ -67,6 +67,7 @@ static void timer_thread(void* completed_thread_ptr);
 extern int64_t g_timer_manager_init_count;
 extern int64_t g_timer_manager_shutdown_count;
 extern int64_t g_fork_count;
+extern int64_t g_next_value;
 #endif  // GRPC_DEBUG_TIMER_MANAGER
 
 static void gc_completed_threads(void) {
@@ -193,6 +194,11 @@ static bool wait_until(grpc_millis next) {
       gpr_log(GPR_INFO, "sleep until kicked");
     }
 
+      // For debug of the timer manager crash only.
+      // TODO (mxyan): remove after bug is fixed.
+#ifdef GRPC_DEBUG_TIMER_MANAGER
+    g_next_value = next;
+#endif
     gpr_cv_wait(&g_cv_wait, &g_mu,
                 grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 

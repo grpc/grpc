@@ -61,7 +61,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
                                    StringRefFromSlice(&md[i].value)));
   }
-  SecureAuthContext context(ctx, false);
+  SecureAuthContext context(ctx);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
   AuthMetadataProcessor::OutputMetadata response_metadata;
 
