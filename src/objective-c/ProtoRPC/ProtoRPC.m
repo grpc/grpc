@@ -235,7 +235,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
         }
         [copiedHandler
             didCloseWithTrailingMetadata:nil
-                                   error:ErrorForBadProto(message, _responseClass, error)];
+                                   error:ErrorForBadProto(message, self->_responseClass, error)];
       });
       [_call cancel];
       _call = nil;
