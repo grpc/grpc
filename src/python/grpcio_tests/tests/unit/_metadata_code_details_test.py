@@ -198,8 +198,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 
-        channel = grpc.insecure_channel('localhost:{}'.format(port))
-        self._unary_unary = channel.unary_unary(
+        self._channel = grpc.insecure_channel('localhost:{}'.format(port))
+        self._unary_unary = self._channel.unary_unary(
             '/'.join((
                 '',
                 _SERVICE,
@@ -208,17 +208,17 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
         )
-        self._unary_stream = channel.unary_stream('/'.join((
+        self._unary_stream = self._channel.unary_stream('/'.join((
             '',
             _SERVICE,
             _UNARY_STREAM,
         )),)
-        self._stream_unary = channel.stream_unary('/'.join((
+        self._stream_unary = self._channel.stream_unary('/'.join((
             '',
             _SERVICE,
             _STREAM_UNARY,
         )),)
-        self._stream_stream = channel.stream_stream(
+        self._stream_stream = self._channel.stream_stream(
             '/'.join((
                 '',
                 _SERVICE,
@@ -227,6 +227,10 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             request_serializer=_REQUEST_SERIALIZER,
             response_deserializer=_RESPONSE_DESERIALIZER,
         )
+
+    def tearDown(self):
+        self._server.stop(None)
+        self._channel.close()
 
     def testSuccessfulUnaryUnary(self):
         self._servicer.set_details(_DETAILS)
