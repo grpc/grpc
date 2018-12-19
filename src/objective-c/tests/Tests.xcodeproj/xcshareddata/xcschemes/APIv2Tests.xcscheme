@@ -14,7 +14,7 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5E10F5A6218CB0D1008BAB68"
+               BlueprintIdentifier = "5E3B95A121CAC6C500C0A151"
                BuildableName = "APIv2Tests.xctest"
                BlueprintName = "APIv2Tests"
                ReferencedContainer = "container:Tests.xcodeproj">
@@ -32,7 +32,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5E10F5A6218CB0D1008BAB68"
+               BlueprintIdentifier = "5E3B95A121CAC6C500C0A151"
                BuildableName = "APIv2Tests.xctest"
                BlueprintName = "APIv2Tests"
                ReferencedContainer = "container:Tests.xcodeproj">
@@ -55,7 +55,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5E10F5A6218CB0D1008BAB68"
+            BlueprintIdentifier = "5E3B95A121CAC6C500C0A151"
             BuildableName = "APIv2Tests.xctest"
             BlueprintName = "APIv2Tests"
             ReferencedContainer = "container:Tests.xcodeproj">
@@ -73,7 +73,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5E10F5A6218CB0D1008BAB68"
+            BlueprintIdentifier = "5E3B95A121CAC6C500C0A151"
             BuildableName = "APIv2Tests.xctest"
             BlueprintName = "APIv2Tests"
             ReferencedContainer = "container:Tests.xcodeproj">
