@@ -22,7 +22,6 @@ import re
 import shutil
 import subprocess
 import sys
-import traceback
 
 import setuptools
 from setuptools.command import build_ext
