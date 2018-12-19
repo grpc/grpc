@@ -58,11 +58,14 @@
   return self;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
+// Do not call designated initializer here due to nullability incompatibility. This method is from
+// old API and does not assert on nullability of the parameters.
+
 - (instancetype)initWithHost:(NSString *)host
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName {
-  // Do not call designated initializer here due to nullability incompatibility. This method is from
-  // old API and does not assert on nullability of the parameters.
   if ((self = [super init])) {
     _host = [host copy];
     _packageName = [packageName copy];
@@ -71,6 +74,8 @@
   }
   return self;
 }
+
+#pragma clang diagnostic pop
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
@@ -87,7 +92,7 @@
 
 - (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
                             message:(id)message
-                    responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+                    responseHandler:(id<GRPCProtoResponseHandler>)handler
                         callOptions:(GRPCCallOptions *)callOptions
                       responseClass:(Class)responseClass {
   GRPCProtoMethod *methodName =
@@ -104,7 +109,7 @@
 }
 
 - (GRPCStreamingProtoCall *)RPCToMethod:(NSString *)method
-                        responseHandler:(id<GRPCProtoResponseCallbacks>)handler
+                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                             callOptions:(GRPCCallOptions *)callOptions
                           responseClass:(Class)responseClass {
   GRPCProtoMethod *methodName =

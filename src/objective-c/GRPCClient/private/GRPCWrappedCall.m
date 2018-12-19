@@ -292,6 +292,10 @@
       gpr_free(ops_array);
 
       NSAssert(error == GRPC_CALL_OK, @"Error starting a batch of operations: %i", error);
+      // To avoid compiler complaint when NSAssert is disabled.
+      if (error != GRPC_CALL_OK) {
+        return;
+      }
     }
   }
 }

@@ -25,7 +25,7 @@
 @class GRPCProtoCall;
 @class GRPCUnaryProtoCall;
 @class GRPCStreamingProtoCall;
-@protocol GRPCProtoResponseCallbacks;
+@protocol GRPCProtoResponseHandler;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
@@ -49,12 +49,12 @@ __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoServ
 
 - (nullable GRPCUnaryProtoCall *)RPCToMethod:(nonnull NSString *)method
                                      message:(nonnull id)message
-                             responseHandler:(nonnull id<GRPCProtoResponseCallbacks>)handler
+                             responseHandler:(nonnull id<GRPCProtoResponseHandler>)handler
                                  callOptions:(nullable GRPCCallOptions *)callOptions
                                responseClass:(nonnull Class)responseClass;
 
 - (nullable GRPCStreamingProtoCall *)RPCToMethod:(nonnull NSString *)method
-                                 responseHandler:(nonnull id<GRPCProtoResponseCallbacks>)handler
+                                 responseHandler:(nonnull id<GRPCProtoResponseHandler>)handler
                                      callOptions:(nullable GRPCCallOptions *)callOptions
                                    responseClass:(nonnull Class)responseClass;
 
