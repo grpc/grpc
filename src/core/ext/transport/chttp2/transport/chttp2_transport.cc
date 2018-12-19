@@ -568,8 +568,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
   cancel_pings(t, GRPC_ERROR_REF(error));
   // ContextList::Execute follows semantics of a callback function and does not
   // need a ref on error
-  grpc_core::ContextList::Execute(cl, nullptr, error);
-  cl = nullptr;
+  grpc_core::ContextList::Execute(t->cl, nullptr, error);
+  t->cl = nullptr;
   if (t->closed_with_error == GRPC_ERROR_NONE) {
     if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
