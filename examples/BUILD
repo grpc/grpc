@@ -79,3 +79,17 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [":helloworld", "//:grpc++"],
 )
+
+cc_binary(
+    name = "compression_client",
+    srcs = ["cpp/compression/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
+
+cc_binary(
+    name = "compression_server",
+    srcs = ["cpp/compression/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
