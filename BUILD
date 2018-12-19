@@ -1058,7 +1058,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
-        "src/core/ext/filters/client_channel/subchannel_index.cc",
+        "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
+        "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
+        "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
@@ -1082,7 +1084,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/subchannel.h",
-        "src/core/ext/filters/client_channel/subchannel_index.h",
+        "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
+        "src/core/ext/filters/client_channel/global_subchannel_pool.h",
+        "src/core/ext/filters/client_channel/local_subchannel_pool.h",
     ],
     language = "c++",
     deps = [

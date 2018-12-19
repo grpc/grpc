@@ -20,6 +20,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <set>
 #include <thread>
 
 #include <grpc/grpc.h>
@@ -35,10 +36,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -97,6 +98,7 @@ class MyTestServiceImpl : public TestServiceImpl {
       std::unique_lock<std::mutex> lock(mu_);
       ++request_count_;
     }
+    AddClient(context->peer());
     return TestServiceImpl::Echo(context, request, response);
   }
 
@@ -110,9 +112,21 @@ class MyTestServiceImpl : public TestServiceImpl {
     request_count_ = 0;
   }
 
+  std::set<grpc::string> clients() {
+    std::unique_lock<std::mutex> lock(clients_mu_);
+    return clients_;
+  }
+
  private:
+  void AddClient(const grpc::string& client) {
+    std::unique_lock<std::mutex> lock(clients_mu_);
+    clients_.insert(client);
+  }
+
   std::mutex mu_;
   int request_count_;
+  std::mutex clients_mu_;
+  std::set<grpc::string> clients_;
 };
 
 class ClientLbEnd2endTest : public ::testing::Test {
@@ -662,27 +676,57 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
+  // Start one server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  std::vector<int> ports = GetServersPorts();
+  // Create two channels that use local subchannel pool.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+  auto channel1 = BuildChannel("pick_first", args);
+  auto stub1 = BuildStub(channel1);
+  SetNextResolution(ports);
+  auto channel2 = BuildChannel("pick_first", args);
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  WaitForServer(stub1, 0, DEBUG_LOCATION);
+  // Send one RPC on each channel.
+  CheckRpcSendOk(stub1, DEBUG_LOCATION);
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // The server receives two requests.
+  EXPECT_EQ(2, servers_[0]->service_.request_count());
+  // The two requests are from two client ports, because the two channels didn't
+  // share subchannels with each other.
+  EXPECT_EQ(2UL, servers_[0]->service_.clients().size());
+}
+
 class ClientLbEnd2endWithParamTest
     : public ClientLbEnd2endTest,
-      public ::testing::WithParamInterface<bool> {
+      public ::testing::WithParamInterface<std::tuple<bool, bool>> {
  protected:
   void SetUp() override {
-    grpc_subchannel_index_test_only_set_force_creation(GetParam());
+    grpc_core::SubchannelKey::TestOnlySetForceDifferent(
+        std::get<0>(GetParam()));
     ClientLbEnd2endTest::SetUp();
   }
 
   void TearDown() override {
     ClientLbEnd2endTest::TearDown();
-    grpc_subchannel_index_test_only_set_force_creation(false);
+    grpc_core::SubchannelKey::TestOnlySetForceDifferent(false);
   }
 };
 
 TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
-  gpr_log(GPR_INFO, "subchannel force creation: %d", GetParam());
+  gpr_log(GPR_INFO, "subchannel key force different: %d",
+          std::get<0>(GetParam()));
+  gpr_log(GPR_INFO, "use local subchannel pool: %d", std::get<1>(GetParam()));
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
-  auto channel = BuildChannel("pick_first");
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, std::get<1>(GetParam()));
+  auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
@@ -698,7 +742,8 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
 }
 
 INSTANTIATE_TEST_CASE_P(SubchannelForceCreation, ClientLbEnd2endWithParamTest,
-                        ::testing::Bool());
+                        ::testing::Combine(::testing::Bool(),
+                                           ::testing::Bool()));
 
 TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   // Prepare the ports for up servers and down servers.

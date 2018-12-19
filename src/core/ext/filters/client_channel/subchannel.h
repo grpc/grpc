@@ -39,7 +39,6 @@
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
-typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -71,6 +70,9 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #endif
 
 namespace grpc_core {
+
+class SubchannelKey;
+class SubchannelPoolInterface;
 
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
@@ -164,7 +166,7 @@ grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
 
 /** return the subchannel index key for \a subchannel */
-const grpc_subchannel_key* grpc_subchannel_get_key(
+const grpc_core::SubchannelKey* grpc_subchannel_get_key(
     const grpc_subchannel* subchannel);
 
 // Resets the connection backoff of the subchannel.
@@ -196,6 +198,8 @@ struct grpc_subchannel_args {
   size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args* args;
+  /** The subchannel pool this subchannel is in */
+  grpc_core::SubchannelPoolInterface* subchannel_pool;
 };
 
 /** create a subchannel given a connector */

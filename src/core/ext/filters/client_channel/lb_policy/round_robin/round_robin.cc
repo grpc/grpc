@@ -33,7 +33,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
@@ -217,7 +216,6 @@ RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
     gpr_log(GPR_INFO, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels());
   }
-  grpc_subchannel_index_ref();
 }
 
 RoundRobin::~RoundRobin() {
@@ -229,7 +227,6 @@ RoundRobin::~RoundRobin() {
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
-  grpc_subchannel_index_unref();
 }
 
 void RoundRobin::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {

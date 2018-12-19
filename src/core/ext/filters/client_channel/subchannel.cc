@@ -33,7 +33,7 @@
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -92,6 +92,9 @@ class ConnectedSubchannelStateWatcher;
 }  // namespace grpc_core
 
 struct grpc_subchannel {
+  /** The subchannel pool this subchannel is in */
+  grpc_core::SubchannelPoolInterface* subchannel_pool_;
+
   grpc_connector* connector;
 
   /** refcount
@@ -107,7 +110,7 @@ struct grpc_subchannel {
   /** channel arguments */
   grpc_channel_args* args;
 
-  grpc_subchannel_key* key;
+  grpc_core::SubchannelKey* key;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -391,7 +394,7 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_connectivity_state_destroy(&c->state_and_health_tracker);
   grpc_connector_unref(c->connector);
   grpc_pollset_set_destroy(c->pollset_set);
-  grpc_subchannel_key_destroy(c->key);
+  grpc_core::Delete(c->key);
   gpr_mu_destroy(&c->mu);
   gpr_free(c);
 }
@@ -444,8 +447,8 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 }
 
 static void disconnect(grpc_subchannel* c) {
-  grpc_subchannel_index_unregister(c->key, c);
   gpr_mu_lock(&c->mu);
+  c->subchannel_pool_->UnregisterSubchannel(c->key, c);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -554,13 +557,13 @@ struct HealthCheckParams {
 
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
                                         const grpc_subchannel_args* args) {
-  grpc_subchannel_key* key = grpc_subchannel_key_create(args);
-  grpc_subchannel* c = grpc_subchannel_index_find(key);
+  grpc_core::SubchannelKey* key =
+      grpc_core::New<grpc_core::SubchannelKey>(args);
+  grpc_subchannel* c = args->subchannel_pool->FindSubchannel(key);
   if (c) {
-    grpc_subchannel_key_destroy(key);
+    grpc_core::Delete(key);
     return c;
   }
-
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = static_cast<grpc_subchannel*>(gpr_zalloc(sizeof(*c)));
   c->key = key;
@@ -642,8 +645,8 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
-
-  return grpc_subchannel_index_register(key, c);
+  c->subchannel_pool_ = args->subchannel_pool;
+  return c->subchannel_pool_->RegisterSubchannel(key, c);
 }
 
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
@@ -1009,7 +1012,7 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c) {
   return copy;
 }
 
-const grpc_subchannel_key* grpc_subchannel_get_key(
+const grpc_core::SubchannelKey* grpc_subchannel_get_key(
     const grpc_subchannel* subchannel) {
   return subchannel->key;
 }

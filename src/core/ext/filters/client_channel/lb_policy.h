@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -168,6 +169,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  grpc_core::SubchannelPoolInterface* subchannel_pool() const {
+    return subchannel_pool_;
+  }
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -205,6 +210,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
+  SubchannelPoolInterface* subchannel_pool_;
+  bool use_local_subchannel_pool_;
 
   // Dummy classes needed for alignment issues.
   // See https://github.com/grpc/grpc/issues/16032 for context.
