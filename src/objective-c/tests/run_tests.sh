@@ -176,7 +176,7 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme ChannelTests \
+    -scheme APIv2Tests \
     -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -186,11 +186,12 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme APIv2Tests \
-    -destination name="iPhone X" \
+    -scheme ChannelTests \
+    -destination name="iPhone 8" \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
 
 exit 0
