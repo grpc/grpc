@@ -15,6 +15,8 @@
 
 # Defines languages, runtimes and releases for backward compatibility testing
 
+XYZ do not merge!!!
+
 
 def get_github_repo(lang):
     return {
