@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/trace.h"
 
-namespace grpc {
+namespace grpc_impl {
 
 namespace internal {
-class AlarmImpl : public CompletionQueueTag {
+class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
  public:
   AlarmImpl() : cq_(nullptr), tag_(nullptr) {
     gpr_ref_init(&refs_, 1);
@@ -51,7 +51,7 @@ class AlarmImpl : public CompletionQueueTag {
     Unref();
     return true;
   }
-  void Set(CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -114,13 +114,14 @@ class AlarmImpl : public CompletionQueueTag {
 };
 }  // namespace internal
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
+static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 
 Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();
 }
 
-void Alarm::SetInternal(CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
+                        void* tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration
   // or exposing core data structures in the C++ public headers.
@@ -145,4 +146,4 @@ Alarm::~Alarm() {
 }
 
 void Alarm::Cancel() { static_cast<internal::AlarmImpl*>(alarm_)->Cancel(); }
-}  // namespace grpc
+}  // namespace grpc_impl

@@ -32,7 +32,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

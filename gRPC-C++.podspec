@@ -78,6 +78,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'include/grpcpp'
 
     ss.source_files = 'include/grpcpp/alarm.h',
+                      'include/grpcpp/alarm_impl.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
@@ -115,10 +116,13 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
                       'include/grpcpp/support/client_callback.h',
+                      'include/grpcpp/support/client_interceptor.h',
                       'include/grpcpp/support/config.h',
+                      'include/grpcpp/support/interceptor.h',
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
+                      'include/grpcpp/support/server_interceptor.h',
                       'include/grpcpp/support/slice.h',
                       'include/grpcpp/support/status.h',
                       'include/grpcpp/support/status_code_enum.h',

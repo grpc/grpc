@@ -60,7 +60,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -86,7 +85,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:report_qps_scenario_service_proto",
         "//src/proto/grpc/testing:worker_service_proto",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -205,7 +203,6 @@ grpc_cc_binary(
     deps = [
         ":qps_worker_impl",
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

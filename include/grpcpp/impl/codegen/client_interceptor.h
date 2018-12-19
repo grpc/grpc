@@ -38,9 +38,17 @@ class InterceptorBatchMethodsImpl;
 namespace experimental {
 class ClientRpcInfo;
 
+// A factory interface for creation of client interceptors. A vector of
+// factories can be provided at channel creation which will be used to create a
+// new vector of client interceptors per RPC. Client interceptor authors should
+// create a subclass of ClientInterceptorFactorInterface which creates objects
+// of their interceptors.
 class ClientInterceptorFactoryInterface {
  public:
   virtual ~ClientInterceptorFactoryInterface() {}
+  // Returns a pointer to an Interceptor object on successful creation, nullptr
+  // otherwise. If nullptr is returned, this server interceptor factory is
+  // ignored for the purposes of that RPC.
   virtual Interceptor* CreateClientInterceptor(ClientRpcInfo* info) = 0;
 };
 }  // namespace experimental
@@ -50,11 +58,16 @@ extern experimental::ClientInterceptorFactoryInterface*
     g_global_client_interceptor_factory;
 }
 
+/// ClientRpcInfo represents the state of a particular RPC as it
+/// appears to an interceptor. It is created and owned by the library and
+/// passed to the CreateClientInterceptor method of the application's
+/// ClientInterceptorFactoryInterface implementation
 namespace experimental {
 class ClientRpcInfo {
  public:
   // TODO(yashykt): Stop default-constructing ClientRpcInfo and remove UNKNOWN
   //                from the list of possible Types.
+  /// Type categorizes RPCs by unary or streaming type
   enum class Type {
     UNARY,
     CLIENT_STREAMING,
@@ -65,13 +78,23 @@ class ClientRpcInfo {
 
   ~ClientRpcInfo(){};
 
+  // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
   ClientRpcInfo(ClientRpcInfo&&) = default;
 
   // Getter methods
+
+  /// Return the fully-specified method name
   const char* method() const { return method_; }
+
+  /// Return a pointer to the channel on which the RPC is being sent
   ChannelInterface* channel() { return channel_; }
+
+  /// Return a pointer to the underlying ClientContext structure associated
+  /// with the RPC to support features that apply to it
   grpc::ClientContext* client_context() { return ctx_; }
+
+  /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
 
  private:
@@ -120,8 +143,11 @@ class ClientRpcInfo {
     }
     for (auto it = creators.begin() + interceptor_pos; it != creators.end();
          ++it) {
-      interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(
-          (*it)->CreateClientInterceptor(this)));
+      auto* interceptor = (*it)->CreateClientInterceptor(this);
+      if (interceptor != nullptr) {
+        interceptors_.push_back(
+            std::unique_ptr<experimental::Interceptor>(interceptor));
+      }
     }
     if (internal::g_global_client_interceptor_factory != nullptr) {
       interceptors_.push_back(std::unique_ptr<experimental::Interceptor>(

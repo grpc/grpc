@@ -53,6 +53,20 @@ cc_binary(
 )
 
 cc_binary(
+    name = "metadata_client",
+    srcs = ["cpp/metadata/greeter_client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
+
+cc_binary(
+    name = "metadata_server",
+    srcs = ["cpp/metadata/greeter_server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":helloworld", "//:grpc++"],
+)
+
+cc_binary(
     name = "lb_client",
     srcs = ["cpp/load_balancing/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],

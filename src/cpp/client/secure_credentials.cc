@@ -261,10 +261,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_status_code* status_code, const char** error_details) {
   std::multimap<grpc::string, grpc::string> metadata;
 
-  // const_cast is safe since the SecureAuthContext does not take owndership and
-  // the object is passed as a const ref to plugin_->GetMetadata.
+  // const_cast is safe since the SecureAuthContext only inc/dec the refcount
+  // and the object is passed as a const ref to plugin_->GetMetadata.
   SecureAuthContext cpp_channel_auth_context(
-      const_cast<grpc_auth_context*>(context.channel_auth_context), false);
+      const_cast<grpc_auth_context*>(context.channel_auth_context));
 
   Status status = plugin_->GetMetadata(context.service_url, context.method_name,
                                        cpp_channel_auth_context, &metadata);

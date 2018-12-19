@@ -28,6 +28,9 @@ using ::opencensus::trace::SpanContext;
 void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
                            absl::string_view primary_role,
                            absl::string_view method, CensusContext* context) {
+  // Destruct the current CensusContext to free the Span memory before
+  // overwriting it below.
+  context->~CensusContext();
   GrpcTraceContext trace_ctxt;
   if (TraceContextEncoding::Decode(tracing, &trace_ctxt) !=
       TraceContextEncoding::kEncodeDecodeFailure) {
@@ -42,6 +45,9 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
 
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
                            CensusContext* parent_ctxt) {
+  // Destruct the current CensusContext to free the Span memory before
+  // overwriting it below.
+  ctxt->~CensusContext();
   if (parent_ctxt != nullptr) {
     SpanContext span_ctxt = parent_ctxt->Context();
     Span span = parent_ctxt->Span();
