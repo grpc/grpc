@@ -16,4 +16,5 @@
 set -ex
 
 export UPLOAD_TEST_RESULTS=true
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=tsan --cache_test_results=no
+EXCLUDE_TESTS="--test_tag_filters=-json_run_localhost_600_or_more_channels"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=tsan --cache_test_results=no "${EXCLUDE_TESTS}"

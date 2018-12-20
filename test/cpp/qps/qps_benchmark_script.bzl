@@ -56,6 +56,15 @@ def qps_json_driver_batch():
 
 def json_run_localhost_batch():
     for scenario in JSON_RUN_LOCALHOST_SCENARIOS:
+        extra_tags = []
+        configs = JSON_RUN_LOCALHOST_SCENARIOS[scenario]
+        # sanity check
+        assert len(configs) == 1
+        client_config = configs[0]['client_config']
+        channels_per_client = client_config['client_channels']
+        num_clients = client_config['num_clients']
+        if num_clients * channels_per_client >= 600:
+            extra_tags += 'json_run_localhost_600_or_more_channels'
         grpc_cc_test(
             name = "json_run_localhost_%s" % scenario,
             srcs = ["json_run_localhost.cc"],
@@ -75,5 +84,5 @@ def json_run_localhost_batch():
             ],
             tags = [
                 "json_run_localhost",
-            ],
+            ] + extra_tags,
         )
