@@ -40,17 +40,19 @@
 
 namespace {
 
-/* Process the result of server authorization check. */
+void spiffe_server_authorization_check_done_cb(
+    grpc_tls_server_authorization_check_arg* arg);
+
 grpc_error* spiffe_process_server_authorization_check_result(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
   char* msg = nullptr;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
-    gpr_asprintf(
-        &msg,
-        "Server authorization check is cancelled by the caller with error: %s",
-        arg->error_details);
+    gpr_asprintf(&msg,
+                 "Server authorization check is cancelled by the caller with "
+                 "error: %s",
+                 arg->error_details);
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
   } else if (arg->status == GRPC_STATUS_OK) {
     /* Server authorization check completed successfully but returned check
@@ -72,20 +74,7 @@ grpc_error* spiffe_process_server_authorization_check_result(
   return error;
 }
 
-/* gRPC-provided callback executed by application, which servers to bring the
- * control back to gRPC core. */
-void spiffe_server_authorization_check_done_cb(
-    grpc_tls_server_authorization_check_arg* arg) {
-  GPR_ASSERT(arg != nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  grpc_error* error = process_server_authorization_check_result(arg);
-  grpc_tls_spiffe_channel_security_connector* sc =
-      static_cast<grpc_tls_spiffe_channel_security_connector*>(
-          arg->cb_user_data);
-  GRPC_CLOSURE_SCHED(sc->on_peer_checked, error);
-}
-
-/** -- Util functions to create/destroy arg instances. -- */
+/** -- Util functions to create/destroy credential reload arg instances. -- */
 grpc_tls_credential_reload_arg* spiffe_credential_reload_arg_create(
     grpc_tls_key_materials_config* config) {
   grpc_tls_credential_reload_arg* arg =
@@ -100,17 +89,6 @@ grpc_tls_credential_reload_arg* spiffe_credential_reload_arg_create(
   return arg;
 }
 
-grpc_tls_server_authorization_check_arg*
-spiffe_server_authorization_check_arg_create(void* user_data) {
-  grpc_tls_server_authorization_check_arg* arg =
-      static_cast<grpc_tls_server_authorization_check_arg*>(
-          gpr_zalloc(sizeof(*arg)));
-  arg->cb = spiffe_server_authorization_check_done_cb;
-  arg->cb_user_data = user_data;
-  arg->status = GRPC_STATUS_OK;
-  return arg;
-}
-
 void spiffe_credential_reload_arg_destroy(grpc_tls_credential_reload_arg* arg) {
   if (arg == nullptr) {
     return;
@@ -120,18 +98,7 @@ void spiffe_credential_reload_arg_destroy(grpc_tls_credential_reload_arg* arg) {
   gpr_free(arg);
 }
 
-void spiffe_server_authorization_check_arg_destroy(
-    grpc_tls_server_authorization_check_arg* arg) {
-  if (arg == nullptr) {
-    return;
-  }
-  gpr_free((void*)arg->target_name);
-  gpr_free((void*)arg->peer_cert);
-  gpr_free((void*)arg->error_details);
-  gpr_free(arg);
-}
-
-class grpc_tls_spifffe_channel_security_connector final
+class grpc_tls_spiffe_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
   grpc_tls_spiffe_channel_security_connector(
@@ -153,7 +120,7 @@ class grpc_tls_spifffe_channel_security_connector final
         static_cast<grpc_tls_spiffe_credentials*>(mutable_channel_creds());
     reload_arg_ = spiffe_credential_reload_arg_create(
         creds->options()->key_materials_config);
-    check_arg_ = spiffe_server_authorization_check_arg_create(this);
+    check_arg_ = server_authorization_check_arg_create(this);
   }
 
   ~grpc_tls_spiffe_channel_security_connector() override {
@@ -164,7 +131,7 @@ class grpc_tls_spifffe_channel_security_connector final
       gpr_free(overridden_target_name_);
     }
     spiffe_credential_reload_arg_destroy(reload_arg_);
-    spiffe_server_authorization_check_arg_destroy(check_arg_);
+    server_authorization_check_arg_destroy(check_arg_);
   }
 
   void add_handshakers(grpc_pollset_set* interested_parties,
@@ -176,15 +143,15 @@ class grpc_tls_spifffe_channel_security_connector final
     tsi_result result = tls_tsi_handshaker_create(
         overridden_target_name_ != nullptr ? overridden_target_name_
                                            : target_name_,
-        session_cache_, creds->mutable_options(), reload_arg_,
-        true /* is_client */, &tsi_hs);
+        session_cache_, creds->options(), reload_arg_, true /* is_client */,
+        &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
       return;
     }
-    grpc_handshake_manager_add(
-        handshake_mgr, grpc_security_handshaker_create(tsi_hs, &sc->base));
+    grpc_handshake_manager_add(handshake_mgr,
+                               grpc_security_handshaker_create(tsi_hs, this));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -223,7 +190,7 @@ class grpc_tls_spifffe_channel_security_connector final
           return;
         }
         /* Server authorization check is handled synchronously. */
-        error = process_server_authorization_check_result(check_arg_);
+        error = spiffe_process_server_authorization_check_result(check_arg_);
       }
     }
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
@@ -288,6 +255,8 @@ class grpc_tls_spifffe_channel_security_connector final
     }
   }
 
+  const grpc_closure* on_peer_checked() const { return on_peer_checked_; }
+
  private:
   char* target_name_;
   char* overridden_target_name_;
@@ -295,6 +264,28 @@ class grpc_tls_spifffe_channel_security_connector final
   grpc_tls_credential_reload_arg* reload_arg_;
   grpc_tls_server_authorization_check_arg* check_arg_;
   grpc_closure* on_peer_checked_;
+
+  grpc_tls_server_authorization_check_arg*
+  server_authorization_check_arg_create(void* user_data) {
+    grpc_tls_server_authorization_check_arg* arg =
+        static_cast<grpc_tls_server_authorization_check_arg*>(
+            gpr_zalloc(sizeof(*arg)));
+    arg->cb = spiffe_server_authorization_check_done_cb;
+    arg->cb_user_data = user_data;
+    arg->status = GRPC_STATUS_OK;
+    return arg;
+  }
+
+  void server_authorization_check_arg_destroy(
+      grpc_tls_server_authorization_check_arg* arg) {
+    if (arg == nullptr) {
+      return;
+    }
+    gpr_free((void*)arg->target_name);
+    gpr_free((void*)arg->peer_cert);
+    gpr_free((void*)arg->error_details);
+    gpr_free(arg);
+  }
 };
 
 class grpc_tls_spiffe_server_security_connector
@@ -350,6 +341,19 @@ class grpc_tls_spiffe_server_security_connector
  private:
   grpc_tls_credential_reload_arg* reload_arg_;
 };
+
+/* gRPC-provided callback executed by application, which servers to bring the
+ * control back to gRPC core. */
+void spiffe_server_authorization_check_done_cb(
+    grpc_tls_server_authorization_check_arg* arg) {
+  GPR_ASSERT(arg != nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error* error = spiffe_process_server_authorization_check_result(arg);
+  grpc_tls_spiffe_channel_security_connector* sc =
+      static_cast<grpc_tls_spiffe_channel_security_connector*>(
+          arg->cb_user_data);
+  GRPC_CLOSURE_SCHED(const_cast<grpc_closure*>(sc->on_peer_checked()), error);
+}
 
 }  // namespace
 

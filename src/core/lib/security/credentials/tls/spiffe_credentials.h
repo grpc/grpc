@@ -42,7 +42,7 @@ class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
   grpc_tls_credentials_options* mutable_options() { return options_; }
 
  private:
-  grpc_alts_credentials_options* options_;
+  grpc_tls_credentials_options* options_;
 };
 
 /* Main struct for grpc SPIFFE server credential. */

@@ -4,7 +4,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -21,7 +20,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -36,7 +36,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -53,7 +52,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -70,7 +68,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -87,7 +84,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -102,8 +100,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -118,7 +116,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
@@ -166,7 +163,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -183,7 +179,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -215,7 +210,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -232,7 +226,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -249,7 +242,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -266,7 +258,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -283,7 +274,7 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -299,7 +290,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -316,7 +306,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -333,7 +322,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -350,7 +338,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -367,7 +354,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -384,7 +370,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -401,7 +386,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -418,7 +402,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -435,7 +418,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -452,7 +434,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -469,7 +450,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -486,7 +466,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -503,8 +482,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
       "transport_security_test_lib"
     ], 
     "headers": [], 
@@ -520,7 +499,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -537,7 +515,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -554,7 +531,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -571,7 +547,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -588,7 +563,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -605,7 +579,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -622,7 +595,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -637,7 +611,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -654,7 +627,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -669,7 +643,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -684,7 +659,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -699,7 +675,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -714,7 +691,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -729,7 +707,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -744,7 +723,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -759,7 +739,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -774,7 +755,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -789,7 +771,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -804,7 +787,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -819,7 +803,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -834,7 +819,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -849,7 +835,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -866,7 +851,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -883,7 +867,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -900,7 +883,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -917,7 +899,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -934,7 +915,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -951,7 +931,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -968,7 +947,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1001,7 +979,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1018,7 +995,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1035,7 +1011,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1052,7 +1027,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1069,7 +1043,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1102,7 +1075,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1119,7 +1091,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1152,7 +1123,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1169,7 +1139,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1190,7 +1159,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1211,7 +1179,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1243,7 +1210,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1260,7 +1226,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1277,7 +1242,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1294,7 +1258,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1311,7 +1274,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1328,7 +1290,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1345,7 +1306,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1362,7 +1322,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1379,7 +1338,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1396,7 +1354,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1413,7 +1370,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1433,7 +1389,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1450,7 +1405,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1467,7 +1421,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1484,7 +1437,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1501,7 +1453,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1518,7 +1469,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1535,7 +1485,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1552,7 +1501,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1569,7 +1517,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1586,7 +1533,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1603,7 +1549,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1620,7 +1565,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1637,7 +1581,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1654,7 +1597,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1671,7 +1613,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1688,7 +1629,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util"
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -1703,7 +1645,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1720,7 +1661,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1737,7 +1677,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1754,7 +1693,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1771,7 +1709,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1788,7 +1725,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1805,7 +1741,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1822,7 +1757,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1839,7 +1773,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1856,7 +1789,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1873,7 +1805,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1890,7 +1821,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1907,7 +1837,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1924,7 +1853,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1941,7 +1869,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1958,7 +1885,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1975,7 +1901,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -1992,7 +1917,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2009,7 +1933,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2026,7 +1949,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2043,7 +1965,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2060,7 +1981,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2077,7 +1997,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2094,7 +2013,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2111,7 +2029,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2128,8 +2045,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
       "ssl_transport_security_test_common", 
       "transport_security_test_lib"
     ], 
@@ -2146,7 +2063,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2163,7 +2079,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2180,7 +2095,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2197,7 +2111,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2214,7 +2127,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2231,7 +2143,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2248,7 +2159,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2265,7 +2175,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2282,7 +2191,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2299,7 +2207,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2316,7 +2223,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2333,7 +2239,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2350,8 +2255,8 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
       "ssl_transport_security_test_common", 
       "transport_security_test_lib"
     ], 
@@ -2368,7 +2273,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2385,7 +2289,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2402,7 +2305,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2419,7 +2321,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2436,7 +2337,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2453,7 +2353,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2470,7 +2369,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2487,7 +2385,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -2523,8 +2420,8 @@
     "deps": [
       "alts_test_util", 
       "gpr", 
-      "gpr_test_util", 
-      "grpc"
+      "grpc", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -2715,7 +2612,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2734,7 +2630,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2753,7 +2648,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -2770,7 +2664,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -2790,7 +2683,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2812,7 +2704,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2834,7 +2725,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2856,7 +2746,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2878,7 +2767,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2900,7 +2788,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2922,7 +2809,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2944,7 +2830,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2966,7 +2851,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -2988,7 +2872,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3010,7 +2893,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3035,7 +2917,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3060,7 +2941,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3082,7 +2962,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3107,7 +2986,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3129,7 +3007,6 @@
     "deps": [
       "benchmark", 
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -3150,7 +3027,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3199,7 +3075,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3220,7 +3095,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3240,7 +3114,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3261,7 +3134,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -3312,7 +3184,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3329,7 +3200,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3349,7 +3219,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3368,7 +3237,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3391,7 +3259,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3410,7 +3277,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3429,7 +3295,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3452,7 +3317,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3551,7 +3415,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3584,7 +3447,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3602,7 +3464,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3635,7 +3496,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc_test_util"
@@ -3653,7 +3513,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3695,7 +3554,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3714,7 +3572,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3733,7 +3590,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3834,7 +3690,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -3921,7 +3776,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_codegen_proto", 
@@ -3972,7 +3826,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -3995,7 +3848,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4017,7 +3869,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4039,7 +3890,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4075,7 +3925,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4094,7 +3943,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4113,7 +3961,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4135,7 +3982,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4155,7 +4001,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4176,7 +4021,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++_test_config", 
       "grpc_test_util"
@@ -4194,7 +4038,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4214,7 +4057,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4256,7 +4098,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4280,7 +4121,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4313,7 +4153,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4332,7 +4171,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_proto_reflection_desc_db", 
@@ -4370,7 +4208,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4391,7 +4228,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4413,7 +4249,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4435,7 +4270,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4462,7 +4296,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4481,7 +4314,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4511,7 +4343,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -4543,7 +4374,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4562,7 +4392,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4581,7 +4410,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4598,7 +4426,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4617,7 +4444,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -4639,7 +4465,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4658,7 +4483,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4684,7 +4508,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4710,7 +4533,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -4729,7 +4551,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4748,7 +4569,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4767,7 +4587,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4786,7 +4605,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4809,7 +4627,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -4835,7 +4652,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4854,7 +4670,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4871,7 +4686,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -4888,7 +4702,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -4934,7 +4747,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -4953,7 +4765,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -5016,7 +4827,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_test_util_unsecure", 
@@ -5035,7 +4845,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -5070,7 +4879,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -5858,7 +5666,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5876,7 +5683,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5894,7 +5700,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5912,7 +5717,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5930,7 +5734,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5948,7 +5751,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5966,7 +5768,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -5984,7 +5785,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6002,7 +5802,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6020,7 +5819,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6038,7 +5836,6 @@
     "deps": [
       "bad_client_test", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6056,7 +5853,6 @@
     "deps": [
       "bad_ssl_test_server", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6073,7 +5869,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6091,7 +5886,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6109,7 +5903,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6127,7 +5920,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6145,7 +5937,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6163,7 +5954,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6181,7 +5971,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6199,7 +5988,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6217,7 +6005,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6235,7 +6022,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6253,7 +6039,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6271,7 +6056,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6289,7 +6073,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6307,7 +6090,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6325,7 +6107,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6343,7 +6124,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6361,7 +6141,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6379,7 +6158,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6397,7 +6175,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6415,7 +6192,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6433,7 +6209,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6451,7 +6226,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6469,7 +6243,6 @@
     "deps": [
       "end2end_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6487,7 +6260,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6505,7 +6277,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6523,7 +6294,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6541,7 +6311,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6559,7 +6328,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6577,7 +6345,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6595,7 +6362,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6613,7 +6379,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6631,7 +6396,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6649,7 +6413,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6667,7 +6430,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6685,7 +6447,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6703,7 +6464,6 @@
     "deps": [
       "end2end_nosec_tests", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -6720,7 +6480,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -6740,7 +6499,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6760,7 +6518,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6780,7 +6537,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6800,7 +6556,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
@@ -6820,7 +6575,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6840,7 +6594,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -6860,7 +6613,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6878,7 +6630,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6896,7 +6647,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6914,7 +6664,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6932,7 +6681,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6950,7 +6698,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6968,7 +6715,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6986,7 +6732,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7004,7 +6749,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7022,7 +6766,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7040,7 +6783,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7058,7 +6800,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7076,7 +6817,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7094,7 +6834,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7166,23 +6905,6 @@
   }, 
   {
     "deps": [
-      "gpr"
-    ], 
-    "headers": [
-      "test/core/util/test_config.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "gpr_test_util", 
-    "src": [
-      "test/core/util/test_config.cc", 
-      "test/core/util/test_config.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "census", 
       "gpr", 
       "grpc_base", 
@@ -7237,7 +6959,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util_base"
     ], 
@@ -7263,7 +6984,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_base", 
       "grpc_unsecure"
     ], 
@@ -7312,7 +7032,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
@@ -7333,7 +7052,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -7846,7 +7564,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -7901,7 +7618,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
@@ -8988,7 +8704,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -9008,7 +8723,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -9028,7 +8742,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -9129,7 +8842,6 @@
   {
     "deps": [
       "gpr", 
-      "gpr_test_util", 
       "grpc_test_util_unsecure", 
       "grpc_unsecure"
     ], 
@@ -10627,13 +10339,14 @@
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.h", 
       "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
       "src/core/lib/security/security_connector/fake/fake_security_connector.h", 
       "src/core/lib/security/security_connector/local/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.h", 
       "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
       "src/core/lib/security/security_connector/ssl_utils.h", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
       "src/core/lib/security/transport/security_handshaker.h", 
@@ -10679,8 +10392,8 @@
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.cc", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
-      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc", 
-      "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.cc", 
+      "src/core/lib/security/credentials/tls/spiffe_credentials.h", 
       "src/core/lib/security/security_connector/alts/alts_security_connector.cc", 
       "src/core/lib/security/security_connector/alts/alts_security_connector.h", 
       "src/core/lib/security/security_connector/fake/fake_security_connector.cc", 
@@ -10693,6 +10406,8 @@
       "src/core/lib/security/security_connector/ssl/ssl_security_connector.h", 
       "src/core/lib/security/security_connector/ssl_utils.cc", 
       "src/core/lib/security/security_connector/ssl_utils.h", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc", 
+      "src/core/lib/security/security_connector/tls/spiffe_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.cc", 
       "src/core/lib/security/transport/secure_endpoint.cc", 
@@ -10747,7 +10462,6 @@
     "deps": [
       "cmdline", 
       "gpr", 
-      "gpr_test_util", 
       "grpc_base", 
       "grpc_client_channel", 
       "grpc_transport_chttp2"
@@ -10771,6 +10485,7 @@
       "test/core/util/port_server_client.h", 
       "test/core/util/slice_splitter.h", 
       "test/core/util/subprocess.h", 
+      "test/core/util/test_config.h", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.h"
     ], 
@@ -10816,6 +10531,8 @@
       "test/core/util/subprocess.h", 
       "test/core/util/subprocess_posix.cc", 
       "test/core/util/subprocess_windows.cc", 
+      "test/core/util/test_config.cc", 
+      "test/core/util/test_config.h", 
       "test/core/util/tracer_util.cc", 
       "test/core/util/tracer_util.h", 
       "test/core/util/trickle_endpoint.cc", 

@@ -183,12 +183,11 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     where a parameter is invalid. Note that some fields of handshaker will be
     populated once credential reload is finished. */
 
-tsi_result tls_tsi_handshaker_create(const char* server_name_indication,
-                                     tsi_ssl_session_cache* session_cache,
-                                     grpc_tls_credentials_options* options,
-                                     grpc_tls_credential_reload_arg* reload_arg,
-                                     bool is_client,
-                                     tsi_handshaker** handshaker);
+tsi_result tls_tsi_handshaker_create(
+    const char* server_name_indication, tsi_ssl_session_cache* session_cache,
+    const grpc_tls_credentials_options* options,
+    grpc_tls_credential_reload_arg* reload_arg, bool is_client,
+    tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */

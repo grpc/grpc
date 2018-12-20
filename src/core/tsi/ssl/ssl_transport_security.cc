@@ -2105,15 +2105,14 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
 }
 
 /* --- TLS TSI implementations --- */
-tsi_result tls_tsi_handshaker_create(const char* server_name_indication,
-                                     tsi_ssl_session_cache* session_cache,
-                                     grpc_tls_credentials_options* options,
-                                     grpc_tls_credential_reload_arg* reload_arg,
-                                     bool is_client,
-                                     tsi_handshaker** handshaker) {
+tsi_result tls_tsi_handshaker_create(
+    const char* server_name_indication, tsi_ssl_session_cache* session_cache,
+    const grpc_tls_credentials_options* options,
+    grpc_tls_credential_reload_arg* reload_arg, bool is_client,
+    tsi_handshaker** handshaker) {
   tsi_ssl_handshaker* impl =
       static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(*impl)));
-  impl->options = options;
+  impl->options = const_cast<grpc_tls_credentials_options*>(options);
   impl->reload_arg = reload_arg;
   impl->server_name_indication = gpr_strdup(server_name_indication);
   impl->session_cache = session_cache;

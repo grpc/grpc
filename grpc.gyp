@@ -259,16 +259,6 @@
       ],
     },
     {
-      'target_name': 'gpr_test_util',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-      ],
-      'sources': [
-        'test/core/util/test_config.cc',
-      ],
-    },
-    {
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
@@ -474,13 +464,14 @@
         'src/core/lib/security/credentials/oauth2/oauth2_credentials.cc',
         'src/core/lib/security/credentials/plugin/plugin_credentials.cc',
         'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
-        'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
+        'src/core/lib/security/credentials/tls/spiffe_credentials.cc',
         'src/core/lib/security/security_connector/alts/alts_security_connector.cc',
         'src/core/lib/security/security_connector/fake/fake_security_connector.cc',
         'src/core/lib/security/security_connector/local/local_security_connector.cc',
         'src/core/lib/security/security_connector/security_connector.cc',
         'src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
         'src/core/lib/security/security_connector/ssl_utils.cc',
+        'src/core/lib/security/security_connector/tls/spiffe_security_connector.cc',
         'src/core/lib/security/transport/client_auth_filter.cc',
         'src/core/lib/security/transport/secure_endpoint.cc',
         'src/core/lib/security/transport/security_handshaker.cc',
@@ -513,6 +504,7 @@
         'src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc',
         'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc',
         'src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc',
+        'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc',
         'src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc',
         'src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc',
         'src/core/tsi/alts/handshaker/alts_tsi_utils.cc',
@@ -606,7 +598,6 @@
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
-        'gpr_test_util',
         'gpr',
         'grpc',
       ],
@@ -636,6 +627,7 @@
         'test/core/util/slice_splitter.cc',
         'test/core/util/subprocess_posix.cc',
         'test/core/util/subprocess_windows.cc',
+        'test/core/util/test_config.cc',
         'test/core/util/tracer_util.cc',
         'test/core/util/trickle_endpoint.cc',
         'test/core/util/cmdline.cc',
@@ -853,7 +845,6 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
-        'gpr_test_util',
         'grpc_unsecure',
       ],
       'sources': [
@@ -877,6 +868,7 @@
         'test/core/util/slice_splitter.cc',
         'test/core/util/subprocess_posix.cc',
         'test/core/util/subprocess_windows.cc',
+        'test/core/util/test_config.cc',
         'test/core/util/tracer_util.cc',
         'test/core/util/trickle_endpoint.cc',
         'test/core/util/cmdline.cc',
@@ -1355,7 +1347,6 @@
         'test_tcp_server',
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -1368,7 +1359,6 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -1685,7 +1675,6 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
-        'gpr_test_util',
         'gpr',
         'grpc++_test_config',
       ],
@@ -1720,7 +1709,6 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
-        'gpr_test_util',
         'gpr',
         'grpc++_test_config',
       ],
@@ -2673,7 +2661,6 @@
       'dependencies': [
         'grpc_test_util_unsecure',
         'grpc_unsecure',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -2686,7 +2673,6 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -2778,7 +2764,6 @@
       'dependencies': [
         'grpc_test_util_unsecure',
         'grpc_unsecure',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
