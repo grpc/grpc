@@ -55,7 +55,7 @@ bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
-  --workspace_status_command=$(get_abs_filename ./volatile-status.sh)
+  --workspace_status_command=$(get_abs_filename ./volatile-status.sh) \
   $@ \
   -- //test/... || FAILED="true"
 
