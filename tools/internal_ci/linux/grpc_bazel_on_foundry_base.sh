@@ -40,10 +40,22 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 BAZEL_INVOCATION_ID="$(uuidgen)"
 echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
 
+get_abs_filename() {
+  # $1 : relative filename
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
+
+cat >volatile-status.sh <<EOL
+#!/bin/bash
+echo "KOKORO_INVOCATION_URL https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
+EOL
+chmod +x volatile-status.sh
+
 bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
+  --workspace_status_command=$(get_abs_filename ./volatile-status.sh)
   $@ \
   -- //test/... || FAILED="true"
 
