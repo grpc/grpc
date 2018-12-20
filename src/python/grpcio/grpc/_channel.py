@@ -526,7 +526,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata, wait_for_ready)
         if state is None:
-            raise rendezvous
+            raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
             call = self._channel.segregated_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
@@ -537,7 +537,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 ),), self._context)
             event = call.next_event()
             _handle_event(event, state, self._response_deserializer)
-            return state, call,
+            return state, call
 
     def __call__(self,
                  request,
@@ -568,7 +568,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata, wait_for_ready)
         if state is None:
-            raise rendezvous
+            raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
             event_handler = _event_handler(state, self._response_deserializer)
             call = self._managed_call(
@@ -603,7 +603,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
         if serialized_request is None:
-            raise rendezvous
+            raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
             state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
             operationses = (
@@ -660,7 +660,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 state.condition.notify_all()
                 if not state.due:
                     break
-        return state, call,
+        return state, call
 
     def __call__(self,
                  request_iterator,
@@ -755,10 +755,10 @@ class _InitialMetadataFlags(int):
     def with_wait_for_ready(self, wait_for_ready):
         if wait_for_ready is not None:
             if wait_for_ready:
-                self = self.__class__(self | cygrpc.InitialMetadataFlags.wait_for_ready | \
+                return self.__class__(self | cygrpc.InitialMetadataFlags.wait_for_ready | \
                     cygrpc.InitialMetadataFlags.wait_for_ready_explicitly_set)
             elif not wait_for_ready:
-                self = self.__class__(self & ~cygrpc.InitialMetadataFlags.wait_for_ready | \
+                return self.__class__(self & ~cygrpc.InitialMetadataFlags.wait_for_ready | \
                     cygrpc.InitialMetadataFlags.wait_for_ready_explicitly_set)
         return self
 

@@ -205,12 +205,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
-
-  // Dummy classes needed for alignment issues.
-  // See https://github.com/grpc/grpc/issues/16032 for context.
-  // TODO(ncteisen): remove this as soon as the issue is resolved.
-  channelz::ChildRefsList dummy_list_foo;
-  channelz::ChildRefsList dummy_list_bar;
 };
 
 }  // namespace grpc_core

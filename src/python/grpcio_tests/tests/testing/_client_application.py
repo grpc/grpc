@@ -130,9 +130,9 @@ def _run_stream_stream(stub):
     request_pipe = _Pipe()
     response_iterator = stub.StreStre(iter(request_pipe))
     request_pipe.add(_application_common.STREAM_STREAM_REQUEST)
-    first_responses = next(response_iterator), next(response_iterator),
+    first_responses = next(response_iterator), next(response_iterator)
     request_pipe.add(_application_common.STREAM_STREAM_REQUEST)
-    second_responses = next(response_iterator), next(response_iterator),
+    second_responses = next(response_iterator), next(response_iterator)
     request_pipe.close()
     try:
         next(response_iterator)

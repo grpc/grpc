@@ -21,42 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
-
-// TODO(soheil): Replace this with InlinedVector once #16032 is resolved.
-class grpc_call_credentials_array {
- public:
-  grpc_call_credentials_array() = default;
-  grpc_call_credentials_array(const grpc_call_credentials_array& that);
-
-  ~grpc_call_credentials_array();
-
-  void reserve(size_t capacity);
-
-  // Must reserve before pushing any data.
-  void push_back(grpc_core::RefCountedPtr<grpc_call_credentials> cred) {
-    GPR_DEBUG_ASSERT(capacity_ > num_creds_);
-    new (&creds_array_[num_creds_++])
-        grpc_core::RefCountedPtr<grpc_call_credentials>(std::move(cred));
-  }
-
-  const grpc_core::RefCountedPtr<grpc_call_credentials>& get(size_t i) const {
-    GPR_DEBUG_ASSERT(i < num_creds_);
-    return creds_array_[i];
-  }
-  grpc_core::RefCountedPtr<grpc_call_credentials>& get_mutable(size_t i) {
-    GPR_DEBUG_ASSERT(i < num_creds_);
-    return creds_array_[i];
-  }
-
-  size_t size() const { return num_creds_; }
-
- private:
-  grpc_core::RefCountedPtr<grpc_call_credentials>* creds_array_ = nullptr;
-  size_t num_creds_ = 0;
-  size_t capacity_ = 0;
-};
 
 /* -- Composite channel credentials. -- */
 
@@ -97,6 +64,10 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:
+  using CallCredentialsList =
+      grpc_core::InlinedVector<grpc_core::RefCountedPtr<grpc_call_credentials>,
+                               2>;
+
   grpc_composite_call_credentials(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
@@ -111,13 +82,13 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
 
-  const grpc_call_credentials_array& inner() const { return inner_; }
+  const CallCredentialsList& inner() const { return inner_; }
 
  private:
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
 
-  grpc_call_credentials_array inner_;
+  CallCredentialsList inner_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H \

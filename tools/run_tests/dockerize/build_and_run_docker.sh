@@ -20,7 +20,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
-cd -
+cd - # shellcheck disable=SC2103
 
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
