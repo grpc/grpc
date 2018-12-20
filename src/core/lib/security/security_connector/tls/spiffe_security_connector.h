@@ -36,29 +36,26 @@
  * - overridden_target_name: overridden target name used for testing.
  * - ssl_session_cache: TSI SSL session cache instance used for sessions
  *   resumption.
- * - sc: address of TLS SPIFFE channel security connector instance to be
- *   returned from the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error stauts code on failure.
+ * It returns nullptr on failure.
  */
-grpc_security_status grpc_tls_spiffe_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target_name,
-    const char* overridden_target_name,
-    tsi_ssl_session_cache* ssl_session_cache,
-    grpc_channel_security_connector** sc);
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_tls_spiffe_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target_name, const char* overridden_target_name,
+    tsi_ssl_session_cache* ssl_session_cache);
 
 /**
  * This method creates an TLS SPIFFE server security connector.
  *
  * - server_creds: server credential instance.
- * - sc: address of TLS SPIFFE sserver security connector instance to be
- *   returned from the method.
  *
- * It returns GRPC_SECURITY_OK on success, and an error status code on failure.
+ * It returns nullptr on failure.
  */
-grpc_security_status grpc_tls_spiffe_server_security_connector_create(
-    grpc_server_credentials* server_creds, grpc_server_security_connector** sc);
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_tls_spiffe_server_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H \
         */

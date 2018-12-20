@@ -342,7 +342,8 @@ class grpc_ssl_server_security_connector
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
     tsi_result result = tsi_create_ssl_server_handshaker_factory_ex(
         cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
-        tsi_get_tsi_client_certificate_request_type(server_creds->config().client_certificate_request),
+        tsi_get_tsi_client_certificate_request_type(
+            server_creds->config().client_certificate_request),
         tsi_get_ssl_cipher_suites(), alpn_protocol_strings,
         static_cast<uint16_t>(num_alpn_protocols), &new_handshaker_factory);
     gpr_free(cert_pairs);

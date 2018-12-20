@@ -32,23 +32,20 @@
 
 #define GRPC_CREDENTIALS_TYPE_SPIFFE "Spiffe"
 
-static void spiffe_credentials_destruct(grpc_channel_credentials* creds) {
-  grpc_tls_spiffe_credentials* spiffe_creds =
-      reinterpret_cast<grpc_tls_spiffe_credentials*>(creds);
-  grpc_tls_credentials_options_destroy(spiffe_creds->options);
+grpc_tls_spiffe_credentials::grpc_tls_spiffe_credentials(
+    const grpc_tls_credentials_options* options)
+    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
+      options_(grpc_tls_credentials_options_copy(options)) {}
+
+grpc_tls_spiffe_credentials::~grpc_tls_spiffe_credentials() {
+  grpc_tls_credentials_options_destroy(options_);
 }
 
-static void spiffe_server_credentials_destruct(grpc_server_credentials* creds) {
-  grpc_tls_spiffe_server_credentials* spiffe_creds =
-      reinterpret_cast<grpc_tls_spiffe_server_credentials*>(creds);
-  grpc_tls_credentials_options_destroy(spiffe_creds->options);
-}
-
-static grpc_security_status spiffe_create_security_connector(
-    grpc_channel_credentials* creds, grpc_call_credentials* call_creds,
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_tls_spiffe_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target_name, const grpc_channel_args* args,
-    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
-  grpc_security_status status = GRPC_SECURITY_OK;
+    grpc_channel_args** new_args) {
   const char* overridden_target_name = nullptr;
   tsi_ssl_session_cache* ssl_session_cache = nullptr;
   for (size_t i = 0; args && i < args->num_args; i++) {
@@ -63,30 +60,35 @@ static grpc_security_status spiffe_create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
-  status = grpc_tls_spiffe_channel_security_connector_create(
-      creds, call_creds, target_name, overridden_target_name, ssl_session_cache,
-      sc);
-  if (status != GRPC_SECURITY_OK) {
-    return status;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
+      grpc_tls_spiffe_channel_security_connector_create(
+          this->Ref(), std::move(call_creds), target_name,
+          overridden_target_name, ssl_session_cache);
+  if (sc == nullptr) {
+    return sc;
   }
   grpc_arg new_arg = grpc_channel_arg_string_create(
       (char*)GRPC_ARG_HTTP2_SCHEME, (char*)"https");
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
-  return status;
+  return sc;
 }
 
-static grpc_security_status spiffe_server_create_security_connector(
-    grpc_server_credentials* creds, grpc_server_security_connector** sc) {
-  return grpc_tls_spiffe_server_security_connector_create(creds, sc);
+grpc_tls_spiffe_server_credentials::grpc_tls_spiffe_server_credentials(
+    const grpc_tls_credentials_options* options)
+    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
+      options_(grpc_tls_credentials_options_copy(options)) {
+  options_->cert_request_type =
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
 }
 
-static const grpc_channel_credentials_vtable spiffe_credentials_vtable = {
-    spiffe_credentials_destruct, spiffe_create_security_connector,
-    /*duplicate_without_call_credentials=*/nullptr};
+grpc_tls_spiffe_server_credentials::~grpc_tls_spiffe_server_credentials() {
+  grpc_tls_credentials_options_destroy(options_);
+}
 
-static const grpc_server_credentials_vtable spiffe_server_credentials_vtable = {
-    spiffe_server_credentials_destruct,
-    spiffe_server_create_security_connector};
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_tls_spiffe_server_credentials::create_security_connector() {
+  return grpc_tls_spiffe_server_security_connector_create(this->Ref());
+}
 
 static bool credentials_options_sanity_check(
     const grpc_tls_credentials_options* options) {
@@ -119,15 +121,7 @@ grpc_channel_credentials* grpc_tls_spiffe_credentials_create(
             "credentials.");
     return nullptr;
   }
-  auto creds = static_cast<grpc_tls_spiffe_credentials*>(
-      gpr_zalloc(sizeof(grpc_tls_spiffe_credentials)));
-  creds->options = grpc_tls_credentials_options_copy(options);
-  creds->options->cert_request_type =
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
-  creds->base.type = GRPC_CREDENTIALS_TYPE_SPIFFE;
-  creds->base.vtable = &spiffe_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
-  return &creds->base;
+  return grpc_core::New<grpc_tls_spiffe_credentials>(options);
 }
 
 grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
@@ -138,13 +132,5 @@ grpc_server_credentials* grpc_tls_spiffe_server_credentials_create(
             "credentials.");
     return nullptr;
   }
-  auto creds = static_cast<grpc_tls_spiffe_server_credentials*>(
-      gpr_zalloc(sizeof(grpc_tls_spiffe_server_credentials)));
-  creds->options = grpc_tls_credentials_options_copy(options);
-  creds->options->cert_request_type =
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
-  creds->base.type = GRPC_CREDENTIALS_TYPE_SPIFFE;
-  creds->base.vtable = &spiffe_server_credentials_vtable;
-  gpr_ref_init(&creds->base.refcount, 1);
-  return &creds->base;
+  return grpc_core::New<grpc_tls_spiffe_server_credentials>(options);
 }

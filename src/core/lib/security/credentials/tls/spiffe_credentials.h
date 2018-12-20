@@ -27,15 +27,40 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 /* Main struct for grpc SPIFFE channel credential. */
-typedef struct grpc_tls_spiffe_credentials {
-  grpc_channel_credentials base;
-  grpc_tls_credentials_options* options;
-} grpc_tls_spiffe_credentials;
+class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
+ public:
+  grpc_tls_spiffe_credentials(const grpc_tls_credentials_options* options);
+  ~grpc_tls_spiffe_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target_name, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
+
+  const grpc_tls_credentials_options* options() const { return options_; }
+  grpc_tls_credentials_options* mutable_options() { return options_; }
+
+ private:
+  grpc_alts_credentials_options* options_;
+};
 
 /* Main struct for grpc SPIFFE server credential. */
-typedef struct grpc_tls_spiffe_server_credentials {
-  grpc_server_credentials base;
-  grpc_tls_credentials_options* options;
-} grpc_tls_spiffe_server_credentials;
+class grpc_tls_spiffe_server_credentials final
+    : public grpc_server_credentials {
+ public:
+  grpc_tls_spiffe_server_credentials(
+      const grpc_tls_credentials_options* options);
+  ~grpc_tls_spiffe_server_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() override;
+
+  const grpc_tls_credentials_options* options() const { return options_; }
+  grpc_tls_credentials_options* mutable_options() { return options_; }
+
+ private:
+  grpc_tls_credentials_options* options_;
+};
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_SPIFFE_CREDENTIALS_H */
