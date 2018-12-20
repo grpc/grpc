@@ -69,7 +69,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @implementation GRPCRequestOptions
 
 - (instancetype)initWithHost:(NSString *)host path:(NSString *)path safety:(GRPCCallSafety)safety {
-  NSAssert(host.length != 0 && path.length != 0, @"Host and Path cannot be empty");
+  NSAssert(host.length != 0 && path.length != 0, @"host and path cannot be empty");
   if (host.length == 0 || path.length == 0) {
     return nil;
   }

@@ -189,6 +189,7 @@ xcodebuild \
     -scheme APIv2Tests \
     -destination name="iPhone 8" \
     HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
