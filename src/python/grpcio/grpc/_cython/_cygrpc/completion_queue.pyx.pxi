@@ -106,16 +106,5 @@ cdef class CompletionQueue:
       pass
 
   def __dealloc__(self):
-    cdef gpr_timespec c_deadline
-    c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
-    if self.c_completion_queue != NULL:
-      # Ensure shutdown
-      if not self.is_shutting_down:
-        grpc_completion_queue_shutdown(self.c_completion_queue)
-      # Pump the queue (All outstanding calls should have been cancelled)
-      while not self.is_shutdown:
-        event = grpc_completion_queue_next(
-            self.c_completion_queue, c_deadline, NULL)
-        self._interpret_event(event)
-      grpc_completion_queue_destroy(self.c_completion_queue)
-    grpc_shutdown()
+    if self.c_completion_queue == NULL:
+      grpc_shutdown()
