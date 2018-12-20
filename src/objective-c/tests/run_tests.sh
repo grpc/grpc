@@ -188,6 +188,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme APIv2Tests \
     -destination name="iPhone 8" \
+    HOST_PORT_LOCAL=localhost:5050 \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
