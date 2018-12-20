@@ -35,44 +35,6 @@
 
 static void composite_call_metadata_cb(void* arg, grpc_error* error);
 
-grpc_call_credentials_array::~grpc_call_credentials_array() {
-  for (size_t i = 0; i < num_creds_; ++i) {
-    creds_array_[i].~RefCountedPtr<grpc_call_credentials>();
-  }
-  if (creds_array_ != nullptr) {
-    gpr_free(creds_array_);
-  }
-}
-
-grpc_call_credentials_array::grpc_call_credentials_array(
-    const grpc_call_credentials_array& that)
-    : num_creds_(that.num_creds_) {
-  reserve(that.capacity_);
-  for (size_t i = 0; i < num_creds_; ++i) {
-    new (&creds_array_[i])
-        grpc_core::RefCountedPtr<grpc_call_credentials>(that.creds_array_[i]);
-  }
-}
-
-void grpc_call_credentials_array::reserve(size_t capacity) {
-  if (capacity_ >= capacity) {
-    return;
-  }
-  grpc_core::RefCountedPtr<grpc_call_credentials>* new_arr =
-      static_cast<grpc_core::RefCountedPtr<grpc_call_credentials>*>(gpr_malloc(
-          sizeof(grpc_core::RefCountedPtr<grpc_call_credentials>) * capacity));
-  if (creds_array_ != nullptr) {
-    for (size_t i = 0; i < num_creds_; ++i) {
-      new (&new_arr[i]) grpc_core::RefCountedPtr<grpc_call_credentials>(
-          std::move(creds_array_[i]));
-      creds_array_[i].~RefCountedPtr<grpc_call_credentials>();
-    }
-    gpr_free(creds_array_);
-  }
-  creds_array_ = new_arr;
-  capacity_ = capacity;
-}
-
 namespace {
 struct grpc_composite_call_credentials_metadata_context {
   grpc_composite_call_credentials_metadata_context(
@@ -103,13 +65,13 @@ static void composite_call_metadata_cb(void* arg, grpc_error* error) {
   grpc_composite_call_credentials_metadata_context* ctx =
       static_cast<grpc_composite_call_credentials_metadata_context*>(arg);
   if (error == GRPC_ERROR_NONE) {
-    const grpc_call_credentials_array& inner = ctx->composite_creds->inner();
+    const grpc_composite_call_credentials::CallCredentialsList& inner =
+        ctx->composite_creds->inner();
     /* See if we need to get some more metadata. */
     if (ctx->creds_index < inner.size()) {
-      if (inner.get(ctx->creds_index++)
-              ->get_request_metadata(
-                  ctx->pollent, ctx->auth_md_context, ctx->md_array,
-                  &ctx->internal_on_request_metadata, &error)) {
+      if (inner[ctx->creds_index++]->get_request_metadata(
+              ctx->pollent, ctx->auth_md_context, ctx->md_array,
+              &ctx->internal_on_request_metadata, &error)) {
         // Synchronous response, so call ourselves recursively.
         composite_call_metadata_cb(arg, error);
         GRPC_ERROR_UNREF(error);
@@ -130,12 +92,11 @@ bool grpc_composite_call_credentials::get_request_metadata(
   ctx = grpc_core::New<grpc_composite_call_credentials_metadata_context>(
       this, pollent, auth_md_context, md_array, on_request_metadata);
   bool synchronous = true;
-  const grpc_call_credentials_array& inner = ctx->composite_creds->inner();
+  const CallCredentialsList& inner = ctx->composite_creds->inner();
   while (ctx->creds_index < inner.size()) {
-    if (inner.get(ctx->creds_index++)
-            ->get_request_metadata(ctx->pollent, ctx->auth_md_context,
-                                   ctx->md_array,
-                                   &ctx->internal_on_request_metadata, error)) {
+    if (inner[ctx->creds_index++]->get_request_metadata(
+            ctx->pollent, ctx->auth_md_context, ctx->md_array,
+            &ctx->internal_on_request_metadata, error)) {
       if (*error != GRPC_ERROR_NONE) break;
     } else {
       synchronous = false;  // Async return.
@@ -149,7 +110,7 @@ bool grpc_composite_call_credentials::get_request_metadata(
 void grpc_composite_call_credentials::cancel_get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_error* error) {
   for (size_t i = 0; i < inner_.size(); ++i) {
-    inner_.get(i)->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
+    inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -172,7 +133,7 @@ void grpc_composite_call_credentials::push_to_inner(
   auto composite_creds =
       static_cast<grpc_composite_call_credentials*>(creds.get());
   for (size_t i = 0; i < composite_creds->inner().size(); ++i) {
-    inner_.push_back(std::move(composite_creds->inner_.get_mutable(i)));
+    inner_.push_back(std::move(composite_creds->inner_[i]));
   }
 }
 
