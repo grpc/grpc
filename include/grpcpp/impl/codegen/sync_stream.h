@@ -56,6 +56,9 @@ class ClientStreamingInterface {
   /// - OR when the call failed for some reason and the library generated a
   ///   status.
   ///
+  /// <i>Write</i> should no longer be called after Finish and it is undefined
+  /// behavior to do so.
+  ///
   /// Return values:
   ///   - \a Status contains the status code, message and details for the call
   ///   - the \a ClientContext associated with this call is updated with

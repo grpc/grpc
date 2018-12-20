@@ -73,6 +73,8 @@ class ClientAsyncStreamingInterface {
   ///
   /// Note that implementations of this method attempt to receive initial
   /// metadata from the server if initial metadata hasn't yet been received.
+  /// <i>Write</i> should no longer be called after Finish and it is undefined
+  /// behavior to do so.
   ///
   /// \param[in] tag Tag identifying this request.
   /// \param[out] status To be updated with the operation status.
