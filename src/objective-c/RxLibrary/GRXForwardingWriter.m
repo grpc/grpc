@@ -54,23 +54,19 @@
   [writeable writesFinishedWithError:errorOrNil];
 }
 
-// This is used to stop the input writer. It nillifies our reference to it
-// to release it.
-- (void)finishInput {
-  GRXWriter *writer = _writer;
-  _writer = nil;
-  writer.state = GRXWriterStateFinished;
-}
-
 #pragma mark GRXWriteable implementation
 
 - (void)writeValue:(id)value {
-  [_writeable writeValue:value];
+  @synchronized (self) {
+    [_writeable writeValue:value];
+  }
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  _writer = nil;
-  [self finishOutputWithError:errorOrNil];
+  @synchronized (self) {
+    _writer = nil;
+    [self finishOutputWithError:errorOrNil];
+  }
 }
 
 #pragma mark GRXWriter implementation
@@ -80,22 +76,38 @@
 }
 
 - (void)setState:(GRXWriterState)state {
+  GRXWriter *copiedWriter = nil;
   if (state == GRXWriterStateFinished) {
-    _writeable = nil;
-    [self finishInput];
+    @synchronized (self) {
+      _writeable = nil;
+      copiedWriter = _writer;
+      _writer = nil;
+    }
+    copiedWriter.state = GRXWriterStateFinished;
   } else {
-    _writer.state = state;
+    @synchronized (self) {
+      copiedWriter = _writer;
+    }
+    copiedWriter.state = state;
   }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  _writeable = writeable;
-  [_writer startWithWriteable:self];
+  GRXWriter *copiedWriter = nil;
+  @synchronized (self) {
+    _writeable = writeable;
+    copiedWriter = _writer;
+  }
+  [copiedWriter startWithWriteable:self];
 }
 
 - (void)finishWithError:(NSError *)errorOrNil {
-  [self finishOutputWithError:errorOrNil];
-  [self finishInput];
+  GRXWriter *copiedWriter = nil;
+  @synchronized (self) {
+    [self finishOutputWithError:errorOrNil];
+    copiedWriter = _writer;
+  }
+  copiedWriter.state = GRXWriterStateFinished;
 }
 
 @end

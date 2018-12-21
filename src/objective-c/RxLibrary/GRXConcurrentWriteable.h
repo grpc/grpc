@@ -23,9 +23,9 @@
 
 /**
  * This is a thread-safe wrapper over a GRXWriteable instance. It lets one enqueue calls to a
- * GRXWriteable instance for the main thread, guaranteeing that writesFinishedWithError: is the last
+ * GRXWriteable instance for the thread user provided, guaranteeing that writesFinishedWithError: is the last
  * message sent to it (no matter what messages are sent to the wrapper, in what order, nor from
- * which thread). It also guarantees that, if cancelWithError: is called from the main thread (e.g.
+ * which thread). It also guarantees that, if cancelWithError: is called (e.g.
  * by the app cancelling the writes), no further messages are sent to the writeable except
  * writesFinishedWithError:.
  *
