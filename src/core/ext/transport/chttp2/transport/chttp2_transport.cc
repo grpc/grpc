@@ -174,9 +174,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  grpc_core::ContextList::Execute(t->cl, nullptr, error);
+  grpc_core::ContextList::Execute(cl, nullptr, error);
   GRPC_ERROR_UNREF(error);
-  t->cl = nullptr;
+  cl = nullptr;
 
   grpc_slice_buffer_destroy_internal(&read_buffer);
   grpc_chttp2_hpack_parser_destroy(&hpack_parser);
