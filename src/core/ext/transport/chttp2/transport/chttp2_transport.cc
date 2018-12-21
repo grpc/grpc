@@ -170,6 +170,14 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_slice_buffer_destroy_internal(&outbuf);
   grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
 
+  grpc_error* error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
+  // ContextList::Execute follows semantics of a callback function and does not
+  // take a ref on error
+  grpc_core::ContextList::Execute(t->cl, nullptr, error);
+  GRPC_ERROR_UNREF(error);
+  t->cl = nullptr;
+
   grpc_slice_buffer_destroy_internal(&read_buffer);
   grpc_chttp2_hpack_parser_destroy(&hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
@@ -566,10 +574,6 @@ static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error* error) {
   end_all_the_calls(t, GRPC_ERROR_REF(error));
   cancel_pings(t, GRPC_ERROR_REF(error));
-  // ContextList::Execute follows semantics of a callback function and does not
-  // need a ref on error
-  grpc_core::ContextList::Execute(t->cl, nullptr, error);
-  t->cl = nullptr;
   if (t->closed_with_error == GRPC_ERROR_NONE) {
     if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
