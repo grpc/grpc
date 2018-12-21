@@ -3297,6 +3297,7 @@
   }, 
   {
     "deps": [
+      "forwarding_load_balancing_policy", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -7028,6 +7029,24 @@
     "src": [
       "test/core/util/test_tcp_server.cc", 
       "test/core/util/test_tcp_server.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [
+      "test/core/util/forwarding_load_balancing_policy.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "forwarding_load_balancing_policy", 
+    "src": [
+      "test/core/util/forwarding_load_balancing_policy.cc", 
+      "test/core/util/forwarding_load_balancing_policy.h"
     ], 
     "third_party": false, 
     "type": "lib"

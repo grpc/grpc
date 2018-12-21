@@ -387,6 +387,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:forwarding_load_balancing_policy",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

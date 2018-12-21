@@ -1638,6 +1638,16 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
+- name: forwarding_load_balancing_policy
+  build: private
+  language: c++
+  headers:
+  - test/core/util/forwarding_load_balancing_policy.h
+  src:
+  - test/core/util/forwarding_load_balancing_policy.cc
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc++
   build: all
   language: c++
@@ -4449,6 +4459,7 @@ targets:
   - grpc++
   - grpc
   - gpr
+  - forwarding_load_balancing_policy
 - name: codegen_test_full
   gtest: true
   build: test

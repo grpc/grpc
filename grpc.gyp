@@ -1366,6 +1366,15 @@
       ],
     },
     {
+      'target_name': 'forwarding_load_balancing_policy',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'test/core/util/forwarding_load_balancing_policy.cc',
+      ],
+    },
+    {
       'target_name': 'grpc++',
       'type': 'static_library',
       'dependencies': [

@@ -154,3 +154,13 @@ sh_library(
     name = "run_with_poller_sh",
     srcs = ["run_with_poller.sh"],
 )
+
+grpc_cc_library(
+    name = "forwarding_load_balancing_policy",
+    testonly = 1,
+    srcs = ["forwarding_load_balancing_policy.cc"],
+    hdrs = ["forwarding_load_balancing_policy.h"],
+    deps = [
+        "//:grpc",
+    ],
+)

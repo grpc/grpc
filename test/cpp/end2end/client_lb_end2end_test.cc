@@ -42,6 +42,7 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -59,6 +60,7 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/forwarding_load_balancing_policy.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
@@ -1231,94 +1233,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   EnableDefaultHealthCheckService(false);
 }
 
-grpc_core::TraceFlag forwarding_lb_tracer(false, "forwarding_lb");
-
-// A minimal forwarding class to avoid implementing a standalone test LB.
-class ForwardingLoadBalancingPolicy : public grpc_core::LoadBalancingPolicy {
- public:
-  ForwardingLoadBalancingPolicy(const Args& args,
-                                const std::string& delegate_policy_name)
-      : grpc_core::LoadBalancingPolicy(args) {
-    delegate_ =
-        grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-            delegate_policy_name.c_str(), args);
-    grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
-                                     interested_parties());
-    // Give re-resolution closure to delegate.
-    GRPC_CLOSURE_INIT(&on_delegate_request_reresolution_,
-                      OnDelegateRequestReresolutionLocked, this,
-                      grpc_combiner_scheduler(combiner()));
-    Ref().release();  // held by callback.
-    delegate_->SetReresolutionClosureLocked(&on_delegate_request_reresolution_);
-  }
-
-  const char* name() const override { return delegate_->name(); }
-
-  void UpdateLocked(const grpc_channel_args& args,
-                    grpc_json* lb_config) override {
-    delegate_->UpdateLocked(args, lb_config);
-  }
-
-  bool PickLocked(PickState* pick, grpc_error** error) override {
-    return delegate_->PickLocked(pick, error);
-  }
-
-  void CancelPickLocked(PickState* pick, grpc_error* error) override {
-    delegate_->CancelPickLocked(pick, error);
-  }
-
-  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) override {
-    delegate_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
-                                         initial_metadata_flags_eq, error);
-  }
-
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override {
-    delegate_->NotifyOnStateChangeLocked(state, closure);
-  }
-
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override {
-    return delegate_->CheckConnectivityLocked(connectivity_error);
-  }
-
-  void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override {
-    delegate_->HandOffPendingPicksLocked(new_policy);
-  }
-
-  void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
-
-  void ResetBackoffLocked() override { delegate_->ResetBackoffLocked(); }
-
-  void FillChildRefsForChannelz(
-      grpc_core::channelz::ChildRefsList* child_subchannels,
-      grpc_core::channelz::ChildRefsList* ignored) override {
-    delegate_->FillChildRefsForChannelz(child_subchannels, ignored);
-  }
-
- protected:
-  void ShutdownLocked() override { delegate_.reset(); }
-
- private:
-  static void OnDelegateRequestReresolutionLocked(void* arg,
-                                                  grpc_error* error) {
-    ForwardingLoadBalancingPolicy* self =
-        static_cast<ForwardingLoadBalancingPolicy*>(arg);
-    if (error != GRPC_ERROR_NONE || self->delegate_ == nullptr) {
-      self->Unref();
-      return;
-    }
-    self->TryReresolutionLocked(&forwarding_lb_tracer, GRPC_ERROR_NONE);
-    self->delegate_->SetReresolutionClosureLocked(
-        &self->on_delegate_request_reresolution_);
-  }
-
-  grpc_core::OrphanablePtr<LoadBalancingPolicy> delegate_;
-  grpc_closure on_delegate_request_reresolution_;
-};
-
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
  protected:
   void SetUp() override {
@@ -1331,12 +1245,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
 
   void TearDown() override { ClientLbEnd2endTest::TearDown(); }
 
-  class InterceptTrailingLb : public ForwardingLoadBalancingPolicy {
+  class InterceptRecvTrailingMetadataLoadBalancingPolicy
+      : public grpc_core::ForwardingLoadBalancingPolicy {
    public:
-    InterceptTrailingLb(const Args& args,
-                        const std::string& delegate_lb_policy_name,
-                        ClientLbInterceptTrailingMetadataTest* test)
-        : ForwardingLoadBalancingPolicy(args, delegate_lb_policy_name),
+    InterceptRecvTrailingMetadataLoadBalancingPolicy(
+        const Args& args, const std::string& delegate_lb_policy_name,
+        ClientLbInterceptTrailingMetadataTest* test)
+        : grpc_core::ForwardingLoadBalancingPolicy(args,
+                                                   delegate_lb_policy_name),
           test_(test) {}
 
     bool PickLocked(PickState* pick, grpc_error** error) override {
@@ -1402,7 +1318,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     CreateLoadBalancingPolicy(
         const grpc_core::LoadBalancingPolicy::Args& args) const override {
       return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
-          grpc_core::New<InterceptTrailingLb>(
+          grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
               args, /*delegate_lb_policy_name=*/ "pick_first", test_));
     }
 
