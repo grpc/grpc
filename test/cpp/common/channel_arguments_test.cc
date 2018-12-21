@@ -209,6 +209,9 @@ TEST_F(ChannelArgumentsTest, SetSocketMutator) {
   channel_args_.SetSocketMutator(mutator0);
   EXPECT_TRUE(HasArg(arg0));
 
+  // Exercise the copy constructor because we ran some sanity checks in it.
+  grpc::ChannelArguments new_args{channel_args_};
+
   channel_args_.SetSocketMutator(mutator1);
   EXPECT_TRUE(HasArg(arg1));
   // arg0 is replaced by arg1
