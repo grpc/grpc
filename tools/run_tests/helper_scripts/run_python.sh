@@ -22,7 +22,7 @@ PYTHON=$(realpath "${1:-py27/bin/python}")
 
 ROOT=$(pwd)
 
-catchsegv $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2" || ls "$ROOT/src/python/grpcio_tests" && sasas
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
