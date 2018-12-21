@@ -71,7 +71,6 @@ def _args():
         '--use_tls', help='Whether to use TLS', default=False, type=bool)
     parser.add_argument(
         '--server_host_override',
-        default="foo.test.google.fr",
         help='the server host to which to claim to connect',
         type=str)
     return parser.parse_args()
