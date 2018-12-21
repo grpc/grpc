@@ -35,24 +35,25 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
@@ -60,7 +61,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
 
 #include <gtest/gtest.h>
 
@@ -1231,22 +1231,32 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   EnableDefaultHealthCheckService(false);
 }
 
+grpc_core::TraceFlag forwarding_lb_tracer(false, "forwarding_lb");
+
 // A minimal forwarding class to avoid implementing a standalone test LB.
 class ForwardingLoadBalancingPolicy : public grpc_core::LoadBalancingPolicy {
  public:
-  ForwardingLoadBalancingPolicy(
-      const Args& args,
-      const std::string& delegate_policy_name)
-      : grpc_core::LoadBalancingPolicy(args), args_{args} {
-    delegate_ = grpc_core::LoadBalancingPolicyRegistry
-        ::CreateLoadBalancingPolicy(delegate_policy_name.c_str(), args);
-    grpc_pollset_set_add_pollset_set(
-        delegate_->interested_parties(),
-        interested_parties());
+  ForwardingLoadBalancingPolicy(const Args& args,
+                                const std::string& delegate_policy_name)
+      : grpc_core::LoadBalancingPolicy(args) {
+    delegate_ =
+        grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+            delegate_policy_name.c_str(), args);
+    grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
+                                     interested_parties());
+    // Give re-resolution closure to delegate.
+    GRPC_CLOSURE_INIT(&on_delegate_request_reresolution_,
+                      OnDelegateRequestReresolutionLocked, this,
+                      grpc_combiner_scheduler(combiner()));
+    Ref().release();  // held by callback.
+    delegate_->SetReresolutionClosureLocked(&on_delegate_request_reresolution_);
   }
 
-  void UpdateLocked(const grpc_channel_args& args) override {
-    delegate_->UpdateLocked(args);
+  const char* name() const override { return delegate_->name(); }
+
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override {
+    delegate_->UpdateLocked(args, lb_config);
   }
 
   bool PickLocked(PickState* pick, grpc_error** error) override {
@@ -1260,10 +1270,8 @@ class ForwardingLoadBalancingPolicy : public grpc_core::LoadBalancingPolicy {
   void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
                                  uint32_t initial_metadata_flags_eq,
                                  grpc_error* error) override {
-    delegate_->CancelMatchingPicksLocked(
-        initial_metadata_flags_mask,
-        initial_metadata_flags_eq,
-        error);
+    delegate_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
+                                         initial_metadata_flags_eq, error);
   }
 
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
@@ -1280,13 +1288,9 @@ class ForwardingLoadBalancingPolicy : public grpc_core::LoadBalancingPolicy {
     delegate_->HandOffPendingPicksLocked(new_policy);
   }
 
-  void ExitIdleLocked() override{
-    delegate_->ExitIdleLocked();
-  }
+  void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
 
-  void ResetBackoffLocked() override {
-    delegate_->ResetBackoffLocked();
-  }
+  void ResetBackoffLocked() override { delegate_->ResetBackoffLocked(); }
 
   void FillChildRefsForChannelz(
       grpc_core::channelz::ChildRefsList* child_subchannels,
@@ -1295,13 +1299,24 @@ class ForwardingLoadBalancingPolicy : public grpc_core::LoadBalancingPolicy {
   }
 
  protected:
-  void ShutdownLocked() override {
-    // noop
-  }
-  Args args_;
+  void ShutdownLocked() override { delegate_.reset(); }
 
  private:
+  static void OnDelegateRequestReresolutionLocked(void* arg,
+                                                  grpc_error* error) {
+    ForwardingLoadBalancingPolicy* self =
+        static_cast<ForwardingLoadBalancingPolicy*>(arg);
+    if (error != GRPC_ERROR_NONE || self->delegate_ == nullptr) {
+      self->Unref();
+      return;
+    }
+    self->TryReresolutionLocked(&forwarding_lb_tracer, GRPC_ERROR_NONE);
+    self->delegate_->SetReresolutionClosureLocked(
+        &self->on_delegate_request_reresolution_);
+  }
+
   grpc_core::OrphanablePtr<LoadBalancingPolicy> delegate_;
+  grpc_closure on_delegate_request_reresolution_;
 };
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
@@ -1314,71 +1329,81 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
                 grpc_core::New<InterceptTrailingFactory>(this)));
   }
 
-  void TearDown() override {
-    ClientLbEnd2endTest::TearDown();
-  }
+  void TearDown() override { ClientLbEnd2endTest::TearDown(); }
 
   class InterceptTrailingLb : public ForwardingLoadBalancingPolicy {
    public:
-    InterceptTrailingLb(
-        const Args& args,
-        const std::string& delegate_lb_policy_name,
-        ClientLbInterceptTrailingMetadataTest* test)
+    InterceptTrailingLb(const Args& args,
+                        const std::string& delegate_lb_policy_name,
+                        ClientLbInterceptTrailingMetadataTest* test)
         : ForwardingLoadBalancingPolicy(args, delegate_lb_policy_name),
-        test_{test} {
-    }
+          test_(test) {}
 
     bool PickLocked(PickState* pick, grpc_error** error) override {
       bool ret = ForwardingLoadBalancingPolicy::PickLocked(pick, error);
-      // If these asserts fail, then we will need to add code to
-      // proxy the results to the delegate LB.
-      GPR_ASSERT(pick->recv_trailing_metadata == nullptr);
-      GPR_ASSERT(pick->recv_trailing_metadata_ready == nullptr);
-      // OK to add add callbacks for test
-      GRPC_CLOSURE_INIT(
-          &recv_trailing_metadata_ready_,
-          InterceptTrailingLb::RecordRecvTrailingMetadata,
-          this,
-          grpc_schedule_on_exec_ctx);
-      pick->recv_trailing_metadata_ready = &recv_trailing_metadata_ready_;
-      pick->recv_trailing_metadata = &recv_trailing_metadata_;
+      // Note: This assumes that the delegate policy does not
+      // intercepting recv_trailing_metadata.  If we ever need to use
+      // this with a delegate policy that does, then we'll need to
+      // handle async pick returns separately.
+      new TrailingMetadataHandler(pick, test_);  // deletes itself
       return ret;
     }
 
-    static void RecordRecvTrailingMetadata(void* arg, grpc_error* err) {
-      InterceptTrailingLb* lb = static_cast<InterceptTrailingLb*>(arg);
-      GPR_ASSERT(err == GRPC_ERROR_NONE);
-      GPR_ASSERT(lb->recv_trailing_metadata_ != nullptr);
-      // an simple check to make sure the trailing metadata is valid
-      GPR_ASSERT(grpc_get_status_code_from_metadata(
-          lb->recv_trailing_metadata_->idx.named.grpc_status->md) ==
-              grpc_status_code::GRPC_STATUS_OK);
-      GRPC_ERROR_UNREF(err);
-      lb->test_->ReportTrailerIntercepted();
-    }
-
    private:
-    grpc_closure recv_trailing_metadata_ready_;
-    grpc_metadata_batch* recv_trailing_metadata_;
+    class TrailingMetadataHandler {
+     public:
+      TrailingMetadataHandler(PickState* pick,
+                              ClientLbInterceptTrailingMetadataTest* test)
+          : test_(test) {
+        GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                          RecordRecvTrailingMetadata, this,
+                          grpc_schedule_on_exec_ctx);
+        pick->recv_trailing_metadata_ready = &recv_trailing_metadata_ready_;
+        pick->original_recv_trailing_metadata_ready =
+            &original_recv_trailing_metadata_ready_;
+        pick->recv_trailing_metadata = &recv_trailing_metadata_;
+      }
+
+     private:
+      static void RecordRecvTrailingMetadata(void* arg, grpc_error* err) {
+        TrailingMetadataHandler* self =
+            static_cast<TrailingMetadataHandler*>(arg);
+        GPR_ASSERT(self->recv_trailing_metadata_ != nullptr);
+        // a simple check to make sure the trailing metadata is valid
+        GPR_ASSERT(
+            grpc_get_status_code_from_metadata(
+                self->recv_trailing_metadata_->idx.named.grpc_status->md) ==
+            grpc_status_code::GRPC_STATUS_OK);
+        self->test_->ReportTrailerIntercepted();
+        GRPC_CLOSURE_SCHED(self->original_recv_trailing_metadata_ready_,
+                           GRPC_ERROR_REF(err));
+        delete self;
+      }
+
+      ClientLbInterceptTrailingMetadataTest* test_;
+      grpc_closure recv_trailing_metadata_ready_;
+      grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+      grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+    };
+
     ClientLbInterceptTrailingMetadataTest* test_;
   };
 
   // A factory for a test LB policy that intercepts trailing metadata.
   // The LB policy is implemented as a wrapper around a delegate LB policy.
-  class InterceptTrailingFactory :
-      public grpc_core::LoadBalancingPolicyFactory {
+  class InterceptTrailingFactory
+      : public grpc_core::LoadBalancingPolicyFactory {
    public:
-    InterceptTrailingFactory(ClientLbInterceptTrailingMetadataTest* test):
-        test_{test} {}
+    explicit InterceptTrailingFactory(
+        ClientLbInterceptTrailingMetadataTest* test)
+        : test_(test) {}
 
     grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
     CreateLoadBalancingPolicy(
         const grpc_core::LoadBalancingPolicy::Args& args) const override {
       return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
           grpc_core::New<InterceptTrailingLb>(
-              args,
-              /*delegate_lb_policy_name=*/ "pick_first",
-              test_));
+              args, /*delegate_lb_policy_name=*/ "pick_first", test_));
     }
 
     const char* name() const override {
@@ -1394,14 +1419,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     trailers_intercepted_++;
   }
 
-  uint32_t trailers_intercepted() {
+  int trailers_intercepted() {
     std::unique_lock<std::mutex> lock(mu_);
     return trailers_intercepted_;
   }
 
  private:
   std::mutex mu_;
-  uint32_t trailers_intercepted_ = 0;
+  int trailers_intercepted_ = 0;
 };
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
@@ -1418,9 +1443,8 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
   // Check LB policy name for the channel.
-  EXPECT_EQ(
-      "intercept_trailing_metadata_lb",
-      channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(kNumServers, trailers_intercepted());
 }
 
