@@ -29,6 +29,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/init.h"
 
 #include "test/core/util/cmdline.h"
 #include "test/core/util/memory_counters.h"
@@ -286,6 +287,7 @@ int main(int argc, char** argv) {
 
   grpc_completion_queue_destroy(cq);
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
 
   gpr_log(GPR_INFO, "---------client stats--------");
   gpr_log(
