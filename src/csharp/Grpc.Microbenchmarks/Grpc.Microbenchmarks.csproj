@@ -4,7 +4,7 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
     <AssemblyName>Grpc.Microbenchmarks</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.Microbenchmarks</PackageId>

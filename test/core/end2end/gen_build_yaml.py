@@ -41,7 +41,7 @@ local_fixture_options = default_secure_fixture_options._replace(
 fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'],
     exclude_iomgrs=['uv'], client_channel=False)
-inproc_fixture_options = default_unsecure_fixture_options._replace(
+inproc_fixture_options = default_secure_fixture_options._replace(
     dns_resolver=False, fullstack=False, name_resolution=False,
     supports_compression=False, is_inproc=True, is_http2=False,
     supports_write_buffering=False, client_channel=False)
@@ -74,7 +74,9 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True, large_writes=False, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
-    'h2_local': local_fixture_options,
+    'h2_local_uds': local_fixture_options,
+    'h2_local_ipv4': local_fixture_options,
+    'h2_local_ipv6': local_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(
         includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,
@@ -281,13 +283,11 @@ def main():
   sec_deps = [
     'grpc_test_util',
     'grpc',
-    'gpr_test_util',
     'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
     'grpc_unsecure',
-    'gpr_test_util',
     'gpr'
   ]
   json = {

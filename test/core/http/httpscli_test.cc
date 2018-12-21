@@ -201,7 +201,7 @@ int main(int argc, char** argv) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   grpc_httpcli_context_init(&g_context);
   grpc_pollset* pollset =

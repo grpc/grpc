@@ -22,7 +22,6 @@ import re
 import shutil
 import subprocess
 import sys
-import traceback
 
 import setuptools
 from setuptools.command import build_ext
@@ -116,6 +115,8 @@ class TestGevent(setuptools.Command):
         # eventually succeed, but need to dig into performance issues.
         'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
         'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
+        'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
         # I have no idea why this doesn't work in gevent, but it shouldn't even be
         # using the c-core
         'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
@@ -128,6 +129,21 @@ class TestGevent(setuptools.Command):
         # Beta API is unsupported for gevent
         'protoc_plugin.beta_python_plugin_test',
         'unit.beta._beta_features_test',
+        # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
+        # This test will stuck while running higher version of gevent
+        'unit._auth_context_test.AuthContextTest.testSessionResumption',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
+        'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
+        # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc'
     )
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []

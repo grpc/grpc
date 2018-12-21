@@ -296,18 +296,24 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
     socklen_t len = sizeof(newval);
     if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                         sizeof(timeout))) {
-      return GRPC_OS_ERROR(errno, "setsockopt(TCP_USER_TIMEOUT)");
+      gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
     }
     if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-      return GRPC_OS_ERROR(errno, "getsockopt(TCP_USER_TIMEOUT)");
+      gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
     }
     if (newval != timeout) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Failed to set TCP_USER_TIMEOUT");
+      /* Do not fail on failing to set TCP_USER_TIMEOUT for now. */
+      gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+      return GRPC_ERROR_NONE;
     }
   }
 #else
-  gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  extern grpc_core::TraceFlag grpc_tcp_trace;
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  }
 #endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }

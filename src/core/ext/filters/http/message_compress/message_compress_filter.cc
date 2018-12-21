@@ -39,6 +39,10 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+static void start_send_message_batch(void* arg, grpc_error* unused);
+static void send_message_on_complete(void* arg, grpc_error* error);
+static void on_send_message_next_done(void* arg, grpc_error* error);
+
 namespace {
 enum initial_metadata_state {
   // Initial metadata not yet seen.
@@ -50,6 +54,23 @@ enum initial_metadata_state {
 };
 
 struct call_data {
+  call_data(grpc_call_element* elem, const grpc_call_element_args& args)
+      : call_combiner(args.call_combiner) {
+    GRPC_CLOSURE_INIT(&start_send_message_batch_in_call_combiner,
+                      start_send_message_batch, elem,
+                      grpc_schedule_on_exec_ctx);
+    grpc_slice_buffer_init(&slices);
+    GRPC_CLOSURE_INIT(&send_message_on_complete, ::send_message_on_complete,
+                      elem, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_send_message_next_done, ::on_send_message_next_done,
+                      elem, grpc_schedule_on_exec_ctx);
+  }
+
+  ~call_data() {
+    grpc_slice_buffer_destroy_internal(&slices);
+    GRPC_ERROR_UNREF(cancel_error);
+  }
+
   grpc_call_combiner* call_combiner;
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem stream_compression_algorithm_storage;
@@ -57,11 +78,12 @@ struct call_data {
   grpc_linked_mdelem accept_stream_encoding_storage;
   /** Compression algorithm we'll try to use. It may be given by incoming
    * metadata, or by the channel's default compression settings. */
-  grpc_message_compression_algorithm message_compression_algorithm;
-  initial_metadata_state send_initial_metadata_state;
-  grpc_error* cancel_error;
+  grpc_message_compression_algorithm message_compression_algorithm =
+      GRPC_MESSAGE_COMPRESS_NONE;
+  initial_metadata_state send_initial_metadata_state = INITIAL_METADATA_UNSEEN;
+  grpc_error* cancel_error = GRPC_ERROR_NONE;
   grpc_closure start_send_message_batch_in_call_combiner;
-  grpc_transport_stream_op_batch* send_message_batch;
+  grpc_transport_stream_op_batch* send_message_batch = nullptr;
   grpc_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream>
       replacement_stream;
@@ -424,16 +446,7 @@ static void compress_start_transport_stream_op_batch(
 /* Constructor for call_data */
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  calld->cancel_error = GRPC_ERROR_NONE;
-  grpc_slice_buffer_init(&calld->slices);
-  GRPC_CLOSURE_INIT(&calld->start_send_message_batch_in_call_combiner,
-                    start_send_message_batch, elem, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->on_send_message_next_done,
-                    on_send_message_next_done, elem, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->send_message_on_complete, send_message_on_complete,
-                    elem, grpc_schedule_on_exec_ctx);
+  new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
@@ -442,8 +455,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_slice_buffer_destroy_internal(&calld->slices);
-  GRPC_ERROR_UNREF(calld->cancel_error);
+  calld->~call_data();
 }
 
 /* Constructor for channel_data */

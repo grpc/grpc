@@ -195,7 +195,7 @@ TEST_F(ChannelzRegistryTest, TestAddAfterCompaction) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

@@ -292,17 +292,18 @@ static void on_timeout(void* arg, grpc_error* error) {
   grpc_handshake_manager_unref(mgr);
 }
 
-void grpc_handshake_manager_do_handshake(
-    grpc_handshake_manager* mgr, grpc_pollset_set* interested_parties,
-    grpc_endpoint* endpoint, const grpc_channel_args* channel_args,
-    grpc_millis deadline, grpc_tcp_server_acceptor* acceptor,
-    grpc_iomgr_cb_func on_handshake_done, void* user_data) {
+void grpc_handshake_manager_do_handshake(grpc_handshake_manager* mgr,
+                                         grpc_endpoint* endpoint,
+                                         const grpc_channel_args* channel_args,
+                                         grpc_millis deadline,
+                                         grpc_tcp_server_acceptor* acceptor,
+                                         grpc_iomgr_cb_func on_handshake_done,
+                                         void* user_data) {
   gpr_mu_lock(&mgr->mu);
   GPR_ASSERT(mgr->index == 0);
   GPR_ASSERT(!mgr->shutdown);
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
-  mgr->args.interested_parties = interested_parties;
   mgr->args.endpoint = endpoint;
   mgr->args.args = grpc_channel_args_copy(channel_args);
   mgr->args.user_data = user_data;

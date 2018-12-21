@@ -293,7 +293,7 @@ typedef struct {
   "grpc.max_channel_trace_event_memory_per_node"
 /** If non-zero, gRPC library will track stats and information at at per channel
  * level. Disabling channelz naturally disables channel tracing. The default
- * is for channelz to be disabled. */
+ * is for channelz to be enabled. */
 #define GRPC_ARG_ENABLE_CHANNELZ "grpc.enable_channelz"
 /** If non-zero, Cronet transport will coalesce packets to fewer frames
  * when possible. */
@@ -347,6 +347,14 @@ typedef struct {
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
+/** If set, inhibits health checking (which may be enabled via the
+ *  service config.) */
+#define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
+/** If set, determines the number of milliseconds that the c-ares based
+ * DNS resolver will wait on queries before cancelling them. The default value
+ * is 10000. Setting this to "0" will disable c-ares query timeouts
+ * entirely. */
+#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

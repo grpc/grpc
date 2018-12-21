@@ -34,8 +34,11 @@ from setuptools.command import build_ext
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath('.'))
 
+import _parallel_compile_patch
 import protoc_lib_deps
 import grpc_version
+
+_parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
     'Development Status :: 5 - Production/Stable',

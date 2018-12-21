@@ -25,15 +25,17 @@ namespace Grpc.Health.V1 {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "ChtncnBjL2hlYWx0aC92MS9oZWFsdGgucHJvdG8SDmdycGMuaGVhbHRoLnYx",
-            "IiUKEkhlYWx0aENoZWNrUmVxdWVzdBIPCgdzZXJ2aWNlGAEgASgJIpQBChNI",
+            "IiUKEkhlYWx0aENoZWNrUmVxdWVzdBIPCgdzZXJ2aWNlGAEgASgJIqkBChNI",
             "ZWFsdGhDaGVja1Jlc3BvbnNlEkEKBnN0YXR1cxgBIAEoDjIxLmdycGMuaGVh",
-            "bHRoLnYxLkhlYWx0aENoZWNrUmVzcG9uc2UuU2VydmluZ1N0YXR1cyI6Cg1T",
+            "bHRoLnYxLkhlYWx0aENoZWNrUmVzcG9uc2UuU2VydmluZ1N0YXR1cyJPCg1T",
             "ZXJ2aW5nU3RhdHVzEgsKB1VOS05PV04QABILCgdTRVJWSU5HEAESDwoLTk9U",
-            "X1NFUlZJTkcQAjJaCgZIZWFsdGgSUAoFQ2hlY2sSIi5ncnBjLmhlYWx0aC52",
-            "MS5IZWFsdGhDaGVja1JlcXVlc3QaIy5ncnBjLmhlYWx0aC52MS5IZWFsdGhD",
-            "aGVja1Jlc3BvbnNlQmEKEWlvLmdycGMuaGVhbHRoLnYxQgtIZWFsdGhQcm90",
-            "b1ABWixnb29nbGUuZ29sYW5nLm9yZy9ncnBjL2hlYWx0aC9ncnBjX2hlYWx0",
-            "aF92MaoCDkdycGMuSGVhbHRoLlYxYgZwcm90bzM="));
+            "X1NFUlZJTkcQAhITCg9TRVJWSUNFX1VOS05PV04QAzKuAQoGSGVhbHRoElAK",
+            "BUNoZWNrEiIuZ3JwYy5oZWFsdGgudjEuSGVhbHRoQ2hlY2tSZXF1ZXN0GiMu",
+            "Z3JwYy5oZWFsdGgudjEuSGVhbHRoQ2hlY2tSZXNwb25zZRJSCgVXYXRjaBIi",
+            "LmdycGMuaGVhbHRoLnYxLkhlYWx0aENoZWNrUmVxdWVzdBojLmdycGMuaGVh",
+            "bHRoLnYxLkhlYWx0aENoZWNrUmVzcG9uc2UwAUJhChFpby5ncnBjLmhlYWx0",
+            "aC52MUILSGVhbHRoUHJvdG9QAVosZ29vZ2xlLmdvbGFuZy5vcmcvZ3JwYy9o",
+            "ZWFsdGgvZ3JwY19oZWFsdGhfdjGqAg5HcnBjLkhlYWx0aC5WMWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -309,6 +311,10 @@ namespace Grpc.Health.V1 {
         [pbr::OriginalName("UNKNOWN")] Unknown = 0,
         [pbr::OriginalName("SERVING")] Serving = 1,
         [pbr::OriginalName("NOT_SERVING")] NotServing = 2,
+        /// <summary>
+        /// Used only by the Watch method.
+        /// </summary>
+        [pbr::OriginalName("SERVICE_UNKNOWN")] ServiceUnknown = 3,
       }
 
     }

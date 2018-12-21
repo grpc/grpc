@@ -62,7 +62,7 @@ def _get_invocation_id():
     bazel_id_directory = os.getenv('KOKORO_ARTIFACTS_DIR')
     bazel_id_file = os.path.join(bazel_id_directory, 'bazel_invocation_ids')
     assert os.path.isfile(bazel_id_file), 'bazel_invocation_ids file, written ' \
-     'by bazel_wrapper.py, expected but not found.'
+     'by RBE initialization script, expected but not found.'
     with open(bazel_id_file, 'r') as f:
         return f.read().replace('\n', '')
 

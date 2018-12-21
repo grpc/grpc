@@ -40,6 +40,9 @@ extern grpc_core::TraceFlag grpc_client_channel_trace;
 
 extern const grpc_channel_filter grpc_client_channel_filter;
 
+void grpc_client_channel_set_channelz_node(
+    grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node);
+
 void grpc_client_channel_populate_child_refs(
     grpc_channel_element* elem,
     grpc_core::channelz::ChildRefsList* child_subchannels,

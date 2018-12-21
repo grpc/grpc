@@ -764,13 +764,14 @@ INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
-doc/combiner-explainer.md \
 doc/command_line_tool.md \
 doc/compression.md \
 doc/compression_cookbook.md \
 doc/connection-backoff-interop-test-description.md \
 doc/connection-backoff.md \
 doc/connectivity-semantics-and-api.md \
+doc/core/combiner-explainer.md \
+doc/core/epoll-polling-engine.md \
 doc/core/grpc-client-server-polling-engine-usage.md \
 doc/core/grpc-cq.md \
 doc/core/grpc-error.md \
@@ -780,10 +781,10 @@ doc/core/pending_api_cleanups.md \
 doc/core/transport_explainer.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
-doc/epoll-polling-engine.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \

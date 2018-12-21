@@ -59,9 +59,8 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_AUTHORITY,
-            grpc_slice_ref_internal(chand->default_authority)));
+        grpc_mdelem_create(GRPC_MDSTR_AUTHORITY, chand->default_authority,
+                           nullptr));
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);

@@ -25,7 +25,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -37,7 +36,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -49,19 +47,17 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
-    name = "stream_compress_test",
+    name = "stream_compression_test",
     srcs = ["stream_compression_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

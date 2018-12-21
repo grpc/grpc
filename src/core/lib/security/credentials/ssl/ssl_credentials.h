@@ -22,27 +22,72 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
-typedef struct {
-  grpc_channel_credentials base;
-  grpc_ssl_config config;
-} grpc_ssl_credentials;
+#include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
-struct grpc_ssl_server_certificate_config {
-  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs;
-  size_t num_key_cert_pairs;
-  char* pem_root_certs;
+class grpc_ssl_credentials : public grpc_channel_credentials {
+ public:
+  grpc_ssl_credentials(const char* pem_root_certs,
+                       grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+                       const verify_peer_options* verify_options);
+
+  ~grpc_ssl_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
+
+ private:
+  void build_config(const char* pem_root_certs,
+                    grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+                    const verify_peer_options* verify_options);
+
+  grpc_ssl_config config_;
 };
 
-typedef struct {
-  grpc_ssl_server_certificate_config_callback cb;
-  void* user_data;
-} grpc_ssl_server_certificate_config_fetcher;
+struct grpc_ssl_server_certificate_config {
+  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
+  size_t num_key_cert_pairs = 0;
+  char* pem_root_certs = nullptr;
+};
 
-typedef struct {
-  grpc_server_credentials base;
-  grpc_ssl_server_config config;
-  grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher;
-} grpc_ssl_server_credentials;
+struct grpc_ssl_server_certificate_config_fetcher {
+  grpc_ssl_server_certificate_config_callback cb = nullptr;
+  void* user_data;
+};
+
+class grpc_ssl_server_credentials final : public grpc_server_credentials {
+ public:
+  grpc_ssl_server_credentials(
+      const grpc_ssl_server_credentials_options& options);
+  ~grpc_ssl_server_credentials() override;
+
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() override;
+
+  bool has_cert_config_fetcher() const {
+    return certificate_config_fetcher_.cb != nullptr;
+  }
+
+  grpc_ssl_certificate_config_reload_status FetchCertConfig(
+      grpc_ssl_server_certificate_config** config) {
+    GPR_DEBUG_ASSERT(has_cert_config_fetcher());
+    return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
+                                          config);
+  }
+
+  const grpc_ssl_server_config& config() const { return config_; }
+
+ private:
+  void build_config(
+      const char* pem_root_certs,
+      grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
+      grpc_ssl_client_certificate_request_type client_certificate_request);
+
+  grpc_ssl_server_config config_;
+  grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;
+};
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,

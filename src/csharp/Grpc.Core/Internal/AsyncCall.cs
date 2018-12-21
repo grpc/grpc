@@ -54,7 +54,7 @@ namespace Grpc.Core.Internal
         ClientSideStatus? finishedStatus;
 
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
+            : base(callDetails.RequestMarshaller.ContextualSerializer, callDetails.ResponseMarshaller.ContextualDeserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.

@@ -63,17 +63,17 @@ _SKIP_ADVANCED = [
     'unimplemented_service'
 ]
 
+_SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
+
 _TEST_TIMEOUT = 3 * 60
 
 # disable this test on core-based languages,
 # see https://github.com/grpc/grpc/issues/9779
 _SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
 
-# report suffix is important for reports to get picked up by internal CI
-_INTERNAL_CL_XML_REPORT = 'sponge_log.xml'
-
-# report suffix is important for reports to get picked up by internal CI
-_XML_REPORT = 'report.xml'
+# report suffix "sponge_log.xml" is important for reports to get picked up by internal CI
+_DOCKER_BUILD_XML_REPORT = 'interop_docker_build/sponge_log.xml'
+_TESTS_XML_REPORT = 'interop_test/sponge_log.xml'
 
 
 class CXXLanguage:
@@ -100,7 +100,7 @@ class CXXLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -129,7 +129,7 @@ class CSharpLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -141,8 +141,8 @@ class CSharpLanguage:
 class CSharpCoreCLRLanguage:
 
     def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.0'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.0'
+        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.1'
+        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.1'
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -158,7 +158,7 @@ class CSharpCoreCLRLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -188,10 +188,10 @@ class DartLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'dart'
@@ -248,7 +248,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def __str__(self):
         return 'javaokhttp'
@@ -309,7 +309,7 @@ class Http2Server:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING
+        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -339,7 +339,7 @@ class Http2Client:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES
+        return _TEST_CASES + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -431,7 +431,7 @@ class PHPLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -456,7 +456,7 @@ class PHP7Language:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return []
@@ -491,7 +491,7 @@ class ObjcLanguage:
         # cmdline argument. Here we return all but one test cases as unimplemented,
         # and depend upon ObjC test's behavior that it runs all cases even when
         # we tell it to run just one.
-        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -526,7 +526,7 @@ class RubyLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -545,13 +545,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py27_native/bin/python',
+            'py37_native/bin/python',
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -560,7 +560,7 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
@@ -610,7 +610,7 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service'
+    'unimplemented_service', 'special_status_message'
 ]
 
 _AUTH_TEST_CASES = [
@@ -688,6 +688,10 @@ def write_cmdlog_maybe(cmdlog, filename):
     if cmdlog:
         with open(filename, 'w') as logfile:
             logfile.write('#!/bin/bash\n')
+            logfile.write('# DO NOT MODIFY\n')
+            logfile.write(
+                '# This file is generated by run_interop_tests.py/create_testcases.sh\n'
+            )
             logfile.writelines("%s\n" % line for line in cmdlog)
         print('Command log written to file %s' % filename)
 
@@ -771,8 +775,7 @@ def cloud_to_prod_jobspec(language,
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
-        '--server_host=%s' % server_host,
-        '--server_host_override=%s' % server_host, '--server_port=443',
+        '--server_host=%s' % server_host, '--server_port=443',
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':
@@ -1157,8 +1160,9 @@ argp.add_argument(
     default=False,
     action='store_const',
     const=True,
-    help=('Put reports into subdirectories to improve '
-          'presentation of results by Internal CI.'))
+    help=(
+        '(Deprecated, has no effect) Put reports into subdirectories to improve '
+        'presentation of results by Internal CI.'))
 argp.add_argument(
     '--bq_result_table',
     default='',
@@ -1247,8 +1251,12 @@ if args.use_docker:
         if args.verbose:
             print('Jobs to run: \n%s\n' % '\n'.join(str(j) for j in build_jobs))
 
-        num_failures, _ = jobset.run(
+        num_failures, build_resultset = jobset.run(
             build_jobs, newline_on_success=True, maxjobs=args.jobs)
+
+        report_utils.render_junit_xml_report(build_resultset,
+                                             _DOCKER_BUILD_XML_REPORT)
+
         if num_failures == 0:
             jobset.message(
                 'SUCCESS',
@@ -1311,7 +1319,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
                             tls_test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
@@ -1513,10 +1521,7 @@ try:
     write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
     write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-    xml_report_name = _XML_REPORT
-    if args.internal_ci:
-        xml_report_name = _INTERNAL_CL_XML_REPORT
-    report_utils.render_junit_xml_report(resultset, xml_report_name)
+    report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
 
     for name, job in resultset.items():
         if "http2" in name:

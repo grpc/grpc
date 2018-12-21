@@ -45,7 +45,7 @@ namespace Grpc.IntegrationTesting
             [Option("server_host", Default = "localhost")]
             public string ServerHost { get; set; }
 
-            [Option("server_host_override", Default = TestCredentials.DefaultHostOverride)]
+            [Option("server_host_override")]
             public string ServerHostOverride { get; set; }
 
             [Option("server_port", Required = true)]

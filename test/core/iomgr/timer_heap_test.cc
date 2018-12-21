@@ -286,7 +286,7 @@ static void shrink_test(void) {
 int main(int argc, char** argv) {
   int i;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   for (i = 0; i < 5; i++) {
     test1();

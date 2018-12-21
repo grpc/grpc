@@ -16,6 +16,7 @@
 import itertools
 import threading
 import unittest
+import logging
 from concurrent import futures
 
 import grpc
@@ -846,4 +847,5 @@ class RPCTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

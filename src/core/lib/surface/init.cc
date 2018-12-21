@@ -123,6 +123,7 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     gpr_time_init();
+    gpr_arena_init();
     grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
@@ -160,6 +161,7 @@ void grpc_shutdown(void) {
   if (--g_initializations == 0) {
     {
       grpc_core::ExecCtx exec_ctx(0);
+      grpc_iomgr_shutdown_background_closure();
       {
         grpc_timer_manager_set_threading(
             false);  // shutdown timer_manager thread

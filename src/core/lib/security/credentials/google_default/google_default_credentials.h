@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY "gcloud"
@@ -39,13 +40,33 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
-typedef struct {
-  grpc_channel_credentials base;
-  grpc_channel_credentials* alts_creds;
-  grpc_channel_credentials* ssl_creds;
-} grpc_google_default_channel_credentials;
+class grpc_google_default_channel_credentials
+    : public grpc_channel_credentials {
+ public:
+  grpc_google_default_channel_credentials(
+      grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> ssl_creds)
+      : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT),
+        alts_creds_(std::move(alts_creds)),
+        ssl_creds_(std::move(ssl_creds)) {}
 
-void grpc_flush_cached_google_default_credentials(void);
+  ~grpc_google_default_channel_credentials() override = default;
+
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
+
+  const grpc_channel_credentials* alts_creds() const {
+    return alts_creds_.get();
+  }
+  const grpc_channel_credentials* ssl_creds() const { return ssl_creds_.get(); }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds_;
+  grpc_core::RefCountedPtr<grpc_channel_credentials> ssl_creds_;
+};
 
 namespace grpc_core {
 namespace internal {
@@ -53,6 +74,9 @@ namespace internal {
 typedef bool (*grpc_gce_tenancy_checker)(void);
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
+
+// TEST-ONLY. Reset the internal global state.
+void grpc_flush_cached_google_default_credentials(void);
 
 }  // namespace internal
 }  // namespace grpc_core

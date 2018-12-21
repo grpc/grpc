@@ -108,7 +108,9 @@ static void simple_request_body(grpc_end2end_test_config config,
   grpc_stats_data* after =
       static_cast<grpc_stats_data*>(gpr_malloc(sizeof(grpc_stats_data)));
 
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   grpc_stats_collect(before);
+#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -225,17 +227,18 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   cq_verifier_destroy(cqv);
 
+  int expected_calls = 1;
+  if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
+    expected_calls *= 2;
+  }
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
+
   grpc_stats_collect(after);
 
   char* stats = grpc_stats_data_as_json(after);
   gpr_log(GPR_DEBUG, "%s", stats);
   gpr_free(stats);
 
-  int expected_calls = 1;
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
-    expected_calls *= 2;
-  }
-#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   GPR_ASSERT(after->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] -
                  before->counters[GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED] ==
              expected_calls);

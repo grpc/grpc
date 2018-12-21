@@ -21,8 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
 #include <utility>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
@@ -48,21 +50,19 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr(RefCountedPtr<Y>&& other) {
-    value_ = other.value_;
+    value_ = static_cast<T*>(other.value_);
     other.value_ = nullptr;
   }
 
   // Move assignment.
   RefCountedPtr& operator=(RefCountedPtr&& other) {
-    if (value_ != nullptr) value_->Unref();
-    value_ = other.value_;
+    reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
   template <typename Y>
   RefCountedPtr& operator=(RefCountedPtr<Y>&& other) {
-    if (value_ != nullptr) value_->Unref();
-    value_ = other.value_;
+    reset(other.value_);
     other.value_ = nullptr;
     return *this;
   }
@@ -74,8 +74,10 @@ class RefCountedPtr {
   }
   template <typename Y>
   RefCountedPtr(const RefCountedPtr<Y>& other) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    value_ = other.value_;
+    value_ = static_cast<T*>(other.value_);
   }
 
   // Copy assignment.
@@ -83,17 +85,17 @@ class RefCountedPtr {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    if (value_ != nullptr) value_->Unref();
-    value_ = other.value_;
+    reset(other.value_);
     return *this;
   }
   template <typename Y>
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
-    if (value_ != nullptr) value_->Unref();
-    value_ = other.value_;
+    reset(other.value_);
     return *this;
   }
 
@@ -102,15 +104,29 @@ class RefCountedPtr {
   }
 
   // If value is non-null, we take ownership of a ref to it.
-  template <typename Y>
-  void reset(Y* value) {
+  void reset(T* value = nullptr) {
     if (value_ != nullptr) value_->Unref();
     value_ = value;
   }
-
-  void reset() {
+  void reset(const DebugLocation& location, const char* reason,
+             T* value = nullptr) {
+    if (value_ != nullptr) value_->Unref(location, reason);
+    value_ = value;
+  }
+  template <typename Y>
+  void reset(Y* value = nullptr) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
     if (value_ != nullptr) value_->Unref();
-    value_ = nullptr;
+    value_ = static_cast<T*>(value);
+  }
+  template <typename Y>
+  void reset(const DebugLocation& location, const char* reason,
+             Y* value = nullptr) {
+    static_assert(std::has_virtual_destructor<T>::value,
+                  "T does not have a virtual dtor");
+    if (value_ != nullptr) value_->Unref(location, reason);
+    value_ = static_cast<T*>(value);
   }
 
   // TODO(roth): This method exists solely as a transition mechanism to allow

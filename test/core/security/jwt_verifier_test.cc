@@ -600,7 +600,7 @@ static void test_jwt_verifier_bad_format(void) {
 /* bad key */
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_jwt_issuer_email_domain();
   test_claims_success();

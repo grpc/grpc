@@ -27,7 +27,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 static void client_channel_factory_ref(
     grpc_client_channel_factory* cc_factory) {}
@@ -110,14 +110,14 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   grpc_channel_args* args_with_authority =
       grpc_channel_args_copy_and_add(args->args, args_to_add, num_args_to_add);
   grpc_uri_destroy(server_uri);
-  grpc_channel_security_connector* subchannel_security_connector = nullptr;
   // Create the security connector using the credentials and target name.
   grpc_channel_args* new_args_from_connector = nullptr;
-  const grpc_security_status security_status =
-      grpc_channel_credentials_create_security_connector(
-          channel_credentials, authority.get(), args_with_authority,
-          &subchannel_security_connector, &new_args_from_connector);
-  if (security_status != GRPC_SECURITY_OK) {
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+      subchannel_security_connector =
+          channel_credentials->create_security_connector(
+              /*call_creds=*/nullptr, authority.get(), args_with_authority,
+              &new_args_from_connector);
+  if (subchannel_security_connector == nullptr) {
     gpr_log(GPR_ERROR,
             "Failed to create secure subchannel for secure name '%s'",
             authority.get());
@@ -125,15 +125,14 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     return nullptr;
   }
   grpc_arg new_security_connector_arg =
-      grpc_security_connector_to_arg(&subchannel_security_connector->base);
+      grpc_security_connector_to_arg(subchannel_security_connector.get());
 
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector
                                          : args_with_authority,
       &new_security_connector_arg, 1);
 
-  GRPC_SECURITY_CONNECTOR_UNREF(&subchannel_security_connector->base,
-                                "lb_channel_create");
+  subchannel_security_connector.reset(DEBUG_LOCATION, "lb_channel_create");
   if (new_args_from_connector != nullptr) {
     grpc_channel_args_destroy(new_args_from_connector);
   }

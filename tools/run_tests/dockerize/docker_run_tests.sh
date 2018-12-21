@@ -18,7 +18,7 @@
 
 set -e
 
-export CONFIG=$config
+export CONFIG=${config:-opt}
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
@@ -38,16 +38,8 @@ exit_code=0
 
 $RUN_TESTS_COMMAND || exit_code=$?
 
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
+# The easiest way to copy all the reports files from inside of
+# the docker container is to zip them and then copy the zip.
 zip -r reports.zip reports
 find . -name report.xml -print0 | xargs -0 -r zip reports.zip
 find . -name sponge_log.xml -print0 | xargs -0 -r zip reports.zip

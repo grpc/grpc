@@ -16,6 +16,7 @@
 from __future__ import print_function
 
 import random
+import logging
 
 import grpc
 
@@ -116,4 +117,5 @@ def run():
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     run()

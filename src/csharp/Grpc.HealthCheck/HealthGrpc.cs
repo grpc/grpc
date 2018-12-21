@@ -40,6 +40,13 @@ namespace Grpc.Health.V1 {
         __Marshaller_grpc_health_v1_HealthCheckRequest,
         __Marshaller_grpc_health_v1_HealthCheckResponse);
 
+    static readonly grpc::Method<global::Grpc.Health.V1.HealthCheckRequest, global::Grpc.Health.V1.HealthCheckResponse> __Method_Watch = new grpc::Method<global::Grpc.Health.V1.HealthCheckRequest, global::Grpc.Health.V1.HealthCheckResponse>(
+        grpc::MethodType.ServerStreaming,
+        __ServiceName,
+        "Watch",
+        __Marshaller_grpc_health_v1_HealthCheckRequest,
+        __Marshaller_grpc_health_v1_HealthCheckResponse);
+
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
@@ -49,7 +56,40 @@ namespace Grpc.Health.V1 {
     /// <summary>Base class for server-side implementations of Health</summary>
     public abstract partial class HealthBase
     {
+      /// <summary>
+      /// If the requested service is unknown, the call will fail with status
+      /// NOT_FOUND.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>The response to send back to the client (wrapped by a task).</returns>
       public virtual global::System.Threading.Tasks.Task<global::Grpc.Health.V1.HealthCheckResponse> Check(global::Grpc.Health.V1.HealthCheckRequest request, grpc::ServerCallContext context)
+      {
+        throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
+      }
+
+      /// <summary>
+      /// Performs a watch for the serving status of the requested service.
+      /// The server will immediately send back a message indicating the current
+      /// serving status.  It will then subsequently send a new message whenever
+      /// the service's serving status changes.
+      ///
+      /// If the requested service is unknown when the call is received, the
+      /// server will send a message setting the serving status to
+      /// SERVICE_UNKNOWN but will *not* terminate the call.  If at some
+      /// future point, the serving status of the service becomes known, the
+      /// server will send a new message with the service's serving status.
+      ///
+      /// If the call terminates with status UNIMPLEMENTED, then clients
+      /// should assume this method is not supported and should not retry the
+      /// call.  If the call terminates with any other status (including OK),
+      /// clients should retry the call with appropriate exponential backoff.
+      /// </summary>
+      /// <param name="request">The request received from the client.</param>
+      /// <param name="responseStream">Used for sending responses back to the client.</param>
+      /// <param name="context">The context of the server-side call handler being invoked.</param>
+      /// <returns>A task indicating completion of the handler.</returns>
+      public virtual global::System.Threading.Tasks.Task Watch(global::Grpc.Health.V1.HealthCheckRequest request, grpc::IServerStreamWriter<global::Grpc.Health.V1.HealthCheckResponse> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -79,21 +119,103 @@ namespace Grpc.Health.V1 {
       {
       }
 
+      /// <summary>
+      /// If the requested service is unknown, the call will fail with status
+      /// NOT_FOUND.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return Check(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// If the requested service is unknown, the call will fail with status
+      /// NOT_FOUND.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The response received from the server.</returns>
       public virtual global::Grpc.Health.V1.HealthCheckResponse Check(global::Grpc.Health.V1.HealthCheckRequest request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_Check, null, options, request);
       }
+      /// <summary>
+      /// If the requested service is unknown, the call will fail with status
+      /// NOT_FOUND.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
       public virtual grpc::AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return CheckAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
+      /// <summary>
+      /// If the requested service is unknown, the call will fail with status
+      /// NOT_FOUND.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
       public virtual grpc::AsyncUnaryCall<global::Grpc.Health.V1.HealthCheckResponse> CheckAsync(global::Grpc.Health.V1.HealthCheckRequest request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_Check, null, options, request);
+      }
+      /// <summary>
+      /// Performs a watch for the serving status of the requested service.
+      /// The server will immediately send back a message indicating the current
+      /// serving status.  It will then subsequently send a new message whenever
+      /// the service's serving status changes.
+      ///
+      /// If the requested service is unknown when the call is received, the
+      /// server will send a message setting the serving status to
+      /// SERVICE_UNKNOWN but will *not* terminate the call.  If at some
+      /// future point, the serving status of the service becomes known, the
+      /// server will send a new message with the service's serving status.
+      ///
+      /// If the call terminates with status UNIMPLEMENTED, then clients
+      /// should assume this method is not supported and should not retry the
+      /// call.  If the call terminates with any other status (including OK),
+      /// clients should retry the call with appropriate exponential backoff.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="headers">The initial metadata to send with the call. This parameter is optional.</param>
+      /// <param name="deadline">An optional deadline for the call. The call will be cancelled if deadline is hit.</param>
+      /// <param name="cancellationToken">An optional token for canceling the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncServerStreamingCall<global::Grpc.Health.V1.HealthCheckResponse> Watch(global::Grpc.Health.V1.HealthCheckRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      {
+        return Watch(request, new grpc::CallOptions(headers, deadline, cancellationToken));
+      }
+      /// <summary>
+      /// Performs a watch for the serving status of the requested service.
+      /// The server will immediately send back a message indicating the current
+      /// serving status.  It will then subsequently send a new message whenever
+      /// the service's serving status changes.
+      ///
+      /// If the requested service is unknown when the call is received, the
+      /// server will send a message setting the serving status to
+      /// SERVICE_UNKNOWN but will *not* terminate the call.  If at some
+      /// future point, the serving status of the service becomes known, the
+      /// server will send a new message with the service's serving status.
+      ///
+      /// If the call terminates with status UNIMPLEMENTED, then clients
+      /// should assume this method is not supported and should not retry the
+      /// call.  If the call terminates with any other status (including OK),
+      /// clients should retry the call with appropriate exponential backoff.
+      /// </summary>
+      /// <param name="request">The request to send to the server.</param>
+      /// <param name="options">The options for the call.</param>
+      /// <returns>The call object.</returns>
+      public virtual grpc::AsyncServerStreamingCall<global::Grpc.Health.V1.HealthCheckResponse> Watch(global::Grpc.Health.V1.HealthCheckRequest request, grpc::CallOptions options)
+      {
+        return CallInvoker.AsyncServerStreamingCall(__Method_Watch, null, options, request);
       }
       /// <summary>Creates a new instance of client from given <c>ClientBaseConfiguration</c>.</summary>
       protected override HealthClient NewInstance(ClientBaseConfiguration configuration)
@@ -107,7 +229,18 @@ namespace Grpc.Health.V1 {
     public static grpc::ServerServiceDefinition BindService(HealthBase serviceImpl)
     {
       return grpc::ServerServiceDefinition.CreateBuilder()
-          .AddMethod(__Method_Check, serviceImpl.Check).Build();
+          .AddMethod(__Method_Check, serviceImpl.Check)
+          .AddMethod(__Method_Watch, serviceImpl.Watch).Build();
+    }
+
+    /// <summary>Register service method implementations with a service binder. Useful when customizing the service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, HealthBase serviceImpl)
+    {
+      serviceBinder.AddMethod(__Method_Check, serviceImpl.Check);
+      serviceBinder.AddMethod(__Method_Watch, serviceImpl.Watch);
     }
 
   }

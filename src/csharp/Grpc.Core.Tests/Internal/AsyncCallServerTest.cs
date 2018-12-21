@@ -49,7 +49,7 @@ namespace Grpc.Core.Internal.Tests
 
             fakeCall = new FakeNativeCall();
             asyncCallServer = new AsyncCallServer<string, string>(
-                Marshallers.StringMarshaller.Serializer, Marshallers.StringMarshaller.Deserializer,
+                Marshallers.StringMarshaller.ContextualSerializer, Marshallers.StringMarshaller.ContextualDeserializer,
                 server);
             asyncCallServer.InitializeForTesting(fakeCall);
         }

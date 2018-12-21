@@ -14,6 +14,7 @@
 """Test of gRPC Python's application-layer API."""
 
 import unittest
+import logging
 
 import six
 
@@ -31,6 +32,7 @@ class AllTest(unittest.TestCase):
             'Future',
             'ChannelConnectivity',
             'StatusCode',
+            'Status',
             'RpcError',
             'RpcContext',
             'Call',
@@ -102,4 +104,5 @@ class ChannelTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)
