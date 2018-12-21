@@ -42,18 +42,18 @@ namespace {
 // Looks recursively (BFS) through all FileDescriptor dependencies for the
 // input/output message package. Should only be run if ruby_package option is
 // set
-void GetInputOutputPackage(const FileDescriptor *file,
-                           const grpc::string& package,
-                           const Descriptor* input_desc,
-                           const Descriptor* output_desc,
-                           grpc::string& input_package,
-                           grpc::string& output_package) {
+void GetInputOutputProtoPackage(const FileDescriptor *file,
+                                const grpc::string &package,
+                                const Descriptor *input_desc,
+                                const Descriptor *output_desc,
+                                grpc::string &input_package,
+                                grpc::string &output_package) {
   const grpc::string& input_name = input_desc->name();
   const grpc::string& output_name = output_desc->name();
   const grpc::string& input_full_name = input_desc->full_name();
   const grpc::string& output_full_name = output_desc->full_name();
 
-  bool found_input_def = false, found_output_def = false;
+  const Descriptor *found_input_desc = nullptr, *found_output_desc = nullptr;
 
   vector<const FileDescriptor*> pending;
   unordered_set<const FileDescriptor*> seen;
@@ -77,25 +77,44 @@ void GetInputOutputPackage(const FileDescriptor *file,
       if (dep->options().has_ruby_package() &&
           dep->options().ruby_package() == package) {
         // look if input/output is defined in this file
-        auto found_input_desc = dep->FindMessageTypeByName(input_name);
-        auto found_output_desc = dep->FindMessageTypeByName(output_name);
+        // FindMessageTypeByName returns Descriptor* if found, else Null
+        const Descriptor *find_input_message_desc =
+                dep->FindMessageTypeByName(input_name);
+        const Descriptor *find_output_message_desc =
+                dep->FindMessageTypeByName(output_name);
 
-        // if message is define and matches the fully qualified name,
-        // get the package name of that file
-        if (found_input_desc &&
-            found_input_desc->full_name() == input_full_name) {
-          input_package = dep->package();
-          found_input_def = true;
+        // check if input is defined in this file
+        if (find_input_message_desc) {
+          // found redefinition in the same ruby namespace
+          if (found_input_desc && find_input_message_desc->name() == input_name) {
+            std::cerr << "Message redefinition detected: \n\t" << input_name
+                      << " redefinied in " << find_input_message_desc->file()->name()
+                      << "\n\talso defined in "
+                      << found_input_desc->file()->name() << std::endl;
+            exit(1);
+          }
+          else if (find_input_message_desc->full_name() == input_full_name) {
+            input_package = dep->package();
+            found_input_desc = find_input_message_desc;
+          }
         }
-        if (found_output_desc &&
-            found_output_desc->full_name() == output_full_name) {
-          output_package = dep->package();
-          found_output_def = true;
+
+        // check if output is defined in this file
+        if (find_output_message_desc) {
+          // found redefinition in the same ruby namespace
+          if (found_output_desc && find_output_message_desc->name() == output_name) {
+            std::cerr << "Message redefinition detected: \n\t" << output_name
+                      << " redefinied in " << find_output_message_desc->file()->name()
+                      << "\n\talso defined in "
+                      << found_output_desc->file()->name() << std::endl;
+            exit(1);
+          }
+          else if (find_output_message_desc->full_name() == output_full_name) {
+            output_package = dep->package();
+            found_output_desc = find_output_message_desc;
+          }
         }
       }
-      // return as soon as both input and output packages are found
-      if (found_input_def && found_output_def)
-        return;
     }
   }
 }
@@ -108,12 +127,12 @@ void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
 
   // only bfs if we really need to
   if (file->options().has_ruby_package()) {
-    auto input_desc = method->input_type();
-    auto output_desc = method->output_type();
+    const Descriptor *input_desc = method->input_type();
+    const Descriptor *output_desc = method->output_type();
 
-    GetInputOutputPackage(file, package,
-                          input_desc, output_desc,
-                          input_package, output_package);
+    GetInputOutputProtoPackage(file, package,
+                               input_desc, output_desc,
+                               input_package, output_package);
   }
 
   grpc::string input_type =
