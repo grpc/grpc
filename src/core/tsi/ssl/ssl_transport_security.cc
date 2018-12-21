@@ -2354,8 +2354,6 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
               tsi_result_to_string(result));
       return TSI_INTERNAL_ERROR;
     }
-    handshaker->factory_ref =
-        tsi_ssl_handshaker_factory_ref(&handshaker_factory->base);
     tsi::SslSessionLRUCache* session_cache =
         handshaker->session_cache == nullptr
             ? nullptr
@@ -2400,8 +2398,6 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
               tsi_result_to_string(result));
       return TSI_INTERNAL_ERROR;
     }
-    handshaker->factory_ref =
-        tsi_ssl_handshaker_factory_ref(&handshaker_factory->base);
     return populate_ssl_handshaker(
         handshaker, handshaker_factory->ssl_contexts[0], false /* is_client*/,
         nullptr, &handshaker_factory->base, nullptr);

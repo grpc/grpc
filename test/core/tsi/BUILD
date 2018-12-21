@@ -37,7 +37,7 @@ grpc_cc_library(
     hdrs = ["ssl_transport_security_test_common.h"],
     deps = [
         ":transport_security_test_lib",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc__test_util",
         "//:grpc",
         "//:gpr",
     ],
@@ -94,7 +94,7 @@ grpc_cc_test(
         "//:grpc",
         "//:gpr",
         "//:tsi",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
