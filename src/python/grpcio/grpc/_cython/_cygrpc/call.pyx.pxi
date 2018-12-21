@@ -84,10 +84,10 @@ cdef class Call:
       gpr_free(peer)
     return result
 
-  def __dealloc__(self):
-    if self.c_call != NULL:
-      grpc_call_unref(self.c_call)
-    grpc_shutdown()
+  # def __dealloc__(self):
+  #   if self.c_call != NULL:
+  #     grpc_call_unref(self.c_call)
+  #   grpc_shutdown()
 
   # The object *should* always be valid from Python. Used for debugging.
   @property

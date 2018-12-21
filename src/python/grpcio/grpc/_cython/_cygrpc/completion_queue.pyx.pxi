@@ -105,6 +105,6 @@ cdef class CompletionQueue:
     while self.poll().type != GRPC_QUEUE_SHUTDOWN:
       pass
 
-  def __dealloc__(self):
-    if self.c_completion_queue == NULL:
-      grpc_shutdown()
+  # def __dealloc__(self):
+  #   if self.c_completion_queue == NULL:
+  #     grpc_shutdown()

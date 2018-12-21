@@ -131,10 +131,10 @@ cdef class CallDetails:
     with nogil:
       grpc_call_details_init(&self.c_details)
 
-  def __dealloc__(self):
-    with nogil:
-      grpc_call_details_destroy(&self.c_details)
-    grpc_shutdown()
+  # def __dealloc__(self):
+  #   with nogil:
+  #     grpc_call_details_destroy(&self.c_details)
+  #   grpc_shutdown()
 
   @property
   def method(self):

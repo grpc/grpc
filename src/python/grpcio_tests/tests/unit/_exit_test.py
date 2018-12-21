@@ -70,7 +70,7 @@ def wait(process):
         processes.append(process)
     process.wait()
 
-
+@unittest.skip("no dealloc test")
 class ExitTest(unittest.TestCase):
 
     def test_unstarted_server(self):

@@ -59,9 +59,10 @@ cdef int _get_metadata(
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) with gil:
-  cpython.Py_DECREF(<object>state)
-  grpc_shutdown()
+cdef void _destroy(void *state): #with gil:
+  pass
+  # cpython.Py_DECREF(<object>state)
+  # grpc_shutdown()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -122,10 +123,10 @@ cdef class SSLSessionCacheLRU:
   def __int__(self):
     return <uintptr_t>self._cache
 
-  def __dealloc__(self):
-    if self._cache != NULL:
-        grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown()
+  # def __dealloc__(self):
+  #   if self._cache != NULL:
+  #       grpc_ssl_session_cache_destroy(self._cache)
+  #   grpc_shutdown()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -188,10 +189,10 @@ cdef class ServerCertificateConfig:
     self.c_ssl_pem_key_cert_pairs = NULL
     self.references = []
 
-  def __dealloc__(self):
-    grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
-    gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown()
+  # def __dealloc__(self):
+  #   grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
+  #   gpr_free(self.c_ssl_pem_key_cert_pairs)
+  #   grpc_shutdown()
 
 
 cdef class ServerCredentials:
@@ -204,10 +205,10 @@ cdef class ServerCredentials:
     self.cert_config_fetcher = None
     self.initial_cert_config_fetched = False
 
-  def __dealloc__(self):
-    if self.c_credentials != NULL:
-      grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown()
+  # def __dealloc__(self):
+  #   if self.c_credentials != NULL:
+  #     grpc_server_credentials_release(self.c_credentials)
+  #   grpc_shutdown()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
