@@ -21,11 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include <grpc/impl/codegen/log.h>
+
+//#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/avl/avl.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 // Channel arg key for whether to use a local subchannel pool.
 #define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL "grpc.use_local_subchannel_pool"
+
+typedef struct grpc_subchannel grpc_subchannel;
+typedef struct grpc_subchannel_call grpc_subchannel_call;
+typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 namespace grpc_core {
 
@@ -60,13 +69,13 @@ class SubchannelKey {
       const grpc_subchannel_args* args,
       grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
 
-  grpc_subchannel_args args_;
+  grpc_subchannel_args* args_;
   // If set, all subchannel keys are regarded different.
   static bool force_different_;
 };
 
 // Interface for subchannel pool.
-class SubchannelPoolInterface {
+class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
  public:
   virtual ~SubchannelPoolInterface() {}
 
@@ -84,6 +93,12 @@ class SubchannelPoolInterface {
   // Finds the subchannel registered for the given subchannel key. Returns NULL
   // if no such channel exists. Thread-safe.
   virtual grpc_subchannel* FindSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
+
+//  // Increments the (non-zero) refcount of the subchannel pool.
+//  SubchannelPoolInterface* Ref();
+//  // Decrements the refcount of the subchannel pool. If the refcount drops to
+//  // zero, destroys the subchannel pool.
+//  void Unref();
 
   GRPC_ABSTRACT_BASE_CLASS
 
