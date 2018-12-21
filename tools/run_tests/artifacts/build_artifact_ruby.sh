@@ -18,7 +18,9 @@ SYSTEM=$(uname | cut -f 1 -d_)
 
 cd "$(dirname "$0")/../../.."
 set +ex
+# shellcheck disable=SC1091
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
+# shellcheck disable=SC1090
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 set -ex
 

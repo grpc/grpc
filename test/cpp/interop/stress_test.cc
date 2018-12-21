@@ -103,7 +103,7 @@ DEFINE_bool(use_alts, false,
             "Whether to use alts. Enable alts will disable tls.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
-DEFINE_string(server_host_override, "foo.test.google.fr",
+DEFINE_string(server_host_override, "",
               "Override the server host which is sent in HTTP header");
 
 using grpc::testing::ALTS;

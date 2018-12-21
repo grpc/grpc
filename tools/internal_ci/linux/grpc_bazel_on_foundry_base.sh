@@ -44,6 +44,7 @@ bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
+  --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
   $@ \
   -- //test/... || FAILED="true"
 
