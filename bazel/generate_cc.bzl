@@ -19,6 +19,7 @@ def generate_cc_impl(ctx):
   if ctx.label.workspace_root:
     label_len += len(ctx.label.workspace_root) + 1
     proto_root = "/" + ctx.label.workspace_root
+  label_len += len(ctx.var["GENDIR"]) + 1
 
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
@@ -29,7 +30,7 @@ def generate_cc_impl(ctx):
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
   out_files = [ctx.new_file(out) for out in outs]
-  dir_out = str(ctx.genfiles_dir.path + proto_root)
+  dir_out = "."
 
   arguments = []
   if ctx.executable.plugin:
@@ -40,8 +41,10 @@ def generate_cc_impl(ctx):
     arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
     additional_input = [ctx.executable.plugin]
   else:
-    arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
+    arguments += ["--cpp_out=."]
     additional_input = []
+
+  dir_out = str(ctx.genfiles_dir.path + proto_root)
 
   # Import protos relative to their workspace root so that protoc prints the
   # right include paths.
@@ -55,7 +58,6 @@ def generate_cc_impl(ctx):
       arguments += ["--proto_path=."]
   # Include the output directory so that protoc puts the generated code in the
   # right directory.
-  arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
   arguments += [proto.path for proto in protos]
 
   # create a list of well known proto files if the argument is non-None
