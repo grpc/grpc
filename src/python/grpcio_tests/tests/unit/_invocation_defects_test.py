@@ -215,6 +215,7 @@ class InvocationDefectsTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testIterableStreamRequestBlockingUnaryResponse(self):
         requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
