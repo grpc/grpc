@@ -40,9 +40,6 @@
 static grpc_core::Thread server_authz_check_thd;
 static grpc_core::Thread client_cred_reload_thd;
 static grpc_core::Thread server_cred_reload_thd;
-static bool server_authz_check_thd_started = false;
-static bool client_cred_reload_thd_started = false;
-static bool server_cred_reload_thd_started = false;
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
@@ -124,7 +121,6 @@ static int server_authz_check_sync(
 
 static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  server_authz_check_thd_started = true;
   server_authz_check_thd =
       grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
   server_authz_check_thd.Start();
@@ -169,7 +165,6 @@ static void server_cred_reload_done_cb(void* user_data) {
 
 static int client_cred_reload_async(void* config_user_data,
                                     grpc_tls_credential_reload_arg* arg) {
-  client_cred_reload_thd_started = true;
   client_cred_reload_thd =
       grpc_core::Thread("h2_spiffe_test", &client_cred_reload_done_cb, arg);
   client_cred_reload_thd.Start();
@@ -178,7 +173,6 @@ static int client_cred_reload_async(void* config_user_data,
 
 static int server_cred_reload_async(void* config_user_data,
                                     grpc_tls_credential_reload_arg* arg) {
-  server_cred_reload_thd_started = true;
   server_cred_reload_thd =
       grpc_core::Thread("h2_spiffe_test", &server_cred_reload_done_cb, arg);
   server_cred_reload_thd.Start();
@@ -421,18 +415,9 @@ int main(int argc, char** argv) {
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
-    if (server_authz_check_thd_started) {
-      server_authz_check_thd.Join();
-      server_authz_check_thd_started = false;
-    }
-    if (client_cred_reload_thd_started) {
-      client_cred_reload_thd.Join();
-      client_cred_reload_thd_started = false;
-    }
-    if (server_cred_reload_thd_started) {
-      server_cred_reload_thd.Join();
-      server_cred_reload_thd_started = false;
-    }
+    server_authz_check_thd.Join();
+    client_cred_reload_thd.Join();
+    server_cred_reload_thd.Join();
   }
   grpc_shutdown();
   /* Cleanup. */

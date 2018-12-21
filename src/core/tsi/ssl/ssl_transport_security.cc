@@ -1057,7 +1057,6 @@ static tsi_ssl_handshaker_factory* tsi_ssl_handshaker_factory_ref(
 
 static void tsi_ssl_handshaker_factory_unref(tsi_ssl_handshaker_factory* self) {
   if (self == nullptr) return;
-
   if (gpr_unref(&self->refcount)) {
     tsi_ssl_handshaker_factory_destroy(self);
   }
@@ -1332,6 +1331,12 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   gpr_free(impl);
 }
 
+static void tls_handshaker_destroy(tsi_handshaker* self) {
+  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
+  tsi_ssl_handshaker_factory_unref(impl->factory_ref);
+  ssl_handshaker_destroy(self);
+}
+
 static tsi_result ssl_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
@@ -1486,7 +1491,7 @@ static const tsi_handshaker_vtable tls_handshaker_vtable = {
     nullptr, /* get_result                -- deprecated */
     nullptr, /* extract_peer              -- deprecated */
     nullptr, /* create_frame_protector    -- deprecated */
-    ssl_handshaker_destroy,
+    tls_handshaker_destroy,
     tls_handshaker_next,
     tls_handshaker_shutdown, /* shutdown */
 };
