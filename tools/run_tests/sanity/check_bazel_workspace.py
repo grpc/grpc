@@ -96,7 +96,7 @@ class BazelEvalState(object):
         if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
             self.names_and_urls[args['name']] = 'dont care'
             return
-        self.names_and_urls[args['name']] = args['url']
+        self.names_and_urls[args['name']] = args['urls']
 
 
 # Parse git hashes from bazel/grpc_deps.bzl {new_}http_archive rules
