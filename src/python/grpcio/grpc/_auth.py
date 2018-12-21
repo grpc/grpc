@@ -61,8 +61,8 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
             future = self._pool.submit(self._credentials.get_access_token)
         future.add_done_callback(_create_get_token_callback(callback))
 
-    def __del__(self):
-        self._pool.shutdown(wait=False)
+    # def __del__(self):
+    #     self._pool.shutdown(wait=False)
 
 
 class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):

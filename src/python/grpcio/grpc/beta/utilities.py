@@ -123,10 +123,10 @@ class _ChannelReadyFuture(future.Future):
         with self._condition:
             self._channel.subscribe(self._update, try_to_connect=True)
 
-    def __del__(self):
-        with self._condition:
-            if not self._cancelled and not self._matured:
-                self._channel.unsubscribe(self._update)
+    # def __del__(self):
+    #     with self._condition:
+    #         if not self._cancelled and not self._matured:
+    #             self._channel.unsubscribe(self._update)
 
 
 def channel_ready_future(channel):

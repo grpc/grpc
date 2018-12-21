@@ -432,16 +432,16 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):
     def __str__(self):
         return self._repr()
 
-    def __del__(self):
-        with self._state.condition:
-            if self._state.code is None:
-                self._state.code = grpc.StatusCode.CANCELLED
-                self._state.details = 'Cancelled upon garbage collection!'
-                self._state.cancelled = True
-                self._call.cancel(
-                    _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[self._state.code],
-                    self._state.details)
-                self._state.condition.notify_all()
+    # def __del__(self):
+    #     with self._state.condition:
+    #         if self._state.code is None:
+    #             self._state.code = grpc.StatusCode.CANCELLED
+    #             self._state.details = 'Cancelled upon garbage collection!'
+    #             self._state.cancelled = True
+    #             self._call.cancel(
+    #                 _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[self._state.code],
+    #                 self._state.details)
+    #             self._state.condition.notify_all()
 
 
 def _start_unary_request(request, timeout, request_serializer):
@@ -1049,19 +1049,19 @@ class Channel(grpc.Channel):
     def close(self):
         self._close()
 
-    def __del__(self):
-        # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
-        # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
-        # here (or more likely, call self._close() here). We don't do this today
-        # because many valid use cases today allow the channel to be deleted
-        # immediately after stubs are created. After a sufficient period of time
-        # has passed for all users to be trusted to hang out to their channels
-        # for as long as they are in use and to close them after using them,
-        # then deletion of this grpc._channel.Channel instance can be made to
-        # effect closure of the underlying cygrpc.Channel instance.
-        if cygrpc is not None:  # Globals may have already been collected.
-            cygrpc.fork_unregister_channel(self)
-        # This prevent the failed-at-initializing object removal from failing.
-        # Though the __init__ failed, the removal will still trigger __del__.
-        if _moot is not None and hasattr(self, "_connectivity_state"):
-            _moot(self._connectivity_state)
+    # def __del__(self):
+    #     # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
+    #     # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
+    #     # here (or more likely, call self._close() here). We don't do this today
+    #     # because many valid use cases today allow the channel to be deleted
+    #     # immediately after stubs are created. After a sufficient period of time
+    #     # has passed for all users to be trusted to hang out to their channels
+    #     # for as long as they are in use and to close them after using them,
+    #     # then deletion of this grpc._channel.Channel instance can be made to
+    #     # effect closure of the underlying cygrpc.Channel instance.
+    #     if cygrpc is not None:  # Globals may have already been collected.
+    #         cygrpc.fork_unregister_channel(self)
+    #     # This prevent the failed-at-initializing object removal from failing.
+    #     # Though the __init__ failed, the removal will still trigger __del__.
+    #     if _moot is not None and hasattr(self, "_connectivity_state"):
+    #         _moot(self._connectivity_state)
