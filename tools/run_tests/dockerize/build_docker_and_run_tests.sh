@@ -20,7 +20,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
-cd -
+cd - # shellcheck disable=SC2103
 
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
@@ -48,7 +48,7 @@ docker_instance_git_root=/var/local/jenkins/grpc
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
 # TODO: silence complaint about $TTY_FLAG expansion in some other way
-# shellcheck disable=SC2086
+# shellcheck disable=SC2086,SC2154
 docker run \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \

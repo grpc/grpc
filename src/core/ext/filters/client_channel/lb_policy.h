@@ -66,10 +66,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct PickState {
     /// Initial metadata associated with the picking call.
     grpc_metadata_batch* initial_metadata = nullptr;
-    /// Bitmask used for selective cancelling. See
+    /// Pointer to bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
-    uint32_t initial_metadata_flags = 0;
+    uint32_t* initial_metadata_flags = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
@@ -88,6 +88,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
+
+  /// Returns the name of the LB policy.
+  virtual const char* name() const GRPC_ABSTRACT;
 
   /// Updates the policy with a new set of \a args and a new \a lb_config from
   /// the resolver. Note that the LB policy gets the set of addresses from the
@@ -210,14 +213,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
-  SubchannelPoolInterface* subchannel_pool_;
-  bool use_local_subchannel_pool_;
-
-  // Dummy classes needed for alignment issues.
-  // See https://github.com/grpc/grpc/issues/16032 for context.
-  // TODO(ncteisen): remove this as soon as the issue is resolved.
-  channelz::ChildRefsList dummy_list_foo;
-  channelz::ChildRefsList dummy_list_bar;
 };
 
 }  // namespace grpc_core

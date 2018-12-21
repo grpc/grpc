@@ -259,16 +259,6 @@
       ],
     },
     {
-      'target_name': 'gpr_test_util',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-      ],
-      'sources': [
-        'test/core/util/test_config.cc',
-      ],
-    },
-    {
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
@@ -546,6 +536,7 @@
         'src/core/ext/filters/client_channel/parse_address.cc',
         'src/core/ext/filters/client_channel/proxy_mapper.cc',
         'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+        'src/core/ext/filters/client_channel/request_routing.cc',
         'src/core/ext/filters/client_channel/resolver.cc',
         'src/core/ext/filters/client_channel/resolver_registry.cc',
         'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -606,7 +597,6 @@
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
-        'gpr_test_util',
         'gpr',
         'grpc',
       ],
@@ -619,6 +609,7 @@
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
         'test/core/end2end/cq_verifier.cc',
         'test/core/end2end/fixtures/http_proxy_fixture.cc',
+        'test/core/end2end/fixtures/local_util.cc',
         'test/core/end2end/fixtures/proxy.cc',
         'test/core/iomgr/endpoint_tests.cc',
         'test/core/util/debugger_macros.cc',
@@ -635,6 +626,7 @@
         'test/core/util/slice_splitter.cc',
         'test/core/util/subprocess_posix.cc',
         'test/core/util/subprocess_windows.cc',
+        'test/core/util/test_config.cc',
         'test/core/util/tracer_util.cc',
         'test/core/util/trickle_endpoint.cc',
         'test/core/util/cmdline.cc',
@@ -807,6 +799,7 @@
         'src/core/ext/filters/client_channel/parse_address.cc',
         'src/core/ext/filters/client_channel/proxy_mapper.cc',
         'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+        'src/core/ext/filters/client_channel/request_routing.cc',
         'src/core/ext/filters/client_channel/resolver.cc',
         'src/core/ext/filters/client_channel/resolver_registry.cc',
         'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -854,13 +847,13 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
-        'gpr_test_util',
         'grpc_unsecure',
       ],
       'sources': [
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
         'test/core/end2end/cq_verifier.cc',
         'test/core/end2end/fixtures/http_proxy_fixture.cc',
+        'test/core/end2end/fixtures/local_util.cc',
         'test/core/end2end/fixtures/proxy.cc',
         'test/core/iomgr/endpoint_tests.cc',
         'test/core/util/debugger_macros.cc',
@@ -877,6 +870,7 @@
         'test/core/util/slice_splitter.cc',
         'test/core/util/subprocess_posix.cc',
         'test/core/util/subprocess_windows.cc',
+        'test/core/util/test_config.cc',
         'test/core/util/tracer_util.cc',
         'test/core/util/trickle_endpoint.cc',
         'test/core/util/cmdline.cc',
@@ -1049,6 +1043,7 @@
         'src/core/ext/filters/client_channel/parse_address.cc',
         'src/core/ext/filters/client_channel/proxy_mapper.cc',
         'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+        'src/core/ext/filters/client_channel/request_routing.cc',
         'src/core/ext/filters/client_channel/resolver.cc',
         'src/core/ext/filters/client_channel/resolver_registry.cc',
         'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -1304,6 +1299,7 @@
         'src/core/ext/filters/client_channel/parse_address.cc',
         'src/core/ext/filters/client_channel/proxy_mapper.cc',
         'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+        'src/core/ext/filters/client_channel/request_routing.cc',
         'src/core/ext/filters/client_channel/resolver.cc',
         'src/core/ext/filters/client_channel/resolver_registry.cc',
         'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -1359,7 +1355,6 @@
         'test_tcp_server',
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -1372,7 +1367,6 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -1689,7 +1683,6 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
-        'gpr_test_util',
         'gpr',
         'grpc++_test_config',
       ],
@@ -1724,7 +1717,6 @@
         'grpc_test_util',
         'grpc++',
         'grpc',
-        'gpr_test_util',
         'gpr',
         'grpc++_test_config',
       ],
@@ -2677,7 +2669,6 @@
       'dependencies': [
         'grpc_test_util_unsecure',
         'grpc_unsecure',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -2690,7 +2681,6 @@
       'dependencies': [
         'grpc_test_util',
         'grpc',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [
@@ -2782,7 +2772,6 @@
       'dependencies': [
         'grpc_test_util_unsecure',
         'grpc_unsecure',
-        'gpr_test_util',
         'gpr',
       ],
       'sources': [

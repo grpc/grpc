@@ -32,6 +32,7 @@ class AllTest(unittest.TestCase):
             'Future',
             'ChannelConnectivity',
             'StatusCode',
+            'Status',
             'RpcError',
             'RpcContext',
             'Call',

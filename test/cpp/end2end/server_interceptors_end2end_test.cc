@@ -24,10 +24,10 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -176,9 +176,12 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
+    // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
           new DummyInterceptorFactory()));
+      creators.push_back(std::unique_ptr<NullInterceptorFactory>(
+          new NullInterceptorFactory()));
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();

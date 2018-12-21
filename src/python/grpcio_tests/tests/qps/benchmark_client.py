@@ -180,7 +180,7 @@ class StreamingSyncBenchmarkClient(BenchmarkClient):
         self._streams = [
             _SyncStream(self._stub, self._generic, self._request,
                         self._handle_response)
-            for _ in xrange(config.outstanding_rpcs_per_channel)
+            for _ in range(config.outstanding_rpcs_per_channel)
         ]
         self._curr_stream = 0
 

@@ -24,7 +24,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:gpr_test_util"],
+    deps = ["//test/core/util:grpc_test_util"],
 )
 
 grpc_cc_library(
@@ -58,6 +58,13 @@ grpc_cc_binary(
     name = "bm_arena",
     testonly = 1,
     srcs = ["bm_arena.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_byte_buffer",
+    testonly = 1,
+    srcs = ["bm_byte_buffer.cc"],
     deps = [":helpers"],
 )
 

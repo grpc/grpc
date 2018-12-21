@@ -33,7 +33,7 @@ class SecureAuthContextTest : public ::testing::Test {};
 
 // Created with nullptr
 TEST_F(SecureAuthContextTest, EmptyContext) {
-  SecureAuthContext context(nullptr, true);
+  SecureAuthContext context(nullptr);
   EXPECT_TRUE(context.GetPeerIdentity().empty());
   EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(context.FindPropertyValues("").empty());
@@ -42,8 +42,10 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
 }
 
 TEST_F(SecureAuthContextTest, Properties) {
-  grpc_auth_context* ctx = grpc_auth_context_create(nullptr);
-  SecureAuthContext context(ctx, true);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  SecureAuthContext context(ctx.get());
+  ctx.reset();
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");
   context.AddProperty("foo", "bar");
@@ -60,8 +62,10 @@ TEST_F(SecureAuthContextTest, Properties) {
 }
 
 TEST_F(SecureAuthContextTest, Iterators) {
-  grpc_auth_context* ctx = grpc_auth_context_create(nullptr);
-  SecureAuthContext context(ctx, true);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  SecureAuthContext context(ctx.get());
+  ctx.reset();
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");
   context.AddProperty("foo", "bar");

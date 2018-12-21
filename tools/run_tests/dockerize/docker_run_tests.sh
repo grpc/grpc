@@ -18,7 +18,7 @@
 
 set -e
 
-export CONFIG=$config
+export CONFIG=${config:-opt}
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
