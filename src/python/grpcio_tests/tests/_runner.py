@@ -203,7 +203,7 @@ class Runner(object):
                             check_kill_self()
                             time.sleep(0)
                         case_thread.join()
-                except:
+                except:  # pylint: disable=try-except-raise
                     # re-raise the exception after forcing the with-block to end
                     raise
                 result.set_output(augmented_case.case, stdout_pipe.output(),

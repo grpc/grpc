@@ -1,5 +1,5 @@
 # Copyright 2018 gRPC authors.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -27,7 +27,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -40,7 +40,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -54,9 +54,9 @@ grpc_cc_test(
         "//:grpc",
         "//:tsi",
         "//:tsi_interface",
-        "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/tsi:transport_security_test_lib",
-        "//test/core/util:gpr_test_util",
+        "//test/core/tsi/alts/crypt:alts_crypt_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -70,6 +70,6 @@ grpc_cc_test(
         "//:gpr_base",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )

@@ -465,14 +465,14 @@ static void test_oauth2_google_iam_composite_creds(void) {
   google_iam_creds->Unref();
   GPR_ASSERT(strcmp(composite_creds->type(),
                     GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
-  const grpc_call_credentials_array& creds_array =
+  const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
-  GPR_ASSERT(creds_array.size() == 2);
-  GPR_ASSERT(strcmp(creds_array.get(0)->type(),
-                    GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
-  GPR_ASSERT(
-      strcmp(creds_array.get(1)->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) == 0);
+  GPR_ASSERT(creds_list.size() == 2);
+  GPR_ASSERT(strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
+             0);
+  GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
+             0);
   run_request_metadata_test(composite_creds, auth_md_ctx, state);
   composite_creds->Unref();
 }
@@ -492,13 +492,13 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(
         strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
-    const grpc_call_credentials_array& creds_array =
+    const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
-    GPR_ASSERT(strcmp(creds_array.get(0)->type(),
-                      GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
-    GPR_ASSERT(strcmp(creds_array.get(1)->type(),
-                      GRPC_CALL_CREDENTIALS_TYPE_IAM) == 0);
+    GPR_ASSERT(
+        strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
+    GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
+               0);
     return nullptr;
   }
 };

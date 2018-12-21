@@ -223,7 +223,7 @@ def _CreateService(payload_pb2, responses_pb2, service_pb2):
     server.start()
     channel = implementations.insecure_channel('localhost', port)
     stub = getattr(service_pb2, STUB_FACTORY_IDENTIFIER)(channel)
-    yield servicer_methods, stub,
+    yield servicer_methods, stub
     server.stop(0)
 
 

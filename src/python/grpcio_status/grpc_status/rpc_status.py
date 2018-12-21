@@ -24,7 +24,7 @@ import grpc
 import google.protobuf  # pylint: disable=unused-import
 from google.rpc import status_pb2
 
-_CODE_TO_GRPC_CODE_MAPPING = dict([(x.value[0], x) for x in grpc.StatusCode])
+_CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
 
 _GRPC_DETAILS_METADATA_KEY = 'grpc-status-details-bin'
 
