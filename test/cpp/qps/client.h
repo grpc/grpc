@@ -251,64 +251,6 @@ class Client {
     return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
   }
 
- protected:
-  bool closed_loop_;
-  gpr_atm thread_pool_done_;
-  double median_latency_collection_interval_seconds_;  // In seconds
-
-  void StartThreads(size_t num_threads) {
-    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
-    threads_remaining_ = num_threads;
-    for (size_t i = 0; i < num_threads; i++) {
-      threads_.emplace_back(new Thread(this, i));
-    }
-  }
-
-  void EndThreads() {
-    MaybeStartRequests();
-    threads_.clear();
-  }
-
-  virtual void DestroyMultithreading() = 0;
-
-  void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
-    // Set up the load distribution based on the number of threads
-    const auto& load = config.load_params();
-
-    std::unique_ptr<RandomDistInterface> random_dist;
-    switch (load.load_case()) {
-      case LoadParams::kClosedLoop:
-        // Closed-loop doesn't use random dist at all
-        break;
-      case LoadParams::kPoisson:
-        random_dist.reset(
-            new ExpDist(load.poisson().offered_load() / num_threads));
-        break;
-      default:
-        GPR_ASSERT(false);
-    }
-
-    // Set closed_loop_ based on whether or not random_dist is set
-    if (!random_dist) {
-      closed_loop_ = true;
-    } else {
-      closed_loop_ = false;
-      // set up interarrival timer according to random dist
-      interarrival_timer_.init(*random_dist, num_threads);
-      const auto now = gpr_now(GPR_CLOCK_MONOTONIC);
-      for (size_t i = 0; i < num_threads; i++) {
-        next_time_.push_back(gpr_time_add(
-            now,
-            gpr_time_from_nanos(interarrival_timer_.next(i), GPR_TIMESPAN)));
-      }
-    }
-  }
-
-  std::function<gpr_timespec()> NextIssuer(int thread_idx) {
-    return closed_loop_ ? std::function<gpr_timespec()>()
-                        : std::bind(&Client::NextIssueTime, this, thread_idx);
-  }
-
   class Thread {
    public:
     Thread(Client* client, size_t idx)
@@ -386,6 +328,64 @@ class Client {
     std::vector<double> medians_each_interval_list_;
     double interval_start_time_;
   };
+
+ protected:
+  bool closed_loop_;
+  gpr_atm thread_pool_done_;
+  double median_latency_collection_interval_seconds_;  // In seconds
+
+  void StartThreads(size_t num_threads) {
+    gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
+    threads_remaining_ = num_threads;
+    for (size_t i = 0; i < num_threads; i++) {
+      threads_.emplace_back(new Thread(this, i));
+    }
+  }
+
+  void EndThreads() {
+    MaybeStartRequests();
+    threads_.clear();
+  }
+
+  virtual void DestroyMultithreading() = 0;
+
+  void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
+    // Set up the load distribution based on the number of threads
+    const auto& load = config.load_params();
+
+    std::unique_ptr<RandomDistInterface> random_dist;
+    switch (load.load_case()) {
+      case LoadParams::kClosedLoop:
+        // Closed-loop doesn't use random dist at all
+        break;
+      case LoadParams::kPoisson:
+        random_dist.reset(
+            new ExpDist(load.poisson().offered_load() / num_threads));
+        break;
+      default:
+        GPR_ASSERT(false);
+    }
+
+    // Set closed_loop_ based on whether or not random_dist is set
+    if (!random_dist) {
+      closed_loop_ = true;
+    } else {
+      closed_loop_ = false;
+      // set up interarrival timer according to random dist
+      interarrival_timer_.init(*random_dist, num_threads);
+      const auto now = gpr_now(GPR_CLOCK_MONOTONIC);
+      for (size_t i = 0; i < num_threads; i++) {
+        next_time_.push_back(gpr_time_add(
+            now,
+            gpr_time_from_nanos(interarrival_timer_.next(i), GPR_TIMESPAN)));
+      }
+    }
+  }
+
+  std::function<gpr_timespec()> NextIssuer(int thread_idx) {
+    return closed_loop_ ? std::function<gpr_timespec()>()
+                        : std::bind(&Client::NextIssueTime, this, thread_idx);
+  }
 
   virtual void ThreadFunc(size_t thread_idx, Client::Thread* t) = 0;
 

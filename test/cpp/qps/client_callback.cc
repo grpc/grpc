@@ -90,7 +90,7 @@ class CallbackClient
     }
   }
 
-  gpr_timespec NextIssueTime() {
+  gpr_timespec NextRPCIssueTime() {
     std::lock_guard<std::mutex> l(next_issue_time_mu_);
     return Client::NextIssueTime(0);
   }
@@ -166,7 +166,7 @@ class CallbackUnaryClient final : public CallbackClient {
  private:
   void ScheduleRpc(Thread* t, size_t vector_idx) {
     if (!closed_loop_) {
-      gpr_timespec next_issue_time = NextIssueTime();
+      gpr_timespec next_issue_time = NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       ctx_[vector_idx]->alarm_.experimental().Set(
@@ -221,13 +221,13 @@ class CallbackStreamingClient : public CallbackClient {
   }
   ~CallbackStreamingClient() {}
 
-  void AddHistogramEntry(double start_, bool ok, void* thread_ptr) {
+  void AddHistogramEntry(double start_, bool ok, Thread* thread_ptr) {
     // Update Histogram with data from the callback run
     HistogramEntry entry;
     if (ok) {
       entry.set_value((UsageTimer::Now() - start_) * 1e9);
     }
-    ((Client::Thread*)thread_ptr)->UpdateHistogram(&entry);
+    thread_ptr->UpdateHistogram(&entry);
   }
 
   int messages_per_stream() { return messages_per_stream_; }
@@ -297,7 +297,7 @@ class CallbackStreamingPingPongReactor final
     if (client_->ThreadCompleted()) return;
 
     if (!client_->IsClosedLoop()) {
-      gpr_timespec next_issue_time = client_->NextIssueTime();
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
       ctx_->alarm_.experimental().Set(next_issue_time,
@@ -307,13 +307,13 @@ class CallbackStreamingPingPongReactor final
     }
   }
 
-  void set_thread_ptr(void* ptr) { thread_ptr_ = ptr; }
+  void set_thread_ptr(Client::Thread* ptr) { thread_ptr_ = ptr; }
 
   CallbackStreamingPingPongClient* client_;
   std::unique_ptr<CallbackClientRpcContext> ctx_;
-  void* thread_ptr_;     // Needed to update histogram entries
-  double start_;         // Track message start time
-  int messages_issued_;  // Messages issued by this stream
+  Client::Thread* thread_ptr_;  // Needed to update histogram entries
+  double start_;                // Track message start time
+  int messages_issued_;         // Messages issued by this stream
 };
 
 class CallbackStreamingPingPongClientImpl final
