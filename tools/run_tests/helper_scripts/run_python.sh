@@ -22,9 +22,7 @@ PYTHON=$(realpath "${1:-py27/bin/python}")
 
 ROOT=$(pwd)
 
-export GRPC_PYTHON_TESTRUNNER_FILTER=unit._channel_ready_future_test
-
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+export GRPC_PYTHON_TESTRUNNER_FILTER=unit._channel_ready_future_test; $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2" || true
 
 ls "$ROOT/src/python/grpcio_tests"
 
