@@ -96,7 +96,6 @@ class EmptyMessageTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
-        self._channel.close()
 
     def testUnaryUnary(self):
         response = self._channel.unary_unary(_UNARY_UNARY)(_REQUEST)

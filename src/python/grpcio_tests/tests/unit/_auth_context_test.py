@@ -71,8 +71,8 @@ class AuthContextTest(unittest.TestCase):
         port = server.add_insecure_port('[::]:0')
         server.start()
 
-        with grpc.insecure_channel('localhost:%d' % port) as channel:
-            response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        channel = grpc.insecure_channel('localhost:%d' % port)
+        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
         server.stop(None)
 
         auth_data = pickle.loads(response)
@@ -98,7 +98,6 @@ class AuthContextTest(unittest.TestCase):
             channel_creds,
             options=_PROPERTY_OPTIONS)
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-        channel.close()
         server.stop(None)
 
         auth_data = pickle.loads(response)
@@ -133,7 +132,6 @@ class AuthContextTest(unittest.TestCase):
             options=_PROPERTY_OPTIONS)
 
         response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-        channel.close()
         server.stop(None)
 
         auth_data = pickle.loads(response)

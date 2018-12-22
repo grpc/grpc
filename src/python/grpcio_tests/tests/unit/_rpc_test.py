@@ -193,7 +193,6 @@ class RPCTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(None)
-        self._channel.close()
 
     def testUnrecognizedMethod(self):
         request = b'abc'
