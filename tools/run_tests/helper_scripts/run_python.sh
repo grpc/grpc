@@ -34,6 +34,7 @@ else
     # exit 1
     ls /var/crash/
     cat /var/crash/*
+    exit 1
 fi
 
 mkdir -p "$ROOT/reports"
