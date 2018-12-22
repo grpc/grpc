@@ -36,6 +36,10 @@ $POST_GIT_STEP
 
 exit_code=0
 
+cat /proc/sys/kernel/core_pattern
+ulimit -c unlimited
+ulimit
+
 $RUN_TESTS_COMMAND || exit_code=$?
 
 # The easiest way to copy all the reports files from inside of
