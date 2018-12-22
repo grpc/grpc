@@ -43,21 +43,22 @@
 - (instancetype)initWithWriteable:(id<GRXWriteable>)writeable;
 
 /**
- * Enqueues writeValue: to be sent to the writeable in the main thread.
- * The passed handler is invoked from the main thread after writeValue: returns.
+ * Enqueues writeValue: to be sent to the writeable from the designated dispatch queue.
+ * The passed handler is invoked from designated dispatch queue after writeValue: returns.
  */
 - (void)enqueueValue:(id)value completionHandler:(void (^)(void))handler;
 
 /**
- * Enqueues writesFinishedWithError:nil to be sent to the writeable in the main thread. After that
- * message is sent to the writeable, all other methods of this object are effectively noops.
+ * Enqueues writesFinishedWithError:nil to be sent to the writeable in the designated dispatch
+ * queue. After that message is sent to the writeable, all other methods of this object are
+ * effectively noops.
  */
 - (void)enqueueSuccessfulCompletion;
 
 /**
  * If the writeable has not yet received a writesFinishedWithError: message, this will enqueue one
- * to be sent to it in the main thread, and cancel all other pending messages to the writeable
- * enqueued by this object (both past and future).
+ * to be sent to it in the designated dispatch queue, and cancel all other pending messages to the
+ * writeable enqueued by this object (both past and future).
  * The error argument cannot be nil.
  */
 - (void)cancelWithError:(NSError *)error;

@@ -63,8 +63,10 @@
 
 - (void)enqueueSuccessfulCompletion {
   dispatch_async(_writeableQueue, ^{
-    if (self->_alreadyFinished) {
-      return;
+    @synchronized (self) {
+      if (self->_alreadyFinished) {
+        return;
+      }
     }
     [self.writeable writesFinishedWithError:nil];
     // Skip any possible message to the wrapped writeable enqueued after this one.
@@ -74,10 +76,14 @@
 
 - (void)cancelWithError:(NSError *)error {
   NSAssert(error != nil, @"For a successful completion, use enqueueSuccessfulCompletion.");
-  dispatch_async(_writeableQueue, ^{
+  @synchronized (self) {
     if (self->_alreadyFinished) {
       return;
     }
+  }
+  dispatch_async(_writeableQueue, ^{
+    // If enqueueSuccessfulCompletion is already issued, self.writeable is nil and the following
+    // line is no-op.
     [self.writeable writesFinishedWithError:error];
     self.writeable = nil;
   });
@@ -85,8 +91,10 @@
 
 - (void)cancelSilently {
   dispatch_async(_writeableQueue, ^{
-    if (self->_alreadyFinished) {
-      return;
+    @synchronized (self) {
+      if (self->_alreadyFinished) {
+        return;
+      }
     }
     self.writeable = nil;
   });
