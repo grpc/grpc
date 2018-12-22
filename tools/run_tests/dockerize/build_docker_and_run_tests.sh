@@ -83,6 +83,6 @@ unzip -o "${TEMP_REPORTS_ZIP}" -d "$git_root" || true
 rm -f "${TEMP_REPORTS_ZIP}"
 
 # remove the container, possibly killing it first
-# docker rm -f "$CONTAINER_NAME" || true
+docker rm -f "$CONTAINER_NAME" || true
 
 exit $DOCKER_EXIT_CODE

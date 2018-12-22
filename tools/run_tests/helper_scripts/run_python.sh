@@ -22,12 +22,17 @@ PYTHON=$(realpath "${1:-py27/bin/python}")
 
 ROOT=$(pwd)
 
-export GRPC_PYTHON_TESTRUNNER_FILTER=unit._channel_ready_future_test; $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2" || true
+#(export GRPC_PYTHON_TESTRUNNER_FILTER=unit._channel_ready_future_test && $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2" || true)
 
-ls "$ROOT/src/python/grpcio_tests"
+if $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"; then
+    echo passed
+else
+    ls "$ROOT/src/python/grpcio_tests"
+    COREFILE=$(find "$ROOT/src/python/grpcio_tests" -maxdepth 1 -name "core*" | head -n 1) # find core file
+    if [[ -f "$COREFILE" ]]; then gdb python "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
+    exit 1
+fi
 
-COREFILE=$(find "$ROOT/src/python/grpcio_tests" -maxdepth 1 -name "core*" | head -n 1) # find core file
-if [[ -f "$COREFILE" ]]; then gdb python "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
