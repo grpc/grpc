@@ -189,11 +189,13 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
             )
         return extensions
     cython_compiler_directives = {}
-    if linetracing:
-        additional_define_macros = [('CYTHON_TRACE_NOGIL', '1')]
-        cython_compiler_directives['linetrace'] = True
+    # if linetracing:
+    additional_define_macros = [('CYTHON_TRACE_NOGIL', '1'), ('CYTHON_TRACE',
+                                                              '1')]
+    cython_compiler_directives['linetrace'] = True
     return Cython.Build.cythonize(
         extensions,
+        gdb_debug=True,
         include_path=[
             include_dir
             for extension in extensions
