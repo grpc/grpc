@@ -104,6 +104,18 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
+  if (client_cred_reload_started) {
+    client_cred_reload_thd.Join();
+  }
+  if (server_cred_reload_started) {
+    server_cred_reload_thd.Join();
+  }
+  if (server_authz_check_started) {
+    server_authz_check_thd.Join();
+  }
+  client_cred_reload_started = false;
+  server_cred_reload_started = false;
+  server_authz_check_started = false;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
@@ -424,15 +436,6 @@ int main(int argc, char** argv) {
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
-    if (client_cred_reload_started) {
-      client_cred_reload_thd.Join();
-    }
-    if (server_cred_reload_started) {
-      server_cred_reload_thd.Join();
-    }
-    if (server_authz_check_started) {
-      server_authz_check_thd.Join();
-    }
   }
   grpc_shutdown();
   /* Cleanup. */
