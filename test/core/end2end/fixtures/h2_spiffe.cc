@@ -40,6 +40,9 @@
 static grpc_core::Thread server_authz_check_thd;
 static grpc_core::Thread client_cred_reload_thd;
 static grpc_core::Thread server_cred_reload_thd;
+static bool client_cred_reload_started = false;
+static bool server_cred_reload_started = false;
+static bool server_authz_check_started = false;
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
@@ -104,6 +107,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
+
 static void server_authz_check_cb(void* user_data) {
   grpc_tls_server_authorization_check_arg* check_arg =
       static_cast<grpc_tls_server_authorization_check_arg*>(user_data);
@@ -112,6 +116,7 @@ static void server_authz_check_cb(void* user_data) {
   check_arg->status = GRPC_STATUS_OK;
   check_arg->cb(check_arg);
 }
+
 static int server_authz_check_sync(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   arg->result = 1;
@@ -124,6 +129,7 @@ static int server_authz_check_async(
   server_authz_check_thd =
       grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
   server_authz_check_thd.Start();
+  server_authz_check_started = true;
   return 1;
 }
 
@@ -168,6 +174,7 @@ static int client_cred_reload_async(void* config_user_data,
   client_cred_reload_thd =
       grpc_core::Thread("h2_spiffe_test", &client_cred_reload_done_cb, arg);
   client_cred_reload_thd.Start();
+  client_cred_reload_started = true;
   return 1;
 }
 
@@ -176,6 +183,7 @@ static int server_cred_reload_async(void* config_user_data,
   server_cred_reload_thd =
       grpc_core::Thread("h2_spiffe_test", &server_cred_reload_done_cb, arg);
   server_cred_reload_thd.Start();
+  server_cred_reload_started = true;
   return 1;
 }
 
@@ -290,6 +298,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
   }
   return 0;
 }
+
 /*
 static void chttp2_init_server_spiffe_sync_reload(
     grpc_end2end_test_fixture* f, grpc_channel_args* server_args) {
@@ -415,9 +424,15 @@ int main(int argc, char** argv) {
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
-    server_authz_check_thd.Join();
-    client_cred_reload_thd.Join();
-    server_cred_reload_thd.Join();
+    if (client_cred_reload_started) {
+      client_cred_reload_thd.Join();
+    }
+    if (server_cred_reload_started) {
+      server_cred_reload_thd.Join();
+    }
+    if (server_authz_check_started) {
+      server_authz_check_thd.Join();
+    }
   }
   grpc_shutdown();
   /* Cleanup. */
