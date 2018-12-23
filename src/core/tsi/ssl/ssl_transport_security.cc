@@ -139,6 +139,8 @@ typedef struct {
   bool credential_reloaded;
   tsi_handshaker_next_arg handshaker_next_arg;
   grpc_closure on_credential_reloaded;
+  tsi_ssl_pem_key_cert_pair* key_cert_pairs;
+  size_t num_key_cert_pairs;
 } tsi_ssl_handshaker;
 
 typedef struct {
@@ -1333,6 +1335,13 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
 
 static void tls_handshaker_destroy(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
+  if (impl->key_cert_pairs != nullptr) {
+    for (size_t i = 0; i < impl->num_key_cert_pairs; i++) {
+      gpr_free((void*)impl->key_cert_pairs[i].private_key);
+      gpr_free((void*)impl->key_cert_pairs[i].cert_chain);
+    }
+    gpr_free(impl->key_cert_pairs);
+  }
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
   ssl_handshaker_destroy(self);
 }
@@ -2339,11 +2348,11 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
         config->pem_key_cert_pairs != nullptr &&
         config->pem_key_cert_pairs->private_key != nullptr &&
         config->pem_key_cert_pairs->cert_chain != nullptr;
-    tsi_ssl_pem_key_cert_pair* cert_pairs = nullptr;
     if (has_key_cert_pair) {
-      cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
+      handshaker->key_cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
           config->pem_key_cert_pairs, config->num_key_cert_pairs);
-      options.pem_key_cert_pair = cert_pairs;
+      handshaker->num_key_cert_pairs = config->num_key_cert_pairs;
+      options.pem_key_cert_pair = handshaker->key_cert_pairs;
     }
     options.alpn_protocols = handshaker->alpn_protocols;
     options.num_alpn_protocols = handshaker->num_alpn_protocols;
@@ -2353,7 +2362,6 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
     }
     tsi_result result = tsi_create_ssl_client_handshaker_factory_with_options(
         &options, &handshaker_factory);
-    gpr_free(cert_pairs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
               tsi_result_to_string(result));
@@ -2374,13 +2382,14 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
     // key materials or credential reload to create a server-side handshaker
     // factory.
   } else {
-    tsi_ssl_pem_key_cert_pair* cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
+    handshaker->key_cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
+    handshaker->num_key_cert_pairs = config->num_key_cert_pairs;
     tsi_ssl_server_handshaker_factory* handshaker_factory = nullptr;
     GPR_ASSERT(handshaker->options != nullptr);
     tsi_ssl_server_handshaker_options options;
     memset(&options, 0, sizeof(options));
-    options.pem_key_cert_pairs = cert_pairs;
+    options.pem_key_cert_pairs = handshaker->key_cert_pairs;
     options.num_key_cert_pairs = config->num_key_cert_pairs;
     options.pem_client_root_certs = config->pem_root_certs == nullptr
                                         ? handshaker->pem_root_certs
@@ -2397,7 +2406,6 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
     }
     tsi_result result = tsi_create_ssl_server_handshaker_factory_with_options(
         &options, &handshaker_factory);
-    gpr_free(cert_pairs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
               tsi_result_to_string(result));
