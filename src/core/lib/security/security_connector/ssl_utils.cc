@@ -34,6 +34,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/tsi/ssl/load_system_roots.h"
 #include "src/core/tsi/ssl/ssl_transport_security.h"
+#include "src/core/tsi/transport_security.h"
 
 grpc_error* grpc_ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
