@@ -37,12 +37,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-static grpc_core::Thread server_authz_check_thd;
-static grpc_core::Thread client_cred_reload_thd;
-static grpc_core::Thread server_cred_reload_thd;
-static bool client_cred_reload_started = false;
-static bool server_cred_reload_started = false;
-static bool server_authz_check_started = false;
+#define TOTAL_NUM_THREADS 100
+static grpc_core::Thread threads[TOTAL_NUM_THREADS];
+static size_t num_threads = 0;
 
 typedef struct fullstack_secure_fixture_data {
   char* localaddr;
@@ -62,7 +59,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-
   return f;
 }
 
@@ -104,18 +100,6 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  if (client_cred_reload_started) {
-    client_cred_reload_thd.Join();
-  }
-  if (server_cred_reload_started) {
-    server_cred_reload_thd.Join();
-  }
-  if (server_authz_check_started) {
-    server_authz_check_thd.Join();
-  }
-  client_cred_reload_started = false;
-  server_cred_reload_started = false;
-  server_authz_check_started = false;
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
 }
@@ -138,10 +122,10 @@ static int server_authz_check_sync(
 
 static int server_authz_check_async(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  server_authz_check_thd =
+  threads[num_threads] =
       grpc_core::Thread("h2_spiffe_test", &server_authz_check_cb, arg);
-  server_authz_check_thd.Start();
-  server_authz_check_started = true;
+  threads[num_threads].Start();
+  num_threads++;
   return 1;
 }
 
@@ -183,19 +167,19 @@ static void server_cred_reload_done_cb(void* user_data) {
 
 static int client_cred_reload_async(void* config_user_data,
                                     grpc_tls_credential_reload_arg* arg) {
-  client_cred_reload_thd =
+  threads[num_threads] =
       grpc_core::Thread("h2_spiffe_test", &client_cred_reload_done_cb, arg);
-  client_cred_reload_thd.Start();
-  client_cred_reload_started = true;
+  threads[num_threads].Start();
+  num_threads++;
   return 1;
 }
 
 static int server_cred_reload_async(void* config_user_data,
                                     grpc_tls_credential_reload_arg* arg) {
-  server_cred_reload_thd =
+  threads[num_threads] =
       grpc_core::Thread("h2_spiffe_test", &server_cred_reload_done_cb, arg);
-  server_cred_reload_thd.Start();
-  server_cred_reload_started = true;
+  threads[num_threads].Start();
+  num_threads++;
   return 1;
 }
 
@@ -436,6 +420,9 @@ int main(int argc, char** argv) {
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
+  }
+  for (size_t ind = 0; ind < num_threads; ind++) {
+    threads[ind].Join();
   }
   grpc_shutdown();
   /* Cleanup. */
