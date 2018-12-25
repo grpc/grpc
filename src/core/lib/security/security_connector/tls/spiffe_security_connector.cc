@@ -178,8 +178,12 @@ class grpc_tls_spiffe_channel_security_connector final
         memcpy(peer_pem, p->value.data, p->value.length);
         peer_pem[p->value.length] = '\0';
         GPR_ASSERT(check_arg_ != nullptr);
-        check_arg_->peer_cert = gpr_strdup(peer_pem);
-        check_arg_->target_name = gpr_strdup(target_name);
+        check_arg_->peer_cert = check_arg_->peer_cert == nullptr
+                                    ? gpr_strdup(peer_pem)
+                                    : check_arg_->peer_cert;
+        check_arg_->target_name = check_arg_->target_name == nullptr
+                                      ? gpr_strdup(target_name)
+                                      : check_arg_->target_name;
         on_peer_checked_ = on_peer_checked;
         gpr_free(peer_pem);
         int callback_status =

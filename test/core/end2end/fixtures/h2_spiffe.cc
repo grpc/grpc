@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -136,8 +137,10 @@ static int client_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_signed_client_key,
                                                   test_signed_client_cert};
-  grpc_tls_key_materials_config_set_key_materials(
-      arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
+  if (!arg->key_materials_config->num_key_cert_pairs) {
+    grpc_tls_key_materials_config_set_key_materials(
+        arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
+  }
   return 0;
 }
 
@@ -145,8 +148,10 @@ static int server_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  grpc_tls_key_materials_config_set_key_materials(
-      arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
+  if (!arg->key_materials_config->num_key_cert_pairs) {
+    grpc_tls_key_materials_config_set_key_materials(
+        arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
+  }
   return 0;
 }
 
@@ -423,9 +428,6 @@ int main(int argc, char** argv) {
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
     grpc_end2end_tests(argc, argv, configs[ind]);
-  }
-  for (size_t ind = 0; ind < num_threads; ind++) {
-    threads[ind].Join();
   }
   grpc_shutdown();
   /* Cleanup. */
