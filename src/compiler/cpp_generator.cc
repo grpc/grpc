@@ -167,7 +167,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
 
 void PrintHeaderClientMethodInterfaces(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars, bool is_public) {
+    std::map<grpc::string, grpc::string>* vars, bool is_public, const Parameters& params) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -181,12 +181,20 @@ void PrintHeaderClientMethodInterfaces(
 
   if (is_public) {
     if (method->NoStreaming()) {
+      if (!params.dllexport_decl.empty()) {
+        printer->Print(params.dllexport_decl.c_str());
+        printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "virtual ::grpc::Status $Method$(::grpc::ClientContext* context, "
           "const $Request$& request, $Response$* response) = 0;\n");
       for (auto async_prefix : async_prefixes) {
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< "
@@ -204,6 +212,10 @@ void PrintHeaderClientMethodInterfaces(
         printer->Print("}\n");
       }
     } else if (ClientOnlyStreaming(method)) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientWriterInterface< $Request$>>"
@@ -220,6 +232,10 @@ void PrintHeaderClientMethodInterfaces(
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< ::grpc::ClientAsyncWriterInterface< $Request$>>"
@@ -237,6 +253,10 @@ void PrintHeaderClientMethodInterfaces(
         printer->Print("}\n");
       }
     } else if (ServerOnlyStreaming(method)) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientReaderInterface< $Response$>>"
@@ -253,6 +273,10 @@ void PrintHeaderClientMethodInterfaces(
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< ::grpc::ClientAsyncReaderInterface< $Response$>> "
@@ -269,6 +293,10 @@ void PrintHeaderClientMethodInterfaces(
         printer->Print("}\n");
       }
     } else if (method->BidiStreaming()) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(*vars,
                      "std::unique_ptr< ::grpc::ClientReaderWriterInterface< "
                      "$Request$, $Response$>> "
@@ -285,6 +313,10 @@ void PrintHeaderClientMethodInterfaces(
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< "
@@ -366,7 +398,7 @@ void PrintHeaderClientMethodInterfaces(
 void PrintHeaderClientMethod(grpc_generator::Printer* printer,
                              const grpc_generator::Method* method,
                              std::map<grpc::string, grpc::string>* vars,
-                             bool is_public) {
+                             bool is_public, const Parameters& params) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -379,12 +411,20 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
 
   if (is_public) {
     if (method->NoStreaming()) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "::grpc::Status $Method$(::grpc::ClientContext* context, "
           "const $Request$& request, $Response$* response) override;\n");
       for (auto async_prefix : async_prefixes) {
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< ::grpc::ClientAsyncResponseReader< $Response$>> "
@@ -400,6 +440,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         printer->Print("}\n");
       }
     } else if (ClientOnlyStreaming(method)) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientWriter< $Request$>>"
@@ -415,6 +459,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(*vars,
                        "std::unique_ptr< ::grpc::ClientAsyncWriter< $Request$>>"
                        " $AsyncPrefix$$Method$(::grpc::ClientContext* context, "
@@ -430,6 +478,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         printer->Print("}\n");
       }
     } else if (ServerOnlyStreaming(method)) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientReader< $Response$>>"
@@ -446,6 +498,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(
             *vars,
             "std::unique_ptr< ::grpc::ClientAsyncReader< $Response$>> "
@@ -461,6 +517,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         printer->Print("}\n");
       }
     } else if (method->BidiStreaming()) {
+      if (!params.dllexport_decl.empty()) {
+          printer->Print(params.dllexport_decl.c_str());
+          printer->Print(" ");
+      }
       printer->Print(
           *vars,
           "std::unique_ptr< ::grpc::ClientReaderWriter< $Request$, $Response$>>"
@@ -476,6 +536,10 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
         (*vars)["AsyncMethodParams"] = async_prefix.method_params;
         (*vars)["AsyncRawArgs"] = async_prefix.raw_args;
+        if (!params.dllexport_decl.empty()) {
+            printer->Print(params.dllexport_decl.c_str());
+            printer->Print(" ");
+        }
         printer->Print(*vars,
                        "std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< "
                        "$Request$, $Response$>> "
@@ -693,11 +757,16 @@ void PrintHeaderClientMethodData(grpc_generator::Printer* printer,
 
 void PrintHeaderServerMethodSync(grpc_generator::Printer* printer,
                                  const grpc_generator::Method* method,
-                                 std::map<grpc::string, grpc::string>* vars) {
+                                 std::map<grpc::string, grpc::string>* vars, 
+                                 const Parameters& params) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
   printer->Print(method->GetLeadingComments("//").c_str());
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   if (method->NoStreaming()) {
     printer->Print(*vars,
                    "virtual ::grpc::Status $Method$("
@@ -1267,7 +1336,8 @@ void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
 
 void PrintHeaderService(grpc_generator::Printer* printer,
                         const grpc_generator::Service* service,
-                        std::map<grpc::string, grpc::string>* vars) {
+                        std::map<grpc::string, grpc::string>* vars,
+                        const Parameters& params) {
   (*vars)["Service"] = service->name();
 
   printer->Print(service->GetLeadingComments("//").c_str());
@@ -1287,11 +1357,15 @@ void PrintHeaderService(grpc_generator::Printer* printer,
       "class StubInterface {\n"
       " public:\n");
   printer->Indent();
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   printer->Print("virtual ~StubInterface() {}\n");
   for (int i = 0; i < service->method_count(); ++i) {
     printer->Print(service->method(i)->GetLeadingComments("//").c_str());
     PrintHeaderClientMethodInterfaces(printer, service->method(i).get(), vars,
-                                      true);
+                                      true, params);
     printer->Print(service->method(i)->GetTrailingComments("//").c_str());
   }
   PrintHeaderClientMethodCallbackInterfacesStart(printer, vars);
@@ -1307,7 +1381,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Indent();
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethodInterfaces(printer, service->method(i).get(), vars,
-                                      false);
+                                      false, params);
   }
   printer->Outdent();
   printer->Print("};\n");
@@ -1315,11 +1389,15 @@ void PrintHeaderService(grpc_generator::Printer* printer,
       "class Stub final : public StubInterface"
       " {\n public:\n");
   printer->Indent();
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   printer->Print(
       "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& "
       "channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethod(printer, service->method(i).get(), vars, true);
+    PrintHeaderClientMethod(printer, service->method(i).get(), vars, true, params);
   }
   PrintHeaderClientMethodCallbackStart(printer, vars);
   for (int i = 0; i < service->method_count(); ++i) {
@@ -1333,13 +1411,17 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Print("std::shared_ptr< ::grpc::ChannelInterface> channel_;\n");
   printer->Print("class experimental_async async_stub_{this};\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethod(printer, service->method(i).get(), vars, false);
+    PrintHeaderClientMethod(printer, service->method(i).get(), vars, false, params);
   }
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethodData(printer, service->method(i).get(), vars);
   }
   printer->Outdent();
   printer->Print("};\n");
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   printer->Print(
       "static std::unique_ptr<Stub> NewStub(const std::shared_ptr< "
       "::grpc::ChannelInterface>& channel, "
@@ -1352,10 +1434,18 @@ void PrintHeaderService(grpc_generator::Printer* printer,
       "class Service : public ::grpc::Service {\n"
       " public:\n");
   printer->Indent();
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   printer->Print("Service();\n");
+  if (!params.dllexport_decl.empty()) {
+      printer->Print(params.dllexport_decl.c_str());
+      printer->Print(" ");
+  }
   printer->Print("virtual ~Service();\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderServerMethodSync(printer, service->method(i).get(), vars);
+    PrintHeaderServerMethodSync(printer, service->method(i).get(), vars, params);
   }
   printer->Outdent();
   printer->Print("};\n");
@@ -1507,7 +1597,7 @@ grpc::string GetHeaderServices(grpc_generator::File* file,
     }
 
     for (int i = 0; i < file->service_count(); ++i) {
-      PrintHeaderService(printer.get(), file->service(i).get(), &vars);
+      PrintHeaderService(printer.get(), file->service(i).get(), &vars, params);
       printer->Print("\n");
     }
 

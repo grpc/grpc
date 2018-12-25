@@ -56,6 +56,8 @@ struct Parameters {
   grpc::string gmock_search_path;
   // *EXPERIMENTAL* Additional include files in grpc.pb.h
   std::vector<grpc::string> additional_header_includes;
+  // Generate preprocessor definitions near services declaration for export symbols from dll's
+  grpc::string dllexport_decl;
 };
 
 // Return the prologue of the generated header file.
