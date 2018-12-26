@@ -46,8 +46,8 @@ std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
-    std::unique_ptr<std::vector<
-        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 }  // namespace experimental
 
@@ -80,8 +80,8 @@ class ChannelCredentials : private GrpcLibraryCodegen {
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const ChannelArguments& args,
-      std::unique_ptr<std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
   virtual std::shared_ptr<Channel> CreateChannel(
@@ -91,8 +91,8 @@ class ChannelCredentials : private GrpcLibraryCodegen {
   // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const ChannelArguments& args,
-      std::unique_ptr<std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) {
     return nullptr;
   };

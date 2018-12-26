@@ -174,13 +174,14 @@ class ServerInterface : public internal::CallHook {
     bool done_intercepting_;
   };
 
+  /// RegisteredAsyncRequest is not part of the C++ API
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
     RegisteredAsyncRequest(ServerInterface* server, ServerContext* context,
                            internal::ServerAsyncStreamingInterface* stream,
                            CompletionQueue* call_cq,
                            ServerCompletionQueue* notification_cq, void* tag,
-                           const char* name);
+                           const char* name, internal::RpcMethod::RpcType type);
 
     virtual bool FinalizeResult(void** tag, bool* status) override {
       /* If we are done intercepting, then there is nothing more for us to do */
@@ -189,7 +190,7 @@ class ServerInterface : public internal::CallHook {
       }
       call_wrapper_ = internal::Call(
           call_, server_, call_cq_, server_->max_receive_message_size(),
-          context_->set_server_rpc_info(name_,
+          context_->set_server_rpc_info(name_, type_,
                                         *server_->interceptor_creators()));
       return BaseAsyncRequest::FinalizeResult(tag, status);
     }
@@ -198,6 +199,7 @@ class ServerInterface : public internal::CallHook {
     void IssueRequest(void* registered_method, grpc_byte_buffer** payload,
                       ServerCompletionQueue* notification_cq);
     const char* name_;
+    const internal::RpcMethod::RpcType type_;
   };
 
   class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
@@ -207,9 +209,9 @@ class ServerInterface : public internal::CallHook {
                           internal::ServerAsyncStreamingInterface* stream,
                           CompletionQueue* call_cq,
                           ServerCompletionQueue* notification_cq, void* tag)
-        : RegisteredAsyncRequest(server, context, stream, call_cq,
-                                 notification_cq, tag,
-                                 registered_method->name()) {
+        : RegisteredAsyncRequest(
+              server, context, stream, call_cq, notification_cq, tag,
+              registered_method->name(), registered_method->method_type()) {
       IssueRequest(registered_method->server_tag(), nullptr, notification_cq);
     }
 
@@ -225,9 +227,9 @@ class ServerInterface : public internal::CallHook {
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,
                         Message* request)
-        : RegisteredAsyncRequest(server, context, stream, call_cq,
-                                 notification_cq, tag,
-                                 registered_method->name()),
+        : RegisteredAsyncRequest(
+              server, context, stream, call_cq, notification_cq, tag,
+              registered_method->name(), registered_method->method_type()),
           registered_method_(registered_method),
           server_(server),
           context_(context),

@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -89,107 +90,42 @@ class InternallyRefCounted : public Orphanable {
   template <typename T>
   friend class RefCountedPtr;
 
-  InternallyRefCounted() { gpr_ref_init(&refs_, 1); }
-  virtual ~InternallyRefCounted() {}
+  // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
+  // Note: RefCount tracing is only enabled on debug builds, even when a
+  //       TraceFlag is used.
+  template <typename TraceFlagT = TraceFlag>
+  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr)
+      : refs_(1, trace_flag) {}
+  virtual ~InternallyRefCounted() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
-
-  void Unref() {
-    if (gpr_unref(&refs_)) {
-      Delete(static_cast<Child*>(this));
-    }
-  }
-
- private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
-
-  gpr_refcount refs_;
-};
-
-// An alternative version of the InternallyRefCounted base class that
-// supports tracing.  This is intended to be used in cases where the
-// object will be handled both by idiomatic C++ code using smart
-// pointers and legacy code that is manually calling Ref() and Unref().
-// Once all of our code is converted to idiomatic C++, we may be able to
-// eliminate this class.
-template <typename Child>
-class InternallyRefCountedWithTracing : public Orphanable {
- public:
-  // Not copyable nor movable.
-  InternallyRefCountedWithTracing(const InternallyRefCountedWithTracing&) =
-      delete;
-  InternallyRefCountedWithTracing& operator=(
-      const InternallyRefCountedWithTracing&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
-
- protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-  // Allow RefCountedPtr<> to access Unref() and IncrementRefCount().
-  template <typename T>
-  friend class RefCountedPtr;
-
-  InternallyRefCountedWithTracing()
-      : InternallyRefCountedWithTracing(static_cast<TraceFlag*>(nullptr)) {}
-
-  explicit InternallyRefCountedWithTracing(TraceFlag* trace_flag)
-      : trace_flag_(trace_flag) {
-    gpr_ref_init(&refs_, 1);
-  }
-
-#ifdef NDEBUG
-  explicit InternallyRefCountedWithTracing(DebugOnlyTraceFlag* trace_flag)
-      : InternallyRefCountedWithTracing() {}
-#endif
-
-  virtual ~InternallyRefCountedWithTracing() {}
-
-  RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
-    IncrementRefCount();
-    return RefCountedPtr<Child>(static_cast<Child*>(this));
-  }
-
   RefCountedPtr<Child> Ref(const DebugLocation& location,
                            const char* reason) GRPC_MUST_USE_RESULT {
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + 1, reason);
-    }
-    return Ref();
+    IncrementRefCount(location, reason);
+    return RefCountedPtr<Child>(static_cast<Child*>(this));
   }
 
-  // TODO(roth): Once all of our code is converted to C++ and can use
-  // RefCountedPtr<> instead of manual ref-counting, make the Unref() methods
-  // private, since they will only be used by RefCountedPtr<>, which is a
-  // friend of this class.
-
   void Unref() {
-    if (gpr_unref(&refs_)) {
+    if (refs_.Unref()) {
+      Delete(static_cast<Child*>(this));
+    }
+  }
+  void Unref(const DebugLocation& location, const char* reason) {
+    if (refs_.Unref(location, reason)) {
       Delete(static_cast<Child*>(this));
     }
   }
 
-  void Unref(const DebugLocation& location, const char* reason) {
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs - 1, reason);
-    }
-    Unref();
+ private:
+  void IncrementRefCount() { refs_.Ref(); }
+  void IncrementRefCount(const DebugLocation& location, const char* reason) {
+    refs_.Ref(location, reason);
   }
 
- private:
-  void IncrementRefCount() { gpr_ref(&refs_); }
-
-  TraceFlag* trace_flag_ = nullptr;
-  gpr_refcount refs_;
+  grpc_core::RefCount refs_;
 };
 
 }  // namespace grpc_core

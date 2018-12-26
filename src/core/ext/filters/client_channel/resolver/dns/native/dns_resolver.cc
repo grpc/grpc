@@ -26,8 +26,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -198,18 +198,14 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                          grpc_slice_from_copied_string(r->name_to_resolve_));
   if (r->addresses_ != nullptr) {
-    grpc_lb_addresses* addresses = grpc_lb_addresses_create(
-        r->addresses_->naddrs, nullptr /* user_data_vtable */);
+    ServerAddressList addresses;
     for (size_t i = 0; i < r->addresses_->naddrs; ++i) {
-      grpc_lb_addresses_set_address(
-          addresses, i, &r->addresses_->addrs[i].addr,
-          r->addresses_->addrs[i].len, false /* is_balancer */,
-          nullptr /* balancer_name */, nullptr /* user_data */);
+      addresses.emplace_back(&r->addresses_->addrs[i].addr,
+                             r->addresses_->addrs[i].len, nullptr /* args */);
     }
-    grpc_arg new_arg = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_arg new_arg = CreateServerAddressListChannelArg(&addresses);
     result = grpc_channel_args_copy_and_add(r->channel_args_, &new_arg, 1);
     grpc_resolved_addresses_destroy(r->addresses_);
-    grpc_lb_addresses_destroy(addresses);
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
     r->backoff_.Reset();

@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0-dev
-  g_stands_for: gizmo
-  version: 1.17.0-dev
+  g_stands_for: goose
+  version: 1.18.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -440,6 +440,7 @@ filegroups:
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/dynamic_annotations.h
   - src/core/lib/iomgr/endpoint.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
@@ -580,14 +581,16 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
-  - src/core/ext/filters/client_channel/method_params.h
   - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
+  - src/core/ext/filters/client_channel/request_routing.h
   - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
+  - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   src:
@@ -602,15 +605,16 @@ filegroups:
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
-  - src/core/ext/filters/client_channel/lb_policy_factory.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
-  - src/core/ext/filters/client_channel/method_params.cc
   - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
+  - src/core/ext/filters/client_channel/request_routing.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
+  - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
+  - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   plugin: grpc_client_channel
@@ -898,6 +902,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
@@ -912,12 +917,14 @@ filegroups:
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
   - test/core/util/subprocess.h
+  - test/core/util/test_config.h
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
@@ -934,10 +941,10 @@ filegroups:
   - test/core/util/slice_splitter.cc
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
+  - test/core/util/test_config.cc
   - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:
-  - gpr_test_util
   - gpr
   uses:
   - cmdline
@@ -962,6 +969,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
+  - src/core/ext/transport/chttp2/transport/context_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/frame_data.h
@@ -984,6 +992,7 @@ filegroups:
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame_data.cc
   - src/core/ext/transport/chttp2/transport/frame_goaway.cc
@@ -1146,7 +1155,6 @@ filegroups:
   - grpc
 - name: tsi
   headers:
-  - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
@@ -1155,7 +1163,6 @@ filegroups:
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
-  - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1165,7 +1172,6 @@ filegroups:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - gpr
-  plugin: grpc_tsi_alts
   secure: true
   uses:
   - tsi_interface
@@ -1324,6 +1330,7 @@ filegroups:
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
   - include/grpcpp/alarm.h
+  - include/grpcpp/alarm_impl.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
   - include/grpcpp/completion_queue.h
@@ -1361,10 +1368,13 @@ filegroups:
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
   - include/grpcpp/support/client_callback.h
+  - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
+  - include/grpcpp/support/interceptor.h
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
   - include/grpcpp/support/server_callback.h
+  - include/grpcpp/support/server_interceptor.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
   - include/grpcpp/support/status_code_enum.h
@@ -1499,16 +1509,6 @@ libs:
   filegroups:
   - gpr_base
   secure: false
-- name: gpr_test_util
-  build: private
-  language: c
-  headers:
-  - test/core/util/test_config.h
-  src:
-  - test/core/util/test_config.cc
-  deps:
-  - gpr
-  secure: false
 - name: grpc
   build: all
   language: c
@@ -1571,7 +1571,6 @@ libs:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/security/oauth2_utils.cc
   deps:
-  - gpr_test_util
   - gpr
   - grpc
   filegroups:
@@ -1581,7 +1580,6 @@ libs:
   language: c
   deps:
   - gpr
-  - gpr_test_util
   - grpc_unsecure
   filegroups:
   - grpc_test_util_base
@@ -1628,7 +1626,6 @@ libs:
   - test_tcp_server
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: test_tcp_server
   build: private
@@ -1640,7 +1637,6 @@ libs:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc++
   build: all
@@ -1755,6 +1751,7 @@ libs:
   build: private
   language: c++
   headers:
+  - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/channel_trace_proto_helper.h
@@ -1768,6 +1765,8 @@ libs:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/channel_trace_proto_helper.cc
@@ -1788,6 +1787,7 @@ libs:
   build: private
   language: c++
   headers:
+  - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/string_ref_helper.h
@@ -1797,6 +1797,8 @@ libs:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
@@ -1963,7 +1965,6 @@ libs:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: interop_server_helper
@@ -1993,7 +1994,6 @@ libs:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: interop_server_main
@@ -2066,7 +2066,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: alloc_test
@@ -2075,8 +2074,9 @@ targets:
   src:
   - test/core/gpr/alloc_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: alpn_test
   build: test
@@ -2086,7 +2086,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: alts_credentials_fuzzer
   build: fuzzer
@@ -2096,7 +2095,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
@@ -2109,7 +2107,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/api_fuzzer_corpus
@@ -2122,8 +2119,9 @@ targets:
   src:
   - test/core/gpr/arena_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: avl_test
   build: test
@@ -2131,8 +2129,8 @@ targets:
   src:
   - test/core/avl/avl_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util
   - grpc
   uses_polling: false
 - name: bad_server_response_test
@@ -2144,7 +2142,6 @@ targets:
   - test_tcp_server
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2174,7 +2171,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2188,7 +2184,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: check_epollexclusive
   build: tool
@@ -2206,7 +2201,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: chttp2_stream_map_test
@@ -2217,7 +2211,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: chttp2_varint_test
@@ -2228,7 +2221,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: client_fuzzer
@@ -2239,7 +2231,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
@@ -2252,8 +2243,8 @@ targets:
   - test/core/util/cmdline_test.cc
   deps:
   - gpr
-  - gpr_test_util
   - grpc_test_util
+  - grpc
   uses_polling: false
 - name: combiner_test
   cpu_cost: 10
@@ -2264,7 +2255,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: compression_test
   build: test
@@ -2274,7 +2264,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: concurrent_connectivity_test
@@ -2286,7 +2275,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2299,7 +2287,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: dns_resolver_connectivity_test
   cpu_cost: 0.1
@@ -2310,7 +2297,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2322,7 +2308,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: dns_resolver_test
   build: test
@@ -2332,7 +2317,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: dualstack_socket_test
   cpu_cost: 0.1
@@ -2343,7 +2327,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2359,7 +2342,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2372,7 +2354,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: ev_epollex_linux_test
@@ -2384,7 +2365,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2398,7 +2378,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: fake_transport_security_test
   build: test
@@ -2406,8 +2385,8 @@ targets:
   src:
   - test/core/tsi/fake_transport_security_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util
   - grpc
   filegroups:
   - transport_security_test_lib
@@ -2423,7 +2402,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2439,7 +2417,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2456,7 +2433,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: fling_server
   build: test
@@ -2467,7 +2443,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: fling_stream_test
   cpu_cost: 1.5
@@ -2478,7 +2453,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -2493,7 +2467,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -2505,8 +2478,9 @@ targets:
   src:
   - test/core/gprpp/fork_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   platforms:
   - mac
   - linux
@@ -2520,7 +2494,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2535,8 +2508,9 @@ targets:
   src:
   - test/core/gpr/cpu_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_env_test
   build: test
@@ -2544,8 +2518,9 @@ targets:
   src:
   - test/core/gpr/env_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_host_port_test
   build: test
@@ -2553,8 +2528,9 @@ targets:
   src:
   - test/core/gpr/host_port_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_log_test
   build: test
@@ -2562,8 +2538,9 @@ targets:
   src:
   - test/core/gpr/log_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_manual_constructor_test
   cpu_cost: 3
@@ -2572,8 +2549,9 @@ targets:
   src:
   - test/core/gprpp/manual_constructor_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_mpscq_test
   cpu_cost: 30
@@ -2582,8 +2560,9 @@ targets:
   src:
   - test/core/gpr/mpscq_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_spinlock_test
   cpu_cost: 3
@@ -2592,8 +2571,9 @@ targets:
   src:
   - test/core/gpr/spinlock_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_string_test
   build: test
@@ -2601,8 +2581,9 @@ targets:
   src:
   - test/core/gpr/string_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_sync_test
   cpu_cost: 10
@@ -2611,8 +2592,9 @@ targets:
   src:
   - test/core/gpr/sync_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_thd_test
   cpu_cost: 10
@@ -2621,8 +2603,9 @@ targets:
   src:
   - test/core/gprpp/thd_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_time_test
   build: test
@@ -2630,8 +2613,9 @@ targets:
   src:
   - test/core/gpr/time_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_tls_test
   build: test
@@ -2639,8 +2623,9 @@ targets:
   src:
   - test/core/gpr/tls_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: gpr_useful_test
   build: test
@@ -2648,8 +2633,9 @@ targets:
   src:
   - test/core/gpr/useful_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: grpc_auth_context_test
   build: test
@@ -2659,7 +2645,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_b64_test
@@ -2670,7 +2655,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_byte_buffer_reader_test
@@ -2681,7 +2665,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_channel_args_test
@@ -2692,7 +2675,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_channel_stack_builder_test
@@ -2703,7 +2685,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_channel_stack_test
   build: test
@@ -2713,7 +2694,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_completion_queue_test
@@ -2724,7 +2704,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_completion_queue_threading_test
   build: test
@@ -2734,7 +2713,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2758,7 +2736,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_fetch_oauth2
   build: test
@@ -2769,7 +2746,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_ipv6_loopback_available_test
   build: test
@@ -2779,7 +2755,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2791,7 +2766,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - linux
@@ -2806,7 +2780,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: grpc_print_google_default_creds_token
@@ -2828,7 +2801,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_ssl_credentials_test
   build: test
@@ -2838,7 +2810,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_verify_jwt
   build: tool
@@ -2859,7 +2830,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2877,7 +2847,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2895,7 +2864,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2910,7 +2878,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -2934,7 +2901,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
@@ -2948,7 +2914,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: hpack_table_test
@@ -2959,7 +2924,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: http_parser_test
@@ -2970,7 +2934,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: http_request_fuzzer_test
@@ -2981,7 +2944,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/http/request_corpus
@@ -2994,7 +2956,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/http/response_corpus
@@ -3007,7 +2968,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: httpcli_test
   cpu_cost: 0.5
@@ -3018,7 +2978,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -3033,7 +2992,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - linux
@@ -3045,7 +3003,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: inproc_callback_test
@@ -3058,7 +3015,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: invalid_call_argument_test
@@ -3070,7 +3026,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: json_fuzzer_test
   build: fuzzer
@@ -3080,7 +3035,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/json/corpus
@@ -3094,7 +3048,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: json_rewrite_test
@@ -3105,7 +3058,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: json_stream_error_test
@@ -3116,7 +3068,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: json_test
@@ -3127,7 +3078,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: lame_client_test
@@ -3138,7 +3088,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: load_file_test
   build: test
@@ -3148,7 +3097,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: low_level_ping_pong_benchmark
@@ -3159,7 +3107,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -3174,7 +3121,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: memory_usage_server
@@ -3186,7 +3132,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: memory_usage_test
   cpu_cost: 1.5
@@ -3197,7 +3142,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -3211,7 +3155,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: minimal_stack_is_minimal_test
@@ -3222,7 +3165,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: multiple_server_queues_test
@@ -3233,7 +3175,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: murmur_hash_test
   build: test
@@ -3241,8 +3182,9 @@ targets:
   src:
   - test/core/gpr/murmur_hash_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: nanopb_fuzzer_response_test
   build: fuzzer
@@ -3252,7 +3194,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/nanopb/corpus_response
@@ -3265,7 +3206,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
@@ -3279,7 +3219,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: num_external_connectivity_watchers_test
   build: test
@@ -3289,7 +3228,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3301,7 +3239,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: percent_decode_fuzzer
@@ -3312,7 +3249,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/slice/percent_decode_corpus
@@ -3325,7 +3261,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
@@ -3338,7 +3273,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: resolve_address_posix_test
@@ -3349,7 +3283,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3365,7 +3298,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   args:
   - --resolver=ares
@@ -3377,7 +3309,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   args:
   - --resolver=native
@@ -3390,7 +3321,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: secure_channel_create_test
   build: test
@@ -3400,7 +3330,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: secure_endpoint_test
   build: test
@@ -3410,7 +3339,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3422,7 +3350,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3434,7 +3361,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: server_fuzzer
   build: fuzzer
@@ -3444,7 +3370,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
@@ -3458,7 +3383,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: slice_buffer_test
   build: test
@@ -3468,7 +3392,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: slice_string_helpers_test
@@ -3479,7 +3402,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: slice_test
@@ -3490,7 +3412,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -3501,7 +3422,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: sockaddr_utils_test
   build: test
@@ -3511,7 +3431,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: socket_utils_test
   build: test
@@ -3521,7 +3440,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3537,7 +3455,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
@@ -3548,8 +3465,8 @@ targets:
   src:
   - test/core/tsi/ssl_transport_security_test.cc
   deps:
-  - gpr_test_util
   - gpr
+  - grpc_test_util
   - grpc
   filegroups:
   - transport_security_test_lib
@@ -3565,7 +3482,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: stream_compression_test
@@ -3576,7 +3492,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: stream_owned_slice_test
@@ -3587,7 +3502,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: tcp_client_posix_test
@@ -3599,7 +3513,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3616,7 +3529,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - native
@@ -3629,7 +3541,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3645,7 +3556,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3661,7 +3571,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - native
@@ -3673,7 +3582,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: timeout_encoding_test
@@ -3684,7 +3592,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: timer_heap_test
@@ -3695,7 +3602,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3708,7 +3614,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3721,7 +3626,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: transport_metadata_test
   build: test
@@ -3731,7 +3635,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: transport_security_test
   build: test
@@ -3741,7 +3644,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - linux
@@ -3755,7 +3657,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3771,7 +3672,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   corpus_dirs:
   - test/core/client_channel/uri_corpus
@@ -3784,7 +3684,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: wakeup_fd_cv_test
   build: test
@@ -3794,7 +3693,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_iomgrs:
   - uv
@@ -3813,7 +3711,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
 - name: alts_counter_test
   build: test
@@ -3831,8 +3728,8 @@ targets:
   - test/core/tsi/alts/crypt/aes_gcm_test.cc
   deps:
   - alts_test_util
-  - gpr_test_util
   - gpr
+  - grpc_test_util
   - grpc
 - name: alts_crypter_test
   build: test
@@ -3945,7 +3842,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: auth_property_iterator_test
   gtest: true
@@ -3958,7 +3854,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: backoff_test
@@ -3969,7 +3864,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: bdp_estimator_test
@@ -3982,7 +3876,6 @@ targets:
   - grpc++
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: bm_arena
@@ -3997,7 +3890,27 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
+- name: bm_byte_buffer
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_byte_buffer.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4019,7 +3932,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4041,7 +3953,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4063,7 +3974,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4085,7 +3995,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4106,7 +4015,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4127,7 +4035,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4148,7 +4055,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4170,7 +4076,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4194,7 +4099,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4221,7 +4125,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4246,7 +4149,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4275,7 +4177,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4300,7 +4201,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4322,7 +4222,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   benchmark: true
@@ -4331,6 +4230,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_timer
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_timer.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: byte_stream_test
   gtest: true
   build: test
@@ -4340,7 +4260,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: channel_arguments_test
@@ -4376,7 +4295,6 @@ targets:
   - grpc++_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   filegroups:
   - grpcpp_channelz_proto
@@ -4393,7 +4311,6 @@ targets:
   - grpc++_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -4410,7 +4327,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   filegroups:
   - grpcpp_channelz_proto
@@ -4425,7 +4341,6 @@ targets:
   - grpc++_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   filegroups:
   - grpcpp_channelz_proto
@@ -4456,7 +4371,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: true
 - name: cli_call_test
@@ -4471,7 +4385,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: client_callback_end2end_test
   gtest: true
@@ -4485,10 +4398,10 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: client_channel_stress_test
   gtest: false
+  cpu_cost: 10.0
   build: test
   language: c++
   src:
@@ -4499,7 +4412,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: client_crash_test
   gtest: true
@@ -4513,7 +4425,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -4530,7 +4441,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: client_interceptors_end2end_test
   gtest: true
@@ -4547,7 +4457,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: client_lb_end2end_test
   gtest: true
@@ -4560,7 +4469,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: codegen_test_full
   gtest: true
@@ -4604,6 +4512,17 @@ targets:
   - grpc++_codegen_base
   - grpc++_codegen_base_src
   uses_polling: false
+- name: context_list_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/chttp2/context_list_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: credentials_test
   gtest: true
   build: test
@@ -4624,7 +4543,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: cxx_slice_test
@@ -4637,7 +4555,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: cxx_string_ref_test
@@ -4660,7 +4577,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: end2end_test
@@ -4678,7 +4594,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: error_details_test
   gtest: true
@@ -4701,7 +4616,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: filter_end2end_test
   gtest: true
@@ -4714,7 +4628,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: generic_end2end_test
   gtest: true
@@ -4727,7 +4640,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: golden_file_test
   gtest: true
@@ -4789,7 +4701,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: grpc_node_plugin
   build: protoc
@@ -4847,7 +4758,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   filegroups:
   - grpc++_codegen_proto
@@ -4875,7 +4785,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: h2_ssl_cert_test
   gtest: true
@@ -4889,7 +4798,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -4905,7 +4813,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -4920,7 +4827,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: http2_client
   build: test
@@ -4949,7 +4855,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: inlined_vector_test
   gtest: true
@@ -4961,7 +4866,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -4977,7 +4881,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -4996,7 +4899,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5016,7 +4918,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5032,7 +4933,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5050,7 +4950,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5067,7 +4966,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -5100,7 +4998,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: nonblocking_test
   gtest: true
@@ -5113,7 +5010,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: noop-benchmark
   build: test
@@ -5133,7 +5029,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -5150,7 +5045,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: proto_utils_test
   gtest: true
@@ -5177,7 +5071,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5198,7 +5091,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: qps_openloop_test
@@ -5214,7 +5106,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5237,7 +5128,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: raw_end2end_test
@@ -5251,7 +5141,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: reconnect_interop_client
   build: test
@@ -5267,7 +5156,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: reconnect_interop_server
@@ -5286,7 +5174,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: ref_counted_ptr_test
@@ -5299,7 +5186,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -5313,7 +5199,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -5326,7 +5211,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: secure_auth_context_test
@@ -5340,7 +5224,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: secure_sync_unary_ping_pong_test
   build: test
@@ -5354,7 +5237,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
   platforms:
@@ -5372,7 +5254,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: server_builder_test
   gtest: true
@@ -5385,7 +5266,6 @@ targets:
   deps:
   - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
-  - gpr_test_util
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
@@ -5400,7 +5280,6 @@ targets:
   deps:
   - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
-  - gpr_test_util
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
@@ -5416,7 +5295,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   uses:
   - grpc++_test
@@ -5432,7 +5310,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -5449,7 +5326,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: server_early_return_test
   gtest: true
@@ -5462,7 +5338,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: server_interceptors_end2end_test
   gtest: true
@@ -5479,7 +5354,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: server_request_call_test
   gtest: true
@@ -5492,7 +5366,6 @@ targets:
   deps:
   - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
-  - gpr_test_util
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
@@ -5507,7 +5380,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
 - name: slice_hash_table_test
   gtest: true
@@ -5518,7 +5390,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: slice_weak_hash_table_test
@@ -5530,7 +5401,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   uses_polling: false
 - name: stats_test
@@ -5543,7 +5413,6 @@ targets:
   - grpc++_test_util
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
   exclude_configs:
   - tsan
@@ -5579,7 +5448,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac
@@ -5609,7 +5477,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   - grpc++_test_config
 - name: thread_manager_test
@@ -5634,7 +5501,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - gpr_test_util
   - gpr
 - name: transport_pid_controller_test
   build: test
@@ -5646,7 +5512,6 @@ targets:
   - grpc++
   - grpc_test_util
   - grpc
-  - gpr_test_util
   - gpr
 - name: transport_security_common_api_test
   build: test
@@ -5669,7 +5534,6 @@ targets:
   - grpc_test_util
   - grpc++
   - grpc
-  - gpr_test_util
   - gpr
   platforms:
   - mac

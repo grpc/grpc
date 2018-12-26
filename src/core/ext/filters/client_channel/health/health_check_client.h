@@ -41,8 +41,7 @@
 
 namespace grpc_core {
 
-class HealthCheckClient
-    : public InternallyRefCountedWithTracing<HealthCheckClient> {
+class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
  public:
   HealthCheckClient(const char* service_name,
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
@@ -61,7 +60,7 @@ class HealthCheckClient
 
  private:
   // Contains a call to the backend and all the data related to the call.
-  class CallState : public InternallyRefCountedWithTracing<CallState> {
+  class CallState : public InternallyRefCounted<CallState> {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);

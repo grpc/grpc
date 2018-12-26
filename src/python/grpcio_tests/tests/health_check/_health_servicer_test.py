@@ -39,8 +39,12 @@ class HealthServicerTest(unittest.TestCase):
         health_pb2_grpc.add_HealthServicer_to_server(servicer, self._server)
         self._server.start()
 
-        channel = grpc.insecure_channel('localhost:%d' % port)
-        self._stub = health_pb2_grpc.HealthStub(channel)
+        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._stub = health_pb2_grpc.HealthStub(self._channel)
+
+    def tearDown(self):
+        self._server.stop(None)
+        self._channel.close()
 
     def test_empty_service(self):
         request = health_pb2.HealthCheckRequest()

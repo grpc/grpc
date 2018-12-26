@@ -15,6 +15,7 @@
 
 from concurrent import futures
 import time
+import logging
 
 import grpc
 
@@ -49,4 +50,5 @@ def serve():
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     serve()

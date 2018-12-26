@@ -24,19 +24,22 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #define GRPC_FAKE_SECURITY_URL_SCHEME "http+fake_security"
 
 /* Creates a fake connector that emulates real channel security.  */
-grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
-    grpc_channel_credentials* channel_creds,
-    grpc_call_credentials* request_metadata_creds, const char* target,
-    const grpc_channel_args* args);
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_fake_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char* target, const grpc_channel_args* args);
 
 /* Creates a fake connector that emulates real server security.  */
-grpc_server_security_connector* grpc_fake_server_security_connector_create(
-    grpc_server_credentials* server_creds);
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_fake_server_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H \
         */

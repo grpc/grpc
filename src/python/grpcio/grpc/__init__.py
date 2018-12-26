@@ -15,11 +15,13 @@
 
 import abc
 import enum
+import logging
 import sys
-
 import six
 
 from grpc._cython import cygrpc as _cygrpc
+
+logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 ############################## Future Interface  ###############################
 
@@ -264,6 +266,22 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, 'unauthenticated')
 
 
+#############################  gRPC Status  ################################
+
+
+class Status(six.with_metaclass(abc.ABCMeta)):
+    """Describes the status of an RPC.
+
+    This is an EXPERIMENTAL API.
+
+    Attributes:
+      code: A StatusCode object to be sent to the client.
+      details: An ASCII-encodable string to be sent to the client upon
+        termination of the RPC.
+      trailing_metadata: The trailing :term:`metadata` in the RPC.
+    """
+
+
 #############################  gRPC Exceptions  ################################
 
 
@@ -387,7 +405,8 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: An optional flag to enable wait for ready mechanism.
+      wait_for_ready: This is an EXPERIMENTAL argument. An optional flag t
+        enable wait for ready mechanism.
     """
 
 
@@ -654,8 +673,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC.
@@ -683,8 +702,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -712,8 +731,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -744,8 +763,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: An optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -776,8 +795,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC.
@@ -806,8 +825,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -835,8 +854,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -867,8 +886,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
-          wait_for_ready: An optional flag to enable wait for ready
-            mechanism
+          wait_for_ready: This is an EXPERIMENTAL argument. An optional
+            flag to enable wait for ready mechanism
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -1108,6 +1127,25 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
             It must not be StatusCode.OK.
           details: An ASCII-encodable string to be sent to the client upon
             termination of the RPC.
+
+        Raises:
+          Exception: An exception is always raised to signal the abortion the
+            RPC to the gRPC runtime.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def abort_with_status(self, status):
+        """Raises an exception to terminate the RPC with a non-OK status.
+
+        The status passed as argument will supercede any existing status code,
+        status message and trailing metadata.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          status: A grpc.Status object. The status code in it must not be
+            StatusCode.OK.
 
         Raises:
           Exception: An exception is always raised to signal the abortion the
@@ -1720,7 +1758,7 @@ def server(thread_pool,
         handlers. The interceptors are given control in the order they are
         specified. This is an EXPERIMENTAL API.
       options: An optional list of key-value pairs (channel args in gRPC runtime)
-      to configure the channel.
+        to configure the channel.
       maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server
         will service before returning RESOURCE_EXHAUSTED status, or None to
         indicate no limit.
@@ -1744,6 +1782,7 @@ __all__ = (
     'Future',
     'ChannelConnectivity',
     'StatusCode',
+    'Status',
     'RpcError',
     'RpcContext',
     'Call',

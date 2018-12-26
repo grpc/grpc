@@ -94,6 +94,7 @@ static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   g_vtable.pollset_destroy = pollset_destroy;
   g_vtable.pollset_work = pollset_work;
   g_vtable.pollset_kick = pollset_kick;
+  g_vtable.shutdown_background_closure = [] {};
   g_vtable.shutdown_engine = [] {};
 
   return &g_vtable;

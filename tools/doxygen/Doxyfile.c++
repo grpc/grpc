@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.17.0-dev
+PROJECT_NUMBER         = 1.18.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/environment_variables.md \
 doc/fail_fast.md \
 doc/fork_support.md \
 doc/g_stands_for.md \
+doc/grpc_release_schedule.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
@@ -924,6 +925,7 @@ include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 include/grpcpp/alarm.h \
+include/grpcpp/alarm_impl.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
@@ -1006,10 +1008,13 @@ include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/client_callback.h \
+include/grpcpp/support/client_interceptor.h \
 include/grpcpp/support/config.h \
+include/grpcpp/support/interceptor.h \
 include/grpcpp/support/proto_buffer_reader.h \
 include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/server_callback.h \
+include/grpcpp/support/server_interceptor.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
 include/grpcpp/support/status_code_enum.h \

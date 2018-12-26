@@ -93,13 +93,13 @@ grpc_cc_library(
     hdrs = [
         "channel_trace_proto_helper.h",
     ],
-    deps = [
-        "//:grpc++",
-        "//src/proto/grpc/channelz:channelz_proto",
-    ],
     external_deps = [
         "gtest",
         "protobuf",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
 )
 
@@ -181,16 +181,19 @@ grpc_cc_test(
     data = [
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
+        "//src/proto/grpc/testing:simple_messages.proto",
     ],
     external_deps = [
         "gtest",
     ],
+    tags = ["nomsan"],  # death tests seem to be incompatible with msan
     deps = [
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
@@ -232,7 +235,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -276,7 +279,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++_error_details",
         "//src/proto/grpc/testing:echo_messages_proto",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -289,8 +292,8 @@ grpc_cc_binary(
         "gflags",
     ],
     deps = [
-        ":grpc_cli_libs",
         ":grpc++_proto_reflection_desc_db",
+        ":grpc_cli_libs",
         ":test_config",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",

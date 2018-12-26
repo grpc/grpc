@@ -132,16 +132,14 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
-std::unique_ptr<std::vector<
-    std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>
+std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreateDummyClientInterceptors() {
-  auto creators = std::unique_ptr<std::vector<
-      std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>>(
-      new std::vector<
-          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
   // Add 20 dummy interceptors before hijacking interceptor
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators->push_back(std::unique_ptr<DummyInterceptorFactory>(
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
   }
   return creators;

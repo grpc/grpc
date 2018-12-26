@@ -43,7 +43,7 @@ static void test_setenv_getenv(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_setenv_getenv();
   return 0;
 }

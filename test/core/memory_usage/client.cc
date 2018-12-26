@@ -193,11 +193,11 @@ int main(int argc, char** argv) {
   gpr_cmdline* cl;
   grpc_event event;
 
-  grpc_init();
-
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init(1, fake_argv);
+  grpc::testing::TestEnvironment env(1, fake_argv);
+
+  grpc_init();
 
   int warmup_iterations = 100;
   int benchmark_iterations = 1000;

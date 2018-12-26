@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -382,23 +383,19 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   EXPECT_EQ(err, GRPC_ERROR_NONE);
   ArgsStruct* args = (ArgsStruct*)argsp;
   grpc_channel_args* channel_args = args->channel_args;
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != nullptr);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses =
-      (grpc_lb_addresses*)channel_arg->value.pointer.p;
+  grpc_core::ServerAddressList* addresses =
+      grpc_core::FindServerAddressListChannelArg(channel_args);
   gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-          addresses->num_addresses, args->expected_addrs.size());
-  GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
+          addresses->size(), args->expected_addrs.size());
+  GPR_ASSERT(addresses->size() == args->expected_addrs.size());
   std::vector<GrpcLBAddress> found_lb_addrs;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    grpc_lb_address addr = addresses->addresses[i];
+  for (size_t i = 0; i < addresses->size(); i++) {
+    grpc_core::ServerAddress& addr = (*addresses)[i];
     char* str;
-    grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
+    grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
     gpr_log(GPR_INFO, "%s", str);
     found_lb_addrs.emplace_back(
-        GrpcLBAddress(std::string(str), addr.is_balancer));
+        GrpcLBAddress(std::string(str), addr.IsBalancer()));
     gpr_free(str);
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {
@@ -477,7 +474,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_target_name == "") {

@@ -141,8 +141,8 @@ class CSharpLanguage:
 class CSharpCoreCLRLanguage:
 
     def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.0'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.0'
+        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp1.1'
+        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp1.1'
         self.safename = str(self)
 
     def client_cmd(self, args):
@@ -545,13 +545,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py27_native/bin/python',
+            'py37_native/bin/python',
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -560,7 +560,7 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py37_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--server', '--args="{}"'.format(' '.join(args))
         ]
 
@@ -775,8 +775,7 @@ def cloud_to_prod_jobspec(language,
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
-        '--server_host=%s' % server_host,
-        '--server_host_override=%s' % server_host, '--server_port=443',
+        '--server_host=%s' % server_host, '--server_port=443',
         '--test_case=%s' % test_case
     ]
     if transport_security == 'tls':

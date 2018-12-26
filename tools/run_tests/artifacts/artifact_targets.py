@@ -124,6 +124,8 @@ class PythonArtifact:
             # https://github.com/resin-io-projects/armv7hf-debian-qemu/issues/9
             # A QEMU bug causes submodule update to hang, so we copy directly
             environ['RELATIVE_COPY_PATH'] = '.'
+            # Parallel builds are counterproductive in emulated environment
+            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = '1'
             extra_args = ' --entrypoint=/usr/bin/qemu-arm-static '
             return create_docker_jobspec(
                 self.name,

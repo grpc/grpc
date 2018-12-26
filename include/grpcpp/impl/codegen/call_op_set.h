@@ -325,7 +325,11 @@ class CallOpSendMessage {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* interceptor_methods) {
+    // The contents of the SendMessage value that was previously set
+    // has had its references stolen by core's operations
+    interceptor_methods->SetSendMessage(nullptr);
+  }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
@@ -415,6 +419,7 @@ class CallOpRecvMessage {
     if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
@@ -511,12 +516,14 @@ class CallOpGenericRecvMessage {
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE);
+    got_message = true;
   }
 
  private:

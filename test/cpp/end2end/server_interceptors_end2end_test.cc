@@ -24,10 +24,10 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_interceptor.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -44,7 +44,34 @@ namespace {
 
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ServerRpcInfo* info) { info_ = info; }
+  LoggingInterceptor(experimental::ServerRpcInfo* info) {
+    info_ = info;
+
+    // Check the method name and compare to the type
+    const char* method = info->method();
+    experimental::ServerRpcInfo::Type type = info->type();
+
+    // Check that we use one of our standard methods with expected type.
+    // Also allow the health checking service.
+    // We accept BIDI_STREAMING for Echo in case it's an AsyncGenericService
+    // being tested (the GenericRpc test).
+    // The empty method is for the Unimplemented requests that arise
+    // when draining the CQ.
+    EXPECT_TRUE(
+        strstr(method, "/grpc.health") == method ||
+        (strcmp(method, "/grpc.testing.EchoTestService/Echo") == 0 &&
+         (type == experimental::ServerRpcInfo::Type::UNARY ||
+          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING)) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/RequestStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::CLIENT_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/ResponseStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::SERVER_STREAMING) ||
+        (strcmp(method, "/grpc.testing.EchoTestService/BidiStream") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING) ||
+        strcmp(method, "/grpc.testing.EchoTestService/Unimplemented") == 0 ||
+        (strcmp(method, "") == 0 &&
+         type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
+  }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
     if (methods->QueryInterceptionHookPoint(
@@ -149,9 +176,12 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
+    // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
           new DummyInterceptorFactory()));
+      creators.push_back(std::unique_ptr<NullInterceptorFactory>(
+          new NullInterceptorFactory()));
     }
     builder.experimental().SetInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
@@ -391,6 +421,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   builder.RegisterAsyncGenericService(&service);
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -486,6 +517,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -539,6 +571,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   builder.AddListeningPort(server_address, InsecureServerCredentials());
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
       creators;
+  creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
     creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
         new DummyInterceptorFactory()));
@@ -574,7 +607,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

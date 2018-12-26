@@ -196,16 +196,18 @@ class TestServiceImplDupPkg
 class TestScenario {
  public:
   TestScenario(bool interceptors, bool proxy, bool inproc_stub,
-               const grpc::string& creds_type)
+               const grpc::string& creds_type, bool use_callback_server)
       : use_interceptors(interceptors),
         use_proxy(proxy),
         inproc(inproc_stub),
-        credentials_type(creds_type) {}
+        credentials_type(creds_type),
+        callback_server(use_callback_server) {}
   void Log() const;
   bool use_interceptors;
   bool use_proxy;
   bool inproc;
   const grpc::string credentials_type;
+  bool callback_server;
 };
 
 static std::ostream& operator<<(std::ostream& out,
@@ -214,6 +216,8 @@ static std::ostream& operator<<(std::ostream& out,
              << (scenario.use_interceptors ? "true" : "false")
              << ", use_proxy=" << (scenario.use_proxy ? "true" : "false")
              << ", inproc=" << (scenario.inproc ? "true" : "false")
+             << ", server_type="
+             << (scenario.callback_server ? "callback" : "sync")
              << ", credentials='" << scenario.credentials_type << "'}";
 }
 
@@ -272,6 +276,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
           creators;
       // Add 20 dummy server interceptors
+      creators.reserve(20);
       for (auto i = 0; i < 20; i++) {
         creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
             new DummyInterceptorFactory()));
@@ -279,7 +284,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
-    builder.RegisterService(&service_);
+    if (!GetParam().callback_server) {
+      builder.RegisterService(&service_);
+    } else {
+      builder.RegisterService(&callback_service_);
+    }
     builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.RegisterService(&dup_pkg_service_);
 
@@ -361,6 +370,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   std::ostringstream server_address_;
   const int kMaxMessageSize_;
   TestServiceImpl service_;
+  CallbackTestServiceImpl callback_service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
   grpc::string user_agent_prefix_;
@@ -1015,7 +1025,8 @@ TEST_P(End2endTest, DiffPackageServices) {
   EXPECT_TRUE(s.ok());
 }
 
-void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
+template <class ServiceType>
+void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
   while (!service->signal_client()) {
@@ -1445,7 +1456,24 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   request.mutable_param()->set_client_cancel_after_us(kCancelDelayUs);
 
   ClientContext context;
-  std::thread cancel_thread(CancelRpc, &context, kCancelDelayUs, &service_);
+  std::thread cancel_thread;
+  if (!GetParam().callback_server) {
+    cancel_thread = std::thread(
+        [&context, this](int delay) { CancelRpc(&context, delay, &service_); },
+        kCancelDelayUs);
+    // Note: the unusual pattern above (and below) is caused by a conflict
+    // between two sets of compiler expectations. clang allows const to be
+    // captured without mention, so there is no need to capture kCancelDelayUs
+    // (and indeed clang-tidy complains if you do so). OTOH, a Windows compiler
+    // in our tests requires an explicit capture even for const. We square this
+    // circle by passing the const value in as an argument to the lambda.
+  } else {
+    cancel_thread = std::thread(
+        [&context, this](int delay) {
+          CancelRpc(&context, delay, &callback_service_);
+        },
+        kCancelDelayUs);
+  }
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
@@ -1837,10 +1865,12 @@ TEST_P(ResourceQuotaEnd2endTest, SimpleRequest) {
   EXPECT_TRUE(s.ok());
 }
 
+// TODO(vjpai): refactor arguments into a struct if it makes sense
 std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_insecure,
                                               bool test_secure,
-                                              bool test_inproc) {
+                                              bool test_inproc,
+                                              bool test_callback_server) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   if (test_secure) {
@@ -1856,41 +1886,48 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
+
+  // For now test callback server only with inproc
   GPR_ASSERT(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
-    scenarios.emplace_back(false, false, false, cred);
-    scenarios.emplace_back(true, false, false, cred);
+    scenarios.emplace_back(false, false, false, cred, false);
+    scenarios.emplace_back(true, false, false, cred, false);
     if (use_proxy) {
-      scenarios.emplace_back(false, true, false, cred);
-      scenarios.emplace_back(true, true, false, cred);
+      scenarios.emplace_back(false, true, false, cred, false);
+      scenarios.emplace_back(true, true, false, cred, false);
     }
   }
   if (test_inproc && insec_ok()) {
-    scenarios.emplace_back(false, false, true, kInsecureCredentialsType);
-    scenarios.emplace_back(true, false, true, kInsecureCredentialsType);
+    scenarios.emplace_back(false, false, true, kInsecureCredentialsType, false);
+    scenarios.emplace_back(true, false, true, kInsecureCredentialsType, false);
+    if (test_callback_server) {
+      scenarios.emplace_back(false, false, true, kInsecureCredentialsType,
+                             true);
+      scenarios.emplace_back(true, false, true, kInsecureCredentialsType, true);
+    }
   }
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(End2end, End2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    End2end, End2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(End2endServerTryCancel, End2endServerTryCancelTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    End2endServerTryCancel, End2endServerTryCancelTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(ProxyEnd2end, ProxyEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    ProxyEnd2end, ProxyEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, false)));
 
-INSTANTIATE_TEST_CASE_P(SecureEnd2end, SecureEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, false,
-                                                                true, false)));
+INSTANTIATE_TEST_CASE_P(
+    SecureEnd2end, SecureEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)));
 
-INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, true,
-                                                                true, true)));
+INSTANTIATE_TEST_CASE_P(
+    ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, false)));
 
 }  // namespace
 }  // namespace testing
@@ -1898,7 +1935,7 @@ INSTANTIATE_TEST_CASE_P(ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
 
 int main(int argc, char** argv) {
   gpr_setenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS", "200");
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

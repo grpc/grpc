@@ -37,7 +37,8 @@ build:tsan --copt=-fsanitize=thread
 build:tsan --copt=-fno-omit-frame-pointer
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
-build:tsan --copt=-DTHREAD_SANITIZER  # used by absl
+# TODO(jtattermusch): ideally we would set --copt=-DTHREAD_SANITIZER (used by absl)
+# but it seems to do more harm than good and triggers #17175
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 

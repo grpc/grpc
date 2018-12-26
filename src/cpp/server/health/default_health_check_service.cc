@@ -42,15 +42,34 @@ DefaultHealthCheckService::DefaultHealthCheckService() {
 void DefaultHealthCheckService::SetServingStatus(
     const grpc::string& service_name, bool serving) {
   std::unique_lock<std::mutex> lock(mu_);
+  if (shutdown_) {
+    // Set to NOT_SERVING in case service_name is not in the map.
+    serving = false;
+  }
   services_map_[service_name].SetServingStatus(serving ? SERVING : NOT_SERVING);
 }
 
 void DefaultHealthCheckService::SetServingStatus(bool serving) {
   const ServingStatus status = serving ? SERVING : NOT_SERVING;
   std::unique_lock<std::mutex> lock(mu_);
+  if (shutdown_) {
+    return;
+  }
   for (auto& p : services_map_) {
     ServiceData& service_data = p.second;
     service_data.SetServingStatus(status);
+  }
+}
+
+void DefaultHealthCheckService::Shutdown() {
+  std::unique_lock<std::mutex> lock(mu_);
+  if (shutdown_) {
+    return;
+  }
+  shutdown_ = true;
+  for (auto& p : services_map_) {
+    ServiceData& service_data = p.second;
+    service_data.SetServingStatus(NOT_SERVING);
   }
 }
 

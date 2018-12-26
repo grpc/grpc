@@ -187,13 +187,14 @@ class MetadataFlagsTest(unittest.TestCase):
 
     def test_call_wait_for_ready_default(self):
         for perform_call in _ALL_CALL_CASES:
-            self.check_connection_does_failfast(perform_call,
-                                                create_dummy_channel())
+            with create_dummy_channel() as channel:
+                self.check_connection_does_failfast(perform_call, channel)
 
     def test_call_wait_for_ready_disabled(self):
         for perform_call in _ALL_CALL_CASES:
-            self.check_connection_does_failfast(
-                perform_call, create_dummy_channel(), wait_for_ready=False)
+            with create_dummy_channel() as channel:
+                self.check_connection_does_failfast(
+                    perform_call, channel, wait_for_ready=False)
 
     def test_call_wait_for_ready_enabled(self):
         # To test the wait mechanism, Python thread is required to make
@@ -210,16 +211,16 @@ class MetadataFlagsTest(unittest.TestCase):
                 wg.done()
 
         def test_call(perform_call):
-            try:
-                channel = grpc.insecure_channel(addr)
-                channel.subscribe(wait_for_transient_failure)
-                perform_call(channel, wait_for_ready=True)
-            except BaseException as e:  # pylint: disable=broad-except
-                # If the call failed, the thread would be destroyed. The channel
-                #   object can be collected before calling the callback, which
-                #   will result in a deadlock.
-                wg.done()
-                unhandled_exceptions.put(e, True)
+            with grpc.insecure_channel(addr) as channel:
+                try:
+                    channel.subscribe(wait_for_transient_failure)
+                    perform_call(channel, wait_for_ready=True)
+                except BaseException as e:  # pylint: disable=broad-except
+                    # If the call failed, the thread would be destroyed. The
+                    # channel object can be collected before calling the
+                    # callback, which will result in a deadlock.
+                    wg.done()
+                    unhandled_exceptions.put(e, True)
 
         test_threads = []
         for perform_call in _ALL_CALL_CASES:

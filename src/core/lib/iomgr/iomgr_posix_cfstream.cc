@@ -54,8 +54,13 @@ static void iomgr_platform_shutdown(void) {
   grpc_wakeup_fd_global_destroy();
 }
 
+static void iomgr_platform_shutdown_background_closure(void) {
+  grpc_shutdown_background_closure();
+}
+
 static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
+    iomgr_platform_shutdown_background_closure};
 
 void grpc_set_default_iomgr_platform() {
   char* enable_cfstream = getenv(grpc_cfstream_env_var);

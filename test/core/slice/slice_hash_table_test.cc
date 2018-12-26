@@ -217,7 +217,7 @@ TEST(SliceHashTable, CmpEmptyKeysDifferentValue) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_core::ExecCtx::GlobalInit();
   int result = RUN_ALL_TESTS();
   grpc_core::ExecCtx::GlobalShutdown();
