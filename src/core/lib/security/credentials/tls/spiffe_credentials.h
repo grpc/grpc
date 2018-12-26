@@ -26,7 +26,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
-/* Main struct for grpc SPIFFE channel credential. */
 class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
  public:
   grpc_tls_spiffe_credentials(const grpc_tls_credentials_options* options);
@@ -45,7 +44,6 @@ class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
   grpc_tls_credentials_options* options_;
 };
 
-/* Main struct for grpc SPIFFE server credential. */
 class grpc_tls_spiffe_server_credentials final
     : public grpc_server_credentials {
  public:

@@ -174,7 +174,6 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     extension.
   - session_cache: SSL session cache for sessions resumption.
   - options: TLS credential options instance.
-  - reload_arg: credential reload arg instance to be passed to API's in config.
   - is_client: a boolean flag indicating if the handshaker will be used at
     the client (is_client = true) or server (is_client = false) side.
   - handshaker is the address of the handshaker pointer to be created.
@@ -185,8 +184,7 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
 
 tsi_result tls_tsi_handshaker_create(
     const char* server_name_indication, tsi_ssl_session_cache* session_cache,
-    const grpc_tls_credentials_options* options,
-    grpc_tls_credential_reload_arg* reload_arg, bool is_client,
+    const grpc_tls_credentials_options* options, bool is_client,
     tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
@@ -353,6 +351,9 @@ void tls_tsi_handshaker_set_pem_root_for_testing(
     tsi_handshaker* handshaker, const char* pem_root_certs,
     tsi_ssl_root_certs_store* root_store);
 
+grpc_tls_credential_reload_arg*
+tls_tsi_handshaker_get_credential_reload_arg_for_testing(
+    tsi_handshaker* handshaker);
 }  // namespace internal
 }  // namespace grpc_core
 

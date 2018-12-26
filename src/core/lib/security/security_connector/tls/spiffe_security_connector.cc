@@ -40,10 +40,11 @@
 
 namespace {
 
-void spiffe_server_authorization_check_done_cb(
+static void spiffe_server_authorization_check_done_cb(
     grpc_tls_server_authorization_check_arg* arg);
 
-grpc_error* spiffe_process_server_authorization_check_result(
+/** -- Util function to process server authorization check result. -- */
+static grpc_error* spiffe_process_server_authorization_check_result(
     grpc_tls_server_authorization_check_arg* arg) {
   grpc_error* error = GRPC_ERROR_NONE;
   char* msg = nullptr;
@@ -74,30 +75,6 @@ grpc_error* spiffe_process_server_authorization_check_result(
   return error;
 }
 
-/** -- Util functions to create/destroy credential reload arg instances. -- */
-grpc_tls_credential_reload_arg* spiffe_credential_reload_arg_create(
-    grpc_tls_key_materials_config* config) {
-  grpc_tls_credential_reload_arg* arg =
-      static_cast<grpc_tls_credential_reload_arg*>(gpr_zalloc(sizeof(*arg)));
-  arg->status = GRPC_STATUS_OK;
-  arg->key_materials_config = grpc_tls_key_materials_config_create();
-  if (config != nullptr) {
-    grpc_tls_key_materials_config_set_key_materials(
-        arg->key_materials_config, config->pem_key_cert_pairs,
-        config->pem_root_certs, config->num_key_cert_pairs);
-  }
-  return arg;
-}
-
-void spiffe_credential_reload_arg_destroy(grpc_tls_credential_reload_arg* arg) {
-  if (arg == nullptr) {
-    return;
-  }
-  gpr_free((void*)arg->error_details);
-  grpc_tls_key_materials_config_destroy(arg->key_materials_config);
-  gpr_free(arg);
-}
-
 class grpc_tls_spiffe_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
@@ -113,14 +90,10 @@ class grpc_tls_spiffe_channel_security_connector final
                                     ? nullptr
                                     : gpr_strdup(overridden_target_name)),
         session_cache_(ssl_session_cache) {
+    check_arg_ = server_authorization_check_arg_create(this);
     char* port;
     gpr_split_host_port(target_name, &target_name_, &port);
     gpr_free(port);
-    grpc_tls_spiffe_credentials* creds =
-        static_cast<grpc_tls_spiffe_credentials*>(mutable_channel_creds());
-    reload_arg_ = spiffe_credential_reload_arg_create(
-        creds->options()->key_materials_config);
-    check_arg_ = server_authorization_check_arg_create(this);
   }
 
   ~grpc_tls_spiffe_channel_security_connector() override {
@@ -130,7 +103,6 @@ class grpc_tls_spiffe_channel_security_connector final
     if (overridden_target_name_ != nullptr) {
       gpr_free(overridden_target_name_);
     }
-    spiffe_credential_reload_arg_destroy(reload_arg_);
     server_authorization_check_arg_destroy(check_arg_);
   }
 
@@ -138,13 +110,12 @@ class grpc_tls_spiffe_channel_security_connector final
                        grpc_handshake_manager* handshake_mgr) override {
     const grpc_tls_spiffe_credentials* creds =
         static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
-    /* Create a TLS tsi handshaker for client. */
+    /* Create a TLS SPIFFE TSI handshaker for client. */
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tls_tsi_handshaker_create(
         overridden_target_name_ != nullptr ? overridden_target_name_
                                            : target_name_,
-        session_cache_, creds->options(), reload_arg_, true /* is_client */,
-        &tsi_hs);
+        session_cache_, creds->options(), true /* is_client */, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -265,7 +236,6 @@ class grpc_tls_spiffe_channel_security_connector final
   char* target_name_;
   char* overridden_target_name_;
   tsi_ssl_session_cache* session_cache_;
-  grpc_tls_credential_reload_arg* reload_arg_;
   grpc_tls_server_authorization_check_arg* check_arg_;
   grpc_closure* on_peer_checked_;
 
@@ -298,17 +268,9 @@ class grpc_tls_spiffe_server_security_connector
   grpc_tls_spiffe_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
       : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
-                                       std::move(server_creds)) {
-    grpc_tls_spiffe_server_credentials* creds =
-        static_cast<grpc_tls_spiffe_server_credentials*>(
-            mutable_server_creds());
-    reload_arg_ = spiffe_credential_reload_arg_create(
-        creds->options()->key_materials_config);
-  }
+                                       std::move(server_creds)) {}
 
-  ~grpc_tls_spiffe_server_security_connector() override {
-    spiffe_credential_reload_arg_destroy(reload_arg_);
-  }
+  ~grpc_tls_spiffe_server_security_connector() override {}
 
   void add_handshakers(grpc_pollset_set* interested_parties,
                        grpc_handshake_manager* handshake_mgr) override {
@@ -316,9 +278,8 @@ class grpc_tls_spiffe_server_security_connector
         static_cast<const grpc_tls_spiffe_server_credentials*>(server_creds());
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
-    tsi_result result =
-        tls_tsi_handshaker_create(nullptr, nullptr, creds->options(),
-                                  reload_arg_, false /* is_client */, &tsi_hs);
+    tsi_result result = tls_tsi_handshaker_create(
+        nullptr, nullptr, creds->options(), false /* is_client */, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -341,9 +302,6 @@ class grpc_tls_spiffe_server_security_connector
     return server_security_connector_cmp(
         static_cast<const grpc_server_security_connector*>(other));
   }
-
- private:
-  grpc_tls_credential_reload_arg* reload_arg_;
 };
 
 /* gRPC-provided callback executed by application, which servers to bring the

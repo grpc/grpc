@@ -36,6 +36,8 @@ extern "C" {
 #include <openssl/crypto.h>
 }
 
+using grpc_core::internal::
+    tls_tsi_handshaker_get_credential_reload_arg_for_testing;
 using grpc_core::internal::tls_tsi_handshaker_set_alpn_protocols_for_testing;
 using grpc_core::internal::tls_tsi_handshaker_set_pem_root_for_testing;
 using grpc_core::internal::tls_tsi_handshaker_set_session_cache_for_testing;
@@ -54,8 +56,6 @@ typedef enum CredReloadMode {
 struct tls_cred_reload_lib {
   grpc_tls_credentials_options* client_creds_options;
   grpc_tls_credentials_options* server_creds_options;
-  grpc_tls_credential_reload_arg* client_reload_arg;
-  grpc_tls_credential_reload_arg* server_reload_arg;
   grpc_core::Thread client_thd;
   grpc_core::Thread server_thd;
   bool client_thd_started;
@@ -86,24 +86,23 @@ static void populate_tls_key_materials_config(
   }
 }
 
-static void client_no_reload(ssl_tsi_test_fixture* ssl_fixture) {
+static void client_options_set_key_materials_config(
+    ssl_tsi_test_fixture* ssl_fixture) {
   tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs = nullptr;
   GPR_ASSERT(ssl_fixture != nullptr);
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
-  if (ssl_fixture->force_client_auth) {
-    client_pem_key_cert_pairs =
-        key_cert_lib->use_bad_client_cert
-            ? &key_cert_lib->bad_client_pem_key_cert_pair
-            : &key_cert_lib->client_pem_key_cert_pair;
-    tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
-    populate_tls_key_materials_config(
-        reload_lib->client_reload_arg->key_materials_config,
-        client_pem_key_cert_pairs, 1);
-  }
+  client_pem_key_cert_pairs = key_cert_lib->use_bad_client_cert
+                                  ? &key_cert_lib->bad_client_pem_key_cert_pair
+                                  : &key_cert_lib->client_pem_key_cert_pair;
+  tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
+  populate_tls_key_materials_config(
+      reload_lib->client_creds_options->key_materials_config,
+      client_pem_key_cert_pairs, 1);
 }
 
-static void server_no_reload(ssl_tsi_test_fixture* ssl_fixture) {
+static void server_options_set_key_materials_config(
+    ssl_tsi_test_fixture* ssl_fixture) {
   GPR_ASSERT(ssl_fixture != nullptr);
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
@@ -117,7 +116,7 @@ static void server_no_reload(ssl_tsi_test_fixture* ssl_fixture) {
           : key_cert_lib->server_num_key_cert_pairs;
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   populate_tls_key_materials_config(
-      reload_lib->server_reload_arg->key_materials_config,
+      reload_lib->server_creds_options->key_materials_config,
       server_pem_key_cert_pairs, num_server_key_cert_pairs);
 }
 
@@ -127,21 +126,9 @@ static int client_schedule_sync(void* config_user_data,
       static_cast<ssl_tsi_test_fixture*>(config_user_data);
   GPR_ASSERT(ssl_fixture != nullptr);
   GPR_ASSERT(ssl_fixture->cred_reload_lib != nullptr);
-  ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
-  tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs = nullptr;
   tls_cred_reload_lib* cred_reload_lib = ssl_fixture->cred_reload_lib;
   if (!cred_reload_lib->client_reload_succeeded) {
-    ssl_fixture->cred_reload_lib->client_reload_arg->status =
-        GRPC_STATUS_INTERNAL;
-    return 0;
-  }
-  if (ssl_fixture->force_client_auth) {
-    client_pem_key_cert_pairs =
-        key_cert_lib->use_bad_client_cert
-            ? &key_cert_lib->bad_client_pem_key_cert_pair
-            : &key_cert_lib->client_pem_key_cert_pair;
-    populate_tls_key_materials_config(arg->key_materials_config,
-                                      client_pem_key_cert_pairs, 1);
+    arg->status = GRPC_STATUS_INTERNAL;
   }
   return 0;
 }
@@ -154,22 +141,8 @@ static int server_schedule_sync(void* config_user_data,
   GPR_ASSERT(ssl_fixture->cred_reload_lib != nullptr);
   tls_cred_reload_lib* cred_reload_lib = ssl_fixture->cred_reload_lib;
   if (!cred_reload_lib->server_reload_succeeded) {
-    ssl_fixture->cred_reload_lib->server_reload_arg->status =
-        GRPC_STATUS_INTERNAL;
-    return 0;
+    arg->status = GRPC_STATUS_INTERNAL;
   }
-  ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
-  tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs =
-      key_cert_lib->use_bad_server_cert
-          ? key_cert_lib->bad_server_pem_key_cert_pairs
-          : key_cert_lib->server_pem_key_cert_pairs;
-  size_t num_server_key_cert_pairs =
-      key_cert_lib->use_bad_server_cert
-          ? key_cert_lib->bad_server_num_key_cert_pairs
-          : key_cert_lib->server_num_key_cert_pairs;
-  populate_tls_key_materials_config(arg->key_materials_config,
-                                    server_pem_key_cert_pairs,
-                                    num_server_key_cert_pairs);
   return 0;
 }
 
@@ -177,9 +150,9 @@ static void client_credential_reload_cb(void* user_data) {
   ssl_tsi_test_fixture* ssl_fixture =
       static_cast<ssl_tsi_test_fixture*>(user_data);
   GPR_ASSERT(ssl_fixture != nullptr);
-  GPR_ASSERT(ssl_fixture->cred_reload_lib != nullptr);
   grpc_tls_credential_reload_arg* reload_arg =
-      ssl_fixture->cred_reload_lib->client_reload_arg;
+      tls_tsi_handshaker_get_credential_reload_arg_for_testing(
+          ssl_fixture->base.client_handshaker);
   GPR_ASSERT(reload_arg != nullptr);
   client_schedule_sync(ssl_fixture, reload_arg);
   reload_arg->cb(reload_arg);
@@ -189,9 +162,9 @@ static void server_credential_reload_cb(void* user_data) {
   ssl_tsi_test_fixture* ssl_fixture =
       static_cast<ssl_tsi_test_fixture*>(user_data);
   GPR_ASSERT(ssl_fixture != nullptr);
-  GPR_ASSERT(ssl_fixture->cred_reload_lib != nullptr);
   grpc_tls_credential_reload_arg* reload_arg =
-      ssl_fixture->cred_reload_lib->server_reload_arg;
+      tls_tsi_handshaker_get_credential_reload_arg_for_testing(
+          ssl_fixture->base.server_handshaker);
   GPR_ASSERT(reload_arg != nullptr);
   server_schedule_sync(ssl_fixture, reload_arg);
   reload_arg->cb(reload_arg);
@@ -226,10 +199,11 @@ static void populate_tls_credential_reload_config(
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   grpc_tls_credentials_options* c = reload_lib->client_creds_options;
   grpc_tls_credentials_options* s = reload_lib->server_creds_options;
+  client_options_set_key_materials_config(ssl_fixture);
+  server_options_set_key_materials_config(ssl_fixture);
   GPR_ASSERT(c != nullptr);
   GPR_ASSERT(s != nullptr);
   if (reload_lib->client_reload_mode == NO_RELOAD) {
-    client_no_reload(ssl_fixture);
     c->credential_reload_config = nullptr;
   } else if (reload_lib->client_reload_mode == SYNC) {
     c->credential_reload_config = grpc_tls_credential_reload_config_create(
@@ -239,7 +213,6 @@ static void populate_tls_credential_reload_config(
         ssl_fixture, client_schedule_async, nullptr, nullptr);
   }
   if (reload_lib->server_reload_mode == NO_RELOAD) {
-    server_no_reload(ssl_fixture);
     s->credential_reload_config = nullptr;
   } else if (reload_lib->server_reload_mode == SYNC) {
     s->credential_reload_config = grpc_tls_credential_reload_config_create(
@@ -262,14 +235,12 @@ static void tls_test_setup_handshakers(tsi_test_fixture* fixture) {
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
 
   /* Create client TSI handshaker. */
-  GPR_ASSERT(reload_lib->client_reload_arg != nullptr);
   GPR_ASSERT(reload_lib->client_creds_options != nullptr);
   populate_tls_credential_reload_config(ssl_fixture);
   GPR_ASSERT(tls_tsi_handshaker_create(
                  ssl_fixture->server_name_indication,
                  ssl_fixture->session_cache, reload_lib->client_creds_options,
-                 reload_lib->client_reload_arg, true,
-                 &ssl_fixture->base.client_handshaker) == TSI_OK);
+                 true, &ssl_fixture->base.client_handshaker) == TSI_OK);
   tls_tsi_handshaker_set_alpn_protocols_for_testing(
       ssl_fixture->base.client_handshaker, nullptr, 0);
   if (alpn_lib->alpn_mode == ALPN_CLIENT_NO_SERVER ||
@@ -287,11 +258,9 @@ static void tls_test_setup_handshakers(tsi_test_fixture* fixture) {
         ssl_fixture->base.client_handshaker, ssl_fixture->session_cache);
   }
   /* Create server TSI handshaker. */
-  GPR_ASSERT(reload_lib->server_reload_arg != nullptr);
   GPR_ASSERT(reload_lib->server_creds_options != nullptr);
   GPR_ASSERT(tls_tsi_handshaker_create(
-                 nullptr, nullptr, reload_lib->server_creds_options,
-                 reload_lib->server_reload_arg, false,
+                 nullptr, nullptr, reload_lib->server_creds_options, false,
                  &ssl_fixture->base.server_handshaker) == TSI_OK);
   tls_tsi_handshaker_set_alpn_protocols_for_testing(
       ssl_fixture->base.server_handshaker, nullptr, 0);
@@ -344,23 +313,6 @@ static void tls_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   ssl_tsi_test_check_handshaker_peers(fixture, expect_success);
 }
 
-static grpc_tls_credential_reload_arg* reload_arg_create() {
-  grpc_tls_credential_reload_arg* arg =
-      static_cast<grpc_tls_credential_reload_arg*>(gpr_zalloc(sizeof(*arg)));
-  arg->status = GRPC_STATUS_OK;
-  arg->key_materials_config = grpc_tls_key_materials_config_create();
-  return arg;
-}
-
-static void reload_arg_destroy(grpc_tls_credential_reload_arg* arg) {
-  if (arg == nullptr) {
-    return;
-  }
-  gpr_free((void*)arg->error_details);
-  grpc_tls_key_materials_config_destroy(arg->key_materials_config);
-  gpr_free(arg);
-}
-
 static void tls_test_destruct(tsi_test_fixture* fixture) {
   ssl_tsi_test_fixture_cleanup(fixture);
   ssl_tsi_test_fixture* ssl_fixture =
@@ -369,8 +321,6 @@ static void tls_test_destruct(tsi_test_fixture* fixture) {
   if (lib == nullptr) {
     return;
   }
-  reload_arg_destroy(lib->client_reload_arg);
-  reload_arg_destroy(lib->server_reload_arg);
   grpc_tls_credentials_options_destroy(lib->client_creds_options);
   grpc_tls_credentials_options_destroy(lib->server_creds_options);
   if (lib->client_thd_started) {
@@ -399,8 +349,10 @@ static tsi_test_fixture* tls_tsi_test_fixture_create(CredReloadMode client_mode,
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   reload_lib->client_creds_options = grpc_tls_credentials_options_create();
   reload_lib->server_creds_options = grpc_tls_credentials_options_create();
-  reload_lib->client_reload_arg = reload_arg_create();
-  reload_lib->server_reload_arg = reload_arg_create();
+  reload_lib->client_creds_options->key_materials_config =
+      grpc_tls_key_materials_config_create();
+  reload_lib->server_creds_options->key_materials_config =
+      grpc_tls_key_materials_config_create();
   if (client_mode == ASYNC) {
     reload_lib->client_thd =
         grpc_core::Thread("tls_transport_security_test_client",
@@ -687,11 +639,11 @@ void ssl_tsi_test_do_handshake_session_cache(CredReloadMode client_mode,
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  for (int c = 2; c < TLS_CRED_RELOAD_MODE_NUM; c++) {
-    for (int s = 2; s < TLS_CRED_RELOAD_MODE_NUM; s++) {
-      for (int c_success = 1; c_success < TLS_CRED_RELOAD_SUCCESS_NUM;
+  for (int c = 0; c < TLS_CRED_RELOAD_MODE_NUM; c++) {
+    for (int s = 0; s < TLS_CRED_RELOAD_MODE_NUM; s++) {
+      for (int c_success = 0; c_success < TLS_CRED_RELOAD_SUCCESS_NUM;
            c_success++) {
-        for (int s_success = 1; s_success < TLS_CRED_RELOAD_SUCCESS_NUM;
+        for (int s_success = 0; s_success < TLS_CRED_RELOAD_SUCCESS_NUM;
              s_success++) {
           gpr_log(GPR_ERROR,
                   "c_mode: %d, s_mode: %d, c_success: %d, s_success: %d", c, s,

@@ -1342,6 +1342,12 @@ static void tls_handshaker_destroy(tsi_handshaker* self) {
     }
     gpr_free(impl->key_cert_pairs);
   }
+  if (impl->reload_arg != nullptr) {
+    grpc_tls_credential_reload_arg* arg = impl->reload_arg;
+    gpr_free((void*)arg->error_details);
+    grpc_tls_key_materials_config_destroy(arg->key_materials_config);
+    gpr_free(arg);
+  }
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
   ssl_handshaker_destroy(self);
 }
@@ -2121,12 +2127,22 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
 /* --- TLS TSI implementations --- */
 tsi_result tls_tsi_handshaker_create(
     const char* server_name_indication, tsi_ssl_session_cache* session_cache,
-    const grpc_tls_credentials_options* options,
-    grpc_tls_credential_reload_arg* reload_arg, bool is_client,
+    const grpc_tls_credentials_options* options, bool is_client,
     tsi_handshaker** handshaker) {
   tsi_ssl_handshaker* impl =
       static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(*impl)));
   impl->options = const_cast<grpc_tls_credentials_options*>(options);
+  grpc_tls_credential_reload_arg* reload_arg =
+      static_cast<grpc_tls_credential_reload_arg*>(
+          gpr_zalloc(sizeof(*reload_arg)));
+  reload_arg->status = GRPC_STATUS_OK;
+  reload_arg->key_materials_config = grpc_tls_key_materials_config_create();
+  grpc_tls_key_materials_config* config = options->key_materials_config;
+  if (config != nullptr) {
+    grpc_tls_key_materials_config_set_key_materials(
+        reload_arg->key_materials_config, config->pem_key_cert_pairs,
+        config->pem_root_certs, config->num_key_cert_pairs);
+  }
   impl->reload_arg = reload_arg;
   impl->server_name_indication = gpr_strdup(server_name_indication);
   impl->session_cache = session_cache;
@@ -2467,6 +2483,15 @@ void tls_tsi_handshaker_set_pem_root_for_testing(
       reinterpret_cast<tsi_ssl_handshaker*>(handshaker);
   ssl_handshaker->pem_root_certs = pem_root_certs;
   ssl_handshaker->root_store = root_store;
+}
+
+grpc_tls_credential_reload_arg*
+tls_tsi_handshaker_get_credential_reload_arg_for_testing(
+    tsi_handshaker* handshaker) {
+  GPR_ASSERT(handshaker != nullptr);
+  tsi_ssl_handshaker* ssl_handshaker =
+      reinterpret_cast<tsi_ssl_handshaker*>(handshaker);
+  return ssl_handshaker->reload_arg;
 }
 
 }  // namespace internal
