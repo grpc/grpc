@@ -300,13 +300,15 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
+    args->error = error;
     notification_signal(fixture);
     return error;
   }
   if (result != TSI_OK) {
-    notification_signal(fixture);
-    return grpc_set_tsi_error_result(
+    args->error = grpc_set_tsi_error_result(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
+    notification_signal(fixture);
+    return args->error;
   }
   /* Update handshaker result. */
   if (handshaker_result != nullptr) {
@@ -324,6 +326,7 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
   if (handshaker_result != nullptr) {
     maybe_append_unused_bytes(args);
   }
+  args->error = error;
   notification_signal(fixture);
   return error;
 }
@@ -331,10 +334,8 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  tsi_test_handshaker_args* args =
-      static_cast<tsi_test_handshaker_args*>(user_data);
-  args->error = on_handshake_next_done(result, user_data, bytes_to_send,
-                                       bytes_to_send_size, handshaker_result);
+  on_handshake_next_done(result, user_data, bytes_to_send, bytes_to_send_size,
+                         handshaker_result);
 }
 
 static bool is_handshake_finished_properly(tsi_test_handshaker_args* args) {
