@@ -82,6 +82,22 @@ class DummyInterceptorFactory
   }
 };
 
+/* This interceptor factory returns nullptr on interceptor creation */
+class NullInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface,
+      public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return nullptr;
+  }
+
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return nullptr;
+  }
+};
+
 class EchoTestServiceStreamingImpl : public EchoTestService::Service {
  public:
   ~EchoTestServiceStreamingImpl() override {}

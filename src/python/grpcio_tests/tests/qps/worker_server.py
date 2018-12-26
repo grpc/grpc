@@ -109,7 +109,7 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         start_time = time.time()
 
         # Create a client for each channel
-        for i in xrange(config.client_channels):
+        for i in range(config.client_channels):
             server = config.server_targets[i % len(config.server_targets)]
             runner = self._create_client_runner(server, config, qps_data)
             client_runners.append(runner)

@@ -22,9 +22,8 @@
   <Target Name="gRPC_ResolvePluginFullPath" AfterTargets="Protobuf_ResolvePlatform">
     <PropertyGroup>
       <!-- TODO(kkm): Do not use Protobuf_PackagedToolsPath, roll gRPC's own. -->
-      <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' and '$(Protobuf_ToolsOs)' == 'windows' "
-           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_x86\$(gRPC_PluginFileName).exe</gRPC_PluginFullPath>
+           >$(Protobuf_PackagedToolsPath)\$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)\$(gRPC_PluginFileName).exe</gRPC_PluginFullPath>
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' "
            >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/$(gRPC_PluginFileName)</gRPC_PluginFullPath>
     </PropertyGroup>

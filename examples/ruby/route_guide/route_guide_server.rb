@@ -172,7 +172,10 @@ def main
   s.add_http2_port(port, :this_port_is_insecure)
   GRPC.logger.info("... running insecurely on #{port}")
   s.handle(ServerImpl.new(feature_db))
-  s.run_till_terminated
+  # Runs the server with SIGHUP, SIGINT and SIGQUIT signal handlers to 
+  #   gracefully shutdown.
+  # User could also choose to run server via call to run_till_terminated
+  s.run_till_terminated_or_interrupted([1, 'int', 'SIGQUIT'])
 end
 
 main

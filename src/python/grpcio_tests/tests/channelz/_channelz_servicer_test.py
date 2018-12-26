@@ -88,11 +88,10 @@ def _generate_channel_server_pairs(n):
 def _close_channel_server_pairs(pairs):
     for pair in pairs:
         pair.server.stop(None)
-        # TODO(ericgribkoff) This del should not be required
-        del pair.server
         pair.channel.close()
 
 
+@unittest.skip('https://github.com/pypa/warehouse/issues/5196')
 class ChannelzServicerTest(unittest.TestCase):
 
     def _send_successful_unary_unary(self, idx):
