@@ -639,11 +639,11 @@ void ssl_tsi_test_do_handshake_session_cache(CredReloadMode client_mode,
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  for (int c = 0; c < TLS_CRED_RELOAD_MODE_NUM; c++) {
-    for (int s = 0; s < TLS_CRED_RELOAD_MODE_NUM; s++) {
-      for (int c_success = 0; c_success < TLS_CRED_RELOAD_SUCCESS_NUM;
+  for (int c = 2; c < TLS_CRED_RELOAD_MODE_NUM; c++) {
+    for (int s = 2; s < TLS_CRED_RELOAD_MODE_NUM; s++) {
+      for (int c_success = 1; c_success < TLS_CRED_RELOAD_SUCCESS_NUM;
            c_success++) {
-        for (int s_success = 0; s_success < TLS_CRED_RELOAD_SUCCESS_NUM;
+        for (int s_success = 1; s_success < TLS_CRED_RELOAD_SUCCESS_NUM;
              s_success++) {
           gpr_log(GPR_ERROR,
                   "c_mode: %d, s_mode: %d, c_success: %d, s_success: %d", c, s,
