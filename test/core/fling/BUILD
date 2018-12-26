@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_cc_binary(
-    name = "client",
+    name = "fling_client",
     testonly = 1,
     srcs = ["client.cc"],
     language = "C++",
@@ -34,7 +34,7 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
-    name = "server",
+    name = "fling_server",
     testonly = 1,
     srcs = ["server.cc"],
     language = "C++",
@@ -50,8 +50,8 @@ grpc_cc_test(
     name = "fling",
     srcs = ["fling_test.cc"],
     data = [
-        ":client",
-        ":server",
+        ":fling_client",
+        ":fling_server",
     ],
     deps = [
         "//:gpr",
@@ -65,8 +65,8 @@ grpc_cc_test(
     name = "fling_stream",
     srcs = ["fling_stream_test.cc"],
     data = [
-        ":client",
-        ":server",
+        ":fling_client",
+        ":fling_server",
     ],
     deps = [
         "//:gpr",
