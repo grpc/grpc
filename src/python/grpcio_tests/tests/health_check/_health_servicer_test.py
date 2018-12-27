@@ -14,6 +14,7 @@
 """Tests of grpc_health.v1.health."""
 
 import threading
+import time
 import unittest
 
 import grpc
@@ -206,6 +207,11 @@ class HealthServicerTest(unittest.TestCase):
         self._servicer.set(_WATCH_SERVICE,
                            health_pb2.HealthCheckResponse.SERVING)
         thread.join()
+
+        # Wait, if necessary, for serving thread to process client cancellation
+        timeout = time.time() + test_constants.SHORT_TIMEOUT
+        while time.time() < timeout and self._servicer._watchers[_WATCH_SERVICE]:
+            time.sleep(1)
         self.assertFalse(self._servicer._watchers[_WATCH_SERVICE],
                          'watch set should be empty')
         self.assertTrue(response_queue.empty())
