@@ -63,14 +63,9 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
   end
 
-  # This subspec is mutually exclusive with the `Main` subspec
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
-    ss.dependency 'gRPC-Core/CFStream-Implementation', version
     ss.dependency "#{s.name}/Main", version
-
-    ss.pod_target_xcconfig = {
-      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-    }
   end
 
   s.subspec 'GID' do |ss|
