@@ -29,12 +29,12 @@ if $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"; then
 else
     # Ubunut sends crash reports through apport
     # ls "$ROOT"
-    find / -name "core*"
-    COREFILE=$(find / -name "core*" | head -n 1) # find core file
+    # find / -name "core*"
+    # COREFILE=$(find / -name "core*" | head -n 1) # find core file
     # if [[ -f "$COREFILE" ]]; then gdb python "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
     # exit 1
-    # ls "$ROOT/src/python/grpcio_tests"
-    # COREFILE=$(find "$ROOT/src/python/grpcio_tests" -maxdepth 1 -name "core*" | head -n 1) # find core file
+    ls "$ROOT/src/python/grpcio_tests"
+    COREFILE=$(find "$ROOT/src/python/grpcio_tests" -maxdepth 1 -name "core*" | head -n 1) # find core file
     if [[ -f "$COREFILE" ]]; then gdb python "$COREFILE" example -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
     exit 1
     # ls /var/crash/
