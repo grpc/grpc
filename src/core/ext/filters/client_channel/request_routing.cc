@@ -61,6 +61,8 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 
 namespace grpc_core {
 
@@ -517,6 +519,14 @@ RequestRouter::RequestRouter(
       tracer_(tracer),
       process_resolver_result_(process_resolver_result),
       process_resolver_result_user_data_(process_resolver_result_user_data) {
+  // Get subchannel pool.
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    subchannel_pool_ = grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
+  } else {
+    subchannel_pool_ = grpc_core::RefCountedPtr<grpc_core::GlobalSubchannelPool>(grpc_core::GlobalSubchannelPool::instance());
+  }
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
                     grpc_combiner_scheduler(combiner));
@@ -668,6 +678,7 @@ void RequestRouter::CreateNewLbPolicyLocked(
   lb_policy_args.client_channel_factory = client_channel_factory_;
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
+  lb_policy_args.subchannel_pool = subchannel_pool_;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
                                                              lb_policy_args);

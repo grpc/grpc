@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 // Channel arg containing a grpc_resolved_address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
@@ -72,7 +73,7 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 namespace grpc_core {
 
 class SubchannelKey;
-class SubchannelPoolInterface;
+//class SubchannelPoolInterface;
 
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
@@ -199,7 +200,7 @@ struct grpc_subchannel_args {
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args* args;
   /** The subchannel pool this subchannel is in */
-  grpc_core::SubchannelPoolInterface* subchannel_pool;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 };
 
 /** create a subchannel given a connector */

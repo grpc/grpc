@@ -19,17 +19,22 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 
 GlobalSubchannelPool::GlobalSubchannelPool() {
   subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
   gpr_mu_init(&mu_);
-  gpr_ref_init(&refcount_, 1);
+}
+
+GlobalSubchannelPool::~GlobalSubchannelPool() {
+  gpr_mu_destroy(&mu_);
+  grpc_avl_unref(subchannel_map_, nullptr);
 }
 
 void GlobalSubchannelPool::Init() {
-  instance_ = grpc_core::New<GlobalSubchannelPool>();
+  instance_ = grpc_core::MakeRefCounted<grpc_core::GlobalSubchannelPool>();
 }
 
 void GlobalSubchannelPool::Shutdown() {
@@ -37,13 +42,13 @@ void GlobalSubchannelPool::Shutdown() {
   // To solve that, we should force polling to flush any pending callbacks, then
   // shutdown safely.
   GPR_ASSERT(instance_ != nullptr);
-  instance_->Unref();
+  instance_.reset();
 }
 
 // TODO(juanlishen): Should this be thread-safe?
-GlobalSubchannelPool& GlobalSubchannelPool::instance() {
+RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   GPR_ASSERT(instance_ != nullptr);
-  return *instance_;
+  return instance_;
 }
 
 grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
@@ -72,7 +77,7 @@ grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
           nullptr);
       // Try to publish the change to the shared map. It may happen (but
       // unlikely) that some other thread has changed the shared map, so compare
-      // to make sure it's unchanged before swapping.
+      // to make sure it's unchanged before swapping. Retry if it's changed.
       gpr_mu_lock(&mu_);
       if (old_map.root == subchannel_map_.root) {
         GPR_SWAP(grpc_avl, new_map, subchannel_map_);
@@ -110,7 +115,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
         grpc_avl_remove(grpc_avl_ref(old_map, nullptr), key, nullptr);
     // Try to publish the change to the shared map. It may happen (but
     // unlikely) that some other thread has changed the shared map, so compare
-    // to make sure it's unchanged before swapping.
+    // to make sure it's unchanged before swapping. Retry if it's changed.
     gpr_mu_lock(&mu_);
     if (old_map.root == subchannel_map_.root) {
       GPR_SWAP(grpc_avl, new_map, subchannel_map_);
@@ -124,7 +129,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
 
 grpc_subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   // Lock, and take a reference to the subchannel map.
-  // We don't need to do the search under a lock as avl's are immutable.
+  // We don't need to do the search under a lock as AVL's are immutable.
   gpr_mu_lock(&mu_);
   grpc_avl index = grpc_avl_ref(subchannel_map_, nullptr);
   gpr_mu_unlock(&mu_);
@@ -134,19 +139,6 @@ grpc_subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   return c;
 }
 
-GlobalSubchannelPool* GlobalSubchannelPool::Ref() {
-  gpr_ref_non_zero(&refcount_);
-  return this;
-}
-
-void GlobalSubchannelPool::Unref() {
-  if (gpr_unref(&refcount_)) {
-    gpr_mu_destroy(&mu_);
-    grpc_avl_unref(subchannel_map_, nullptr);
-    grpc_core::Delete(this);
-  }
-}
-
-GlobalSubchannelPool* GlobalSubchannelPool::instance_ = nullptr;
+RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance_ = nullptr;
 
 }  // namespace grpc_core

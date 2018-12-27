@@ -36,6 +36,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
 
@@ -168,6 +169,7 @@ class RequestRouter {
   // LB policy and associated state.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   bool exit_idle_when_lb_policy_arrives_ = false;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool_;
 
   grpc_connectivity_state_tracker state_tracker_;
 };

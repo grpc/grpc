@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 
@@ -34,7 +35,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // The ctor and dtor are not intended to use directly.
   GlobalSubchannelPool();
-  ~GlobalSubchannelPool() override {}
+  ~GlobalSubchannelPool() override;
 
   // Should be called exactly once at filter initialization time.
   static void Init();
@@ -42,7 +43,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static void Shutdown();
 
   // Gets the singleton instance.
-  static GlobalSubchannelPool& instance();
+  static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
   grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
@@ -51,18 +52,9 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
                             grpc_subchannel* constructed) override;
   grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
 
-  // Increments the (non-zero) refcount of the subchannel pool.
-  GlobalSubchannelPool* Ref();
-  // Decrements the refcount of the subchannel pool. If the refcount drops to
-  // zero, destroies the subchannel pool.
-  void Unref();
-
  private:
   // The singleton instance.
-  static GlobalSubchannelPool* instance_;
-
-  // The refcount of this subchannel pool.
-  gpr_refcount refcount_;
+  static RefCountedPtr<GlobalSubchannelPool> instance_;
 
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;

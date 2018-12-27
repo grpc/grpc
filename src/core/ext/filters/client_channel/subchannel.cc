@@ -93,7 +93,7 @@ class ConnectedSubchannelStateWatcher;
 
 struct grpc_subchannel {
   /** The subchannel pool this subchannel is in */
-  grpc_core::SubchannelPoolInterface* subchannel_pool_;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool_;
 
   grpc_connector* connector;
 
@@ -449,6 +449,7 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 static void disconnect(grpc_subchannel* c) {
   gpr_mu_lock(&c->mu);
   c->subchannel_pool_->UnregisterSubchannel(c->key, c);
+  c->subchannel_pool_.reset();
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
