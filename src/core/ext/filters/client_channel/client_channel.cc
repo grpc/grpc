@@ -62,6 +62,9 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 
 using grpc_core::internal::ClientChannelMethodParams;
 using grpc_core::internal::ClientChannelMethodParamsTable;
@@ -277,6 +280,14 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   }
   grpc_client_channel_factory* client_channel_factory =
       static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
+  // Get subchannel pool.
+  arg =
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    chand->subchannel_pool = grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
+  } else {
+    chand->subchannel_pool = grpc_core::RefCountedPtr<grpc_core::GlobalSubchannelPool>(grpc_core::GlobalSubchannelPool::instance());
+  }
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {
