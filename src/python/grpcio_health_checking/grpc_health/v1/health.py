@@ -102,11 +102,11 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
     def set(self, service, status):
         """Sets the status of a service.
 
-    Args:
-        service: string, the name of the service. NOTE, '' must be set.
-        status: HealthCheckResponse.status enum value indicating the status of
-          the service
-    """
+        Args:
+          service: string, the name of the service. NOTE, '' must be set.
+          status: HealthCheckResponse.status enum value indicating the status of
+            the service
+        """
         with self._lock:
             self._server_status[service] = status
             if service in self._watchers:

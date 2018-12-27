@@ -22,10 +22,9 @@ from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
 from tests.unit import test_common
+from tests.unit.framework.common import test_constants
 
 from six.moves import queue
-
-_QUEUE_TIMEOUT_S = 5
 
 _SERVING_SERVICE = 'grpc.test.TestServiceServing'
 _UNKNOWN_SERVICE = 'grpc.test.TestServiceUnknown'
@@ -98,7 +97,7 @@ class HealthServicerTest(unittest.TestCase):
             target=_consume_responses, args=(rendezvous, response_queue))
         thread.start()
 
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
                          response.status)
 
@@ -114,19 +113,19 @@ class HealthServicerTest(unittest.TestCase):
             target=_consume_responses, args=(rendezvous, response_queue))
         thread.start()
 
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          response.status)
 
         self._servicer.set(_WATCH_SERVICE,
                            health_pb2.HealthCheckResponse.SERVING)
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
                          response.status)
 
         self._servicer.set(_WATCH_SERVICE,
                            health_pb2.HealthCheckResponse.NOT_SERVING)
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.NOT_SERVING,
                          response.status)
 
@@ -142,14 +141,14 @@ class HealthServicerTest(unittest.TestCase):
             target=_consume_responses, args=(rendezvous, response_queue))
         thread.start()
 
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          response.status)
 
         self._servicer.set('some-other-service',
                            health_pb2.HealthCheckResponse.SERVING)
-        with self.assertRaises(queue.Empty) as context:
-            response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        with self.assertRaises(queue.Empty):
+            response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
 
         rendezvous.cancel()
         thread.join()
@@ -168,8 +167,8 @@ class HealthServicerTest(unittest.TestCase):
         thread1.start()
         thread2.start()
 
-        response1 = response_queue1.get(timeout=_QUEUE_TIMEOUT_S)
-        response2 = response_queue2.get(timeout=_QUEUE_TIMEOUT_S)
+        response1 = response_queue1.get(timeout=test_constants.SHORT_TIMEOUT)
+        response2 = response_queue2.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          response1.status)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
@@ -177,8 +176,8 @@ class HealthServicerTest(unittest.TestCase):
 
         self._servicer.set(_WATCH_SERVICE,
                            health_pb2.HealthCheckResponse.SERVING)
-        response1 = response_queue1.get(timeout=_QUEUE_TIMEOUT_S)
-        response2 = response_queue2.get(timeout=_QUEUE_TIMEOUT_S)
+        response1 = response_queue1.get(timeout=test_constants.SHORT_TIMEOUT)
+        response2 = response_queue2.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
                          response1.status)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVING,
@@ -199,7 +198,7 @@ class HealthServicerTest(unittest.TestCase):
             target=_consume_responses, args=(rendezvous, response_queue))
         thread.start()
 
-        response = response_queue.get(timeout=_QUEUE_TIMEOUT_S)
+        response = response_queue.get(timeout=test_constants.SHORT_TIMEOUT)
         self.assertEqual(health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
                          response.status)
 
