@@ -150,6 +150,9 @@ class ByteBuffer final {
   /// Is this ByteBuffer valid?
   bool Valid() const { return (buffer_ != nullptr); }
 
+  /// To get the underlying byte buffer
+  grpc_byte_buffer* get_buffer() const { return buffer_; }
+
  private:
   friend class SerializationTraits<ByteBuffer, void>;
   friend class ServerInterface;
