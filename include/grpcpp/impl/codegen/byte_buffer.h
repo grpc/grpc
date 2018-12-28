@@ -112,6 +112,9 @@ class ByteBuffer final {
   /// Dump (read) the buffer contents into \a slices.
   Status Dump(std::vector<Slice>* slices) const;
 
+  /// Dump (read) the buffer contents into a Slice
+  Status Dump(Slice* slice) const;
+
   /// Remove all data.
   void Clear() {
     if (buffer_) {

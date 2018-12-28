@@ -43,6 +43,28 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   return Status::OK;
 }
 
+Status ByteBuffer::Dump(Slice* slice) const{
+  if (!buffer_) {
+    return ::grpc::Status(::grpc::StatusCode::INTERNAL, "No payload");
+  }
+  if ((buffer_->type == GRPC_BB_RAW) &&
+      (buffer_->data.raw.compression == GRPC_COMPRESS_NONE) &&
+      (buffer_->data.raw.slice_buffer.count == 1)) {
+    ::new (slice) Slice(buffer_->data.raw.slice_buffer.slices[0],
+                        Slice::STEAL_REF);
+  } else {
+    grpc_byte_buffer_reader reader;
+    if (!grpc_byte_buffer_reader_init(&reader, buffer_)) {
+      return Status(StatusCode::INTERNAL,
+                    "Couldn't initialize byte buffer reader");
+    }
+    grpc_slice tmp_slice = grpc_byte_buffer_reader_readall(&reader);
+    grpc_byte_buffer_reader_destroy(&reader);
+    ::new (slice) Slice(tmp_slice, Slice::STEAL_REF);
+  }
+  return ::grpc::Status::OK;
+}
+
 ByteBuffer::ByteBuffer(const ByteBuffer& buf) : buffer_(nullptr) {
   operator=(buf);
 }
