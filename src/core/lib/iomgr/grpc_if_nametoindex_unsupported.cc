@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifndef GRPC_POSIX_SOCKET
+#if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
 
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 
@@ -34,4 +34,5 @@ uint32_t grpc_if_nametoindex(char* name) {
   return 0;
 }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_IF_NAMETOINDEX == 0 || \
+          !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX) */
