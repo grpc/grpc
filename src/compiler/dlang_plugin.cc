@@ -50,9 +50,9 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 		
 		if (m->client_streaming() && m->server_streaming())
 		{
-			cos.WriteString("\tClientReaderWriter!(" + req + " ," + res + ") " + func + "(){\n");
-			cos.WriteString("\t\tmixin(CM3!(" + req + " , " + res + "  , " + service->name() + "Base.SERVICE));\n");
-			cos.WriteString("}\n");
+			cos.WriteString("\tClientReaderWriter!(" + res + " ," + req + ") " + func + "(){\n");
+			cos.WriteString("\t\tmixin(CM3!(" + res + " , " + req + "  , " + service->name() + "Base.SERVICE));\n");
+			cos.WriteString("\t}\n");
 		}
 		else if (m->client_streaming())
 		{
