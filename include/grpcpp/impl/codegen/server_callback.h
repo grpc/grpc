@@ -642,7 +642,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -652,7 +652,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(resp, options).ok());
       }
       Finish(std::move(s));
     }
@@ -804,7 +804,7 @@ class CallbackBidiHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -813,7 +813,7 @@ class CallbackBidiHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(resp, options).ok());
       }
       Finish(std::move(s));
     }

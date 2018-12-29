@@ -303,6 +303,18 @@ class CallOpSendMessage {
   template <class M>
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
 
+  /// Send \a message using \a options for the write. The \a options are cleared
+  /// after use. This form of SendMessage allows gRPC to reference \a message
+  /// beyond the lifetime of SendMessage.
+  template <class M>
+  Status SendMessage(const M* message,
+                     WriteOptions options) GRPC_MUST_USE_RESULT;
+
+  /// This form of SendMessage allows gRPC to reference \a message beyond the
+  /// lifetime of SendMessage.
+  template <class M>
+  Status SendMessage(const M* message) GRPC_MUST_USE_RESULT;
+
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_buf_.Valid() || hijacked_) return;
@@ -321,14 +333,14 @@ class CallOpSendMessage {
     if (!send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_);
+    interceptor_methods->SetSendMessage(&send_buf_, msg_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     // The contents of the SendMessage value that was previously set
     // has had its references stolen by core's operations
-    interceptor_methods->SetSendMessage(nullptr);
+    interceptor_methods->SetSendMessage(nullptr, nullptr);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -336,6 +348,7 @@ class CallOpSendMessage {
   }
 
  private:
+  const void* msg_ = nullptr;  // The original non-serialized message
   bool hijacked_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
@@ -360,6 +373,18 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message) {
   return SendMessage(message, WriteOptions());
+}
+
+template <class M>
+Status CallOpSendMessage::SendMessage(const M* message, WriteOptions options) {
+  msg_ = message;
+  return SendMessage(*message, options);
+}
+
+template <class M>
+Status CallOpSendMessage::SendMessage(const M* message) {
+  msg_ = message;
+  return SendMessage(*message, WriteOptions());
 }
 
 template <class R>

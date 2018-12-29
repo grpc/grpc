@@ -293,6 +293,11 @@ class LoggingInterceptor : public experimental::Interceptor {
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
               .ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
+      EXPECT_EQ(
+          static_cast<const EchoRequest*>(methods->GetOriginalSendMessage())
+              ->message()
+              .find("Hello"),
+          0);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {

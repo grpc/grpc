@@ -111,6 +111,12 @@ class InterceptorBatchMethods {
   /// A return value of nullptr indicates that this ByteBuffer is not valid.
   virtual ByteBuffer* GetSendMessage() = 0;
 
+  /// Returns a non-modifiable pointer to the original non-serialized form of
+  /// the message. Valid for PRE_SEND_MESSAGE interceptions. A return value of
+  /// nullptr indicates that this field is not valid. Also note that this is
+  /// only supported for sync and callback APIs at the present moment.
+  virtual const void* GetOriginalSendMessage() = 0;
+
   /// Returns a modifiable multimap of the initial metadata to be sent. Valid
   /// for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates
   /// that this field is not valid.
