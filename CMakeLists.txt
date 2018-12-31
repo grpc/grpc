@@ -94,6 +94,12 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+include(CheckSymbolExists)
+check_symbol_exists(pthread_setname_np pthread.h HAVE_PTHREAD_SETNAME_NP)
+if (HAVE_PTHREAD_SETNAME_NP)
+  add_definitions(-DHAVE_PTHREAD_SETNAME_NP)
+endif ()
+
 add_definitions(-DPB_FIELD_16BIT)
 
 if (MSVC)

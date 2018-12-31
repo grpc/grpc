@@ -173,7 +173,9 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#if defined(HAVE_PTHREAD_SETNAME_NP)
 #define GPR_LINUX_PTHREAD_NAME 1
+#endif /* HAVE_PTHREAD_SETNAME_NP */
 #include <linux/version.h>
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
