@@ -509,11 +509,11 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                                          GRPC_ARG_SERVER_ADDRESS_LIST,
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
-  grpc_subchannel_args sc_args;
   for (size_t i = 0; i < addresses.size(); i++) {
     // If there were any balancer addresses, we would have chosen grpclb
     // policy, which does not use a SubchannelList.
     GPR_ASSERT(!addresses[i].IsBalancer());
+    grpc_subchannel_args sc_args;
     memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     sc_args.subchannel_pool = policy->subchannel_pool();
     InlinedVector<grpc_arg, 4> args_to_add;
