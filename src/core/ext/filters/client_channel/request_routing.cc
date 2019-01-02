@@ -525,7 +525,7 @@ RequestRouter::RequestRouter(
   if (grpc_channel_arg_get_bool(arg, false)) {
     subchannel_pool_ = grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
   } else {
-    subchannel_pool_ = grpc_core::RefCountedPtr<grpc_core::GlobalSubchannelPool>(grpc_core::GlobalSubchannelPool::instance());
+    subchannel_pool_ = grpc_core::GlobalSubchannelPool::instance();
   }
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,

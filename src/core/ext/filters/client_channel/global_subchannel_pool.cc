@@ -34,21 +34,26 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
 }
 
 void GlobalSubchannelPool::Init() {
-  instance_ = grpc_core::MakeRefCounted<grpc_core::GlobalSubchannelPool>();
+  instance_ = New<RefCountedPtr<GlobalSubchannelPool>>(MakeRefCounted<GlobalSubchannelPool>());
 }
 
 void GlobalSubchannelPool::Shutdown() {
   // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
   // To solve that, we should force polling to flush any pending callbacks, then
   // shutdown safely.
+  // To ensure Init() was called before.
   GPR_ASSERT(instance_ != nullptr);
-  instance_.reset();
+  // To ensure Shutdown() was not called before.
+  GPR_ASSERT(*instance_ != nullptr);
+  instance_->reset();
+  Delete(instance_);
 }
 
 // TODO(juanlishen): Should this be thread-safe?
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   GPR_ASSERT(instance_ != nullptr);
-  return instance_;
+  GPR_ASSERT(*instance_ != nullptr);
+  return *instance_;
 }
 
 grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
@@ -139,6 +144,6 @@ grpc_subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   return c;
 }
 
-RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance_ = nullptr;
+RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
 }  // namespace grpc_core

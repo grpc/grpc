@@ -54,7 +54,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
  private:
   // The singleton instance.
-  static RefCountedPtr<GlobalSubchannelPool> instance_;
+  static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
