@@ -841,6 +841,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   [self sendHeaders];
   [self invokeCall];
+
+  // Connectivity monitor is not required for CFStream
+  char *enableCFStream = getenv(kCFStreamVarName);
+  if (enableCFStream == nil || enableCFStream[0] != '1') {
+    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+  }
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
