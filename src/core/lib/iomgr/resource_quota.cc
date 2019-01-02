@@ -665,6 +665,7 @@ void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota) {
     GPR_ASSERT(resource_quota->num_threads_allocated == 0);
     GRPC_COMBINER_UNREF(resource_quota->combiner, "resource_quota");
     gpr_free(resource_quota->name);
+    gpr_mu_destroy(&resource_quota->thread_count_mu);
     gpr_free(resource_quota);
   }
 }
