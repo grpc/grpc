@@ -38,7 +38,7 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   id copiedValue = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     if (_state != GRXWriterStateNotStarted) {
       return;
     }
@@ -63,7 +63,7 @@
 // the original \a map function returns a new Writer of another type. So we
 // need to override this function here.
 - (GRXWriter *)map:(id (^)(id))map {
-  @synchronized (self) {
+  @synchronized(self) {
     // Since _value is available when creating the object, we can simply
     // apply the map and store the output.
     _value = map(_value);

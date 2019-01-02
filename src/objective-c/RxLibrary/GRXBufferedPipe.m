@@ -52,7 +52,7 @@
     value = [value copy];
   }
   dispatch_async(_writeQueue, ^(void) {
-    @synchronized (self) {
+    @synchronized(self) {
       if (self->_state == GRXWriterStateFinished) {
         return;
       }
@@ -106,7 +106,7 @@
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  @synchronized (self) {
+  @synchronized(self) {
     self.writeable = writeable;
     _state = GRXWriterStateStarted;
   }

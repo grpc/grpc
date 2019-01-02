@@ -63,7 +63,7 @@
 
 - (void)enqueueSuccessfulCompletion {
   dispatch_async(_writeableQueue, ^{
-    @synchronized (self) {
+    @synchronized(self) {
       if (self->_alreadyFinished) {
         return;
       }
@@ -76,7 +76,7 @@
 
 - (void)cancelWithError:(NSError *)error {
   NSAssert(error != nil, @"For a successful completion, use enqueueSuccessfulCompletion.");
-  @synchronized (self) {
+  @synchronized(self) {
     if (self->_alreadyFinished) {
       return;
     }
@@ -91,7 +91,7 @@
 
 - (void)cancelSilently {
   dispatch_async(_writeableQueue, ^{
-    @synchronized (self) {
+    @synchronized(self) {
       if (self->_alreadyFinished) {
         return;
       }

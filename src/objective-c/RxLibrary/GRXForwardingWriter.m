@@ -57,13 +57,13 @@
 #pragma mark GRXWriteable implementation
 
 - (void)writeValue:(id)value {
-  @synchronized (self) {
+  @synchronized(self) {
     [_writeable writeValue:value];
   }
 }
 
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
-  @synchronized (self) {
+  @synchronized(self) {
     _writer = nil;
     [self finishOutputWithError:errorOrNil];
   }
@@ -78,14 +78,14 @@
 - (void)setState:(GRXWriterState)state {
   GRXWriter *copiedWriter = nil;
   if (state == GRXWriterStateFinished) {
-    @synchronized (self) {
+    @synchronized(self) {
       _writeable = nil;
       copiedWriter = _writer;
       _writer = nil;
     }
     copiedWriter.state = GRXWriterStateFinished;
   } else {
-    @synchronized (self) {
+    @synchronized(self) {
       copiedWriter = _writer;
     }
     copiedWriter.state = state;
@@ -94,7 +94,7 @@
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
   GRXWriter *copiedWriter = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     _writeable = writeable;
     copiedWriter = _writer;
   }
@@ -103,7 +103,7 @@
 
 - (void)finishWithError:(NSError *)errorOrNil {
   GRXWriter *copiedWriter = nil;
-  @synchronized (self) {
+  @synchronized(self) {
     [self finishOutputWithError:errorOrNil];
     copiedWriter = _writer;
   }
