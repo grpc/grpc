@@ -307,13 +307,13 @@ class CallOpSendMessage {
   /// after use. This form of SendMessage allows gRPC to reference \a message
   /// beyond the lifetime of SendMessage.
   template <class M>
-  Status SendMessage(const M* message,
-                     WriteOptions options) GRPC_MUST_USE_RESULT;
+  Status SendMessagePtr(const M* message,
+                        WriteOptions options) GRPC_MUST_USE_RESULT;
 
   /// This form of SendMessage allows gRPC to reference \a message beyond the
   /// lifetime of SendMessage.
   template <class M>
-  Status SendMessage(const M* message) GRPC_MUST_USE_RESULT;
+  Status SendMessagePtr(const M* message) GRPC_MUST_USE_RESULT;
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
@@ -376,13 +376,14 @@ Status CallOpSendMessage::SendMessage(const M& message) {
 }
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M* message, WriteOptions options) {
+Status CallOpSendMessage::SendMessagePtr(const M* message,
+                                         WriteOptions options) {
   msg_ = message;
   return SendMessage(*message, options);
 }
 
 template <class M>
-Status CallOpSendMessage::SendMessage(const M* message) {
+Status CallOpSendMessage::SendMessagePtr(const M* message) {
   msg_ = message;
   return SendMessage(*message, WriteOptions());
 }
