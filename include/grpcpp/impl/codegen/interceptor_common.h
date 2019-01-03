@@ -79,9 +79,24 @@ class InterceptorBatchMethodsImpl
     hooks_[static_cast<size_t>(type)] = true;
   }
 
-  ByteBuffer* GetSerializedSendMessage() override { return send_message_; }
+  ByteBuffer* GetSerializedSendMessage() override {
+    GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
+    if (*orig_send_message_ != nullptr) {
+      GPR_CODEGEN_ASSERT(serializer_(*orig_send_message_).ok());
+      *orig_send_message_ = nullptr;
+    }
+    return send_message_;
+  }
 
-  const void* GetSendMessage() override { return orig_send_message_; }
+  const void* GetSendMessage() override {
+    GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
+    return *orig_send_message_;
+  }
+
+  void ModifySendMessage(const void* message) override {
+    GPR_CODEGEN_ASSERT(orig_send_message_ != nullptr);
+    *orig_send_message_ = message;
+  }
 
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {
     return send_initial_metadata_;
@@ -117,9 +132,11 @@ class InterceptorBatchMethodsImpl
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf, const void* msg) {
+  void SetSendMessage(ByteBuffer* buf, const void** msg,
+                      std::function<Status(const void*)> serializer) {
     send_message_ = buf;
     orig_send_message_ = msg;
+    serializer_ = serializer;
   }
 
   void SetSendInitialMetadata(
@@ -339,7 +356,8 @@ class InterceptorBatchMethodsImpl
   std::function<void(void)> callback_;
 
   ByteBuffer* send_message_ = nullptr;
-  const void* orig_send_message_ = nullptr;
+  const void** orig_send_message_ = nullptr;
+  std::function<Status(const void*)> serializer_;
 
   std::multimap<grpc::string, grpc::string>* send_initial_metadata_;
 
@@ -398,6 +416,13 @@ class CancelInterceptorBatchMethods
         "It is illegal to call GetOriginalSendMessage on a method which "
         "has a Cancel notification");
     return nullptr;
+  }
+
+  void ModifySendMessage(const void* message) override {
+    GPR_CODEGEN_ASSERT(
+        false &&
+        "It is illegal to call ModifySendMessage on a method which "
+        "has a Cancel notification");
   }
 
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {

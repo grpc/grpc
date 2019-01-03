@@ -117,6 +117,8 @@ class InterceptorBatchMethods {
   /// only supported for sync and callback APIs at the present moment.
   virtual const void* GetSendMessage() = 0;
 
+  virtual void ModifySendMessage(const void* message) = 0;
+
   /// Returns a modifiable multimap of the initial metadata to be sent. Valid
   /// for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates
   /// that this field is not valid.

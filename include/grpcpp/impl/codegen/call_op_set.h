@@ -317,7 +317,10 @@ class CallOpSendMessage {
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (!send_buf_.Valid() || hijacked_) return;
+    if ((msg_ == nullptr && !send_buf_.Valid()) || hijacked_) return;
+    if (msg_ != nullptr) {
+      GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
+    }
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
@@ -330,17 +333,17 @@ class CallOpSendMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!send_buf_.Valid()) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_, msg_);
+    interceptor_methods->SetSendMessage(&send_buf_, &msg_, serializer_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     // The contents of the SendMessage value that was previously set
     // has had its references stolen by core's operations
-    interceptor_methods->SetSendMessage(nullptr, nullptr);
+    interceptor_methods->SetSendMessage(nullptr, nullptr, nullptr);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -352,6 +355,7 @@ class CallOpSendMessage {
   bool hijacked_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
+  std::function<Status(const void*)> serializer_;
 };
 
 template <class M>
@@ -362,12 +366,21 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   // The void in the template parameter below should not be needed
   // (since it should be implicit) but is needed due to an observed
   // difference in behavior between clang and gcc for certain internal users
-  Status result = SerializationTraits<M, void>::Serialize(
-      message, send_buf_.bbuf_ptr(), &own_buf);
-  if (!own_buf) {
-    send_buf_.Duplicate();
+  serializer_ = [this](const void* message) {
+    bool own_buf;
+    send_buf_.Clear();
+    Status result = SerializationTraits<M, void>::Serialize(
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    if (!own_buf) {
+      send_buf_.Duplicate();
+    }
+    return result;
+  };
+  // Serialize immediately only if we do not have access to the message pointer
+  if (msg_ == nullptr) {
+    return serializer_(&message);
   }
-  return result;
+  return Status::OK;
 }
 
 template <class M>
