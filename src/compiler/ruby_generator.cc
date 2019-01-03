@@ -20,6 +20,7 @@
 #include <map>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/ruby_generator.h"
@@ -36,122 +37,142 @@ using grpc::protobuf::io::StringOutputStream;
 using std::map;
 using std::vector;
 using std::unordered_set;
+using std::unordered_multimap;
+using std::unordered_map;
 
 namespace grpc_ruby_generator {
 namespace {
-// Looks recursively (BFS) through all FileDescriptor dependencies for the
-// input/output message package. Should only be run if ruby_package option is
-// set
-void GetInputOutputProtoPackage(const FileDescriptor *file,
-                                const grpc::string &package,
-                                const Descriptor *input_desc,
-                                const Descriptor *output_desc,
-                                grpc::string &input_package,
-                                grpc::string &output_package) {
-  const grpc::string& input_name = input_desc->name();
-  const grpc::string& output_name = output_desc->name();
-  const grpc::string& input_full_name = input_desc->full_name();
-  const grpc::string& output_full_name = output_desc->full_name();
 
-  const Descriptor *found_input_desc = nullptr, *found_output_desc = nullptr;
-
-  vector<const FileDescriptor*> pending;
-  unordered_set<const FileDescriptor*> seen;
-  pending.push_back(file);
-
-  while (!pending.empty()) {
-    // pop a FileDescriptor out of the pending queue
-    const FileDescriptor* working = pending[0];
-    pending.erase(pending.begin());
-
-    // iterate through all the dependency to see if input_name is defined
-    int dep_cnt = working->dependency_count();
-    for (int i = 0; i < dep_cnt; ++i) {
-      const FileDescriptor* dep = file->dependency(i);
-      // if dep is not yet seen, add to pending queue
-      if (seen.find(dep) == seen.end()) {
-        pending.push_back(dep);
-      }
-
-      // if a dependency defines its messages in the same ruby namespace
-      if (dep->options().has_ruby_package() &&
-          dep->options().ruby_package() == package) {
-        // look if input/output is defined in this file
-        // FindMessageTypeByName returns Descriptor* if found, else Null
-        const Descriptor *find_input_message_desc =
-                dep->FindMessageTypeByName(input_name);
-        const Descriptor *find_output_message_desc =
-                dep->FindMessageTypeByName(output_name);
-
-        // check if input is defined in this file
-        if (find_input_message_desc) {
-          // found redefinition in the same ruby namespace
-          if (found_input_desc && find_input_message_desc->name() == input_name) {
-            std::cerr << "Message redefinition detected: \n\t" << input_name
-                      << " redefinied in " << find_input_message_desc->file()->name()
-                      << "\n\talso defined in "
-                      << found_input_desc->file()->name() << std::endl;
-            exit(1);
-          }
-          else if (find_input_message_desc->full_name() == input_full_name) {
-            input_package = dep->package();
-            found_input_desc = find_input_message_desc;
-          }
-        }
-
-        // check if output is defined in this file
-        if (find_output_message_desc) {
-          // found redefinition in the same ruby namespace
-          if (found_output_desc && find_output_message_desc->name() == output_name) {
-            std::cerr << "Message redefinition detected: \n\t" << output_name
-                      << " redefinied in " << find_output_message_desc->file()->name()
-                      << "\n\talso defined in "
-                      << found_output_desc->file()->name() << std::endl;
-            exit(1);
-          }
-          else if (find_output_message_desc->full_name() == output_full_name) {
-            output_package = dep->package();
-            found_output_desc = find_output_message_desc;
-          }
-        }
+void CheckMessageRedef(unordered_set<grpc::string> &keySet,
+                       unordered_multimap<grpc::string, const Descriptor*> &module_map) {
+  bool redef = false;
+  for (const grpc::string &key:keySet) {
+    unordered_map<grpc::string, const Descriptor*> uniqueMap;
+    auto rangePair = module_map.equal_range(key);
+    for (auto it = rangePair.first; it!=rangePair.second; ++it) {
+      const Descriptor* msg_desc = it->second;
+      grpc::string msg_name = msg_desc->name();
+      auto res = uniqueMap.insert({msg_name, msg_desc});
+      // if failed insert, then there is a collision, print error
+      if (!res.second) {
+        std::cerr << "In Ruby module " << key << ": Message redefinition detected"
+                  << "\n\tMessage " << msg_name << " defined in "
+                  << msg_desc->file()->name() << "\n\tAlso defined in "
+                  << uniqueMap[msg_name]->file()->name() << std::endl;
+        redef = true;
       }
     }
   }
+  if (redef) {
+    std::cerr << "Redefinitions detected, aborting\n";
+    exit(1);
+  }
+}
+
+void GetCurrentContext(const FileDescriptor *file,
+                       unordered_multimap<grpc::string, const Descriptor*> &module_map,
+                       unordered_map<grpc::string, grpc::string> &package_map) {
+  unordered_set<grpc::string> keySet;
+  unordered_set<const FileDescriptor*> seen;
+  vector <const FileDescriptor*> pending;
+
+  pending.push_back(file);
+
+  // bfs through dependencies
+  while (!pending.empty()) {
+    // pop from queue
+    const FileDescriptor *working = pending.front();
+    pending.erase(pending.begin());
+
+    // mark working as seen
+    seen.insert(working);
+
+    // push all unseen neighbors onto pending
+    int dep_cnt = working->dependency_count();
+    for (int i = 0; i < dep_cnt; ++i) {
+      const FileDescriptor *dep = working->dependency(i);
+      if (seen.find(dep) == seen.end()) {
+        pending.push_back(dep);
+      }
+    }
+
+    // if ruby_package is defined by the user, create a mapping between the
+    // proto package and the ruby_package
+    grpc::string ruby_module;
+    if (working->options().has_ruby_package()) {
+      ruby_module = working->options().ruby_package();
+      package_map.insert({working->package(), ruby_module});
+    }
+    else {
+      ruby_module = working->package();
+      ruby_module = Modularize(ruby_module);
+    }
+
+    // create mapping from namespace to Message types
+    std::pair<grpc::string, const Descriptor*> module_message;
+    module_message.first = ruby_module;
+    keySet.insert(ruby_module);
+    for (int j = 0; j < working->message_type_count(); ++j) {
+      module_message.second = working->message_type(j);
+      module_map.insert(module_message);
+    }
+  }
+
+  // print out MODULE_MAP
+  // for debugging
+  for (auto& x:module_map) {
+    std::cerr << x.first << ": " << x.second->full_name() << std::endl;
+  }
+
+  for (auto& x:package_map) {
+    std::cerr << x.first << ": " << x.second << std::endl;
+  }
+
+  CheckMessageRedef(keySet, module_map);
+}
+
+grpc::string ReplaceLongestCommonPrefix(const grpc::string &method_name,
+                                        unordered_map<grpc::string, grpc::string> &package_map) {
+  grpc::string res(method_name);
+  grpc::string longestCommonPrefix;
+  for (const auto& pair:package_map) {
+    grpc::string protoPackage = pair.first;
+    if (protoPackage.length() < method_name.length() &&
+        method_name.substr(0, protoPackage.length()) == protoPackage &&
+        protoPackage.length() > longestCommonPrefix.length()) {
+      longestCommonPrefix = protoPackage;
+    }
+  }
+  if (longestCommonPrefix.length() > 0) {
+    grpc::string to = package_map.at(longestCommonPrefix);
+    ReplacePrefix(&res, longestCommonPrefix, to);
+  }
+  return res;
 }
 
 // Prints out the method using the ruby gRPC DSL.
 void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
                  Printer* out) {
-  const FileDescriptor *file = method->file();
-  grpc::string input_package = package, output_package = package;
+  auto module_map = new unordered_multimap <grpc::string, const Descriptor*>;
+  auto package_map = new unordered_map <grpc::string, grpc::string>;
 
-  // only bfs if we really need to
-  if (file->options().has_ruby_package()) {
-    const Descriptor *input_desc = method->input_type();
-    const Descriptor *output_desc = method->output_type();
+  GetCurrentContext(method->file(), *module_map, *package_map);
 
-    GetInputOutputProtoPackage(file, package,
-                               input_desc, output_desc,
-                               input_package, output_package);
-  }
+  grpc::string canonical_input_method =
+          ReplaceLongestCommonPrefix(method->input_type()->full_name(),
+                                     *package_map);
+  grpc::string canonical_output_method =
+          ReplaceLongestCommonPrefix(method->output_type()->full_name(),
+                                     *package_map);
 
-  grpc::string input_type =
-      RubyTypeOf(method->input_type()->full_name(), input_package);
+  grpc::string input_type = RubyTypeOf(canonical_input_method, package);
+
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  // if the package changed, append the correct namespace
-  if (input_package != package) {
-    input_type = RubyTypeOf(package, "") + "::" + input_type;
-  }
-  grpc::string output_type =
-      RubyTypeOf(method->output_type()->full_name(), output_package);
+  grpc::string output_type = RubyTypeOf(canonical_output_method, package);
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
-  }
-  // if the package changed, append the correct namespace
-  if (output_package != package) {
-    output_type = RubyTypeOf(package, "") + "::" + output_type;
   }
   std::map<grpc::string, grpc::string> method_vars = ListToDict({
       "mth.name",
@@ -164,6 +185,9 @@ void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
   out->Print(GetRubyComments(method, true).c_str());
   out->Print(method_vars, "rpc :$mth.name$, $input.type$, $output.type$\n");
   out->Print(GetRubyComments(method, false).c_str());
+
+  free(module_map);
+  free(package_map);
 }
 
 // Prints out the service using the ruby gRPC DSL.
@@ -253,7 +277,6 @@ grpc::string GetServices(const FileDescriptor* file) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
-
     StringOutputStream output_stream(&output);
     Printer out(&output_stream, '$');
 
