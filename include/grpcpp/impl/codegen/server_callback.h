@@ -320,7 +320,7 @@ class CallbackUnaryHandler : public MethodHandler {
       // The response is dropped if the status is not OK.
       if (s.ok()) {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessage(resp_));
+                                     finish_ops_.SendMessagePtr(&resp_));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -449,7 +449,7 @@ class CallbackClientStreamingHandler : public MethodHandler {
       // The response is dropped if the status is not OK.
       if (s.ok()) {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessage(resp_));
+                                     finish_ops_.SendMessagePtr(&resp_));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -642,7 +642,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -652,7 +652,7 @@ class CallbackServerStreamingHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       }
       Finish(std::move(s));
     }
@@ -804,7 +804,7 @@ class CallbackBidiHandler : public MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*resp, options).ok());
+      GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -813,7 +813,7 @@ class CallbackBidiHandler : public MethodHandler {
       // Don't send any message if the status is bad
       if (s.ok()) {
         // TODO(vjpai): don't assert
-        GPR_CODEGEN_ASSERT(finish_ops_.SendMessage(*resp, options).ok());
+        GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       }
       Finish(std::move(s));
     }
