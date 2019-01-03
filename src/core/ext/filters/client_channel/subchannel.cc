@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_key.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -94,7 +95,7 @@ class ConnectedSubchannelStateWatcher;
 
 struct grpc_subchannel {
   /** The subchannel pool this subchannel is in */
-  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool_;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
 
   grpc_connector* connector;
 
@@ -449,8 +450,8 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 
 static void disconnect(grpc_subchannel* c) {
   gpr_mu_lock(&c->mu);
-  c->subchannel_pool_->UnregisterSubchannel(c->key, c);
-  c->subchannel_pool_.reset();
+  c->subchannel_pool->UnregisterSubchannel(c->key, c);
+  c->subchannel_pool.reset();
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -647,8 +648,8 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
-  c->subchannel_pool_ = args->subchannel_pool;
-  return c->subchannel_pool_->RegisterSubchannel(key, c);
+  c->subchannel_pool = args->subchannel_pool;
+  return c->subchannel_pool->RegisterSubchannel(key, c);
 }
 
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
@@ -1012,11 +1013,6 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c) {
   auto copy = c->connected_subchannel;
   gpr_mu_unlock(&c->mu);
   return copy;
-}
-
-const grpc_core::SubchannelKey* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel) {
-  return subchannel->key;
 }
 
 void* grpc_connected_subchannel_call_get_parent_data(

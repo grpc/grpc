@@ -72,9 +72,6 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 namespace grpc_core {
 
-class SubchannelKey;
-// class SubchannelPoolInterface;
-
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   struct CallArgs {
@@ -165,10 +162,6 @@ void grpc_subchannel_notify_on_state_change(
  * */
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
-
-/** return the subchannel index key for \a subchannel */
-const grpc_core::SubchannelKey* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel);
 
 // Resets the connection backoff of the subchannel.
 // TODO(roth): Move connection backoff out of subchannels and up into LB
