@@ -27,12 +27,24 @@ py_proto_library(
     ],
 )
 
+filegroup(
+    name = "channelz_page_templates",
+    srcs = glob(["templates/*.html"]),
+)
+
 py_library(
     name = "grpc_channelz",
-    srcs = ["channelz.py",],
+    srcs = [
+        "channelz.py",
+        "_channelz_page.py",
+        "_renderer.py",
+    ],
     deps = [
         ":py_channelz_proto",
         "//src/python/grpcio/grpc:grpcio",
+    ],
+    data = [
+        "//src/python/grpcio_channelz/grpc_channelz/v1/templates",
     ],
     imports=["../../",],
 )

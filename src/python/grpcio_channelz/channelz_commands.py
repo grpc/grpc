@@ -64,4 +64,5 @@ class BuildPackageProtos(setuptools.Command):
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
         from grpc_tools import command
-        command.build_package_protos(self.distribution.package_dir[''])
+        command.build_package_protos(
+            self.distribution.package_dir['grpcio-channelz'])

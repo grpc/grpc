@@ -13,6 +13,7 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+import threading
 import grpc
 from grpc._cython import cygrpc
 
@@ -20,6 +21,8 @@ import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
 from google.protobuf import json_format
+
+from . import _channelz_page
 
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
@@ -140,3 +143,21 @@ def add_channelz_servicer(server):
     """
     _channelz_pb2_grpc.add_ChannelzServicer_to_server(ChannelzServicer(),
                                                       server)
+
+
+def serve_channelz_page(host=None, port=None):
+    if host is None or port is None:
+        raise ValueError('"host" and "port" can\'t be None')
+    http_server = _channelz_page._create_http_server((host, port))
+
+    # SSL/TLS is required for gdebug HTTP server.
+    # But not for Channelz servicer.
+    # import ssl
+    # http_server.socket = ssl.wrap_socket(
+    #   http_server.socket, certfile='./server.pem', server_side=True)
+    # )
+
+    serving_thread = threading.Thread(target=http_server.serve_forever)
+    serving_thread.daemon = True
+    serving_thread.start()
+    return http_server

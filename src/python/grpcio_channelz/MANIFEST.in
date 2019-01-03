@@ -2,3 +2,4 @@ include grpc_version.py
 recursive-include grpc_channelz *.py
 global-exclude *.pyc
 include LICENSE
+include grpc_channelz/v1/templates/*.html

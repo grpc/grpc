@@ -1,0 +1,27 @@
+<p>showing {num_channel} items (id: {min_id} - {max_id})</p>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>target</th>
+        <th>state</th>
+        <th>calls started</th>
+        <th>calls succeeded</th>
+        <th>calls failed</th>
+        <th>last call started</th>
+    </tr>
+    {topchannels:loop:
+    <tr>
+        <td>{{item.ref.channel_id}}</td>
+        <td>
+            <a href='channel?channel_id={{item.ref.channel_id}}'>
+                {{item.data.target}}
+            </a>
+        </td>
+        <td>{{item.data.state:state}}</td>
+        <td>{{item.data.calls_started}}</td>
+        <td>{{item.data.calls_succeeded}}</td>
+        <td>{{item.data.calls_failed}}</td>
+        <td>{{item.data.last_call_started_timestamp:timestamp}}</td>
+    </tr>
+    }
+</table>

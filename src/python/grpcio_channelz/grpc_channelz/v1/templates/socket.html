@@ -1,0 +1,83 @@
+<table border="1">
+    <tr>
+        <th>Socket ID</th>
+        <td>{socket.ref.socket_id}</td>
+    </tr>
+    <tr>
+        <th>streams started</th>
+        <td>{socket.data.streams_started}</td>
+    </tr>
+    <tr>
+        <th>streams succeeded</th>
+        <td>{socket.data.streams_succeeded}</td>
+    </tr>
+    <tr>
+        <th>streams failed</th>
+        <td>{socket.data.streams_failed}</td>
+    </tr>
+    <tr>
+        <th>messages sent</th>
+        <td>{socket.data.messages_sent}</td>
+    </tr>
+    <tr>
+        <th>messages received</th>
+        <td>{socket.data.messages_received}</td>
+    </tr>
+    <tr>
+        <th>keepalives sent</th>
+        <td>{socket.data.keep_alives_sent}</td>
+    </tr>
+    <tr>
+        <th>last local stream created</th>
+        <td>{socket.data.last_local_stream_created_timestamp:timestamp}</td>
+    </tr>
+    <tr>
+        <th>last remote stream created</th>
+        <td>{socket.data.last_remote_stream_created_timestamp:timestamp}</td>
+    </tr>
+    <tr>
+        <th>last message sent</th>
+        <td>{socket.data.last_message_sent_timestamp:timestamp}</td>
+    </tr>
+    <tr>
+        <th>last message received</th>
+        <td>{socket.data.last_message_received_timestamp:timestamp}</td>
+    </tr>
+    <tr>
+        <th>local flowcontrol window</th>
+        <td>{socket.data.local_flow_control_window}</td>
+    </tr>
+    <tr>
+        <th>remote flowcontrol window</th>
+        <td>{socket.data.remote_flow_control_window}</td>
+    </tr>
+    <tr>
+        <th>local address</th>
+        <td>{socket.local.tcpip_address.ip_address}:{socket.local.tcpip_address.port}</td>
+    </tr>
+    <tr>
+        <th>remote address</th>
+        <td>{socket.remote.tcpip_address.ip_address}:{socket.remote.tcpip_address.port}</td>
+    </tr>
+    <tr>
+        <th>remote name</th>
+        <td>{socket.remote.other_address.name}</td>
+    </tr>
+    <tr>
+        <th>security</th>
+        <td>{socket.security}</td>
+    </tr>
+    <tr>
+        <th>socket options</th>
+        <td>
+            <table>
+            {socket.data.option:loop:
+                <tr>
+                    <th>{{item.name}}</th>
+                    <td>{{item.value}}</td>
+                </tr>
+            }
+            </table>
+        </td>
+    </tr>
+</table>

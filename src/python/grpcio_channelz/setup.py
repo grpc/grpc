@@ -54,7 +54,12 @@ CLASSIFIERS = [
 ]
 
 PACKAGE_DIRECTORIES = {
-    '': '.',
+    'grpcio-channelz': '.',
+}
+
+_TEMPLATE_DIRECTORY = os.path.join('grpc_channelz', 'v1', 'templates')
+PACKAGE_DATA = {
+    'grpcio-channelz': [os.path.join(_TEMPLATE_DIRECTORY, '*.html')]
 }
 
 INSTALL_REQUIRES = (
@@ -90,7 +95,9 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
+    package_data=PACKAGE_DATA,
     packages=setuptools.find_packages('.'),
+    include_package_data=True,
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS)

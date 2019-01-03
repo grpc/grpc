@@ -1,0 +1,67 @@
+<table border="1">
+    <tr>
+        <th>Channel ID</th>
+        <td>{channel.ref.channel_id} - [{channel.data.target}]</td>
+    </tr>
+    <tr>
+        <th>state</th>
+        <td>{channel.data.state:state}</td>
+    </tr>
+    <tr>
+        <th>target</th>
+        <td>{channel.data.target}</td>
+    </tr>
+    <tr>
+        <th>calls started</th>
+        <td>{channel.data.calls_started}</td>
+    </tr>
+    <tr>
+        <th>calls succeeded</th>
+        <td>{channel.data.calls_succeeded}</td>
+    </tr>
+    <tr>
+        <th>calls failed</th>
+        <td>{channel.data.calls_failed}</td>
+    </tr>
+    <tr>
+        <th>last call started</th>
+        <td>{channel.data.last_call_started_timestamp:timestamp}</td>
+    </tr>
+    <tr>
+        <th>nested channels</th>
+        <td>
+            {nested_channels:loop:
+            <a href='channel?channel_id={{item.ref.channel_id}}'>
+                {{item.ref.channel_id}} - [{{item.data.target}}]
+            </a>}
+        </td>
+    </tr>
+</table>
+
+<h2>SubChannels</h2>
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>target</th>
+        <th>state</th>
+        <th>calls started</th>
+        <th>calls succeeded</th>
+        <th>calls failed</th>
+        <th>last call started</th>
+    </tr>
+    {subchannels:loop:
+    <tr>
+        <td>{{item.ref.subchannel_id}}</td>
+        <td>
+            <a href='subchannel?subchannel_id={{item.ref.subchannel_id}}'>
+                {{item.data.target}}
+            </a>
+        </td>
+        <td>{{item.data.state:state}}</td>
+        <td>{{item.data.calls_started}}</td>
+        <td>{{item.data.calls_succeeded}}</td>
+        <td>{{item.data.calls_failed}}</td>
+        <td>{{item.data.last_call_started_timestamp:timestamp}}</td>
+    </tr>
+    }
+</table>

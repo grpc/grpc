@@ -1,0 +1,31 @@
+<p>showing {num_serversockets} items (id: {min_id} - {max_id})</p>
+<table border="1">
+    <tr>
+        <th>ServerSocket</th>
+        <th>streams started</th>
+        <th>streams succeeded</th>
+        <th>streams failed</th>
+        <th>messages sent</th>
+        <th>messages received </th>
+        <th>keepalives sent</th>
+        <th>last message sent</th>
+        <th>last message received</th>
+    </tr>
+    {serversockets:loop:
+    <tr>
+        <td>
+            <a href='socket?socket_id={{item.ref.socket_id}}'>
+                {{item.ref.socket_id}}[{{item.local:address}} -> {{item.remote:address}}]
+            </a>    
+        </td>
+        <td>{{item.data.streams_started}}</td>
+        <td>{{item.data.streams_succeeded}}</td>
+        <td>{{item.data.streams_failed}}</td>
+        <td>{{item.data.messages_sent}}</td>
+        <td>{{item.data.messages_received}}</td>
+        <td>{{item.data.keep_alives_sent}}</td>
+        <td>{{item.data.last_message_sent_timestamp:timestamp}}</td>
+        <td>{{item.data.last_message_received_timestamp:timestamp}}</td>
+    </tr>
+    }
+</table>
