@@ -65,3 +65,20 @@
     </tr>
     }
 </table>
+
+<h2>Trace</h2>
+<p>Tracer created at {channel.data.trace.creation_timestamp:timestamp}. Showing {channel.data.trace.num_events_logged} items.</p>
+<table border="1">
+    <tr>
+        <th>Timestamp</th>
+        <th>Severity</th>
+        <th>Trace</th>
+    </tr>
+    {channel.data.trace.events:loop:
+    <tr>
+        <td>{{item.timestamp:timestamp}}</td>
+        <td>{{item.severity:severity}}</td>
+        <td>{{item.description}}</td>
+    </tr>
+    }
+</table>

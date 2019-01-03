@@ -33,6 +33,8 @@ class _Renderer(string.Formatter):
         elif format_spec == 'state':
             return _channelz_pb2.ChannelConnectivityState.State.Name(
                 value.state)
+        elif format_spec == 'severity':
+            return _channelz_pb2.ChannelTraceEvent.Severity.Name(value)
         elif format_spec == 'timestamp':
             json_str = value.ToJsonString()
             return 'N/A' if json_str == _EMPTY_TIME_STR else json_str
