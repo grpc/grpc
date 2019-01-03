@@ -2246,6 +2246,21 @@ targets:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
+- name: close_fd_test
+  build: test
+  language: c
+  src:
+  - test/core/bad_connection/close_fd_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  exclude_configs:
+  - tsan
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: cmdline_test
   build: test
   language: c
