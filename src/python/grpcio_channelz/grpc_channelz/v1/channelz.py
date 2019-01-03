@@ -146,6 +146,27 @@ def add_channelz_servicer(server):
 
 
 def serve_channelz_page(host=None, port=None):
+    """Start an HTTP server serving Channelz Pages.
+
+    The pages will be served under: http://<URL>/gdebug/channelz/
+    The gRPC server/client have to be started prior to requesting the server.
+    Otherwise, the gRPC C-Core won't be started, and it will throw SIGABORT
+    terminating the process.
+
+    To close the HTTP server cleanly, you need to call 'shutdown()' and
+    'server_close()' on the returned HTTP server instance. For more details,
+    please check the definition of Python's BaseServer:
+    https://docs.python.org/3/library/socketserver.html#socketserver.BaseServer
+
+    This is an EXPERIMENTAL API.
+
+    Args:
+      host: a str indicates the address of the HTTP server.
+      port: a int indicates the tcp port of the HTTP server.
+    
+    Returns:
+      An http.Server.HTTPServer instance that is already started serving.
+    """
     if host is None or port is None:
         raise ValueError('"host" and "port" can\'t be None')
     http_server = _channelz_page._create_http_server((host, port))
