@@ -16,53 +16,8 @@ FROM debian:jessie
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
   curl \
-  dnsutils \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
-
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
-
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==10.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+  gcc && apt-get clean
 
 #==================
 # Ruby dependencies
@@ -71,14 +26,13 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.5
-RUN /bin/bash -l -c "rvm install ruby-2.5"
-RUN /bin/bash -l -c "rvm use --default ruby-2.5"
+# Install Ruby 2.6
+RUN /bin/bash -l -c "rvm install ruby-2.6.0"
+RUN /bin/bash -l -c "rvm use --default ruby-2.6.0"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.6.0' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
-
 
 RUN mkdir /var/local/jenkins
 
