@@ -23,26 +23,63 @@
 
 #include <grpc/grpc_security.h>
 
-struct grpc_tls_credentials_options {
-  grpc_ssl_client_certificate_request_type cert_request_type;
-  grpc_tls_key_materials_config* key_materials_config;
-  grpc_tls_credential_reload_config* credential_reload_config;
-  grpc_tls_server_authorization_check_config* server_authorization_check_config;
-};
+#include "src/core/lib/gprpp/ref_counted.h"
 
 /** TLS key materials config. **/
-struct grpc_tls_key_materials_config {
-  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs;
-  size_t num_key_cert_pairs;
-  const char* pem_root_certs;
+struct grpc_tls_key_materials_config
+    : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
+ public:
+  ~grpc_tls_key_materials_config();
+  void set_key_materials(const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
+                         const char* root_certs, size_t num);
+  const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs() const {
+    return pem_key_cert_pairs_;
+  }
+  grpc_ssl_pem_key_cert_pair* mutable_pem_key_cert_pairs() {
+    return pem_key_cert_pairs_;
+  }
+  size_t num_key_cert_pairs() const { return num_key_cert_pairs_; }
+  const char* pem_root_certs() const { return pem_root_certs_; }
+
+  void set_num_key_cert_pairs(size_t pairs) { num_key_cert_pairs_ = pairs; }
+  void set_pem_key_cert_pairs(grpc_ssl_pem_key_cert_pair* pairs) {
+    pem_key_cert_pairs_ = pairs;
+  }
+
+ private:
+  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs_;
+  size_t num_key_cert_pairs_;
+  const char* pem_root_certs_;
 };
 
 /** TLS credential reload config. **/
-struct grpc_tls_credential_reload_config {
+struct grpc_tls_credential_reload_config
+    : public grpc_core::RefCounted<grpc_tls_credential_reload_config> {
+ public:
+  grpc_tls_credential_reload_config(
+      const void* config_user_data,
+      int (*schedule)(void* config_user_data,
+                      grpc_tls_credential_reload_arg* arg),
+      void (*cancel)(void* config_user_data,
+                     grpc_tls_credential_reload_arg* arg),
+      void (*destruct)(void* config_user_data));
+  ~grpc_tls_credential_reload_config();
+
+  int schedule(grpc_tls_credential_reload_arg* arg) const {
+    return schedule_(const_cast<void*>(config_user_data_), arg);
+  }
+  void cancel(grpc_tls_credential_reload_arg* arg) const {
+    if (cancel_ == nullptr) {
+      gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      return;
+    }
+    cancel_(const_cast<void*>(config_user_data_), arg);
+  }
+
+ private:
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
-  const void* config_user_data;
-
+  const void* config_user_data_;
   /** callback function for invoking credential reload API. The implementation
      of this method has to be non-blocking, but can be performed synchronously
      or asynchronously.
@@ -54,27 +91,45 @@ struct grpc_tls_credential_reload_config {
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule returns.
   */
-  int (*schedule)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-
+  int (*schedule_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
   /** callback function for cancelling a credential reload request scheduled via
      an asynchronous \a schedule. \a arg is used to pinpoint an exact reloading
       request to be cancelled, and the operation may not have any effect if the
      request has already been processed. */
-  void (*cancel)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
-
+  void (*cancel_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
   /** callback function for cleaning up any data associated with credential
    * reload config. */
-  void (*destruct)(void* config_user_data);
-
-  /* refcount for config. */
-  gpr_refcount refcount;
+  void (*destruct_)(void* config_user_data);
 };
 
 /** TLS server authorization check config. **/
-struct grpc_tls_server_authorization_check_config {
+struct grpc_tls_server_authorization_check_config
+    : public grpc_core::RefCounted<grpc_tls_server_authorization_check_config> {
+ public:
+  grpc_tls_server_authorization_check_config(
+      const void* config_user_data,
+      int (*schedule)(void* config_user_data,
+                      grpc_tls_server_authorization_check_arg* arg),
+      void (*cancel)(void* config_user_data,
+                     grpc_tls_server_authorization_check_arg* arg),
+      void (*destruct)(void* config_user_data));
+  ~grpc_tls_server_authorization_check_config();
+
+  int schedule(grpc_tls_server_authorization_check_arg* arg) const {
+    return schedule_(const_cast<void*>(config_user_data_), arg);
+  }
+  void cancel(grpc_tls_server_authorization_check_arg* arg) const {
+    if (cancel_ == nullptr) {
+      gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      return;
+    }
+    cancel_(const_cast<void*>(config_user_data_), arg);
+  }
+
+ private:
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
-  const void* config_user_data;
+  const void* config_user_data_;
 
   /** callback function for invoking server authorization check. The
      implementation of this method has to be non-blocking, but can be performed
@@ -88,50 +143,81 @@ struct grpc_tls_server_authorization_check_config {
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule() returns.
   */
-  int (*schedule)(void* config_user_data,
-                  grpc_tls_server_authorization_check_arg* arg);
+  int (*schedule_)(void* config_user_data,
+                   grpc_tls_server_authorization_check_arg* arg);
 
   /** callback function for canceling a server authorization check request. */
-  void (*cancel)(void* config_user_data,
-                 grpc_tls_server_authorization_check_arg* arg);
+  void (*cancel_)(void* config_user_data,
+                  grpc_tls_server_authorization_check_arg* arg);
 
   /** callback function for cleaning up any data associated with server
      authorization check config. */
-  void (*destruct)(void* config_user_data);
-
-  /* refcount for config. */
-  gpr_refcount refcount;
+  void (*destruct_)(void* config_user_data);
 };
 
-/**
- * This method performs a deep copy on grpc_tls_credentials_options instance.
- *
- * - options: a grpc_tls_credentials_options instance that needs to be copied.
- *
- * It returns a new grpc_tls_credentials_options instance on success and NULL
- * on failure.
- */
-grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
-    const grpc_tls_credentials_options* options);
+struct grpc_tls_credentials_options
+    : public grpc_core::RefCounted<grpc_tls_credentials_options> {
+ public:
+  ~grpc_tls_credentials_options() {
+    if (key_materials_config_.get() != nullptr) {
+      key_materials_config_.get()->Unref();
+    }
+    if (credential_reload_config_.get() != nullptr) {
+      credential_reload_config_.get()->Unref();
+    }
+    if (server_authorization_check_config_.get() != nullptr) {
+      server_authorization_check_config_.get()->Unref();
+    }
+  }
 
-/** Destroy a grpc_tls_key_materials_config instance. */
-void grpc_tls_key_materials_config_destroy(
-    grpc_tls_key_materials_config* config);
+  /* Getters for options members. */
+  grpc_ssl_client_certificate_request_type cert_request_type() const {
+    return cert_request_type_;
+  }
+  const grpc_tls_key_materials_config* key_materials_config() const {
+    return key_materials_config_.get();
+  }
+  const grpc_tls_credential_reload_config* credential_reload_config() const {
+    return credential_reload_config_.get();
+  }
+  const grpc_tls_server_authorization_check_config*
+  server_authorization_check_config() const {
+    return server_authorization_check_config_.get();
+  }
+  grpc_tls_key_materials_config* mutable_key_materials_config() {
+    return key_materials_config_.get();
+  }
 
-/* API's for ref/unref credential reload and server authorization check configs.
- */
-grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_ref(
-    grpc_tls_credential_reload_config* config);
+  /* Setters for options members. */
+  void set_cert_request_type(
+      const grpc_ssl_client_certificate_request_type type) {
+    cert_request_type_ = type;
+  }
+  void set_key_materials_config(grpc_tls_key_materials_config* config) {
+    if (config != nullptr) {
+      key_materials_config_ = std::move(config->Ref());
+    }
+  }
+  void set_credential_reload_config(grpc_tls_credential_reload_config* config) {
+    if (config != nullptr) {
+      credential_reload_config_ = std::move(config->Ref());
+    }
+  }
+  void set_server_authorization_check_config(
+      grpc_tls_server_authorization_check_config* config) {
+    if (config != nullptr) {
+      server_authorization_check_config_ = std::move(config->Ref());
+    }
+  }
 
-void grpc_tls_credential_reload_config_unref(
-    grpc_tls_credential_reload_config* config);
-
-grpc_tls_server_authorization_check_config*
-grpc_tls_server_authorization_check_config_ref(
-    grpc_tls_server_authorization_check_config* config);
-
-void grpc_tls_server_authorization_check_config_unref(
-    grpc_tls_server_authorization_check_config* config);
+ private:
+  grpc_ssl_client_certificate_request_type cert_request_type_;
+  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
+  grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
+      credential_reload_config_;
+  grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
+      server_authorization_check_config_;
+};
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H \
         */

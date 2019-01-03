@@ -652,10 +652,6 @@ GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,
     grpc_tls_server_authorization_check_config* config);
 
-/** Destroy a TLS credentials options. */
-GRPCAPI void grpc_tls_credentials_options_destroy(
-    grpc_tls_credentials_options* options);
-
 /** --- TLS key materials config. --- **/
 
 /** Create an empty grpc_tls_key_materials_config instance. */
@@ -665,8 +661,8 @@ GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create();
  */
 GRPCAPI void grpc_tls_key_materials_config_set_key_materials(
     grpc_tls_key_materials_config* config,
-    grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, const char* pem_root_certs,
-    size_t num_key_cert_pairs);
+    const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    const char* pem_root_certs, size_t num_key_cert_pairs);
 
 /** --- TLS credential reload config. --- */
 

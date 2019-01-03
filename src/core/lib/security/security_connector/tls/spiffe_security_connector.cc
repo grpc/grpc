@@ -135,8 +135,8 @@ class grpc_tls_spiffe_channel_security_connector final
     const grpc_tls_spiffe_credentials* creds =
         static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
     GPR_ASSERT(creds->options() != nullptr);
-    grpc_tls_server_authorization_check_config* config =
-        creds->options()->server_authorization_check_config;
+    const grpc_tls_server_authorization_check_config* config =
+        creds->options()->server_authorization_check_config();
     if (error == GRPC_ERROR_NONE && config != nullptr) {
       /* Peer property will contain a complete certificate chain. */
       const tsi_peer_property* p =
@@ -157,8 +157,7 @@ class grpc_tls_spiffe_channel_security_connector final
                                       : check_arg_->target_name;
         on_peer_checked_ = on_peer_checked;
         gpr_free(peer_pem);
-        int callback_status =
-            config->schedule((void*)config->config_user_data, check_arg_);
+        int callback_status = config->schedule(check_arg_);
         /* Server authorization check is handled asynchronously. */
         if (callback_status) {
           tsi_peer_destruct(&peer);
@@ -223,10 +222,10 @@ class grpc_tls_spiffe_channel_security_connector final
     const grpc_tls_spiffe_credentials* creds =
         static_cast<const grpc_tls_spiffe_credentials*>(channel_creds());
     GPR_ASSERT(creds != nullptr && creds->options() != nullptr);
-    if (creds->options()->server_authorization_check_config != nullptr) {
-      grpc_tls_server_authorization_check_config* config =
-          creds->options()->server_authorization_check_config;
-      config->cancel((void*)config->config_user_data, check_arg_);
+    if (creds->options()->server_authorization_check_config() != nullptr) {
+      const grpc_tls_server_authorization_check_config* config =
+          creds->options()->server_authorization_check_config();
+      config->cancel(check_arg_);
     }
   }
 
@@ -306,7 +305,7 @@ class grpc_tls_spiffe_server_security_connector
 
 /* gRPC-provided callback executed by application, which servers to bring the
  * control back to gRPC core. */
-void spiffe_server_authorization_check_done_cb(
+static void spiffe_server_authorization_check_done_cb(
     grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
   grpc_core::ExecCtx exec_ctx;

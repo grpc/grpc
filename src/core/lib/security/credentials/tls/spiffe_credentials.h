@@ -37,11 +37,11 @@ class grpc_tls_spiffe_credentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  const grpc_tls_credentials_options* options() const { return options_; }
-  grpc_tls_credentials_options* mutable_options() { return options_; }
+  const grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options* mutable_options() { return options_.get(); }
 
  private:
-  grpc_tls_credentials_options* options_;
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
 class grpc_tls_spiffe_server_credentials final
@@ -54,11 +54,11 @@ class grpc_tls_spiffe_server_credentials final
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector() override;
 
-  const grpc_tls_credentials_options* options() const { return options_; }
-  grpc_tls_credentials_options* mutable_options() { return options_; }
+  const grpc_tls_credentials_options* options() const { return options_.get(); }
+  grpc_tls_credentials_options* mutable_options() { return options_.get(); }
 
  private:
-  grpc_tls_credentials_options* options_;
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_SPIFFE_CREDENTIALS_H */

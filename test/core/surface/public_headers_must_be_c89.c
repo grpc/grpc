@@ -196,7 +196,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_key_materials_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_credential_reload_config);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_server_authorization_check_config);
-  printf("%lx", (unsigned long) grpc_tls_credentials_options_destroy);
   printf("%lx", (unsigned long) grpc_tls_key_materials_config_create);
   printf("%lx", (unsigned long) grpc_tls_key_materials_config_set_key_materials);
   printf("%lx", (unsigned long) grpc_tls_credential_reload_config_create);

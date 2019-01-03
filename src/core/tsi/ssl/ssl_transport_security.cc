@@ -1345,7 +1345,6 @@ static void tls_handshaker_destroy(tsi_handshaker* self) {
   if (impl->reload_arg != nullptr) {
     grpc_tls_credential_reload_arg* arg = impl->reload_arg;
     gpr_free((void*)arg->error_details);
-    grpc_tls_key_materials_config_destroy(arg->key_materials_config);
     gpr_free(arg);
   }
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
@@ -1453,11 +1452,10 @@ static tsi_result tls_handshaker_next(
     handshaker->reload_arg->status = GRPC_STATUS_OK;
     grpc_tls_credentials_options* options = handshaker->options;
     GPR_ASSERT(options != nullptr);
-    grpc_tls_credential_reload_config* config =
-        options->credential_reload_config;
-    if (config != nullptr && config->schedule != nullptr) {
-      int callback_status = config->schedule((void*)config->config_user_data,
-                                             handshaker->reload_arg);
+    const grpc_tls_credential_reload_config* config =
+        options->credential_reload_config();
+    if (config != nullptr) {
+      int callback_status = config->schedule(handshaker->reload_arg);
       /* Handle asynchronously. */
       if (callback_status) {
         return TSI_ASYNC;
@@ -1482,10 +1480,10 @@ static void tls_handshaker_shutdown(tsi_handshaker* self) {
   }
   tsi_ssl_handshaker* handshaker = reinterpret_cast<tsi_ssl_handshaker*>(self);
   GPR_ASSERT(handshaker->options != nullptr);
-  grpc_tls_credential_reload_config* config =
-      handshaker->options->credential_reload_config;
+  const grpc_tls_credential_reload_config* config =
+      handshaker->options->credential_reload_config();
   if (config != nullptr) {
-    config->cancel((void*)config->config_user_data, handshaker->reload_arg);
+    config->cancel(handshaker->reload_arg);
   }
 }
 
@@ -2137,11 +2135,11 @@ tsi_result tls_tsi_handshaker_create(
           gpr_zalloc(sizeof(*reload_arg)));
   reload_arg->status = GRPC_STATUS_OK;
   reload_arg->key_materials_config = grpc_tls_key_materials_config_create();
-  grpc_tls_key_materials_config* config = options->key_materials_config;
+  const grpc_tls_key_materials_config* config = options->key_materials_config();
   if (config != nullptr) {
     grpc_tls_key_materials_config_set_key_materials(
-        reload_arg->key_materials_config, config->pem_key_cert_pairs,
-        config->pem_root_certs, config->num_key_cert_pairs);
+        reload_arg->key_materials_config, config->pem_key_cert_pairs(),
+        config->pem_root_certs(), config->num_key_cert_pairs());
   }
   impl->reload_arg = reload_arg;
   impl->server_name_indication = gpr_strdup(server_name_indication);
@@ -2350,7 +2348,7 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
     tsi_ssl_client_handshaker_factory* handshaker_factory = nullptr;
     tsi_ssl_client_handshaker_options options;
     memset(&options, 0, sizeof(options));
-    if (config->pem_root_certs == nullptr) {
+    if (config->pem_root_certs() == nullptr) {
       options.pem_root_certs = handshaker->pem_root_certs;
       options.root_store = handshaker->root_store;
       if (options.pem_root_certs == nullptr) {
@@ -2358,16 +2356,16 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
         return TSI_INTERNAL_ERROR;
       }
     } else {
-      options.pem_root_certs = config->pem_root_certs;
+      options.pem_root_certs = config->pem_root_certs();
     }
     bool has_key_cert_pair =
-        config->pem_key_cert_pairs != nullptr &&
-        config->pem_key_cert_pairs->private_key != nullptr &&
-        config->pem_key_cert_pairs->cert_chain != nullptr;
+        config->pem_key_cert_pairs() != nullptr &&
+        config->pem_key_cert_pairs()->private_key != nullptr &&
+        config->pem_key_cert_pairs()->cert_chain != nullptr;
     if (has_key_cert_pair) {
       handshaker->key_cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
-          config->pem_key_cert_pairs, config->num_key_cert_pairs);
-      handshaker->num_key_cert_pairs = config->num_key_cert_pairs;
+          config->pem_key_cert_pairs(), config->num_key_cert_pairs());
+      handshaker->num_key_cert_pairs = config->num_key_cert_pairs();
       options.pem_key_cert_pair = handshaker->key_cert_pairs;
     }
     options.alpn_protocols = handshaker->alpn_protocols;
@@ -2399,20 +2397,20 @@ static tsi_result update_ssl_handshaker(tsi_ssl_handshaker* handshaker,
     // factory.
   } else {
     handshaker->key_cert_pairs = tsi_convert_grpc_to_tsi_cert_pairs(
-        config->pem_key_cert_pairs, config->num_key_cert_pairs);
-    handshaker->num_key_cert_pairs = config->num_key_cert_pairs;
+        config->pem_key_cert_pairs(), config->num_key_cert_pairs());
+    handshaker->num_key_cert_pairs = config->num_key_cert_pairs();
     tsi_ssl_server_handshaker_factory* handshaker_factory = nullptr;
     GPR_ASSERT(handshaker->options != nullptr);
     tsi_ssl_server_handshaker_options options;
     memset(&options, 0, sizeof(options));
     options.pem_key_cert_pairs = handshaker->key_cert_pairs;
-    options.num_key_cert_pairs = config->num_key_cert_pairs;
-    options.pem_client_root_certs = config->pem_root_certs == nullptr
+    options.num_key_cert_pairs = config->num_key_cert_pairs();
+    options.pem_client_root_certs = config->pem_root_certs() == nullptr
                                         ? handshaker->pem_root_certs
-                                        : config->pem_root_certs;
+                                        : config->pem_root_certs();
     options.client_certificate_request =
         tsi_get_tsi_client_certificate_request_type(
-            handshaker->options->cert_request_type);
+            handshaker->options->cert_request_type());
     options.cipher_suites = tsi_get_ssl_cipher_suites();
     options.alpn_protocols = handshaker->alpn_protocols;
     options.num_alpn_protocols = handshaker->num_alpn_protocols;

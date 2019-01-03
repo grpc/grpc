@@ -70,18 +70,20 @@ static void populate_tls_key_materials_config(
     grpc_tls_key_materials_config* config,
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs) {
   GPR_ASSERT(config != nullptr);
-  config->num_key_cert_pairs = num_key_cert_pairs;
+  config->set_num_key_cert_pairs(num_key_cert_pairs);
   if (num_key_cert_pairs > 0) {
     GPR_ASSERT(pem_key_cert_pairs != nullptr);
-    config->pem_key_cert_pairs = static_cast<grpc_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
+    grpc_ssl_pem_key_cert_pair* key_cert_pairs =
+        static_cast<grpc_ssl_pem_key_cert_pair*>(gpr_zalloc(
+            num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
+    config->set_pem_key_cert_pairs(key_cert_pairs);
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GPR_ASSERT(pem_key_cert_pairs[i].private_key != nullptr);
     GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != nullptr);
-    config->pem_key_cert_pairs[i].cert_chain =
+    config->mutable_pem_key_cert_pairs()[i].cert_chain =
         gpr_strdup(pem_key_cert_pairs[i].cert_chain);
-    config->pem_key_cert_pairs[i].private_key =
+    config->mutable_pem_key_cert_pairs()[i].private_key =
         gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
 }
@@ -97,7 +99,7 @@ static void client_options_set_key_materials_config(
                                   : &key_cert_lib->client_pem_key_cert_pair;
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   populate_tls_key_materials_config(
-      reload_lib->client_creds_options->key_materials_config,
+      reload_lib->client_creds_options->mutable_key_materials_config(),
       client_pem_key_cert_pairs, 1);
 }
 
@@ -116,7 +118,7 @@ static void server_options_set_key_materials_config(
           : key_cert_lib->server_num_key_cert_pairs;
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   populate_tls_key_materials_config(
-      reload_lib->server_creds_options->key_materials_config,
+      reload_lib->server_creds_options->mutable_key_materials_config(),
       server_pem_key_cert_pairs, num_server_key_cert_pairs);
 }
 
@@ -204,22 +206,22 @@ static void populate_tls_credential_reload_config(
   GPR_ASSERT(c != nullptr);
   GPR_ASSERT(s != nullptr);
   if (reload_lib->client_reload_mode == NO_RELOAD) {
-    c->credential_reload_config = nullptr;
+    c->set_credential_reload_config(nullptr);
   } else if (reload_lib->client_reload_mode == SYNC) {
-    c->credential_reload_config = grpc_tls_credential_reload_config_create(
-        ssl_fixture, client_schedule_sync, nullptr, nullptr);
+    c->set_credential_reload_config(grpc_tls_credential_reload_config_create(
+        ssl_fixture, client_schedule_sync, nullptr, nullptr));
   } else if (reload_lib->client_reload_mode == ASYNC) {
-    c->credential_reload_config = grpc_tls_credential_reload_config_create(
-        ssl_fixture, client_schedule_async, nullptr, nullptr);
+    c->set_credential_reload_config(grpc_tls_credential_reload_config_create(
+        ssl_fixture, client_schedule_async, nullptr, nullptr));
   }
   if (reload_lib->server_reload_mode == NO_RELOAD) {
-    s->credential_reload_config = nullptr;
+    s->set_credential_reload_config(nullptr);
   } else if (reload_lib->server_reload_mode == SYNC) {
-    s->credential_reload_config = grpc_tls_credential_reload_config_create(
-        ssl_fixture, server_schedule_sync, nullptr, nullptr);
+    s->set_credential_reload_config(grpc_tls_credential_reload_config_create(
+        ssl_fixture, server_schedule_sync, nullptr, nullptr));
   } else if (reload_lib->server_reload_mode == ASYNC) {
-    s->credential_reload_config = grpc_tls_credential_reload_config_create(
-        ssl_fixture, server_schedule_async, nullptr, nullptr);
+    s->set_credential_reload_config(grpc_tls_credential_reload_config_create(
+        ssl_fixture, server_schedule_async, nullptr, nullptr));
   }
 }
 
@@ -321,14 +323,14 @@ static void tls_test_destruct(tsi_test_fixture* fixture) {
   if (lib == nullptr) {
     return;
   }
-  grpc_tls_credentials_options_destroy(lib->client_creds_options);
-  grpc_tls_credentials_options_destroy(lib->server_creds_options);
   if (lib->client_thd_started) {
     lib->client_thd.Join();
   }
   if (lib->server_thd_started) {
     lib->server_thd.Join();
   }
+  lib->client_creds_options->Unref();
+  lib->server_creds_options->Unref();
   gpr_free(lib);
 }
 
@@ -349,10 +351,10 @@ static tsi_test_fixture* tls_tsi_test_fixture_create(CredReloadMode client_mode,
   tls_cred_reload_lib* reload_lib = ssl_fixture->cred_reload_lib;
   reload_lib->client_creds_options = grpc_tls_credentials_options_create();
   reload_lib->server_creds_options = grpc_tls_credentials_options_create();
-  reload_lib->client_creds_options->key_materials_config =
-      grpc_tls_key_materials_config_create();
-  reload_lib->server_creds_options->key_materials_config =
-      grpc_tls_key_materials_config_create();
+  reload_lib->client_creds_options->set_key_materials_config(
+      grpc_tls_key_materials_config_create());
+  reload_lib->server_creds_options->set_key_materials_config(
+      grpc_tls_key_materials_config_create());
   if (client_mode == ASYNC) {
     reload_lib->client_thd =
         grpc_core::Thread("tls_transport_security_test_client",

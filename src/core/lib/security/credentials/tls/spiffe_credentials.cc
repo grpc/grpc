@@ -35,10 +35,13 @@
 grpc_tls_spiffe_credentials::grpc_tls_spiffe_credentials(
     const grpc_tls_credentials_options* options)
     : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
-      options_(grpc_tls_credentials_options_copy(options)) {}
+      options_(std::move(
+          const_cast<grpc_tls_credentials_options*>(options)->Ref())) {}
 
 grpc_tls_spiffe_credentials::~grpc_tls_spiffe_credentials() {
-  grpc_tls_credentials_options_destroy(options_);
+  if (options_.get() == nullptr)
+    gpr_log(GPR_ERROR, "channel options is nullptr");
+  options_.get()->Unref();
 }
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
@@ -76,13 +79,14 @@ grpc_tls_spiffe_credentials::create_security_connector(
 grpc_tls_spiffe_server_credentials::grpc_tls_spiffe_server_credentials(
     const grpc_tls_credentials_options* options)
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
-      options_(grpc_tls_credentials_options_copy(options)) {
-  options_->cert_request_type =
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+      options_(std::move(
+          const_cast<grpc_tls_credentials_options*>(options)->Ref())) {
+  options_->set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
 }
 
 grpc_tls_spiffe_server_credentials::~grpc_tls_spiffe_server_credentials() {
-  grpc_tls_credentials_options_destroy(options_);
+  options_.get()->Unref();
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
@@ -96,18 +100,12 @@ static bool credentials_options_sanity_check(
     gpr_log(GPR_ERROR, "SPIFFE TLS credentials options is nullptr.");
     return false;
   }
-  if (options->key_materials_config == nullptr &&
-      options->credential_reload_config == nullptr) {
+  if (options->key_materials_config() == nullptr &&
+      options->credential_reload_config() == nullptr) {
     gpr_log(
         GPR_ERROR,
         "SPIFFE TLS credentials options must specify either key materials or "
         "credential reload config.");
-    return false;
-  }
-  if (options->credential_reload_config != nullptr &&
-      options->credential_reload_config->schedule == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Schedule API of credential reload config cannot be nullptr.");
     return false;
   }
   return true;

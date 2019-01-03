@@ -137,7 +137,7 @@ static int client_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_signed_client_key,
                                                   test_signed_client_cert};
-  if (!arg->key_materials_config->num_key_cert_pairs) {
+  if (!arg->key_materials_config->num_key_cert_pairs()) {
     grpc_tls_key_materials_config_set_key_materials(
         arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
   }
@@ -148,7 +148,7 @@ static int server_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
-  if (!arg->key_materials_config->num_key_cert_pairs) {
+  if (!arg->key_materials_config->num_key_cert_pairs()) {
     grpc_tls_key_materials_config_set_key_materials(
         arg->key_materials_config, &pem_cert_key_pair, nullptr, 1);
   }
@@ -213,7 +213,7 @@ static grpc_channel_credentials* create_spiffe_channel_credentials(
       options, check_config);
   /* Create SPIFFE channel credentials. */
   grpc_channel_credentials* creds = grpc_tls_spiffe_credentials_create(options);
-  grpc_tls_credentials_options_destroy(options);
+
   return creds;
 }
 
@@ -230,7 +230,6 @@ static grpc_server_credentials* create_spiffe_server_credentials(
                                                             reload_config);
   grpc_server_credentials* creds =
       grpc_tls_spiffe_server_credentials_create(options);
-  grpc_tls_credentials_options_destroy(options);
   return creds;
 }
 /*
