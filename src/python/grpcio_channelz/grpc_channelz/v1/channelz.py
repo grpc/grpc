@@ -163,20 +163,13 @@ def serve_channelz_page(host=None, port=None):
     Args:
       host: a str indicates the address of the HTTP server.
       port: a int indicates the tcp port of the HTTP server.
-    
+
     Returns:
       An http.Server.HTTPServer instance that is already started serving.
     """
     if host is None or port is None:
         raise ValueError('"host" and "port" can\'t be None')
     http_server = _channelz_page._create_http_server((host, port))
-
-    # SSL/TLS is required for gdebug HTTP server.
-    # But not for Channelz servicer.
-    # import ssl
-    # http_server.socket = ssl.wrap_socket(
-    #   http_server.socket, certfile='./server.pem', server_side=True)
-    # )
 
     serving_thread = threading.Thread(target=http_server.serve_forever)
     serving_thread.daemon = True

@@ -17,6 +17,7 @@ import pkgutil
 import collections
 import traceback
 from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from six.moves.urllib.parse import parse_qs, urlparse
 
 from grpc._cython import cygrpc
 import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
@@ -43,13 +44,10 @@ _base_template = _fetch_template('base.html')
 
 
 def _parse_args(path):
-    if '?' not in path:
-        return {}
-    args = {}
-    args_list = path.split('?', 1)[1].split('&')
-    for arg_str in args_list:
-        key, value = arg_str.split('=')
-        args[key] = value
+    args = parse_qs(urlparse(path).query)
+    for key in args:
+        if isinstance(args[key], list) and len(args[key]) == 1:
+            args[key] = args[key][0]
     return args
 
 

@@ -95,7 +95,8 @@ class ChannelzPageTest(unittest.TestCase):
         self._channel = grpc.insecure_channel('localhost:%d' % port)
 
         self._page_server = channelz.serve_channelz_page('', 0)
-        self._page_url_prefix = _CHANNELZ_URL_PREFIX_TEMPLATE % self._page_server.server_address[1]
+        self._page_url_prefix = _CHANNELZ_URL_PREFIX_TEMPLATE % self._page_server.server_address[
+            1]
 
         # Emit RPCs to make sure sockets are created
         self._send_successful_unary_unary()
