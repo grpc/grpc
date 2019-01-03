@@ -26,9 +26,7 @@ from grpc_channelz.v1 import channelz
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_CHANNELZ_PAGE_PORT = 8080
-_CHANNELZ_URL_PREFIX = 'http://localhost:%d/gdebug/channelz/' % (
-    _CHANNELZ_PAGE_PORT)
+_CHANNELZ_URL_PREFIX_TEMPLATE = 'http://localhost:%d/gdebug/channelz/'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -96,8 +94,8 @@ class ChannelzPageTest(unittest.TestCase):
 
         self._channel = grpc.insecure_channel('localhost:%d' % port)
 
-        self._page_server = channelz.serve_channelz_page(
-            '', _CHANNELZ_PAGE_PORT)
+        self._page_server = channelz.serve_channelz_page('', 0)
+        self._page_url_prefix = _CHANNELZ_URL_PREFIX_TEMPLATE % self._page_server.server_address[1]
 
         # Emit RPCs to make sure sockets are created
         self._send_successful_unary_unary()
@@ -112,35 +110,35 @@ class ChannelzPageTest(unittest.TestCase):
         super(ChannelzPageTest, self).tearDown()
 
     def test_homepage(self):
-        resp = requests.get(_CHANNELZ_URL_PREFIX)
+        resp = requests.get(self._page_url_prefix)
         self.assertEqual(resp.status_code, 200)
 
     def test_channel(self):
         # Page of list of channels
-        resp = requests.get(_CHANNELZ_URL_PREFIX + 'topchannels')
+        resp = requests.get(self._page_url_prefix + 'topchannels')
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a channel
         surffix = pq(resp.text)('table a').attr('href')
         self.assertIn('channel?channel_id=', surffix)
-        resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+        resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a subchannel
         surffix = pq(resp.text)('table').eq(1).find('a').attr('href')
         self.assertIn('subchannel?subchannel_id=', surffix)
-        resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+        resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a socket
         surffix = pq(resp.text)('table a').attr('href')
         self.assertIn('socket?socket_id=', surffix)
-        resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+        resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
     def test_serversockets(self):
         # Page of list of servers
-        resp = requests.get(_CHANNELZ_URL_PREFIX + 'servers')
+        resp = requests.get(self._page_url_prefix + 'servers')
         self.assertEqual(resp.status_code, 200)
 
         # TODO(lidiz) In Python 3, the server from last test unit will remain alive...
@@ -158,46 +156,46 @@ class ChannelzPageTest(unittest.TestCase):
 
         # Page of detail of a server
         self.assertIn('serversockets?server_id=', surffix)
-        resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+        resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of the listen socket
         surffix = pq(resp.text)('table a').attr('href')
         self.assertIn('socket?socket_id=', surffix)
-        resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+        resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
     def test_incomplete_arguments(self):
         for surffix in ['channel', 'subchannel', 'socket', 'serversockets']:
-            resp = requests.get(_CHANNELZ_URL_PREFIX + surffix)
+            resp = requests.get(self._page_url_prefix + surffix)
             self.assertEqual(resp.status_code, 400)
 
     def test_not_found_channel(self):
-        resp = requests.get(_CHANNELZ_URL_PREFIX + 'channel?channel_id=999')
+        resp = requests.get(self._page_url_prefix + 'channel?channel_id=999')
         self.assertEqual(resp.status_code, 404)
 
     def test_not_found_subchannel(self):
         resp = requests.get(
-            _CHANNELZ_URL_PREFIX + 'subchannel?subchannel_id=999')
+            self._page_url_prefix + 'subchannel?subchannel_id=999')
         self.assertEqual(resp.status_code, 404)
 
     def test_not_found_socket(self):
-        resp = requests.get(_CHANNELZ_URL_PREFIX + 'socket?socket_id=999')
+        resp = requests.get(self._page_url_prefix + 'socket?socket_id=999')
         self.assertEqual(resp.status_code, 404)
 
     def test_not_found_serversockets(self):
         resp = requests.get(
-            _CHANNELZ_URL_PREFIX + 'serversockets?server_id=999')
+            self._page_url_prefix + 'serversockets?server_id=999')
         self.assertEqual(resp.status_code, 404)
 
     def test_not_found_topchannels(self):
         resp = requests.get(
-            _CHANNELZ_URL_PREFIX + 'topchannels?start_channel_id=999')
+            self._page_url_prefix + 'topchannels?start_channel_id=999')
         self.assertEqual(resp.status_code, 404)
 
     def test_not_found_servers(self):
         resp = requests.get(
-            _CHANNELZ_URL_PREFIX + 'servers?start_server_id=999')
+            self._page_url_prefix + 'servers?start_server_id=999')
         self.assertEqual(resp.status_code, 404)
 
 
