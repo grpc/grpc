@@ -160,7 +160,7 @@ class ChannelzPageTest(unittest.TestCase):
         resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
-        # Page of detail of the listen socket
+        # Page of detail of the server sockets
         surffix = pq(resp.text)('table a').attr('href')
         self.assertIn('socket?socket_id=', surffix)
         resp = requests.get(self._page_url_prefix + surffix)

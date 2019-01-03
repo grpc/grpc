@@ -176,6 +176,10 @@ def _serversockets_handler(render, args):
         raise _BadRequest('"server_id" cannot be empty')
     server_id = int(args.get('server_id'))
     start_socket_id = int(args.get('start_socket_id', '0'))
+    server = json_format.Parse(
+        cygrpc.channelz_get_server(server_id),
+        _channelz_pb2.GetServerResponse(),
+    ).server
     serversocket_refs = json_format.Parse(
         cygrpc.channelz_get_server_sockets(server_id, start_socket_id, 0),
         _channelz_pb2.GetServerSocketsResponse(),
@@ -194,6 +198,7 @@ def _serversockets_handler(render, args):
             ).socket)
 
     return render(
+        server=server,
         serversockets=serversockets,
         num_serversockets=len(serversockets),
         min_id=min(ref.socket_id for ref in serversocket_refs),
