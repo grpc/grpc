@@ -79,7 +79,7 @@ class RpcMethodHandler : public MethodHandler {
       ops.set_compression_level(param.server_context->compression_level());
     }
     if (status.ok()) {
-      status = ops.SendMessage(rsp);
+      status = ops.SendMessagePtr(&rsp);
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -139,7 +139,7 @@ class ClientStreamingHandler : public MethodHandler {
       }
     }
     if (status.ok()) {
-      status = ops.SendMessage(rsp);
+      status = ops.SendMessagePtr(&rsp);
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);

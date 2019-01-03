@@ -50,7 +50,7 @@ cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg):
   return wrapped.arg
 
 
-cdef class _ArgumentProcessor:
+cdef class _ChannelArg:
 
   cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *:
     key, value = argument
@@ -82,27 +82,34 @@ cdef class _ArgumentProcessor:
           'Expected int, bytes, or behavior, got {}'.format(type(value)))
 
 
-cdef class _ArgumentsProcessor:
+cdef class _ChannelArgs:
 
   def __cinit__(self, arguments):
     self._arguments = () if arguments is None else tuple(arguments)
-    self._argument_processors = []
+    self._channel_args = []
     self._references = []
+    self._c_arguments.arguments = NULL
 
-  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *:
+  cdef void _c(self, grpc_arg_pointer_vtable *vtable) except *:
     self._c_arguments.arguments_length = len(self._arguments)
-    if self._c_arguments.arguments_length == 0:
-      return NULL
-    else:
+    if self._c_arguments.arguments_length != 0:
       self._c_arguments.arguments = <grpc_arg *>gpr_malloc(
           self._c_arguments.arguments_length * sizeof(grpc_arg))
       for index, argument in enumerate(self._arguments):
-        argument_processor = _ArgumentProcessor()
-        argument_processor.c(argument, vtable, self._references)
-        self._c_arguments.arguments[index] = argument_processor.c_argument
-        self._argument_processors.append(argument_processor)
-      return &self._c_arguments
+        channel_arg = _ChannelArg()
+        channel_arg.c(argument, vtable, self._references)
+        self._c_arguments.arguments[index] = channel_arg.c_argument
+        self._channel_args.append(channel_arg)
 
-  cdef un_c(self):
-    if self._arguments:
+  cdef grpc_channel_args *c_args(self) except *:
+    return &self._c_arguments
+
+  def __dealloc__(self):
+    if self._c_arguments.arguments != NULL:
       gpr_free(self._c_arguments.arguments)
+
+  @staticmethod
+  cdef _ChannelArgs from_args(object arguments, grpc_arg_pointer_vtable * vtable):
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
+    channel_args._c(vtable)
+    return channel_args

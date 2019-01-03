@@ -73,7 +73,7 @@ class LoggingInterceptor : public experimental::Interceptor {
          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -83,7 +83,7 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSendMessage();
+      auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -142,6 +142,32 @@ class LoggingInterceptorFactory
   }
 };
 
+// Test if GetSendMessage works as expected
+class GetSendMessageTester : public experimental::Interceptor {
+ public:
+  GetSendMessageTester(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      EXPECT_EQ(static_cast<const EchoRequest*>(methods->GetSendMessage())
+                    ->message()
+                    .find("Hello"),
+                0u);
+    }
+    methods->Proceed();
+  }
+};
+
+class GetSendMessageTesterFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new GetSendMessageTester(info);
+  }
+};
+
 void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
@@ -176,6 +202,9 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new GetSendMessageTesterFactory()));
     // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
@@ -216,6 +245,9 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new GetSendMessageTesterFactory()));
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
           new DummyInterceptorFactory()));

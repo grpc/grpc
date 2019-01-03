@@ -79,7 +79,9 @@ class InterceptorBatchMethodsImpl
     hooks_[static_cast<size_t>(type)] = true;
   }
 
-  ByteBuffer* GetSendMessage() override { return send_message_; }
+  ByteBuffer* GetSerializedSendMessage() override { return send_message_; }
+
+  const void* GetSendMessage() override { return orig_send_message_; }
 
   bool GetSendMessageStatus() override { return !*fail_send_message_; }
 
@@ -123,8 +125,10 @@ class InterceptorBatchMethodsImpl
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf, bool* fail_send_message) {
+  void SetSendMessage(ByteBuffer* buf, const void* msg,
+                      bool* fail_send_message) {
     send_message_ = buf;
+    orig_send_message_ = msg;
     fail_send_message_ = fail_send_message;
   }
 
@@ -346,6 +350,7 @@ class InterceptorBatchMethodsImpl
 
   ByteBuffer* send_message_ = nullptr;
   bool* fail_send_message_ = nullptr;
+  const void* orig_send_message_ = nullptr;
 
   std::multimap<grpc::string, grpc::string>* send_initial_metadata_;
 
@@ -391,7 +396,7 @@ class CancelInterceptorBatchMethods
                        "Cancel notification");
   }
 
-  ByteBuffer* GetSendMessage() override {
+  ByteBuffer* GetSerializedSendMessage() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call GetSendMessage on a method which "
                        "has a Cancel notification");
@@ -404,6 +409,14 @@ class CancelInterceptorBatchMethods
         "It is illegal to call GetSendMessageStatus on a method which "
         "has a Cancel notification");
     return false;
+  }
+
+  const void* GetSendMessage() override {
+    GPR_CODEGEN_ASSERT(
+        false &&
+        "It is illegal to call GetOriginalSendMessage on a method which "
+        "has a Cancel notification");
+    return nullptr;
   }
 
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {

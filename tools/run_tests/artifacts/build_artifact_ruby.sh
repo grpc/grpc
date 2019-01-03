@@ -38,7 +38,7 @@ fi
 
 set +ex
 rvm use default
-gem install bundler --update
+gem install bundler -v 1.17.3
 
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
