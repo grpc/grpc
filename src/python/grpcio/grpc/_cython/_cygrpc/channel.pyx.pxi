@@ -455,14 +455,10 @@ cdef class Channel:
         self._state, flags, method, host, deadline, metadata, credentials,
         operationses_and_tags, context)
 
-  def next_call_event(self):
+  def next_call_event(self, queue_deadline=None):
     def on_success(tag):
       if tag is not None:
         _process_integrated_call_tag(self._state, tag)
-    if is_fork_support_enabled():
-      queue_deadline = time.time() + 1.0
-    else:
-      queue_deadline = None
     return _next_call_event(self._state, self._state.c_call_completion_queue,
                             on_success, queue_deadline)
 

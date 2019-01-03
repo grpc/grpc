@@ -101,7 +101,7 @@ cdef class Server:
           <cpython.PyObject *>server_shutdown_tag)
 
   def shutdown(self, CompletionQueue queue not None, tag):
-    if queue.is_shutting_down:
+    if queue.is_shutdown:
       raise ValueError("queue must be live")
     elif not self.is_started:
       raise ValueError("the server hasn't started yet")
@@ -147,6 +147,7 @@ cdef class Server:
         while not self.is_shutdown:
           time.sleep(0)
       grpc_server_destroy(self.c_server)
+      self.backup_shutdown_queue.shutdown()
       self.c_server = NULL
 
   def __dealloc(self):

@@ -706,6 +706,7 @@ def _request_call(state):
 def _stop_serving(state):
     if not state.rpc_states and not state.due:
         state.server.destroy()
+        state.completion_queue.shutdown()
         for shutdown_event in state.shutdown_events:
             shutdown_event.set()
         state.stage = _ServerStage.STOPPED
@@ -758,10 +759,12 @@ def _process_event_and_continue(state, event):
     return should_continue
 
 
-def _serve(state):
+def _serve(state, parent_thread):
     while True:
-        timeout = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
-        event = state.completion_queue.poll(timeout)
+        deadline = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
+        event = state.completion_queue.poll(deadline)
+        if not parent_thread.is_alive():
+            return
         if state.server_deallocated:
             _begin_shutdown_once(state)
         if event.completion_type != cygrpc.CompletionType.queue_timeout:
@@ -816,8 +819,8 @@ def _start(state):
         state.stage = _ServerStage.STARTED
         _request_call(state)
 
-        thread = threading.Thread(target=_serve, args=(state,))
-        thread.daemon = True
+        thread = threading.Thread(
+            target=_serve, args=(state, threading.current_thread()))
         thread.start()
 
 

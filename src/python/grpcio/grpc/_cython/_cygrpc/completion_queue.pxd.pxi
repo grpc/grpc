@@ -22,7 +22,6 @@ cdef _interpret_event(grpc_event c_event)
 cdef class CompletionQueue:
 
   cdef grpc_completion_queue *c_completion_queue
-  cdef bint is_shutting_down
   cdef bint is_shutdown
 
   cdef _interpret_event(self, grpc_event c_event)

@@ -80,7 +80,6 @@ cdef class CompletionQueue:
           grpc_completion_queue_factory_lookup(&c_attrs), &c_attrs, NULL);
     else:
       self.c_completion_queue = grpc_completion_queue_create_for_next(NULL)
-    self.is_shutting_down = False
     self.is_shutdown = False
 
   cdef _interpret_event(self, grpc_event c_event):
@@ -94,28 +93,19 @@ cdef class CompletionQueue:
   def poll(self, deadline=None):
     return self._interpret_event(_next(self.c_completion_queue, deadline))
 
+  # All outstanding calls must be cancelled before invoking this method.
   def shutdown(self):
-    with nogil:
-      grpc_completion_queue_shutdown(self.c_completion_queue)
-    self.is_shutting_down = True
-
-  def clear(self):
-    if not self.is_shutting_down:
-      raise ValueError('queue must be shutting down to be cleared')
-    while self.poll().type != GRPC_QUEUE_SHUTDOWN:
-      pass
-
-  def __dealloc__(self):
     cdef gpr_timespec c_deadline
     c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
-    if self.c_completion_queue != NULL:
-      # Ensure shutdown
-      if not self.is_shutting_down:
-        grpc_completion_queue_shutdown(self.c_completion_queue)
-      # Pump the queue (All outstanding calls should have been cancelled)
-      while not self.is_shutdown:
-        event = grpc_completion_queue_next(
-            self.c_completion_queue, c_deadline, NULL)
-        self._interpret_event(event)
-      grpc_completion_queue_destroy(self.c_completion_queue)
-    grpc_shutdown()
+    with nogil:
+      grpc_completion_queue_shutdown(self.c_completion_queue)
+    while not self.is_shutdown:
+      event = grpc_completion_queue_next(
+          self.c_completion_queue, c_deadline, NULL)
+      self._interpret_event(event)
+    grpc_completion_queue_destroy(self.c_completion_queue)
+    self.c_completion_queue = NULL
+
+  def __dealloc__(self):
+    if self.c_completion_queue == NULL:
+      grpc_shutdown()

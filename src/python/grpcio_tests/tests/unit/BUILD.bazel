@@ -18,6 +18,7 @@ GRPCIO_TESTS_UNIT = [
     "_exit_test.py",
     "_interceptor_test.py",
     "_invalid_metadata_test.py",
+    "_interpreter_exit_test.py",
     "_invocation_defects_test.py",
     "_logging_test.py",
     "_metadata_code_details_test.py",

@@ -71,6 +71,8 @@ _NON_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
                                   '\tdebug_error_string = "{}"\n'
                                   '>')
 
+_INTERPRETER_EXIT_CHECK_PERIOD_S = 1.0
+
 
 def _deadline(timeout):
     return None if timeout is None else time.time() + timeout
@@ -777,10 +779,13 @@ class _ChannelCallState(object):
 
 def _run_channel_spin_thread(state):
 
-    def channel_spin():
+    def channel_spin(parent_thread):
         while True:
             cygrpc.block_if_fork_in_progress(state)
-            event = state.channel.next_call_event()
+            deadline = time.time() + _INTERPRETER_EXIT_CHECK_PERIOD_S
+            event = state.channel.next_call_event(deadline)
+            if not parent_thread.is_alive():
+                return
             if event.completion_type == cygrpc.CompletionType.queue_timeout:
                 continue
             call_completed = event.tag(event)
@@ -790,8 +795,8 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    channel_spin_thread = cygrpc.ForkManagedThread(target=channel_spin)
-    channel_spin_thread.setDaemon(True)
+    channel_spin_thread = cygrpc.ForkManagedThread(
+        target=channel_spin, args=(threading.current_thread(),))
     channel_spin_thread.start()
 
 
@@ -895,7 +900,7 @@ def _spawn_delivery(state, callbacks):
 
 
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
-def _poll_connectivity(state, channel, initial_try_to_connect):
+def _poll_connectivity(state, channel, initial_try_to_connect, parent_thread):
     try_to_connect = initial_try_to_connect
     connectivity = channel.check_connectivity_state(try_to_connect)
     with state.lock:
@@ -912,6 +917,8 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
     while True:
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
+        if not parent_thread.is_alive():
+            return
         cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             if not state.callbacks_and_connectivities and not state.try_to_connect:
@@ -942,8 +949,8 @@ def _subscribe(state, callback, try_to_connect):
         if not state.callbacks_and_connectivities and not state.polling:
             polling_thread = cygrpc.ForkManagedThread(
                 target=_poll_connectivity,
-                args=(state, state.channel, bool(try_to_connect)))
-            polling_thread.setDaemon(True)
+                args=(state, state.channel, bool(try_to_connect),
+                      threading.current_thread()))
             polling_thread.start()
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
