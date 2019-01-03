@@ -1696,6 +1696,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
+    lb_policy_args.subchannel_pool = subchannel_pool();
     CreateRoundRobinPolicyLocked(lb_policy_args);
   }
   grpc_channel_args_destroy(args);
