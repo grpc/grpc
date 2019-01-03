@@ -27,6 +27,10 @@ py_test(
         "//src/python/grpcio_tests/tests/unit/framework/common:common",
         requirement("pyquery"),
         requirement("requests"),
+        requirement("urllib3"),
+        requirement("chardet"),
+        requirement("certifi"),
+        requirement("idna"),
     ],
     imports = ["../../",],
 )
