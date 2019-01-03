@@ -28,7 +28,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <src/core/lib/gprpp/ref_counted.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
