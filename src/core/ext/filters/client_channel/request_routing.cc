@@ -32,8 +32,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -61,8 +63,6 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_metadata.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 
 namespace grpc_core {
 
@@ -523,7 +523,8 @@ RequestRouter::RequestRouter(
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL);
   if (grpc_channel_arg_get_bool(arg, false)) {
-    subchannel_pool_ = grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
+    subchannel_pool_ =
+        grpc_core::MakeRefCounted<grpc_core::LocalSubchannelPool>();
   } else {
     subchannel_pool_ = grpc_core::GlobalSubchannelPool::instance();
   }

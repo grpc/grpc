@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -30,7 +31,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 // Channel arg containing a grpc_resolved_address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
@@ -73,7 +73,7 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 namespace grpc_core {
 
 class SubchannelKey;
-//class SubchannelPoolInterface;
+// class SubchannelPoolInterface;
 
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
@@ -190,7 +190,8 @@ grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);
 
 struct grpc_subchannel_args {
-  /* When updating this struct, also update subchannel_index.c */
+  // When updating this struct, also update subchannel_index.cc and
+  // client_channel_factory_create_subchannel().
 
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */

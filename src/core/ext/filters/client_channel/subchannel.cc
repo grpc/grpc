@@ -28,6 +28,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <src/core/lib/gprpp/ref_counted.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"

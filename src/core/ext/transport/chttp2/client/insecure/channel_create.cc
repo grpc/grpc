@@ -42,7 +42,9 @@ static void client_channel_factory_unref(
 static grpc_subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
   grpc_subchannel_args final_sc_args;
-  memcpy(&final_sc_args, args, sizeof(*args));
+  final_sc_args.subchannel_pool = args->subchannel_pool;
+  final_sc_args.filter_count = args->filter_count;
+  final_sc_args.filters = args->filters;
   final_sc_args.args = grpc_default_authority_add_if_not_present(args->args);
   grpc_connector* connector = grpc_chttp2_connector_create();
   grpc_subchannel* s = grpc_subchannel_create(connector, &final_sc_args);

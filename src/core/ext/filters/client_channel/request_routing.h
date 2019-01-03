@@ -25,6 +25,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -36,7 +37,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
 

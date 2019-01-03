@@ -20,6 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/debug/trace.h"
 
 namespace grpc_core {
 
@@ -34,13 +35,11 @@ GlobalSubchannelPool::~GlobalSubchannelPool() {
 }
 
 void GlobalSubchannelPool::Init() {
-  instance_ = New<RefCountedPtr<GlobalSubchannelPool>>(MakeRefCounted<GlobalSubchannelPool>());
+  instance_ = New<RefCountedPtr<GlobalSubchannelPool>>(
+      MakeRefCounted<GlobalSubchannelPool>());
 }
 
 void GlobalSubchannelPool::Shutdown() {
-  // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
-  // To solve that, we should force polling to flush any pending callbacks, then
-  // shutdown safely.
   // To ensure Init() was called before.
   GPR_ASSERT(instance_ != nullptr);
   // To ensure Shutdown() was not called before.

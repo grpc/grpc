@@ -26,12 +26,15 @@
 
 namespace grpc_core {
 
+TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
+
 //
 // SubchannelKey
 //
 
 SubchannelKey::SubchannelKey(const grpc_subchannel_args* args) {
-  args_ = static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(grpc_subchannel_args)));
+  args_ = static_cast<grpc_subchannel_args*>(
+      gpr_malloc(sizeof(grpc_subchannel_args)));
   Init(args, grpc_channel_args_normalize);
 }
 
@@ -42,7 +45,8 @@ SubchannelKey::~SubchannelKey() {
 }
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
-  args_ = static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(grpc_subchannel_args)));
+  args_ = static_cast<grpc_subchannel_args*>(
+      gpr_malloc(sizeof(grpc_subchannel_args)));
   Init(other.args_, grpc_channel_args_copy);
 }
 
@@ -77,8 +81,8 @@ void SubchannelKey::Init(
   if (args_->filter_count > 0) {
     args_->filters = static_cast<const grpc_channel_filter**>(
         gpr_malloc(sizeof(*args_->filters) * args_->filter_count));
-    memcpy(reinterpret_cast<grpc_channel_filter*>(args_->filters), args->filters,
-           sizeof(*args_->filters) * args_->filter_count);
+    memcpy(reinterpret_cast<grpc_channel_filter*>(args_->filters),
+           args->filters, sizeof(*args_->filters) * args_->filter_count);
   } else {
     args_->filters = nullptr;
   }
@@ -91,13 +95,12 @@ bool SubchannelKey::force_different_ = false;
 // SubchannelPoolInterface
 //
 
-
-//SubchannelPoolInterface* SubchannelPoolInterface::Ref() {
+// SubchannelPoolInterface* SubchannelPoolInterface::Ref() {
 //  refs_.RefNonZero();
 //  return this;
 //}
 //
-//void SubchannelPoolInterface::Unref() {
+// void SubchannelPoolInterface::Unref() {
 //  if (refs_.Unref()) grpc_core::Delete(this);
 //}
 

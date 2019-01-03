@@ -24,8 +24,8 @@
 #include <grpc/impl/codegen/log.h>
 
 //#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/avl/avl.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
@@ -74,9 +74,15 @@ class SubchannelKey {
   static bool force_different_;
 };
 
+extern TraceFlag grpc_subchannel_pool_trace;
+
 // Interface for subchannel pool.
+// TODO(juanlishen): This refcounting mechanism may lead to memory leak.
+// To solve that, we should force polling to flush any pending callbacks, then
+// shut down safely. See https://github.com/grpc/grpc/issues/12560.
 class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
  public:
+  SubchannelPoolInterface() : RefCounted(&grpc_subchannel_pool_trace) {}
   virtual ~SubchannelPoolInterface() {}
 
   // Registers a subchannel against a key. Takes ownership of \a constructed.
@@ -93,12 +99,6 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Finds the subchannel registered for the given subchannel key. Returns NULL
   // if no such channel exists. Thread-safe.
   virtual grpc_subchannel* FindSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
-
-//  // Increments the (non-zero) refcount of the subchannel pool.
-//  SubchannelPoolInterface* Ref();
-//  // Decrements the refcount of the subchannel pool. If the refcount drops to
-//  // zero, destroys the subchannel pool.
-//  void Unref();
 
   GRPC_ABSTRACT_BASE_CLASS
 

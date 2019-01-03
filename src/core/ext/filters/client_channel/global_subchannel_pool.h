@@ -53,7 +53,8 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:
-  // The singleton instance.
+  // The singleton instance. (It's a pointer to RefCountedPtr so that this
+  // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
   // A map from subchannel key to subchannel.
