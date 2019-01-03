@@ -4263,6 +4263,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_timer
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_timer.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: byte_stream_test
   gtest: true
   build: test

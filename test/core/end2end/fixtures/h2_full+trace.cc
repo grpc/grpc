@@ -113,6 +113,15 @@ int main(int argc, char** argv) {
   g_fixture_slowdown_factor = 10;
 #endif
 
+#ifdef GPR_WINDOWS
+  /* on Windows, writing logs to stderr is very slow
+     when stderr is redirected to a disk file.
+     The "trace" tests fixtures generates large amount
+     of logs, so setting a buffer for stderr prevents certain
+     test cases from timing out. */
+  setvbuf(stderr, NULL, _IOLBF, 1024);
+#endif
+
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
