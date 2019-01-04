@@ -106,9 +106,6 @@ struct grpc_subchannel {
         keep the subchannel open */
   gpr_atm ref_pair;
 
-  /** non-transport related channel filters */
-  const grpc_channel_filter** filters;
-  size_t num_filters;
   /** channel arguments */
   grpc_channel_args* args;
 
@@ -389,7 +386,6 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
     c->channelz_subchannel->MarkSubchannelDestroyed();
     c->channelz_subchannel.reset();
   }
-  gpr_free((void*)c->filters);
   c->health_check_service_name.reset();
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -573,15 +569,6 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
   grpc_connector_ref(c->connector);
-  c->num_filters = args->filter_count;
-  if (c->num_filters > 0) {
-    c->filters = static_cast<const grpc_channel_filter**>(
-        gpr_malloc(sizeof(grpc_channel_filter*) * c->num_filters));
-    memcpy((void*)c->filters, args->filters,
-           sizeof(grpc_channel_filter*) * c->num_filters);
-  } else {
-    c->filters = nullptr;
-  }
   c->pollset_set = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));

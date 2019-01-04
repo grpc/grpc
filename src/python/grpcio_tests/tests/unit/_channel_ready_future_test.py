@@ -60,6 +60,8 @@ class ChannelReadyFutureTest(unittest.TestCase):
         self.assertTrue(ready_future.done())
         self.assertFalse(ready_future.running())
 
+        channel.close()
+
     def test_immediately_connectable_channel_connectivity(self):
         thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
         server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
@@ -83,6 +85,9 @@ class ChannelReadyFutureTest(unittest.TestCase):
         self.assertTrue(ready_future.done())
         self.assertFalse(ready_future.running())
         self.assertFalse(thread_pool.was_used())
+
+        channel.close()
+        server.stop(None)
 
 
 if __name__ == '__main__':

@@ -186,11 +186,6 @@ struct grpc_subchannel_args {
   // When updating this struct, also update subchannel_index.cc and
   // client_channel_factory_create_subchannel().
 
-  /** Channel filters for this channel - wrapped factories will likely
-      want to mutate this */
-  const grpc_channel_filter** filters;
-  /** The number of filters in the above array */
-  size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args* args;
   /** The subchannel pool this subchannel is in */
