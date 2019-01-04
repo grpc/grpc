@@ -189,11 +189,6 @@ grpc_call_stack* grpc_subchannel_call_get_call_stack(
 struct grpc_subchannel_args {
   /* When updating this struct, also update subchannel_index.c */
 
-  /** Channel filters for this channel - wrapped factories will likely
-      want to mutate this */
-  const grpc_channel_filter** filters;
-  /** The number of filters in the above array */
-  size_t filter_count;
   /** Channel arguments to be supplied to the newly created channel */
   const grpc_channel_args* args;
 };
