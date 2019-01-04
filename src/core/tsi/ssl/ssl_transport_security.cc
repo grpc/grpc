@@ -1344,6 +1344,9 @@ static void tls_handshaker_destroy(tsi_handshaker* self) {
   }
   if (impl->reload_arg != nullptr) {
     grpc_tls_credential_reload_arg* arg = impl->reload_arg;
+    if (impl->reload_arg->key_materials_config != nullptr) {
+      impl->reload_arg->key_materials_config->Unref();
+    }
     gpr_free((void*)arg->error_details);
     gpr_free(arg);
   }
