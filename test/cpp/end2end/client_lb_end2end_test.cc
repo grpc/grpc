@@ -702,6 +702,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   EXPECT_EQ(2UL, servers_[0]->service_.clients().size());
 }
 
+// The first parameter determines whether all the subchannel keys are considered different, hence new subchannels are always created.
+// The second parameter determines whether to use local subchannel pool.
 class ClientLbEnd2endWithParamTest
     : public ClientLbEnd2endTest,
       public ::testing::WithParamInterface<std::tuple<bool, bool>> {

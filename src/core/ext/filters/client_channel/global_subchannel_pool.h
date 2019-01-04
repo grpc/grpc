@@ -61,6 +61,8 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   grpc_avl subchannel_map_;
   // To protect subchannel_map_.
   gpr_mu mu_;
+  // The vtable for subchannel operations in an AVL tree.
+  static const grpc_avl_vtable subchannel_avl_vtable_;
 };
 
 }  // namespace grpc_core

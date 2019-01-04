@@ -140,6 +140,9 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   grpc_subchannel_args* final_sc_args =
       static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(*final_sc_args)));
   memcpy(final_sc_args, args, sizeof(*args));
+  final_sc_args->filter_count = args->filter_count;
+  final_sc_args->filters = args->filters;
+  final_sc_args->subchannel_pool = args->subchannel_pool;
   final_sc_args->args = new_args;
   return final_sc_args;
 }

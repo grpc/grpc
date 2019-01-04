@@ -61,10 +61,6 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   virtual grpc_subchannel* FindSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
 
   GRPC_ABSTRACT_BASE_CLASS
-
- protected:
-  // The vtable for subchannel operations in an AVL tree.
-  static const grpc_avl_vtable subchannel_avl_vtable_;
 };
 
 }  // namespace grpc_core

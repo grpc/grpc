@@ -48,6 +48,8 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
  private:
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
+  // The vtable for subchannel operations in an AVL tree.
+  static const grpc_avl_vtable subchannel_avl_vtable_;
 };
 
 }  // namespace grpc_core
