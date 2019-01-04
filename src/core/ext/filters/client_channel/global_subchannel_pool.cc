@@ -19,8 +19,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/subchannel_key.h"
-#include "src/core/lib/debug/trace.h"
+
+#include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 
@@ -76,7 +76,7 @@ grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
       // Note that we should ref the old map first because grpc_avl_add() will
       // unref it while we still need to access it later.
       grpc_avl new_map = grpc_avl_add(
-          grpc_avl_ref(old_map, nullptr), grpc_core::New<SubchannelKey>(*key),
+          grpc_avl_ref(old_map, nullptr), New<SubchannelKey>(*key),
           GRPC_SUBCHANNEL_WEAK_REF(constructed, "subchannel_register+new"),
           nullptr);
       // Try to publish the change to the shared map. It may happen (but
@@ -150,12 +150,12 @@ namespace {
 
 static void sck_avl_destroy(void* p, void* user_data) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
-  grpc_core::Delete(key);
+  Delete(key);
 }
 
 static void* sck_avl_copy(void* p, void* unused) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
-  auto new_key = grpc_core::New<SubchannelKey>(*key);
+  auto new_key = New<SubchannelKey>(*key);
   return static_cast<void*>(new_key);
 }
 
@@ -166,11 +166,11 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 static void scv_avl_destroy(void* p, void* user_data) {
-  GRPC_SUBCHANNEL_WEAK_UNREF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_WEAK_UNREF((grpc_subchannel*)p, "global_subchannel_pool");
 }
 
 static void* scv_avl_copy(void* p, void* unused) {
-  GRPC_SUBCHANNEL_WEAK_REF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_WEAK_REF((grpc_subchannel*)p, "global_subchannel_pool");
   return p;
 }
 

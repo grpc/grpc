@@ -19,7 +19,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/subchannel_key.h"
+
+#include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 
@@ -42,9 +43,8 @@ grpc_subchannel* LocalSubchannelPool::RegisterSubchannel(
     GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
   } else {
     // There hasn't been such subchannel. Add one.
-    subchannel_map_ =
-        grpc_avl_add(subchannel_map_, grpc_core::New<SubchannelKey>(*key),
-                     constructed, nullptr);
+    subchannel_map_ = grpc_avl_add(subchannel_map_, New<SubchannelKey>(*key),
+                                   constructed, nullptr);
     c = constructed;
   }
   return c;
@@ -62,20 +62,19 @@ void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
 grpc_subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(
       grpc_avl_get(subchannel_map_, key, nullptr));
-  if (c == nullptr) return c;
-  return GRPC_SUBCHANNEL_REF(c, "found_from_pool");
+  return c == nullptr ? c : GRPC_SUBCHANNEL_REF(c, "found_from_pool");
 }
 
 namespace {
 
 static void sck_avl_destroy(void* p, void* user_data) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
-  grpc_core::Delete(key);
+  Delete(key);
 }
 
 static void* sck_avl_copy(void* p, void* unused) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
-  auto new_key = grpc_core::New<SubchannelKey>(*key);
+  auto new_key = New<SubchannelKey>(*key);
   return static_cast<void*>(new_key);
 }
 

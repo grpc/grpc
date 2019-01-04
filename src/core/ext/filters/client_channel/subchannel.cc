@@ -33,7 +33,6 @@
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_key.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,7 +42,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -557,9 +555,9 @@ struct HealthCheckParams {
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
                                         const grpc_subchannel_args* args) {
   grpc_core::SubchannelKey* key =
-      grpc_core::New<grpc_core::SubchannelKey>(args);
+      grpc_core::New<grpc_core::SubchannelKey>(args->args);
   grpc_subchannel* c = args->subchannel_pool->FindSubchannel(key);
-  if (c) {
+  if (c != nullptr) {
     grpc_core::Delete(key);
     return c;
   }

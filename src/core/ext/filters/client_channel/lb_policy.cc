@@ -18,9 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
+
 #include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(

@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 
@@ -57,12 +56,12 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
+  // The vtable for subchannel operations in an AVL tree.
+  static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
   grpc_avl subchannel_map_;
   // To protect subchannel_map_.
   gpr_mu mu_;
-  // The vtable for subchannel operations in an AVL tree.
-  static const grpc_avl_vtable subchannel_avl_vtable_;
 };
 
 }  // namespace grpc_core

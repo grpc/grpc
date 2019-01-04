@@ -127,7 +127,7 @@ class RequestRouter {
   LoadBalancingPolicy* lb_policy() const { return lb_policy_.get(); }
 
  private:
-  using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
+  using TraceStringVector = InlinedVector<char*, 3>;
 
   class ReresolutionRequestHandler;
   class LbConnectivityWatcher;
@@ -169,7 +169,9 @@ class RequestRouter {
   // LB policy and associated state.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   bool exit_idle_when_lb_policy_arrives_ = false;
-  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool_;
+
+  // Subchannel pool to pass to LB policy.
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
 
   grpc_connectivity_state_tracker state_tracker_;
 };

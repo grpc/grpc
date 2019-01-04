@@ -21,20 +21,53 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/log.h>
-
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
-typedef struct grpc_subchannel grpc_subchannel;
+struct grpc_subchannel;
 
 namespace grpc_core {
 
-class SubchannelKey;
-
 extern TraceFlag grpc_subchannel_pool_trace;
+
+// A key that can uniquely identify a subchannel.
+class SubchannelKey {
+ public:
+  explicit SubchannelKey(const grpc_channel_args* args);
+  ~SubchannelKey();
+
+  // Copyable.
+  SubchannelKey(const SubchannelKey& other);
+  SubchannelKey& operator=(const SubchannelKey& other);
+  // Not movable.
+  SubchannelKey(SubchannelKey&&) = delete;
+  SubchannelKey& operator=(SubchannelKey&&) = delete;
+
+  int Cmp(const SubchannelKey& other) const;
+
+  // Sets whether subchannel keys are always regarded different.
+  // If \a force_different is true, all keys are regarded different, resulting
+  // in new subchannels always being created in a subchannel pool. Otherwise,
+  // the keys will be compared as usual.
+  //
+  // Tests using this function \em MUST run tests with and without \a
+  // force_different set.
+  static void TestOnlySetForceDifferent(bool force_different);
+
+ private:
+  // Initializes the subchannel key with the given \a args and the function to
+  // copy channel args.
+  void Init(
+      const grpc_channel_args* args,
+      grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
+
+  const grpc_channel_args* args_;
+
+  // If set, all subchannel keys are regarded different.
+  static bool force_different_;
+};
 
 // Interface for subchannel pool.
 // TODO(juanlishen): This refcounting mechanism may lead to memory leak.
