@@ -30,21 +30,17 @@ struct grpc_tls_key_materials_config
     : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
  public:
   ~grpc_tls_key_materials_config();
-  void set_key_materials(const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
-                         const char* root_certs, size_t num);
+
+  /** Getters for member fields. **/
   const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs() const {
-    return pem_key_cert_pairs_;
-  }
-  grpc_ssl_pem_key_cert_pair* mutable_pem_key_cert_pairs() {
     return pem_key_cert_pairs_;
   }
   size_t num_key_cert_pairs() const { return num_key_cert_pairs_; }
   const char* pem_root_certs() const { return pem_root_certs_; }
 
-  void set_num_key_cert_pairs(size_t pairs) { num_key_cert_pairs_ = pairs; }
-  void set_pem_key_cert_pairs(grpc_ssl_pem_key_cert_pair* pairs) {
-    pem_key_cert_pairs_ = pairs;
-  }
+  /** Setters for member fields. **/
+  void set_key_materials(const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
+                         const char* root_certs, size_t num);
 
  private:
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs_;
@@ -66,35 +62,35 @@ struct grpc_tls_credential_reload_config
   ~grpc_tls_credential_reload_config();
 
   int schedule(grpc_tls_credential_reload_arg* arg) const {
-    return schedule_(const_cast<void*>(config_user_data_), arg);
+    return schedule_(config_user_data_, arg);
   }
   void cancel(grpc_tls_credential_reload_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       return;
     }
-    cancel_(const_cast<void*>(config_user_data_), arg);
+    cancel_(config_user_data_, arg);
   }
 
  private:
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
-  const void* config_user_data_;
+  void* config_user_data_;
   /** callback function for invoking credential reload API. The implementation
      of this method has to be non-blocking, but can be performed synchronously
      or asynchronously.
 
-      If processing occurs synchronously, it populates \a arg->key_materials, \a
-      arg->status, and \a arg->error_details and returns zero.
+     If processing occurs synchronously, it populates \a arg->key_materials, \a
+     arg->status, and \a arg->error_details and returns zero.
 
-      If processing occurs asynchronously, it returns a non-zero value.
+     If processing occurs asynchronously, it returns a non-zero value.
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule returns.
   */
   int (*schedule_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
   /** callback function for cancelling a credential reload request scheduled via
      an asynchronous \a schedule. \a arg is used to pinpoint an exact reloading
-      request to be cancelled, and the operation may not have any effect if the
+     request to be cancelled, and the operation may not have any effect if the
      request has already been processed. */
   void (*cancel_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
   /** callback function for cleaning up any data associated with credential
@@ -116,20 +112,20 @@ struct grpc_tls_server_authorization_check_config
   ~grpc_tls_server_authorization_check_config();
 
   int schedule(grpc_tls_server_authorization_check_arg* arg) const {
-    return schedule_(const_cast<void*>(config_user_data_), arg);
+    return schedule_(config_user_data_, arg);
   }
   void cancel(grpc_tls_server_authorization_check_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       return;
     }
-    cancel_(const_cast<void*>(config_user_data_), arg);
+    cancel_(config_user_data_, arg);
   }
 
  private:
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
-  const void* config_user_data_;
+  void* config_user_data_;
 
   /** callback function for invoking server authorization check. The
      implementation of this method has to be non-blocking, but can be performed
@@ -155,6 +151,7 @@ struct grpc_tls_server_authorization_check_config
   void (*destruct_)(void* config_user_data);
 };
 
+/* TLS credentials options. */
 struct grpc_tls_credentials_options
     : public grpc_core::RefCounted<grpc_tls_credentials_options> {
  public:
@@ -170,7 +167,7 @@ struct grpc_tls_credentials_options
     }
   }
 
-  /* Getters for options members. */
+  /* Getters for member fields. */
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
@@ -188,7 +185,7 @@ struct grpc_tls_credentials_options
     return key_materials_config_.get();
   }
 
-  /* Setters for options members. */
+  /* Setters for member fields. */
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;

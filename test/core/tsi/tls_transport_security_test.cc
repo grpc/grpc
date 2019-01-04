@@ -70,22 +70,24 @@ static void populate_tls_key_materials_config(
     grpc_tls_key_materials_config* config,
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs) {
   GPR_ASSERT(config != nullptr);
-  config->set_num_key_cert_pairs(num_key_cert_pairs);
-  if (num_key_cert_pairs > 0) {
-    GPR_ASSERT(pem_key_cert_pairs != nullptr);
-    grpc_ssl_pem_key_cert_pair* key_cert_pairs =
-        static_cast<grpc_ssl_pem_key_cert_pair*>(gpr_zalloc(
-            num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
-    config->set_pem_key_cert_pairs(key_cert_pairs);
+  if (num_key_cert_pairs == 0) {
+    return;
   }
+  grpc_ssl_pem_key_cert_pair* key_cert_pairs =
+      static_cast<grpc_ssl_pem_key_cert_pair*>(
+          gpr_zalloc(num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(pem_key_cert_pairs[i].private_key != nullptr);
-    GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != nullptr);
-    config->mutable_pem_key_cert_pairs()[i].cert_chain =
-        gpr_strdup(pem_key_cert_pairs[i].cert_chain);
-    config->mutable_pem_key_cert_pairs()[i].private_key =
+    key_cert_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
+    key_cert_pairs[i].private_key =
         gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
+  config->set_key_materials(key_cert_pairs, nullptr, num_key_cert_pairs);
+  // free memeory
+  for (size_t i = 0; i < num_key_cert_pairs; i++) {
+    gpr_free((void*)key_cert_pairs[i].private_key);
+    gpr_free((void*)key_cert_pairs[i].cert_chain);
+  }
+  gpr_free(key_cert_pairs);
 }
 
 static void client_options_set_key_materials_config(

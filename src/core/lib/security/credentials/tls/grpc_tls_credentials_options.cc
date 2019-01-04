@@ -43,7 +43,9 @@ void grpc_tls_key_materials_config::set_key_materials(
     pem_key_cert_pairs_[i].cert_chain =
         gpr_strdup(key_cert_pairs[i].cert_chain);
   }
-  pem_root_certs_ = gpr_strdup(root_certs);
+  if (root_certs != nullptr) {
+    pem_root_certs_ = gpr_strdup(root_certs);
+  }
   num_key_cert_pairs_ = num;
 }
 
@@ -63,7 +65,7 @@ grpc_tls_credential_reload_config::grpc_tls_credential_reload_config(
                     grpc_tls_credential_reload_arg* arg),
     void (*cancel)(void* config_user_data, grpc_tls_credential_reload_arg* arg),
     void (*destruct)(void* config_user_data))
-    : config_user_data_(config_user_data),
+    : config_user_data_(const_cast<void*>(config_user_data)),
       schedule_(schedule),
       cancel_(cancel),
       destruct_(destruct) {}
@@ -83,7 +85,7 @@ grpc_tls_server_authorization_check_config::
         void (*cancel)(void* config_user_data,
                        grpc_tls_server_authorization_check_arg* arg),
         void (*destruct)(void* config_user_data))
-    : config_user_data_(config_user_data),
+    : config_user_data_(const_cast<void*>(config_user_data)),
       schedule_(schedule),
       cancel_(cancel),
       destruct_(destruct) {}
@@ -95,7 +97,7 @@ grpc_tls_server_authorization_check_config::
   }
 }
 
-/** -- TLS credentials options API implementation. -- **/
+/** -- Wrapper APIs declared in grpc_security.h -- **/
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   return grpc_core::New<grpc_tls_credentials_options>();
 }
@@ -149,7 +151,6 @@ void grpc_tls_credentials_options_set_server_authorization_check_config(
   options->set_server_authorization_check_config(config);
 }
 
-/** -- TLS key materials config API implementation. -- **/
 grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
   return grpc_core::New<grpc_tls_key_materials_config>();
 }
@@ -167,7 +168,6 @@ void grpc_tls_key_materials_config_set_key_materials(
   config->set_key_materials(key_cert_pairs, root_certs, num);
 }
 
-/** -- TLS credential reload config API implementation. -- **/
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
     const void* config_user_data,
     int (*schedule)(void* config_user_data,
@@ -184,7 +184,6 @@ grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
       config_user_data, schedule, cancel, destruct);
 }
 
-/** -- TLS server authorization check config API implementation. -- **/
 grpc_tls_server_authorization_check_config*
 grpc_tls_server_authorization_check_config_create(
     const void* config_user_data,
