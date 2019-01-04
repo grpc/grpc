@@ -78,18 +78,18 @@ def append_junit_xml_results(tree,
         # after the last dot, which results bad info being displayed in the UI.
         # We replace dots by another character to avoid this problem.
         suite_name = suite_name.replace('.', '_')
-    testsuite = ET.SubElement(
-        tree.getroot(),
-        'testsuite',
-        id=id,
-        package=suite_package,
-        name=suite_name,
-        timestamp=datetime.datetime.now().isoformat())
+    #testsuite = ET.SubElement(
+    #    tree.getroot(),
+    #    'testsuite',
+    #    id=id,
+    #    package=suite_package,
+    #    name=suite_name,
+    #    timestamp=datetime.datetime.now().isoformat())
     failure_count = 0
     error_count = 0
     for shortname, results in six.iteritems(resultset):
         for result in results:
-            xml_test_suite = ET.SubElement(testsuite, 'testsuite', name=shortname)
+            xml_test_suite = ET.SubElement(tree.getroot(), 'testsuite', name=shortname)
             xml_test = ET.SubElement(xml_test_suite, 'testcase', name=shortname)
             if result.elapsed_time:
                 xml_test.set('time', str(result.elapsed_time))
@@ -104,8 +104,8 @@ def append_junit_xml_results(tree,
                 error_count += 1
             elif result.state == 'SKIPPED':
                 ET.SubElement(xml_test, 'skipped', message='Skipped')
-    testsuite.set('failures', str(failure_count))
-    testsuite.set('errors', str(error_count))
+    #testsuite.set('failures', str(failure_count))
+    #testsuite.set('errors', str(error_count))
 
 
 def render_interop_html_report(client_langs, server_langs, test_cases,
