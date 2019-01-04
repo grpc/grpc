@@ -677,6 +677,29 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
+  // Start one server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  std::vector<int> ports = GetServersPorts();
+  // Create two channels that (by default) use the global subchannel pool.
+  auto channel1 = BuildChannel("pick_first");
+  auto stub1 = BuildStub(channel1);
+  SetNextResolution(ports);
+  auto channel2 = BuildChannel("pick_first");
+  auto stub2 = BuildStub(channel2);
+  SetNextResolution(ports);
+  WaitForServer(stub1, 0, DEBUG_LOCATION);
+  // Send one RPC on each channel.
+  CheckRpcSendOk(stub1, DEBUG_LOCATION);
+  CheckRpcSendOk(stub2, DEBUG_LOCATION);
+  // The server receives two requests.
+  EXPECT_EQ(2, servers_[0]->service_.request_count());
+  // The two requests are from the same client port, because the two channels
+  // share subchannels via the global subchannel pool.
+  EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   // Start one server.
   const int kNumServers = 1;
@@ -702,8 +725,9 @@ TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   EXPECT_EQ(2UL, servers_[0]->service_.clients().size());
 }
 
-// The first parameter determines whether all the subchannel keys are considered different, hence new subchannels are always created.
-// The second parameter determines whether to use local subchannel pool.
+// The first parameter determines whether all the subchannel keys are considered
+// different, hence new subchannels are always created. The second parameter
+// determines whether to use local subchannel pool.
 class ClientLbEnd2endWithParamTest
     : public ClientLbEnd2endTest,
       public ::testing::WithParamInterface<std::tuple<bool, bool>> {

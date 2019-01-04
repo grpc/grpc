@@ -138,7 +138,8 @@ grpc_subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   grpc_avl index = grpc_avl_ref(subchannel_map_, nullptr);
   gpr_mu_unlock(&mu_);
   grpc_subchannel* c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
-      static_cast<grpc_subchannel*>(grpc_avl_get(index, key, nullptr)), "found_from_pool");
+      static_cast<grpc_subchannel*>(grpc_avl_get(index, key, nullptr)),
+      "found_from_pool");
   grpc_avl_unref(index, nullptr);
   return c;
 }

@@ -42,10 +42,9 @@ grpc_subchannel* LocalSubchannelPool::RegisterSubchannel(
     GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
   } else {
     // There hasn't been such subchannel. Add one.
-    subchannel_map_ = grpc_avl_add(
-        subchannel_map_, grpc_core::New<SubchannelKey>(*key),
-        constructed,
-        nullptr);
+    subchannel_map_ =
+        grpc_avl_add(subchannel_map_, grpc_core::New<SubchannelKey>(*key),
+                     constructed, nullptr);
     c = constructed;
   }
   return c;
@@ -61,11 +60,10 @@ void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
 }
 
 grpc_subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
-  grpc_subchannel* c = static_cast<grpc_subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
+  grpc_subchannel* c = static_cast<grpc_subchannel*>(
+      grpc_avl_get(subchannel_map_, key, nullptr));
   if (c == nullptr) return c;
-  return GRPC_SUBCHANNEL_REF(c
-      ,
-      "found_from_pool");
+  return GRPC_SUBCHANNEL_REF(c, "found_from_pool");
 }
 
 namespace {
@@ -87,12 +85,9 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
   return key_a->Cmp(*key_b);
 }
 
-static void scv_avl_destroy(void* p, void* user_data) {
-}
+static void scv_avl_destroy(void* p, void* user_data) {}
 
-static void* scv_avl_copy(void* p, void* unused) {
-  return p;
-}
+static void* scv_avl_copy(void* p, void* unused) { return p; }
 
 }  // namespace
 

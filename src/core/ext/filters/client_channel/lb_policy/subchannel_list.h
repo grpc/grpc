@@ -514,8 +514,6 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     // policy, which does not use a SubchannelList.
     GPR_ASSERT(!addresses[i].IsBalancer());
     grpc_subchannel_args sc_args;
-    sc_args.filter_count = 0;
-    sc_args.filters = nullptr;
     sc_args.subchannel_pool = policy->subchannel_pool();
     InlinedVector<grpc_arg, 4> args_to_add;
     args_to_add.emplace_back(
