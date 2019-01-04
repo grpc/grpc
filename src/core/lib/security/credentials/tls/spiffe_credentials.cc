@@ -35,12 +35,9 @@
 grpc_tls_spiffe_credentials::grpc_tls_spiffe_credentials(
     const grpc_tls_credentials_options* options)
     : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
-      options_(std::move(
-          const_cast<grpc_tls_credentials_options*>(options)->Ref())) {}
+      options_(const_cast<grpc_tls_credentials_options*>(options)->Ref()) {}
 
 grpc_tls_spiffe_credentials::~grpc_tls_spiffe_credentials() {
-  if (options_.get() == nullptr)
-    gpr_log(GPR_ERROR, "channel options is nullptr");
   options_.get()->Unref();
 }
 

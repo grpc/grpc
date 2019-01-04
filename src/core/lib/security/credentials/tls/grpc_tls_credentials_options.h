@@ -195,18 +195,18 @@ struct grpc_tls_credentials_options
   }
   void set_key_materials_config(grpc_tls_key_materials_config* config) {
     if (config != nullptr) {
-      key_materials_config_ = std::move(config->Ref());
+      key_materials_config_ = config->Ref();
     }
   }
   void set_credential_reload_config(grpc_tls_credential_reload_config* config) {
     if (config != nullptr) {
-      credential_reload_config_ = std::move(config->Ref());
+      credential_reload_config_ = config->Ref();
     }
   }
   void set_server_authorization_check_config(
       grpc_tls_server_authorization_check_config* config) {
     if (config != nullptr) {
-      server_authorization_check_config_ = std::move(config->Ref());
+      server_authorization_check_config_ = config->Ref();
     }
   }
 
