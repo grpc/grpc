@@ -138,7 +138,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   }
   grpc_channel_args_destroy(args_with_authority);
   grpc_subchannel_args* final_sc_args =
-      static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(*final_sc_args)));
+      static_cast<grpc_subchannel_args*>(gpr_zalloc(sizeof(*final_sc_args)));
   final_sc_args->subchannel_pool = args->subchannel_pool;
   final_sc_args->args = new_args;
   return final_sc_args;
@@ -157,6 +157,7 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
   grpc_connector* connector = grpc_chttp2_connector_create();
   grpc_subchannel* s = grpc_subchannel_create(connector, subchannel_args);
   grpc_connector_unref(connector);
+  subchannel_args->subchannel_pool.reset();
   grpc_channel_args_destroy(
       const_cast<grpc_channel_args*>(subchannel_args->args));
   gpr_free(subchannel_args);
