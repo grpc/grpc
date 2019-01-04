@@ -89,7 +89,8 @@ def append_junit_xml_results(tree,
     error_count = 0
     for shortname, results in six.iteritems(resultset):
         for result in results:
-            xml_test = ET.SubElement(testsuite, 'testcase', name=shortname)
+            xml_test_suite = ET.SubElement(testsuite, 'testsuite', name=shortname)
+            xml_test = ET.SubElement(xml_test_suite, 'testcase', name=shortname)
             if result.elapsed_time:
                 xml_test.set('time', str(result.elapsed_time))
             filtered_msg = _filter_msg(result.message, 'XML')
