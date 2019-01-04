@@ -291,7 +291,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
               .ok());
-      EXPECT_EQ(req.message().find("Hello"), 0);
+      EXPECT_EQ(req.message().find("Hello"), 0u);
       msg = req.message();
     }
     if (methods->QueryInterceptionHookPoint(
@@ -316,7 +316,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       EXPECT_EQ(static_cast<EchoResponse*>(methods->GetRecvMessage())
                     ->message()
                     .find("Hello"),
-                0);
+                0u);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
@@ -370,7 +370,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
               .ok());
-      EXPECT_TRUE(req.message().find("Hello") == 0);
+      EXPECT_TRUE(req.message().find("Hello") == 0u);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_CLOSE)) {
@@ -386,7 +386,7 @@ class LoggingInterceptor : public experimental::Interceptor {
             experimental::InterceptionHookPoints::POST_RECV_MESSAGE)) {
       EchoResponse* resp =
           static_cast<EchoResponse*>(methods->GetRecvMessage());
-      EXPECT_TRUE(resp->message().find("Hello") == 0);
+      EXPECT_TRUE(resp->message().find("Hello") == 0u);
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
