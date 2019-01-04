@@ -46,7 +46,7 @@ namespace experimental {
 /// operation has been requested and it is available. POST_RECV means that a
 /// result is available but has not yet been passed back to the application.
 enum class InterceptionHookPoints {
-  /// The first two in this list are for clients and servers
+  /// The first three in this list are for clients and servers
   PRE_SEND_INITIAL_METADATA,
   PRE_SEND_MESSAGE,
   POST_SEND_MESSAGE,
