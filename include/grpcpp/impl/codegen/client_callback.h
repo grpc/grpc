@@ -73,7 +73,7 @@ class CallbackUnaryCallImpl {
         CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    Status s = ops->SendMessage(*request);
+    Status s = ops->SendMessagePtr(request);
     if (!s.ok()) {
       tag->force_run(s);
       return;
@@ -341,7 +341,7 @@ class ClientCallbackReaderWriterImpl
       start_corked_ = false;
     }
     // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
@@ -524,7 +524,7 @@ class ClientCallbackReaderImpl
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(start_ops_.SendMessage(*request).ok());
+    GPR_CODEGEN_ASSERT(start_ops_.SendMessagePtr(request).ok());
     start_ops_.ClientSendClose();
   }
 
@@ -650,7 +650,7 @@ class ClientCallbackWriterImpl
       start_corked_ = false;
     }
     // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessage(*msg).ok());
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
