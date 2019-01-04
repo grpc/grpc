@@ -379,7 +379,7 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   if (msg_ == nullptr) {
     return serializer_(&message);
   }
-  return Status::OK;
+  return Status();
 }
 
 template <class M>
