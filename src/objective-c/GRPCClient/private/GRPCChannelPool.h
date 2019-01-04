@@ -88,7 +88,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Return a channel with a particular configuration. The channel may be a cached channel.
  */
-- (GRPCPooledChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions;
+- (nullable GRPCPooledChannel *)channelWithHost:(NSString *)host
+                                    callOptions:(GRPCCallOptions *)callOptions;
 
 /**
  * Disconnect all channels in this pool.

@@ -160,7 +160,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _timeout = timeout < 0 ? 0 : timeout;
     _oauth2AccessToken = [oauth2AccessToken copy];
     _authTokenProvider = authTokenProvider;
-    _initialMetadata = [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
+    _initialMetadata =
+        initialMetadata == nil
+            ? nil
+            : [[NSDictionary alloc] initWithDictionary:initialMetadata copyItems:YES];
     _userAgentPrefix = [userAgentPrefix copy];
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
@@ -171,7 +174,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _connectInitialBackoff = connectInitialBackoff < 0 ? 0 : connectInitialBackoff;
     _connectMaxBackoff = connectMaxBackoff < 0 ? 0 : connectMaxBackoff;
     _additionalChannelArgs =
-        [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
+        additionalChannelArgs == nil
+            ? nil
+            : [[NSDictionary alloc] initWithDictionary:additionalChannelArgs copyItems:YES];
     _PEMRootCertificates = [PEMRootCertificates copy];
     _PEMPrivateKey = [PEMPrivateKey copy];
     _PEMCertificateChain = [PEMCertificateChain copy];
@@ -458,7 +463,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setConnectMinTimeout:(NSTimeInterval)connectMinTimeout {
   if (connectMinTimeout < 0) {
-    connectMinTimeout = 0;
+    _connectMinTimeout = 0;
   } else {
     _connectMinTimeout = connectMinTimeout;
   }
