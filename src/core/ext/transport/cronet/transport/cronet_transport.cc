@@ -336,7 +336,7 @@ static void add_to_storage(struct stream_obj* s,
   in remove_from_storage */
   op_and_state* new_op = grpc_core::New<op_and_state>(s, *op);
   // Pontential fix to crash on GPR_ASSERT(!curr->done)
-  // TODO (mxyan): check if this is indeed necessary. 
+  // TODO (mxyan): check if this is indeed necessary.
   new_op->done = false;
   gpr_mu_lock(&s->mu);
   storage->head = new_op;
