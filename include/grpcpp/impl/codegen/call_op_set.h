@@ -361,7 +361,6 @@ class CallOpSendMessage {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  bool own_buf;
   // TODO(vjpai): Remove the void below when possible
   // The void in the template parameter below should not be needed
   // (since it should be implicit) but is needed due to an observed
