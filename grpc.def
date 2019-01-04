@@ -136,7 +136,6 @@ EXPORTS
     grpc_tls_credentials_options_set_key_materials_config
     grpc_tls_credentials_options_set_credential_reload_config
     grpc_tls_credentials_options_set_server_authorization_check_config
-    grpc_tls_credentials_options_destroy
     grpc_tls_key_materials_config_create
     grpc_tls_key_materials_config_set_key_materials
     grpc_tls_credential_reload_config_create
