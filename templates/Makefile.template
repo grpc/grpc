@@ -1807,11 +1807,6 @@
   %  endfor
   % endif
   % for src in tgt.src:
-  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: \
-  % for dep in tgt.deps:
-   $(LIBDIR)/$(CONFIG)/lib${dep}.a\
-  % endfor
-
   % if tgt.language == 'c89':
   % for src in tgt.src:
   $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o : ${src}
