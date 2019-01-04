@@ -16,15 +16,25 @@
 import unittest
 import time
 import logging
+import re
 
 import requests
-from pyquery import PyQuery as pq
 
 import grpc
 from grpc_channelz.v1 import channelz
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
+
+# Matches first link inside of a table
+_table_a_href_re = re.compile(r'<table.+?<a href=[\'"](.+?)[\'"]', re.DOTALL)
+# Matches first link inside the second table
+_table_eq1_a_href_re = re.compile(r'<table.+?<table.+?<a href=[\'"](.+?)[\'"]',
+                                  re.DOTALL)
+# Matches all table rows
+_tr_re = re.compile(r'<tr>(.+?)</tr>', re.DOTALL)
+# Matches first link if there is at least two links
+_a_href_a_re = re.compile(r'<a href=[\'"](.+?)[\'"].+?<a', re.DOTALL)
 
 _CHANNELZ_URL_PREFIX_TEMPLATE = 'http://localhost:%d/gdebug/channelz/'
 
@@ -120,19 +130,20 @@ class ChannelzPageTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a channel
-        surffix = pq(resp.text)('table a').attr('href')
+        surffix = _table_a_href_re.search(resp.text).group(1)
         self.assertIn('channel?channel_id=', surffix)
         resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a subchannel
-        surffix = pq(resp.text)('table').eq(1).find('a').attr('href')
+        surffix = _table_eq1_a_href_re.search(resp.text).group(1)
+        # surffix = pq(resp.text)('table').eq(1).find('a').attr('href')
         self.assertIn('subchannel?subchannel_id=', surffix)
         resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a socket
-        surffix = pq(resp.text)('table a').attr('href')
+        surffix = _table_a_href_re.search(resp.text).group(1)
         self.assertIn('socket?socket_id=', surffix)
         resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)
@@ -142,18 +153,14 @@ class ChannelzPageTest(unittest.TestCase):
         resp = requests.get(self._page_url_prefix + 'servers')
         self.assertEqual(resp.status_code, 200)
 
-        # TODO(lidiz) In Python 3, the server from last test unit will remain alive...
-        # Remove the selection logic when the deallocation is fixed.
-        trs = pq(resp.text)('table tr')
-        for i in range(len(trs)):
-            tds = trs.eq(i).find('td')
-            if not tds:
-                continue
-            if not tds.eq(0).find('a'):
-                continue
-            if not tds.eq(len(tds) - 1).find('a'):
-                continue
-            surffix = tds.eq(0).find('a').attr('href')
+        # TODO(lidiz) In Python 3, the server from last test unit will remain
+        # alive... Remove the selection logic when the deallocation is fixed.
+        # Each table row displays a server's detail. If there is only one link,
+        # that means the server is not listening to any socket. To proceed,
+        # we want to pick a server that is listen to at least one socket.
+        trs = _tr_re.findall(resp.text)
+        groups = [_a_href_a_re.search(content) for content in trs]
+        surffix = next(group for group in groups if group is not None).group(1)
 
         # Page of detail of a server
         self.assertIn('serversockets?server_id=', surffix)
@@ -161,7 +168,7 @@ class ChannelzPageTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of the server sockets
-        surffix = pq(resp.text)('table a').attr('href')
+        surffix = _table_a_href_re.search(resp.text).group(1)
         self.assertIn('socket?socket_id=', surffix)
         resp = requests.get(self._page_url_prefix + surffix)
         self.assertEqual(resp.status_code, 200)

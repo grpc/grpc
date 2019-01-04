@@ -50,8 +50,7 @@ INSTALL_REQUIRES = (
     'protobuf>=3.6.0',
     'six>=1.10',
     'google-auth>=1.0.0',
-    'requests>=2.14.2',
-    'pyquery==1.2.4')
+    'requests>=2.14.2')
 
 if not PY3:
     INSTALL_REQUIRES += ('futures>=2.2.0',)

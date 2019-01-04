@@ -14,4 +14,3 @@ chardet==3.0.4
 certifi==2017.4.17
 idna==2.7
 googleapis-common-protos==1.5.5
-pyquery==1.2.4
