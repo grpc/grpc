@@ -76,8 +76,7 @@ grpc_tls_spiffe_credentials::create_security_connector(
 grpc_tls_spiffe_server_credentials::grpc_tls_spiffe_server_credentials(
     const grpc_tls_credentials_options* options)
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_SPIFFE),
-      options_(std::move(
-          const_cast<grpc_tls_credentials_options*>(options)->Ref())) {
+      options_(const_cast<grpc_tls_credentials_options*>(options)->Ref()) {
   options_->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
 }
