@@ -22,4 +22,15 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/interop_matrix/run_interop_matrix_tests.py $RUN_TESTS_FLAGS
+# TODO(jtattermusch): Diagnose out of disk space problems. Remove once not needed.
+df -h
+
+tools/interop_matrix/run_interop_matrix_tests.py $RUN_TESTS_FLAGS || FAILED="true"
+
+# TODO(jtattermusch): Diagnose out of disk space problems. Remove once not needed.
+df -h
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
