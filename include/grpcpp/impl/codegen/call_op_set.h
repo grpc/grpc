@@ -453,14 +453,16 @@ class CallOpRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    if (message_ == nullptr) return;
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!got_message) return;
+    if (message_ == nullptr) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
@@ -548,20 +550,23 @@ class CallOpGenericRecvMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    interceptor_methods->SetRecvMessage(message_);
+    if (!deserialize_) return;
+    interceptor_methods->SetRecvMessage(message_, &got_message);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!got_message) return;
+    if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
+    if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
     if (!deserialize_) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_RECV_MESSAGE);
+    got_message = true;
   }
 
  private:
