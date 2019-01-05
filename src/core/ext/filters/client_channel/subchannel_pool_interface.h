@@ -47,10 +47,12 @@ class SubchannelKey {
 
   int Cmp(const SubchannelKey& other) const;
 
-  // Sets whether subchannel keys are always regarded different.
-  // If \a force_different is true, all keys are regarded different, resulting
-  // in new subchannels always being created in a subchannel pool. Otherwise,
-  // the keys will be compared as usual.
+  // Sets whether subchannel keys are always initialized differently in the
+  // normal ctor. If \a force_different is true, all the subchannel keys
+  // constructed via the normal ctor (vs the copy ctor) will be different even
+  // if the ctor arguments are the same, resulting in new subchannels always
+  // being created in a subchannel pool. Otherwise, the subchannel keys will be
+  // initialized as usual.
   //
   // Tests using this function \em MUST run tests with and without \a
   // force_different set.
@@ -65,7 +67,11 @@ class SubchannelKey {
 
   const grpc_channel_args* args_;
 
-  // If set, all subchannel keys are regarded different.
+  // Additional field to differentiate each subchannel key in testing.
+  size_t test_only_id_;
+
+  // If set, all subchannel keys are initialized differently (except for the
+  // copies of the same subchannel key).
   static bool force_different_;
 };
 

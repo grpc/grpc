@@ -28,6 +28,8 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   Init(args, grpc_channel_args_normalize);
+  static size_t next_id = 0;
+  if (GPR_UNLIKELY(force_different_)) test_only_id_ = next_id++;
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -36,17 +38,21 @@ SubchannelKey::~SubchannelKey() {
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
   Init(other.args_, grpc_channel_args_copy);
+  if (GPR_UNLIKELY(force_different_)) test_only_id_ = other.test_only_id_;
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
   Init(other.args_, grpc_channel_args_copy);
+  if (GPR_UNLIKELY(force_different_)) test_only_id_ = other.test_only_id_;
   return *this;
 }
 
 int SubchannelKey::Cmp(const SubchannelKey& other) const {
-  // To pretend the keys are different, return a non-zero value.
-  if (GPR_UNLIKELY(force_different_)) return 1;
+  // Return 0 if the ID's are the same.
+  if (GPR_UNLIKELY(force_different_)) {
+    return test_only_id_ != other.test_only_id_;
+  }
   return grpc_channel_args_compare(args_, other.args_);
 }
 
