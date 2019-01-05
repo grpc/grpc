@@ -34,12 +34,14 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         requirement('google-auth'),
         requirement('requests'),
-        requirement('enum34'),
         requirement('urllib3'),
         requirement('chardet'),
         requirement('certifi'),
         requirement('idna'),
-    ],
+    ] + select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
     imports=["../../",],
 )
 

@@ -23,9 +23,11 @@ py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
     deps = [
-        requirement("enum34"),
         requirement("six"),
-    ],
+    ] + select({
+        "//conditions:default": [requirement('enum34'),],
+        "//:python3": [],
+    }),
 )
 
 py_library(
