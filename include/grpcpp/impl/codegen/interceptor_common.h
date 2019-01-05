@@ -83,6 +83,8 @@ class InterceptorBatchMethodsImpl
 
   const void* GetSendMessage() override { return orig_send_message_; }
 
+  bool GetSendMessageStatus() override { return !*fail_send_message_; }
+
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {
     return send_initial_metadata_;
   }
@@ -112,14 +114,22 @@ class InterceptorBatchMethodsImpl
 
   Status* GetRecvStatus() override { return recv_status_; }
 
+  void FailHijackedSendMessage() override {
+    GPR_CODEGEN_ASSERT(hooks_[static_cast<size_t>(
+        experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)]);
+    *fail_send_message_ = true;
+  }
+
   std::multimap<grpc::string_ref, grpc::string_ref>* GetRecvTrailingMetadata()
       override {
     return recv_trailing_metadata_->map();
   }
 
-  void SetSendMessage(ByteBuffer* buf, const void* msg) {
+  void SetSendMessage(ByteBuffer* buf, const void* msg,
+                      bool* fail_send_message) {
     send_message_ = buf;
     orig_send_message_ = msg;
+    fail_send_message_ = fail_send_message;
   }
 
   void SetSendInitialMetadata(
@@ -348,6 +358,7 @@ class InterceptorBatchMethodsImpl
   std::function<void(void)> callback_;
 
   ByteBuffer* send_message_ = nullptr;
+  bool* fail_send_message_ = nullptr;
   const void* orig_send_message_ = nullptr;
 
   std::multimap<grpc::string, grpc::string>* send_initial_metadata_;
@@ -400,6 +411,14 @@ class CancelInterceptorBatchMethods
                        "It is illegal to call GetSendMessage on a method which "
                        "has a Cancel notification");
     return nullptr;
+  }
+
+  bool GetSendMessageStatus() override {
+    GPR_CODEGEN_ASSERT(
+        false &&
+        "It is illegal to call GetSendMessageStatus on a method which "
+        "has a Cancel notification");
+    return false;
   }
 
   const void* GetSendMessage() override {
@@ -479,6 +498,12 @@ class CancelInterceptorBatchMethods
   void FailHijackedRecvMessage() override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call FailHijackedRecvMessage on a "
+                       "method which has a Cancel notification");
+  }
+
+  void FailHijackedSendMessage() override {
+    GPR_CODEGEN_ASSERT(false &&
+                       "It is illegal to call FailHijackedSendMessage on a "
                        "method which has a Cancel notification");
   }
 };

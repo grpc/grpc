@@ -326,21 +326,37 @@ class CallOpSendMessage {
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
-  void FinishOp(bool* status) { send_buf_.Clear(); }
+  void FinishOp(bool* status) {
+    if (!send_buf_.Valid()) {
+      return;
+    }
+    if (hijacked_ && failed_send_) {
+      // Hijacking interceptor failed this Op
+      *status = false;
+    } else if (!*status) {
+      // This Op was passed down to core and the Op failed
+      failed_send_ = true;
+    }
+  }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
     if (!send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_, msg_);
+    interceptor_methods->SetSendMessage(&send_buf_, msg_, &failed_send_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
+    if (send_buf_.Valid()) {
+      interceptor_methods->AddInterceptionHookPoint(
+          experimental::InterceptionHookPoints::POST_SEND_MESSAGE);
+    }
+    send_buf_.Clear();
     // The contents of the SendMessage value that was previously set
     // has had its references stolen by core's operations
-    interceptor_methods->SetSendMessage(nullptr, nullptr);
+    interceptor_methods->SetSendMessage(nullptr, nullptr, &failed_send_);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -350,6 +366,7 @@ class CallOpSendMessage {
  private:
   const void* msg_ = nullptr;  // The original non-serialized message
   bool hijacked_ = false;
+  bool failed_send_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
 };
