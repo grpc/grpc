@@ -28,13 +28,16 @@
 #include <grpc/support/string_util.h>
 
 /** -- gRPC TLS key materials config API implementation. -- **/
-void grpc_tls_key_materials_config::free_key_cert_pairs() {
-  for (size_t i = 0; i < num_key_cert_pairs_; i++) {
-    gpr_free((void*)pem_key_cert_pairs_[i].private_key);
-    gpr_free((void*)pem_key_cert_pairs_[i].cert_chain);
+namespace {
+void free_key_cert_pairs(grpc_ssl_pem_key_cert_pair* key_cert_pairs,
+                         size_t num) {
+  for (size_t i = 0; i < num; i++) {
+    gpr_free((void*)key_cert_pairs[i].private_key);
+    gpr_free((void*)key_cert_pairs[i].cert_chain);
   }
-  gpr_free(pem_key_cert_pairs_);
+  gpr_free(key_cert_pairs);
 }
+}  // namespace
 
 void grpc_tls_key_materials_config::set_key_materials(
     const char* root_certs, const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
@@ -43,7 +46,7 @@ void grpc_tls_key_materials_config::set_key_materials(
     gpr_log(GPR_ERROR, "Invalid arguments to set_key_materials()");
     return;
   }
-  free_key_cert_pairs();
+  free_key_cert_pairs(pem_key_cert_pairs_, num_key_cert_pairs_);
   pem_key_cert_pairs_ = static_cast<grpc_ssl_pem_key_cert_pair*>(
       gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair) * num));
   for (size_t i = 0; i < num; i++) {
@@ -60,7 +63,7 @@ void grpc_tls_key_materials_config::set_key_materials(
 }
 
 grpc_tls_key_materials_config::~grpc_tls_key_materials_config() {
-  free_key_cert_pairs();
+  free_key_cert_pairs(pem_key_cert_pairs_, num_key_cert_pairs_);
   gpr_free((void*)pem_root_certs_);
 }
 

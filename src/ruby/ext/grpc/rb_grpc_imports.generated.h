@@ -455,7 +455,7 @@ extern grpc_tls_credentials_options_set_server_authorization_check_config_type g
 typedef grpc_tls_key_materials_config*(*grpc_tls_key_materials_config_create_type)();
 extern grpc_tls_key_materials_config_create_type grpc_tls_key_materials_config_create_import;
 #define grpc_tls_key_materials_config_create grpc_tls_key_materials_config_create_import
-typedef void(*grpc_tls_key_materials_config_set_key_materials_type)(grpc_tls_key_materials_config* config, const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, const char* pem_root_certs, size_t num_key_cert_pairs);
+typedef void(*grpc_tls_key_materials_config_set_key_materials_type)(grpc_tls_key_materials_config* config, const char* pem_root_certs, const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs);
 extern grpc_tls_key_materials_config_set_key_materials_type grpc_tls_key_materials_config_set_key_materials_import;
 #define grpc_tls_key_materials_config_set_key_materials grpc_tls_key_materials_config_set_key_materials_import
 typedef grpc_tls_credential_reload_config*(*grpc_tls_credential_reload_config_create_type)(const void* config_user_data, int (*schedule)(void* config_user_data, grpc_tls_credential_reload_arg* arg), void (*cancel)(void* config_user_data, grpc_tls_credential_reload_arg* arg), void (*destruct)(void* config_user_data));

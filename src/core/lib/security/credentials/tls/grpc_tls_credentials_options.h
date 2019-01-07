@@ -44,7 +44,6 @@ struct grpc_tls_key_materials_config
                          size_t num);
 
  private:
-  void free_key_cert_pairs();
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs_;
   size_t num_key_cert_pairs_;
   const char* pem_root_certs_;
