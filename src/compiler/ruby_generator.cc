@@ -39,9 +39,9 @@ namespace grpc_ruby_generator {
 namespace {
 
 // returns the full canonical message name
-grpc::string GetCanonicalMessageType(const Descriptor *msg) {
-  const Descriptor *top_level_msg;
-  const FileDescriptor *file_containing_msg;
+grpc::string GetCanonicalMessageType(const Descriptor* msg) {
+  const Descriptor* top_level_msg;
+  const FileDescriptor* file_containing_msg;
   grpc::string msg_full_name;
   grpc::string msg_name;
   grpc::string msg_proto_pkg;
