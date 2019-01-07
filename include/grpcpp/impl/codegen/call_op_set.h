@@ -324,8 +324,8 @@ class CallOpSendMessage {
     }
     if (msg_ != nullptr) {
       GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
-      serializer_ = nullptr;
     }
+    serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();

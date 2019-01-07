@@ -98,9 +98,7 @@ class InterceptorBatchMethodsImpl
     *orig_send_message_ = message;
   }
 
-  bool GetSendMessageStatus() override {
-    return !*fail_send_message_;
-  }
+  bool GetSendMessageStatus() override { return !*fail_send_message_; }
 
   std::multimap<grpc::string, grpc::string>* GetSendInitialMetadata() override {
     return send_initial_metadata_;
