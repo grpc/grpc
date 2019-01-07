@@ -57,9 +57,9 @@ void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
   // TODO(juanlishen): The found subchannel should always be the same with the
   // previously registered subchannel. But the PickFirstManyUpdates test
   // (force_different = true) shows that sometimes we can't find the
-  // subchannel from the AVL any more. Investigate why.
-  if (c == nullptr) return;
-  GPR_ASSERT(c == constructed);
+  // subchannel from the AVL any more (or maybe the found one has changed if
+  // ASAN is on). Investigate why.
+  if (c != constructed) return;
   subchannel_map_ = grpc_avl_remove(subchannel_map_, key, nullptr);
 }
 

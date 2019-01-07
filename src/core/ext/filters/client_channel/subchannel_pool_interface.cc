@@ -29,7 +29,9 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   Init(args, grpc_channel_args_normalize);
   static size_t next_id = 0;
-  if (GPR_UNLIKELY(force_different_)) test_only_id_ = next_id++;
+  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
+    test_only_id_ = next_id++;
+  }
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -38,26 +40,30 @@ SubchannelKey::~SubchannelKey() {
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
   Init(other.args_, grpc_channel_args_copy);
-  if (GPR_UNLIKELY(force_different_)) test_only_id_ = other.test_only_id_;
+  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
+    test_only_id_ = other.test_only_id_;
+  }
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
   Init(other.args_, grpc_channel_args_copy);
-  if (GPR_UNLIKELY(force_different_)) test_only_id_ = other.test_only_id_;
+  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
+    test_only_id_ = other.test_only_id_;
+  }
   return *this;
 }
 
 int SubchannelKey::Cmp(const SubchannelKey& other) const {
   // Return 0 if the ID's are the same.
-  if (GPR_UNLIKELY(force_different_)) {
+  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
     return test_only_id_ != other.test_only_id_;
   }
   return grpc_channel_args_compare(args_, other.args_);
 }
 
 void SubchannelKey::TestOnlySetForceDifferent(bool force_creation) {
-  force_different_ = force_creation;
+  gpr_atm_no_barrier_store(&force_different_, force_creation);
 }
 
 void SubchannelKey::Init(
@@ -66,6 +72,6 @@ void SubchannelKey::Init(
   args_ = copy_channel_args(args);
 }
 
-bool SubchannelKey::force_different_ = false;
+gpr_atm SubchannelKey::force_different_ = 0;
 
 }  // namespace grpc_core

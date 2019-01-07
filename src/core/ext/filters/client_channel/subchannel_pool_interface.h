@@ -72,7 +72,7 @@ class SubchannelKey {
 
   // If set, all subchannel keys are initialized differently (except for the
   // copies of the same subchannel key).
-  static bool force_different_;
+  static gpr_atm force_different_;
 };
 
 // Interface for subchannel pool.
