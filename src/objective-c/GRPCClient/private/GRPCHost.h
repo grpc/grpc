@@ -20,6 +20,10 @@
 
 #import <grpc/impl/codegen/compression_types.h>
 
+#import "GRPCChannelFactory.h"
+
+#import <GRPCClient/GRPCCallOptions.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCCompletionQueue;
@@ -28,12 +32,10 @@ struct grpc_channel_credentials;
 
 @interface GRPCHost : NSObject
 
-+ (void)flushChannelCache;
 + (void)resetAllHostSettings;
 
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;
-@property(nonatomic, nullable) struct grpc_channel_credentials *channelCreds;
 @property(nonatomic) grpc_compression_algorithm compressAlgorithm;
 @property(nonatomic) int keepaliveInterval;
 @property(nonatomic) int keepaliveTimeout;
@@ -44,14 +46,14 @@ struct grpc_channel_credentials;
 @property(nonatomic) unsigned int initialConnectBackoff;
 @property(nonatomic) unsigned int maxConnectBackoff;
 
-/** The following properties should only be modified for testing: */
+@property(nonatomic) id<GRPCChannelFactory> channelFactory;
 
-@property(nonatomic, getter=isSecure) BOOL secure;
+/** The following properties should only be modified for testing: */
 
 @property(nonatomic, copy, nullable) NSString *hostNameOverride;
 
 /** The default response size limit is 4MB. Set this to override that default. */
-@property(nonatomic, strong, nullable) NSNumber *responseSizeLimitOverride;
+@property(nonatomic) NSUInteger responseSizeLimitOverride;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */
@@ -62,19 +64,10 @@ struct grpc_channel_credentials;
              withCertChain:(nullable NSString *)pemCertChain
                      error:(NSError **)errorPtr;
 
-/** Create a grpc_call object to the provided path on this host. */
-- (nullable struct grpc_call *)unmanagedCallWithPath:(NSString *)path
-                                          serverName:(NSString *)serverName
-                                             timeout:(NSTimeInterval)timeout
-                                     completionQueue:(GRPCCompletionQueue *)queue;
+@property(atomic) GRPCTransportType transportType;
 
-// TODO: There's a race when a new RPC is coming through just as an existing one is getting
-// notified that there's no connectivity. If connectivity comes back at that moment, the new RPC
-// will have its channel destroyed by the other RPC, and will never get notified of a problem, so
-// it'll hang (the C layer logs a timeout, with exponential back off). One solution could be to pass
-// the GRPCChannel to the GRPCCall, renaming this as "disconnectChannel:channel", which would only
-// act on that specific channel.
-- (void)disconnect;
++ (GRPCCallOptions *)callOptionsForHost:(NSString *)host;
+
 @end
 
 NS_ASSUME_NONNULL_END

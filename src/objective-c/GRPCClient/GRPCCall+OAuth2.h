@@ -18,34 +18,13 @@
 
 #import "GRPCCall.h"
 
-/**
- * The protocol of an OAuth2 token object from which GRPCCall can acquire a token.
- */
-@protocol GRPCAuthorizationProtocol
-- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
-@end
+#import "GRPCCallOptions.h"
 
-/** Helpers for setting and reading headers compatible with OAuth2. */
+// Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (OAuth2)
 
-/**
- * Setting this property is equivalent to setting "Bearer <passed token>" as the value of the
- * request header with key "authorization" (the authorization header). Setting it to nil removes the
- * authorization header from the request.
- * The value obtained by getting the property is the OAuth2 bearer token if the authorization header
- * of the request has the form "Bearer <token>", or nil otherwise.
- */
-@property(atomic, copy) NSString *oauth2AccessToken;
-
-/** Returns the value (if any) of the "www-authenticate" response header (the challenge header). */
-@property(atomic, readonly) NSString *oauth2ChallengeHeader;
-
-/**
- * The authorization token object to be used when starting the call. If the value is set to nil, no
- * oauth authentication will be used.
- *
- * If tokenProvider exists, it takes precedence over the token set by oauth2AccessToken.
- */
+@property(atomic, copy) NSString* oauth2AccessToken;
+@property(atomic, copy, readonly) NSString* oauth2ChallengeHeader;
 @property(atomic, strong) id<GRPCAuthorizationProtocol> tokenProvider;
 
 @end
