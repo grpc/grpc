@@ -79,7 +79,6 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    void* clientCallBackInfo) {
   grpc_core::ExecCtx exec_ctx;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  printf("** CFStreamHandle::WriteCallback\n");
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
             stream, type, clientCallBackInfo);
