@@ -39,10 +39,12 @@ struct grpc_tls_key_materials_config
   const char* pem_root_certs() const { return pem_root_certs_; }
 
   /** Setters for member fields. **/
-  void set_key_materials(const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
-                         const char* root_certs, size_t num);
+  void set_key_materials(const char* root_certs,
+                         const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
+                         size_t num);
 
  private:
+  void free_key_cert_pairs();
   grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs_;
   size_t num_key_cert_pairs_;
   const char* pem_root_certs_;
@@ -79,10 +81,8 @@ struct grpc_tls_credential_reload_config
   /** callback function for invoking credential reload API. The implementation
      of this method has to be non-blocking, but can be performed synchronously
      or asynchronously.
-
      If processing occurs synchronously, it populates \a arg->key_materials, \a
      arg->status, and \a arg->error_details and returns zero.
-
      If processing occurs asynchronously, it returns a non-zero value.
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule returns.
@@ -94,7 +94,7 @@ struct grpc_tls_credential_reload_config
      request has already been processed. */
   void (*cancel_)(void* config_user_data, grpc_tls_credential_reload_arg* arg);
   /** callback function for cleaning up any data associated with credential
-   * reload config. */
+     reload config. */
   void (*destruct_)(void* config_user_data);
 };
 
@@ -130,12 +130,9 @@ struct grpc_tls_server_authorization_check_config
   /** callback function for invoking server authorization check. The
      implementation of this method has to be non-blocking, but can be performed
      synchronously or asynchronously.
-
-      If processing occurs synchronously, it populates \a arg->result, \a
+     If processing occurs synchronously, it populates \a arg->result, \a
      arg->status, and \a arg->error_details, and returns zero.
-
-
-      If processing occurs asynchronously, it returns a non-zero value.
+     If processing occurs asynchronously, it returns a non-zero value.
      Application then invokes \a arg->cb when processing is completed. Note that
      \a arg->cb cannot be invoked before \a schedule() returns.
   */

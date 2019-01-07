@@ -660,26 +660,26 @@ GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create();
 /** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
  */
 GRPCAPI void grpc_tls_key_materials_config_set_key_materials(
-    grpc_tls_key_materials_config* config,
+    grpc_tls_key_materials_config* config, const char* pem_root_certs,
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    const char* pem_root_certs, size_t num_key_cert_pairs);
+    size_t num_key_cert_pairs);
 
 /** --- TLS credential reload config. --- */
 
 typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
 
 /** A callback function provided by gRPC to handle the result of credential
-   reload. It is used when schedule API is implemented asynchronously and serves
-   to bring the control back to grpc C core. */
+    reload. It is used when schedule API is implemented asynchronously and
+    serves to bring the control back to grpc C core. */
 typedef void (*grpc_tls_on_credential_reload_done_cb)(
     grpc_tls_credential_reload_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel
     a credential reload request. cb and cb_user_data represent a gRPC-provided
     callback and an argument passed to it. key_materials is an in/output
-   parameter containing currently used/newly reloaded credentials. status and
-   error_details are used to hold information about errors occurred when a
-   credential reload request is scheduled/cancelled. */
+    parameter containing currently used/newly reloaded credentials. status and
+    error_details are used to hold information about errors occurred when a
+    credential reload request is scheduled/cancelled. */
 struct grpc_tls_credential_reload_arg {
   grpc_tls_on_credential_reload_done_cb cb;
   void* cb_user_data;
@@ -721,17 +721,17 @@ typedef struct grpc_tls_server_authorization_check_arg
     grpc_tls_server_authorization_check_arg;
 
 /** callback function provided by gRPC used to handle the result of server
-   authorization check. It is used when schedule API is implemented
-   asynchronously, and serves to bring the control back to gRPC C core. */
+    authorization check. It is used when schedule API is implemented
+    asynchronously, and serves to bring the control back to gRPC C core. */
 typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
     grpc_tls_server_authorization_check_arg* arg);
 
 /** A struct containing all information necessary to schedule/cancel a server
-    authorization check request. cb and cb_user_data represent a gRPC-provided
-   callback and an argument passed to it. result will store the result of server
-   authorization check. target_name is the name of an endpoint the channel is
-   connecting to and certificate represents a complete certificate chain
-   including both signing and leaf certificates. status and error_details
+   authorization check request. cb and cb_user_data represent a gRPC-provided
+   callback and an argument passed to it. result will store the result of
+   server authorization check. target_name is the name of an endpoint the
+   channel is connecting to and certificate represents a complete certificate
+   chain including both signing and leaf certificates. status and error_details
    contain information about errors occurred when a server authorization check
    request is scheduled/cancelled. */
 struct grpc_tls_server_authorization_check_arg {

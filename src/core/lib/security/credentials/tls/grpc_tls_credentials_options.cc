@@ -28,13 +28,22 @@
 #include <grpc/support/string_util.h>
 
 /** -- gRPC TLS key materials config API implementation. -- **/
+void grpc_tls_key_materials_config::free_key_cert_pairs() {
+  for (size_t i = 0; i < num_key_cert_pairs_; i++) {
+    gpr_free((void*)pem_key_cert_pairs_[i].private_key);
+    gpr_free((void*)pem_key_cert_pairs_[i].cert_chain);
+  }
+  gpr_free(pem_key_cert_pairs_);
+}
+
 void grpc_tls_key_materials_config::set_key_materials(
-    const grpc_ssl_pem_key_cert_pair* key_cert_pairs, const char* root_certs,
+    const char* root_certs, const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
     size_t num) {
   if (key_cert_pairs == nullptr || num == 0) {
     gpr_log(GPR_ERROR, "Invalid arguments to set_key_materials()");
     return;
   }
+  free_key_cert_pairs();
   pem_key_cert_pairs_ = static_cast<grpc_ssl_pem_key_cert_pair*>(
       gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair) * num));
   for (size_t i = 0; i < num; i++) {
@@ -44,17 +53,14 @@ void grpc_tls_key_materials_config::set_key_materials(
         gpr_strdup(key_cert_pairs[i].cert_chain);
   }
   if (root_certs != nullptr) {
+    gpr_free((void*)pem_root_certs_);
     pem_root_certs_ = gpr_strdup(root_certs);
   }
   num_key_cert_pairs_ = num;
 }
 
 grpc_tls_key_materials_config::~grpc_tls_key_materials_config() {
-  for (size_t i = 0; i < num_key_cert_pairs_; i++) {
-    gpr_free((void*)pem_key_cert_pairs_[i].private_key);
-    gpr_free((void*)pem_key_cert_pairs_[i].cert_chain);
-  }
-  gpr_free(pem_key_cert_pairs_);
+  free_key_cert_pairs();
   gpr_free((void*)pem_root_certs_);
 }
 
@@ -156,16 +162,15 @@ grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
 }
 
 void grpc_tls_key_materials_config_set_key_materials(
-    grpc_tls_key_materials_config* config,
-    const grpc_ssl_pem_key_cert_pair* key_cert_pairs, const char* root_certs,
-    size_t num) {
+    grpc_tls_key_materials_config* config, const char* root_certs,
+    const grpc_ssl_pem_key_cert_pair* key_cert_pairs, size_t num) {
   if (config == nullptr || key_cert_pairs == nullptr || num == 0) {
     gpr_log(GPR_ERROR,
             "Invalid arguments to "
             "grpc_tls_key_materials_config_set_key_materials()");
     return;
   }
-  config->set_key_materials(key_cert_pairs, root_certs, num);
+  config->set_key_materials(root_certs, key_cert_pairs, num);
 }
 
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
