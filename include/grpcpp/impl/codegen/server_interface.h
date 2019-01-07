@@ -272,7 +272,7 @@ class ServerInterface : public internal::CallHook {
       /* Set interception point for recv message */
       interceptor_methods_.AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
-      interceptor_methods_.SetRecvMessage(request_);
+      interceptor_methods_.SetRecvMessage(request_, nullptr);
       return RegisteredAsyncRequest::FinalizeResult(tag, status);
     }
 
