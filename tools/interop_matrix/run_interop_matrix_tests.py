@@ -117,7 +117,8 @@ def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
     images = {}
     for tag in releases:
         for runtime in client_matrix.get_runtimes_for_lang_release(lang, tag):
-            image_name = '%s/grpc_interop_%s:%s' % (image_path_prefix, runtime, tag)
+            image_name = '%s/grpc_interop_%s:%s' % (image_path_prefix, runtime,
+                                                    tag)
             image_tuple = (tag, image_name)
 
             if not images.has_key(runtime):

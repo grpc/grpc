@@ -44,7 +44,10 @@ def get_runtimes_for_lang_release(lang, release):
             if release_info[release] is not None:
                 runtimes_to_skip = release_info[release].get('skip_runtime', [])
                 break
-    return [runtime for runtime in LANG_RUNTIME_MATRIX[lang] if runtime not in runtimes_to_skip]
+    return [
+        runtime for runtime in LANG_RUNTIME_MATRIX[lang]
+        if runtime not in runtimes_to_skip
+    ]
 
 
 def should_build_docker_interop_image_from_release_tag(lang):
