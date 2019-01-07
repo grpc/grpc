@@ -321,6 +321,7 @@ class CallOpSendMessage {
     if (msg_ != nullptr) {
       GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
     }
+    serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
@@ -361,13 +362,13 @@ class CallOpSendMessage {
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  // TODO(vjpai): Remove the void below when possible
-  // The void in the template parameter below should not be needed
-  // (since it should be implicit) but is needed due to an observed
-  // difference in behavior between clang and gcc for certain internal users
   serializer_ = [this](const void* message) {
     bool own_buf;
     send_buf_.Clear();
+    // TODO(vjpai): Remove the void below when possible
+    // The void in the template parameter below should not be needed
+    // (since it should be implicit) but is needed due to an observed
+    // difference in behavior between clang and gcc for certain internal users
     Status result = SerializationTraits<M, void>::Serialize(
         *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
     if (!own_buf) {
