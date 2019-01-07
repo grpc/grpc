@@ -103,7 +103,6 @@ class ChannelTest(unittest.TestCase):
         channel = grpc.secure_channel('google.com:443', channel_credentials)
         channel.close()
 
-print("HELLO", "WORLD", end='!\n')
 
 if __name__ == '__main__':
     logging.basicConfig()
