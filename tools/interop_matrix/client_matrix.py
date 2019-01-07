@@ -35,6 +35,18 @@ def get_release_tag_name(release_info):
     return release_info.keys()[0]
 
 
+def get_runtimes_for_lang_release(lang, release):
+    """Get list of valid runtimes for given release of lang."""
+    runtimes_to_skip = []
+    # see if any the lang release has "skip_runtime" annotation.
+    for release_info in LANG_RELEASE_MATRIX[lang]:
+        if get_release_tag_name(release_info) == release:
+            if release_info[release] is not None:
+                runtimes_to_skip = release_info[release].get('skip_runtime', [])
+                break
+    return [runtime for runtime in LANG_RUNTIME_MATRIX[lang] if runtime not in runtimes_to_skip]
+
+
 def should_build_docker_interop_image_from_release_tag(lang):
     if lang in ['go', 'java', 'node']:
         return False
@@ -44,7 +56,7 @@ def should_build_docker_interop_image_from_release_tag(lang):
 # Dictionary of runtimes per language
 LANG_RUNTIME_MATRIX = {
     'cxx': ['cxx'],  # This is actually debian8.
-    'go': ['go1.7', 'go1.8'],
+    'go': ['go1.7', 'go1.8', 'go1.11'],
     'java': ['java_oracle8'],
     'python': ['python'],
     'node': ['node'],
@@ -110,52 +122,89 @@ LANG_RELEASE_MATRIX = {
     ],
     'go': [
         {
-            'v1.0.5': None
+            'v1.0.5': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.2.1': None
+            'v1.2.1': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.3.0': None
+            'v1.3.0': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.4.2': None
+            'v1.4.2': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.5.2': None
+            'v1.5.2': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.6.0': None
+            'v1.6.0': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.7.4': None
+            'v1.7.4': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.8.2': None
+            'v1.8.2': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.9.2': None
+            'v1.9.2': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.10.1': None
+            'v1.10.1': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.11.3': None
+            'v1.11.3': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.12.2': None
+            'v1.12.2': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.13.0': None
+            'v1.13.0': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.14.0': None
+            'v1.14.0': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.15.0': None
+            'v1.15.0': {
+                'skip_runtime': ['go1.11']
+            }
         },
         {
-            'v1.16.0': None
+            'v1.16.0': {
+                'skip_runtime': ['go1.11']
+            }
+        },
+        {
+            'v1.17.0': {
+                'skip_runtime': ['go1.7', 'go1.8']
+            }
         },
     ],
     'java': [

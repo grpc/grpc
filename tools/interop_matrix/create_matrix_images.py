@@ -217,7 +217,7 @@ def build_all_images_for_release(lang, release):
         }.get(lang, 'GRPC_ROOT')
         env[var] = stack_base
 
-    for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:
+    for runtime in client_matrix.get_runtimes_for_lang_release(lang, release):
         job = build_image_jobspec(runtime, env, release, stack_base)
         docker_images.append(job.tag)
         build_jobs.append(job)
