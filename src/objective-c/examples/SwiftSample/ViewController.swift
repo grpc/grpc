@@ -54,8 +54,8 @@ class ViewController: UIViewController {
       } else {
         NSLog("2. Finished with error: \(error!)")
       }
-      NSLog("2. Response headers: \(RPC.responseHeaders)")
-      NSLog("2. Response trailers: \(RPC.responseTrailers)")
+      NSLog("2. Response headers: \(String(describing: RPC.responseHeaders))")
+      NSLog("2. Response trailers: \(String(describing: RPC.responseTrailers))")
     }
 
     // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
@@ -68,7 +68,7 @@ class ViewController: UIViewController {
 
     let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")!
 
-    let requestsWriter = GRXWriter(value: request.data())
+    let requestsWriter = GRXWriter(value: request.data())!
 
     let call = GRPCCall(host: RemoteHost, path: method.httpPath, requestsWriter: requestsWriter)!
 
@@ -80,8 +80,8 @@ class ViewController: UIViewController {
       } else {
         NSLog("3. Finished with error: \(error!)")
       }
-      NSLog("3. Response headers: \(call.responseHeaders)")
-      NSLog("3. Response trailers: \(call.responseTrailers)")
+      NSLog("3. Response headers: \(String(describing: call.responseHeaders))")
+      NSLog("3. Response trailers: \(String(describing: call.responseTrailers))")
     })
   }
 }

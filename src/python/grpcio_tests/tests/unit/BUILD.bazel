@@ -7,6 +7,7 @@ GRPCIO_TESTS_UNIT = [
     "_api_test.py",
     "_auth_context_test.py",
     "_auth_test.py",
+    "_version_test.py",
     "_channel_args_test.py",
     "_channel_close_test.py",
     "_channel_connectivity_test.py",

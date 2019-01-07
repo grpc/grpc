@@ -16,7 +16,7 @@
 # This script is invoked by run_interop_tests.py to build the docker image
 # for interop testing. You should never need to call this script on your own.
 
-set -x
+set -ex
 
 # Params:
 #  INTEROP_IMAGE - name of tag of the final interop image

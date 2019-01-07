@@ -69,7 +69,6 @@ def json_run_localhost_batch():
             ],
             deps = [
                 "//:gpr",
-                "//test/core/util:gpr_test_util",
                 "//test/core/util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",

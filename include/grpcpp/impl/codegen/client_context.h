@@ -200,6 +200,13 @@ class ClientContext {
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, the key name
   /// must end in "-bin".
+  ///
+  /// Metadata must conform to the following format:
+  /// Custom-Metadata -> Binary-Header / ASCII-Header
+  /// Binary-Header -> {Header-Name "-bin" } {binary value}
+  /// ASCII-Header -> Header-Name ASCII-Value
+  /// Header-Name -> 1*( %x30-39 / %x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - .
+  /// ASCII-Value -> 1*( %x20-%x7E ) ; space and printable ASCII
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 

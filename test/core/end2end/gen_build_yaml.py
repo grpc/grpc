@@ -283,13 +283,11 @@ def main():
   sec_deps = [
     'grpc_test_util',
     'grpc',
-    'gpr_test_util',
     'gpr'
   ]
   unsec_deps = [
     'grpc_test_util_unsecure',
     'grpc_unsecure',
-    'gpr_test_util',
     'gpr'
   ]
   json = {

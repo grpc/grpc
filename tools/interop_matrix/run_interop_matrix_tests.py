@@ -232,10 +232,13 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
+    skip_tests = False
     if not _pull_images_for_lang(lang, images):
         jobset.message(
-            'FAILED', 'Image download failed. Exiting.', do_newline=True)
-        return 1
+            'FAILED',
+            'Image download failed. Skipping tests for language "%s"' % lang,
+            do_newline=True)
+        skip_tests = True
 
     total_num_failures = 0
     for release, image in images:
@@ -246,17 +249,22 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
         if not job_spec_list:
             jobset.message(
                 'FAILED', 'No test cases were found.', do_newline=True)
-            return 1
+            total_num_failures += 1
+            continue
 
         num_failures, resultset = jobset.run(
             job_spec_list,
             newline_on_success=True,
             add_env={'docker_image': image},
-            maxjobs=args.jobs)
+            maxjobs=args.jobs,
+            skip_jobs=skip_tests)
         if args.bq_result_table and resultset:
             upload_test_results.upload_interop_results_to_bq(
                 resultset, args.bq_result_table)
-        if num_failures:
+        if skip_tests:
+            jobset.message('FAILED', 'Tests were skipped', do_newline=True)
+            total_num_failures += 1
+        elif num_failures:
             jobset.message('FAILED', 'Some tests failed', do_newline=True)
             total_num_failures += num_failures
         else:
@@ -266,6 +274,8 @@ def _run_tests_for_lang(lang, runtime, images, xml_report_tree):
                                               'grpc_interop_matrix', suite_name,
                                               str(uuid.uuid4()))
 
+    # cleanup all downloaded docker images
+    for _, image in images:
         if not args.keep:
             _cleanup_docker_image(image)
 

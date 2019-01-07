@@ -27,6 +27,7 @@ def _get_number_active_threads():
 class ForkPosixTester(unittest.TestCase):
 
     def setUp(self):
+        self._saved_fork_support_flag = cygrpc._GRPC_ENABLE_FORK_SUPPORT
         cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
 
     def testForkManagedThread(self):
@@ -49,6 +50,9 @@ class ForkPosixTester(unittest.TestCase):
         thread.start()
         thread.join()
         self.assertEqual(0, _get_number_active_threads())
+
+    def tearDown(self):
+        cygrpc._GRPC_ENABLE_FORK_SUPPORT = self._saved_fork_support_flag
 
 
 @unittest.skipUnless(os.name == 'nt', 'Windows-specific tests')

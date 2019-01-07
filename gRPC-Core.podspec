@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.18.0-dev'
+  version = '1.19.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
+  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
   s.libraries = 'c++'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -350,6 +350,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
+                      'src/core/ext/filters/client_channel/request_routing.h',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -793,6 +794,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
+                      'src/core/ext/filters/client_channel/request_routing.cc',
                       'src/core/ext/filters/client_channel/resolver.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -973,6 +975,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
+                              'src/core/ext/filters/client_channel/request_routing.h',
                               'src/core/ext/filters/client_channel/resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -1201,9 +1204,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
 
-    ss.source_files = 'test/core/util/test_config.cc',
-                      'test/core/util/test_config.h',
-                      'test/core/end2end/data/client_certs.cc',
+    ss.source_files = 'test/core/end2end/data/client_certs.cc',
                       'test/core/end2end/data/server1_cert.cc',
                       'test/core/end2end/data/server1_key.cc',
                       'test/core/end2end/data/test_root_cert.cc',
@@ -1227,6 +1228,7 @@ Pod::Spec.new do |s|
                       'test/core/util/slice_splitter.cc',
                       'test/core/util/subprocess_posix.cc',
                       'test/core/util/subprocess_windows.cc',
+                      'test/core/util/test_config.cc',
                       'test/core/util/tracer_util.cc',
                       'test/core/util/trickle_endpoint.cc',
                       'test/core/util/cmdline.cc',
@@ -1252,6 +1254,7 @@ Pod::Spec.new do |s|
                       'test/core/util/port_server_client.h',
                       'test/core/util/slice_splitter.h',
                       'test/core/util/subprocess.h',
+                      'test/core/util/test_config.h',
                       'test/core/util/tracer_util.h',
                       'test/core/util/trickle_endpoint.h',
                       'test/core/util/cmdline.h',

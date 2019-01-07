@@ -170,7 +170,12 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_slice_buffer_destroy_internal(&outbuf);
   grpc_chttp2_hpack_compressor_destroy(&hpack_compressor);
 
-  grpc_core::ContextList::Execute(cl, nullptr, GRPC_ERROR_NONE);
+  grpc_error* error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed");
+  // ContextList::Execute follows semantics of a callback function and does not
+  // take a ref on error
+  grpc_core::ContextList::Execute(cl, nullptr, error);
+  GRPC_ERROR_UNREF(error);
   cl = nullptr;
 
   grpc_slice_buffer_destroy_internal(&read_buffer);
