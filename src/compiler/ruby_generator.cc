@@ -19,8 +19,6 @@
 #include <cctype>
 #include <map>
 #include <vector>
-#include <unordered_set>
-#include <unordered_map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/ruby_generator.h"
@@ -36,9 +34,6 @@ using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
 using std::vector;
-using std::unordered_set;
-using std::unordered_multimap;
-using std::unordered_map;
 
 namespace grpc_ruby_generator {
 namespace {
