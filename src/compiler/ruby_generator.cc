@@ -43,8 +43,9 @@ using std::unordered_map;
 namespace grpc_ruby_generator {
 namespace {
 
+// returns the full canonical message name
 grpc::string GetCanonicalMessageType(const Descriptor *msg) {
-  const Descriptor *top_level_msg = msg;
+  const Descriptor *top_level_msg;
   const FileDescriptor *file_containing_msg;
   grpc::string msg_full_name;
   grpc::string msg_name;
@@ -53,38 +54,31 @@ grpc::string GetCanonicalMessageType(const Descriptor *msg) {
   grpc::string res(msg->full_name());
 
   // If msg is nested, find the topmost message
+  top_level_msg = msg;
   while (top_level_msg->containing_type()) {
     top_level_msg = top_level_msg->containing_type();
   }
+  file_containing_msg = top_level_msg->file();
 
   msg_full_name = top_level_msg->full_name();
   msg_name = top_level_msg->name();
   msg_proto_pkg = msg_full_name.substr(0, msg_full_name.length() -
                                           msg_name.length());
 
-  file_containing_msg = top_level_msg->file();
-
   if (file_containing_msg->options().has_ruby_package()) {
     resolved_namespace = file_containing_msg->options().ruby_package();
   }
+  // no need to do translation, full_name already include the correct package
   else {
-    resolved_namespace = file_containing_msg->package();
-    resolved_namespace = Modularize(resolved_namespace);
+    return res;
   }
 
-  // add heading period if needed
-  if (msg_proto_pkg.length() == 0) {
-    if (resolved_namespace.length() > 0) {
-      res = "." + res;
-    }
-  }
   // remove trailing period
-  else if (msg_proto_pkg[msg_proto_pkg.length()-1] == '.') {
+  if (msg_proto_pkg.back() == '.') {
     msg_proto_pkg.pop_back();
   }
 
   ReplacePrefix(&res, msg_proto_pkg, resolved_namespace);
-  std::cerr << res << std::endl;
   return res;
 }
 
