@@ -467,11 +467,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 + (uint32_t)callFlagsForHost:(NSString *)host path:(NSString *)path {
   NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
-  uint32_t flags = 0;
   @synchronized(callFlags) {
-    flags = [callFlags[hostAndPath] intValue];
+    return [callFlags[hostAndPath] intValue];
   }
-  return flags;
 }
 
 // Designated initializer
