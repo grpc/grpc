@@ -118,6 +118,8 @@ class InterceptorBatchMethods {
   /// only supported for sync and callback APIs at the present moment.
   virtual const void* GetSendMessage() = 0;
 
+  virtual void ModifySendMessage(const void* message) = 0;
+
   /// Checks whether the SEND MESSAGE op succeeded. Valid for POST_SEND_MESSAGE
   /// interceptions.
   virtual bool GetSendMessageStatus() = 0;

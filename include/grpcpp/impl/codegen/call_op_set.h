@@ -317,7 +317,15 @@ class CallOpSendMessage {
 
  protected:
   void AddOp(grpc_op* ops, size_t* nops) {
-    if (!send_buf_.Valid() || hijacked_) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
+    if (hijacked_) {
+      serializer_ = nullptr;
+      return;
+    }
+    if (msg_ != nullptr) {
+      GPR_CODEGEN_ASSERT(serializer_(msg_).ok());
+    }
+    serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
@@ -327,9 +335,7 @@ class CallOpSendMessage {
     write_options_.Clear();
   }
   void FinishOp(bool* status) {
-    if (!send_buf_.Valid()) {
-      return;
-    }
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
     if (hijacked_ && failed_send_) {
       // Hijacking interceptor failed this Op
       *status = false;
@@ -341,22 +347,25 @@ class CallOpSendMessage {
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (!send_buf_.Valid()) return;
+    if (msg_ == nullptr && !send_buf_.Valid()) return;
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::PRE_SEND_MESSAGE);
-    interceptor_methods->SetSendMessage(&send_buf_, msg_, &failed_send_);
+    interceptor_methods->SetSendMessage(&send_buf_, &msg_, &failed_send_,
+                                        serializer_);
   }
 
   void SetFinishInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
-    if (send_buf_.Valid()) {
+    if (msg_ != nullptr || send_buf_.Valid()) {
       interceptor_methods->AddInterceptionHookPoint(
           experimental::InterceptionHookPoints::POST_SEND_MESSAGE);
     }
     send_buf_.Clear();
+    msg_ = nullptr;
     // The contents of the SendMessage value that was previously set
     // has had its references stolen by core's operations
-    interceptor_methods->SetSendMessage(nullptr, nullptr, &failed_send_);
+    interceptor_methods->SetSendMessage(nullptr, nullptr, &failed_send_,
+                                        nullptr);
   }
 
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -369,22 +378,32 @@ class CallOpSendMessage {
   bool failed_send_ = false;
   ByteBuffer send_buf_;
   WriteOptions write_options_;
+  std::function<Status(const void*)> serializer_;
 };
 
 template <class M>
 Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   write_options_ = options;
-  bool own_buf;
-  // TODO(vjpai): Remove the void below when possible
-  // The void in the template parameter below should not be needed
-  // (since it should be implicit) but is needed due to an observed
-  // difference in behavior between clang and gcc for certain internal users
-  Status result = SerializationTraits<M, void>::Serialize(
-      message, send_buf_.bbuf_ptr(), &own_buf);
-  if (!own_buf) {
-    send_buf_.Duplicate();
+  serializer_ = [this](const void* message) {
+    bool own_buf;
+    send_buf_.Clear();
+    // TODO(vjpai): Remove the void below when possible
+    // The void in the template parameter below should not be needed
+    // (since it should be implicit) but is needed due to an observed
+    // difference in behavior between clang and gcc for certain internal users
+    Status result = SerializationTraits<M, void>::Serialize(
+        *static_cast<const M*>(message), send_buf_.bbuf_ptr(), &own_buf);
+    if (!own_buf) {
+      send_buf_.Duplicate();
+    }
+    return result;
+  };
+  // Serialize immediately only if we do not have access to the message pointer
+  if (msg_ == nullptr) {
+    return serializer_(&message);
+    serializer_ = nullptr;
   }
-  return result;
+  return Status();
 }
 
 template <class M>
