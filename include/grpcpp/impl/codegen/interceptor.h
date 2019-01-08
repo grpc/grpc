@@ -46,9 +46,10 @@ namespace experimental {
 /// operation has been requested and it is available. POST_RECV means that a
 /// result is available but has not yet been passed back to the application.
 enum class InterceptionHookPoints {
-  /// The first two in this list are for clients and servers
+  /// The first three in this list are for clients and servers
   PRE_SEND_INITIAL_METADATA,
   PRE_SEND_MESSAGE,
+  POST_SEND_MESSAGE,
   PRE_SEND_STATUS,  // server only
   PRE_SEND_CLOSE,   // client only: WritesDone for stream; after write in unary
   /// The following three are for hijacked clients only and can only be
@@ -111,11 +112,22 @@ class InterceptorBatchMethods {
   /// A return value of nullptr indicates that this ByteBuffer is not valid.
   virtual ByteBuffer* GetSerializedSendMessage() = 0;
 
-  /// Returns a non-modifiable pointer to the original non-serialized form of
-  /// the message. Valid for PRE_SEND_MESSAGE interceptions. A return value of
+  /// Returns a non-modifiable pointer to the non-serialized form of the message
+  /// to be sent. Valid for PRE_SEND_MESSAGE interceptions. A return value of
   /// nullptr indicates that this field is not valid. Also note that this is
   /// only supported for sync and callback APIs at the present moment.
   virtual const void* GetSendMessage() = 0;
+
+  /// Overwrites the message to be sent with \a message. \a message should be in
+  /// the non-serialized form expected by the method. Valid for PRE_SEND_MESSAGE
+  /// interceptions. Note that the interceptor is responsible for maintaining
+  /// the life of the message for the duration on the send operation, i.e., till
+  /// POST_SEND_MESSAGE.
+  virtual void ModifySendMessage(const void* message) = 0;
+
+  /// Checks whether the SEND MESSAGE op succeeded. Valid for POST_SEND_MESSAGE
+  /// interceptions.
+  virtual bool GetSendMessageStatus() = 0;
 
   /// Returns a modifiable multimap of the initial metadata to be sent. Valid
   /// for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates
@@ -162,6 +174,15 @@ class InterceptorBatchMethods {
   /// started from interceptors without infinite regress through the interceptor
   /// list.
   virtual std::unique_ptr<ChannelInterface> GetInterceptedChannel() = 0;
+
+  /// On a hijacked RPC, an interceptor can decide to fail a PRE_RECV_MESSAGE
+  /// op. This would be a signal to the reader that there will be no more
+  /// messages, or the stream has failed or been cancelled.
+  virtual void FailHijackedRecvMessage() = 0;
+
+  /// On a hijacked RPC/ to-be hijacked RPC, this can be called to fail a SEND
+  /// MESSAGE op
+  virtual void FailHijackedSendMessage() = 0;
 };
 
 /// Interface for an interceptor. Interceptor authors must create a class

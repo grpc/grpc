@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "goose"
+g_stands_for = "gold"
 
 core_version = "7.0.0-dev"
 
-version = "1.18.0-dev"
+version = "1.19.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
