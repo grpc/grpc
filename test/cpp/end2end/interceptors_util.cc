@@ -132,6 +132,16 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
   return false;
 }
 
+bool CheckMetadata(const std::multimap<grpc::string, grpc::string>& map,
+                   const string& key, const string& value) {
+  for (const auto& pair : map) {
+    if (pair.first == key && pair.second == value) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreateDummyClientInterceptors() {
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>

@@ -19,7 +19,7 @@ grpc_package(name = "test/core/memory_usage")
 licenses(["notice"])  # Apache v2
 
 grpc_cc_library(
-    name = "client",
+    name = "memory_usage_client",
     testonly = 1,
     srcs = ["client.cc"],
     deps = [
@@ -30,7 +30,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "server",
+    name = "memory_usage_server",
     testonly = 1,
     srcs = ["server.cc"],
     deps = [
@@ -45,8 +45,8 @@ grpc_cc_test(
     name = "memory_usage_test",
     srcs = ["memory_usage_test.cc"],
     data = [
-        ":client",
-        ":server",
+        ":memory_usage_client",
+        ":memory_usage_server",
     ],
     language = "C++",
     deps = [

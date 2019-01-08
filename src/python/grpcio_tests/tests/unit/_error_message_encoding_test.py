@@ -71,6 +71,7 @@ class ErrorMessageEncodingTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testMessageEncoding(self):
         for message in _UNICODE_ERROR_MESSAGES:
