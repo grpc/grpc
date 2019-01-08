@@ -64,10 +64,10 @@
       return;
     }
 
-    @synchronized (self) {
-       if (self->_cancelled) {
-         return;
-       }
+    @synchronized(self) {
+      if (self->_cancelled) {
+        return;
+      }
     }
 
     [self.writeable writeValue:value];
@@ -80,7 +80,7 @@
     if (self->_alreadyFinished) {
       return;
     }
-    @synchronized (self) {
+    @synchronized(self) {
       if (self->_cancelled) {
         return;
       }
