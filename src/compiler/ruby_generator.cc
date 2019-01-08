@@ -26,10 +26,10 @@
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
 
+using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::Descriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
@@ -57,8 +57,8 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
 
   msg_full_name = top_level_msg->full_name();
   msg_name = top_level_msg->name();
-  msg_proto_pkg = msg_full_name.substr(0, msg_full_name.length() -
-                                          msg_name.length());
+  msg_proto_pkg =
+      msg_full_name.substr(0, msg_full_name.length() - msg_name.length());
 
   if (file_containing_msg->options().has_ruby_package()) {
     resolved_namespace = file_containing_msg->options().ruby_package();
@@ -81,9 +81,9 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
 void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
                  Printer* out) {
   grpc::string canonical_input_type =
-          GetCanonicalMessageType(method->input_type());
+      GetCanonicalMessageType(method->input_type());
   grpc::string canonical_output_type =
-          GetCanonicalMessageType(method->output_type());
+      GetCanonicalMessageType(method->output_type());
 
   grpc::string input_type = RubyTypeOf(canonical_input_type, package);
 
