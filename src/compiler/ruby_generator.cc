@@ -68,9 +68,15 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
     return res;
   }
 
-  // remove trailing period
-  if (msg_proto_pkg.back() == '.') {
-    msg_proto_pkg.pop_back();
+  // remove trailing period, prevent it from being replaced
+  if (msg_proto_pkg.length() > 0) {
+    if (msg_proto_pkg.back() == '.') {
+      msg_proto_pkg.pop_back();
+    }
+  }
+  // add a period if appending resolved_namespace
+  else if (resolved_namespace.length() > 0) {
+    resolved_namespace += '.';
   }
 
   ReplacePrefix(&res, msg_proto_pkg, resolved_namespace);
