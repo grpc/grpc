@@ -611,6 +611,7 @@
         'test/core/end2end/fixtures/proxy.cc',
         'test/core/iomgr/endpoint_tests.cc',
         'test/core/util/debugger_macros.cc',
+        'test/core/util/forwarding_load_balancing_policy.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
@@ -853,6 +854,7 @@
         'test/core/end2end/fixtures/proxy.cc',
         'test/core/iomgr/endpoint_tests.cc',
         'test/core/util/debugger_macros.cc',
+        'test/core/util/forwarding_load_balancing_policy.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
@@ -1363,15 +1365,6 @@
       ],
       'sources': [
         'test/core/util/test_tcp_server.cc',
-      ],
-    },
-    {
-      'target_name': 'forwarding_load_balancing_policy',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'test/core/util/forwarding_load_balancing_policy.cc',
       ],
     },
     {

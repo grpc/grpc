@@ -3318,7 +3318,6 @@
   }, 
   {
     "deps": [
-      "forwarding_load_balancing_policy", 
       "gpr", 
       "grpc", 
       "grpc++", 
@@ -7056,24 +7055,6 @@
   }, 
   {
     "deps": [
-      "grpc_base", 
-      "grpc_client_channel"
-    ], 
-    "headers": [
-      "test/core/util/forwarding_load_balancing_policy.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "forwarding_load_balancing_policy", 
-    "src": [
-      "test/core/util/forwarding_load_balancing_policy.cc", 
-      "test/core/util/forwarding_load_balancing_policy.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "gpr", 
       "grpc", 
       "grpc++_base", 
@@ -10478,6 +10459,7 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/forwarding_load_balancing_policy.h", 
       "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.h", 
@@ -10511,6 +10493,8 @@
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/forwarding_load_balancing_policy.cc", 
+      "test/core/util/forwarding_load_balancing_policy.h", 
       "test/core/util/fuzzer_util.cc", 
       "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.cc", 

@@ -1756,6 +1756,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/forwarding_load_balancing_policy.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2078,6 +2079,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/forwarding_load_balancing_policy.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2824,48 +2826,6 @@ target_link_libraries(test_tcp_server
   grpc_test_util
   grpc
   gpr
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_library(forwarding_load_balancing_policy
-  test/core/util/forwarding_load_balancing_policy.cc
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(forwarding_load_balancing_policy PROPERTIES COMPILE_PDB_NAME "forwarding_load_balancing_policy"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/forwarding_load_balancing_policy.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-
-target_include_directories(forwarding_load_balancing_policy
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-target_link_libraries(forwarding_load_balancing_policy
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
 
@@ -12534,7 +12494,6 @@ target_link_libraries(client_lb_end2end_test
   grpc++
   grpc
   gpr
-  forwarding_load_balancing_policy
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

@@ -906,6 +906,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
+  - test/core/util/forwarding_load_balancing_policy.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -928,6 +929,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/forwarding_load_balancing_policy.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1638,16 +1640,6 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
-- name: forwarding_load_balancing_policy
-  build: private
-  language: c++
-  headers:
-  - test/core/util/forwarding_load_balancing_policy.h
-  src:
-  - test/core/util/forwarding_load_balancing_policy.cc
-  uses:
-  - grpc_base
-  - grpc_client_channel
 - name: grpc++
   build: all
   language: c++
@@ -4480,7 +4472,6 @@ targets:
   - grpc++
   - grpc
   - gpr
-  - forwarding_load_balancing_policy
 - name: codegen_test_full
   gtest: true
   build: test
