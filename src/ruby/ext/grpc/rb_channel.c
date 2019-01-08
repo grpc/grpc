@@ -327,8 +327,8 @@ static void* wait_for_watch_state_op_complete_without_gvl(void* arg) {
   void* success = (void*)0;
 
   gpr_mu_lock(&global_connection_polling_mu);
-  // it's unsafe to do a "watch" after "channel polling abort" because the cq has
-  // been shut down.
+  // it's unsafe to do a "watch" after "channel polling abort" because the cq
+  // has been shut down.
   if (abort_channel_polling || stack->bg_wrapped->channel_destroyed) {
     gpr_mu_unlock(&global_connection_polling_mu);
     return (void*)0;
