@@ -340,13 +340,13 @@ class ClientCallbackReaderWriterImpl
                                      context_->initial_metadata_flags());
       start_corked_ = false;
     }
-    // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+    // TODO(vjpai): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
@@ -649,13 +649,13 @@ class ClientCallbackWriterImpl
                                      context_->initial_metadata_flags());
       start_corked_ = false;
     }
-    // TODO(vjpai): don't assert
-    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg).ok());
 
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+    // TODO(vjpai): don't assert
+    GPR_CODEGEN_ASSERT(write_ops_.SendMessagePtr(msg, options).ok());
     callbacks_outstanding_++;
     if (started_) {
       call_.PerformOps(&write_ops_);
