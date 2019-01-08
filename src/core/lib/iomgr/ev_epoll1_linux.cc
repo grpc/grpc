@@ -1242,6 +1242,8 @@ static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
  * Event engine binding
  */
 
+static bool is_any_background_poller_thread(void) { return false; }
+
 static void shutdown_background_closure(void) {}
 
 static void shutdown_engine(void) {
@@ -1287,6 +1289,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    is_any_background_poller_thread,
     shutdown_background_closure,
     shutdown_engine,
 };
