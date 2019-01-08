@@ -64,18 +64,6 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
-namespace {
-struct state_watcher {
-  grpc_closure closure;
-  grpc_subchannel* subchannel;
-  grpc_connectivity_state connectivity_state;
-  grpc_connectivity_state last_connectivity_state;
-  grpc_core::OrphanablePtr<grpc_core::HealthCheckClient> health_check_client;
-  grpc_closure health_check_closure;
-  grpc_connectivity_state health_state;
-};
-}  // namespace
-
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
   grpc_pollset_set* pollset_set;
