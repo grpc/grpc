@@ -539,26 +539,24 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 #pragma mark Finish
 
+// This function should support being called within a @synchronized(self) block in another function
+// Should not manipulate _requestWriter for deadlock prevention.
 - (void)finishWithError:(NSError *)errorOrNil {
-  GRXConcurrentWriteable *copiedResponseWriteable = nil;
-
   @synchronized(self) {
     if (_state == GRXWriterStateFinished) {
       return;
     }
     _state = GRXWriterStateFinished;
-    copiedResponseWriteable = _responseWriteable;
+
+    if (errorOrNil) {
+      [_responseWriteable cancelWithError:errorOrNil];
+    } else {
+      [_responseWriteable enqueueSuccessfulCompletion];
+    }
 
     // If the call isn't retained anywhere else, it can be deallocated now.
     _retainSelf = nil;
   }
-
-  if (errorOrNil) {
-    [copiedResponseWriteable cancelWithError:errorOrNil];
-  } else {
-    [copiedResponseWriteable enqueueSuccessfulCompletion];
-  }
-  _requestWriter.state = GRXWriterStateFinished;
 }
 
 - (void)cancel {
@@ -572,19 +570,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
     [_wrappedCall cancel];
   }
-}
-
-- (void)maybeFinishWithError:(NSError *)errorOrNil {
-  BOOL toFinish = NO;
-  @synchronized(self) {
-    if (_finished == NO) {
-      _finished = YES;
-      toFinish = YES;
-    }
-  }
-  if (toFinish == YES) {
-    [self finishWithError:errorOrNil];
-  }
+  _requestWriter.state = GRXWriterStateFinished;
 }
 
 - (void)dealloc {
@@ -647,6 +633,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                               }]];
           [strongSelf->_wrappedCall cancel];
         }
+        strongSelf->_requestWriter.state = GRXWriterStateFinished;
       } else {
         @synchronized(strongSelf) {
           [strongSelf->_responseWriteable enqueueValue:data
@@ -818,6 +805,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
             error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
           }
           [strongSelf finishWithError:error];
+          strongSelf->_requestWriter.state = GRXWriterStateFinished;
         }
       }];
 }
@@ -841,12 +829,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                     callOptions:_callOptions];
 
     if (_wrappedCall == nil) {
-      [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                     code:GRPCErrorCodeUnavailable
-                                                 userInfo:@{
-                                                   NSLocalizedDescriptionKey :
-                                                       @"Failed to create call or channel."
-                                                 }]];
+      [self finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                code:GRPCErrorCodeUnavailable
+                                            userInfo:@{
+                                                       NSLocalizedDescriptionKey :
+                                                         @"Failed to create call or channel."
+                                                       }]];
       return;
     }
 
@@ -971,6 +959,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                             NSLocalizedDescriptionKey : @"Connectivity lost."
                                           }]];
     }
+    strongSelf->_requestWriter.state = GRXWriterStateFinished;
   }
 }
 
