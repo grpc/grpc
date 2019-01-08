@@ -163,7 +163,7 @@ typedef struct {
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
-/** Grace period after the chennel reaches its max age. Int valued,
+/** Grace period after the channel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
