@@ -400,8 +400,9 @@ Status CallOpSendMessage::SendMessage(const M& message, WriteOptions options) {
   };
   // Serialize immediately only if we do not have access to the message pointer
   if (msg_ == nullptr) {
-    return serializer_(&message);
+    Status result = serializer_(&message);
     serializer_ = nullptr;
+    return result;
   }
   return Status();
 }

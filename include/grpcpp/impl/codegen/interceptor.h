@@ -112,12 +112,17 @@ class InterceptorBatchMethods {
   /// A return value of nullptr indicates that this ByteBuffer is not valid.
   virtual ByteBuffer* GetSerializedSendMessage() = 0;
 
-  /// Returns a non-modifiable pointer to the original non-serialized form of
-  /// the message. Valid for PRE_SEND_MESSAGE interceptions. A return value of
+  /// Returns a non-modifiable pointer to the non-serialized form of the message
+  /// to be sent. Valid for PRE_SEND_MESSAGE interceptions. A return value of
   /// nullptr indicates that this field is not valid. Also note that this is
   /// only supported for sync and callback APIs at the present moment.
   virtual const void* GetSendMessage() = 0;
 
+  /// Overwrites the message to be sent with \a message. \a message should be in
+  /// the non-serialized form expected by the method. Valid for PRE_SEND_MESSAGE
+  /// interceptions. Note that the interceptor is responsible for maintaining
+  /// the life of the message for the duration on the send operation, i.e., till
+  /// POST_SEND_MESSAGE.
   virtual void ModifySendMessage(const void* message) = 0;
 
   /// Checks whether the SEND MESSAGE op succeeded. Valid for POST_SEND_MESSAGE
