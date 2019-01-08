@@ -776,6 +776,21 @@ void ssl_tsi_test_handshaker_factory_internals() {
   test_tsi_ssl_client_handshaker_factory_bad_params();
 }
 
+void ssl_tsi_test_duplicate_root_certificates() {
+  const char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* dup_root_cert = static_cast<char*>(
+      gpr_zalloc(sizeof(char) * (strlen(root_cert) * 2 + 1)));
+  memcpy(dup_root_cert, root_cert, strlen(root_cert));
+  memcpy(dup_root_cert + strlen(root_cert), root_cert, strlen(root_cert));
+  tsi_ssl_root_certs_store* root_store =
+      tsi_ssl_root_certs_store_create(dup_root_cert);
+  GPR_ASSERT(root_store != nullptr);
+  // Free memory.
+  tsi_ssl_root_certs_store_destroy(root_store);
+  gpr_free((void*)root_cert);
+  gpr_free((void*)dup_root_cert);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -801,6 +816,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_round_trip_for_all_configs();
   ssl_tsi_test_do_round_trip_odd_buffer_size();
   ssl_tsi_test_handshaker_factory_internals();
+  ssl_tsi_test_duplicate_root_certificates();
   grpc_shutdown();
   return 0;
 }
