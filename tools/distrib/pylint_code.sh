@@ -32,12 +32,12 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=python_pylint_venv
-python3 -m virtualenv $VIRTUALENV
+python -m virtualenv $VIRTUALENV
 
 PYTHON=$VIRTUALENV/bin/python
 
-$PYTHON -m pip install --upgrade pip==18.1
-$PYTHON -m pip install --upgrade pylint==2.2.2
+$PYTHON -m pip install --upgrade pip==10.0.1
+$PYTHON -m pip install pylint==1.9.2
 
 EXIT=0
 for dir in "${DIRS[@]}"; do

@@ -18,9 +18,7 @@ SYSTEM=$(uname | cut -f 1 -d_)
 
 cd "$(dirname "$0")/../../.."
 set +ex
-# shellcheck disable=SC1091
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-# shellcheck disable=SC1090
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
 set -ex
 
@@ -38,7 +36,7 @@ fi
 
 set +ex
 rvm use default
-gem install bundler -v 1.17.3
+gem install bundler --update
 
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 

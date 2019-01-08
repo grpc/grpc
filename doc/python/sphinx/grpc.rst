@@ -19,11 +19,6 @@ Go to `gRPC Python Examples <https://github.com/grpc/grpc/tree/master/examples/p
 Module Contents
 ---------------
 
-Version
-^^^^^^^
-
-The version string is available as :code:`grpc.__version__`.
-
 Create Client
 ^^^^^^^^^^^^^
 

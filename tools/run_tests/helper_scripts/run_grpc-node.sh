@@ -16,8 +16,6 @@
 # This script runs grpc/grpc-node tests with their grpc submodule updated
 # to this reference
 
-set -ex
-
 # cd to gRPC root directory
 cd "$(dirname "$0")/../../.."
 

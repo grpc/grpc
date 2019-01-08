@@ -31,23 +31,42 @@ class ContextList {
  public:
   /* Creates a new element with \a context as the value and appends it to the
    * list. */
-  static void Append(ContextList** head, grpc_chttp2_stream* s);
+  static void Append(ContextList** head, grpc_chttp2_stream* s) {
+    /* Make sure context is not already present */
+    GRPC_CHTTP2_STREAM_REF(s, "timestamp");
+
+#ifndef NDEBUG
+    ContextList* ptr = *head;
+    while (ptr != nullptr) {
+      if (ptr->s_ == s) {
+        GPR_ASSERT(
+            false &&
+            "Trying to append a stream that is already present in the list");
+      }
+      ptr = ptr->next_;
+    }
+#endif
+
+    /* Create a new element in the list and add it at the front */
+    ContextList* elem = grpc_core::New<ContextList>();
+    elem->s_ = s;
+    elem->byte_offset_ = s->byte_counter;
+    elem->next_ = *head;
+    *head = elem;
+  }
 
   /* Executes a function \a fn with each context in the list and \a ts. It also
-   * frees up the entire list after this operation. It is intended as a callback
-   * and hence does not take a ref on \a error */
+   * frees up the entire list after this operation. */
   static void Execute(void* arg, grpc_core::Timestamps* ts, grpc_error* error);
 
  private:
-  void* trace_context_ = nullptr;
+  grpc_chttp2_stream* s_ = nullptr;
   ContextList* next_ = nullptr;
   size_t byte_offset_ = 0;
 };
 
-void grpc_http2_set_write_timestamps_callback(void (*fn)(void*,
-                                                         grpc_core::Timestamps*,
-                                                         grpc_error* error));
-void grpc_http2_set_fn_get_copied_context(void* (*fn)(void*));
+void grpc_http2_set_write_timestamps_callback(
+    void (*fn)(void*, grpc_core::Timestamps*));
 } /* namespace grpc_core */
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CONTEXT_LIST_H */

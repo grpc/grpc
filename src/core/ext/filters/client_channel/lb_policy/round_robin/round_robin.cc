@@ -53,13 +53,9 @@ namespace {
 // round_robin LB policy
 //
 
-constexpr char kRoundRobin[] = "round_robin";
-
 class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
-
-  const char* name() const override { return kRoundRobin; }
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
@@ -295,7 +291,7 @@ void RoundRobin::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
   pending_picks_ = nullptr;
   while (pick != nullptr) {
     PickState* next = pick->next;
-    if ((*pick->initial_metadata_flags & initial_metadata_flags_mask) ==
+    if ((pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       pick->connected_subchannel.reset();
       GRPC_CLOSURE_SCHED(pick->on_complete,
@@ -704,7 +700,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
   }
 
-  const char* name() const override { return kRoundRobin; }
+  const char* name() const override { return "round_robin"; }
 };
 
 }  // namespace

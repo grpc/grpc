@@ -163,7 +163,7 @@ typedef struct {
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
-/** Grace period after the channel reaches its max age. Int valued,
+/** Grace period after the chennel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
@@ -355,10 +355,6 @@ typedef struct {
  * is 10000. Setting this to "0" will disable c-ares query timeouts
  * entirely. */
 #define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
-/** gRPC Objective-C channel pooling domain string. */
-#define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
-/** gRPC Objective-C channel pooling id. */
-#define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

@@ -36,7 +36,8 @@ namespace internal {
 class ClientChannelMethodParams;
 
 // A table mapping from a method name to its method parameters.
-typedef SliceHashTable<RefCountedPtr<ClientChannelMethodParams>>
+typedef grpc_core::SliceHashTable<
+    grpc_core::RefCountedPtr<ClientChannelMethodParams>>
     ClientChannelMethodParamsTable;
 
 // A container of processed fields from the resolver result. Simplifies the
@@ -46,30 +47,33 @@ class ProcessedResolverResult {
   // Processes the resolver result and populates the relative members
   // for later consumption. Tries to parse retry parameters only if parse_retry
   // is true.
-  ProcessedResolverResult(const grpc_channel_args& resolver_result,
+  ProcessedResolverResult(const grpc_channel_args* resolver_result,
                           bool parse_retry);
 
   // Getters. Any managed object's ownership is transferred.
-  UniquePtr<char> service_config_json() {
+  grpc_core::UniquePtr<char> service_config_json() {
     return std::move(service_config_json_);
   }
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data() {
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data() {
     return std::move(retry_throttle_data_);
   }
-  RefCountedPtr<ClientChannelMethodParamsTable> method_params_table() {
+  grpc_core::RefCountedPtr<ClientChannelMethodParamsTable>
+  method_params_table() {
     return std::move(method_params_table_);
   }
-  UniquePtr<char> lb_policy_name() { return std::move(lb_policy_name_); }
+  grpc_core::UniquePtr<char> lb_policy_name() {
+    return std::move(lb_policy_name_);
+  }
   grpc_json* lb_policy_config() { return lb_policy_config_; }
 
  private:
   // Finds the service config; extracts LB config and (maybe) retry throttle
   // params from it.
-  void ProcessServiceConfig(const grpc_channel_args& resolver_result,
+  void ProcessServiceConfig(const grpc_channel_args* resolver_result,
                             bool parse_retry);
 
   // Finds the LB policy name (when no LB config was found).
-  void ProcessLbPolicyName(const grpc_channel_args& resolver_result);
+  void ProcessLbPolicyName(const grpc_channel_args* resolver_result);
 
   // Parses the service config. Intended to be used by
   // ServiceConfig::ParseGlobalParams.
@@ -81,16 +85,16 @@ class ProcessedResolverResult {
   void ParseRetryThrottleParamsFromServiceConfig(const grpc_json* field);
 
   // Service config.
-  UniquePtr<char> service_config_json_;
-  UniquePtr<grpc_core::ServiceConfig> service_config_;
+  grpc_core::UniquePtr<char> service_config_json_;
+  grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config_;
   // LB policy.
   grpc_json* lb_policy_config_ = nullptr;
-  UniquePtr<char> lb_policy_name_;
+  grpc_core::UniquePtr<char> lb_policy_name_;
   // Retry throttle data.
   char* server_name_ = nullptr;
-  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   // Method params table.
-  RefCountedPtr<ClientChannelMethodParamsTable> method_params_table_;
+  grpc_core::RefCountedPtr<ClientChannelMethodParamsTable> method_params_table_;
 };
 
 // The parameters of a method.

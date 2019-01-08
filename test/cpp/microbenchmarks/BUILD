@@ -189,10 +189,3 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_proto",
     ],
 )
-
-grpc_cc_binary(
-    name = "bm_timer",
-    testonly = 1,
-    srcs = ["bm_timer.cc"],
-    deps = [":helpers"],
-)

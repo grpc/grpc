@@ -76,14 +76,14 @@ static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReach
   }
 }
 
-+ (void)registerObserver:(id)observer selector:(SEL)selector {
++ (void)registerObserver:(_Nonnull id)observer selector:(SEL)selector {
   [[NSNotificationCenter defaultCenter] addObserver:observer
                                            selector:selector
                                                name:kGRPCConnectivityNotification
                                              object:nil];
 }
 
-+ (void)unregisterObserver:(id)observer {
++ (void)unregisterObserver:(_Nonnull id)observer {
   [[NSNotificationCenter defaultCenter] removeObserver:observer];
 }
 

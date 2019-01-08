@@ -62,8 +62,6 @@ class CFStreamHandle final {
   grpc_core::LockfreeEvent read_event_;
   grpc_core::LockfreeEvent write_event_;
 
-  dispatch_queue_t dispatch_queue_;
-
   gpr_refcount refcount_;
 };
 

@@ -36,12 +36,8 @@ namespace {
 
 const uint32_t kByteOffset = 123;
 
-void* DummyArgsCopier(void* arg) { return arg; }
-
-void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts,
-                                    grpc_error* error) {
+void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts) {
   ASSERT_NE(arg, nullptr);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
   EXPECT_EQ(ts->byte_offset, kByteOffset);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
@@ -56,7 +52,6 @@ void discard_write(grpc_slice slice) {}
 TEST(ContextList, ExecuteFlushesList) {
   grpc_core::ContextList* list = nullptr;
   grpc_http2_set_write_timestamps_callback(TestExecuteFlushesListVerifier);
-  grpc_http2_set_fn_get_copied_context(DummyArgsCopier);
   const int kNumElems = 5;
   grpc_core::ExecCtx exec_ctx;
   grpc_stream_refcount ref;

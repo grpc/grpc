@@ -366,11 +366,6 @@ void ChannelFilterPluginShutdown();
 /// The \a include_filter argument specifies a function that will be called
 /// to determine at run-time whether or not to add the filter. If the
 /// value is nullptr, the filter will be added unconditionally.
-/// If the channel stack type is GRPC_CLIENT_SUBCHANNEL, the caller should
-/// ensure that subchannels with different filter lists will always have
-/// different channel args. This requires setting a channel arg in case the
-/// registration function relies on some condition other than channel args to
-/// decide whether to add a filter or not.
 template <typename ChannelDataType, typename CallDataType>
 void RegisterChannelFilter(
     const char* name, grpc_channel_stack_type stack_type, int priority,

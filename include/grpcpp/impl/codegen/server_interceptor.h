@@ -51,33 +51,19 @@ class ServerInterceptorFactoryInterface {
   virtual Interceptor* CreateServerInterceptor(ServerRpcInfo* info) = 0;
 };
 
-/// ServerRpcInfo represents the state of a particular RPC as it
-/// appears to an interceptor. It is created and owned by the library and
-/// passed to the CreateServerInterceptor method of the application's
-/// ServerInterceptorFactoryInterface implementation
 class ServerRpcInfo {
  public:
-  /// Type categorizes RPCs by unary or streaming type
   enum class Type { UNARY, CLIENT_STREAMING, SERVER_STREAMING, BIDI_STREAMING };
 
   ~ServerRpcInfo(){};
 
-  // Delete all copy and move constructors and assignments
   ServerRpcInfo(const ServerRpcInfo&) = delete;
-  ServerRpcInfo& operator=(const ServerRpcInfo&) = delete;
   ServerRpcInfo(ServerRpcInfo&&) = delete;
   ServerRpcInfo& operator=(ServerRpcInfo&&) = delete;
 
   // Getter methods
-
-  /// Return the fully-specified method name
   const char* method() const { return method_; }
-
-  /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
-
-  /// Return a pointer to the underlying ServerContext structure associated
-  /// with the RPC to support features that apply to it
   grpc::ServerContext* server_context() { return ctx_; }
 
  private:

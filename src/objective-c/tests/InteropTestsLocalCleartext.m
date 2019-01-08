@@ -41,14 +41,6 @@ static int32_t kLocalInteropServerOverhead = 10;
   return kLocalCleartextHost;
 }
 
-+ (NSString *)PEMRootCertificates {
-  return nil;
-}
-
-+ (NSString *)hostNameOverride {
-  return nil;
-}
-
 - (int32_t)encodingOverhead {
   return kLocalInteropServerOverhead;  // bytes
 }
@@ -58,10 +50,6 @@ static int32_t kLocalInteropServerOverhead = 10;
 
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-}
-
-+ (GRPCTransportType)transportType {
-  return GRPCTransportTypeInsecure;
 }
 
 @end

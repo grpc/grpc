@@ -362,10 +362,9 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 // TODO(makarandd): Move to a different file that contains only unit tests
 - (void)testExceptions {
-  GRXWriter *writer = [GRXWriter writerWithValue:[NSData data]];
   // Try to set parameters to nil for GRPCCall. This should cause an exception
   @try {
-    (void)[[GRPCCall alloc] initWithHost:nil path:nil requestsWriter:writer];
+    (void)[[GRPCCall alloc] initWithHost:nil path:nil requestsWriter:nil];
     XCTFail(@"Did not receive an exception when parameters are nil");
   } @catch (NSException *theException) {
     NSLog(@"Received exception as expected: %@", theException.name);
@@ -555,14 +554,13 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
   NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
-  [GRPCCall useInsecureConnectionsForHost:kDummyAddress];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+                                             path:@""
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   [GRPCCall setMinConnectTimeout:timeout * 1000
                   initialBackoff:backoff * 1000
                       maxBackoff:0
                          forHost:kDummyAddress];
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
-                                             path:@"/dummyPath"
-                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   NSDate *startTime = [NSDate date];
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(id value) {
     XCTAssert(NO, @"Received message. Should not reach here");
@@ -585,11 +583,11 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 // The numbers of the following three tests are selected to be smaller than the default values of
 // initial backoff (1s) and min_connect_timeout (20s), so that if they fail we know the default
 // values fail to be overridden by the channel args.
-- (void)testTimeoutBackoff1 {
+- (void)testTimeoutBackoff2 {
   [self testTimeoutBackoffWithTimeout:0.7 Backoff:0.3];
 }
 
-- (void)testTimeoutBackoff2 {
+- (void)testTimeoutBackoff3 {
   [self testTimeoutBackoffWithTimeout:0.3 Backoff:0.7];
 }
 

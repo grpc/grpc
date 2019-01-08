@@ -153,7 +153,7 @@ static void grpc_rb_channel_free(void* p) {
 
   if (ch->bg_wrapped != NULL) {
     /* assumption made here: it's ok to directly gpr_mu_lock the global
-     * connection polling mutex because we're in a finalizer,
+     * connection polling mutex becuse we're in a finalizer,
      * and we can count on this thread to not be interrupted or
      * yield the gil. */
     grpc_rb_channel_safe_destroy(ch->bg_wrapped);
@@ -292,7 +292,7 @@ static void* get_state_without_gil(void* arg) {
   Indicates the current state of the channel, whose value is one of the
   constants defined in GRPC::Core::ConnectivityStates.
 
-  It also tries to connect if the channel is idle in the second form. */
+  It also tries to connect if the chennel is idle in the second form. */
 static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
                                                     VALUE self) {
   VALUE try_to_connect_param = Qfalse;
@@ -327,8 +327,8 @@ static void* wait_for_watch_state_op_complete_without_gvl(void* arg) {
   void* success = (void*)0;
 
   gpr_mu_lock(&global_connection_polling_mu);
-  // it's unsafe to do a "watch" after "channel polling abort" because the cq
-  // has been shut down.
+  // its unsafe to do a "watch" after "channel polling abort" because the cq has
+  // been shut down.
   if (abort_channel_polling || stack->bg_wrapped->channel_destroyed) {
     gpr_mu_unlock(&global_connection_polling_mu);
     return (void*)0;

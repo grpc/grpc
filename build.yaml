@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0-dev
-  g_stands_for: gold
-  version: 1.19.0-dev
+  g_stands_for: goose
+  version: 1.18.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -584,7 +584,6 @@ filegroups:
   - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/request_routing.h
   - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
@@ -609,7 +608,6 @@ filegroups:
   - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/request_routing.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
@@ -4230,27 +4228,6 @@ targets:
   - mac
   - linux
   - posix
-- name: bm_timer
-  build: test
-  language: c++
-  src:
-  - test/cpp/microbenchmarks/bm_timer.cc
-  deps:
-  - grpc_benchmark
-  - benchmark
-  - grpc++_test_util_unsecure
-  - grpc_test_util_unsecure
-  - grpc++_unsecure
-  - grpc_unsecure
-  - gpr
-  - grpc++_test_config
-  benchmark: true
-  defaults: benchmark
-  platforms:
-  - mac
-  - linux
-  - posix
-  uses_polling: false
 - name: byte_stream_test
   gtest: true
   build: test

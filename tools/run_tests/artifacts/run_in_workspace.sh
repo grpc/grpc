@@ -19,8 +19,7 @@
 set -ex
 
 cd "$(dirname "$0")/../../.."
-repo_root=$(pwd)
-export repo_root
+export repo_root=$(pwd)
 
 # TODO: fix file to pass shellcheck
 

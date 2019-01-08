@@ -337,7 +337,6 @@ class InterceptorTest(unittest.TestCase):
     def tearDown(self):
         self._server.stop(None)
         self._server_pool.shutdown(wait=True)
-        self._channel.close()
 
     def testTripleRequestMessagesClientInterceptor(self):
 

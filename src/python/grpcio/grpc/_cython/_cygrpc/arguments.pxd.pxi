@@ -28,22 +28,19 @@ cdef tuple _wrap_grpc_arg(grpc_arg arg)
 cdef grpc_arg _unwrap_grpc_arg(tuple wrapped_arg)
 
 
-cdef class _ChannelArg:
+cdef class _ArgumentProcessor:
 
   cdef grpc_arg c_argument
 
   cdef void c(self, argument, grpc_arg_pointer_vtable *vtable, references) except *
 
 
-cdef class _ChannelArgs:
+cdef class _ArgumentsProcessor:
 
   cdef readonly tuple _arguments
-  cdef list _channel_args
+  cdef list _argument_processors
   cdef readonly list _references
   cdef grpc_channel_args _c_arguments
 
-  cdef void _c(self, grpc_arg_pointer_vtable *vtable) except *
-  cdef grpc_channel_args *c_args(self) except *
-
-  @staticmethod
-  cdef _ChannelArgs from_args(object arguments, grpc_arg_pointer_vtable * vtable)
+  cdef grpc_channel_args *c(self, grpc_arg_pointer_vtable *vtable) except *
+  cdef un_c(self)

@@ -22,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+import traceback
 
 import setuptools
 from setuptools.command import build_ext
@@ -133,7 +134,6 @@ class TestGevent(setuptools.Command):
         # This test will stuck while running higher version of gevent
         'unit._auth_context_test.AuthContextTest.testSessionResumption',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
-        'unit._metadata_flags_test',
         'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
         'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
         'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
@@ -141,7 +141,6 @@ class TestGevent(setuptools.Command):
         'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
-        'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
         # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',

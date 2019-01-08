@@ -122,13 +122,9 @@ TraceFlag grpc_lb_glb_trace(false, "glb");
 
 namespace {
 
-constexpr char kGrpclb[] = "grpclb";
-
 class GrpcLb : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(const Args& args);
-
-  const char* name() const override { return kGrpclb; }
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
@@ -1140,7 +1136,7 @@ void GrpcLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
   pending_picks_ = nullptr;
   while (pp != nullptr) {
     PendingPick* next = pp->next;
-    if ((*pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
+    if ((pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       // Note: pp is deleted in this callback.
       GRPC_CLOSURE_SCHED(&pp->on_complete,
@@ -1823,7 +1819,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(args));
   }
 
-  const char* name() const override { return kGrpclb; }
+  const char* name() const override { return "grpclb"; }
 };
 
 }  // namespace

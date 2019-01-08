@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.19.0-dev'
+  version = '1.18.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
+  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
   s.libraries = 'c++'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -349,7 +349,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.h',
                       'src/core/ext/filters/client_channel/proxy_mapper.h',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
-                      'src/core/ext/filters/client_channel/request_routing.h',
                       'src/core/ext/filters/client_channel/resolver.h',
                       'src/core/ext/filters/client_channel/resolver_factory.h',
                       'src/core/ext/filters/client_channel/resolver_registry.h',
@@ -792,7 +791,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/parse_address.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper.cc',
                       'src/core/ext/filters/client_channel/proxy_mapper_registry.cc',
-                      'src/core/ext/filters/client_channel/request_routing.cc',
                       'src/core/ext/filters/client_channel/resolver.cc',
                       'src/core/ext/filters/client_channel/resolver_registry.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
@@ -972,7 +970,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/parse_address.h',
                               'src/core/ext/filters/client_channel/proxy_mapper.h',
                               'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
-                              'src/core/ext/filters/client_channel/request_routing.h',
                               'src/core/ext/filters/client_channel/resolver.h',
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',

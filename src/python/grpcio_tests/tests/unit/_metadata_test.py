@@ -186,7 +186,6 @@ class MetadataTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
-        self._channel.close()
 
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(_UNARY_UNARY)

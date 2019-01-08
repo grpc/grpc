@@ -20,8 +20,6 @@
 
 #import "private/GRPCHost.h"
 
-#import "GRPCCallOptions.h"
-
 @implementation GRPCCall (Tests)
 
 + (void)useTestCertsPath:(NSString *)certsPath
@@ -44,7 +42,7 @@
 
 + (void)useInsecureConnectionsForHost:(NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
-  hostConfig.transportType = GRPCTransportTypeInsecure;
+  hostConfig.secure = NO;
 }
 
 + (void)resetHostSettings {

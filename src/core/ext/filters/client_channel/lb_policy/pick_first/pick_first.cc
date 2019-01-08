@@ -43,13 +43,9 @@ namespace {
 // pick_first LB policy
 //
 
-constexpr char kPickFirst[] = "pick_first";
-
 class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(const Args& args);
-
-  const char* name() const override { return kPickFirst; }
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
@@ -238,7 +234,7 @@ void PickFirst::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
   pending_picks_ = nullptr;
   while (pick != nullptr) {
     PickState* next = pick->next;
-    if ((*pick->initial_metadata_flags & initial_metadata_flags_mask) ==
+    if ((pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       GRPC_CLOSURE_SCHED(pick->on_complete,
                          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -626,7 +622,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
   }
 
-  const char* name() const override { return kPickFirst; }
+  const char* name() const override { return "pick_first"; }
 };
 
 }  // namespace

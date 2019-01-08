@@ -20,8 +20,7 @@
 set -ex
 
 cd "$(dirname "$0")/../../.."
-repo_root="$(pwd)"
-export repo_root
+export repo_root="$(pwd)"
 
 rm -rf "${WORKSPACE_NAME}"
 git clone . "${WORKSPACE_NAME}"
