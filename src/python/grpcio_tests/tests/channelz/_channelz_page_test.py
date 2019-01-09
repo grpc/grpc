@@ -225,8 +225,8 @@ class ChannelzPagePreventAbortTest(unittest.TestCase):
         self._serving_thread.join()
 
     def test_request_page_without_grpc_init(self):
-        resp = requests.get(self._page_url_prefix + 'servers?start_server_id=0')
         # This shouldn't trigger SIGABORT
+        resp = requests.get(self._page_url_prefix + 'servers?start_server_id=0')
         self.assertEqual(resp.status_code, 503)
 
 

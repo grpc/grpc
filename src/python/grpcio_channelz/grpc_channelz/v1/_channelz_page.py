@@ -59,11 +59,11 @@ class _BadRequest(Exception):
     pass
 
 
-def _homepage_handler(render, unused_args):
-    return render()
+def _homepage_handler(base_page, unused_args):
+    return _renderer.format(base_page)
 
 
-def _topchannels_handler(render, args):
+def _topchannels_handler(base_page, args):
     start_channel_id = int(args.get('start_channel_id', '0'))
     topchannels = json_format.Parse(
         cygrpc.channelz_get_top_channels(start_channel_id),
@@ -72,14 +72,15 @@ def _topchannels_handler(render, args):
     if not topchannels:
         raise _NotFound(
             'No channel found for "start_channel_id"==%d' % start_channel_id)
-    return render(
+    return _renderer.format(
+        base_page,
         topchannels=topchannels,
         num_channel=len(topchannels),
         min_id=min(channel.ref.channel_id for channel in topchannels),
         max_id=max(channel.ref.channel_id for channel in topchannels))
 
 
-def _channel_handler(render, args):
+def _channel_handler(base_page, args):
     if 'channel_id' not in args:
         raise _BadRequest('"channel_id" cannot be empty')
     channel_id = int(args.get('channel_id'))
@@ -104,13 +105,14 @@ def _channel_handler(render, args):
                 _channelz_pb2.GetSubchannelResponse(),
             ).subchannel)
 
-    return render(
+    return _renderer.format(
+        base_page,
         channel=channel,
         nested_channels=nested_channels,
         subchannels=subchannels)
 
 
-def _subchannel_handler(render, args):
+def _subchannel_handler(base_page, args):
     if 'subchannel_id' not in args:
         raise _BadRequest('"subchannel_id" cannot be empty')
     subchannel_id = int(args.get('subchannel_id'))
@@ -127,10 +129,10 @@ def _subchannel_handler(render, args):
                 _channelz_pb2.GetSocketResponse(),
             ).socket)
 
-    return render(subchannel=subchannel, sockets=sockets)
+    return _renderer.format(base_page, subchannel=subchannel, sockets=sockets)
 
 
-def _socket_handler(render, args):
+def _socket_handler(base_page, args):
     if 'socket_id' not in args:
         raise _BadRequest('"socket_id" cannot be empty')
     socket_id = int(args.get('socket_id'))
@@ -139,10 +141,10 @@ def _socket_handler(render, args):
         _channelz_pb2.GetSocketResponse(),
     ).socket
 
-    return render(socket=socket)
+    return _renderer.format(base_page, socket=socket)
 
 
-def _servers_handler(render, args):
+def _servers_handler(base_page, args):
     start_server_id = int(args.get('start_server_id', '0'))
     servers = json_format.Parse(
         cygrpc.channelz_get_servers(start_server_id),
@@ -164,14 +166,15 @@ def _servers_handler(render, args):
                 ).socket)
         servers_n_sockets.append(_SERVER_AND_SOCKETS(server, listen_sockets))
 
-    return render(
+    return _renderer.format(
+        base_page,
         num_servers=len(servers),
         min_id=min(server.ref.server_id for server in servers),
         max_id=max(server.ref.server_id for server in servers),
         servers_n_sockets=servers_n_sockets)
 
 
-def _serversockets_handler(render, args):
+def _serversockets_handler(base_page, args):
     if 'server_id' not in args:
         raise _BadRequest('"server_id" cannot be empty')
     server_id = int(args.get('server_id'))
@@ -197,7 +200,8 @@ def _serversockets_handler(render, args):
                 _channelz_pb2.GetSocketResponse(),
             ).socket)
 
-    return render(
+    return _renderer.format(
+        base_page,
         server=server,
         serversockets=serversockets,
         num_serversockets=len(serversockets),
@@ -245,11 +249,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
             title=serving_page.title,
             content=_fetch_template(serving_page.template))
 
-        # Encapsulate _renderer and base_page into an enclosure
-        def render(*args, **kwargs):
-            return _renderer.format(base_page, *args, **kwargs)
-
-        full_page = serving_page.handler(render, args)
+        full_page = serving_page.handler(base_page, args)
         self._set_ok_headers()
         self.wfile.write(full_page.encode('ASCII'))
 
