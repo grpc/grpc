@@ -35,14 +35,15 @@ def get_release_tags(lang):
 
 def get_runtimes_for_lang_release(lang, release):
     """Get list of valid runtimes for given release of lang."""
-    runtimes_to_skip = []
+    runtimes = list(LANG_RUNTIME_MATRIX[lang])
     release_info = LANG_RELEASE_MATRIX[lang].get(release)
-    if release_info:
-        runtimes_to_skip = release_info.skip_runtime
-    return [
-        runtime for runtime in LANG_RUNTIME_MATRIX[lang]
-        if runtime not in runtimes_to_skip
-    ]
+    if release_info and release_info.runtime_subset:
+        runtimes = list(release_info.runtime_subset)
+
+    # check that all selected runtimes are valid for given language
+    for runtime in runtimes:
+        assert runtime in LANG_RUNTIME_MATRIX[lang]
+    return runtimes
 
 
 def should_build_docker_interop_image_from_release_tag(lang):
@@ -70,9 +71,9 @@ LANG_RUNTIME_MATRIX = {
 class ReleaseInfo:
     """Info about a single release of a language"""
 
-    def __init__(self, patch=[], skip_runtime=[], testcases_file=None):
+    def __init__(self, patch=[], runtime_subset=[], testcases_file=None):
         self.patch = patch
-        self.skip_runtime = skip_runtime
+        self.runtime_subset = runtime_subset
         self.testcases_file = None
 
 
@@ -100,23 +101,23 @@ LANG_RELEASE_MATRIX = {
     ]),
     'go':
     OrderedDict([
-        ('v1.0.5', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.2.1', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.3.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.4.2', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.5.2', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.6.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.7.4', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.8.2', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.9.2', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.10.1', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.11.3', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.12.2', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.13.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.14.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.15.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.16.0', ReleaseInfo(skip_runtime=['go1.11'])),
-        ('v1.17.0', ReleaseInfo(skip_runtime=['go1.8'])),
+        ('v1.0.5', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.2.1', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.3.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.4.2', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.5.2', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.6.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.7.4', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.8.2', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.9.2', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.10.1', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.11.3', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.12.2', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.13.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.14.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.15.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.16.0', ReleaseInfo(runtime_subset=['go1.8'])),
+        ('v1.17.0', ReleaseInfo(runtime_subset=['go1.11'])),
     ]),
     'java':
     OrderedDict([
