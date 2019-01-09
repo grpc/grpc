@@ -425,9 +425,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // queue
   dispatch_queue_t _responseQueue;
 
-  // Whether the call is finished. If it is, should not call finishWithError again.
-  BOOL _finished;
-
   // The OAuth2 token fetched from a token provider.
   NSString *_fetchedOauth2AccessToken;
 }
@@ -750,7 +747,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     [self cancel];
   } else {
     dispatch_async(_callQueue, ^{
-
       // EOS error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
       [self finishRequestWithErrorHandler:nil];
     });

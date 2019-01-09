@@ -113,10 +113,8 @@
 
 - (void)cancelSilently {
   dispatch_async(_writeableQueue, ^{
-    @synchronized(self) {
-      if (self->_alreadyFinished) {
-        return;
-      }
+    if (self->_alreadyFinished) {
+      return;
     }
     self.writeable = nil;
   });

@@ -82,7 +82,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
  * the corresponding value, and that's useful for advanced use cases like pausing an writer. For
  * more details, see the documentation of the enum further down. The property is thread safe.
  */
-@property(atomic) GRXWriterState state;
+@property GRXWriterState state;
 
 /**
  * Transition to the Started state, and start sending messages to the writeable (a reference to it
