@@ -39,38 +39,37 @@ static gpr_mu g_mu;
 static gpr_refcount g_refcount;
 
 struct grpc_subchannel_key {
-  grpc_subchannel_args args;
+  grpc_channel_args* args;
 };
 
 static bool g_force_creation = false;
 
 static grpc_subchannel_key* create_key(
-    const grpc_subchannel_args* args,
+    const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   grpc_subchannel_key* k =
       static_cast<grpc_subchannel_key*>(gpr_malloc(sizeof(*k)));
-  k->args.args = copy_channel_args(args->args);
+  k->args = copy_channel_args(args);
   return k;
 }
 
-grpc_subchannel_key* grpc_subchannel_key_create(
-    const grpc_subchannel_args* args) {
+grpc_subchannel_key* grpc_subchannel_key_create(const grpc_channel_args* args) {
   return create_key(args, grpc_channel_args_normalize);
 }
 
 static grpc_subchannel_key* subchannel_key_copy(grpc_subchannel_key* k) {
-  return create_key(&k->args, grpc_channel_args_copy);
+  return create_key(k->args, grpc_channel_args_copy);
 }
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b) {
   // To pretend the keys are different, return a non-zero value.
   if (GPR_UNLIKELY(g_force_creation)) return 1;
-  return grpc_channel_args_compare(a->args.args, b->args.args);
+  return grpc_channel_args_compare(a->args, b->args);
 }
 
 void grpc_subchannel_key_destroy(grpc_subchannel_key* k) {
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(k->args.args));
+  grpc_channel_args_destroy(k->args);
   gpr_free(k);
 }
 
