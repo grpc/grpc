@@ -177,12 +177,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-35bfb70728dedc936a370e551294f2fc9c02b7d5",
+            strip_prefix = "bazel-toolchains-37419a124bdb9af2fec5b99a973d359b6b899b61 ",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/35bfb70728dedc936a370e551294f2fc9c02b7d5.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/35bfb70728dedc936a370e551294f2fc9c02b7d5.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/37419a124bdb9af2fec5b99a973d359b6b899b61 .tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/37419a124bdb9af2fec5b99a973d359b6b899b61 .tar.gz",
             ],
-            sha256 = "50c9df51f80cdf9ff8f2bc27620c155526b9ba67be95e8a686f32ff8898a06e2",
+            sha256 = "ee854b5de299138c1f4a2edb5573d22b21d975acfc7aa938f36d30b49ef97498",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
