@@ -18,16 +18,16 @@ package keyvaluestore;
 
 // Key value store service definition.
 service KeyValueStore {
-  // Provides a value for each key reques
-  rpc GetValues (stream Key) returns (stream Value) {}
+  // Provides a value for each key request
+  rpc GetValues (stream Request) returns (stream Response) {}
 }
 
 // The request message containing the key
-message Key {
+message Request {
   string key = 1;
 }
 
-// The response message containing the greetings
-message Value {
+// The response message containing the value associated with the key
+message Response {
   string value = 1;
 }
