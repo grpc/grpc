@@ -12,43 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import pkgutil
 import collections
+import pkgutil
 import traceback
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from six.moves.urllib.parse import parse_qs, urlparse
 
-from grpc._cython import cygrpc
-import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 from google.protobuf import json_format
+from grpc._cython import cygrpc
+from six.moves.BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer  # pylint: disable=wrong-import-order
+from six.moves.urllib.parse import parse_qs, urlparse  # pylint: disable=wrong-import-order
 
-from ._renderer import _Renderer
+from grpc_channelz.v1 import _renderer as __renderer
+from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
 
 _TEMPLATE_FOLDER = './templates'
+_URI_PREFIX = '/gdebug/channelz/'
 
 _PAGE = collections.namedtuple('_PAGE', ['title', 'template', 'handler'])
-_SERVER_N_SOCKETS = collections.namedtuple('_SERVER_N_SOCKETS',
-                                           ['server', 'listen_sockets'])
+_SERVER_AND_SOCKETS = collections.namedtuple('_SERVER_AND_SOCKETS',
+                                             ['server', 'listen_sockets'])
 
-_renderer = _Renderer()
+_renderer = __renderer.Renderer()
 
 
 def _fetch_template(template_name):
-    return pkgutil.get_data(__name__,
-                            os.path.join(_TEMPLATE_FOLDER,
-                                         template_name)).decode('ASCII')
+    return pkgutil.get_data(__name__, '%s/%s' % (_TEMPLATE_FOLDER,
+                                                 template_name)).decode('ASCII')
 
 
 _base_template = _fetch_template('base.html')
 
 
-def _parse_args(path):
-    args = parse_qs(urlparse(path).query)
+def _parse_path_and_args_from_url(path):
+    parsed = urlparse(path)
+    args = parse_qs(parsed.query)
     for key in args:
         if isinstance(args[key], list) and len(args[key]) == 1:
             args[key] = args[key][0]
-    return args
+    return parsed.path, args
 
 
 class _NotFound(Exception):
@@ -162,7 +162,7 @@ def _servers_handler(render, args):
                     cygrpc.channelz_get_socket(ref.socket_id),
                     _channelz_pb2.GetSocketResponse(),
                 ).socket)
-        servers_n_sockets.append(_SERVER_N_SOCKETS(server, listen_sockets))
+        servers_n_sockets.append(_SERVER_AND_SOCKETS(server, listen_sockets))
 
     return render(
         num_servers=len(servers),
@@ -231,10 +231,11 @@ class _RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _handle(self):
-        if not self.path.startswith('/gdebug/channelz/'):
+        if not self.path.startswith(_URI_PREFIX):
             raise _NotFound()
 
-        request_page = self.path[17:].split('?', 1)[0]
+        path, args = _parse_path_and_args_from_url(self.path)
+        request_page = path[len(_URI_PREFIX):]
         if request_page not in _SERVING_PAGES:
             raise _NotFound('Page not found')
         serving_page = _SERVING_PAGES[request_page]
@@ -248,7 +249,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
         def render(*args, **kwargs):
             return _renderer.format(base_page, *args, **kwargs)
 
-        full_page = serving_page.handler(render, _parse_args(self.path))
+        full_page = serving_page.handler(render, args)
         self._set_ok_headers()
         self.wfile.write(full_page.encode('ASCII'))
 
@@ -266,10 +267,12 @@ class _RequestHandler(BaseHTTPRequestHandler):
                 self.send_error(404, str(e))
             else:
                 # Otherwise, return 400
-                traceback.print_exc()
-                self.send_error(400)
+                self.send_error(400, str(e))
+        except RuntimeError as e:
+            stack_str = traceback.format_exc()
+            if str(e) == 'The gRPC library is not initialized.':
+                self.send_error(503)  # 503 - Service Unavailable
         except Exception as e:  # pylint: disable=broad-except
-            traceback.print_exc()
             self.send_error(500)
 
 

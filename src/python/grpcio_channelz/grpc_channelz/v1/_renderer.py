@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import string
+
 import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
 
 _EMPTY_TIME_STR = '1970-01-01T00:00:00Z'
@@ -22,7 +23,7 @@ def _sanitize(text):
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-class _Renderer(string.Formatter):
+class Renderer(string.Formatter):
 
     def format_field(self, value, format_spec):  # pylint: disable=too-many-return-statements
         if format_spec.startswith('loop'):
@@ -49,7 +50,7 @@ class _Renderer(string.Formatter):
             else:
                 return 'N/A'
         elif format_spec == 'sanitized':
-            return super(_Renderer, self).format_field(value, '')
+            return super(Renderer, self).format_field(value, '')
         else:
             return _sanitize(
-                super(_Renderer, self).format_field(value, format_spec))
+                super(Renderer, self).format_field(value, format_spec))

@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests of Serving HTTPS Channelz Page."""
+"""Tests of Serving HTML Channelz Page."""
 
-import unittest
-import time
 import logging
 import re
-
-import requests
+import threading
+import time
+import unittest
 
 import grpc
-from grpc_channelz.v1 import channelz
+import requests
 
+from grpc_channelz.v1 import channelz
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
@@ -107,6 +107,10 @@ class ChannelzPageTest(unittest.TestCase):
         self._page_server = channelz.serve_channelz_page('', 0)
         self._page_url_prefix = _CHANNELZ_URL_PREFIX_TEMPLATE % self._page_server.server_address[
             1]
+        self._serving_thread = threading.Thread(
+            target=self._page_server.serve_forever)
+        self._serving_thread.daemon = True
+        self._serving_thread.start()
 
         # Emit RPCs to make sure sockets are created
         self._send_successful_unary_unary()
@@ -116,9 +120,9 @@ class ChannelzPageTest(unittest.TestCase):
     def tearDown(self):
         self._page_server.shutdown()
         self._page_server.server_close()
+        self._serving_thread.join()
         self._server.stop(None)
         self._channel.close()
-        super(ChannelzPageTest, self).tearDown()
 
     def test_homepage(self):
         resp = requests.get(self._page_url_prefix)
@@ -130,22 +134,21 @@ class ChannelzPageTest(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a channel
-        surffix = _table_a_href_re.search(resp.text).group(1)
-        self.assertIn('channel?channel_id=', surffix)
-        resp = requests.get(self._page_url_prefix + surffix)
+        suffix = _table_a_href_re.search(resp.text).group(1)
+        self.assertIn('channel?channel_id=', suffix)
+        resp = requests.get(self._page_url_prefix + suffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a subchannel
-        surffix = _table_eq1_a_href_re.search(resp.text).group(1)
-        # surffix = pq(resp.text)('table').eq(1).find('a').attr('href')
-        self.assertIn('subchannel?subchannel_id=', surffix)
-        resp = requests.get(self._page_url_prefix + surffix)
+        suffix = _table_eq1_a_href_re.search(resp.text).group(1)
+        self.assertIn('subchannel?subchannel_id=', suffix)
+        resp = requests.get(self._page_url_prefix + suffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of a socket
-        surffix = _table_a_href_re.search(resp.text).group(1)
-        self.assertIn('socket?socket_id=', surffix)
-        resp = requests.get(self._page_url_prefix + surffix)
+        suffix = _table_a_href_re.search(resp.text).group(1)
+        self.assertIn('socket?socket_id=', suffix)
+        resp = requests.get(self._page_url_prefix + suffix)
         self.assertEqual(resp.status_code, 200)
 
     def test_serversockets(self):
@@ -153,29 +156,26 @@ class ChannelzPageTest(unittest.TestCase):
         resp = requests.get(self._page_url_prefix + 'servers')
         self.assertEqual(resp.status_code, 200)
 
-        # TODO(lidiz) In Python 3, the server from last test unit will remain
-        # alive... Remove the selection logic when the deallocation is fixed.
-        # Each table row displays a server's detail. If there is only one link,
-        # that means the server is not listening to any socket. To proceed,
-        # we want to pick a server that is listen to at least one socket.
         trs = _tr_re.findall(resp.text)
+        # There should be 2 table row, one for header, one for alive server.
+        self.assertEqual(len(trs), 2)
         groups = [_a_href_a_re.search(content) for content in trs]
-        surffix = next(group for group in groups if group is not None).group(1)
+        suffix = next(group for group in groups if group is not None).group(1)
 
         # Page of detail of a server
-        self.assertIn('serversockets?server_id=', surffix)
-        resp = requests.get(self._page_url_prefix + surffix)
+        self.assertIn('serversockets?server_id=', suffix)
+        resp = requests.get(self._page_url_prefix + suffix)
         self.assertEqual(resp.status_code, 200)
 
         # Page of detail of the server sockets
-        surffix = _table_a_href_re.search(resp.text).group(1)
-        self.assertIn('socket?socket_id=', surffix)
-        resp = requests.get(self._page_url_prefix + surffix)
+        suffix = _table_a_href_re.search(resp.text).group(1)
+        self.assertIn('socket?socket_id=', suffix)
+        resp = requests.get(self._page_url_prefix + suffix)
         self.assertEqual(resp.status_code, 200)
 
     def test_incomplete_arguments(self):
-        for surffix in ['channel', 'subchannel', 'socket', 'serversockets']:
-            resp = requests.get(self._page_url_prefix + surffix)
+        for suffix in ['channel', 'subchannel', 'socket', 'serversockets']:
+            resp = requests.get(self._page_url_prefix + suffix)
             self.assertEqual(resp.status_code, 400)
 
     def test_not_found_channel(self):
@@ -205,6 +205,29 @@ class ChannelzPageTest(unittest.TestCase):
         resp = requests.get(
             self._page_url_prefix + 'servers?start_server_id=999')
         self.assertEqual(resp.status_code, 404)
+
+
+class ChannelzPagePreventAbortTest(unittest.TestCase):
+
+    def setUp(self):
+        super(ChannelzPagePreventAbortTest, self).setUp()
+        self._page_server = channelz.serve_channelz_page('', 0)
+        self._page_url_prefix = _CHANNELZ_URL_PREFIX_TEMPLATE % self._page_server.server_address[
+            1]
+        self._serving_thread = threading.Thread(
+            target=self._page_server.serve_forever)
+        self._serving_thread.daemon = True
+        self._serving_thread.start()
+
+    def tearDown(self):
+        self._page_server.shutdown()
+        self._page_server.server_close()
+        self._serving_thread.join()
+
+    def test_request_page_without_grpc_init(self):
+        resp = requests.get(self._page_url_prefix + 'servers?start_server_id=0')
+        # This shouldn't trigger SIGABORT
+        self.assertEqual(resp.status_code, 503)
 
 
 if __name__ == '__main__':

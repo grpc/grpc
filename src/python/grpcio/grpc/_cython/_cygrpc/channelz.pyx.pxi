@@ -14,6 +14,8 @@
 
 
 def channelz_get_top_channels(start_channel_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_top_channels(
         start_channel_id,
     )
@@ -23,6 +25,8 @@ def channelz_get_top_channels(start_channel_id):
     return c_returned_str
     
 def channelz_get_servers(start_server_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_servers(start_server_id)
     if c_returned_str == NULL:
         raise ValueError('Failed to get servers, please ensure your' \
@@ -30,6 +34,8 @@ def channelz_get_servers(start_server_id):
     return c_returned_str
     
 def channelz_get_server(server_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_server(server_id)
     if c_returned_str == NULL:
         raise ValueError('Failed to get the server, please ensure your' \
@@ -37,6 +43,8 @@ def channelz_get_server(server_id):
     return c_returned_str
     
 def channelz_get_server_sockets(server_id, start_socket_id, max_results):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_server_sockets(
         server_id,
         start_socket_id,
@@ -50,6 +58,8 @@ def channelz_get_server_sockets(server_id, start_socket_id, max_results):
     return c_returned_str
     
 def channelz_get_channel(channel_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_channel(channel_id)
     if c_returned_str == NULL:
         raise ValueError('Failed to get the channel, please ensure your' \
@@ -57,6 +67,8 @@ def channelz_get_channel(channel_id):
     return c_returned_str
     
 def channelz_get_subchannel(subchannel_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_subchannel(subchannel_id)
     if c_returned_str == NULL:
         raise ValueError('Failed to get the subchannel, please ensure your' \
@@ -64,6 +76,8 @@ def channelz_get_subchannel(subchannel_id):
     return c_returned_str
     
 def channelz_get_socket(socket_id):
+    if grpc_is_initialized() == 0:
+        raise RuntimeError('The gRPC library is not initialized.')
     cdef char *c_returned_str = grpc_channelz_get_socket(socket_id)
     if c_returned_str == NULL:
         raise ValueError('Failed to get the socket, please ensure your' \

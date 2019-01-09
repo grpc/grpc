@@ -13,16 +13,13 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
-import threading
 import grpc
 from grpc._cython import cygrpc
-
-import grpc_channelz.v1.channelz_pb2 as _channelz_pb2
-import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
-
 from google.protobuf import json_format
 
-from . import _channelz_page
+from grpc_channelz.v1 import channelz_pb2 as _channelz_pb2
+from grpc_channelz.v1 import channelz_pb2_grpc as _channelz_pb2_grpc
+from grpc_channelz.v1 import _channelz_page
 
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
@@ -148,10 +145,7 @@ def add_channelz_servicer(server):
 def serve_channelz_page(host=None, port=None):
     """Start an HTTP server serving Channelz Pages.
 
-    The pages will be served under: http://<URL>/gdebug/channelz/
-    The gRPC server/client have to be started prior to requesting the server.
-    Otherwise, the gRPC C-Core won't be started, and it will throw SIGABORT
-    terminating the process.
+    The pages will be served under: http://<host>:<port>/gdebug/channelz/
 
     To close the HTTP server cleanly, you need to call 'shutdown()' and
     'server_close()' on the returned HTTP server instance. For more details,
@@ -161,17 +155,12 @@ def serve_channelz_page(host=None, port=None):
     This is an EXPERIMENTAL API.
 
     Args:
-      host: a str indicates the address of the HTTP server.
-      port: a int indicates the tcp port of the HTTP server.
+      host: a str specifying the host on which the HTTP server should listen.
+      port: a int indicating the tcp port of the HTTP server.
 
     Returns:
-      An http.Server.HTTPServer instance that is already started serving.
+      An http.Server.HTTPServer instance with Channelz Page handler.
     """
     if host is None or port is None:
         raise ValueError('"host" and "port" can\'t be None')
-    http_server = _channelz_page._create_http_server((host, port))
-
-    serving_thread = threading.Thread(target=http_server.serve_forever)
-    serving_thread.daemon = True
-    serving_thread.start()
-    return http_server
+    return _channelz_page._create_http_server((host, port))
