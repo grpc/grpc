@@ -36,7 +36,7 @@ def get_release_tags(lang):
 def get_runtimes_for_lang_release(lang, release):
     """Get list of valid runtimes for given release of lang."""
     runtimes_to_skip = []
-    release_info = LANG_RELEASE_MATRIX[lang][release]
+    release_info = LANG_RELEASE_MATRIX[lang].get(release)
     if release_info:
         runtimes_to_skip = release_info.skip_runtime
     return [

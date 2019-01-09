@@ -260,7 +260,7 @@ atexit.register(cleanup)
 def maybe_apply_patches_on_git_tag(stack_base, lang, release):
     files_to_patch = []
 
-    release_info = client_matrix.LANG_RELEASE_MATRIX[lang][release]
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
     if release_info:
         files_to_patch = release_info.patch
     if not files_to_patch:
