@@ -399,6 +399,10 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 
+bool grpc_is_any_background_poller_thread(void) {
+  return g_event_engine->is_any_background_poller_thread();
+}
+
 void grpc_shutdown_background_closure(void) {
   g_event_engine->shutdown_background_closure();
 }

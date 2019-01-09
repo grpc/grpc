@@ -41,10 +41,14 @@ static void iomgr_platform_init(void) {
 static void iomgr_platform_flush(void) {}
 static void iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
 static void iomgr_platform_shutdown_background_closure(void) {}
+static bool iomgr_platform_is_any_background_poller_thread(void) {
+  return false;
+}
 
 static grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
-    iomgr_platform_shutdown_background_closure};
+    iomgr_platform_shutdown_background_closure,
+    iomgr_platform_is_any_background_poller_thread};
 
 void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
                             grpc_custom_resolver_vtable* resolver,
