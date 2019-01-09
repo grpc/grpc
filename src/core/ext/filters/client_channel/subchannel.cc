@@ -64,18 +64,6 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
-namespace {
-struct state_watcher {
-  grpc_closure closure;
-  grpc_subchannel* subchannel;
-  grpc_connectivity_state connectivity_state;
-  grpc_connectivity_state last_connectivity_state;
-  grpc_core::OrphanablePtr<grpc_core::HealthCheckClient> health_check_client;
-  grpc_closure health_check_closure;
-  grpc_connectivity_state health_state;
-};
-}  // namespace
-
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
   grpc_pollset_set* pollset_set;
@@ -553,7 +541,7 @@ struct HealthCheckParams {
 }  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args) {
+                                        const grpc_channel_args* args) {
   grpc_core::SubchannelKey* key =
       grpc_core::New<grpc_core::SubchannelKey>(args->args);
   grpc_subchannel* c = args->subchannel_pool->FindSubchannel(key);
@@ -570,11 +558,10 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->pollset_set = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
-  grpc_get_subchannel_address_arg(args->args, addr);
+  grpc_get_subchannel_address_arg(args, addr);
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (grpc_proxy_mappers_map_address(addr, args->args, &new_address,
-                                     &new_args)) {
+  if (grpc_proxy_mappers_map_address(addr, args, &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     gpr_free(addr);
     addr = new_address;
@@ -583,7 +570,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
   gpr_free(addr);
   c->args = grpc_channel_args_copy_and_add_and_remove(
-      new_args != nullptr ? new_args : args->args, keys_to_remove,
+      new_args != nullptr ? new_args : args, keys_to_remove,
       GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
   gpr_free(new_arg.value.string);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
@@ -596,7 +583,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_connectivity_state_init(&c->state_and_health_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
   grpc_core::BackOff::Options backoff_options;
-  parse_args_for_backoff_values(args->args, &backoff_options,
+  parse_args_for_backoff_values(args, &backoff_options,
                                 &c->min_connect_timeout_ms);
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);

@@ -39,7 +39,6 @@
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
-typedef struct grpc_subchannel_args grpc_subchannel_args;
 
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -182,19 +181,9 @@ void grpc_subchannel_call_set_cleanup_closure(
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);
 
-struct grpc_subchannel_args {
-  // When updating this struct, also update subchannel_index.cc and
-  // client_channel_factory_create_subchannel().
-
-  /** Channel arguments to be supplied to the newly created channel */
-  const grpc_channel_args* args;
-  /** The subchannel pool this subchannel is in */
-  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
-};
-
 /** create a subchannel given a connector */
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args);
+                                        const grpc_channel_args* args);
 
 /// Sets \a addr from \a args.
 void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
