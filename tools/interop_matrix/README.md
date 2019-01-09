@@ -1,6 +1,6 @@
 # Overview
 
-This directory contains scripts that facilitate building and running gRPC tests for combinations of language/runtimes (known as matrix).
+This directory contains scripts that facilitate building and running gRPC interoperability tests for combinations of language/runtimes (known as matrix).
 
 The setup builds gRPC docker images for each language/runtime and upload it to Google Container Registry (GCR). These images, encapsulating gRPC stack
 from specific releases/tag, are used to test version compatiblity between gRPC release versions.
