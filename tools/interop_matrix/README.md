@@ -42,10 +42,10 @@ For more details on each step, refer to sections below.
 - The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').
 
 ## Instructions for running test cases against a GCR image manually
-- Download docker image from GCR.  For example: `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_go1.7:master`.
+- Download docker image from GCR.  For example: `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_go1.8:master`.
 - Run test cases by specifying `docker_image` variable inline with the test case script created above.
 For example:
-  - `docker_image=gcr.io/grpc-testing/grpc_interop_go1.7:master ./testcases/go__master` will run go__master test cases against `go1.7` with gRPC release `master` docker image in GCR.
+  - `docker_image=gcr.io/grpc-testing/grpc_interop_go1.8:master ./testcases/go__master` will run go__master test cases against `go1.8` with gRPC release `master` docker image in GCR.
 
 Note:
 - File path starting with `tools/` or `template/` are relative to the grpc repo root dir.  File path starting with `./` are relative to current directory (`tools/interop_matrix`).
