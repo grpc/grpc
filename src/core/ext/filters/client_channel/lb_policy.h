@@ -55,7 +55,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
     /// Subchannel pool.
-    RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
+    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
@@ -174,8 +174,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  RefCountedPtr<SubchannelPoolInterface> subchannel_pool() const {
-    return subchannel_pool_;
+  /// Returns a pointer to the subchannel pool of type
+  /// RefCountedPtr<SubchannelPoolInterface>.
+  RefCountedPtr<SubchannelPoolInterface>* subchannel_pool() {
+    return &subchannel_pool_;
   }
 
   GRPC_ABSTRACT_BASE_CLASS

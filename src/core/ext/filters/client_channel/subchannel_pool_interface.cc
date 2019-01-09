@@ -20,7 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -73,5 +73,36 @@ void SubchannelKey::Init(
 }
 
 gpr_atm SubchannelKey::force_different_ = 0;
+
+namespace {
+
+void* arg_copy(void* p) { return p; }
+
+void arg_destroy(void* p) {}
+
+int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
+    arg_copy, arg_destroy, arg_cmp};
+
+}  // namespace
+
+SubchannelPoolInterface*
+SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
+    const grpc_channel_args* args) {
+  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
+  if (arg) {
+    GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
+    return static_cast<SubchannelPoolInterface*>(arg->value.pointer.p);
+  }
+  return nullptr;
+}
+
+grpc_arg SubchannelPoolInterface::CreateChannelArg(
+    grpc_core::SubchannelPoolInterface* subchannel_pool) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
+      &subchannel_pool_arg_vtable);
+}
 
 }  // namespace grpc_core

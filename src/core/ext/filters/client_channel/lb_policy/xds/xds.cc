@@ -1523,6 +1523,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
+    lb_policy_args.subchannel_pool = subchannel_pool();
     lb_policy_args.args = args;
     CreateChildPolicyLocked(lb_policy_args);
     if (grpc_lb_xds_trace.enabled()) {

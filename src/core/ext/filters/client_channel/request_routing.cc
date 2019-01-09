@@ -676,7 +676,7 @@ void RequestRouter::CreateNewLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner_;
   lb_policy_args.client_channel_factory = client_channel_factory_;
-  lb_policy_args.subchannel_pool = subchannel_pool_;
+  lb_policy_args.subchannel_pool = &subchannel_pool_;
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
