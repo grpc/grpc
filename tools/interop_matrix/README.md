@@ -13,6 +13,7 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
   - `gcloud container images list --repository gcr.io/grpc-testing` lists available images.
   - `gcloud container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
+  - images can also be viewed in https://pantheon.corp.google.com/gcr/images/grpc-testing?project=grpc-testing
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
   - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9` followed by
   - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 tools/interop_matrix/testcases/java__master`
@@ -20,13 +21,11 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
 - (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
 For more details on each step, refer to sections below.
 
-## Instructions for adding new language/runtimes*
+## Instructions for adding new language/runtimes
 - Create new `Dockerfile.template`, `build_interop.sh.template` for the language/runtime under `template/tools/dockerfile/`.
 - Run `tools/buildgen/generate_projects.sh` to create corresponding files under `tools/dockerfile/`.
 - Add language/runtimes to `client_matrix.py` following existing language/runtimes examples.
-- Run `tools/interop_matrix/create_matrix_images.py` which will build and upload images to GCR.  Unless you are also building images for a gRPC release, make sure not to set `--release` (the default release 'master' is used for testing).
-
-*: Please delete your docker images at https://pantheon.corp.google.com/gcr/images/grpc-testing?project=grpc-testing afterwards.  Permissions to access GrpcTesting project is required for this step.
+- Run `tools/interop_matrix/create_matrix_images.py` which will build (and upload) images to GCR.
 
 ## Instructions for creating new test cases
 - Create test cases by running `LANG=<lang> [RELEASE=<release>] ./create_testcases.sh`.  For example,
@@ -39,7 +38,7 @@ For more details on each step, refer to sections below.
   - `--release` specifies a git release tag.  Defaults to `--release=all`.  Make sure the GCR images with the tag have been created using `create_matrix_images.py` above.
   - `--language` specifies a language.  Defaults to `--language=all`.
   For example, To test all languages for all gRPC releases across all runtimes, do `tools/interop_matrix/run_interop_matrix_test.py --release=all`.
-- The output for all the test cases is recorded in a junit style xml file (default to 'report.xml').
+- The output for all the test cases is recorded in a junit style xml file (defaults to 'report.xml').
 
 ## Instructions for running test cases against a GCR image manually
 - Download docker image from GCR.  For example: `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_go1.8:v1.16.0`.
