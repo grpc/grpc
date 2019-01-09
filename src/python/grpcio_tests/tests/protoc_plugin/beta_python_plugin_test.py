@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import contextlib
+import faulthandler
 import importlib
 import os
 from os import path
@@ -21,6 +22,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 import unittest
 
 from six import moves
@@ -105,6 +107,15 @@ def _packagify(directory):
         init_file_name = path.join(subdirectory, '__init__.py')
         with open(init_file_name, 'wb') as init_file:
             init_file.write(b'')
+
+
+def dump_threads():
+    start_time = time.time()
+    while True:
+        if time.time() > start_time+30:
+            faulthandler.dump_traceback()
+            return
+        time.sleep(1)
 
 
 class _ServicerMethods(object):
@@ -313,6 +324,11 @@ class PythonPluginTest(unittest.TestCase):
             with open(proto_file_name, 'wb') as proto_file:
                 proto_file.write(massaged_proto_content)
             self._proto_file_names.add(proto_file_name)
+
+
+        t = threading.Thread(target=dump_threads)
+        t.daemon = True
+        t.start()
 
     def tearDown(self):
         shutil.rmtree(self._directory)

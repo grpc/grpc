@@ -24,6 +24,7 @@ import six
 import grpc
 from grpc import _common
 from grpc import _interceptor
+from grpc import _thread
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
@@ -759,11 +760,15 @@ def _process_event_and_continue(state, event):
     return should_continue
 
 
-def _serve(state, parent_thread):
+def _serve(state):
     while True:
         deadline = time.time() + _DEALLOCATED_SERVER_CHECK_PERIOD_S
         event = state.completion_queue.poll(deadline)
-        if not parent_thread.is_alive():
+        # The ThreadPoolExecutor threads may shut down after our atexit handler
+        # fires, so this will still leave them hanging.
+        # This only works if futures/thread.py registers its atexit handler
+        # after we register ours, which can not be expected.
+        if _thread.is_exiting():
             return
         if state.server_deallocated:
             _begin_shutdown_once(state)
@@ -819,9 +824,10 @@ def _start(state):
         state.stage = _ServerStage.STARTED
         _request_call(state)
 
-        thread = threading.Thread(
-            target=_serve, args=(state, threading.current_thread()))
+        thread = threading.Thread(target=_serve, args=(state,))
+        thread.daemon = True
         thread.start()
+        _thread.add_daemon_thread(thread)
 
 
 def _validate_generic_rpc_handlers(generic_rpc_handlers):

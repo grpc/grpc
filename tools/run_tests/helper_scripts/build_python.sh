@@ -182,6 +182,7 @@ $VENV_PYTHON -m pip install six enum34 protobuf
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
   $VENV_PYTHON -m pip install futures
+  $VENV_PYTHON -m pip install faulthandler
 fi
 
 pip_install_dir "$ROOT"

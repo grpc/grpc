@@ -214,7 +214,7 @@ class InvocationDefectsTest(unittest.TestCase):
         self._channel = grpc.insecure_channel('localhost:%d' % port)
 
     def tearDown(self):
-        self._server.stop(0)
+        self._server.stop(None)
         self._channel.close()
 
     def testIterableStreamRequestBlockingUnaryResponse(self):

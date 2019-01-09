@@ -25,10 +25,9 @@ INTERPRETER = sys.executable
 
 class InterpreterExitTest(unittest.TestCase):
 
-    # NOTE: We  avoid Python daemon threads due to potential for segfaults after
-    # the main thread exits. See https://bugs.python.org/issue1856, although
-    # issues were also observed with Python3 (see also
-    # https://github.com/grpc/grpc/issues/11804).
+    # NOTE: Daemon threads may cause crashes upon interpreter exit. See
+    # https://bugs.python.org/issue1856, although this wasalso observed with
+    # Python 3 (see also https://github.com/grpc/grpc/issues/11804).
     def test_server_cleanup_exits_cleanly(self):
         script = """if True:
             import sys
@@ -50,9 +49,10 @@ class InterpreterExitTest(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         out, err = process.communicate()
-        self.assertEqual(0, process.returncode,
-                         "process failed with exit code %d" %
-                         (process.returncode))
+        self.assertEqual(
+            0, process.returncode,
+            'process failed with exit code %d (stdout: %s, stderr: %s)' %
+            (process.returncode, out, err))
 
 
 if __name__ == '__main__':
