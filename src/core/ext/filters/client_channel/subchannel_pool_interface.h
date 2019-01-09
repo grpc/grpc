@@ -99,6 +99,13 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // if no such channel exists. Thread-safe.
   virtual grpc_subchannel* FindSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
 
+  // Creates a channel arg from \a subchannel pool.
+  static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);
+
+  // Gets the subchannel pool from the channel args.
+  static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
+      const grpc_channel_args* args);
+
   GRPC_ABSTRACT_BASE_CLASS
 };
 

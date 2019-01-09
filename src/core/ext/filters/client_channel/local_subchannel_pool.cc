@@ -71,26 +71,26 @@ grpc_subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
 
 namespace {
 
-static void sck_avl_destroy(void* p, void* user_data) {
+void sck_avl_destroy(void* p, void* user_data) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
   Delete(key);
 }
 
-static void* sck_avl_copy(void* p, void* unused) {
+void* sck_avl_copy(void* p, void* unused) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
   auto new_key = New<SubchannelKey>(*key);
   return static_cast<void*>(new_key);
 }
 
-static long sck_avl_compare(void* a, void* b, void* unused) {
+long sck_avl_compare(void* a, void* b, void* unused) {
   const SubchannelKey* key_a = static_cast<const SubchannelKey*>(a);
   const SubchannelKey* key_b = static_cast<const SubchannelKey*>(b);
   return key_a->Cmp(*key_b);
 }
 
-static void scv_avl_destroy(void* p, void* user_data) {}
+void scv_avl_destroy(void* p, void* user_data) {}
 
-static void* scv_avl_copy(void* p, void* unused) { return p; }
+void* scv_avl_copy(void* p, void* unused) { return p; }
 
 }  // namespace
 

@@ -431,9 +431,11 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 }
 
 static void disconnect(grpc_subchannel* c) {
-  gpr_mu_lock(&c->mu);
+  // The subchannel_pool is only used once here in this subchannel, so the
+  // access can be outside of the lock.
   c->subchannel_pool->UnregisterSubchannel(c->key, c);
   c->subchannel_pool.reset();
+  gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
   grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -543,8 +545,12 @@ struct HealthCheckParams {
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
                                         const grpc_channel_args* args) {
   grpc_core::SubchannelKey* key =
-      grpc_core::New<grpc_core::SubchannelKey>(args->args);
-  grpc_subchannel* c = args->subchannel_pool->FindSubchannel(key);
+      grpc_core::New<grpc_core::SubchannelKey>(args);
+  grpc_core::SubchannelPoolInterface* subchannel_pool =
+      grpc_core::SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
+          args);
+  GPR_ASSERT(subchannel_pool != nullptr);
+  grpc_subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     grpc_core::Delete(key);
     return c;
@@ -620,7 +626,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
-  c->subchannel_pool = args->subchannel_pool;
+  c->subchannel_pool = subchannel_pool->Ref();
   return c->subchannel_pool->RegisterSubchannel(key, c);
 }
 
