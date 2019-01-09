@@ -56,7 +56,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // Make them read-write.
 @property(atomic, strong) NSDictionary *responseHeaders;
 @property(atomic, strong) NSDictionary *responseTrailers;
-@property(atomic) BOOL isWaitingForToken;
 
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path

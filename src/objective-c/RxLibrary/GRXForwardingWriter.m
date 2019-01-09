@@ -72,7 +72,11 @@
 #pragma mark GRXWriter implementation
 
 - (GRXWriterState)state {
-  return _writer ? _writer.state : GRXWriterStateFinished;
+  GRXWriter *copiedWriter;
+  @synchronized(self) {
+    copiedWriter = _writer;
+  }
+  return copiedWriter ? copiedWriter.state : GRXWriterStateFinished;
 }
 
 - (void)setState:(GRXWriterState)state {
@@ -106,6 +110,7 @@
   @synchronized(self) {
     [self finishOutputWithError:errorOrNil];
     copiedWriter = _writer;
+    _writer = nil;
   }
   copiedWriter.state = GRXWriterStateFinished;
 }
