@@ -11,8 +11,8 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
 - Build new client docker image(s).  For example, for C and wrapper languages release `v1.9.9`, do
   - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx csharp python ruby php`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
-  - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
-  - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
+  - `gcloud container images list --repository gcr.io/grpc-testing` lists available images.
+  - `gcloud container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
   - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9` followed by
   - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 tools/interop_matrix/testcases/java__master`
