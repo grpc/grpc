@@ -98,3 +98,17 @@ cc_binary(
     defines = ["BAZEL_BUILD"],
     deps = [":helloworld", "//:grpc++"],
 )
+
+cc_binary(
+    name = "keyvaluestore_client",
+    srcs = ["cpp/keyvaluestore/client.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":keyvaluestore", "//:grpc++"],
+)
+
+cc_binary(
+    name = "keyvaluestore_server",
+    srcs = ["cpp/keyvaluestore/server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":keyvaluestore", "//:grpc++"],
+)
