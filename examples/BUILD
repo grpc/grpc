@@ -38,6 +38,11 @@ grpc_proto_library(
     srcs = ["protos/route_guide.proto"],
 )
 
+grpc_proto_library(
+    name = "keyvaluestore",
+    srcs = ["protos/keyvaluestore.proto"],
+)
+
 cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
