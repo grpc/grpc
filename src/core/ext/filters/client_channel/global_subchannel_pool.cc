@@ -95,7 +95,7 @@ grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
 }
 
 void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
-                                                grpc_subchannel* constructed) {
+                                                grpc_subchannel* expected) {
   bool done = false;
   // Compare and swap (CAS) loop:
   while (!done) {
@@ -103,18 +103,9 @@ void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
     gpr_mu_lock(&mu_);
     grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
     gpr_mu_unlock(&mu_);
-    // Check to see if this key still refers to the previously registered
-    // subchannel.
     grpc_subchannel* c =
         static_cast<grpc_subchannel*>(grpc_avl_get(old_map, key, nullptr));
-    // TODO(juanlishen): The found subchannel should always be the same with the
-    // previously registered subchannel. But the PickFirstManyUpdates test
-    // (force_different = true) shows that sometimes we can't find the
-    // subchannel from the AVL any more. Investigate why.
-    if (c != constructed) {
-      grpc_avl_unref(old_map, nullptr);
-      return;
-    }
+    GPR_ASSERT(c == expected);
     // Remove the subchannel.
     // Note that we should ref the old map first because grpc_avl_remove() will
     // unref it while we still need to access it later.

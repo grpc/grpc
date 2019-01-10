@@ -48,7 +48,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
                                       grpc_subchannel* constructed) override;
   void UnregisterSubchannel(SubchannelKey* key,
-                            grpc_subchannel* constructed) override;
+                            grpc_subchannel* expected) override;
   grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:

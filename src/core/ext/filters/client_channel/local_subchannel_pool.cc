@@ -51,15 +51,10 @@ grpc_subchannel* LocalSubchannelPool::RegisterSubchannel(
 }
 
 void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
-                                               grpc_subchannel* constructed) {
+                                               grpc_subchannel* expected) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(
       grpc_avl_get(subchannel_map_, key, nullptr));
-  // TODO(juanlishen): The found subchannel should always be the same with the
-  // previously registered subchannel. But the PickFirstManyUpdates test
-  // (force_different = true) shows that sometimes we can't find the
-  // subchannel from the AVL any more (or maybe the found one has changed if
-  // ASAN is on). Investigate why.
-  if (c != constructed) return;
+  GPR_ASSERT(c == expected);
   subchannel_map_ = grpc_avl_remove(subchannel_map_, key, nullptr);
 }
 
