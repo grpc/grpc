@@ -350,11 +350,13 @@ typedef struct {
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
-/** If set, determines the number of milliseconds that the c-ares based
- * DNS resolver will wait on queries before cancelling them. The default value
- * is 10000. Setting this to "0" will disable c-ares query timeouts
- * entirely. */
-#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
+/** If set, this value will be used by the c-ares library as its query timeout
+ * in milliseconds setting. Note that this doesn't directy translate to an
+ * overall c-ares resolution timeout, but rather to an initial timeout used
+ * by c-ares retry logic. The default value is "0", which uses the c-ares
+ * library default setting. */
+#define GRPC_ARG_DNS_ARES_INITIAL_QUERY_TIMEOUT_MS \
+  "grpc.dns_ares_initial_query_timeout"
 /** gRPC Objective-C channel pooling domain string. */
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */

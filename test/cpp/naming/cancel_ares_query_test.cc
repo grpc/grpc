@@ -264,7 +264,7 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
 typedef enum {
   NONE,
   SHORT,
-  ZERO,
+  LONG,
 } cancellation_test_query_timeout_setting;
 
 void TestCancelDuringActiveQuery(
@@ -283,22 +283,28 @@ void TestCancelDuringActiveQuery(
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
   if (query_timeout_setting == NONE) {
+    // c-ares default timeout/retry settings are long enough so that
+    // the RPC deadline will come first.
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
     client_args = nullptr;
   } else if (query_timeout_setting == SHORT) {
     expected_status_code = GRPC_STATUS_UNAVAILABLE;
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer =
-        1;  // Set this shorter than the call deadline so that it goes off.
+    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_INITIAL_QUERY_TIMEOUT_MS);
+    // Set this short enough so that DNS resolution will fail
+    // before the call deadline goes off. By default there are
+    // 4 retries, so with an initial query timeout setting of 1, the
+    // total resolution timeout setting is roughly 1 * (2^5 - 1) ms.
+    arg.value.integer = 1;
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  } else if (query_timeout_setting == ZERO) {
+  } else if (query_timeout_setting == LONG) {
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
     grpc_arg arg;
     arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-    arg.value.integer = 0;  // Set this to zero to disable query timeouts.
+    arg.key = const_cast<char*>(GRPC_ARG_DNS_ARES_INITIAL_QUERY_TIMEOUT_MS);
+    // Set this so that the RPC deadline comes first.
+    arg.value.integer = 1000 * grpc_test_slowdown_factor();
     client_args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   } else {
     abort();
@@ -308,7 +314,7 @@ void TestCancelDuringActiveQuery(
   gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
-  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(1 * 1000);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
@@ -372,19 +378,19 @@ void TestCancelDuringActiveQuery(
 
 TEST(CancelDuringAresQuery,
      TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
-  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
+  TestCancelDuringActiveQuery(NONE /* use c-ares default timeout settings */);
 }
 
 TEST(
     CancelDuringAresQuery,
-    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithShortQueryTimeoutIsGraceful) {
+  TestCancelDuringActiveQuery(SHORT /* set short query timeouts */);
 }
 
 TEST(
     CancelDuringAresQuery,
-    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
+    TestHitDeadlineAndDestroyChannelDuringAresResolutionWithLongQueryTimeoutIsGraceful) {
+  TestCancelDuringActiveQuery(LONG /* set long query timeouts */);
 }
 
 }  // namespace
@@ -397,7 +403,7 @@ int main(int argc, char** argv) {
   // including the teardown time (the teardown
   // part of the test involves cancelling the DNS query,
   // which is the main point of interest for this test).
-  gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(4);
+  gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(10);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

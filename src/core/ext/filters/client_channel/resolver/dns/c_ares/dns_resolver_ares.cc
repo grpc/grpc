@@ -123,8 +123,8 @@ class AresDnsResolver : public Resolver {
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
-  // timeout in milliseconds for active DNS queries
-  int query_timeout_ms_;
+  // initial c-ares query timeout setting in milliseconds
+  int initial_query_timeout_ms_;
 };
 
 AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
@@ -162,11 +162,10 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
                     grpc_combiner_scheduler(combiner()));
   GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this,
                     grpc_combiner_scheduler(combiner()));
-  const grpc_arg* query_timeout_ms_arg =
-      grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS);
-  query_timeout_ms_ = grpc_channel_arg_get_integer(
-      query_timeout_ms_arg,
-      {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX});
+  const grpc_arg* initial_query_timeout_ms_arg = grpc_channel_args_find(
+      channel_args_, GRPC_ARG_DNS_ARES_INITIAL_QUERY_TIMEOUT_MS);
+  initial_query_timeout_ms_ = grpc_channel_arg_get_integer(
+      initial_query_timeout_ms_arg, {0, 0, INT_MAX});
 }
 
 AresDnsResolver::~AresDnsResolver() {
@@ -421,7 +420,7 @@ void AresDnsResolver::StartResolvingLocked() {
       dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
       &on_resolved_, &addresses_, true /* check_grpclb */,
       request_service_config_ ? &service_config_json_ : nullptr,
-      query_timeout_ms_, combiner());
+      initial_query_timeout_ms_, combiner());
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
                        this, pending_request_);
