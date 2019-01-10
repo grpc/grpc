@@ -67,12 +67,9 @@ class SubchannelKey {
 
   const grpc_channel_args* args_;
 
-  // Additional field to differentiate each subchannel key in testing.
-  size_t test_only_id_;
-
   // If set, all subchannel keys are initialized differently (except for the
   // copies of the same subchannel key).
-  static gpr_atm force_different_;
+  static bool force_different_;
 };
 
 // Interface for subchannel pool.

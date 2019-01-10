@@ -24,6 +24,8 @@
 
 // The subchannel pool to reuse subchannels.
 #define GRPC_ARG_SUBCHANNEL_POOL "grpc.subchannel_pool"
+// The subchannel key ID that is only used in test to make each key unique.
+#define GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID "grpc.subchannel_key_test_only_id"
 
 namespace grpc_core {
 
@@ -31,9 +33,14 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   Init(args, grpc_channel_args_normalize);
-  static size_t next_id = 0;
-  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
-    test_only_id_ = next_id++;
+  if (GPR_UNLIKELY(force_different_)) {
+    static size_t next_id = 0;
+    grpc_arg arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID), next_id++);
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_add(args_, &arg, 1);
+    grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
+    args_ = new_args;
   }
 }
 
@@ -43,30 +50,20 @@ SubchannelKey::~SubchannelKey() {
 
 SubchannelKey::SubchannelKey(const SubchannelKey& other) {
   Init(other.args_, grpc_channel_args_copy);
-  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
-    test_only_id_ = other.test_only_id_;
-  }
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
   Init(other.args_, grpc_channel_args_copy);
-  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
-    test_only_id_ = other.test_only_id_;
-  }
   return *this;
 }
 
 int SubchannelKey::Cmp(const SubchannelKey& other) const {
-  // Return 0 if the ID's are the same.
-  if (GPR_UNLIKELY(gpr_atm_no_barrier_load(&force_different_))) {
-    return test_only_id_ != other.test_only_id_;
-  }
   return grpc_channel_args_compare(args_, other.args_);
 }
 
 void SubchannelKey::TestOnlySetForceDifferent(bool force_creation) {
-  gpr_atm_no_barrier_store(&force_different_, force_creation);
+  force_different_ = force_creation;
 }
 
 void SubchannelKey::Init(
@@ -75,7 +72,7 @@ void SubchannelKey::Init(
   args_ = copy_channel_args(args);
 }
 
-gpr_atm SubchannelKey::force_different_ = 0;
+bool SubchannelKey::force_different_ = false;
 
 namespace {
 
