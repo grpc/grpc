@@ -14,12 +14,10 @@
 // limitations under the License.
 #endregion
 
-using Grpc.Core.Utils;
-
 namespace Grpc.Core
 {
     /// <summary>
-    /// Represents RPC result, which consists of <see cref="StatusCode"/> and an optional detail string. 
+    /// Represents RPC result, which consists of <see cref="StatusCode"/> and an optional detail string.
     /// </summary>
     public struct Status
     {
