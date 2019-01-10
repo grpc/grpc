@@ -1756,7 +1756,6 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/forwarding_load_balancing_policy.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -1771,6 +1770,7 @@ add_library(grpc_test_util
   test/core/util/subprocess_posix.cc
   test/core/util/subprocess_windows.cc
   test/core/util/test_config.cc
+  test/core/util/test_lb_policies.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   test/core/util/cmdline.cc
@@ -2079,7 +2079,6 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
-  test/core/util/forwarding_load_balancing_policy.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2094,6 +2093,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/subprocess_posix.cc
   test/core/util/subprocess_windows.cc
   test/core/util/test_config.cc
+  test/core/util/test_lb_policies.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   test/core/util/cmdline.cc

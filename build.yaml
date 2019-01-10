@@ -906,7 +906,6 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
-  - test/core/util/forwarding_load_balancing_policy.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
@@ -919,6 +918,7 @@ filegroups:
   - test/core/util/slice_splitter.h
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
+  - test/core/util/test_lb_policies.h
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
@@ -929,7 +929,6 @@ filegroups:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
-  - test/core/util/forwarding_load_balancing_policy.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -944,6 +943,7 @@ filegroups:
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
+  - test/core/util/test_lb_policies.cc
   - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:
