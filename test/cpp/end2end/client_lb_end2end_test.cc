@@ -1255,6 +1255,8 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
                                                    delegate_lb_policy_name),
           test_(test) {}
 
+    ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
+
     bool PickLocked(PickState* pick, grpc_error** error) override {
       bool ret = ForwardingLoadBalancingPolicy::PickLocked(pick, error);
       // Note: This assumes that the delegate policy does not
