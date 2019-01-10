@@ -34,7 +34,7 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   Init(args, grpc_channel_args_normalize);
   if (GPR_UNLIKELY(force_different_)) {
-    static size_t next_id = 0;
+    static int next_id = 0;
     grpc_arg arg = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID), next_id++);
     grpc_channel_args* new_args =
