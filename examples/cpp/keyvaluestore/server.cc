@@ -57,7 +57,7 @@ const char * get_value_from_map(const char* key) {
       return kvs_map[i].value;
     }
   }
-  return nullptr;
+  return "";
 }
 
 // Logic and data behind the server's behavior.
