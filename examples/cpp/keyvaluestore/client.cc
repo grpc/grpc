@@ -41,19 +41,19 @@ class KeyValueStoreClient {
   KeyValueStoreClient(std::shared_ptr<Channel> channel)
       : stub_(KeyValueStore::NewStub(channel)) {}
 
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
+  // Requests each key in the vector and displays the value as a pair
   void GetValues(const std::vector<std::string>& keys) {
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
     auto stream = stub_->GetValues(&context);
     for (const auto& key:keys) {
-      // Data we are sending to the server.
+      // Key we are sending to the server.
       Request request;
       request.set_key(key);
       stream->Write(request);
 
+      // Get the value for the sent key
       Response response;
       stream->Read(&response);
       std::cout << key << " : " << response.value() << "\n";
