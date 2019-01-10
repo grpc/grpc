@@ -62,9 +62,7 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
 
   if (file_containing_msg->options().has_ruby_package()) {
     resolved_namespace = file_containing_msg->options().ruby_package();
-  }
-  // no need to do translation, full_name already include the correct package
-  else {
+  } else {
     return res;
   }
 
@@ -73,9 +71,7 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
     if (msg_proto_pkg.back() == '.') {
       msg_proto_pkg.pop_back();
     }
-  }
-  // add a period if appending resolved_namespace
-  else if (resolved_namespace.length() > 0) {
+  } else if (resolved_namespace.length() > 0) {
     resolved_namespace += '.';
   }
 
