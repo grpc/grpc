@@ -688,6 +688,10 @@ typedef struct grpc_experimental_completion_queue_functor {
       pointer to this functor and a boolean that indicates whether the
       operation succeeded (non-zero) or failed (zero) */
   void (*functor_run)(struct grpc_experimental_completion_queue_functor*, int);
+
+  /** The following fields are not API. They are meant for internal use. */
+  int internal_success;
+  struct grpc_experimental_completion_queue_functor* internal_next;
 } grpc_experimental_completion_queue_functor;
 
 /* The upgrade to version 2 is currently experimental. */
