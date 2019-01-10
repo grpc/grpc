@@ -25,8 +25,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -51,9 +51,8 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
   ForwardingLoadBalancingPolicy(const Args& args,
                                 const std::string& delegate_policy_name)
       : LoadBalancingPolicy(args) {
-    delegate_ =
-        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-            delegate_policy_name.c_str(), args);
+    delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+        delegate_policy_name.c_str(), args);
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
                                      interested_parties());
     // Give re-resolution closure to delegate.
@@ -148,7 +147,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       void* user_data)
       : ForwardingLoadBalancingPolicy(args,
                                       /*delegate_lb_policy_name=*/"pick_first"),
-        cb_(cb), user_data_(user_data) {}
+        cb_(cb),
+        user_data_(user_data) {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
@@ -206,8 +206,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
  public:
-  explicit InterceptTrailingFactory(
-      InterceptRecvTrailingMetadataCallback cb, void* user_data)
+  explicit InterceptTrailingFactory(InterceptRecvTrailingMetadataCallback cb,
+                                    void* user_data)
       : cb_(cb), user_data_(user_data) {}
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>

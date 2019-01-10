@@ -156,10 +156,10 @@ sh_library(
 )
 
 grpc_cc_library(
-    name = "forwarding_load_balancing_policy",
+    name = "test_lb_policies",
     testonly = 1,
-    srcs = ["forwarding_load_balancing_policy.cc"],
-    hdrs = ["forwarding_load_balancing_policy.h"],
+    srcs = ["test_lb_policies.cc"],
+    hdrs = ["test_lb_policies.h"],
     deps = [
         "//:grpc",
     ],
