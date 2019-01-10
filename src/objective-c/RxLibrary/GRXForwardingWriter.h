@@ -25,11 +25,7 @@
  * input writer, and for classes that represent objects with input and
  * output sequences of values, like an RPC.
  *
- * Thread-safety:
- * All messages sent to this object need to be serialized. When it is started, the writer it wraps
- * is started in the same thread. Manual state changes are propagated to the wrapped writer in the
- * same thread too. Importantly, all messages the wrapped writer sends to its writeable need to be
- * serialized with any message sent to this object.
+ * Thread-safety: the methods of this class are thread safe.
  */
 @interface GRXForwardingWriter : GRXWriter
 - (instancetype)initWithWriter:(GRXWriter *)writer NS_DESIGNATED_INITIALIZER;

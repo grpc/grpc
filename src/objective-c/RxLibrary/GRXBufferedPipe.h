@@ -36,8 +36,7 @@
  * crash. If you want to react to flow control signals to prevent that, instead of using this class
  * you can implement an object that conforms to GRXWriter.
  *
- * Thread-safety:
- * The methods of an object of this class should not be called concurrently from different threads.
+ * Thread-safety: the methods of this class are thread-safe.
  */
 @interface GRXBufferedPipe : GRXWriter<GRXWriteable>
 
