@@ -41,7 +41,8 @@ class KeyValueStoreClient {
   KeyValueStoreClient(std::shared_ptr<Channel> channel)
       : stub_(KeyValueStore::NewStub(channel)) {}
 
-  // Requests each key in the vector and displays the value as a pair
+  // Requests each key in the vector and displays the key and its corresponding
+  // value as a pair
   void GetValues(const std::vector<std::string>& keys) {
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
