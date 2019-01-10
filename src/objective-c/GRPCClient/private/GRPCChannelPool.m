@@ -236,6 +236,12 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
     return nil;
   }
 
+  // remove trailing slash of hostname
+  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
+  if (hostURL.host && hostURL.port == nil) {
+    host = [hostURL.host stringByAppendingString:@":443"];
+  }
+
   GRPCPooledChannel *pooledChannel = nil;
   GRPCChannelConfiguration *configuration =
       [[GRPCChannelConfiguration alloc] initWithHost:host callOptions:callOptions];
