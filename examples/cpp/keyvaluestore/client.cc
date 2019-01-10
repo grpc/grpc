@@ -32,9 +32,9 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using keyvaluestore::KeyValueStore;
 using keyvaluestore::Request;
 using keyvaluestore::Response;
-using keyvaluestore::KeyValueStore;
 
 class KeyValueStoreClient {
  public:
@@ -48,7 +48,7 @@ class KeyValueStoreClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
     auto stream = stub_->GetValues(&context);
-    for (const auto& key:keys) {
+    for (const auto& key : keys) {
       // Key we are sending to the server.
       Request request;
       request.set_key(key);
@@ -61,7 +61,7 @@ class KeyValueStoreClient {
     }
     stream->WritesDone();
     Status status = stream->Finish();
-    if(!status.ok()) {
+    if (!status.ok()) {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;
       std::cout << "RPC failed";
@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
   // (use of InsecureChannelCredentials()).
   KeyValueStoreClient client(grpc::CreateChannel(
       "localhost:50051", grpc::InsecureChannelCredentials()));
-  std::vector<std::string>  keys = {"key1", "key2", "key3", "key4", "key5"};
+  std::vector<std::string> keys = {"key1", "key2", "key3", "key4", "key5"};
   client.GetValues(keys);
 
   return 0;
