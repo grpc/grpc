@@ -74,14 +74,12 @@ platform(
     """,
 )
 
-# This target is auto-generated from release/cpp.tpl and should not be
-# modified directly.
 toolchain(
     name = "cc-toolchain-clang-x86_64-default",
     exec_compatible_with = [
     ],
     target_compatible_with = [
     ],
-    toolchain = "@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.1/bazel_0.16.1/default:cc-compiler-k8",
+    toolchain = "@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.1/bazel_0.20.0/default:cc-compiler-k8",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
