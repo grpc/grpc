@@ -433,8 +433,10 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 static void disconnect(grpc_subchannel* c) {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
-  c->subchannel_pool->UnregisterSubchannel(c->key, c);
-  c->subchannel_pool.reset();
+  if (c->subchannel_pool != nullptr) {
+    c->subchannel_pool->UnregisterSubchannel(c->key, c);
+    c->subchannel_pool.reset();
+  }
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
@@ -626,8 +628,13 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
-  c->subchannel_pool = subchannel_pool->Ref();
-  return c->subchannel_pool->RegisterSubchannel(key, c);
+  // Try to register the subchannel before setting the subchannel pool.
+  // Otherwise, in case of a registration race, unreffing c in
+  // RegisterSubchannel() will cause c to be tried to be unregistered, while its
+  // key maps to a different subchannel.
+  grpc_subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
+  if (registered == c) c->subchannel_pool = subchannel_pool->Ref();
+  return registered;
 }
 
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
