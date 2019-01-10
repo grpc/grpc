@@ -46,6 +46,7 @@ def generate_resolver_component_tests():
             "gmock",
         ],
         deps = [
+            ":dns_test_util",
             "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
             "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
             "//:grpc++%s" % unsecure_build_config_suffix,

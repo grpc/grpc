@@ -1677,6 +1677,13 @@ libs:
   - grpc_test_util
   - grpc
   - gpr
+- name: dns_test_util
+  build: private
+  language: c++
+  headers:
+  - test/cpp/naming/dns_test_util.h
+  src:
+  - test/cpp/naming/dns_test_util.cc
 - name: grpc++
   build: all
   language: c++

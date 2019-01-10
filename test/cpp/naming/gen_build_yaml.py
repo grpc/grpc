@@ -50,6 +50,7 @@ def _resolver_test_cases(resolver_component_data):
             ('expected_lb_policy', (test_case['expected_lb_policy'] or '')),
             ('enable_srv_queries', test_case['enable_srv_queries']),
             ('enable_txt_queries', test_case['enable_txt_queries']),
+            ('inject_broken_nameserver_list', test_case['inject_broken_nameserver_list']),
         ],
     })
   return out
@@ -72,6 +73,7 @@ def main():
               'src': ['test/cpp/naming/resolver_component_test.cc'],
               'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
+                  'dns_test_util',
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,
                   'grpc++' + unsecure_build_config_suffix,
@@ -130,6 +132,7 @@ def main():
           'src': ['test/cpp/naming/cancel_ares_query_test.cc'],
           'platforms': ['linux', 'posix', 'mac', 'windows'],
           'deps': [
+              'dns_test_util',
               'grpc++_test_util',
               'grpc_test_util',
               'grpc++',
