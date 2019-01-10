@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package keyvaluestore;
 
-// Key value store service definition.
+// A simple key-value storage service
 service KeyValueStore {
   // Provides a value for each key request
   rpc GetValues (stream Request) returns (stream Response) {}
