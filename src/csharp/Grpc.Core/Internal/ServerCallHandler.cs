@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
                 responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
-            } 
+            }
             catch (Exception e)
             {
                 if (!(e is RpcException))
@@ -345,14 +345,12 @@ namespace Grpc.Core.Internal
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
-            where TRequest : class
-            where TResponse : class
+        public static ServerCallContext NewContext(ServerRpcNew newRpc, IServerResponseStream serverResponseStream, CancellationToken cancellationToken)
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
 
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
-                newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
+            var contextExtraData = new ServerCallContextExtraData(newRpc.Call, serverResponseStream);
+            return contextExtraData.NewServerCallContext(newRpc, cancellationToken);
         }
     }
 }

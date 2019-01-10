@@ -37,22 +37,11 @@ namespace Grpc.Core.Testing
             Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
         {
             return new ServerCallContext(null, method, host, deadline, requestHeaders, cancellationToken,
-                writeHeadersFunc, new WriteOptionsHolder(writeOptionsGetter, writeOptionsSetter),
-                () => peer, () => authContext, () => contextPropagationToken);
-        }
-
-        private class WriteOptionsHolder : IHasWriteOptions
-        {
-            Func<WriteOptions> writeOptionsGetter;
-            Action<WriteOptions> writeOptionsSetter;
-
-            public WriteOptionsHolder(Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
-            {
-                this.writeOptionsGetter = writeOptionsGetter;
-                this.writeOptionsSetter = writeOptionsSetter;
-            }
-
-            public WriteOptions WriteOptions { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+                (ctx, extraData, headers) => writeHeadersFunc(headers),
+                (ctx, extraData) => writeOptionsGetter(),
+                (ctx, extraData, options) => writeOptionsSetter(options),
+                (ctx, extraData) => peer, (ctx, callHandle) => authContext,
+                (ctx, callHandle, options) => contextPropagationToken);
         }
     }
 }

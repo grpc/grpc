@@ -21,6 +21,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -29,45 +30,49 @@ namespace Grpc.Core
     /// </summary>
     public class ServerCallContext
     {
-        private readonly CallSafeHandle callHandle;
+        private readonly object extraData;
         private readonly string method;
         private readonly string host;
         private readonly DateTime deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
         private readonly Metadata responseTrailers = new Metadata();
-        private readonly Func<Metadata, Task> writeHeadersFunc;
-        private readonly IHasWriteOptions writeOptionsHolder;
-        private readonly Lazy<AuthContext> authContext;
-        private readonly Func<string> testingOnlyPeerGetter;
-        private readonly Func<AuthContext> testingOnlyAuthContextGetter;
-        private readonly Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory;
+        private readonly Func<ServerCallContext, object, Metadata, Task> writeHeadersFunc;
+        private readonly Func<ServerCallContext, object, WriteOptions> writeOptionsGetter;
+        private readonly Action<ServerCallContext, object, WriteOptions> writeOptionsSetter;
+
+        private readonly Func<ServerCallContext, object, string> peerGetter;
+        private readonly Func<ServerCallContext, object, AuthContext> authContextGetter;
+        private readonly Func<ServerCallContext, object, ContextPropagationOptions, ContextPropagationToken> contextPropagationTokenFactory;
 
         private Status status = Status.DefaultSuccess;
 
-        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
-            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
-            : this(callHandle, method, host, deadline, requestHeaders, cancellationToken, writeHeadersFunc, writeOptionsHolder, null, null, null)
+        /// <summary>
+        /// Creates a new instance of <c>ServerCallContext</c>.
+        /// To allow reuse of ServerCallContext API by different gRPC implementations, the implementation of some members is provided externally.
+        /// To provide state, this <c>ServerCallContext</c> instance and <c>extraData</c> will be passed to the member implementations.
+        /// </summary>
+        internal ServerCallContext(object extraData,
+            string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+            Func<ServerCallContext, object, Metadata, Task> writeHeadersFunc,
+            Func<ServerCallContext, object, WriteOptions> writeOptionsGetter,
+            Action<ServerCallContext, object, WriteOptions> writeOptionsSetter,
+            Func<ServerCallContext, object, string> peerGetter,
+            Func<ServerCallContext, object, AuthContext> authContextGetter,
+            Func<ServerCallContext, object, ContextPropagationOptions, ContextPropagationToken> contextPropagationTokenFactory)
         {
-        }
-
-        // Additional constructor params should be used for testing only
-        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
-            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder,
-            Func<string> testingOnlyPeerGetter, Func<AuthContext> testingOnlyAuthContextGetter, Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory)
-        {
-            this.callHandle = callHandle;
+            this.extraData = extraData;
             this.method = method;
             this.host = host;
             this.deadline = deadline;
             this.requestHeaders = requestHeaders;
             this.cancellationToken = cancellationToken;
-            this.writeHeadersFunc = writeHeadersFunc;
-            this.writeOptionsHolder = writeOptionsHolder;
-            this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
-            this.testingOnlyPeerGetter = testingOnlyPeerGetter;
-            this.testingOnlyAuthContextGetter = testingOnlyAuthContextGetter;
-            this.testingOnlyContextPropagationTokenFactory = testingOnlyContextPropagationTokenFactory;
+            this.writeHeadersFunc = GrpcPreconditions.CheckNotNull(writeHeadersFunc);
+            this.writeOptionsGetter = GrpcPreconditions.CheckNotNull(writeOptionsGetter);
+            this.writeOptionsSetter = GrpcPreconditions.CheckNotNull(writeOptionsSetter);
+            this.peerGetter = GrpcPreconditions.CheckNotNull(peerGetter);
+            this.authContextGetter = GrpcPreconditions.CheckNotNull(authContextGetter);
+            this.contextPropagationTokenFactory = GrpcPreconditions.CheckNotNull(contextPropagationTokenFactory);
         }
 
         /// <summary>
@@ -79,7 +84,7 @@ namespace Grpc.Core
         /// <returns>The task that finished once response headers have been written.</returns>
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
-            return writeHeadersFunc(responseHeaders);
+            return writeHeadersFunc(this, extraData, responseHeaders);
         }
 
         /// <summary>
@@ -87,13 +92,9 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
         {
-            if (testingOnlyContextPropagationTokenFactory != null)
-            {
-                return testingOnlyContextPropagationTokenFactory();
-            }
-            return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
+            return contextPropagationTokenFactory(this, extraData, options);
         }
-            
+
         /// <summary>Name of method called in this RPC.</summary>
         public string Method
         {
@@ -117,14 +118,7 @@ namespace Grpc.Core
         {
             get
             {
-                if (testingOnlyPeerGetter != null)
-                {
-                    return testingOnlyPeerGetter();
-                }
-                // Getting the peer lazily is fine as the native call is guaranteed
-                // not to be disposed before user-supplied server side handler returns.
-                // Most users won't need to read this field anyway.
-                return this.callHandle.GetPeer();
+                return peerGetter(this, extraData);
             }
         }
 
@@ -187,12 +181,12 @@ namespace Grpc.Core
         {
             get
             {
-                return writeOptionsHolder.WriteOptions;
+                return writeOptionsGetter(this, extraData);
             }
 
             set
             {
-                writeOptionsHolder.WriteOptions = value;
+                writeOptionsSetter(this, extraData, value);
             }
         }
 
@@ -204,31 +198,8 @@ namespace Grpc.Core
         {
             get
             {
-                if (testingOnlyAuthContextGetter != null)
-                {
-                    return testingOnlyAuthContextGetter();
-                }
-                return authContext.Value;
+                return authContextGetter(this, extraData);
             }
         }
-
-        private AuthContext GetAuthContextEager()
-        {
-            using (var authContextNative = callHandle.GetAuthContext())
-            {
-                return authContextNative.ToAuthContext();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Allows sharing write options between ServerCallContext and other objects.
-    /// </summary>
-    internal interface IHasWriteOptions
-    {
-        /// <summary>
-        /// Gets or sets the write options.
-        /// </summary>
-        WriteOptions WriteOptions { get; set; }
     }
 }
