@@ -870,7 +870,7 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
-      if (batch->recv_trailing_metadata) {
+      if (batch->recv_trailing_metadata && calld->have_request) {
         maybe_inject_recv_trailing_metadata_ready_for_lb(
             *calld->request->pick(), batch);
       }
