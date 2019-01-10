@@ -83,7 +83,9 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  // Try to give enough time for c-ares to run through it's retries
+  // a few times if needed.
+  grpc_millis deadline = n_sec_deadline(90);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -371,15 +373,10 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    if (gpr_stricmp(resolver_type, "ares") != 0) {
-      // These tests can trigger DNS queries to the nearby nameserver
-      // that need to come back in order for the test to succeed.
-      // c-ares is prone to not using the local system caches that the
-      // native getaddrinfo implementations take advantage of, so running
-      // these unit tests under c-ares risks flakiness.
-      test_invalid_ip_addresses();
-      test_unparseable_hostports();
-    } else {
+    test_invalid_ip_addresses();
+    test_unparseable_hostports();
+    if (gpr_stricmp(resolver_type, "ares") == 0) {
+      // This behavior expecation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
     }
     grpc_core::Executor::ShutdownAll();
