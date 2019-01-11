@@ -21,12 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 
 typedef int64_t grpc_millis;
@@ -34,9 +36,8 @@ typedef int64_t grpc_millis;
 #define GRPC_MILLIS_INF_FUTURE INT64_MAX
 #define GRPC_MILLIS_INF_PAST INT64_MIN
 
-/** A workqueue represents a list of work to be executed asynchronously.
-    Forward declared here to avoid a circular dependency with workqueue.h. */
-typedef struct grpc_workqueue grpc_workqueue;
+/** A combiner represents a list of work to be executed later.
+    Forward declared here to avoid a circular dependency with combiner.h. */
 typedef struct grpc_combiner grpc_combiner;
 
 /* This exec_ctx is ready to return: either pre-populated, or cached as soon as
@@ -225,6 +226,56 @@ class ExecCtx {
 
   GPR_TLS_CLASS_DECL(exec_ctx_);
   ExecCtx* last_exec_ctx_ = Get();
+};
+
+class ApplicationCallbackExecCtx {
+ public:
+  ApplicationCallbackExecCtx() {
+    grpc_core::Fork::IncExecCtxCount();
+    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
+            gpr_tls_get(&callback_exec_ctx_)) == nullptr) {
+      gpr_tls_set(&callback_exec_ctx_, reinterpret_cast<intptr_t>(this));
+    }
+  }
+  ~ApplicationCallbackExecCtx() {
+    if (reinterpret_cast<ApplicationCallbackExecCtx*>(
+            gpr_tls_get(&callback_exec_ctx_)) == this) {
+      while (head_ != nullptr) {
+        auto* f = head_;
+        head_ = f->internal_next;
+        if (f->internal_next == nullptr) {
+          tail_ = nullptr;
+        }
+        (*f->functor_run)(f, f->internal_success);
+      }
+      gpr_tls_set(&callback_exec_ctx_, reinterpret_cast<intptr_t>(nullptr));
+    } else {
+      GPR_ASSERT(head_ == nullptr);
+      GPR_ASSERT(tail_ == nullptr);
+    }
+    grpc_core::Fork::DecExecCtxCount();
+  }
+  static void Enqueue(grpc_experimental_completion_queue_functor* functor,
+                      int is_success) {
+    functor->internal_success = is_success;
+    functor->internal_next = nullptr;
+
+    auto* ctx = reinterpret_cast<ApplicationCallbackExecCtx*>(
+        gpr_tls_get(&callback_exec_ctx_));
+
+    if (ctx->head_ == nullptr) {
+      ctx->head_ = functor;
+    }
+    if (ctx->tail_ != nullptr) {
+      ctx->tail_->internal_next = functor;
+    }
+    ctx->tail_ = functor;
+  }
+
+ private:
+  grpc_experimental_completion_queue_functor* head_{nullptr};
+  grpc_experimental_completion_queue_functor* tail_{nullptr};
+  GPR_TLS_CLASS_DECL(callback_exec_ctx_);
 };
 }  // namespace grpc_core
 

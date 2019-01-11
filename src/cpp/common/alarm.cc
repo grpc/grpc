@@ -52,6 +52,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     return true;
   }
   void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -72,6 +73,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
                     &on_alarm_);
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
@@ -87,6 +89,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
                     &on_alarm_);
   }
   void Cancel() {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_timer_cancel(&timer_);
   }
