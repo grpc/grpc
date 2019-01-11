@@ -1063,5 +1063,5 @@ class Channel(grpc.Channel):
             cygrpc.fork_unregister_channel(self)
         # This prevent the failed-at-initializing object removal from failing.
         # Though the __init__ failed, the removal will still trigger __del__.
-        if _moot is not None and hasattr(self, "_connectivity_state"):
+        if _moot is not None and hasattr(self, '_connectivity_state'):
             _moot(self._connectivity_state)
