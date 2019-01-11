@@ -94,6 +94,17 @@ class ServiceConfig {
   static RefCountedPtr<T> MethodConfigTableLookup(
       const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path);
 
+  /// Parses the xds config given the JSON node of the first child of XdsConfig.
+  /// If parsing succeeds, returns the balancer name, and fills \a child_policy
+  /// and \a fallback_policy if they are also found. Returns null upon failure.
+  static UniquePtr<char> ParseXdsConfig(grpc_json* xds_config_json,
+                                        grpc_json** child_policy,
+                                        grpc_json** fallback_policy);
+
+  /// Returns the JSON node of policy content given the JSON node of the first
+  /// child of LoadBalancingConfig.
+  static grpc_json* ParseLoadBalancingConfig(grpc_json* lb_config_json);
+
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>

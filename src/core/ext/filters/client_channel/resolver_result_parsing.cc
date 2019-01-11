@@ -150,26 +150,8 @@ void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
   for (grpc_json* lb_config = field->child; lb_config != nullptr;
        lb_config = lb_config->next) {
     if (lb_config->type != GRPC_JSON_OBJECT) return;
-    // Find the policy object.
-    grpc_json* policy = nullptr;
-    for (grpc_json* field = lb_config->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || strcmp(field->key, "policy") != 0 ||
-          field->type != GRPC_JSON_OBJECT) {
-        return;
-      }
-      if (policy != nullptr) return;  // Duplicate.
-      policy = field;
-    }
-    // Find the specific policy content since the policy object is of type
-    // "oneof".
-    grpc_json* policy_content = nullptr;
-    for (grpc_json* field = policy->child; field != nullptr;
-         field = field->next) {
-      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT) return;
-      if (policy_content != nullptr) return;  // Violate "oneof" type.
-      policy_content = field;
-    }
+    grpc_json* policy_content =
+        ServiceConfig::ParseLoadBalancingConfig(lb_config->child);
     // If we support this policy, then select it.
     if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
             policy_content->key)) {

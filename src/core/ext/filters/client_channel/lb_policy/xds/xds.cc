@@ -101,6 +101,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -279,6 +280,9 @@ class XdsLb : public LoadBalancingPolicy {
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
 
+  // Name of the balancer to connect to.
+  UniquePtr<char> balancer_name_;
+
   // Current channel args from the resolver.
   grpc_channel_args* args_ = nullptr;
 
@@ -319,6 +323,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
+  grpc_json* fallback_policy_json_ = nullptr;
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
   UniquePtr<ServerAddressList> fallback_backend_addresses_;
@@ -332,6 +337,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  grpc_json* child_policy_json_ = nullptr;
   grpc_connectivity_state child_connectivity_state_;
   grpc_closure on_child_connectivity_changed_;
   grpc_closure on_child_request_reresolution_;
@@ -1187,9 +1193,13 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-// TODO(vishalpowar): Use lb_config to configure LB policy.
 void XdsLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
   ProcessChannelArgsLocked(args);
+  balancer_name_ = ServiceConfig::ParseXdsConfig(lb_config, &child_policy_json_,
+                                                 &fallback_policy_json_);
+  if (balancer_name_ == nullptr) {
+    gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
+  }
   // Update the existing child policy.
   // Note: We have disabled fallback mode in the code, so this child policy must
   // have been created from a serverlist.
