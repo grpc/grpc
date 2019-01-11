@@ -81,7 +81,10 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  // Try to give a large enough timeout to cover the times when
+  // DNS queries over the network (for the malformed address cases)
+  // take a long time or need to be retried.
+  grpc_millis deadline = n_sec_deadline(60);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -120,6 +123,21 @@ static void must_fail(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
+// This test assumes the environment has an ipv6 loopback
+static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
+  args_struct* args = static_cast<args_struct*>(argsp);
+  GPR_ASSERT(err == GRPC_ERROR_NONE);
+  GPR_ASSERT(args->addrs != nullptr);
+  GPR_ASSERT(args->addrs->naddrs > 0);
+  const struct sockaddr* first_address =
+      reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
+  GPR_ASSERT(first_address->sa_family == AF_INET6);
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
+}
+
 static void test_localhost(void) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
@@ -141,6 +159,19 @@ static void test_default_port(void) {
       "localhost", "1", args.pollset_set,
       GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
       &args.addrs);
+  grpc_core::ExecCtx::Get()->Flush();
+  poll_pollset_until_request_done(&args);
+  args_finish(&args);
+}
+
+static void test_localhost_result_has_ipv6_first(void) {
+  grpc_core::ExecCtx exec_ctx;
+  args_struct args;
+  args_init(&args);
+  grpc_resolve_address("localhost:1", nullptr, args.pollset_set,
+                       GRPC_CLOSURE_CREATE(must_succeed_with_ipv6_first, &args,
+                                           grpc_schedule_on_exec_ctx),
+                       &args.addrs);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&args);
   args_finish(&args);
@@ -281,14 +312,13 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    if (gpr_stricmp(resolver_type, "ares") != 0) {
-      // These tests can trigger DNS queries to the nearby nameserver
-      // that need to come back in order for the test to succeed.
-      // c-ares is prone to not using the local system caches that the
-      // native getaddrinfo implementations take advantage of, so running
-      // these unit tests under c-ares risks flakiness.
-      test_invalid_ip_addresses();
-      test_unparseable_hostports();
+    test_invalid_ip_addresses();
+    test_unparseable_hostports();
+    if (gpr_stricmp(resolver_type, "ares") == 0) {
+      // TODO(apolcyn): should this test run on native resolver
+      // cases too? Unlike with c-ares, we don't have full control
+      // over native resolver's address sorting in all test environments.
+      test_localhost_result_has_ipv6_first();
     }
     grpc_executor_shutdown();
   }

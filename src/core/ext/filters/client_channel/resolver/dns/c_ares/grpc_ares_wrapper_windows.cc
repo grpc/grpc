@@ -58,14 +58,6 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     GPR_ASSERT(*addrs == nullptr);
     *addrs = grpc_core::MakeUnique<grpc_core::ServerAddressList>();
     uint16_t numeric_port = grpc_strhtons(*port);
-    // Append the ipv6 loopback address.
-    struct sockaddr_in6 ipv6_loopback_addr;
-    memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
-    ((char*)&ipv6_loopback_addr.sin6_addr)[15] = 1;
-    ipv6_loopback_addr.sin6_family = AF_INET6;
-    ipv6_loopback_addr.sin6_port = numeric_port;
-    (*addrs)->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
-                           nullptr /* args */);
     // Append the ipv4 loopback address.
     struct sockaddr_in ipv4_loopback_addr;
     memset(&ipv4_loopback_addr, 0, sizeof(ipv4_loopback_addr));
@@ -74,6 +66,14 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     ipv4_loopback_addr.sin_family = AF_INET;
     ipv4_loopback_addr.sin_port = numeric_port;
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
+                           nullptr /* args */);
+    // Append the ipv6 loopback address.
+    struct sockaddr_in6 ipv6_loopback_addr;
+    memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
+    ((char*)&ipv6_loopback_addr.sin6_addr)[15] = 1;
+    ipv6_loopback_addr.sin6_family = AF_INET6;
+    ipv6_loopback_addr.sin6_port = numeric_port;
+    (*addrs)->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
                            nullptr /* args */);
     // Let the address sorter figure out which one should be tried first.
     grpc_cares_wrapper_address_sorting_sort(addrs->get());
