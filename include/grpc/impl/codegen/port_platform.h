@@ -466,10 +466,6 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_ARES 1
 #endif
 
-#ifndef GRPC_IF_NAMETOINDEX
-#define GRPC_IF_NAMETOINDEX 1
-#endif
-
 #ifndef GRPC_MUST_USE_RESULT
 #if defined(__GNUC__) && !defined(__MINGW32__)
 #define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
