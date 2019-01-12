@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0-dev
-  g_stands_for: goose
-  version: 1.18.0-dev
+  g_stands_for: gold
+  version: 1.19.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -276,6 +276,8 @@ filegroups:
   - src/core/lib/iomgr/gethostname_fallback.cc
   - src/core/lib/iomgr/gethostname_host_name_max.cc
   - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   - src/core/lib/iomgr/internal_errqueue.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
@@ -452,6 +454,7 @@ filegroups:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/gethostname.h
+  - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -3241,6 +3244,20 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: parse_address_with_named_scope_id_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/parse_address_with_named_scope_id_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c
@@ -3275,7 +3292,7 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: resolve_address_posix_test
+- name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
   src:
@@ -3284,6 +3301,8 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
+  args:
+  - --resolver=ares
   exclude_iomgrs:
   - uv
   platforms:
@@ -3301,6 +3320,23 @@ targets:
   - gpr
   args:
   - --resolver=ares
+- name: resolve_address_using_native_resolver_posix_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/resolve_address_posix_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  args:
+  - --resolver=native
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: resolve_address_using_native_resolver_test
   build: test
   language: c

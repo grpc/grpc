@@ -64,18 +64,6 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
-namespace {
-struct state_watcher {
-  grpc_closure closure;
-  grpc_subchannel* subchannel;
-  grpc_connectivity_state connectivity_state;
-  grpc_connectivity_state last_connectivity_state;
-  grpc_core::OrphanablePtr<grpc_core::HealthCheckClient> health_check_client;
-  grpc_closure health_check_closure;
-  grpc_connectivity_state health_state;
-};
-}  // namespace
-
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
   grpc_pollset_set* pollset_set;
@@ -101,9 +89,6 @@ struct grpc_subchannel {
         keep the subchannel open */
   gpr_atm ref_pair;
 
-  /** non-transport related channel filters */
-  const grpc_channel_filter** filters;
-  size_t num_filters;
   /** channel arguments */
   grpc_channel_args* args;
 
@@ -384,7 +369,6 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
     c->channelz_subchannel->MarkSubchannelDestroyed();
     c->channelz_subchannel.reset();
   }
-  gpr_free((void*)c->filters);
   c->health_check_service_name.reset();
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -553,7 +537,7 @@ struct HealthCheckParams {
 }  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args) {
+                                        const grpc_channel_args* args) {
   grpc_subchannel_key* key = grpc_subchannel_key_create(args);
   grpc_subchannel* c = grpc_subchannel_index_find(key);
   if (c) {
@@ -567,23 +551,13 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
   grpc_connector_ref(c->connector);
-  c->num_filters = args->filter_count;
-  if (c->num_filters > 0) {
-    c->filters = static_cast<const grpc_channel_filter**>(
-        gpr_malloc(sizeof(grpc_channel_filter*) * c->num_filters));
-    memcpy((void*)c->filters, args->filters,
-           sizeof(grpc_channel_filter*) * c->num_filters);
-  } else {
-    c->filters = nullptr;
-  }
   c->pollset_set = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
-  grpc_get_subchannel_address_arg(args->args, addr);
+  grpc_get_subchannel_address_arg(args, addr);
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (grpc_proxy_mappers_map_address(addr, args->args, &new_address,
-                                     &new_args)) {
+  if (grpc_proxy_mappers_map_address(addr, args, &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     gpr_free(addr);
     addr = new_address;
@@ -592,7 +566,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
   gpr_free(addr);
   c->args = grpc_channel_args_copy_and_add_and_remove(
-      new_args != nullptr ? new_args : args->args, keys_to_remove,
+      new_args != nullptr ? new_args : args, keys_to_remove,
       GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
   gpr_free(new_arg.value.string);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
@@ -605,7 +579,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_connectivity_state_init(&c->state_and_health_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
   grpc_core::BackOff::Options backoff_options;
-  parse_args_for_backoff_values(args->args, &backoff_options,
+  parse_args_for_backoff_values(args, &backoff_options,
                                 &c->min_connect_timeout_ms);
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);

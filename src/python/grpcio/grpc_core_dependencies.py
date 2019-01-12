@@ -102,6 +102,8 @@ CORE_SOURCE_FILES = [
     'src/core/lib/iomgr/gethostname_fallback.cc',
     'src/core/lib/iomgr/gethostname_host_name_max.cc',
     'src/core/lib/iomgr/gethostname_sysconf.cc',
+    'src/core/lib/iomgr/grpc_if_nametoindex_posix.cc',
+    'src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc',
     'src/core/lib/iomgr/internal_errqueue.cc',
     'src/core/lib/iomgr/iocp_windows.cc',
     'src/core/lib/iomgr/iomgr.cc',

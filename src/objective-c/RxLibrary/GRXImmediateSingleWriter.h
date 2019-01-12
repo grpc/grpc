@@ -23,6 +23,8 @@
 /**
  * Utility to construct GRXWriter instances from values that are immediately available when
  * required.
+ *
+ * Thread safety: the methods of this class are thread safe.
  */
 @interface GRXImmediateSingleWriter : GRXImmediateWriter
 

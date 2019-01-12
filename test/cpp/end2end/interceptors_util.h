@@ -165,6 +165,9 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel);
 bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
                    const string& key, const string& value);
 
+bool CheckMetadata(const std::multimap<grpc::string, grpc::string>& map,
+                   const string& key, const string& value);
+
 std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
 CreateDummyClientInterceptors();
 

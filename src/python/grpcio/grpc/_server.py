@@ -860,9 +860,10 @@ class _Server(grpc.Server):
         return _stop(self._state, grace)
 
     def __del__(self):
-        # We can not grab a lock in __del__(), so set a flag to signal the
-        # serving daemon thread (if it exists) to initiate shutdown.
-        self._state.server_deallocated = True
+        if hasattr(self, '_state'):
+            # We can not grab a lock in __del__(), so set a flag to signal the
+            # serving daemon thread (if it exists) to initiate shutdown.
+            self._state.server_deallocated = True
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,

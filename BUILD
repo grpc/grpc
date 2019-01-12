@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "goose"
+g_stands_for = "gold"
 
 core_version = "7.0.0-dev"
 
-version = "1.18.0-dev"
+version = "1.19.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -736,6 +736,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
         "src/core/lib/iomgr/is_epollexclusive_available.cc",
+        "src/core/lib/iomgr/grpc_if_nametoindex_posix.cc",
+        "src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/network_status_tracker.cc",
@@ -881,6 +883,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",

@@ -80,9 +80,9 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
  * This property can be used to query the current state of the writer, which determines how it might
  * currently use its writeable. Some state transitions can be triggered by setting this property to
  * the corresponding value, and that's useful for advanced use cases like pausing an writer. For
- * more details, see the documentation of the enum further down.
+ * more details, see the documentation of the enum further down. The property is thread safe.
  */
-@property(nonatomic) GRXWriterState state;
+@property GRXWriterState state;
 
 /**
  * Transition to the Started state, and start sending messages to the writeable (a reference to it
