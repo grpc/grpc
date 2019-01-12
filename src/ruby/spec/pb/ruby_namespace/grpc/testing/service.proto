@@ -1,0 +1,9 @@
+syntax = "proto3";
+package service;
+option ruby_package = "MyService";
+
+import "messages.proto";
+
+service Service {
+  rpc Endpoint(msgs.Request) returns (msgs.Response);
+}

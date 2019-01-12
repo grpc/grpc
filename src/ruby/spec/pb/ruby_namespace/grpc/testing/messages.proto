@@ -1,0 +1,6 @@
+syntax = "proto3";
+package msgs;
+option ruby_package = "MyService";
+
+message Request {}
+message Response {}
