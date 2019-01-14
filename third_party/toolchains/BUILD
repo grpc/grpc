@@ -53,10 +53,6 @@ platform(
             value: "false"
         }
         properties: {
-            name: "dockerDropCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
             name: "dockerNetwork"
             value: "off"
         }
@@ -86,10 +82,6 @@ platform(
         properties: {
             name: "dockerSiblingContainers"
             value: "false"
-        }
-        properties: {
-            name: "dockerDropCapabilities"
-            value: "SYS_PTRACE"
         }
         properties: {
             name: "dockerNetwork"
