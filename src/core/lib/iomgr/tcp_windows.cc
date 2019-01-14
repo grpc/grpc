@@ -24,7 +24,6 @@
 
 #include <limits.h>
 
-#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 
 #include <grpc/slice_buffer.h>
@@ -470,7 +469,6 @@ static void win_shutdown(grpc_endpoint* ep, grpc_error* why) {
 }
 
 static void win_destroy(grpc_endpoint* ep) {
-  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   TCP_UNREF(tcp, "destroy");
@@ -526,8 +524,6 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   tcp->peer_string = gpr_strdup(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  /* Tell network status tracking code about the new endpoint */
-  grpc_network_status_register_endpoint(&tcp->base);
   grpc_resource_quota_unref_internal(resource_quota);
 
   return &tcp->base;

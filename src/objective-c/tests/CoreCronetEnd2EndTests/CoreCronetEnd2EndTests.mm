@@ -318,10 +318,6 @@ static char *roots_filename;
   [self testIndividualCase:(char *)"negative_deadline"];
 }
 
-- (void)testNetworkStatusChange {
-  [self testIndividualCase:(char *)"network_status_change"];
-}
-
 - (void)testNoOp {
   [self testIndividualCase:(char *)"no_op"];
 }

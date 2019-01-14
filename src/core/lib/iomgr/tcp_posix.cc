@@ -22,7 +22,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
@@ -127,9 +126,8 @@ struct grpc_tcp {
   bool socket_ts_enabled; /* True if timestamping options are set on the socket
                            */
   bool ts_capable;        /* Cache whether we can set timestamping options */
-  gpr_atm
-      stop_error_notification; /* Set to 1 if we do not want to be notified on
-                                  errors anymore */
+  gpr_atm stop_error_notification; /* Set to 1 if we do not want to be notified
+                                      on errors anymore */
 };
 
 struct backup_poller {
@@ -388,7 +386,6 @@ static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
-  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
   if (grpc_event_engine_can_track_errors()) {
@@ -701,7 +698,8 @@ static void process_errors(grpc_tcp* tcp) {
 
     union {
       char rbuf[1024 /*CMSG_SPACE(sizeof(scm_timestamping)) +
-                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in))*/];
+                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in))*/
+      ];
       struct cmsghdr align;
     } aligned_buf;
     memset(&aligned_buf, 0, sizeof(aligned_buf));
@@ -1131,8 +1129,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
   grpc_resource_user_slice_allocator_init(
       &tcp->slice_allocator, tcp->resource_user, tcp_read_allocation_done, tcp);
-  /* Tell network status tracker about new endpoint */
-  grpc_network_status_register_endpoint(&tcp->base);
   grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_init(&tcp->tb_mu);
   tcp->tb_head = nullptr;
@@ -1159,7 +1155,6 @@ int grpc_tcp_fd(grpc_endpoint* ep) {
 
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done) {
-  grpc_network_status_unregister_endpoint(ep);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(ep->vtable == &vtable);
   tcp->release_fd = fd;
