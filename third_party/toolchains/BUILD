@@ -48,6 +48,18 @@ platform(
           name: "gceMachineType"  # Small machines for majority of tests.
           value: "n1-highmem-2"
         }
+        properties: {
+            name: "dockerSiblingContainers"
+            value: "false"
+        }
+        properties: {
+            name: "dockerDropCapabilities"
+            value: "SYS_PTRACE"
+        }
+        properties: {
+            name: "dockerNetwork"
+            value: "off"
+        }
         """,
 )
 
@@ -70,6 +82,18 @@ platform(
         properties: {
           name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
           value: "n1-standard-8"
+        }
+        properties: {
+            name: "dockerSiblingContainers"
+            value: "false"
+        }
+        properties: {
+            name: "dockerDropCapabilities"
+            value: "SYS_PTRACE"
+        }
+        properties: {
+            name: "dockerNetwork"
+            value: "off"
         }
     """,
 )
