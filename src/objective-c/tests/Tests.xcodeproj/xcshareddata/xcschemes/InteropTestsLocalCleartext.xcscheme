@@ -26,7 +26,6 @@
       buildConfiguration = "Test"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      language = ""
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
          <TestableReference
@@ -40,12 +39,6 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "GRPCClientTests/testConnectionToRemoteServer">
-               </Test>
-               <Test
-                  Identifier = "GRPCClientTests/testMetadata">
-               </Test>
-               <Test
                   Identifier = "InteropTests">
                </Test>
             </SkippedTests>
@@ -58,7 +51,6 @@
       buildConfiguration = "Test"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      language = ""
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"

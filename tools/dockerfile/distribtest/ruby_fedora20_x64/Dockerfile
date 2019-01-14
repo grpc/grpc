@@ -14,6 +14,23 @@
 
 FROM fedora:20
 
-RUN yum clean all && yum update -y && yum install -y ruby findutils
+# distro-sync and install openssl, per https://github.com/fedora-cloud/docker-brew-fedora/issues/19
+RUN yum clean all && yum update -y && yum distro-sync -y && yum install -y openssl gnupg which findutils
 
-RUN gem install bundler
+# Install rvm
+RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN curl -sSL https://get.rvm.io | bash -s stable
+
+# Install Ruby 2.2
+# Running the installation twice to work around docker issue when using overlay.
+# https://github.com/docker/docker/issues/10180
+RUN (/bin/bash -l -c "rvm install ruby-2.2.10") || (/bin/bash -l -c "rvm install ruby-2.2.10")
+RUN /bin/bash -l -c "rvm use --default ruby-2.2.10"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.2.10' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
+
+RUN mkdir /var/local/jenkins
+
+RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"

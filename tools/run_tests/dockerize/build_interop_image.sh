@@ -90,9 +90,6 @@ else
   docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
 fi
 
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
-
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 
 # Prepare image for interop tests, commit it on success.

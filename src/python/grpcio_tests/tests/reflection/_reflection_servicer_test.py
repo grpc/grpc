@@ -56,8 +56,12 @@ class ReflectionServicerTest(unittest.TestCase):
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 
-        channel = grpc.insecure_channel('localhost:%d' % port)
-        self._stub = reflection_pb2_grpc.ServerReflectionStub(channel)
+        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._stub = reflection_pb2_grpc.ServerReflectionStub(self._channel)
+
+    def tearDown(self):
+        self._server.stop(None)
+        self._channel.close()
 
     def testFileByName(self):
         requests = (

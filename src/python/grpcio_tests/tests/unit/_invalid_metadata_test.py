@@ -62,6 +62,9 @@ class InvalidMetadataTest(unittest.TestCase):
         self._stream_unary = _stream_unary_multi_callable(self._channel)
         self._stream_stream = _stream_stream_multi_callable(self._channel)
 
+    def tearDown(self):
+        self._channel.close()
+
     def testUnaryRequestBlockingUnaryResponse(self):
         request = b'\x07\x08'
         metadata = (('InVaLiD', 'UnaryRequestBlockingUnaryResponse'),)

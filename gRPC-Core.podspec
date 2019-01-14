@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.18.0-dev'
+  version = '1.19.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -93,7 +93,7 @@ Pod::Spec.new do |s|
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
+  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
   s.libraries = 'c++'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -417,6 +417,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/gethostname.h',
+                      'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
@@ -427,7 +428,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
-                      'src/core/lib/iomgr/network_status_tracker.h',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.h',
                       'src/core/lib/iomgr/pollset_custom.h',
@@ -571,6 +571,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/gethostname_fallback.cc',
                       'src/core/lib/iomgr/gethostname_host_name_max.cc',
                       'src/core/lib/iomgr/gethostname_sysconf.cc',
+                      'src/core/lib/iomgr/grpc_if_nametoindex_posix.cc',
+                      'src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc',
                       'src/core/lib/iomgr/internal_errqueue.cc',
                       'src/core/lib/iomgr/iocp_windows.cc',
                       'src/core/lib/iomgr/iomgr.cc',
@@ -582,7 +584,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/is_epollexclusive_available.cc',
                       'src/core/lib/iomgr/load_file.cc',
                       'src/core/lib/iomgr/lockfree_event.cc',
-                      'src/core/lib/iomgr/network_status_tracker.cc',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/pollset.cc',
                       'src/core/lib/iomgr/pollset_custom.cc',
@@ -1040,6 +1041,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/gethostname.h',
+                              'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
@@ -1050,7 +1052,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
-                              'src/core/lib/iomgr/network_status_tracker.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
                               'src/core/lib/iomgr/pollset_custom.h',
@@ -1296,7 +1297,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/max_connection_idle.cc',
                       'test/core/end2end/tests/max_message_length.cc',
                       'test/core/end2end/tests/negative_deadline.cc',
-                      'test/core/end2end/tests/network_status_change.cc',
                       'test/core/end2end/tests/no_error_on_hotpath.cc',
                       'test/core/end2end/tests/no_logging.cc',
                       'test/core/end2end/tests/no_op.cc',

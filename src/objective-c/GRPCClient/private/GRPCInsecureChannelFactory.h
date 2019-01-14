@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,21 @@
  * limitations under the License.
  *
  */
+#import "GRPCChannelFactory.h"
 
-#include <grpc/support/port_platform.h>
+@class GRPCChannel;
 
-#include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/network_status_tracker.h"
+NS_ASSUME_NONNULL_BEGIN
 
-void grpc_network_status_shutdown(void) {}
+@interface GRPCInsecureChannelFactory : NSObject<GRPCChannelFactory>
 
-void grpc_network_status_init(void) {
-  // TODO(makarandd): Install callback with OS to monitor network status.
-}
++ (nullable instancetype)sharedInstance;
 
-void grpc_destroy_network_status_monitor() {}
+- (nullable grpc_channel *)createChannelWithHost:(NSString *)host
+                                     channelArgs:(nullable NSDictionary *)args;
 
-void grpc_network_status_register_endpoint(grpc_endpoint* ep) { (void)ep; }
+- (nullable instancetype)init NS_UNAVAILABLE;
 
-void grpc_network_status_unregister_endpoint(grpc_endpoint* ep) { (void)ep; }
+@end
 
-void grpc_network_status_shutdown_all_endpoints() {}
+NS_ASSUME_NONNULL_END

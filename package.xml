@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.18.0dev</release>
-  <api>1.18.0dev</api>
+  <release>1.19.0dev</release>
+  <api>1.19.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -358,6 +358,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/internal_errqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.h" role="src" />
@@ -368,7 +369,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/nameser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_custom.h" role="src" />
@@ -512,6 +512,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_host_name_max.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_sysconf.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/grpc_if_nametoindex_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/internal_errqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.cc" role="src" />
@@ -523,7 +525,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/is_epollexclusive_available.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_custom.cc" role="src" />

@@ -73,7 +73,7 @@ class LoggingInterceptor : public experimental::Interceptor {
          type == experimental::ServerRpcInfo::Type::BIDI_STREAMING));
   }
 
-  virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
       auto* map = methods->GetSendInitialMetadata();
@@ -83,7 +83,7 @@ class LoggingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
       EchoRequest req;
-      auto* buffer = methods->GetSendMessage();
+      auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
       EXPECT_TRUE(
           SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
@@ -142,6 +142,71 @@ class LoggingInterceptorFactory
   }
 };
 
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageTester : public experimental::Interceptor {
+ public:
+  SyncSendMessageTester(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("Hello"), 0u);
+      new_msg_.set_message("World" + old_msg);
+      methods->ModifySendMessage(&new_msg_);
+    }
+    methods->Proceed();
+  }
+
+ private:
+  EchoRequest new_msg_;
+};
+
+class SyncSendMessageTesterFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new SyncSendMessageTester(info);
+  }
+};
+
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageVerifier : public experimental::Interceptor {
+ public:
+  SyncSendMessageVerifier(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      // Make sure that the changes made in SyncSendMessageTester persisted
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("World"), 0u);
+
+      // Remove the "World" part of the string that we added earlier
+      new_msg_.set_message(old_msg.erase(0, 5));
+      methods->ModifySendMessage(&new_msg_);
+
+      // LoggingInterceptor verifies that changes got reverted
+    }
+    methods->Proceed();
+  }
+
+ private:
+  EchoRequest new_msg_;
+};
+
+class SyncSendMessageVerifierFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new SyncSendMessageVerifier(info);
+  }
+};
+
 void MakeBidiStreamingCall(const std::shared_ptr<Channel>& channel) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   ClientContext ctx;
@@ -173,6 +238,12 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
     std::vector<
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
         creators;
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageTesterFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageVerifierFactory()));
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));
@@ -213,6 +284,12 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
     std::vector<
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
         creators;
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageTesterFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new SyncSendMessageVerifierFactory()));
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
             new LoggingInterceptorFactory()));

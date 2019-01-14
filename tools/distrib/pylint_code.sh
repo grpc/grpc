@@ -48,4 +48,10 @@ for dir in "${TEST_DIRS[@]}"; do
   $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
 done
 
+find examples/python \
+  -iname "*.py" \
+  -not -name "*_pb2.py" \
+  -not -name "*_pb2_grpc.py" \
+  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn
+
 exit $EXIT
