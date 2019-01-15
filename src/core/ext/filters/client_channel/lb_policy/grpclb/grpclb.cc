@@ -85,7 +85,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -988,7 +987,6 @@ GrpcLb::GrpcLb(const LoadBalancingPolicy::Args& args)
                                1000)) {
   // Initialization.
   gpr_mu_init(&lb_channel_mu_);
-  grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
@@ -1032,7 +1030,6 @@ GrpcLb::~GrpcLb() {
   if (serverlist_ != nullptr) {
     grpc_grpclb_destroy_serverlist(serverlist_);
   }
-  grpc_subchannel_index_unref();
 }
 
 void GrpcLb::ShutdownLocked() {
@@ -1699,6 +1696,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
+    lb_policy_args.subchannel_pool = subchannel_pool();
     CreateRoundRobinPolicyLocked(lb_policy_args);
   }
   grpc_channel_args_destroy(args);
