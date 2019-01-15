@@ -6,16 +6,17 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.17.1 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.19.0.dev0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="gRPC Health Checking" href="grpc_health_checking.html" />
+    <link rel="next" title="gRPC Channelz" href="grpc_channelz.html" />
     <link rel="prev" title="Welcome to gRPC Python’s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -32,7 +33,7 @@
 
 
 
-<p class="blurb">1.17.1</p>
+<p class="blurb">1.19.0.dev0</p>
 
 
 
@@ -46,6 +47,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#tutorial">Tutorial</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#version">Version</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-client">Create Client</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-client-credentials">Create Client Credentials</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#create-server">Create Server</a></li>
@@ -70,6 +72,7 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
@@ -81,7 +84,7 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Welcome to gRPC Python’s documentation!</a></li>
-      <li>Next: <a href="grpc_health_checking.html" title="next chapter">gRPC Health Checking</a></li>
+      <li>Next: <a href="grpc_channelz.html" title="next chapter">gRPC Channelz</a></li>
   </ul></li>
 </ul>
 </div>
@@ -126,6 +129,10 @@ Or, if you would like dive in with more extensive usage of gRPC Python, check <a
 </div>
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="version">
+<h3>Version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h3>
+<p>The version string is available as <code class="code docutils literal notranslate"><span class="pre">grpc.__version__</span></code>.</p>
+</div>
 <div class="section" id="create-client">
 <h3>Create Client<a class="headerlink" href="#create-client" title="Permalink to this headline">¶</a></h3>
 <dl class="function">
@@ -340,8 +347,8 @@ before the server is started.</li>
 and optionally manipulate the incoming RPCs before handing them over to
 handlers. The interceptors are given control in the order they are
 specified. This is an EXPERIMENTAL API.</li>
-<li><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)</li>
-<li><strong>configure the channel.</strong> (<em>to</em>) – </li>
+<li><strong>options</strong> – An optional list of key-value pairs (channel args in gRPC runtime)
+to configure the channel.</li>
 <li><strong>maximum_concurrent_rpcs</strong> – The maximum number of concurrent RPCs this server
 will service before returning RESOURCE_EXHAUSTED status, or None to
 indicate no limit.</li>
@@ -1527,6 +1534,27 @@ termination of the RPC.</li>
 <tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">Exception</span></code> – An exception is always raised to signal the abortion the
 RPC to the gRPC runtime.</p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.ServicerContext.abort_with_status">
+<code class="descname">abort_with_status</code><span class="sig-paren">(</span><em>status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServicerContext.abort_with_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.ServicerContext.abort_with_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raises an exception to terminate the RPC with a non-OK status.</p>
+<p>The status passed as argument will supercede any existing status code,
+status message and trailing metadata.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>status</strong> – A grpc.Status object. The status code in it must not be
+StatusCode.OK.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal notranslate"><span class="pre">Exception</span></code> – An exception is always raised to signal the abortion the
+RPC to the gRPC runtime.</td>
 </tr>
 </tbody>
 </table>

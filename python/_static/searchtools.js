@@ -138,7 +138,6 @@ var Search = {
    */
   query : function(query) {
     var i;
-    var stopwords = DOCUMENTATION_OPTIONS.SEARCH_LANGUAGE_STOP_WORDS;
 
     // stem the searchterms and add them to the correct list
     var stemmer = new Stemmer();
