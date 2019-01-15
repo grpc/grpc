@@ -147,7 +147,8 @@ class ThreadInternalsWindows
 namespace grpc_core {
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-               bool* success, const Options& options) : options_(options) {
+               bool* success, const Options& options)
+    : options_(options) {
   bool outcome = false;
   impl_ =
       grpc_core::New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);

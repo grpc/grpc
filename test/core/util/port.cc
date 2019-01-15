@@ -34,6 +34,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/surface/init.h"
 #include "test/core/util/port_server_client.h"
 
 static int* chosen_ports = nullptr;
@@ -67,6 +68,7 @@ static void free_chosen_ports(void) {
     grpc_free_port_using_server(chosen_ports[i]);
   }
   grpc_shutdown();
+  grpc_maybe_wait_for_async_shutdown();
   gpr_free(chosen_ports);
 }
 
