@@ -114,6 +114,19 @@ grpc_google_default_channel_credentials::create_security_connector(
   return sc;
 }
 
+grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
+    grpc_channel_args* args) {
+  grpc_channel_args* updated = args;
+  if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
+      nullptr) {
+    grpc_arg new_srv_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
+    updated = grpc_channel_args_copy_and_add(args, &new_srv_arg, 1);
+    grpc_channel_args_destroy(args);
+  }
+  return updated;
+}
+
 static void on_metadata_server_detection_http_response(void* user_data,
                                                        grpc_error* error) {
   metadata_server_detector* detector =
