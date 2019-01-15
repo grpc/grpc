@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Python implementation of the GRPC helloworld.Greeter client with channel options and call timeout parameters."""
+"""gRPC Python helloworld.Greeter client with channel options and call timeout parameters."""
 
 from __future__ import print_function
 import logging

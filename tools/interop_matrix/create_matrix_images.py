@@ -39,10 +39,9 @@ _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
-        set(
-            client_matrix.get_release_tag_name(info)
-            for lang in client_matrix.LANG_RELEASE_MATRIX.values()
-            for info in lang)))
+        set(release
+            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
+            for release in release_dict.keys())))
 
 # Destination directory inside docker image to keep extra info from build time.
 _BUILD_INFO = '/var/local/build_info'
@@ -260,11 +259,10 @@ atexit.register(cleanup)
 
 def maybe_apply_patches_on_git_tag(stack_base, lang, release):
     files_to_patch = []
-    for release_info in client_matrix.LANG_RELEASE_MATRIX[lang]:
-        if client_matrix.get_release_tag_name(release_info) == release:
-            if release_info[release] is not None:
-                files_to_patch = release_info[release].get('patch')
-                break
+
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
+    if release_info:
+        files_to_patch = release_info.patch
     if not files_to_patch:
         return
     patch_file_relative_path = 'patches/%s_%s/git_repo.patch' % (lang, release)

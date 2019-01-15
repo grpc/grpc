@@ -724,30 +724,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   EXPECT_EQ(2UL, servers_[0]->service_.clients().size());
 }
 
-// The first parameter determines whether all the subchannel keys are considered
-// different, hence new subchannels are always created. The second parameter
-// determines whether to use local subchannel pool.
-class ClientLbEnd2endWithParamTest
-    : public ClientLbEnd2endTest,
-      public ::testing::WithParamInterface<std::tuple<bool, bool>> {
- protected:
-  void SetUp() override {
-    grpc_core::SubchannelKey::TestOnlySetForceDifferent(
-        std::get<0>(GetParam()));
-    ClientLbEnd2endTest::SetUp();
-  }
-
-  void TearDown() override {
-    ClientLbEnd2endTest::TearDown();
-    grpc_core::SubchannelKey::TestOnlySetForceDifferent(false);
-  }
-};
-
-TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
-  gpr_log(GPR_INFO, "subchannel key force different: %d",
-          std::get<0>(GetParam()));
-  gpr_log(GPR_INFO, "use local subchannel pool: %d", std::get<1>(GetParam()));
-  // Start servers and send one RPC per server.
+TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
+  const int kNumUpdates = 1000;
   const int kNumServers = 3;
   StartServers(kNumServers);
   ChannelArguments args;
@@ -755,7 +733,7 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   auto channel = BuildChannel("pick_first", args);
   auto stub = BuildStub(channel);
   std::vector<int> ports = GetServersPorts();
-  for (size_t i = 0; i < 1000; ++i) {
+  for (size_t i = 0; i < kNumUpdates; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
     SetNextResolution(ports);
@@ -766,10 +744,6 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
-
-INSTANTIATE_TEST_CASE_P(SubchannelForceCreation, ClientLbEnd2endWithParamTest,
-                        ::testing::Combine(::testing::Bool(),
-                                           ::testing::Bool()));
 
 TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   // Prepare the ports for up servers and down servers.

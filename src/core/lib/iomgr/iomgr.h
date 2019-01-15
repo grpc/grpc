@@ -39,6 +39,9 @@ void grpc_iomgr_shutdown();
  * background poller. */
 void grpc_iomgr_shutdown_background_closure();
 
+/** Returns true if the caller is a worker thread for any background poller. */
+bool grpc_iomgr_is_any_background_poller_thread();
+
 /* Exposed only for testing */
 size_t grpc_iomgr_count_objects_for_testing();
 

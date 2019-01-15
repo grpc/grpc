@@ -149,6 +149,6 @@ cdef class Server:
       grpc_server_destroy(self.c_server)
       self.c_server = NULL
 
-  def __dealloc(self):
+  def __dealloc__(self):
     if self.c_server == NULL:
       grpc_shutdown()

@@ -44,10 +44,9 @@ _LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
-        set(
-            client_matrix.get_release_tag_name(info)
-            for lang in client_matrix.LANG_RELEASE_MATRIX.values()
-            for info in lang)))
+        set(release
+            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
+            for release in release_dict.keys())))
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
