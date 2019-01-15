@@ -94,8 +94,7 @@ grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
   return c;
 }
 
-void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
-                                                grpc_subchannel* expected) {
+void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
   bool done = false;
   // Compare and swap (CAS) loop:
   while (!done) {
@@ -103,9 +102,6 @@ void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key,
     gpr_mu_lock(&mu_);
     grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
     gpr_mu_unlock(&mu_);
-    grpc_subchannel* c =
-        static_cast<grpc_subchannel*>(grpc_avl_get(old_map, key, nullptr));
-    GPR_ASSERT(c == expected);
     // Remove the subchannel.
     // Note that we should ref the old map first because grpc_avl_remove() will
     // unref it while we still need to access it later.

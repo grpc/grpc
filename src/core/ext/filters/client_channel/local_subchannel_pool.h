@@ -41,8 +41,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Thread-unsafe. Intended to be invoked within the client_channel combiner.
   grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
                                       grpc_subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key,
-                            grpc_subchannel* expected) override;
+  void UnregisterSubchannel(SubchannelKey* key) override;
   grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:

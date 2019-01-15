@@ -47,17 +47,6 @@ class SubchannelKey {
 
   int Cmp(const SubchannelKey& other) const;
 
-  // Sets whether subchannel keys are always initialized differently in the
-  // normal ctor. If \a force_different is true, all the subchannel keys
-  // constructed via the normal ctor (vs the copy ctor) will be different even
-  // if the ctor arguments are the same, resulting in new subchannels always
-  // being created in a subchannel pool. Otherwise, the subchannel keys will be
-  // initialized as usual.
-  //
-  // Tests using this function \em MUST run tests with and without \a
-  // force_different set.
-  static void TestOnlySetForceDifferent(bool force_different);
-
  private:
   // Initializes the subchannel key with the given \a args and the function to
   // copy channel args.
@@ -66,10 +55,6 @@ class SubchannelKey {
       grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
 
   const grpc_channel_args* args_;
-
-  // If set, all subchannel keys are initialized differently (except for the
-  // copies of the same subchannel key).
-  static bool force_different_;
 };
 
 // Interface for subchannel pool.
@@ -87,10 +72,8 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   virtual grpc_subchannel* RegisterSubchannel(
       SubchannelKey* key, grpc_subchannel* constructed) GRPC_ABSTRACT;
 
-  // Removes \a expected as the registered subchannel for \a key. Caller should
-  // guarantee \a key maps to \a expected.
-  virtual void UnregisterSubchannel(SubchannelKey* key,
-                                    grpc_subchannel* expected) GRPC_ABSTRACT;
+  // Removes \a expected as the registered subchannel for \a key.
+  virtual void UnregisterSubchannel(SubchannelKey* key) GRPC_ABSTRACT;
 
   // Finds the subchannel registered for the given subchannel key. Returns NULL
   // if no such channel exists. Thread-safe.

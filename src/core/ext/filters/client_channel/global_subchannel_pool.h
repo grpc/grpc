@@ -47,8 +47,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
                                       grpc_subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key,
-                            grpc_subchannel* expected) override;
+  void UnregisterSubchannel(SubchannelKey* key) override;
   grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:

@@ -33,15 +33,6 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_channel_args* args) {
   Init(args, grpc_channel_args_normalize);
-  if (GPR_UNLIKELY(force_different_)) {
-    static int next_id = 0;
-    grpc_arg arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_SUBCHANNEL_KEY_TEST_ONLY_ID), next_id++);
-    grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(args_, &arg, 1);
-    grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-    args_ = new_args;
-  }
 }
 
 SubchannelKey::~SubchannelKey() {
@@ -62,23 +53,24 @@ int SubchannelKey::Cmp(const SubchannelKey& other) const {
   return grpc_channel_args_compare(args_, other.args_);
 }
 
-void SubchannelKey::TestOnlySetForceDifferent(bool force_creation) {
-  force_different_ = force_creation;
-}
-
 void SubchannelKey::Init(
     const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   args_ = copy_channel_args(args);
 }
 
-bool SubchannelKey::force_different_ = false;
-
 namespace {
 
-void* arg_copy(void* p) { return p; }
+void* arg_copy(void* p) {
+  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
+  subchannel_pool->Ref().release();
+  return p;
+}
 
-void arg_destroy(void* p) {}
+void arg_destroy(void* p) {
+  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
+  subchannel_pool->Unref();
+}
 
 int arg_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
@@ -88,7 +80,7 @@ const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
 }  // namespace
 
 grpc_arg SubchannelPoolInterface::CreateChannelArg(
-    grpc_core::SubchannelPoolInterface* subchannel_pool) {
+    SubchannelPoolInterface* subchannel_pool) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
       &subchannel_pool_arg_vtable);
@@ -98,8 +90,7 @@ SubchannelPoolInterface*
 SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
     const grpc_channel_args* args) {
   const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
-  if (arg != nullptr) {
-    GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
+  if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
     return static_cast<SubchannelPoolInterface*>(arg->value.pointer.p);
   }
   return nullptr;
