@@ -6,13 +6,14 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.17.1 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.19.0.dev0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -30,7 +31,7 @@
 
 
 
-<p class="blurb">1.17.1</p>
+<p class="blurb">1.19.0.dev0</p>
 
 
 
@@ -41,6 +42,7 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../grpc_channelz.html">gRPC Channelz</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_reflection.html">gRPC Reflection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../grpc_testing.html">gRPC Testing</a></li>
@@ -109,6 +111,11 @@
 <span class="kn">from</span> <span class="nn">grpc._cython</span> <span class="k">import</span> <span class="n">cygrpc</span> <span class="k">as</span> <span class="n">_cygrpc</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NullHandler</span><span class="p">())</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">grpc._grpcio_metadata</span> <span class="k">import</span> <span class="n">__version__</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;dev0&quot;</span>
 
 <span class="c1">############################## Future Interface  ###############################</span>
 
@@ -351,6 +358,22 @@
     <span class="n">UNAVAILABLE</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unavailable</span><span class="p">,</span> <span class="s1">&#39;unavailable&#39;</span><span class="p">)</span>
     <span class="n">DATA_LOSS</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">data_loss</span><span class="p">,</span> <span class="s1">&#39;data loss&#39;</span><span class="p">)</span>
     <span class="n">UNAUTHENTICATED</span> <span class="o">=</span> <span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">unauthenticated</span><span class="p">,</span> <span class="s1">&#39;unauthenticated&#39;</span><span class="p">)</span></div>
+
+
+<span class="c1">#############################  gRPC Status  ################################</span>
+
+
+<span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;Describes the status of an RPC.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      code: A StatusCode object to be sent to the client.</span>
+<span class="sd">      details: An ASCII-encodable string to be sent to the client upon</span>
+<span class="sd">        termination of the RPC.</span>
+<span class="sd">      trailing_metadata: The trailing :term:`metadata` in the RPC.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 
 <span class="c1">#############################  gRPC Exceptions  ################################</span>
@@ -1205,6 +1228,25 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="ServicerContext.abort_with_status"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.abort_with_status">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">abort_with_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Raises an exception to terminate the RPC with a non-OK status.</span>
+
+<span class="sd">        The status passed as argument will supercede any existing status code,</span>
+<span class="sd">        status message and trailing metadata.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          status: A grpc.Status object. The status code in it must not be</span>
+<span class="sd">            StatusCode.OK.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">          Exception: An exception is always raised to signal the abortion the</span>
+<span class="sd">            RPC to the gRPC runtime.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="ServicerContext.set_code"><a class="viewcode-back" href="../grpc.html#grpc.ServicerContext.set_code">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">set_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets the value to be used as status code upon RPC completion.</span>
@@ -1810,7 +1852,7 @@
 <span class="sd">        handlers. The interceptors are given control in the order they are</span>
 <span class="sd">        specified. This is an EXPERIMENTAL API.</span>
 <span class="sd">      options: An optional list of key-value pairs (channel args in gRPC runtime)</span>
-<span class="sd">      to configure the channel.</span>
+<span class="sd">        to configure the channel.</span>
 <span class="sd">      maximum_concurrent_rpcs: The maximum number of concurrent RPCs this server</span>
 <span class="sd">        will service before returning RESOURCE_EXHAUSTED status, or None to</span>
 <span class="sd">        indicate no limit.</span>
@@ -1834,6 +1876,7 @@
     <span class="s1">&#39;Future&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ChannelConnectivity&#39;</span><span class="p">,</span>
     <span class="s1">&#39;StatusCode&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Status&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RpcError&#39;</span><span class="p">,</span>
     <span class="s1">&#39;RpcContext&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Call&#39;</span><span class="p">,</span>

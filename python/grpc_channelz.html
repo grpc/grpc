@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC Health Checking &#8212; gRPC Python 1.19.0.dev0 documentation</title>
+    <title>gRPC Channelz &#8212; gRPC Python 1.19.0.dev0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -16,8 +16,8 @@
     <script type="text/javascript" src="_static/language_data.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="gRPC Reflection" href="grpc_reflection.html" />
-    <link rel="prev" title="gRPC Channelz" href="grpc_channelz.html" />
+    <link rel="next" title="gRPC Health Checking" href="grpc_health_checking.html" />
+    <link rel="prev" title="gRPC" href="grpc.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -44,11 +44,12 @@
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
-<li class="toctree-l1"><a class="reference internal" href="grpc_channelz.html">gRPC Channelz</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC Health Checking</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC Channelz</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-grpc-channelz">What is gRPC Channelz?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-grpc_channelz.v1.channelz">Module Contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_health_checking.html">gRPC Health Checking</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
@@ -58,8 +59,8 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="grpc_channelz.html" title="previous chapter">gRPC Channelz</a></li>
-      <li>Next: <a href="grpc_reflection.html" title="next chapter">gRPC Reflection</a></li>
+      <li>Previous: <a href="grpc.html" title="previous chapter">gRPC</a></li>
+      <li>Next: <a href="grpc_health_checking.html" title="next chapter">gRPC Health Checking</a></li>
   </ul></li>
 </ul>
 </div>
@@ -91,33 +92,42 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="grpc-health-checking">
-<h1>gRPC Health Checking<a class="headerlink" href="#grpc-health-checking" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="grpc-channelz">
+<h1>gRPC Channelz<a class="headerlink" href="#grpc-channelz" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-grpc-channelz">
+<h2>What is gRPC Channelz?<a class="headerlink" href="#what-is-grpc-channelz" title="Permalink to this headline">¶</a></h2>
+<p>Design Document <a class="reference external" href="https://github.com/grpc/proposal/blob/master/A14-channelz.md">gRPC Channelz</a></p>
+</div>
+<div class="section" id="module-grpc_channelz.v1.channelz">
+<span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_channelz.v1.channelz" title="Permalink to this headline">¶</a></h2>
+<p>Channelz debug service implementation in gRPC Python.</p>
 <dl class="class">
-<dt id="grpc_health.v1.health.HealthServicer">
-<em class="property">class </em><code class="descclassname">grpc_health.v1.health.</code><code class="descname">HealthServicer</code><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer" title="Permalink to this definition">¶</a></dt>
+<dt id="grpc_channelz.v1.channelz.ChannelzServicer">
+<em class="property">class </em><code class="descclassname">grpc_channelz.v1.channelz.</code><code class="descname">ChannelzServicer</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/channelz.html#ChannelzServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.ChannelzServicer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
-<dl class="method">
-<dt id="grpc_health.v1.health.HealthServicer.set">
-<code class="descname">set</code><span class="sig-paren">(</span><em>service</em>, <em>status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_health/v1/health.html#HealthServicer.set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_health.v1.health.HealthServicer.set" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets the status of a service.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="grpc_channelz.v1.channelz.add_channelz_servicer">
+<code class="descclassname">grpc_channelz.v1.channelz.</code><code class="descname">add_channelz_servicer</code><span class="sig-paren">(</span><em>server</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_channelz/v1/channelz.html#add_channelz_servicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_channelz.v1.channelz.add_channelz_servicer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add Channelz servicer to a server. Channelz servicer is in charge of
+pulling information from C-Core for entire process. It will allow the
+server to response to Channelz queries.</p>
+<p>The Channelz statistic is enabled by default inside C-Core. Whether the
+statistic is enabled or not is isolated from adding Channelz servicer.
+That means you can query Channelz info with a Channelz-disabled channel,
+and you can add Channelz servicer to a Channelz-disabled server.</p>
+<p>The Channelz statistic can be enabled or disabled by channel option
+‘grpc.enable_channelz’. Set to 1 to enable, set to 0 to disable.</p>
+<p>This is an EXPERIMENTAL API.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>service</strong> – string, the name of the service. NOTE, ‘’ must be set.</li>
-<li><strong>status</strong> – HealthCheckResponse.status enum value indicating the status of
-the service</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>server</strong> – grpc.Server to which Channelz service will be added.</td>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -134,7 +144,7 @@ the service</li>
       &copy;2018, The gRPC Authors.
       
       |
-      <a href="_sources/grpc_health_checking.rst.txt"
+      <a href="_sources/grpc_channelz.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
