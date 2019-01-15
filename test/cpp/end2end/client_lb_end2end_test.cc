@@ -38,7 +38,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -662,30 +661,14 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
-class ClientLbEnd2endWithParamTest
-    : public ClientLbEnd2endTest,
-      public ::testing::WithParamInterface<bool> {
- protected:
-  void SetUp() override {
-    grpc_subchannel_index_test_only_set_force_creation(GetParam());
-    ClientLbEnd2endTest::SetUp();
-  }
-
-  void TearDown() override {
-    ClientLbEnd2endTest::TearDown();
-    grpc_subchannel_index_test_only_set_force_creation(false);
-  }
-};
-
-TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
-  gpr_log(GPR_INFO, "subchannel force creation: %d", GetParam());
-  // Start servers and send one RPC per server.
+TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
+  const int kNumUpdates = 1000;
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto channel = BuildChannel("pick_first");
   auto stub = BuildStub(channel);
   std::vector<int> ports = GetServersPorts();
-  for (size_t i = 0; i < 1000; ++i) {
+  for (size_t i = 0; i < kNumUpdates; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
     SetNextResolution(ports);
@@ -696,9 +679,6 @@ TEST_P(ClientLbEnd2endWithParamTest, PickFirstManyUpdates) {
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
-
-INSTANTIATE_TEST_CASE_P(SubchannelForceCreation, ClientLbEnd2endWithParamTest,
-                        ::testing::Bool());
 
 TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   // Prepare the ports for up servers and down servers.
