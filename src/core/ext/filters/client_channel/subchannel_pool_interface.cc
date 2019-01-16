@@ -58,6 +58,7 @@ void SubchannelKey::Init(
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   args_ = copy_channel_args(args);
 }
+
 namespace {
 
 void* arg_copy(void* p) {

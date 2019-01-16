@@ -478,7 +478,7 @@ struct pending_batch {
   bool send_ops_cached;
 };
 
-/** Call data.  Holds a pointer to grpc_core::SubchannelCall and the
+/** Call data.  Holds a pointer to SubchannelCall and the
     associated machinery to create such a pointer.
     Handles queueing of stream ops until a call object is ready, waiting
     for initial metadata before trying to create a call object,

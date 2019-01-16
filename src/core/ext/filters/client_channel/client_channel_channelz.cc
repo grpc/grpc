@@ -117,7 +117,7 @@ SubchannelNode::SubchannelNode(Subchannel* subchannel,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel),
       subchannel_(subchannel),
-      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTarget()))),
+      target_(UniquePtr<char>(gpr_strdup(subchannel_->GetTargetAddress()))),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}

@@ -517,8 +517,8 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     args_to_add.emplace_back(SubchannelPoolInterface::CreateChannelArg(
         policy_->subchannel_pool()->get()));
     const size_t subchannel_address_arg_index = args_to_add.size();
-    args_to_add.emplace_back(grpc_core::Subchannel::CreateSubchannelAddressArg(
-        &addresses[i].address()));
+    args_to_add.emplace_back(
+        Subchannel::CreateSubchannelAddressArg(&addresses[i].address()));
     if (addresses[i].args() != nullptr) {
       for (size_t j = 0; j < addresses[i].args()->num_args; ++j) {
         args_to_add.emplace_back(addresses[i].args()->args[j]);
