@@ -423,9 +423,9 @@ void HealthCheckClient::CallState::StartBatchInCallCombiner(void* arg,
                                                             grpc_error* error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  grpc_subchannel_call* call =
-      static_cast<grpc_subchannel_call*>(batch->handler_private.extra_arg);
-  grpc_subchannel_call_process_op(call, batch);
+  SubchannelCall* call =
+      static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
+  call->ProcessOp(batch);
 }
 
 void HealthCheckClient::CallState::StartBatch(
@@ -452,7 +452,7 @@ void HealthCheckClient::CallState::StartCancel(void* arg, grpc_error* error) {
       GRPC_CLOSURE_CREATE(OnCancelComplete, self, grpc_schedule_on_exec_ctx));
   batch->cancel_stream = true;
   batch->payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  grpc_subchannel_call_process_op(self->call_, batch);
+  self->call_->ProcessOp(batch);
 }
 
 void HealthCheckClient::CallState::Cancel() {
