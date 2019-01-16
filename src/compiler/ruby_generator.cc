@@ -42,11 +42,7 @@ namespace {
 grpc::string GetCanonicalMessageType(const Descriptor* msg) {
   const Descriptor* top_level_msg;
   const FileDescriptor* file_containing_msg;
-  grpc::string msg_full_name;
-  grpc::string msg_name;
-  grpc::string msg_proto_pkg;
   grpc::string resolved_namespace;
-  grpc::string res(msg->full_name());
 
   // If msg is nested, find the topmost message
   top_level_msg = msg;
@@ -54,6 +50,10 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
     top_level_msg = top_level_msg->containing_type();
   }
   file_containing_msg = top_level_msg->file();
+
+  grpc::string msg_full_name;
+  grpc::string msg_name;
+  grpc::string msg_proto_pkg;
 
   msg_full_name = top_level_msg->full_name();
   msg_name = top_level_msg->name();
@@ -63,18 +63,17 @@ grpc::string GetCanonicalMessageType(const Descriptor* msg) {
   if (file_containing_msg->options().has_ruby_package()) {
     resolved_namespace = file_containing_msg->options().ruby_package();
   } else {
-    return res;
+    return msg->full_name();
   }
 
-  // remove trailing period, prevent it from being replaced
+  // remove trailing period
   if (msg_proto_pkg.length() > 0) {
-    if (msg_proto_pkg.back() == '.') {
-      msg_proto_pkg.pop_back();
-    }
+    msg_proto_pkg.pop_back();
   } else if (resolved_namespace.length() > 0) {
     resolved_namespace += '.';
   }
 
+  grpc::string res(msg->full_name());
   ReplacePrefix(&res, msg_proto_pkg, resolved_namespace);
   return res;
 }
