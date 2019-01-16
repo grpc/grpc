@@ -355,6 +355,9 @@ typedef struct {
  * is 10000. Setting this to "0" will disable c-ares query timeouts
  * entirely. */
 #define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
+/** If set, uses a local subchannel pool within the channel. Otherwise, uses the
+ * global subchannel pool. */
+#define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL "grpc.use_local_subchannel_pool"
 /** gRPC Objective-C channel pooling domain string. */
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */

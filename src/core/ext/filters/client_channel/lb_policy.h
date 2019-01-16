@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -53,6 +54,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_combiner* combiner = nullptr;
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
+    /// Subchannel pool.
+    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
@@ -171,6 +174,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  /// Returns a pointer to the subchannel pool of type
+  /// RefCountedPtr<SubchannelPoolInterface>.
+  RefCountedPtr<SubchannelPoolInterface>* subchannel_pool() {
+    return &subchannel_pool_;
+  }
+
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
@@ -204,6 +213,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_combiner* combiner_;
   /// Client channel factory, used to create channels and subchannels.
   grpc_client_channel_factory* client_channel_factory_;
+  /// Subchannel pool.
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.
