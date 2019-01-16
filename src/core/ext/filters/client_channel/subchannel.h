@@ -70,7 +70,6 @@
 namespace grpc_core {
 
 class SubchannelCall;
-class ConnectedSubchannelStateWatcher;
 
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
@@ -118,22 +117,19 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
 class SubchannelCall {
  public:
-  SubchannelCall(ConnectedSubchannel* connection,
+  SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                  const ConnectedSubchannel::CallArgs& args)
-      : connection_(connection), deadline_(args.deadline) {}
+      : connected_subchannel_(std::move(connected_subchannel)),
+        deadline_(args.deadline) {}
   ~SubchannelCall();
 
-  // Continues processing a transport op.
-  void ProcessOp(grpc_transport_stream_op_batch* op);
+  // Continues processing a transport stream op batch.
+  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
   // Returns a pointer to the parent data associated with the subchannel call.
   // The data will be of the size specified in \a parent_data_size field of
   // the args passed to \a ConnectedSubchannel::CreateCall().
   void* GetParentData();
-
-  // Sets *status based on md_batch and error.
-  void GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
-                     grpc_status_code* status);
 
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
@@ -146,9 +142,6 @@ class SubchannelCall {
   SubchannelCall* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-  // Callback to destroy the subchannel call.
-  static void Destroy(void* arg, grpc_error* error);
-
  private:
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.
@@ -157,7 +150,7 @@ class SubchannelCall {
 
   static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
 
-  ConnectedSubchannel* connection_ = nullptr;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_closure* schedule_closure_after_destroy_ = nullptr;
   // State needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready_;
@@ -170,38 +163,11 @@ class SubchannelCall {
 // provides a target for load balancing.
 class Subchannel {
  public:
-  struct ExternalStateWatcher {
-    ExternalStateWatcher(Subchannel* subchannel, grpc_pollset_set* pollset_set,
-                         grpc_closure* notify)
-        : subchannel(subchannel), pollset_set(pollset_set), notify(notify) {
-      GRPC_SUBCHANNEL_WEAK_REF(subchannel, "external_state_watcher+init");
-      GRPC_CLOSURE_INIT(&on_state_changed, OnStateChanged, this,
-                        grpc_schedule_on_exec_ctx);
-    }
-
-    static void OnStateChanged(void* arg, grpc_error* error) {
-      ExternalStateWatcher* w = static_cast<ExternalStateWatcher*>(arg);
-      grpc_closure* follow_up = w->notify;
-      if (w->pollset_set != nullptr) {
-        grpc_pollset_set_del_pollset_set(w->subchannel->pollset_set_,
-                                         w->pollset_set);
-      }
-      gpr_mu_lock(&w->subchannel->mu_);
-      w->next->prev = w->prev;
-      w->prev->next = w->next;
-      gpr_mu_unlock(&w->subchannel->mu_);
-      GRPC_SUBCHANNEL_WEAK_UNREF(w->subchannel, "external_state_watcher+done");
-      gpr_free(w);
-      GRPC_CLOSURE_SCHED(follow_up, GRPC_ERROR_REF(error));
-    }
-
-    Subchannel* subchannel;
-    grpc_pollset_set* pollset_set;
-    grpc_closure* notify;
-    grpc_closure on_state_changed;
-    ExternalStateWatcher* next;
-    ExternalStateWatcher* prev;
-  };
+  // The ctor and dtor are not intended to use directly.
+  Subchannel(SubchannelKey* key, grpc_connector* connector,
+             BackOff::Options backoff_option,
+             grpc_millis min_connect_timeout_ms, const grpc_channel_args* args);
+  ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
   static Subchannel* Create(grpc_connector* connector,
@@ -214,8 +180,6 @@ class Subchannel {
   void WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-  channelz::SubchannelNode* GetChannelzNode();
-
   intptr_t GetChildSocketUuid();
 
   // Gets the string representing the subchannel address.
@@ -225,6 +189,8 @@ class Subchannel {
   // Gets the connected subchannel - or nullptr if not connected (which may
   // happen before it initially connects or during transient failures).
   RefCountedPtr<ConnectedSubchannel> connected_subchannel();
+
+  channelz::SubchannelNode* get_channelz_node();
 
   // Polls the current connectivity state of the subchannel.
   grpc_connectivity_state CheckConnectivity(grpc_error** error,
@@ -256,17 +222,12 @@ class Subchannel {
                                                  grpc_resolved_address* addr);
 
  private:
-  friend class ConnectedSubchannelStateWatcher;
-
-  // Returns a string indicating the subchannel's connectivity state change to
-  // \a state.
-  static const char* ConnectivityStateChangeString(
-      grpc_connectivity_state state);
+  struct ExternalStateWatcher;
+  class ConnectedSubchannelStateWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
-  void SetSubchannelConnectivityStateLocked(grpc_connectivity_state state,
-                                            grpc_error* error,
-                                            const char* reason);
+  void SetConnectivityStateLocked(grpc_connectivity_state state,
+                                  grpc_error* error, const char* reason);
 
   // Methods for connection.
   void MaybeStartConnectingLocked();
@@ -275,12 +236,6 @@ class Subchannel {
   static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
   void Disconnect();
-
-  static void Destroy(void* arg, grpc_error* error);
-
-  static void ParseArgsForBackoffValues(const grpc_channel_args* args,
-                                        BackOff::Options* backoff_options,
-                                        grpc_millis* min_connect_timeout_ms);
 
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
@@ -311,30 +266,30 @@ class Subchannel {
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   OrphanablePtr<ConnectedSubchannelStateWatcher> connected_subchannel_watcher_;
-  bool connecting_;
-  bool disconnected_;
+  bool connecting_ = false;
+  bool disconnected_ = false;
 
   // Connectivity state tracking.
   grpc_connectivity_state_tracker state_tracker_;
   grpc_connectivity_state_tracker state_and_health_tracker_;
   UniquePtr<char> health_check_service_name_;
-  ExternalStateWatcher root_external_state_watcher_;
+  ExternalStateWatcher* root_external_state_watcher_;
 
   // Backoff state.
-  ManualConstructor<BackOff> backoff_;
+  BackOff backoff_;
   grpc_millis next_attempt_deadline_;
   grpc_millis min_connect_timeout_ms_;
-  bool backoff_begun_;
+  bool backoff_begun_ = false;
 
   // Retry alarm.
   grpc_timer retry_alarm_;
   grpc_closure on_retry_alarm_;
-  bool have_retry_alarm_;
+  bool have_retry_alarm_ = false;
   // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_;
+  bool retry_immediately_ = false;
 
   // Channelz tracking.
-  RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
+  RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

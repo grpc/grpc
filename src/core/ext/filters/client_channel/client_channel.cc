@@ -876,7 +876,7 @@ static void resume_pending_batch_in_call_combiner(void* arg,
   grpc_core::SubchannelCall* subchannel_call =
       static_cast<grpc_core::SubchannelCall*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
-  subchannel_call->ProcessOp(batch);
+  subchannel_call->StartTransportStreamOpBatch(batch);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -1758,7 +1758,7 @@ static void start_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   grpc_core::SubchannelCall* subchannel_call =
       static_cast<grpc_core::SubchannelCall*>(batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
-  subchannel_call->ProcessOp(batch);
+  subchannel_call->StartTransportStreamOpBatch(batch);
 }
 
 // Adds a closure to closures that will execute batch in the call combiner.
@@ -1949,7 +1949,7 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
   add_retriable_recv_trailing_metadata_op(calld, retry_state, batch_data);
   retry_state->recv_trailing_metadata_internal_batch = batch_data;
   // Note: This will release the call combiner.
-  calld->subchannel_call->ProcessOp(&batch_data->batch);
+  calld->subchannel_call->StartTransportStreamOpBatch(&batch_data->batch);
 }
 
 // If there are any cached send ops that need to be replayed on the
@@ -2445,7 +2445,7 @@ static void cc_start_transport_stream_op_batch(
           batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
     } else {
       // Note: This will release the call combiner.
-      calld->subchannel_call->ProcessOp(batch);
+      calld->subchannel_call->StartTransportStreamOpBatch(batch);
     }
     return;
   }

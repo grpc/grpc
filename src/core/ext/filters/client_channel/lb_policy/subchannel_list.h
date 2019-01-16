@@ -203,7 +203,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
     for (size_t i = 0; i < subchannels_.size(); ++i) {
       if (subchannels_[i].subchannel() != nullptr) {
         grpc_core::channelz::SubchannelNode* subchannel_node =
-            subchannels_[i].subchannel()->GetChannelzNode();
+            subchannels_[i].subchannel()->get_channelz_node();
         if (subchannel_node != nullptr) {
           refs_list->push_back(subchannel_node->uuid());
         }
@@ -357,7 +357,6 @@ void SubchannelData<SubchannelListType,
             grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
   }
   GPR_ASSERT(connectivity_notification_pending_);
-
   subchannel_->NotifyOnStateChange(
       subchannel_list_->policy()->interested_parties(),
       &pending_connectivity_state_unsafe_, &connectivity_changed_closure_,
