@@ -42,7 +42,7 @@ def build_package_protos(package_root):
             '--grpc_python_out={}'.format(inclusion_root),
         ] + [proto_file]
         if protoc.main(command) != 0:
-            sys.stderr.write('warning: {} failed'.format(command))
+            raise RuntimeError('error: {} failed'.format(command))
 
 
 class BuildPackageProtos(setuptools.Command):
