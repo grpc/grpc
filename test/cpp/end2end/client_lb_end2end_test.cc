@@ -1251,11 +1251,43 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   int trailers_intercepted_ = 0;
 };
 
-TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetries) {
+TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
   auto channel = BuildChannel("intercept_trailing_metadata_lb");
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 3,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}");
+  auto channel = BuildChannel("intercept_trailing_metadata_lb", args);
   auto stub = BuildStub(channel);
   SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
