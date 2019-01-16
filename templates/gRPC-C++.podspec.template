@@ -140,7 +140,7 @@
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '${modify_podspec_version_string('0.0.6', settings.version)}'
+    version = '${modify_podspec_version_string('0.0.7', settings.version)}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
