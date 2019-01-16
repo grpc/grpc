@@ -105,7 +105,7 @@ static grpc_error* posix_blocking_resolve_address(
         grpc_error_set_str(
             grpc_error_set_str(
                 grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("OS Error"),
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING(gai_strerror(s)),
                     GRPC_ERROR_INT_ERRNO, s),
                 GRPC_ERROR_STR_OS_ERROR,
                 grpc_slice_from_static_string(gai_strerror(s))),
