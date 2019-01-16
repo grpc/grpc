@@ -13,6 +13,9 @@
 # limitations under the License.
 """Implementations of interoperability test methods."""
 
+from tests.bazel_patch import bazel_patch
+bazel_patch()
+
 import enum
 import json
 import os

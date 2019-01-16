@@ -13,6 +13,9 @@
 # limitations under the License.
 """Tests of grpc_status."""
 
+from tests.bazel_patch import bazel_patch
+bazel_patch()
+
 import unittest
 
 import logging

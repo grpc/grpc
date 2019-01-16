@@ -1,0 +1,8 @@
+py_library(
+    name = "bazel_patch",
+    srcs = ["bazel_patch.py"],
+    visibility = ["//visibility:public"],
+    data=[
+        "//src/python/grpcio_tests/tests/unit/credentials",
+    ],
+)
