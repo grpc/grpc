@@ -92,7 +92,7 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }),
+                  }) + ["BAZEL_BUILD"],
         hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
         deps = deps + _get_external_deps(external_deps),
         copts = copts,
@@ -112,7 +112,6 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         srcs = srcs,
         deps = deps,
     )
-
 
 def grpc_proto_library(
         name,
