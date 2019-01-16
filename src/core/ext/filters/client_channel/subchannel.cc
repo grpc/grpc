@@ -756,6 +756,30 @@ void Subchannel::MaybeStartConnectingLocked() {
   }
 }
 
+void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
+  Subchannel* c = static_cast<Subchannel*>(arg);
+  gpr_mu_lock(&c->mu_);
+  c->have_retry_alarm_ = false;
+  if (c->disconnected_) {
+    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
+                                                             &error, 1);
+  } else if (c->retry_immediately_) {
+    c->retry_immediately_ = false;
+    error = GRPC_ERROR_NONE;
+  } else {
+    GRPC_ERROR_REF(error);
+  }
+  if (error == GRPC_ERROR_NONE) {
+    gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
+    c->ContinueConnectingLocked();
+    gpr_mu_unlock(&c->mu_);
+  } else {
+    gpr_mu_unlock(&c->mu_);
+    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
 void Subchannel::ContinueConnectingLocked() {
   grpc_connect_in_args args;
   args.interested_parties = pollset_set_;
@@ -771,6 +795,42 @@ void Subchannel::ContinueConnectingLocked() {
                               "connecting");
   grpc_connector_connect(connector_, &args, &connecting_result_,
                          &on_connecting_finished_);
+}
+
+void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
+  auto* c = static_cast<Subchannel*>(arg);
+  grpc_channel_args* delete_channel_args = c->connecting_result_.channel_args;
+  GRPC_SUBCHANNEL_WEAK_REF(c, "on_connecting_finished");
+  gpr_mu_lock(&c->mu_);
+  c->connecting_ = false;
+  if (c->connecting_result_.transport != nullptr &&
+      c->PublishTransportLocked()) {
+    // Do nothing, transport was published.
+  } else if (c->disconnected_) {
+    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
+  } else {
+    c->SetSubchannelConnectivityStateLocked(
+        GRPC_CHANNEL_TRANSIENT_FAILURE,
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Connect Failed", &error, 1),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+        "connect_failed");
+    grpc_connectivity_state_set(
+        &c->state_and_health_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
+        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                               "Connect Failed", &error, 1),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+        "connect_failed");
+
+    const char* errmsg = grpc_error_string(error);
+    gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
+
+    c->MaybeStartConnectingLocked();
+    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
+  }
+  gpr_mu_unlock(&c->mu_);
+  GRPC_SUBCHANNEL_WEAK_UNREF(c, "on_connecting_finished");
+  grpc_channel_args_destroy(delete_channel_args);
 }
 
 namespace {
@@ -838,66 +898,6 @@ void Subchannel::Disconnect() {
   connected_subchannel_.reset();
   connected_subchannel_watcher_.reset();
   gpr_mu_unlock(&mu_);
-}
-
-void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
-  Subchannel* c = static_cast<Subchannel*>(arg);
-  gpr_mu_lock(&c->mu_);
-  c->have_retry_alarm_ = false;
-  if (c->disconnected_) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
-                                                             &error, 1);
-  } else if (c->retry_immediately_) {
-    c->retry_immediately_ = false;
-    error = GRPC_ERROR_NONE;
-  } else {
-    GRPC_ERROR_REF(error);
-  }
-  if (error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
-    c->ContinueConnectingLocked();
-    gpr_mu_unlock(&c->mu_);
-  } else {
-    gpr_mu_unlock(&c->mu_);
-    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
-  auto* c = static_cast<Subchannel*>(arg);
-  grpc_channel_args* delete_channel_args = c->connecting_result_.channel_args;
-  GRPC_SUBCHANNEL_WEAK_REF(c, "on_connecting_finished");
-  gpr_mu_lock(&c->mu_);
-  c->connecting_ = false;
-  if (c->connecting_result_.transport != nullptr &&
-      c->PublishTransportLocked()) {
-    // Do nothing, transport was published.
-  } else if (c->disconnected_) {
-    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
-  } else {
-    c->SetSubchannelConnectivityStateLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Connect Failed", &error, 1),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-        "connect_failed");
-    grpc_connectivity_state_set(
-        &c->state_and_health_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                               "Connect Failed", &error, 1),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-        "connect_failed");
-
-    const char* errmsg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Connect failed: %s", errmsg);
-
-    c->MaybeStartConnectingLocked();
-    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
-  }
-  gpr_mu_unlock(&c->mu_);
-  GRPC_SUBCHANNEL_WEAK_UNREF(c, "on_connecting_finished");
-  grpc_channel_args_destroy(delete_channel_args);
 }
 
 void Subchannel::Destroy(void* arg, grpc_error* error) {

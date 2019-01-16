@@ -268,21 +268,14 @@ class Subchannel {
                                             grpc_error* error,
                                             const char* reason);
 
-  // Starts connecting if needed.
+  // Methods for connection.
   void MaybeStartConnectingLocked();
-
-  // Continues to do the real connecting.
+  static void OnRetryAlarm(void* arg, grpc_error* error);
   void ContinueConnectingLocked();
-
-  // When connected, publishes the transport. Returns true if publishing
-  // succeeds.
+  static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
-
-  // Disconnects the subchannel.
   void Disconnect();
 
-  static void OnRetryAlarm(void* arg, grpc_error* error);
-  static void OnConnectingFinished(void* arg, grpc_error* error);
   static void Destroy(void* arg, grpc_error* error);
 
   static void ParseArgsForBackoffValues(const grpc_channel_args* args,
