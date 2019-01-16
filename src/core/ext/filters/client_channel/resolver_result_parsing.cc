@@ -149,14 +149,12 @@ void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
   // Find the first LB policy that this client supports.
   for (grpc_json* lb_config = field->child; lb_config != nullptr;
        lb_config = lb_config->next) {
-    if (lb_config->type != GRPC_JSON_OBJECT) return;
-    grpc_json* policy_content =
-        ServiceConfig::ParseLoadBalancingConfig(lb_config->child);
+    grpc_json* policy = ServiceConfig::ParseLoadBalancingConfig(lb_config);
     // If we support this policy, then select it.
     if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            policy_content->key)) {
-      lb_policy_name_.reset(gpr_strdup(policy_content->key));
-      lb_policy_config_ = policy_content->child;
+            policy->key)) {
+      lb_policy_name_.reset(gpr_strdup(policy->key));
+      lb_policy_config_ = policy->child;
       return;
     }
   }

@@ -30,6 +30,7 @@ LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
+      lb_config_(args.lb_config),
       interested_parties_(grpc_pollset_set_create()),
       request_reresolution_(nullptr) {}
 

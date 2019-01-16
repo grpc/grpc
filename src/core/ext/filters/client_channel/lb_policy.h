@@ -183,6 +183,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_client_channel_factory* client_channel_factory() const {
     return client_channel_factory_;
   }
+  grpc_json* lb_config() const { return lb_config_; }
 
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
@@ -204,6 +205,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_combiner* combiner_;
   /// Client channel factory, used to create channels and subchannels.
   grpc_client_channel_factory* client_channel_factory_;
+  /// Load balancing config from the resolver.
+  grpc_json* lb_config_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Callback to force a re-resolution.

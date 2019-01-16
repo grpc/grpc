@@ -103,60 +103,19 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json) {
   return UniquePtr<char>(path);
 }
 
-UniquePtr<char> ServiceConfig::ParseXdsConfig(grpc_json* xds_config_json,
-                                              grpc_json** child_policy,
-                                              grpc_json** fallback_policy) {
-  const char* balancer_name = nullptr;
-  grpc_json* output_child_policy = nullptr;
-  grpc_json* output_fallback_policy = nullptr;
-  for (grpc_json* field = xds_config_json; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr) return nullptr;
-    if (strcmp(field->key, "balancer_name") == 0) {
-      if (balancer_name != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_STRING) return nullptr;
-      balancer_name = field->value;
-    } else if (strcmp(field->key, "child_policy") == 0) {
-      if (output_child_policy != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_OBJECT) return nullptr;
-      output_child_policy = ParseLoadBalancingConfig(field->child);
-    } else if (strcmp(field->key, "fallback_policy") == 0) {
-      if (output_fallback_policy != nullptr) return nullptr;  // Duplicate.
-      if (field->type != GRPC_JSON_OBJECT) return nullptr;
-      output_fallback_policy = ParseLoadBalancingConfig(field->child);
-    }
-  }
-  if (balancer_name == nullptr) return nullptr;  // Required field.
-  if (output_child_policy != nullptr) *child_policy = output_child_policy;
-  if (output_fallback_policy != nullptr) {
-    *fallback_policy = output_fallback_policy;
-  }
-  return UniquePtr<char>(gpr_strdup(balancer_name));
-}
-
 grpc_json* ServiceConfig::ParseLoadBalancingConfig(grpc_json* lb_config_json) {
-  // Find the policy object.
-  grpc_json* policy = nullptr;
-  for (grpc_json* field = lb_config_json; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr || strcmp(field->key, "policy") != 0 ||
-        field->type != GRPC_JSON_OBJECT) {
-      return nullptr;
-    }
-    if (policy != nullptr) return nullptr;  // Duplicate.
-    policy = field;
+  if (lb_config_json == nullptr || lb_config_json->type != GRPC_JSON_OBJECT) {
+    return nullptr;
   }
-  // Find the specific policy content since the policy object is of type
-  // "oneof".
-  grpc_json* policy_content = nullptr;
-  for (grpc_json* field = policy->child; field != nullptr;
+  grpc_json* policy = nullptr;
+  for (grpc_json* field = lb_config_json->child; field != nullptr;
        field = field->next) {
     if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
       return nullptr;
-    if (policy_content != nullptr) return nullptr;  // Violate "oneof" type.
-    policy_content = field;
+    if (policy != nullptr) return nullptr;  // Violate "oneof" type.
+    policy = field;
   }
-  return policy_content;
+  return policy;
 }
 
 }  // namespace grpc_core
