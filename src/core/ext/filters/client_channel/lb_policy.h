@@ -77,6 +77,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Closure to run when pick is complete, if not completed synchronously.
     /// If null, pick will fail if a result is not available synchronously.
     grpc_closure* on_complete = nullptr;
+    // Callback set by lb policy to be notified of trailing metadata.
+    // The callback must be scheduled on grpc_schedule_on_exec_ctx.
+    grpc_closure* recv_trailing_metadata_ready = nullptr;
+    // The address that will be set to point to the original
+    // recv_trailing_metadata_ready callback, to be invoked by the LB
+    // policy's recv_trailing_metadata_ready callback when complete.
+    // Must be non-null if recv_trailing_metadata_ready is non-null.
+    grpc_closure** original_recv_trailing_metadata_ready = nullptr;
+    // If this is not nullptr, then the client channel will point it to the
+    // call's trailing metadata before invoking recv_trailing_metadata_ready.
+    // If this is nullptr, then the callback will still be called.
+    // The lb does not have ownership of the metadata.
+    grpc_metadata_batch** recv_trailing_metadata = nullptr;
     /// Will be set to the selected subchannel, or nullptr on failure or when
     /// the LB policy decides to drop the call.
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;

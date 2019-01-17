@@ -728,6 +728,25 @@ static void free_cached_send_op_data_for_completed_batch(
 }
 
 //
+// LB recv_trailing_metadata_ready handling
+//
+
+void maybe_inject_recv_trailing_metadata_ready_for_lb(
+    const grpc_core::LoadBalancingPolicy::PickState& pick,
+    grpc_transport_stream_op_batch* batch) {
+  if (pick.recv_trailing_metadata_ready != nullptr) {
+    *pick.original_recv_trailing_metadata_ready =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        pick.recv_trailing_metadata_ready;
+    if (pick.recv_trailing_metadata != nullptr) {
+      *pick.recv_trailing_metadata =
+          batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    }
+  }
+}
+
+//
 // pending_batches management
 //
 
@@ -851,6 +870,10 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
+      if (batch->recv_trailing_metadata && calld->have_request) {
+        maybe_inject_recv_trailing_metadata_ready_for_lb(
+            *calld->request->pick(), batch);
+      }
       batch->handler_private.extra_arg = calld;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         fail_pending_batch_in_call_combiner, batch,
@@ -903,6 +926,10 @@ static void pending_batches_resume(grpc_call_element* elem) {
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
+      if (batch->recv_trailing_metadata) {
+        maybe_inject_recv_trailing_metadata_ready_for_lb(
+            *calld->request->pick(), batch);
+      }
       batch->handler_private.extra_arg = calld->subchannel_call;
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         resume_pending_batch_in_call_combiner, batch,
@@ -1932,6 +1959,8 @@ static void add_retriable_recv_trailing_metadata_op(
   batch_data->batch.payload->recv_trailing_metadata
       .recv_trailing_metadata_ready =
       &retry_state->recv_trailing_metadata_ready;
+  maybe_inject_recv_trailing_metadata_ready_for_lb(*calld->request->pick(),
+                                                   &batch_data->batch);
 }
 
 // Helper function used to start a recv_trailing_metadata batch.  This
