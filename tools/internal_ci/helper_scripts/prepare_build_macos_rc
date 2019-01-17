@@ -38,7 +38,7 @@ if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   set -x
 fi
 
-set +ex  # rvm script is very verbose and exits with errorcode
+set +e  # rvm script is very verbose and exits with errorcode
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
 time rvm install 2.5.0
