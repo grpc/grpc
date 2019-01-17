@@ -1,0 +1,16 @@
+# .coveragerc to control coverage.py
+[run]
+branch = True
+cover_pylib = False
+concurrency = thread
+
+[report]
+ignore_errors = True
+skip_covered = True
+include =
+    *site-packages/grpc*
+omit =
+    *pb2.py
+    *pb2_grpc.py
+    *site-packages/grpc/beta*
+    *site-packages/grpc/framework*

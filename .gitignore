@@ -10,7 +10,8 @@ cython_debug/
 python_build/
 yapf_virtual_environment/
 python_pylint_venv/
-.coverage*
+.coverage
+.coverage.*
 .eggs
 htmlcov/
 dist/
@@ -19,6 +20,10 @@ py27_gevent/
 py27_native/
 py3[0-9]_gevent/
 py3[0-9]_native/
+src/python/grpcio_channelz/LICENSE
+src/python/grpcio_health_checking/LICENSE
+src/python/grpcio_reflection/LICENSE
+src/python/grpcio_status/LICENSE
 
 # Node installation output
 node_modules

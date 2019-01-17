@@ -17,6 +17,7 @@ import os
 import json
 import time
 import datetime
+import sys
 
 import requests
 import jwt
@@ -118,3 +119,12 @@ def check_on_pr(name, summary, success=True):
         })
     print('Result of Creating/Updating Check on PR:',
           json.dumps(resp.json(), indent=2))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print('Please specify the name of the check item.')
+    check_on_pr(
+        name=sys.argv[1],
+        summary=sys.stdin.read()
+    )
