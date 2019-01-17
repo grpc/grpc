@@ -141,7 +141,6 @@ class TestGevent(setuptools.Command):
         'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
         'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
-        'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
         # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
