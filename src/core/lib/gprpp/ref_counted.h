@@ -227,6 +227,8 @@ class RefCounted : public Impl {
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 
+  RefCount refs_;
+
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
@@ -236,8 +238,6 @@ class RefCounted : public Impl {
   void IncrementRefCount(const DebugLocation& location, const char* reason) {
     refs_.Ref(location, reason);
   }
-
-  RefCount refs_;
 };
 
 }  // namespace grpc_core

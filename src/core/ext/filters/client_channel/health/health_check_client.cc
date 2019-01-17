@@ -295,7 +295,9 @@ HealthCheckClient::CallState::~CallState() {
     gpr_log(GPR_INFO, "HealthCheckClient %p: destroying CallState %p",
             health_check_client_.get(), this);
   }
-  if (call_ != nullptr) GRPC_SUBCHANNEL_CALL_UNREF(call_, "call_ended");
+  // The subchannel call is in the arena, so reset the pointer before we destroy
+  // the arena.
+  call_.reset();
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
     if (context_[i].destroy != nullptr) {
       context_[i].destroy(context_[i].value);
@@ -430,7 +432,7 @@ void HealthCheckClient::CallState::StartBatchInCallCombiner(void* arg,
 
 void HealthCheckClient::CallState::StartBatch(
     grpc_transport_stream_op_batch* batch) {
-  batch->handler_private.extra_arg = call_;
+  batch->handler_private.extra_arg = call_.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(&call_combiner_, &batch->handler_private.closure,

@@ -99,7 +99,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-NULL.
-    SubchannelCall* call_;
+    RefCountedPtr<SubchannelCall> call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;

@@ -116,23 +116,14 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-namespace {
-
-void subchannel_call_destroy(void* arg, grpc_error* error) {
-  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
-  auto* self = static_cast<SubchannelCall*>(arg);
-  self->~SubchannelCall();
-}
-
-}  // namespace
-
-grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
-                                            SubchannelCall** call) {
+grpc_error* ConnectedSubchannel::CreateCall(
+    const CallArgs& args, RefCountedPtr<SubchannelCall>* call) {
   const size_t allocation_size =
       GetInitialCallSizeEstimate(args.parent_data_size);
-  *call = new (gpr_arena_alloc(args.arena, allocation_size))
-      SubchannelCall(Ref(DEBUG_LOCATION, "subchannel_call"), args);
-  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
+  *call = RefCountedPtr<SubchannelCall>(
+      new (gpr_arena_alloc(args.arena, allocation_size))
+          SubchannelCall(Ref(DEBUG_LOCATION, "subchannel_call"), args));
+  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call->get());
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */
@@ -144,7 +135,8 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       args.call_combiner /* call_combiner */
   };
   grpc_error* error = grpc_call_stack_init(
-      channel_stack_, 1, subchannel_call_destroy, *call, &call_args);
+      channel_stack_, 1 /* initial_refs */, nullptr /* destroy */,
+      nullptr /* destroy_arg*/, &call_args);
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
@@ -176,6 +168,7 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 //
 
 SubchannelCall::~SubchannelCall() {
+  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(this), nullptr,
                           schedule_closure_after_destroy_);
 }
@@ -205,15 +198,16 @@ void SubchannelCall::SetCleanupClosure(grpc_closure* closure) {
   schedule_closure_after_destroy_ = closure;
 }
 
-SubchannelCall* SubchannelCall::Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this),
-                      GRPC_SUBCHANNEL_REF_REASON);
-  return this;
+void SubchannelCall::Unref() {
+  if (refs_.Unref()) {
+    this->~SubchannelCall();
+  }
 }
 
-void SubchannelCall::Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this),
-                        GRPC_SUBCHANNEL_REF_REASON);
+void SubchannelCall::Unref(const DebugLocation& location, const char* reason) {
+  if (refs_.Unref(location, reason)) {
+    this->~SubchannelCall();
+  }
 }
 
 void SubchannelCall::MaybeInterceptRecvTrailingMetadata(

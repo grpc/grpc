@@ -394,7 +394,7 @@ struct subchannel_batch_data {
 
   gpr_refcount refs;
   grpc_call_element* elem;
-  grpc_core::SubchannelCall* subchannel_call;  // Holds a ref.
+  grpc_core::RefCountedPtr<grpc_core::SubchannelCall> subchannel_call;
   // The batch to use in the subchannel call.
   // Its payload field points to subchannel_call_retry_state.batch_payload.
   grpc_transport_stream_op_batch batch;
@@ -504,10 +504,6 @@ struct call_data {
         last_attempt_got_server_pushback(false) {}
 
   ~call_data() {
-    if (GPR_LIKELY(subchannel_call != nullptr)) {
-      GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call,
-                                 "client_channel_destroy_call");
-    }
     grpc_slice_unref_internal(path);
     GRPC_ERROR_UNREF(cancel_error);
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
@@ -536,7 +532,7 @@ struct call_data {
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
 
-  grpc_core::SubchannelCall* subchannel_call = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::SubchannelCall> subchannel_call;
 
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error = GRPC_ERROR_NONE;
@@ -896,14 +892,14 @@ static void pending_batches_resume(grpc_call_element* elem) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: starting %" PRIuPTR
             " pending batches on subchannel_call=%p",
-            chand, calld, num_batches, calld->subchannel_call);
+            chand, calld, num_batches, calld->subchannel_call.get());
   }
   grpc_core::CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
-      batch->handler_private.extra_arg = calld->subchannel_call;
+      batch->handler_private.extra_arg = calld->subchannel_call.get();
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         resume_pending_batch_in_call_combiner, batch,
                         grpc_schedule_on_exec_ctx);
@@ -992,12 +988,7 @@ static void do_retry(grpc_call_element* elem,
   const ClientChannelMethodParams::RetryPolicy* retry_policy =
       calld->method_params->retry_policy();
   GPR_ASSERT(retry_policy != nullptr);
-  // Reset subchannel call and connected subchannel.
-  if (calld->subchannel_call != nullptr) {
-    GRPC_SUBCHANNEL_CALL_UNREF(calld->subchannel_call,
-                               "client_channel_call_retry");
-    calld->subchannel_call = nullptr;
-  }
+  calld->subchannel_call.reset();
   if (calld->have_request) {
     calld->have_request = false;
     calld->request.Destroy();
@@ -1152,9 +1143,7 @@ namespace {
 subchannel_batch_data::subchannel_batch_data(grpc_call_element* elem,
                                              call_data* calld, int refcount,
                                              bool set_on_complete)
-    : elem(elem),
-      subchannel_call(GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call,
-                                               "batch_data_create")) {
+    : elem(elem), subchannel_call(calld->subchannel_call) {
   subchannel_call_retry_state* retry_state =
       static_cast<subchannel_call_retry_state*>(
           calld->subchannel_call->GetParentData());
@@ -1184,7 +1173,7 @@ void subchannel_batch_data::destroy() {
   if (batch.recv_trailing_metadata) {
     grpc_metadata_batch_destroy(&retry_state->recv_trailing_metadata);
   }
-  GRPC_SUBCHANNEL_CALL_UNREF(subchannel_call, "batch_data_unref");
+  subchannel_call.reset();
   call_data* calld = static_cast<call_data*>(elem->call_data);
   GRPC_CALL_STACK_UNREF(calld->owning_call, "batch_data");
 }
@@ -1767,7 +1756,7 @@ static void add_closure_for_subchannel_batch(
     grpc_core::CallCombinerClosureList* closures) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  batch->handler_private.extra_arg = calld->subchannel_call;
+  batch->handler_private.extra_arg = calld->subchannel_call.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                     start_batch_in_call_combiner, batch,
                     grpc_schedule_on_exec_ctx);
@@ -2179,7 +2168,7 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: starting %" PRIuPTR
             " retriable batches on subchannel_call=%p",
-            chand, calld, closures.size(), calld->subchannel_call);
+            chand, calld, closures.size(), calld->subchannel_call.get());
   }
   // Note: This will yield the call combiner.
   closures.RunClosures(calld->call_combiner);
@@ -2209,7 +2198,8 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
           call_args, &calld->subchannel_call);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
-            chand, calld, calld->subchannel_call, grpc_error_string(new_error));
+            chand, calld, calld->subchannel_call.get(),
+            grpc_error_string(new_error));
   }
   if (GPR_UNLIKELY(new_error != GRPC_ERROR_NONE)) {
     new_error = grpc_error_add_child(new_error, error);
@@ -2459,7 +2449,7 @@ static void cc_start_transport_stream_op_batch(
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: starting batch on subchannel_call=%p", chand,
-              calld, calld->subchannel_call);
+              calld, calld->subchannel_call.get());
     }
     pending_batches_resume(elem);
     return;
@@ -2708,8 +2698,8 @@ void grpc_client_channel_watch_connectivity_state(
       GRPC_ERROR_NONE);
 }
 
-grpc_core::SubchannelCall* grpc_client_channel_get_subchannel_call(
-    grpc_call_element* elem) {
+grpc_core::RefCountedPtr<grpc_core::SubchannelCall>
+grpc_client_channel_get_subchannel_call(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   return calld->subchannel_call;
 }

@@ -45,8 +45,6 @@
 #define GRPC_SUBCHANNEL_UNREF(p, r) (p)->Unref(__FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) (p)->WeakRef(__FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) (p)->WeakUnref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_CALL_REF(p, r) (p)->Ref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) (p)->Unref(__FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS \
   const char *file, int line, const char *reason
 #define GRPC_SUBCHANNEL_REF_REASON reason
@@ -59,8 +57,6 @@
 #define GRPC_SUBCHANNEL_UNREF(p, r) (p)->Unref()
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) (p)->WeakRef()
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) (p)->WeakUnref()
-#define GRPC_SUBCHANNEL_CALL_REF(p, r) (p)->Ref()
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) (p)->Unref()
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #define GRPC_SUBCHANNEL_REF_REASON ""
 #define GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS
@@ -94,7 +90,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  grpc_error* CreateCall(const CallArgs& args, SubchannelCall** call);
+  grpc_error* CreateCall(const CallArgs& args,
+                         RefCountedPtr<SubchannelCall>* call);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const grpc_channel_args* args() const { return args_; }
@@ -115,7 +112,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   const intptr_t socket_uuid_;
 };
 
-class SubchannelCall {
+class SubchannelCall : public RefCounted<SubchannelCall> {
  public:
   SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                  const ConnectedSubchannel::CallArgs& args)
@@ -138,9 +135,8 @@ class SubchannelCall {
   // Must be called once per call.
   void SetCleanupClosure(grpc_closure* closure);
 
-  // Refs and unrefs the underlying call stack.
-  SubchannelCall* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-  void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+  void Unref();
+  void Unref(const DebugLocation& location, const char* reason);
 
  private:
   // If channelz is enabled, intercepts recv_trailing so that we may check the
