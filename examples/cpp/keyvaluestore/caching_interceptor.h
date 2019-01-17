@@ -27,8 +27,9 @@
 #endif
 
 // This is a naive implementation of a cache. A new cache is for each call. For
-// each new key request, the key is first searched in the map and if found, the interceptor feeds in the value. Only
-// if the key is not found in the cache do we make a request.
+// each new key request, the key is first searched in the map and if found, the
+// interceptor fills in the return value without making a request to the server.
+// Only if the key is not found in the cache do we make a request.
 class CachingInterceptor : public grpc::experimental::Interceptor {
  public:
   CachingInterceptor(grpc::experimental::ClientRpcInfo* info) {}
@@ -101,11 +102,14 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
       auto* status = methods->GetRecvStatus();
       *status = grpc::Status::OK;
     }
+    // One of Hijack or Proceed always needs to be called to make progress.
     if (hijack) {
-      // Hijack is called only once when PRE_SEND_INITIAL_METADATA is present in the hook points
+      // Hijack is called only once when PRE_SEND_INITIAL_METADATA is present in
+      // the hook points
       methods->Hijack();
     } else {
-      // Proceed is an indicator that the interceptor is done intercepting the batch. 
+      // Proceed is an indicator that the interceptor is done intercepting the
+      // batch.
       methods->Proceed();
     }
   }
