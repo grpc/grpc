@@ -1206,8 +1206,9 @@ void GrpcLb::FillChildRefsForChannelz(
   if (rr_policy_ != nullptr) {
     rr_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
   }
-  if (lb_channel_uuid_ != 0) {
-    child_channels->push_back(lb_channel_uuid_);
+  gpr_atm uuid = gpr_atm_no_barrier_load(&lb_channel_uuid_);
+  if (uuid != 0) {
+    child_channels->push_back(uuid);
   }
 }
 
