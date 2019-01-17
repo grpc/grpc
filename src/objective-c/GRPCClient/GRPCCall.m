@@ -889,14 +889,18 @@ const char *kCFStreamVarName = "grpc_cfstream";
     [tokenProvider getTokenWithHandler:^(NSString *token) {
       __strong typeof(self) strongSelf = weakSelf;
       if (strongSelf) {
+        BOOL startCall = NO;
         @synchronized(strongSelf) {
-          if (strongSelf->_state == GRXWriterStateNotStarted) {
+          if (strongSelf->_state != GRXWriterStateFinished) {
+            startCall = YES;
             if (token) {
               strongSelf->_fetchedOauth2AccessToken = [token copy];
             }
           }
         }
-        [strongSelf startCallWithWriteable:writeable];
+        if (startCall) {
+          [strongSelf startCallWithWriteable:writeable];
+        }
       }
     }];
   } else {
