@@ -923,6 +923,7 @@ filegroups:
   - test/core/util/slice_splitter.h
   - test/core/util/subprocess.h
   - test/core/util/test_config.h
+  - test/core/util/test_lb_policies.h
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
@@ -947,6 +948,7 @@ filegroups:
   - test/core/util/subprocess_posix.cc
   - test/core/util/subprocess_windows.cc
   - test/core/util/test_config.cc
+  - test/core/util/test_lb_policies.cc
   - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:

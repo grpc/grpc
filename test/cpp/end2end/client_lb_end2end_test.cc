@@ -41,6 +41,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -52,6 +53,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include <gtest/gtest.h>
@@ -1263,6 +1265,81 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   CheckRpcSendOk(stub2, DEBUG_LOCATION);
   // Clean up.
   EnableDefaultHealthCheckService(false);
+}
+
+class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
+ protected:
+  void SetUp() override {
+    ClientLbEnd2endTest::SetUp();
+    grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+        ReportTrailerIntercepted, this);
+  }
+
+  void TearDown() override { ClientLbEnd2endTest::TearDown(); }
+
+  int trailers_intercepted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    return trailers_intercepted_;
+  }
+
+ private:
+  static void ReportTrailerIntercepted(void* arg) {
+    ClientLbInterceptTrailingMetadataTest* self =
+        static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
+    std::unique_lock<std::mutex> lock(self->mu_);
+    self->trailers_intercepted_++;
+  }
+
+  std::mutex mu_;
+  int trailers_intercepted_ = 0;
+};
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  auto channel = BuildChannel("intercept_trailing_metadata_lb");
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 3,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}");
+  auto channel = BuildChannel("intercept_trailing_metadata_lb", args);
+  auto stub = BuildStub(channel);
+  SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
 }
 
 }  // namespace

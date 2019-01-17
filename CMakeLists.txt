@@ -1782,6 +1782,7 @@ add_library(grpc_test_util
   test/core/util/subprocess_posix.cc
   test/core/util/subprocess_windows.cc
   test/core/util/test_config.cc
+  test/core/util/test_lb_policies.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   test/core/util/cmdline.cc
@@ -2107,6 +2108,7 @@ add_library(grpc_test_util_unsecure
   test/core/util/subprocess_posix.cc
   test/core/util/subprocess_windows.cc
   test/core/util/test_config.cc
+  test/core/util/test_lb_policies.cc
   test/core/util/tracer_util.cc
   test/core/util/trickle_endpoint.cc
   test/core/util/cmdline.cc
