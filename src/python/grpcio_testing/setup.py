@@ -50,18 +50,10 @@ INSTALL_REQUIRES = (
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 
-try:
-    import testing_commands as _testing_commands
-    # we are in the build environment, otherwise the above import fails
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        'preprocess': _testing_commands.Preprocess,
-    }
-except ImportError:
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        'preprocess': _NoOpCommand,
-    }
+COMMAND_CLASS = {
+    # wire up commands to no-op not to break the external dependencies
+    'preprocess': _NoOpCommand,
+}
 
 setuptools.setup(
     name='grpcio-testing',

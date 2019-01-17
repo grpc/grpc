@@ -21,7 +21,6 @@ import setuptools
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 REFLECTION_PROTO = os.path.join(
     ROOT_DIR, '../../proto/grpc/reflection/v1alpha/reflection.proto')
-LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
 
 
 class Preprocess(setuptools.Command):
@@ -43,8 +42,6 @@ class Preprocess(setuptools.Command):
                 REFLECTION_PROTO,
                 os.path.join(ROOT_DIR,
                              'grpc_reflection/v1alpha/reflection.proto'))
-        if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
 
 
 class BuildPackageProtos(setuptools.Command):
