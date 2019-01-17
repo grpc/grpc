@@ -20,9 +20,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-
 namespace Grpc.Core
 {
     /// <summary>
