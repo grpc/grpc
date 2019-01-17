@@ -45,25 +45,6 @@ namespace grpc_core {
 /// returned by \a interested_parties().
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
-  struct Args {
-    /// The combiner under which all LB policy calls will be run.
-    /// Policy does NOT take ownership of the reference to the combiner.
-    // TODO(roth): Once we have a C++-like interface for combiners, this
-    // API should change to take a smart pointer that does pass ownership
-    // of a reference.
-    grpc_combiner* combiner = nullptr;
-    /// Used to create channels and subchannels.
-    grpc_client_channel_factory* client_channel_factory = nullptr;
-    /// Subchannel pool.
-    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
-    /// Channel args from the resolver.
-    /// Note that the LB policy gets the set of addresses from the
-    /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
-    grpc_channel_args* args = nullptr;
-    /// Load balancing config from the resolver.
-    grpc_json* lb_config = nullptr;
-  };
-
   /// State used for an LB pick.
   struct PickState {
     /// Initial metadata associated with the picking call.
@@ -76,6 +57,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
     /// If null, pick will fail if a result is not available synchronously.
+// FIXME: remove
     grpc_closure* on_complete = nullptr;
     // Callback set by lb policy to be notified of trailing metadata.
     // The callback must be scheduled on grpc_schedule_on_exec_ctx.
@@ -97,7 +79,93 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// needed.
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
     /// Next pointer.  For internal use by LB policy.
+// FIXME: remove
     PickState* next = nullptr;
+  };
+
+  class SubchannelPicker : public RefCounted<SubchannelPicker> {
+   public:
+    enum PickResult {
+      // Pick complete.  If connected_subchannel is non-null, client channel
+      // can immediately proceed with the call on connected_subchannel;
+      // otherwise, call should be dropped.
+      PICK_COMPLETE,
+      // Pick cannot be completed until something changes on the control
+      // plane.  Client channel will queue the pick and try again the
+      // next time the picker is updated.
+      PICK_QUEUE,
+      // LB policy is in transient failure.  If the pick is wait_for_ready,
+      // client channel will wait for the next picker and try again;
+      // otherwise, the call will be failed immediately.
+      // The Pick() method will set its error parameter if this value is
+      // returned.
+      PICK_TRANSIENT_FAILURE,
+    };
+
+    SubchannelPicker() = default;
+    virtual ~SubchannelPicker() = default;
+
+    virtual PickResult Pick(PickState* pick, grpc_error** error) GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
+  class QueuePicker : public SubchannelPicker {
+   public:
+    PickResult Pick(PickState* pick, grpc_error** error) override {
+      return PICK_QUEUE;
+    }
+  };
+
+  class TransientFailurePicker : public SubchannelPicker {
+   public:
+    explicit TransientFailurePicker(grpc_error* error)
+        : error_(error) {}
+    ~TransientFailurePicker() { GRPC_ERROR_UNREF(error_); }
+
+    PickResult Pick(PickState* pick, grpc_error** error) override {
+      *error = GRPC_ERROR_REF(error_);
+      return PICK_TRANSIENT_FAILURE;
+    }
+
+   private:
+    grpc_error* error_;
+  };
+
+  class ChannelControlHelper : public RefCounted<ChannelControlHelper> {
+   public:
+    ChannelControlHelper() = default;
+    virtual ~ChannelControlHelper() = default;
+
+    // TODO(roth): In a subsequent PR, change this to also propagate the
+    // connectivity state?
+    virtual void UpdateState(RefCountedPtr<SubchannelPicker> picker)
+        GRPC_ABSTRACT;
+
+    virtual void RequestReresolution() GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
+  struct Args {
+    /// The combiner under which all LB policy calls will be run.
+    /// Policy does NOT take ownership of the reference to the combiner.
+    // TODO(roth): Once we have a C++-like interface for combiners, this
+    // API should change to take a smart pointer that does pass ownership
+    // of a reference.
+    grpc_combiner* combiner = nullptr;
+    /// Used to create channels and subchannels.
+    grpc_client_channel_factory* client_channel_factory = nullptr;
+    /// Subchannel pool.
+    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
+    /// Channel control helper.
+    RefCountedPtr<ChannelControlHelper> channel_control_helper;
+    /// Channel args from the resolver.
+    /// Note that the LB policy gets the set of addresses from the
+    /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
+    grpc_channel_args* args = nullptr;
+    /// Load balancing config from the resolver.
+    grpc_json* lb_config = nullptr;
   };
 
   // Not copyable nor movable.
@@ -113,6 +181,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void UpdateLocked(const grpc_channel_args& args,
                             grpc_json* lb_config) GRPC_ABSTRACT;
 
+// FIXME: remove
   /// Finds an appropriate subchannel for a call, based on data in \a pick.
   /// \a pick must remain alive until the pick is complete.
   ///
@@ -126,12 +195,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// set and true will be returned).
   virtual bool PickLocked(PickState* pick, grpc_error** error) GRPC_ABSTRACT;
 
+// FIXME: remove
   /// Cancels \a pick.
   /// The \a on_complete callback of the pending pick will be invoked with
   /// \a pick->connected_subchannel set to null.
   virtual void CancelPickLocked(PickState* pick,
                                 grpc_error* error) GRPC_ABSTRACT;
 
+// FIXME: remove
   /// Cancels all pending picks for which their \a initial_metadata_flags (as
   /// given in the call to \a PickLocked()) matches
   /// \a initial_metadata_flags_eq when ANDed with
@@ -139,6 +210,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
                                          uint32_t initial_metadata_flags_eq,
                                          grpc_error* error) GRPC_ABSTRACT;
+
+// FIXME: remove
+  /// Hands off pending picks to \a new_policy.
+  virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
+      GRPC_ABSTRACT;
 
   /// Requests a notification when the connectivity state of the policy
   /// changes from \a *state.  When that happens, sets \a *state to the
@@ -150,10 +226,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// the associated error, if any.
   virtual grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) GRPC_ABSTRACT;
-
-  /// Hands off pending picks to \a new_policy.
-  virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
-      GRPC_ABSTRACT;
 
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,
@@ -179,6 +251,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
         GRPC_ERROR_NONE);
   }
 
+// FIXME: remove
   /// Sets the re-resolution closure to \a request_reresolution.
   void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
     GPR_ASSERT(request_reresolution_ == nullptr);
@@ -186,6 +259,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   }
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
+  ChannelControlHelper* channel_control_helper() const {
+    return channel_control_helper_.get();
+  }
 
   /// Returns a pointer to the subchannel pool of type
   /// RefCountedPtr<SubchannelPoolInterface>.
@@ -198,7 +274,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-  explicit LoadBalancingPolicy(const Args& args);
+  explicit LoadBalancingPolicy(Args args);
   virtual ~LoadBalancingPolicy();
 
   grpc_combiner* combiner() const { return combiner_; }
@@ -211,6 +287,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
+// FIXME: remove
   /// Tries to request a re-resolution.
   void TryReresolutionLocked(grpc_core::TraceFlag* grpc_lb_trace,
                              grpc_error* error);
@@ -230,8 +307,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
+// FIXME: remove
   /// Callback to force a re-resolution.
   grpc_closure* request_reresolution_;
+  /// Channel control helper.
+  RefCountedPtr<ChannelControlHelper> channel_control_helper_;
 };
 
 }  // namespace grpc_core

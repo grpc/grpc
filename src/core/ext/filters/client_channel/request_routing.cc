@@ -665,6 +665,17 @@ void RequestRouter::OnResolverShutdownLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
+// FIXME: remove
+namespace {
+class NoOpChannelControlHelper
+    : public LoadBalancingPolicy::ChannelControlHelper {
+ public:
+  void UpdateState(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
+      override {}
+  void RequestReresolution() override {}
+};
+}  // namespace
+
 // Creates a new LB policy, replacing any previous one.
 // If the new policy is created successfully, sets *connectivity_state and
 // *connectivity_error to its initial connectivity state; otherwise,
@@ -679,6 +690,8 @@ void RequestRouter::CreateNewLbPolicyLocked(
   lb_policy_args.subchannel_pool = &subchannel_pool_;
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
+  lb_policy_args.channel_control_helper =
+      MakeRefCounted<NoOpChannelControlHelper>();
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
                                                              lb_policy_args);

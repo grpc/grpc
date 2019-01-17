@@ -56,7 +56,7 @@ constexpr char kRoundRobin[] = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
-  explicit RoundRobin(const Args& args);
+  explicit RoundRobin(Args args);
 
   const char* name() const override { return kRoundRobin; }
 
@@ -158,7 +158,6 @@ class RoundRobin : public LoadBalancingPolicy {
     void UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 
     size_t GetNextReadySubchannelIndexLocked();
-    void UpdateLastReadySubchannelIndexLocked(size_t last_ready_index);
 
    private:
     size_t num_ready_ = 0;
@@ -166,6 +165,71 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_transient_failure_ = 0;
     grpc_error* last_transient_failure_error_ = GRPC_ERROR_NONE;
     size_t last_ready_index_;  // Index into list of last pick.
+  };
+
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list,
+           size_t last_ready_index)
+        : parent_(parent), subchannel_list_(subchannel_list),
+          last_ready_index_(last_ready_index) {
+      for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
+        subchannels_.push_back(
+            subchannel_list->subchannel(i)->connected_subchannel()->Ref());
+      }
+    }
+
+    PickResult Pick(PickState* pick, grpc_error** error) override {
+      if (grpc_lb_round_robin_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "[RR %p picker %p] getting next ready subchannel (out of %"
+                PRIuPTR "), last_ready_index=%" PRIuPTR,
+                parent_, this, subchannels_.size(), last_ready_index_);
+      }
+      for (size_t i = 0; i < subchannels_.size(); ++i) {
+        const size_t index =
+            (i + last_ready_index_ + 1) % subchannels_.size();
+        if (grpc_lb_round_robin_trace.enabled()) {
+          gpr_log(
+              GPR_INFO,
+              "[RR %p picker %p] checking subchannel index %" PRIuPTR
+              ", subchannel_list %p: connected_subchannel=%p",
+              parent_, this, index, subchannel_list_,
+              subchannels_[index].get());
+        }
+        if (subchannels_[index].get() != nullptr) {
+          if (grpc_lb_round_robin_trace.enabled()) {
+            gpr_log(GPR_INFO,
+                    "[RR %p picker %p] found next ready connected subchannel "
+                    "(%p) at index %" PRIuPTR " of subchannel_list %p",
+                    parent_, this, subchannels_[index].get(), index,
+                    subchannel_list_);
+          }
+          last_ready_index_ = index;
+          pick->connected_subchannel = subchannels_[index];
+          return PICK_COMPLETE;
+        }
+      }
+      if (grpc_lb_round_robin_trace.enabled()) {
+        gpr_log(GPR_INFO, "[RR %p picker %p] no subchannels in ready state",
+                parent_, this);
+      }
+      *error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no subchannels in READY state");
+      return PICK_TRANSIENT_FAILURE;
+    }
+
+    RoundRobinSubchannelList* subchannel_list() const {
+      return subchannel_list_;
+    }
+
+   private:
+    // Using pointer values only, no refs held -- do not dereference!
+    RoundRobin* parent_;
+    RoundRobinSubchannelList* subchannel_list_;
+
+    size_t last_ready_index_;
+    InlinedVector<RefCountedPtr<ConnectedSubchannel>, 10> subchannels_;
   };
 
   // Helper class to ensure that any function that modifies the child refs
@@ -210,7 +274,7 @@ class RoundRobin : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
+RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
@@ -329,7 +393,6 @@ bool RoundRobin::DoPickLocked(PickState* pick) {
   const size_t next_ready_index =
       subchannel_list_->GetNextReadySubchannelIndexLocked();
   if (next_ready_index < subchannel_list_->num_subchannels()) {
-    /* readily available, report right away */
     RoundRobinSubchannelData* sd =
         subchannel_list_->subchannel(next_ready_index);
     GPR_ASSERT(sd->connected_subchannel() != nullptr);
@@ -341,8 +404,6 @@ bool RoundRobin::DoPickLocked(PickState* pick) {
               this, sd->subchannel(), pick->connected_subchannel.get(),
               sd->subchannel_list(), next_ready_index);
     }
-    /* only advance the last picked pointer if the selection was used */
-    subchannel_list_->UpdateLastReadySubchannelIndexLocked(next_ready_index);
     return true;
   }
   return false;
@@ -487,16 +548,23 @@ void RoundRobin::RoundRobinSubchannelList::
     /* 1) READY */
     grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_READY,
                                 GRPC_ERROR_NONE, "rr_ready");
+    p->channel_control_helper()->UpdateState(
+        MakeRefCounted<Picker>(p, this,
+        0 /* FIXME: randomize? */));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_CONNECTING,
                                 GRPC_ERROR_NONE, "rr_connecting");
+    p->channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>());
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(&p->state_tracker_,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
                                 GRPC_ERROR_REF(last_transient_failure_error_),
                                 "rr_exhausted_subchannels");
+    p->channel_control_helper()->UpdateState(
+        MakeRefCounted<TransientFailurePicker>(
+            GRPC_ERROR_REF(last_transient_failure_error_)));
   }
 }
 
@@ -607,6 +675,7 @@ RoundRobin::RoundRobinSubchannelList::GetNextReadySubchannelIndexLocked() {
                 " of subchannel_list %p",
                 policy(), subchannel(index)->subchannel(), index, this);
       }
+      last_ready_index_ = index;
       return index;
     }
   }
@@ -614,21 +683,6 @@ RoundRobin::RoundRobinSubchannelList::GetNextReadySubchannelIndexLocked() {
     gpr_log(GPR_INFO, "[RR %p] no subchannels in ready state", this);
   }
   return num_subchannels();
-}
-
-// Sets last_ready_index_ to last_ready_index.
-void RoundRobin::RoundRobinSubchannelList::UpdateLastReadySubchannelIndexLocked(
-    size_t last_ready_index) {
-  GPR_ASSERT(last_ready_index < num_subchannels());
-  last_ready_index_ = last_ready_index;
-  if (grpc_lb_round_robin_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[RR %p] setting last_ready_subchannel_index=%" PRIuPTR
-            " (SC %p, CSC %p)",
-            policy(), last_ready_index,
-            subchannel(last_ready_index)->subchannel(),
-            subchannel(last_ready_index)->connected_subchannel());
-  }
 }
 
 grpc_connectivity_state RoundRobin::CheckConnectivityLocked(
@@ -651,10 +705,13 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.
     // Otherwise, keep using the current subchannel list (ignore this update).
     if (subchannel_list_ == nullptr) {
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args");
       grpc_connectivity_state_set(
           &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-          "rr_update_missing");
+          GRPC_ERROR_REF(error), "rr_update_missing");
+      channel_control_helper()->UpdateState(
+          MakeRefCounted<TransientFailurePicker>(error));
     }
     return;
   }
@@ -678,10 +735,13 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
   if (!started_picking_ ||
       latest_pending_subchannel_list_->num_subchannels() == 0) {
     if (latest_pending_subchannel_list_->num_subchannels() == 0) {
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update");
       grpc_connectivity_state_set(
           &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
-          "rr_update_empty");
+          GRPC_ERROR_REF(error), "rr_update_empty");
+      channel_control_helper()->UpdateState(
+          MakeRefCounted<TransientFailurePicker>(error));
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else {
