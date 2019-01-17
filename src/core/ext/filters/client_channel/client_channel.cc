@@ -489,9 +489,9 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     // taking a lock on chand->info_mu, because this function is the
     // only thing that modifies its value, and it can only be invoked
     // once at any given time.
-    bool lb_policy_name_changed = chand->info_lb_policy_name == nullptr ||
-                                  gpr_stricmp(chand->info_lb_policy_name.get(),
-                                              lb_policy_name.get()) != 0;
+    bool lb_policy_name_changed =
+        chand->info_lb_policy_name == nullptr ||
+        strcmp(chand->info_lb_policy_name.get(), lb_policy_name.get()) != 0;
     if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
       // Continue using the same LB policy.  Update with new addresses.
       if (grpc_client_channel_trace.enabled()) {
@@ -570,12 +570,6 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
     } else {
       grpc_error* error = GRPC_ERROR_NONE;
       grpc_core::LoadBalancingPolicy::PickState pick_state;
-      pick_state.initial_metadata = nullptr;
-      pick_state.initial_metadata_flags = 0;
-      pick_state.on_complete = nullptr;
-      memset(&pick_state.subchannel_call_context, 0,
-             sizeof(pick_state.subchannel_call_context));
-      pick_state.user_data = nullptr;
       // Pick must return synchronously, because pick_state.on_complete is null.
       GPR_ASSERT(chand->lb_policy->PickLocked(&pick_state, &error));
       if (pick_state.connected_subchannel != nullptr) {

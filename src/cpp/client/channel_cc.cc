@@ -149,8 +149,9 @@ internal::Call Channel::CreateCallInternal(const internal::RpcMethod& method,
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we
   // should notify the interceptors too/
-  auto* info = context->set_client_rpc_info(
-      method.name(), this, interceptor_creators_, interceptor_pos);
+  auto* info =
+      context->set_client_rpc_info(method.name(), method.method_type(), this,
+                                   interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
   return internal::Call(c_call, this, cq, info);

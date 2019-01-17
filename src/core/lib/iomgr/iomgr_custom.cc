@@ -40,9 +40,11 @@ static void iomgr_platform_init(void) {
 }
 static void iomgr_platform_flush(void) {}
 static void iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
+static void iomgr_platform_shutdown_background_closure(void) {}
 
 static grpc_iomgr_platform_vtable vtable = {
-    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown,
+    iomgr_platform_shutdown_background_closure};
 
 void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
                             grpc_custom_resolver_vtable* resolver,

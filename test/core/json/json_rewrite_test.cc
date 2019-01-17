@@ -287,7 +287,7 @@ void test_rewrites() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_rewrites();
   gpr_log(GPR_INFO, "json_rewrite_test success");
   return 0;

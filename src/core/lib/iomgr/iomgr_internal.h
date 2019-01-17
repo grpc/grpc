@@ -35,6 +35,7 @@ typedef struct grpc_iomgr_platform_vtable {
   void (*init)(void);
   void (*flush)(void);
   void (*shutdown)(void);
+  void (*shutdown_background_closure)(void);
 } grpc_iomgr_platform_vtable;
 
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
@@ -51,6 +52,9 @@ void grpc_iomgr_platform_init(void);
 void grpc_iomgr_platform_flush(void);
 /** tear down all platform specific global iomgr structures */
 void grpc_iomgr_platform_shutdown(void);
+
+/** shut down all the closures registered in the background poller */
+void grpc_iomgr_platform_shutdown_background_closure(void);
 
 bool grpc_iomgr_abort_on_leaks(void);
 

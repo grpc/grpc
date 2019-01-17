@@ -186,8 +186,7 @@ class SubchannelData {
 
 // A list of subchannels.
 template <typename SubchannelListType, typename SubchannelDataType>
-class SubchannelList
-    : public InternallyRefCountedWithTracing<SubchannelListType> {
+class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  public:
   typedef InlinedVector<SubchannelDataType, 10> SubchannelVector;
 
@@ -226,8 +225,7 @@ class SubchannelList
   // Note: Caller must ensure that this is invoked inside of the combiner.
   void Orphan() override {
     ShutdownLocked();
-    InternallyRefCountedWithTracing<SubchannelListType>::Unref(DEBUG_LOCATION,
-                                                               "shutdown");
+    InternallyRefCounted<SubchannelListType>::Unref(DEBUG_LOCATION, "shutdown");
   }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -493,7 +491,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     const grpc_lb_addresses* addresses, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     const grpc_channel_args& args)
-    : InternallyRefCountedWithTracing<SubchannelListType>(tracer),
+    : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer),
       combiner_(GRPC_COMBINER_REF(combiner, "subchannel_list")) {

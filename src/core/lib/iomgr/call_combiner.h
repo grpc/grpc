@@ -27,7 +27,10 @@
 
 #include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/dynamic_annotations.h"
 
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
@@ -40,14 +43,38 @@
 
 extern grpc_core::TraceFlag grpc_call_combiner_trace;
 
-typedef struct {
+struct grpc_call_combiner {
   gpr_atm size = 0;  // size_t, num closures in queue or currently executing
   gpr_mpscq queue;
   // Either 0 (if not cancelled and no cancellation closure set),
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
   gpr_atm cancel_state = 0;
-} grpc_call_combiner;
+#ifdef GRPC_TSAN_ENABLED
+  // A fake ref-counted lock that is kept alive after the destruction of
+  // grpc_call_combiner, when we are running the original closure.
+  //
+  // Ideally we want to lock and unlock the call combiner as a pointer, when the
+  // callback is called. However, original_closure is free to trigger
+  // anything on the call combiner (including destruction of grpc_call).
+  // Thus, we need a ref-counted structure that can outlive the call combiner.
+  struct TsanLock
+      : public grpc_core::RefCounted<TsanLock,
+                                     grpc_core::NonPolymorphicRefCount> {
+    TsanLock() { TSAN_ANNOTATE_RWLOCK_CREATE(&taken); }
+    ~TsanLock() { TSAN_ANNOTATE_RWLOCK_DESTROY(&taken); }
+
+    // To avoid double-locking by the same thread, we should acquire/release
+    // the lock only when taken is false. On each acquire taken must be set to
+    // true.
+    std::atomic<bool> taken{false};
+  };
+  grpc_core::RefCountedPtr<TsanLock> tsan_lock =
+      grpc_core::MakeRefCounted<TsanLock>();
+  grpc_closure tsan_closure;
+  grpc_closure* original_closure;
+#endif
+};
 
 // Assumes memory was initialized to zero.
 void grpc_call_combiner_init(grpc_call_combiner* call_combiner);

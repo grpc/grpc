@@ -51,3 +51,6 @@
 [submodule "third_party/protoc-gen-validate"]
 	path = third_party/protoc-gen-validate
 	url = https://github.com/lyft/protoc-gen-validate.git
+[submodule "third_party/upb"]
+	path = third_party/upb
+	url = https://github.com/google/upb.git

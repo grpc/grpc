@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <grpcpp/impl/codegen/interceptor.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
 namespace grpc {
@@ -44,6 +45,8 @@ class ServerInterceptorFactoryInterface {
 
 class ServerRpcInfo {
  public:
+  enum class Type { UNARY, CLIENT_STREAMING, SERVER_STREAMING, BIDI_STREAMING };
+
   ~ServerRpcInfo(){};
 
   ServerRpcInfo(const ServerRpcInfo&) = delete;
@@ -51,12 +54,27 @@ class ServerRpcInfo {
   ServerRpcInfo& operator=(ServerRpcInfo&&) = default;
 
   // Getter methods
-  const char* method() { return method_; }
+  const char* method() const { return method_; }
+  Type type() const { return type_; }
   grpc::ServerContext* server_context() { return ctx_; }
 
  private:
-  ServerRpcInfo(grpc::ServerContext* ctx, const char* method)
-      : ctx_(ctx), method_(method) {
+  static_assert(Type::UNARY ==
+                    static_cast<Type>(internal::RpcMethod::NORMAL_RPC),
+                "violated expectation about Type enum");
+  static_assert(Type::CLIENT_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::CLIENT_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::SERVER_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::SERVER_STREAMING),
+                "violated expectation about Type enum");
+  static_assert(Type::BIDI_STREAMING ==
+                    static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
+                "violated expectation about Type enum");
+
+  ServerRpcInfo(grpc::ServerContext* ctx, const char* method,
+                internal::RpcMethod::RpcType type)
+      : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {
     ref_.store(1);
   }
 
@@ -86,6 +104,7 @@ class ServerRpcInfo {
 
   grpc::ServerContext* ctx_ = nullptr;
   const char* method_ = nullptr;
+  const Type type_;
   std::atomic_int ref_;
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 

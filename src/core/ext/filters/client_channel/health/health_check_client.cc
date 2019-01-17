@@ -51,8 +51,7 @@ HealthCheckClient::HealthCheckClient(
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
     grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode> channelz_node)
-    : InternallyRefCountedWithTracing<HealthCheckClient>(
-          &grpc_health_check_client_trace),
+    : InternallyRefCounted<HealthCheckClient>(&grpc_health_check_client_trace),
       service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
@@ -281,8 +280,7 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error** error) {
 HealthCheckClient::CallState::CallState(
     RefCountedPtr<HealthCheckClient> health_check_client,
     grpc_pollset_set* interested_parties)
-    : InternallyRefCountedWithTracing<CallState>(
-          &grpc_health_check_client_trace),
+    : InternallyRefCounted<CallState>(&grpc_health_check_client_trace),
       health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(gpr_arena_create(health_check_client_->connected_subchannel_

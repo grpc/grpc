@@ -208,7 +208,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_vectors(GRPC_SLICE_SPLIT_MERGE_ALL);
   test_vectors(GRPC_SLICE_SPLIT_ONE_BYTE);

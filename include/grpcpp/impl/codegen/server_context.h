@@ -66,13 +66,20 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
+template <class RequestType, class ResponseType>
 class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackClientStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
+template <class RequestType, class ResponseType>
+class CallbackBidiHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 class Call;
+class ServerReactor;
 }  // namespace internal
 
 class CompletionQueue;
@@ -270,8 +277,14 @@ class ServerContext {
   friend class ::grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
+  template <class RequestType, class ResponseType>
   friend class ::grpc::internal::CallbackUnaryHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackClientStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  template <class RequestType, class ResponseType>
+  friend class ::grpc::internal::CallbackBidiHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   friend class ::grpc::ClientContext;
@@ -282,7 +295,9 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(internal::Call* call, bool callback);
+  void BeginCompletionOp(internal::Call* call,
+                         std::function<void(bool)> callback,
+                         internal::ServerReactor* reactor);
   /// Return the tag queued by BeginCompletionOp()
   internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -299,12 +314,12 @@ class ServerContext {
   uint32_t initial_metadata_flags() const { return 0; }
 
   experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method,
+      const char* method, internal::RpcMethod::RpcType type,
       const std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>&
           creators) {
     if (creators.size() != 0) {
-      rpc_info_ = new experimental::ServerRpcInfo(this, method);
+      rpc_info_ = new experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;

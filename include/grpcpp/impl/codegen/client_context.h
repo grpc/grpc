@@ -46,6 +46,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -71,6 +72,12 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
+template <class Request, class Response>
+class ClientCallbackReaderWriterImpl;
+template <class Response>
+class ClientCallbackReaderImpl;
+template <class Request>
+class ClientCallbackWriterImpl;
 }  // namespace internal
 
 template <class R>
@@ -162,6 +169,8 @@ class InteropClientContextInspector;
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
+/// \warning The ClientContext instance used for creating an rpc must remain
+///          alive and valid for the lifetime of the rpc.
 class ClientContext {
  public:
   ClientContext();
@@ -394,6 +403,12 @@ class ClientContext {
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::CallbackUnaryCallImpl;
+  template <class Request, class Response>
+  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
+  template <class Response>
+  friend class ::grpc::internal::ClientCallbackReaderImpl;
+  template <class Request>
+  friend class ::grpc::internal::ClientCallbackWriterImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {
@@ -404,12 +419,13 @@ class ClientContext {
   void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::ChannelInterface* channel,
+      const char* method, internal::RpcMethod::RpcType type,
+      grpc::ChannelInterface* channel,
       const std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>&
           creators,
       size_t interceptor_pos) {
-    rpc_info_ = experimental::ClientRpcInfo(this, method, channel);
+    rpc_info_ = experimental::ClientRpcInfo(this, type, method, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }

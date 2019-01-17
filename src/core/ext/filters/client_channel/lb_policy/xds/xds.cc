@@ -166,8 +166,7 @@ class XdsLb : public LoadBalancingPolicy {
   };
 
   /// Contains a call to the LB server and all the data related to the call.
-  class BalancerCallState
-      : public InternallyRefCountedWithTracing<BalancerCallState> {
+  class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy);
@@ -199,7 +198,6 @@ class XdsLb : public LoadBalancingPolicy {
     static bool LoadReportCountersAreZero(xds_grpclb_request* request);
 
     static void MaybeSendClientLoadReportLocked(void* arg, grpc_error* error);
-    static void ClientLoadReportDoneLocked(void* arg, grpc_error* error);
     static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
     static void OnBalancerMessageReceivedLocked(void* arg, grpc_error* error);
     static void OnBalancerStatusReceivedLocked(void* arg, grpc_error* error);
@@ -489,7 +487,7 @@ grpc_lb_addresses* ProcessServerlist(const xds_grpclb_serverlist* serverlist) {
 
 XdsLb::BalancerCallState::BalancerCallState(
     RefCountedPtr<LoadBalancingPolicy> parent_xdslb_policy)
-    : InternallyRefCountedWithTracing<BalancerCallState>(&grpc_lb_xds_trace),
+    : InternallyRefCounted<BalancerCallState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(parent_xdslb_policy)) {
   GPR_ASSERT(xdslb_policy_ != nullptr);
   GPR_ASSERT(!xdslb_policy()->shutting_down_);
@@ -668,6 +666,7 @@ bool XdsLb::BalancerCallState::LoadReportCountersAreZero(
          (drop_entries == nullptr || drop_entries->empty());
 }
 
+// TODO(vpowar): Use LRS to send the client Load Report.
 void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
@@ -685,38 +684,8 @@ void XdsLb::BalancerCallState::SendClientLoadReportLocked() {
   } else {
     last_client_load_report_counters_were_zero_ = false;
   }
-  grpc_slice request_payload_slice = xds_grpclb_request_encode(request);
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
+  // TODO(vpowar): Send the report on LRS stream.
   xds_grpclb_request_destroy(request);
-  // Send the report.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = send_message_payload_;
-  GRPC_CLOSURE_INIT(&client_load_report_closure_, ClientLoadReportDoneLocked,
-                    this, grpc_combiner_scheduler(xdslb_policy()->combiner()));
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      lb_call_, &op, 1, &client_load_report_closure_);
-  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] call_error=%d", xdslb_policy_.get(),
-            call_error);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  }
-}
-
-void XdsLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
-                                                          grpc_error* error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  XdsLb* xdslb_policy = lb_calld->xdslb_policy();
-  grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
-  lb_calld->send_message_payload_ = nullptr;
-  if (error != GRPC_ERROR_NONE || lb_calld != xdslb_policy->lb_calld_.get()) {
-    lb_calld->Unref(DEBUG_LOCATION, "client_load_report");
-    return;
-  }
-  lb_calld->ScheduleNextClientLoadReportLocked();
 }
 
 void XdsLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
@@ -1811,7 +1780,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(addresses, args));
   }
 
-  const char* name() const override { return "xds"; }
+  const char* name() const override { return "xds_experimental"; }
 };
 
 }  // namespace

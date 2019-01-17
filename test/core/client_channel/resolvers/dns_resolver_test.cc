@@ -60,7 +60,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
 
   g_combiner = grpc_combiner_create();
