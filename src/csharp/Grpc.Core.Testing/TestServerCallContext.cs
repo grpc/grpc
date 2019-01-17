@@ -36,12 +36,73 @@ namespace Grpc.Core.Testing
             string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
             Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
         {
-            return new ServerCallContext(null, method, host, deadline, requestHeaders, cancellationToken,
-                (ctx, extraData, headers) => writeHeadersFunc(headers),
-                (ctx, extraData) => writeOptionsGetter(),
-                (ctx, extraData, options) => writeOptionsSetter(options),
-                (ctx, extraData) => peer, (ctx, callHandle) => authContext,
-                (ctx, callHandle, options) => contextPropagationToken);
+            return new TestingServerCallContext(method, host, deadline, requestHeaders, cancellationToken, peer,
+                authContext, contextPropagationToken, writeHeadersFunc, writeOptionsGetter, writeOptionsSetter);
+        }
+
+        private class TestingServerCallContext : ServerCallContext
+        {
+            private readonly string method;
+            private readonly string host;
+            private readonly DateTime deadline;
+            private readonly Metadata requestHeaders;
+            private readonly CancellationToken cancellationToken;
+            private readonly Metadata responseTrailers = new Metadata();
+            private Status status;
+            private readonly string peer;
+            private readonly AuthContext authContext;
+            private readonly ContextPropagationToken contextPropagationToken;
+            private readonly Func<Metadata, Task> writeHeadersFunc;
+            private readonly Func<WriteOptions> writeOptionsGetter;
+            private readonly Action<WriteOptions> writeOptionsSetter;
+
+            public TestingServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+                string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
+                Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
+            {
+                this.method = method;
+                this.host = host;
+                this.deadline = deadline;
+                this.requestHeaders = requestHeaders;
+                this.cancellationToken = cancellationToken;
+                this.responseTrailers = new Metadata();
+                this.status = Status.DefaultSuccess;
+                this.peer = peer;
+                this.authContext = authContext;
+                this.contextPropagationToken = contextPropagationToken;
+                this.writeHeadersFunc = writeHeadersFunc;
+                this.writeOptionsGetter = writeOptionsGetter;
+                this.writeOptionsSetter = writeOptionsSetter;
+            }
+
+            protected override string MethodInternal => method;
+
+            protected override string HostInternal => host;
+
+            protected override string PeerInternal => peer;
+
+            protected override DateTime DeadlineInternal => deadline;
+
+            protected override Metadata RequestHeadersInternal => requestHeaders;
+
+            protected override CancellationToken CancellationTokenInternal => cancellationToken;
+
+            protected override Metadata ResponseTrailersInternal => responseTrailers;
+
+            protected override Status StatusInternal { get => status; set => status = value; }
+            protected override WriteOptions WriteOptionsInternal { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+
+            protected override AuthContext AuthContextInternal => authContext;
+
+            protected override ContextPropagationToken CreatePropagationTokenInternal(ContextPropagationOptions options)
+            {
+                return contextPropagationToken;
+            }
+
+            protected override Task WriteResponseHeadersInternalAsync(Metadata responseHeaders)
+            {
+                return writeHeadersFunc(responseHeaders);
+            }
         }
     }
 }

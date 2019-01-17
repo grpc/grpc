@@ -28,51 +28,13 @@ namespace Grpc.Core
     /// <summary>
     /// Context for a server-side call.
     /// </summary>
-    public class ServerCallContext
+    public abstract class ServerCallContext
     {
-        private readonly object extraData;
-        private readonly string method;
-        private readonly string host;
-        private readonly DateTime deadline;
-        private readonly Metadata requestHeaders;
-        private readonly CancellationToken cancellationToken;
-        private readonly Metadata responseTrailers = new Metadata();
-        private readonly Func<ServerCallContext, object, Metadata, Task> writeHeadersFunc;
-        private readonly Func<ServerCallContext, object, WriteOptions> writeOptionsGetter;
-        private readonly Action<ServerCallContext, object, WriteOptions> writeOptionsSetter;
-
-        private readonly Func<ServerCallContext, object, string> peerGetter;
-        private readonly Func<ServerCallContext, object, AuthContext> authContextGetter;
-        private readonly Func<ServerCallContext, object, ContextPropagationOptions, ContextPropagationToken> contextPropagationTokenFactory;
-
-        private Status status = Status.DefaultSuccess;
-
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
-        /// To allow reuse of ServerCallContext API by different gRPC implementations, the implementation of some members is provided externally.
-        /// To provide state, this <c>ServerCallContext</c> instance and <c>extraData</c> will be passed to the member implementations.
         /// </summary>
-        internal ServerCallContext(object extraData,
-            string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
-            Func<ServerCallContext, object, Metadata, Task> writeHeadersFunc,
-            Func<ServerCallContext, object, WriteOptions> writeOptionsGetter,
-            Action<ServerCallContext, object, WriteOptions> writeOptionsSetter,
-            Func<ServerCallContext, object, string> peerGetter,
-            Func<ServerCallContext, object, AuthContext> authContextGetter,
-            Func<ServerCallContext, object, ContextPropagationOptions, ContextPropagationToken> contextPropagationTokenFactory)
+        protected ServerCallContext()
         {
-            this.extraData = extraData;
-            this.method = method;
-            this.host = host;
-            this.deadline = deadline;
-            this.requestHeaders = requestHeaders;
-            this.cancellationToken = cancellationToken;
-            this.writeHeadersFunc = GrpcPreconditions.CheckNotNull(writeHeadersFunc);
-            this.writeOptionsGetter = GrpcPreconditions.CheckNotNull(writeOptionsGetter);
-            this.writeOptionsSetter = GrpcPreconditions.CheckNotNull(writeOptionsSetter);
-            this.peerGetter = GrpcPreconditions.CheckNotNull(peerGetter);
-            this.authContextGetter = GrpcPreconditions.CheckNotNull(authContextGetter);
-            this.contextPropagationTokenFactory = GrpcPreconditions.CheckNotNull(contextPropagationTokenFactory);
         }
 
         /// <summary>
@@ -84,7 +46,7 @@ namespace Grpc.Core
         /// <returns>The task that finished once response headers have been written.</returns>
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
-            return writeHeadersFunc(this, extraData, responseHeaders);
+            return WriteResponseHeadersInternalAsync(responseHeaders);
         }
 
         /// <summary>
@@ -92,83 +54,41 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
         {
-            return contextPropagationTokenFactory(this, extraData, options);
+            return CreatePropagationTokenInternal(options);
         }
 
         /// <summary>Name of method called in this RPC.</summary>
-        public string Method
-        {
-            get
-            {
-                return this.method;
-            }
-        }
+        public string Method => MethodInternal;
 
         /// <summary>Name of host called in this RPC.</summary>
-        public string Host
-        {
-            get
-            {
-                return this.host;
-            }
-        }
+        public string Host => HostInternal;
 
         /// <summary>Address of the remote endpoint in URI format.</summary>
-        public string Peer
-        {
-            get
-            {
-                return peerGetter(this, extraData);
-            }
-        }
+        public string Peer => PeerInternal;
 
         /// <summary>Deadline for this RPC.</summary>
-        public DateTime Deadline
-        {
-            get
-            {
-                return this.deadline;
-            }
-        }
+        public DateTime Deadline => DeadlineInternal;
 
         /// <summary>Initial metadata sent by client.</summary>
-        public Metadata RequestHeaders
-        {
-            get
-            {
-                return this.requestHeaders;
-            }
-        }
+        public Metadata RequestHeaders => RequestHeadersInternal;
 
         /// <summary>Cancellation token signals when call is cancelled.</summary>
-        public CancellationToken CancellationToken
-        {
-            get
-            {
-                return this.cancellationToken;
-            }
-        }
+        public CancellationToken CancellationToken => CancellationTokenInternal;
 
         /// <summary>Trailers to send back to client after RPC finishes.</summary>
-        public Metadata ResponseTrailers
-        {
-            get
-            {
-                return this.responseTrailers;
-            }
-        }
+        public Metadata ResponseTrailers => ResponseTrailersInternal;
 
         /// <summary> Status to send back to client after RPC finishes.</summary>
         public Status Status
         {
             get
             {
-                return this.status;
+                return StatusInternal;
             }
 
             set
             {
-                status = value;
+                StatusInternal = value;
             }
         }
 
@@ -181,12 +101,12 @@ namespace Grpc.Core
         {
             get
             {
-                return writeOptionsGetter(this, extraData);
+                return WriteOptionsInternal;
             }
 
             set
             {
-                writeOptionsSetter(this, extraData, value);
+                WriteOptionsInternal = value;
             }
         }
 
@@ -194,12 +114,31 @@ namespace Grpc.Core
         /// Gets the <c>AuthContext</c> associated with this call.
         /// Note: Access to AuthContext is an experimental API that can change without any prior notice.
         /// </summary>
-        public AuthContext AuthContext
-        {
-            get
-            {
-                return authContextGetter(this, extraData);
-            }
-        }
+        public AuthContext AuthContext => AuthContextInternal;
+
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Task WriteResponseHeadersInternalAsync(Metadata responseHeaders);
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract ContextPropagationToken CreatePropagationTokenInternal(ContextPropagationOptions options);
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string MethodInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string HostInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string PeerInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract DateTime DeadlineInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Metadata RequestHeadersInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract CancellationToken CancellationTokenInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Metadata ResponseTrailersInternal { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Status StatusInternal { get; set; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract WriteOptions WriteOptionsInternal { get; set; }
+          /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract AuthContext AuthContextInternal { get; }
     }
 }
