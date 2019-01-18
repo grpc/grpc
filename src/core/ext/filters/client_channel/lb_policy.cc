@@ -34,7 +34,8 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args)
       subchannel_pool_(*args.subchannel_pool),
       interested_parties_(grpc_pollset_set_create()),
       request_reresolution_(nullptr),
-      channel_control_helper_(std::move(args.channel_control_helper)) {}
+      channel_control_helper_(std::move(args.channel_control_helper)),
+      channelz_node_(std::move(args.channelz_node)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);

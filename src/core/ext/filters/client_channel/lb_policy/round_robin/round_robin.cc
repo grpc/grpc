@@ -284,6 +284,8 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
     gpr_log(GPR_INFO, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels());
   }
+  // Initialize channel with a picker that will start us connecting.
+  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
 }
 
 RoundRobin::~RoundRobin() {
@@ -555,7 +557,8 @@ void RoundRobin::RoundRobinSubchannelList::
     /* 2) CONNECTING */
     grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_CONNECTING,
                                 GRPC_ERROR_NONE, "rr_connecting");
-    p->channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>());
+    p->channel_control_helper()->UpdateState(
+        MakeRefCounted<QueuePicker>(p->Ref()));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(&p->state_tracker_,
@@ -757,8 +760,8 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(std::move(args)));
   }
 
   const char* name() const override { return kRoundRobin; }

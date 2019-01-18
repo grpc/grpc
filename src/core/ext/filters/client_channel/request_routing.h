@@ -81,16 +81,11 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
       channelz::ChildRefsList* child_subchannels,
       channelz::ChildRefsList* child_channels) override;
 
-// FIXME: make this private, and client_channel a friend?
-// FIXME: should we take a ref?
-  void set_channelz_node(channelz::ClientChannelNode* node) {
-    channelz_node_ = node;
-  }
-
  private:
   using TraceStringVector = InlinedVector<char*, 3>;
 
   class ResolvingControlHelper;
+  class Picker;
 
   ~ResolvingLoadBalancingPolicy();
 
@@ -119,8 +114,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   UniquePtr<char> child_policy_name_;
   UniquePtr<char> child_lb_config_str_;
   grpc_json* child_lb_config_ = nullptr;
-
-  channelz::ClientChannelNode* channelz_node_ = nullptr;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;

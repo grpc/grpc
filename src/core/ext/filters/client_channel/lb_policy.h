@@ -52,6 +52,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Pointer to bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
+// FIXME: can this go back to not being a pointer?
     uint32_t* initial_metadata_flags = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
@@ -112,9 +113,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   class QueuePicker : public SubchannelPicker {
    public:
+    explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
+        : parent_(std::move(parent)) {}
+
     PickResult Pick(PickState* pick, grpc_error** error) override {
+      parent_->ExitIdleLocked();
       return PICK_QUEUE;
     }
+
+   private:
+    RefCountedPtr<LoadBalancingPolicy> parent_;
   };
 
   class TransientFailurePicker : public SubchannelPicker {
@@ -157,13 +165,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
     /// Subchannel pool.
+// FIXME: remove unnecessary indirection
     RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
     /// Channel control helper.
     RefCountedPtr<ChannelControlHelper> channel_control_helper;
+    /// Channelz node.
+    RefCountedPtr<channelz::ClientChannelNode> channelz_node;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
-    grpc_channel_args* args = nullptr;
+    const grpc_channel_args* args = nullptr;
     /// Load balancing config from the resolver.
     grpc_json* lb_config = nullptr;
   };
@@ -262,6 +273,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
   }
+  channelz::ClientChannelNode* channelz_node() const {
+    return channelz_node_.get();
+  }
 
   /// Returns a pointer to the subchannel pool of type
   /// RefCountedPtr<SubchannelPoolInterface>.
@@ -296,6 +310,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
     LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
     policy->ShutdownLocked();
+// FIXME: will this cause crashes for LB policies that try to access the
+// helper after shutdown is triggered (while cleaning up)?
+    policy->channel_control_helper_.reset();
     policy->Unref();
   }
 
@@ -312,6 +329,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_closure* request_reresolution_;
   /// Channel control helper.
   RefCountedPtr<ChannelControlHelper> channel_control_helper_;
+  /// Channelz node.
+  RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

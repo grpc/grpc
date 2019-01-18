@@ -247,10 +247,9 @@ class XdsLb : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(XdsLb* parent, RefCountedPtr<SubchannelPicker> child_picker,
+    Picker(RefCountedPtr<SubchannelPicker> child_picker,
            RefCountedPtr<XdsLbClientStats> client_stats)
-        : parent_(parent),
-          child_picker_(std::move(child_picker)),
+        : child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
@@ -270,10 +269,6 @@ class XdsLb : public LoadBalancingPolicy {
     }
 
    private:
-    // Storing the address for logging, but not holding a ref.
-    // DO NOT DEFERENCE!
-    XdsLb* parent_;
-
     RefCountedPtr<SubchannelPicker> child_picker_;
     RefCountedPtr<XdsLbClientStats> client_stats_;
   };
@@ -290,8 +285,7 @@ class XdsLb : public LoadBalancingPolicy {
         client_stats = parent_->lb_calld_->client_stats()->Ref();
       }
       parent_->channel_control_helper()->UpdateState(
-          MakeRefCounted<Picker>(parent_.get(), std::move(picker),
-                                 std::move(client_stats)));
+          MakeRefCounted<Picker>(std::move(picker), std::move(client_stats)));
     }
 
     void RequestReresolution() override {
@@ -1013,6 +1007,8 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
       arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
+  // Initialize channel with a picker that will start us connecting.
+  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
 }
 
 XdsLb::~XdsLb() {
@@ -1599,7 +1595,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     lb_policy_args.args = args;
     lb_policy_args.channel_control_helper =
         MakeRefCounted<XdsChannelControlHelper>(Ref());
-    CreateChildPolicyLocked(lb_policy_args);
+    CreateChildPolicyLocked(std::move(lb_policy_args));
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
               child_policy_.get());
@@ -1711,7 +1707,7 @@ void XdsLb::OnChildPolicyConnectivityChangedLocked(void* arg,
 class XdsFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
+      LoadBalancingPolicy::Args args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     const ServerAddressList* addresses =
         FindServerAddressListChannelArg(args.args);
@@ -1724,7 +1720,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (!found_balancer_address) return nullptr;
-    return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(args));
+    return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(std::move(args)));
   }
 
   const char* name() const override { return kXds; }

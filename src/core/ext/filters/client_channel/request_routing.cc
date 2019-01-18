@@ -83,12 +83,42 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
   void RequestReresolution() override {
     if (parent_->tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: started name re-resolving",
+      gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
     }
     parent_->resolver_->RequestReresolutionLocked();
   }
 
+ private:
+  RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
+};
+
+//
+// ResolvingLoadBalancingPolicy::Picker
+//
+
+class ResolvingLoadBalancingPolicy::Picker
+    : public LoadBalancingPolicy::SubchannelPicker {
+ public:
+  explicit Picker(RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
+      : parent_(std::move(parent)) {}
+
+  PickResult Pick(PickState* pick, grpc_error** error) override {
+// FIXME: is this check needed?
+    if (parent_->resolver_ == nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected");
+      return PICK_TRANSIENT_FAILURE;
+    }
+    // If we haven't yet started resolving, do so.
+    if (!parent_->started_resolving_) {
+      parent_->StartResolvingLocked();
+    }
+    // Tell channel to queue the pick until we create an LB policy and
+    // return its picker to the channel.
+    return PICK_QUEUE;
+  }
+
+ private:
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
 };
 
@@ -129,6 +159,8 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   if (resolver_ == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
+  // Return our picker to the channel.
+  channel_control_helper()->UpdateState(MakeRefCounted<Picker>(Ref()));
 }
 
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
@@ -199,6 +231,9 @@ void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
 void ResolvingLoadBalancingPolicy::FillChildRefsForChannelz(
     channelz::ChildRefsList* child_subchannels,
     channelz::ChildRefsList* child_channels) {
+  if (lb_policy_ != nullptr) {
+    lb_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
+  }
 }
 
 namespace {
@@ -225,11 +260,11 @@ const char* GetChannelConnectivityStateChangeString(
 void ResolvingLoadBalancingPolicy::SetConnectivityStateLocked(
     grpc_connectivity_state state, grpc_error* error, const char* reason) {
   if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "request_router=%p: setting connectivity state to %s",
+    gpr_log(GPR_INFO, "resolving_lb=%p: setting connectivity state to %s",
             this, grpc_connectivity_state_name(state));
   }
-  if (channelz_node_ != nullptr) {
-    channelz_node_->AddTraceEvent(
+  if (channelz_node() != nullptr) {
+    channelz_node()->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string(
             GetChannelConnectivityStateChangeString(state)));
@@ -239,7 +274,7 @@ void ResolvingLoadBalancingPolicy::SetConnectivityStateLocked(
 
 void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
   if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "request_router=%p: starting name resolution", this);
+    gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
   GPR_ASSERT(!started_resolving_);
   started_resolving_ = true;
@@ -251,11 +286,11 @@ void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
 // is shutting down.
 void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
   if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "request_router=%p: shutting down", this);
+    gpr_log(GPR_INFO, "resolving_lb=%p: shutting down", this);
   }
   if (lb_policy_ != nullptr) {
     if (tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: shutting down lb_policy=%p", this,
+      gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
               lb_policy_.get());
     }
     grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
@@ -268,7 +303,7 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
     // being orphaned.  This code is included just to be defensive.
     if (tracer_->enabled()) {
       gpr_log(GPR_INFO,
-              "request_router=%p: spontaneous shutdown from resolver %p", this,
+              "resolving_lb=%p: spontaneous shutdown from resolver %p", this,
               resolver_.get());
     }
     resolver_.reset();
@@ -304,17 +339,17 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
                                                              lb_policy_args);
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    if (channelz_node_ != nullptr) {
+    if (channelz_node() != nullptr) {
       char* str;
       gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
       trace_strings->push_back(str);
     }
   } else {
     if (tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: created new LB policy \"%s\" (%p)",
+      gpr_log(GPR_INFO, "resolving_lb=%p: created new LB policy \"%s\" (%p)",
               this, lb_policy_name, new_lb_policy.get());
     }
-    if (channelz_node_ != nullptr) {
+    if (channelz_node() != nullptr) {
       char* str;
       gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
       trace_strings->push_back(str);
@@ -322,7 +357,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     // Swap out the LB policy and update the fds in interested_parties_.
     if (lb_policy_ != nullptr) {
       if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "request_router=%p: shutting down lb_policy=%p", this,
+        gpr_log(GPR_INFO, "resolving_lb=%p: shutting down lb_policy=%p", this,
                 lb_policy_.get());
       }
       grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
@@ -376,8 +411,8 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
     char* flat;
     size_t flat_len = 0;
     flat = gpr_strvec_flatten(&v, &flat_len);
-    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                  grpc_slice_new(flat, flat_len, gpr_free));
+    channelz_node()->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                                   grpc_slice_new(flat, flat_len, gpr_free));
     gpr_strvec_destroy(&v);
   }
 }
@@ -393,7 +428,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
             : (error == GRPC_ERROR_NONE ? " (transient error)"
                                         : " (resolver shutdown)");
     gpr_log(GPR_INFO,
-            "request_router=%p: got resolver result: resolver_result=%p "
+            "resolving_lb=%p: got resolver result: resolver_result=%p "
             "error=%s%s",
             self, self->resolver_result_, grpc_error_string(error),
             disposition);
@@ -423,7 +458,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   // process, which means that we keep using the previous result (if any).
   if (self->resolver_result_ == nullptr) {
     if (self->tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: resolver transient failure", self);
+      gpr_log(GPR_INFO, "resolving_lb=%p: resolver transient failure", self);
     }
     // Don't override connectivity state if we already have an LB policy.
     if (self->lb_policy_ != nullptr) set_connectivity_state = false;
@@ -444,7 +479,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       // Continue using the same LB policy.  Update with new addresses.
       if (self->tracer_->enabled()) {
         gpr_log(GPR_INFO,
-                "request_router=%p: updating existing LB policy \"%s\" (%p)",
+                "resolving_lb=%p: updating existing LB policy \"%s\" (%p)",
                 self, lb_policy_name, self->lb_policy_.get());
       }
       self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
@@ -458,7 +493,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
                                     &trace_strings);
     }
     // Add channel trace event.
-    if (self->channelz_node_ != nullptr) {
+    if (self->channelz_node() != nullptr) {
       if (service_config_changed) {
         // TODO(ncteisen): might be worth somehow including a snippet of the
         // config in the trace, at the risk of bloating the trace logs.

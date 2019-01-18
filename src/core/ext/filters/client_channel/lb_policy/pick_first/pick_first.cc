@@ -177,6 +177,8 @@ PickFirst::PickFirst(Args args) : LoadBalancingPolicy(std::move(args)) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
   UpdateLocked(*args.args, args.lb_config);
+  // Initialize channel with a picker that will start us connecting.
+  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
 }
 
 PickFirst::~PickFirst() {
@@ -512,7 +514,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         p->selected_ = nullptr;
         StopConnectivityWatchLocked();
         p->channel_control_helper()->UpdateState(
-            MakeRefCounted<QueuePicker>());
+            MakeRefCounted<QueuePicker>(p->Ref()));
       } else {
         grpc_connectivity_state_set(&p->state_tracker_, connectivity_state,
                                     GRPC_ERROR_REF(error), "selected_changed");
@@ -642,8 +644,8 @@ void PickFirst::PickFirstSubchannelData::
 class PickFirstFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(std::move(args)));
   }
 
   const char* name() const override { return kPickFirst; }

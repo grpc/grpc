@@ -1157,6 +1157,8 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
       arg, {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
+  // Initialize channel with a picker that will start us connecting.
+  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
 }
 
 GrpcLb::~GrpcLb() {
@@ -1820,7 +1822,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.subchannel_pool = subchannel_pool();
     lb_policy_args.channel_control_helper =
         MakeRefCounted<RoundRobinChannelControlHelper>(Ref());
-    CreateRoundRobinPolicyLocked(lb_policy_args);
+    CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);
 }
@@ -1928,7 +1930,7 @@ void GrpcLb::OnRoundRobinConnectivityChangedLocked(void* arg,
 class GrpcLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
+      LoadBalancingPolicy::Args args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     const ServerAddressList* addresses =
         FindServerAddressListChannelArg(args.args);
@@ -1941,7 +1943,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     if (!found_balancer) return nullptr;
-    return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(args));
+    return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(std::move(args)));
   }
 
   const char* name() const override { return kGrpclb; }

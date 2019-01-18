@@ -212,10 +212,10 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
   CreateLoadBalancingPolicy(
-      const grpc_core::LoadBalancingPolicy::Args& args) const override {
+      grpc_core::LoadBalancingPolicy::Args args) const override {
     return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
         grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-            args, cb_, user_data_));
+            std::move(args), cb_, user_data_));
   }
 
   const char* name() const override {
