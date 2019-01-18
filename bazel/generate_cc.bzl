@@ -83,7 +83,7 @@ _generate_cc = rule(
     attrs = {
         "srcs": attr.label_list(
             mandatory = True,
-            non_empty = True,
+            allow_empty = False,
             providers = ["proto"],
         ),
         "plugin": attr.label(

@@ -82,16 +82,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
     // Create security connector
-    grpc_server_security_connector* sc = nullptr;
-    grpc_security_status status =
-        grpc_server_credentials_create_security_connector(creds, &sc);
-    GPR_ASSERT(status == GRPC_SECURITY_OK);
+    grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
+        creds->create_security_connector();
+    GPR_ASSERT(sc != nullptr);
     grpc_millis deadline = GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now();
 
     struct handshake_state state;
     state.done_callback_called = false;
     grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
-    grpc_server_security_connector_add_handshakers(sc, nullptr, handshake_mgr);
+    sc->add_handshakers(nullptr, handshake_mgr);
     grpc_handshake_manager_do_handshake(
         handshake_mgr, mock_endpoint, nullptr /* channel_args */, deadline,
         nullptr /* acceptor */, on_handshake_done, &state);
@@ -110,7 +109,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     GPR_ASSERT(state.done_callback_called);
 
     grpc_handshake_manager_destroy(handshake_mgr);
-    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "test");
+    sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
     grpc_slice_unref(cert_slice);
     grpc_slice_unref(key_slice);

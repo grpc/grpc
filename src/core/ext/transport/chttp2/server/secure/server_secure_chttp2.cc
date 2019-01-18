@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -40,9 +41,8 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
                                       grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_error* err = GRPC_ERROR_NONE;
-  grpc_server_security_connector* sc = nullptr;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
-  grpc_security_status status;
   grpc_channel_args* args = nullptr;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
@@ -54,30 +54,27 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
   }
-  status = grpc_server_credentials_create_security_connector(creds, &sc);
-  if (status != GRPC_SECURITY_OK) {
+  sc = creds->create_security_connector();
+  if (sc == nullptr) {
     char* msg;
     gpr_asprintf(&msg,
                  "Unable to create secure server with credentials of type %s.",
-                 creds->type);
-    err = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg),
-                             GRPC_ERROR_INT_SECURITY_STATUS, status);
+                 creds->type());
+    err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     goto done;
   }
   // Create channel args.
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_server_credentials_to_arg(creds);
-  args_to_add[1] = grpc_security_connector_to_arg(&sc->base);
+  args_to_add[1] = grpc_security_connector_to_arg(sc.get());
   args =
       grpc_channel_args_copy_and_add(grpc_server_get_channel_args(server),
                                      args_to_add, GPR_ARRAY_SIZE(args_to_add));
   // Add server port.
   err = grpc_chttp2_server_add_port(server, addr, args, &port_num);
 done:
-  if (sc != nullptr) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
-  }
+  sc.reset(DEBUG_LOCATION, "server");
 
   if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);

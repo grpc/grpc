@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.18.0-dev'
+  version = '1.19.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -59,7 +59,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
     ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
-    ss.private_header_files = "#{src_dir}/private/*.h"
+    ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/*.h"
 
     ss.dependency 'gRPC-Core', version
   end

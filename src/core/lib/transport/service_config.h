@@ -240,6 +240,7 @@ RefCountedPtr<T> ServiceConfig::MethodConfigTableLookup(
     value = table.Get(wildcard_path);
     grpc_slice_unref_internal(wildcard_path);
     gpr_free(path_str);
+    if (value == nullptr) return nullptr;
   }
   return RefCountedPtr<T>(*value);
 }

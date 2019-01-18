@@ -98,6 +98,8 @@ class ReconnectTest(unittest.TestCase):
         server.add_insecure_port('[::]:{}'.format(port))
         server.start()
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
+        server.stop(None)
+        channel.close()
 
 
 if __name__ == '__main__':

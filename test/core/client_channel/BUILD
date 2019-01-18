@@ -44,6 +44,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "parse_address_with_named_scope_id_test",
+    srcs = ["parse_address_with_named_scope_id_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "uri_parser_test",
     srcs = ["uri_parser_test.cc"],
     language = "C++",
@@ -64,7 +75,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

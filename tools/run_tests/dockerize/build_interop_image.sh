@@ -16,7 +16,7 @@
 # This script is invoked by run_interop_tests.py to build the docker image
 # for interop testing. You should never need to call this script on your own.
 
-set -x
+set -ex
 
 # Params:
 #  INTEROP_IMAGE - name of tag of the final interop image
@@ -89,9 +89,6 @@ else
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
 fi
-
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
 
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 

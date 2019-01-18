@@ -30,9 +30,11 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
@@ -41,16 +43,16 @@ namespace grpc_core {
 namespace internal {
 
 ProcessedResolverResult::ProcessedResolverResult(
-    const grpc_channel_args* resolver_result, bool parse_retry) {
+    const grpc_channel_args& resolver_result, bool parse_retry) {
   ProcessServiceConfig(resolver_result, parse_retry);
   // If no LB config was found above, just find the LB policy name then.
   if (lb_policy_name_ == nullptr) ProcessLbPolicyName(resolver_result);
 }
 
 void ProcessedResolverResult::ProcessServiceConfig(
-    const grpc_channel_args* resolver_result, bool parse_retry) {
+    const grpc_channel_args& resolver_result, bool parse_retry) {
   const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result, GRPC_ARG_SERVICE_CONFIG);
+      grpc_channel_args_find(&resolver_result, GRPC_ARG_SERVICE_CONFIG);
   const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
   if (service_config_json != nullptr) {
     service_config_json_.reset(gpr_strdup(service_config_json));
@@ -58,7 +60,7 @@ void ProcessedResolverResult::ProcessServiceConfig(
     if (service_config_ != nullptr) {
       if (parse_retry) {
         channel_arg =
-            grpc_channel_args_find(resolver_result, GRPC_ARG_SERVER_URI);
+            grpc_channel_args_find(&resolver_result, GRPC_ARG_SERVER_URI);
         const char* server_uri = grpc_channel_arg_get_string(channel_arg);
         GPR_ASSERT(server_uri != nullptr);
         grpc_uri* uri = grpc_uri_parse(server_uri, true);
@@ -76,7 +78,7 @@ void ProcessedResolverResult::ProcessServiceConfig(
 }
 
 void ProcessedResolverResult::ProcessLbPolicyName(
-    const grpc_channel_args* resolver_result) {
+    const grpc_channel_args& resolver_result) {
   // Prefer the LB policy name found in the service config. Note that this is
   // checking the deprecated loadBalancingPolicy field, rather than the new
   // loadBalancingConfig field.
@@ -94,17 +96,23 @@ void ProcessedResolverResult::ProcessLbPolicyName(
   // Otherwise, find the LB policy name set by the client API.
   if (lb_policy_name_ == nullptr) {
     const grpc_arg* channel_arg =
-        grpc_channel_args_find(resolver_result, GRPC_ARG_LB_POLICY_NAME);
+        grpc_channel_args_find(&resolver_result, GRPC_ARG_LB_POLICY_NAME);
     lb_policy_name_.reset(gpr_strdup(grpc_channel_arg_get_string(channel_arg)));
   }
   // Special case: If at least one balancer address is present, we use
   // the grpclb policy, regardless of what the resolver has returned.
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(resolver_result, GRPC_ARG_LB_ADDRESSES);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
-    if (grpc_lb_addresses_contains_balancer_address(*addresses)) {
+  const ServerAddressList* addresses =
+      FindServerAddressListChannelArg(&resolver_result);
+  if (addresses != nullptr) {
+    bool found_balancer_address = false;
+    for (size_t i = 0; i < addresses->size(); ++i) {
+      const ServerAddress& address = (*addresses)[i];
+      if (address.IsBalancer()) {
+        found_balancer_address = true;
+        break;
+      }
+    }
+    if (found_balancer_address) {
       if (lb_policy_name_ != nullptr &&
           strcmp(lb_policy_name_.get(), "grpclb") != 0) {
         gpr_log(GPR_INFO,

@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -38,8 +39,6 @@
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
-typedef struct grpc_subchannel_args grpc_subchannel_args;
-typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -85,28 +84,31 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
     size_t parent_data_size;
   };
 
-  explicit ConnectedSubchannel(
-      grpc_channel_stack* channel_stack,
+  ConnectedSubchannel(
+      grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
           channelz_subchannel,
       intptr_t socket_uuid);
   ~ConnectedSubchannel();
 
-  grpc_channel_stack* channel_stack() { return channel_stack_; }
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
-  channelz::SubchannelNode* channelz_subchannel() {
+
+  grpc_channel_stack* channel_stack() const { return channel_stack_; }
+  const grpc_channel_args* args() const { return args_; }
+  channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
-  intptr_t socket_uuid() { return socket_uuid_; }
+  intptr_t socket_uuid() const { return socket_uuid_; }
 
   size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
  private:
   grpc_channel_stack* channel_stack_;
+  grpc_channel_args* args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
@@ -160,10 +162,6 @@ void grpc_subchannel_notify_on_state_change(
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
 
-/** return the subchannel index key for \a subchannel */
-const grpc_subchannel_key* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel);
-
 // Resets the connection backoff of the subchannel.
 // TODO(roth): Move connection backoff out of subchannels and up into LB
 // policy code (probably by adding a SubchannelGroup between
@@ -183,21 +181,9 @@ void grpc_subchannel_call_set_cleanup_closure(
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);
 
-struct grpc_subchannel_args {
-  /* When updating this struct, also update subchannel_index.c */
-
-  /** Channel filters for this channel - wrapped factories will likely
-      want to mutate this */
-  const grpc_channel_filter** filters;
-  /** The number of filters in the above array */
-  size_t filter_count;
-  /** Channel arguments to be supplied to the newly created channel */
-  const grpc_channel_args* args;
-};
-
 /** create a subchannel given a connector */
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args);
+                                        const grpc_channel_args* args);
 
 /// Sets \a addr from \a args.
 void grpc_get_subchannel_address_arg(const grpc_channel_args* args,

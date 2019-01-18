@@ -29,11 +29,9 @@ cdef class Server:
     self._vtable.copy = &_copy_pointer
     self._vtable.destroy = &_destroy_pointer
     self._vtable.cmp = &_compare_pointer
-    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
-        arguments)
-    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
-    self.c_server = grpc_server_create(c_arguments, NULL)
-    arguments_processor.un_c()
+    cdef _ChannelArgs channel_args = _ChannelArgs.from_args(
+        arguments, &self._vtable)
+    self.c_server = grpc_server_create(channel_args.c_args(), NULL)
     self.references.append(arguments)
     self.is_started = False
     self.is_shutting_down = False
@@ -128,7 +126,10 @@ cdef class Server:
       with nogil:
         grpc_server_cancel_all_calls(self.c_server)
 
-  def __dealloc__(self):
+  # TODO(https://github.com/grpc/grpc/issues/17515) Determine what, if any,
+  # portion of this is safe to call from __dealloc__, and potentially remove
+  # backup_shutdown_queue.
+  def destroy(self):
     if self.c_server != NULL:
       if not self.is_started:
         pass
@@ -146,4 +147,8 @@ cdef class Server:
         while not self.is_shutdown:
           time.sleep(0)
       grpc_server_destroy(self.c_server)
-    grpc_shutdown()
+      self.c_server = NULL
+
+  def __dealloc__(self):
+    if self.c_server == NULL:
+      grpc_shutdown()

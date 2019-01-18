@@ -37,6 +37,10 @@
 
 #include <AvailabilityMacros.h>
 
+#include "GRPCCallOptions.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
 #pragma mark gRPC errors
 
 /** Domain of NSError objects produced by gRPC. */
@@ -140,42 +144,148 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 };
 
 /**
- * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
- */
-typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
-  /** Signal that there is no guarantees on how the call affects the server state. */
-  GRPCCallSafetyDefault = 0,
-  /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
-  GRPCCallSafetyIdempotentRequest = 1,
-  /** Signal that the call is cacheable and will not affect server state. gRPC is free to use GET
-     verb. */
-  GRPCCallSafetyCacheableRequest = 2,
-};
-
-/**
  * Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
  * the server.
  */
-extern id const kGRPCHeadersKey;
-extern id const kGRPCTrailersKey;
+extern NSString *const kGRPCHeadersKey;
+extern NSString *const kGRPCTrailersKey;
+
+/** An object can implement this protocol to receive responses from server from a call. */
+@protocol GRPCResponseHandler<NSObject>
+
+@required
+
+/**
+ * All the responses must be issued to a user-provided dispatch queue. This property specifies the
+ * dispatch queue to be used for issuing the notifications.
+ */
+@property(atomic, readonly) dispatch_queue_t dispatchQueue;
+
+@optional
+
+/**
+ * Issued when initial metadata is received from the server.
+ */
+- (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
+
+/**
+ * Issued when a message is received from the server. The message is the raw data received from the
+ * server, with decompression and without proto deserialization.
+ */
+- (void)didReceiveRawMessage:(nullable NSData *)message;
+
+/**
+ * Issued when a call finished. If the call finished successfully, \a error is nil and \a
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * is non-nil and contains the corresponding error information, including gRPC error codes and
+ * error descriptions.
+ */
+- (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                               error:(nullable NSError *)error;
+
+@end
+
+/**
+ * Call related parameters. These parameters are automatically specified by Protobuf. If directly
+ * using the \a GRPCCall2 class, users should specify these parameters manually.
+ */
+@interface GRPCRequestOptions : NSObject<NSCopying>
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+/** Initialize with all properties. */
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                      safety:(GRPCCallSafety)safety NS_DESIGNATED_INITIALIZER;
+
+/** The host serving the RPC service. */
+@property(copy, readonly) NSString *host;
+/** The path to the RPC call. */
+@property(copy, readonly) NSString *path;
+/**
+ * Specify whether the call is idempotent or cachable. gRPC may select different HTTP verbs for the
+ * call based on this information. The default verb used by gRPC is POST.
+ */
+@property(readonly) GRPCCallSafety safety;
+
+@end
 
 #pragma mark GRPCCall
 
-/** Represents a single gRPC remote call. */
+/**
+ * A \a GRPCCall2 object represents an RPC call.
+ */
+@interface GRPCCall2 : NSObject
+
+- (instancetype)init NS_UNAVAILABLE;
+
++ (instancetype) new NS_UNAVAILABLE;
+
+/**
+ * Designated initializer for a call.
+ * \param requestOptions Protobuf generated parameters for the call.
+ * \param responseHandler The object to which responses should be issued.
+ * \param callOptions Options for the call.
+ */
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler
+                           callOptions:(nullable GRPCCallOptions *)callOptions
+    NS_DESIGNATED_INITIALIZER;
+/**
+ * Convenience initializer for a call that uses default call options (see GRPCCallOptions.m for
+ * the default options).
+ */
+- (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                       responseHandler:(id<GRPCResponseHandler>)responseHandler;
+
+/**
+ * Starts the call. This function must only be called once for each instance.
+ */
+- (void)start;
+
+/**
+ * Cancel the request of this call at best effort. It attempts to notify the server that the RPC
+ * should be cancelled, and issue didCloseWithTrailingMetadata:error: callback with error code
+ * CANCELED if no other error code has already been issued.
+ */
+- (void)cancel;
+
+/**
+ * Send a message to the server. Data are sent as raw bytes in gRPC message frames.
+ */
+- (void)writeData:(NSData *)data;
+
+/**
+ * Finish the RPC request and half-close the call. The server may still send messages and/or
+ * trailers to the client. The method must only be called once and after start is called.
+ */
+- (void)finish;
+
+/**
+ * Get a copy of the original call options.
+ */
+@property(readonly, copy) GRPCCallOptions *callOptions;
+
+/** Get a copy of the original request options. */
+@property(readonly, copy) GRPCRequestOptions *requestOptions;
+
+@end
+
+NS_ASSUME_NONNULL_END
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+
+/**
+ * This interface is deprecated. Please use \a GRPCcall2.
+ *
+ * Represents a single gRPC remote call.
+ */
 @interface GRPCCall : GRXWriter
 
-/**
- * The authority for the RPC. If nil, the default authority will be used. This property must be nil
- * when Cronet transport is enabled.
- */
-@property(atomic, copy, readwrite) NSString *serverName;
-
-/**
- * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
- * positive, the gRPC call returns with status GRPCErrorCodeDeadlineExceeded if it is not completed
- * within \a timeout seconds. A negative value is not allowed.
- */
-@property NSTimeInterval timeout;
+- (instancetype)init NS_UNAVAILABLE;
 
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
@@ -236,7 +346,7 @@ extern id const kGRPCTrailersKey;
  */
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
-              requestsWriter:(GRXWriter *)requestsWriter NS_DESIGNATED_INITIALIZER;
+              requestsWriter:(GRXWriter *)requestWriter;
 
 /**
  * Finishes the request side of this call, notifies the server that the RPC should be cancelled, and
@@ -245,21 +355,13 @@ extern id const kGRPCTrailersKey;
 - (void)cancel;
 
 /**
- * Set the call flag for a specific host path.
- *
- * Host parameter should not contain the scheme (http:// or https://), only the name or IP addr
- * and the port number, for example @"localhost:5050".
+ * The following methods are deprecated.
  */
 + (void)setCallSafety:(GRPCCallSafety)callSafety host:(NSString *)host path:(NSString *)path;
-
-/**
- * Set the dispatch queue to be used for callbacks.
- *
- * This configuration is only effective before the call starts.
- */
+@property(atomic, copy, readwrite) NSString *serverName;
+@property NSTimeInterval timeout;
 - (void)setResponseDispatchQueue:(dispatch_queue_t)queue;
 
-// TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end
 
 #pragma mark Backwards compatibiity
@@ -281,4 +383,5 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 /** This is only needed for backwards-compatibility. */
 @interface NSMutableDictionary (GRPCRequestHeaders)<GRPCRequestHeaders>
 @end
+#pragma clang diagnostic pop
 #pragma clang diagnostic pop

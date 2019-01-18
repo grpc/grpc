@@ -15,3 +15,18 @@
 
 cdef object _custom_op_on_c_call(int op, grpc_call *call):
   raise NotImplementedError("No custom hooks are implemented")
+
+def install_census_context_from_call(Call call):
+  pass
+
+def uninstall_context():
+  pass
+
+def build_context():
+  pass
+
+cdef class CensusContext:
+  pass
+
+def set_census_context_on_call(_CallState call_state, CensusContext census_ctx):
+  pass

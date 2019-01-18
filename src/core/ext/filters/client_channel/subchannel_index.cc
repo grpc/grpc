@@ -39,55 +39,33 @@ static gpr_mu g_mu;
 static gpr_refcount g_refcount;
 
 struct grpc_subchannel_key {
-  grpc_subchannel_args args;
+  grpc_channel_args* args;
 };
 
-static bool g_force_creation = false;
-
 static grpc_subchannel_key* create_key(
-    const grpc_subchannel_args* args,
+    const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
   grpc_subchannel_key* k =
       static_cast<grpc_subchannel_key*>(gpr_malloc(sizeof(*k)));
-  k->args.filter_count = args->filter_count;
-  if (k->args.filter_count > 0) {
-    k->args.filters = static_cast<const grpc_channel_filter**>(
-        gpr_malloc(sizeof(*k->args.filters) * k->args.filter_count));
-    memcpy(reinterpret_cast<grpc_channel_filter*>(k->args.filters),
-           args->filters, sizeof(*k->args.filters) * k->args.filter_count);
-  } else {
-    k->args.filters = nullptr;
-  }
-  k->args.args = copy_channel_args(args->args);
+  k->args = copy_channel_args(args);
   return k;
 }
 
-grpc_subchannel_key* grpc_subchannel_key_create(
-    const grpc_subchannel_args* args) {
+grpc_subchannel_key* grpc_subchannel_key_create(const grpc_channel_args* args) {
   return create_key(args, grpc_channel_args_normalize);
 }
 
 static grpc_subchannel_key* subchannel_key_copy(grpc_subchannel_key* k) {
-  return create_key(&k->args, grpc_channel_args_copy);
+  return create_key(k->args, grpc_channel_args_copy);
 }
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b) {
-  // To pretend the keys are different, return a non-zero value.
-  if (GPR_UNLIKELY(g_force_creation)) return 1;
-  int c = GPR_ICMP(a->args.filter_count, b->args.filter_count);
-  if (c != 0) return c;
-  if (a->args.filter_count > 0) {
-    c = memcmp(a->args.filters, b->args.filters,
-               a->args.filter_count * sizeof(*a->args.filters));
-    if (c != 0) return c;
-  }
-  return grpc_channel_args_compare(a->args.args, b->args.args);
+  return grpc_channel_args_compare(a->args, b->args);
 }
 
 void grpc_subchannel_key_destroy(grpc_subchannel_key* k) {
-  gpr_free(reinterpret_cast<grpc_channel_args*>(k->args.filters));
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(k->args.args));
+  grpc_channel_args_destroy(k->args);
   gpr_free(k);
 }
 
@@ -241,8 +219,4 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     grpc_avl_unref(updated, nullptr);
     grpc_avl_unref(index, nullptr);
   }
-}
-
-void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
-  g_force_creation = force_creation;
 }

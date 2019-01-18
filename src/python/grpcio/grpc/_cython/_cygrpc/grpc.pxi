@@ -389,7 +389,8 @@ cdef extern from "grpc/grpc.h":
   char* grpc_channelz_get_servers(intptr_t start_server_id)
   char* grpc_channelz_get_server(intptr_t server_id)
   char* grpc_channelz_get_server_sockets(intptr_t server_id,
-                                         intptr_t start_socket_id)
+                                         intptr_t start_socket_id,
+                                         intptr_t max_results)
   char* grpc_channelz_get_channel(intptr_t channel_id)
   char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
   char* grpc_channelz_get_socket(intptr_t socket_id)
