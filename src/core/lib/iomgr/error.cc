@@ -765,7 +765,7 @@ grpc_error* grpc_os_error(const char* file, int line, int err,
       grpc_error_set_str(
           grpc_error_set_int(
               grpc_error_create(file, line,
-                                grpc_slice_from_static_string("OS Error"),
+                                grpc_slice_from_static_string(strerror(err)),
                                 nullptr, 0),
               GRPC_ERROR_INT_ERRNO, err),
           GRPC_ERROR_STR_OS_ERROR,

@@ -42,8 +42,6 @@ struct grpc_subchannel_key {
   grpc_channel_args* args;
 };
 
-static bool g_force_creation = false;
-
 static grpc_subchannel_key* create_key(
     const grpc_channel_args* args,
     grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
@@ -63,8 +61,6 @@ static grpc_subchannel_key* subchannel_key_copy(grpc_subchannel_key* k) {
 
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b) {
-  // To pretend the keys are different, return a non-zero value.
-  if (GPR_UNLIKELY(g_force_creation)) return 1;
   return grpc_channel_args_compare(a->args, b->args);
 }
 
@@ -223,8 +219,4 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     grpc_avl_unref(updated, nullptr);
     grpc_avl_unref(index, nullptr);
   }
-}
-
-void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
-  g_force_creation = force_creation;
 }

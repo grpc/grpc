@@ -886,6 +886,8 @@ src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
 src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
+src/core/ext/filters/client_channel/global_subchannel_pool.cc \
+src/core/ext/filters/client_channel/global_subchannel_pool.h \
 src/core/ext/filters/client_channel/health/health.pb.c \
 src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/filters/client_channel/health/health_check_client.cc \
@@ -926,6 +928,8 @@ src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
 src/core/ext/filters/client_channel/lb_policy_registry.cc \
 src/core/ext/filters/client_channel/lb_policy_registry.h \
+src/core/ext/filters/client_channel/local_subchannel_pool.cc \
+src/core/ext/filters/client_channel/local_subchannel_pool.h \
 src/core/ext/filters/client_channel/parse_address.cc \
 src/core/ext/filters/client_channel/parse_address.h \
 src/core/ext/filters/client_channel/proxy_mapper.cc \
@@ -964,8 +968,8 @@ src/core/ext/filters/client_channel/server_address.cc \
 src/core/ext/filters/client_channel/server_address.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
-src/core/ext/filters/client_channel/subchannel_index.cc \
-src/core/ext/filters/client_channel/subchannel_index.h \
+src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
+src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1238,8 +1242,6 @@ src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
-src/core/lib/iomgr/network_status_tracker.cc \
-src/core/lib/iomgr/network_status_tracker.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
