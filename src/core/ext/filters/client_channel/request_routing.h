@@ -40,6 +40,102 @@
 
 namespace grpc_core {
 
+class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
+ public:
+  // Synchronous callback that takes the service config JSON string and
+  // LB policy name.
+  // Returns true if the service config has changed since the last result.
+  typedef bool (*ProcessResolverResultCallback)(void* user_data,
+                                                const grpc_channel_args& args,
+                                                const char** lb_policy_name,
+                                                grpc_json** lb_policy_config);
+
+  ResolvingLoadBalancingPolicy(
+      Args args, TraceFlag* tracer,
+      ProcessResolverResultCallback process_resolver_result,
+      void* process_resolver_result_user_data, UniquePtr<char> target_uri,
+      UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
+      grpc_error** error);
+
+  virtual const char* name() const override {
+// FIXME: is this thread-safe?
+    if (lb_policy_ != nullptr) return lb_policy_->name();
+    return "resolving_lb";
+  }
+
+  // No-op -- should never get updates from the channel.
+  void UpdateLocked(const grpc_channel_args& args,
+                    grpc_json* lb_config) override {}
+
+  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
+                                 grpc_closure* closure) override;
+
+  grpc_connectivity_state CheckConnectivityLocked(
+      grpc_error** connectivity_error) override;
+
+  void ExitIdleLocked() override;
+
+  void ResetBackoffLocked() override;
+
+  void FillChildRefsForChannelz(
+      channelz::ChildRefsList* child_subchannels,
+      channelz::ChildRefsList* child_channels) override;
+
+// FIXME: make this private, and client_channel a friend?
+// FIXME: should we take a ref?
+  void set_channelz_node(channelz::ClientChannelNode* node) {
+    channelz_node_ = node;
+  }
+
+ private:
+  using TraceStringVector = InlinedVector<char*, 3>;
+
+  class ResolvingControlHelper;
+
+  ~ResolvingLoadBalancingPolicy();
+
+  void ShutdownLocked() override;
+
+  void StartResolvingLocked();
+  void OnResolverShutdownLocked(grpc_error* error);
+  void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
+                               grpc_connectivity_state* connectivity_state,
+                               grpc_error** connectivity_error,
+                               TraceStringVector* trace_strings);
+  void MaybeAddTraceMessagesForAddressChangesLocked(
+      TraceStringVector* trace_strings);
+  void ConcatenateAndAddChannelTraceLocked(
+      TraceStringVector* trace_strings) const;
+  static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
+
+  void SetConnectivityStateLocked(grpc_connectivity_state state,
+                                  grpc_error* error, const char* reason);
+
+  // Passed in from caller at construction time.
+  TraceFlag* tracer_;
+  ProcessResolverResultCallback process_resolver_result_;
+  void* process_resolver_result_user_data_;
+  UniquePtr<char> target_uri_;
+  UniquePtr<char> child_policy_name_;
+  UniquePtr<char> child_lb_config_str_;
+  grpc_json* child_lb_config_ = nullptr;
+
+  channelz::ClientChannelNode* channelz_node_ = nullptr;
+
+  // Resolver and associated state.
+  OrphanablePtr<Resolver> resolver_;
+  bool started_resolving_ = false;
+  grpc_channel_args* resolver_result_ = nullptr;
+  bool previous_resolution_contained_addresses_ = false;
+  grpc_closure on_resolver_result_changed_;
+
+  // Child LB policy and associated state.
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
+  bool exit_idle_when_lb_policy_arrives_ = false;
+
+  grpc_connectivity_state_tracker state_tracker_;
+};
+
 class RequestRouter {
  public:
   class Request {
