@@ -1320,13 +1320,15 @@
 
   install-headers_c:
   	$(E) "[INSTALL] Installing public C headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_C), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+  	$(Q) DIRS="$(shell dirname $(PUBLIC_HEADERS_C) | uniq )"; \
+  		for d in $$DIRS; do [ ! -d $(prefix)/$$d ] && $(INSTALL) -d $(prefix)/$$d || : ; done
+  	$(Q) for f in $(PUBLIC_HEADERS_C); do $(INSTALL) $$f $(prefix)/$$f ; done
 
   install-headers_cxx:
   	$(E) "[INSTALL] Installing public C++ headers"
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) -d $(prefix)/$(dir $(h)) && ) exit 0 || exit 1
-  	$(Q) $(foreach h, $(PUBLIC_HEADERS_CXX), $(INSTALL) $(h) $(prefix)/$(h) && ) exit 0 || exit 1
+  	$(Q) DIRS="$(shell dirname $(PUBLIC_HEADERS_CXX) | uniq )"; \
+  		for d in $$DIRS; do [ ! -d $(prefix)/$$d ] && $(INSTALL) -d $(prefix)/$$d || : ; done
+  	$(Q) for f in $(PUBLIC_HEADERS_CXX); do $(INSTALL) $$f $(prefix)/$$f ; done
 
   install-static: install-static_c install-static_cxx
 
