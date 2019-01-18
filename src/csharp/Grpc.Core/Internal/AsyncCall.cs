@@ -494,13 +494,14 @@ namespace Grpc.Core.Internal
                 return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
             }
 
-            var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
+            var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.AsImplOrNull().ParentCall : CallSafeHandle.NullInstance;
 
             var credentials = details.Options.Credentials;
             using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
             {
+                // TODO(jtattermusch): is the "DefaultMask" correct here??
                 var result = details.Channel.Handle.CreateCall(
-                             parentCall, ContextPropagationToken.DefaultMask, cq,
+                             parentCall, ContextPropagationTokenImpl.DefaultMask, cq,
                              details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
                 return result;
             }

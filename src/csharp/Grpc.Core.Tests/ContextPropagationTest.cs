@@ -72,7 +72,7 @@ namespace Grpc.Core.Tests
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
                 var propagationToken = context.CreatePropagationToken();
-                Assert.IsNotNull(propagationToken.ParentCall);
+                Assert.IsNotNull(propagationToken.AsImplOrNull().ParentCall);
 
                 var callOptions = new CallOptions(propagationToken: propagationToken);
                 try
