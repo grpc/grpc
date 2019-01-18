@@ -13,11 +13,13 @@
 # limitations under the License.
 
 from __future__ import print_function
-import os
-import json
-import time
+
+import argparse
 import datetime
+import json
+import os
 import sys
+import time
 
 import requests
 import jwt
@@ -46,7 +48,7 @@ def _jwt_token():
 
 def _access_token():
     global _ACCESS_TOKEN_CACHE
-    if _ACCESS_TOKEN_CACHE == None or _ACCESS_TOKEN_CACHE['exp'] < time.time():
+    if _ACCESS_TOKEN_CACHE is None or _ACCESS_TOKEN_CACHE.get('exp') < time.time():
         resp = requests.post(
             url='https://api.github.com/app/installations/%s/access_tokens' %
             _INSTALLATION_ID,
@@ -122,9 +124,13 @@ def check_on_pr(name, summary, success=True):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print('Please specify the name of the check item.')
+    parser = argparse.ArgumentParser(
+        description='Post Github Check on pull request.')
+    parser.add_argument(
+        '--name', nargs=1, help='The name of the item listed in Github CHeck.', required=True)
+    args = parser.parse_args()
+
     check_on_pr(
-        name=sys.argv[1],
+        name=args.name,
         summary=sys.stdin.read()
     )

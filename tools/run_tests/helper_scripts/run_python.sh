@@ -25,7 +25,7 @@ ROOT=$(pwd)
 $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 coverage combine "$ROOT/src/python/grpcio_tests"
 coverage report --rcfile=.coveragerc | \
-  python "$ROOT/tools/run_tests/python_utils/check_on_pr.py" "python coverage"
+  python "$ROOT/tools/run_tests/python_utils/check_on_pr.py" --name "python coverage"
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
