@@ -57,6 +57,12 @@ constexpr int SCM_TSTAMP_SND = 0;
 constexpr int SCM_TSTAMP_SCHED = 1;
 /* The timestamp type for when data acknowledged by peer. */
 constexpr int SCM_TSTAMP_ACK = 2;
+
+/* Control message type containing OPT_STATS */
+#ifndef SCM_TIMESTAMPING_OPT_STATS
+#define SCM_TIMESTAMPING_OPT_STATS 54
+#endif
+
 /* Redefine required constants from <linux/net_tstamp.h> */
 constexpr uint32_t SOF_TIMESTAMPING_TX_SOFTWARE = 1u << 1;
 constexpr uint32_t SOF_TIMESTAMPING_SOFTWARE = 1u << 4;
@@ -79,25 +85,25 @@ enum TCPOptStats {
   TCP_NLA_BUSY,           /* Time (usec) busy sending data. */
   TCP_NLA_RWND_LIMITED,   /* Time (usec) limited by receive window. */
   TCP_NLA_SNDBUF_LIMITED, /* Time (usec) limited by send buffer. */
-  TCP_NLA_DATA_SEGS_OUT,  // Data pkts sent including retransmission. */
-  TCP_NLA_TOTAL_RETRANS,  // Data pkts retransmitted. */
-  TCP_NLA_PACING_RATE,    // Pacing rate in Bps. */
-  TCP_NLA_DELIVERY_RATE,  // Delivery rate in Bps. */
-  TCP_NLA_SND_CWND,       // Sending congestion window. */
-  TCP_NLA_REORDERING,     // Reordering metric. */
-  TCP_NLA_MIN_RTT,        // minimum RTT. */
-  TCP_NLA_RECUR_RETRANS,  // Recurring retransmits for the current pkt. */
-  TCP_NLA_DELIVERY_RATE_APP_LMT,  // Delivery rate application limited? */
-  TCP_NLA_SNDQ_SIZE,              // Data (bytes) pending in send queue */
-  TCP_NLA_CA_STATE,               // ca_state of socket */
-  TCP_NLA_SND_SSTHRESH,           // Slow start size threshold */
-  TCP_NLA_DELIVERED,              // Data pkts delivered incl. out-of-order */
-  TCP_NLA_DELIVERED_CE,           // Like above but only ones w/ CE marks */
-  TCP_NLA_BYTES_SENT,             // Data bytes sent including retransmission */
-  TCP_NLA_BYTES_RETRANS,          // Data bytes retransmitted */
-  TCP_NLA_DSACK_DUPS,             // DSACK blocks received */
-  TCP_NLA_REORD_SEEN,             // reordering events seen */
-  TCP_NLA_SRTT,                   // smoothed RTT in usecs */
+  TCP_NLA_DATA_SEGS_OUT,  /* Data pkts sent including retransmission. */
+  TCP_NLA_TOTAL_RETRANS,  /* Data pkts retransmitted. */
+  TCP_NLA_PACING_RATE,    /* Pacing rate in Bps. */
+  TCP_NLA_DELIVERY_RATE,  /* Delivery rate in Bps. */
+  TCP_NLA_SND_CWND,       /* Sending congestion window. */
+  TCP_NLA_REORDERING,     /* Reordering metric. */
+  TCP_NLA_MIN_RTT,        /* minimum RTT. */
+  TCP_NLA_RECUR_RETRANS,  /* Recurring retransmits for the current pkt. */
+  TCP_NLA_DELIVERY_RATE_APP_LMT, /* Delivery rate application limited? */
+  TCP_NLA_SNDQ_SIZE,             /* Data (bytes) pending in send queue */
+  TCP_NLA_CA_STATE,              /* ca_state of socket */
+  TCP_NLA_SND_SSTHRESH,          /* Slow start size threshold */
+  TCP_NLA_DELIVERED,             /* Data pkts delivered incl. out-of-order */
+  TCP_NLA_DELIVERED_CE,          /* Like above but only ones w/ CE marks */
+  TCP_NLA_BYTES_SENT,            /* Data bytes sent including retransmission */
+  TCP_NLA_BYTES_RETRANS,         /* Data bytes retransmitted */
+  TCP_NLA_DSACK_DUPS,            /* DSACK blocks received */
+  TCP_NLA_REORD_SEEN,            /* reordering events seen */
+  TCP_NLA_SRTT,                  /* smoothed RTT in usecs */
 };
 #endif /* GRPC_LINUX_ERRQUEUE */
 
