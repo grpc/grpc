@@ -41,7 +41,6 @@ fi
 set +e  # rvm script is very verbose and exits with errorcode
 # Advice from https://github.com/Homebrew/homebrew-cask/issues/8629#issuecomment-68641176
 brew update && brew upgrade brew-cask && brew cleanup && brew cask cleanup
-rvm --debug requirements ruby-2.5.0
 source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
 time rvm install 2.5.0
