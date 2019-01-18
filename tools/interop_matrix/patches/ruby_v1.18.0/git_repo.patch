@@ -1,0 +1,10 @@
+diff --git a/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh b/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
+index 67f66090ae..e71ad91499 100755
+--- a/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
++++ b/tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh
+@@ -30,4 +30,4 @@ cd /var/local/git/grpc
+ rvm --default use ruby-2.5
+ 
+ # build Ruby interop client and server
+-(cd src/ruby && gem update bundler && bundle && rake compile)
++(cd src/ruby && gem install bundler -v 1.17.3 && bundle && rake compile)

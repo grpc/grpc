@@ -201,6 +201,10 @@ LANG_RELEASE_MATRIX = {
         ('v1.15.0', ReleaseInfo()),
         ('v1.16.0', ReleaseInfo()),
         ('v1.17.1', ReleaseInfo()),
+        ('v1.18.0',
+         ReleaseInfo(patch=[
+             'tools/dockerfile/interoptest/grpc_interop_ruby/build_interop.sh',
+         ])),
     ]),
     'php':
     OrderedDict([
