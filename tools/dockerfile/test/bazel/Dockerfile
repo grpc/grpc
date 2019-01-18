@@ -14,11 +14,11 @@
 
 FROM gcr.io/oss-fuzz-base/base-builder
 
-############################ WARNING ######################################
+# -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
 # https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
 # accordingly.
-###########################################################################
+# -------------------------------------------------------------------------
 
 # Install basic packages and Bazel dependencies.
 RUN apt-get update && apt-get install -y software-properties-common python-software-properties
