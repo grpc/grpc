@@ -33,7 +33,7 @@
 namespace grpc_core {
 
 struct ConnectionMetrics {
-  /* Delivery rate in Bps. */
+  /* Delivery rate in Bytes/s. */
   Optional<uint64_t> delivery_rate;
   /* If the delivery rate is limited by the application, this is set to true. */
   Optional<uint64_t> is_delivery_rate_app_limited;
