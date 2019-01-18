@@ -26,35 +26,17 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/optional.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
 namespace grpc_core {
 
-/* A make-shift alternative for absl::Optional. This can be removed in favor of
- * that once is absl dependencies can be introduced. */
-template <typename T>
-class Optional {
- public:
-  void set(const T& val) {
-    value_ = val;
-    set_ = true;
-  }
-
-  bool has_value() { return set_; }
-
-  void reset() { set_ = false; }
-
-  T value() { return value_; }
-  T value_;
-  bool set_ = false;
-};
-
 struct ConnectionMetrics {
   /* Delivery rate in Bps. */
   Optional<uint64_t> delivery_rate;
   /* If the delivery rate is limited by the application, this is set to true. */
-  bool is_delivery_rate_app_limited = true;
+  Optional<uint64_t> is_delivery_rate_app_limited;
   /* Total packets retransmitted. */
   Optional<uint32_t> packet_retx;
   /* Total packets retransmitted spuriously. This metric is smaller than or

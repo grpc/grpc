@@ -96,25 +96,10 @@ static void TestTcpBufferList() {
   TestShutdownFlushesList();
 }
 
-/* Tests grpc_core::Optional */
-static void TestOptional() {
-  grpc_core::Optional<int> opt_val;
-  GPR_ASSERT(opt_val.has_value() == false);
-  const int kTestVal = 123;
-
-  opt_val.set(kTestVal);
-  GPR_ASSERT(opt_val.has_value());
-  GPR_ASSERT(opt_val.value() == 123);
-
-  opt_val.reset();
-  GPR_ASSERT(opt_val.has_value() == false);
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   TestTcpBufferList();
-  TestOptional();
   grpc_shutdown();
   return 0;
 }

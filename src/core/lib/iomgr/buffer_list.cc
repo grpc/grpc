@@ -66,8 +66,8 @@ void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
   }
   if (info->length > offsetof(grpc_core::tcp_info, tcpi_sndbuf_limited)) {
     metrics->recurring_retrans.set(info->tcpi_retransmits);
-    metrics->is_delivery_rate_app_limited =
-        info->tcpi_delivery_rate_app_limited;
+    metrics->is_delivery_rate_app_limited.set(
+        info->tcpi_delivery_rate_app_limited);
     metrics->congestion_window.set(info->tcpi_snd_cwnd);
     metrics->reordering.set(info->tcpi_reordering);
     metrics->packet_retx.set(info->tcpi_total_retrans);
@@ -126,7 +126,7 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
         break;
       }
       case TCP_NLA_DELIVERY_RATE_APP_LMT: {
-        metrics->is_delivery_rate_app_limited = read_unaligned<uint8_t>(val);
+        metrics->is_delivery_rate_app_limited.set(read_unaligned<uint8_t>(val));
         break;
       }
       case TCP_NLA_SND_CWND: {

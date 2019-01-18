@@ -644,6 +644,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "optional",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/optional.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "orphanable",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
@@ -976,6 +987,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "inlined_vector",
+        "optional",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
