@@ -30,27 +30,6 @@
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
-void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
-                               void* arg) {
-  GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
-  /* Store the current time as the sendmsg time. */
-  new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
-  new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  if (*head == nullptr) {
-    *head = new_elem;
-    return;
-  }
-  /* Append at the end. */
-  TracedBuffer* ptr = *head;
-  while (ptr->next_ != nullptr) {
-    ptr = ptr->next_;
-  }
-  ptr->next_ = new_elem;
-}
-
 namespace {
 /** Fills gpr_timespec gts based on values from timespec ts */
 void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
@@ -79,9 +58,41 @@ T read_unaligned(const void* ptr) {
   return val;
 }
 
-/** Adds opt stats statistics from the given control message to the connection
- * metrics. */
-void ExtractOptStats(ConnectionMetrics* metrics, const cmsghdr* opt_stats) {
+/* Extracts opt stats from the tcp_info struct \a info to \a metrics */
+void extract_opt_stats_from_tcp_info(ConnectionMetrics* metrics,
+                                     const grpc_core::tcp_info* info) {
+  if (info == nullptr) {
+    return;
+  }
+  if (info->length > offsetof(grpc_core::tcp_info, tcpi_sndbuf_limited)) {
+    metrics->recurring_retrans.set(info->tcpi_retransmits);
+    metrics->is_delivery_rate_app_limited =
+        info->tcpi_delivery_rate_app_limited;
+    metrics->congestion_window.set(info->tcpi_snd_cwnd);
+    metrics->reordering.set(info->tcpi_reordering);
+    metrics->packet_retx.set(info->tcpi_total_retrans);
+    metrics->pacing_rate.set(info->tcpi_pacing_rate);
+    metrics->data_notsent.set(info->tcpi_notsent_bytes);
+    if (info->tcpi_min_rtt != UINT32_MAX) {
+      metrics->min_rtt.set(info->tcpi_min_rtt);
+    }
+    metrics->packet_sent.set(info->tcpi_data_segs_out);
+    metrics->delivery_rate.set(info->tcpi_delivery_rate);
+    metrics->busy_usec.set(info->tcpi_busy_time);
+    metrics->rwnd_limited_usec.set(info->tcpi_rwnd_limited);
+    metrics->sndbuf_limited_usec.set(info->tcpi_sndbuf_limited);
+  }
+  if (info->length > offsetof(grpc_core::tcp_info, tcpi_dsack_dups)) {
+    metrics->data_sent.set(info->tcpi_bytes_sent);
+    metrics->data_retx.set(info->tcpi_bytes_retrans);
+    metrics->packet_spurious_retx.set(info->tcpi_dsack_dups);
+  }
+}
+
+/** Extracts opt stats from the given control message \a opt_stats to the
+ * connection metrics \a metrics */
+void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
+                                 const cmsghdr* opt_stats) {
   if (opt_stats == nullptr) {
     return;
   }
@@ -176,6 +187,28 @@ void ExtractOptStats(ConnectionMetrics* metrics, const cmsghdr* opt_stats) {
 }
 } /* namespace */
 
+void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
+                               const grpc_core::tcp_info* info, void* arg) {
+  GPR_DEBUG_ASSERT(head != nullptr);
+  TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
+  /* Store the current time as the sendmsg time. */
+  new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
+  new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
+  extract_opt_stats_from_tcp_info(&new_elem->ts_.sendmsg_time.metrics, info);
+  if (*head == nullptr) {
+    *head = new_elem;
+    return;
+  }
+  /* Append at the end. */
+  TracedBuffer* ptr = *head;
+  while (ptr->next_ != nullptr) {
+    ptr = ptr->next_;
+  }
+  ptr->next_ = new_elem;
+}
+
 void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
                                     struct sock_extended_err* serr,
                                     struct cmsghdr* opt_stats,
@@ -191,17 +224,20 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
         case SCM_TSTAMP_SCHED:
           fill_gpr_from_timestamp(&(elem->ts_.scheduled_time.time),
                                   &(tss->ts[0]));
-          ExtractOptStats(&(elem->ts_.scheduled_time.metrics), opt_stats);
+          extract_opt_stats_from_cmsg(&(elem->ts_.scheduled_time.metrics),
+                                      opt_stats);
           elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
           fill_gpr_from_timestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
-          ExtractOptStats(&(elem->ts_.sent_time.metrics), opt_stats);
+          extract_opt_stats_from_cmsg(&(elem->ts_.sent_time.metrics),
+                                      opt_stats);
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
           fill_gpr_from_timestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
-          ExtractOptStats(&(elem->ts_.acked_time.metrics), opt_stats);
+          extract_opt_stats_from_cmsg(&(elem->ts_.acked_time.metrics),
+                                      opt_stats);
           /* Got all timestamps. Do the callback and free this TracedBuffer.
            * The thing below can be passed by value if we don't want the
            * restriction on the lifetime. */

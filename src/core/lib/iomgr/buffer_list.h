@@ -71,6 +71,8 @@ struct ConnectionMetrics {
   Optional<uint64_t> data_retx;
   /* Total bytes sent so far. */
   Optional<uint64_t> data_sent;
+  /* Total bytes in write queue but not sent. */
+  Optional<uint64_t> data_notsent;
   /* Pacing rate of the connection in Bps */
   Optional<uint64_t> pacing_rate;
   /* Minimum RTT observed in usec. */
@@ -129,7 +131,7 @@ class TracedBuffer {
   /** Add a new entry in the TracedBuffer list pointed to by head. Also saves
    * sendmsg_time with the current timestamp. */
   static void AddNewEntry(grpc_core::TracedBuffer** head, uint32_t seq_no,
-                          void* arg);
+                          const grpc_core::tcp_info* info, void* arg);
 
   /** Processes a received timestamp based on sock_extended_err and
    * scm_timestamping structures. It will invoke the timestamps callback if the
