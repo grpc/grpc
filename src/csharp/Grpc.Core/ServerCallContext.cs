@@ -43,7 +43,7 @@ namespace Grpc.Core
         /// <returns>The task that finished once response headers have been written.</returns>
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
-            return WriteResponseHeadersInternalAsync(responseHeaders);
+            return WriteResponseHeadersAsyncCore(responseHeaders);
         }
 
         /// <summary>
@@ -51,41 +51,41 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
         {
-            return CreatePropagationTokenInternal(options);
+            return CreatePropagationTokenCore(options);
         }
 
         /// <summary>Name of method called in this RPC.</summary>
-        public string Method => MethodInternal;
+        public string Method => MethodCore;
 
         /// <summary>Name of host called in this RPC.</summary>
-        public string Host => HostInternal;
+        public string Host => HostCore;
 
         /// <summary>Address of the remote endpoint in URI format.</summary>
-        public string Peer => PeerInternal;
+        public string Peer => PeerCore;
 
         /// <summary>Deadline for this RPC.</summary>
-        public DateTime Deadline => DeadlineInternal;
+        public DateTime Deadline => DeadlineCore;
 
         /// <summary>Initial metadata sent by client.</summary>
-        public Metadata RequestHeaders => RequestHeadersInternal;
+        public Metadata RequestHeaders => RequestHeadersCore;
 
         /// <summary>Cancellation token signals when call is cancelled.</summary>
-        public CancellationToken CancellationToken => CancellationTokenInternal;
+        public CancellationToken CancellationToken => CancellationTokenCore;
 
         /// <summary>Trailers to send back to client after RPC finishes.</summary>
-        public Metadata ResponseTrailers => ResponseTrailersInternal;
+        public Metadata ResponseTrailers => ResponseTrailersCore;
 
         /// <summary> Status to send back to client after RPC finishes.</summary>
         public Status Status
         {
             get
             {
-                return StatusInternal;
+                return StatusCore;
             }
 
             set
             {
-                StatusInternal = value;
+                StatusCore = value;
             }
         }
 
@@ -98,12 +98,12 @@ namespace Grpc.Core
         {
             get
             {
-                return WriteOptionsInternal;
+                return WriteOptionsCore;
             }
 
             set
             {
-                WriteOptionsInternal = value;
+                WriteOptionsCore = value;
             }
         }
 
@@ -111,31 +111,31 @@ namespace Grpc.Core
         /// Gets the <c>AuthContext</c> associated with this call.
         /// Note: Access to AuthContext is an experimental API that can change without any prior notice.
         /// </summary>
-        public AuthContext AuthContext => AuthContextInternal;
+        public AuthContext AuthContext => AuthContextCore;
 
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract Task WriteResponseHeadersInternalAsync(Metadata responseHeaders);
+        protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract ContextPropagationToken CreatePropagationTokenInternal(ContextPropagationOptions options);
+        protected abstract ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options);
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract string MethodInternal { get; }
+        protected abstract string MethodCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract string HostInternal { get; }
+        protected abstract string HostCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract string PeerInternal { get; }
+        protected abstract string PeerCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract DateTime DeadlineInternal { get; }
+        protected abstract DateTime DeadlineCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract Metadata RequestHeadersInternal { get; }
+        protected abstract Metadata RequestHeadersCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract CancellationToken CancellationTokenInternal { get; }
+        protected abstract CancellationToken CancellationTokenCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract Metadata ResponseTrailersInternal { get; }
+        protected abstract Metadata ResponseTrailersCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract Status StatusInternal { get; set; }
+        protected abstract Status StatusCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract WriteOptions WriteOptionsInternal { get; set; }
+        protected abstract WriteOptions WriteOptionsCore { get; set; }
           /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract AuthContext AuthContextInternal { get; }
+        protected abstract AuthContext AuthContextCore { get; }
     }
 }

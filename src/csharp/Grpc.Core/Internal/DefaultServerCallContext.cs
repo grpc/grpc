@@ -61,43 +61,43 @@ namespace Grpc.Core
             this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
         }
 
-        protected override ContextPropagationToken CreatePropagationTokenInternal(ContextPropagationOptions options)
+        protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
         {
             return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
         }
 
-        protected override Task WriteResponseHeadersInternalAsync(Metadata responseHeaders)
+        protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
         {
             return serverResponseStream.WriteResponseHeadersAsync(responseHeaders);
         }
 
-        protected override string MethodInternal => method;
+        protected override string MethodCore => method;
 
-        protected override string HostInternal => host;
+        protected override string HostCore => host;
 
-        protected override string PeerInternal => callHandle.GetPeer();
+        protected override string PeerCore => callHandle.GetPeer();
 
-        protected override DateTime DeadlineInternal => deadline;
+        protected override DateTime DeadlineCore => deadline;
 
-        protected override Metadata RequestHeadersInternal => requestHeaders;
+        protected override Metadata RequestHeadersCore => requestHeaders;
 
-        protected override CancellationToken CancellationTokenInternal => cancellationToken;
+        protected override CancellationToken CancellationTokenCore => cancellationToken;
 
-        protected override Metadata ResponseTrailersInternal => responseTrailers;
+        protected override Metadata ResponseTrailersCore => responseTrailers;
 
-        protected override Status StatusInternal
+        protected override Status StatusCore
         {
             get => status;
             set => status = value;
         }
 
-        protected override WriteOptions WriteOptionsInternal
+        protected override WriteOptions WriteOptionsCore
         {
             get => serverResponseStream.WriteOptions;
             set => serverResponseStream.WriteOptions = value;
         }
 
-        protected override AuthContext AuthContextInternal => authContext.Value;
+        protected override AuthContext AuthContextCore => authContext.Value;
 
         private AuthContext GetAuthContextEager()
         {

@@ -74,31 +74,31 @@ namespace Grpc.Core.Testing
                 this.writeOptionsSetter = writeOptionsSetter;
             }
 
-            protected override string MethodInternal => method;
+            protected override string MethodCore => method;
 
-            protected override string HostInternal => host;
+            protected override string HostCore => host;
 
-            protected override string PeerInternal => peer;
+            protected override string PeerCore => peer;
 
-            protected override DateTime DeadlineInternal => deadline;
+            protected override DateTime DeadlineCore => deadline;
 
-            protected override Metadata RequestHeadersInternal => requestHeaders;
+            protected override Metadata RequestHeadersCore => requestHeaders;
 
-            protected override CancellationToken CancellationTokenInternal => cancellationToken;
+            protected override CancellationToken CancellationTokenCore => cancellationToken;
 
-            protected override Metadata ResponseTrailersInternal => responseTrailers;
+            protected override Metadata ResponseTrailersCore => responseTrailers;
 
-            protected override Status StatusInternal { get => status; set => status = value; }
-            protected override WriteOptions WriteOptionsInternal { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+            protected override Status StatusCore { get => status; set => status = value; }
+            protected override WriteOptions WriteOptionsCore { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
 
-            protected override AuthContext AuthContextInternal => authContext;
+            protected override AuthContext AuthContextCore => authContext;
 
-            protected override ContextPropagationToken CreatePropagationTokenInternal(ContextPropagationOptions options)
+            protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
             {
                 return contextPropagationToken;
             }
 
-            protected override Task WriteResponseHeadersInternalAsync(Metadata responseHeaders)
+            protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
             {
                 return writeHeadersFunc(responseHeaders);
             }
