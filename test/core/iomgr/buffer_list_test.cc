@@ -48,7 +48,7 @@ static void TestShutdownFlushesList() {
   for (auto i = 0; i < NUM_ELEM; i++) {
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
     grpc_core::TracedBuffer::AddNewEntry(
-        &list, i, nullptr, static_cast<void*>(&verifier_called[i]));
+        &list, i, 0, static_cast<void*>(&verifier_called[i]));
   }
   grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
   GPR_ASSERT(list == nullptr);
@@ -84,7 +84,7 @@ static void TestVerifierCalledOnAck() {
   grpc_core::TracedBuffer* list = nullptr;
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
-  grpc_core::TracedBuffer::AddNewEntry(&list, 213, nullptr, &verifier_called);
+  grpc_core::TracedBuffer::AddNewEntry(&list, 213, 0, &verifier_called);
   grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
   GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);

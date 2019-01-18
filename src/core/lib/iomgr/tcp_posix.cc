@@ -593,11 +593,6 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
 
 #ifdef GRPC_LINUX_ERRQUEUE
-static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
-  info->length = sizeof(*info) - sizeof(socklen_t);
-  memset(info, 0, sizeof(*info));
-  return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
-}
 
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
@@ -635,15 +630,9 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   /* Only save timestamps if all the bytes were taken by sendmsg. */
   if (sending_length == static_cast<size_t>(length)) {
     gpr_mu_lock(&tcp->tb_mu);
-    grpc_core::tcp_info info;
-    auto* info_ptr = &info;
-    if (get_socket_tcp_info(info_ptr, tcp->fd) != 0) {
-      /* Failed to get tcp_info */
-      info_ptr = nullptr;
-    }
     grpc_core::TracedBuffer::AddNewEntry(
         &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        info_ptr, tcp->outgoing_buffer_arg);
+        tcp->fd, tcp->outgoing_buffer_arg);
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }

@@ -24,6 +24,7 @@
 #include <grpc/support/log.h>
 
 #ifdef GRPC_LINUX_ERRQUEUE
+#include <netinet/in.h>
 #include <string.h>
 #include <time.h>
 
@@ -185,10 +186,16 @@ void extract_opt_stats_from_cmsg(ConnectionMetrics* metrics,
     offset += NLA_ALIGN(attr->nla_len);
   }
 }
+
+static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
+  info->length = sizeof(*info) - sizeof(socklen_t);
+  memset(info, 0, sizeof(*info));
+  return getsockopt(fd, IPPROTO_TCP, TCP_INFO, info, &(info->length));
+}
 } /* namespace */
 
-void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
-                               const grpc_core::tcp_info* info, void* arg) {
+void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
+                               void* arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
   /* Store the current time as the sendmsg time. */
@@ -196,7 +203,11 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  extract_opt_stats_from_tcp_info(&new_elem->ts_.sendmsg_time.metrics, info);
+
+  if (get_socket_tcp_info(&new_elem->ts_.info, fd) == 0) {
+    extract_opt_stats_from_tcp_info(&new_elem->ts_.sendmsg_time.metrics,
+                                    &new_elem->ts_.info);
+  }
   if (*head == nullptr) {
     *head = new_elem;
     return;
