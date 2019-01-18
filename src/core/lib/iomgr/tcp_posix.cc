@@ -665,8 +665,8 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
       if (grpc_tcp_trace.enabled()) {
         gpr_log(GPR_ERROR, "Received timestamp without extended error");
       }
+      return opt_stats;
     }
-    return opt_stats;
   }
 
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
