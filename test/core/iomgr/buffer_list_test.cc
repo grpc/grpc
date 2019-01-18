@@ -63,9 +63,9 @@ static void TestVerifierCalledOnAckVerifier(void* arg,
                                             grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(ts->acked_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->acked_time.tv_sec == 123);
-  GPR_ASSERT(ts->acked_time.tv_nsec == 456);
+  GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->acked_time.time.tv_sec == 123);
+  GPR_ASSERT(ts->acked_time.time.tv_nsec == 456);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
@@ -85,7 +85,7 @@ static void TestVerifierCalledOnAck() {
   gpr_atm verifier_called;
   gpr_atm_rel_store(&verifier_called, static_cast<gpr_atm>(0));
   grpc_core::TracedBuffer::AddNewEntry(&list, 213, &verifier_called);
-  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, &tss);
+  grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
   GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);
   grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
@@ -96,10 +96,25 @@ static void TestTcpBufferList() {
   TestShutdownFlushesList();
 }
 
+/* Tests grpc_core::Optional */
+static void TestOptional() {
+  grpc_core::Optional<int> opt_val;
+  GPR_ASSERT(opt_val.has_value() == false);
+  const int kTestVal = 123;
+
+  opt_val.set(kTestVal);
+  GPR_ASSERT(opt_val.has_value());
+  GPR_ASSERT(opt_val.value() == 123);
+
+  opt_val.reset();
+  GPR_ASSERT(opt_val.has_value() == false);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   TestTcpBufferList();
+  TestOptional();
   grpc_shutdown();
   return 0;
 }
