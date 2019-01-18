@@ -112,6 +112,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   const intptr_t socket_uuid_;
 };
 
+// Although this class is deriving RefCounted<>, it only destructs but doesn't
+// free itself when refcount reaches 0.
 class SubchannelCall : public RefCounted<SubchannelCall> {
  public:
   SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
@@ -133,8 +135,11 @@ class SubchannelCall : public RefCounted<SubchannelCall> {
 
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
-  void SetCleanupClosure(grpc_closure* closure);
+  void SetAfterCallStackDestroy(grpc_closure* closure);
 
+  grpc_closure* after_call_stack_destroy() { return after_call_stack_destroy_; }
+
+  // Overrides RefCounted's methods to avoid freeing itself.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
 
@@ -147,7 +152,7 @@ class SubchannelCall : public RefCounted<SubchannelCall> {
   static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  grpc_closure* schedule_closure_after_destroy_ = nullptr;
+  grpc_closure* after_call_stack_destroy_ = nullptr;
   // State needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ = nullptr;

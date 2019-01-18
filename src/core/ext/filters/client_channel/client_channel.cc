@@ -2521,7 +2521,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
                                  grpc_closure* then_schedule_closure) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (GPR_LIKELY(calld->subchannel_call != nullptr)) {
-    calld->subchannel_call->SetCleanupClosure(then_schedule_closure);
+    calld->subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
     then_schedule_closure = nullptr;
   }
   calld->~call_data();
