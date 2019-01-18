@@ -81,8 +81,7 @@ T read_unaligned(const void* ptr) {
 
 /** Adds opt stats statistics from the given control message to the connection
  * metrics. */
-void ExtractOptStats(ConnectionMetrics* conn_metrics,
-                     const cmsghdr* opt_stats) {
+void ExtractOptStats(ConnectionMetrics* metrics, const cmsghdr* opt_stats) {
   if (opt_stats == nullptr) {
     return;
   }
@@ -96,76 +95,79 @@ void ExtractOptStats(ConnectionMetrics* conn_metrics,
     const void* val = data + offset + NLA_HDRLEN;
     switch (attr->nla_type) {
       case TCP_NLA_BUSY: {
-        conn_metrics->busy_usec.set(read_unaligned<uint64_t>(val));
+        metrics->busy_usec.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_RWND_LIMITED: {
-        conn_metrics->rwnd_limited_usec.set(read_unaligned<uint64_t>(val));
+        metrics->rwnd_limited_usec.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_SNDBUF_LIMITED: {
-        conn_metrics->sndbuf_limited_usec.set(read_unaligned<uint64_t>(val));
+        metrics->sndbuf_limited_usec.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_PACING_RATE: {
-        conn_metrics->pacing_rate.set(read_unaligned<uint64_t>(val));
+        metrics->pacing_rate.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERY_RATE: {
-        conn_metrics->delivery_rate.set(read_unaligned<uint64_t>(val));
+        metrics->delivery_rate.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERY_RATE_APP_LMT: {
-        conn_metrics->is_delivery_rate_app_limited =
-            read_unaligned<uint8_t>(val);
+        metrics->is_delivery_rate_app_limited = read_unaligned<uint8_t>(val);
         break;
       }
       case TCP_NLA_SND_CWND: {
-        conn_metrics->congestion_window.set(read_unaligned<uint32_t>(val));
+        metrics->congestion_window.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_MIN_RTT: {
-        conn_metrics->min_rtt.set(read_unaligned<uint32_t>(val));
+        metrics->min_rtt.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_SRTT: {
-        conn_metrics->srtt.set(read_unaligned<uint32_t>(val));
+        metrics->srtt.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_RECUR_RETRANS: {
-        conn_metrics->recurring_retrans.set(read_unaligned<uint8_t>(val));
+        metrics->recurring_retrans.set(read_unaligned<uint8_t>(val));
         break;
       }
       case TCP_NLA_BYTES_SENT: {
-        conn_metrics->data_sent.set(read_unaligned<uint64_t>(val));
+        metrics->data_sent.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DATA_SEGS_OUT: {
-        conn_metrics->packet_sent.set(read_unaligned<uint64_t>(val));
+        metrics->packet_sent.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_TOTAL_RETRANS: {
-        conn_metrics->packet_retx.set(read_unaligned<uint64_t>(val));
+        metrics->packet_retx.set(read_unaligned<uint64_t>(val));
         break;
       }
       case TCP_NLA_DELIVERED: {
-        conn_metrics->packet_delivered.set(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_DELIVERED_CE: {
-        conn_metrics->packet_delivered_ce.set(read_unaligned<uint32_t>(val));
+        metrics->packet_delivered_ce.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_BYTES_RETRANS: {
-        conn_metrics->data_retx.set(read_unaligned<uint64_t>(val));
+        metrics->data_retx.set(read_unaligned<uint64_t>(val));
+        break;
+      }
+      case TCP_NLA_DSACK_DUPS: {
+        metrics->packet_spurious_retx.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_REORDERING: {
-        conn_metrics->reordering.set(read_unaligned<uint32_t>(val));
+        metrics->reordering.set(read_unaligned<uint32_t>(val));
         break;
       }
       case TCP_NLA_SND_SSTHRESH: {
-        conn_metrics->snd_ssthresh.set(read_unaligned<uint32_t>(val));
+        metrics->snd_ssthresh.set(read_unaligned<uint32_t>(val));
         break;
       }
     }

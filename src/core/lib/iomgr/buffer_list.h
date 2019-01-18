@@ -57,6 +57,9 @@ struct ConnectionMetrics {
   bool is_delivery_rate_app_limited = true;
   /* Total packets retransmitted. */
   Optional<uint32_t> packet_retx;
+  /* Total packets retransmitted spuriously. This metric is smaller than or
+  equal to packet_retx. */
+  Optional<uint32_t> packet_spurious_retx;
   /* Total packets sent. */
   Optional<uint32_t> packet_sent;
   /* Total packets delivered. */
