@@ -34,7 +34,7 @@ gpr_thd_id g_init_thread;
 
 static void iomgr_platform_init(void) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_executor_set_threading(false);
+  grpc_core::Executor::SetThreadingAll(false);
   g_init_thread = gpr_thd_currentid();
   grpc_pollset_global_init();
 }
