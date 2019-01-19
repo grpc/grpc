@@ -227,10 +227,10 @@ static void cover_self(grpc_tcp* tcp) {
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     gpr_atm_rel_store(&g_backup_poller, (gpr_atm)p);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
-                          grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
-        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
+                                         grpc_core::Executor::Scheduler(
+                                             grpc_core::ExecutorJobType::LONG)),
+                       GRPC_ERROR_NONE);
   } else {
     while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
            nullptr) {

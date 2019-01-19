@@ -101,7 +101,8 @@ cc_binary(
 
 cc_binary(
     name = "keyvaluestore_client",
-    srcs = ["cpp/keyvaluestore/client.cc"],
+    srcs = ["cpp/keyvaluestore/caching_interceptor.h",
+            "cpp/keyvaluestore/client.cc"],    
     defines = ["BAZEL_BUILD"],
     deps = [":keyvaluestore", "//:grpc++"],
 )
