@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -180,9 +180,18 @@ Friends</h2></td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplParams" colspan="2">template&lt;class Streamer , bool WriteNeeded&gt; </td></tr>
 <tr class="memitem:a65ae6d263727d1e67e811969f909212b"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a65ae6d263727d1e67e811969f909212b">::grpc::internal::TemplatedBidiStreamingHandler</a></td></tr>
 <tr class="separator:a65ae6d263727d1e67e811969f909212b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa338f99365bb9921a529358ad243041d"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
-<tr class="memitem:aa338f99365bb9921a529358ad243041d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#aa338f99365bb9921a529358ad243041d">::grpc::internal::CallbackUnaryHandler</a></td></tr>
-<tr class="separator:aa338f99365bb9921a529358ad243041d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99744cb5f50c9b27c792d3dad982843d"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a99744cb5f50c9b27c792d3dad982843d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a99744cb5f50c9b27c792d3dad982843d">::grpc::internal::CallbackUnaryHandler</a></td></tr>
+<tr class="separator:a99744cb5f50c9b27c792d3dad982843d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a675c972ca6b81b253f1cb1cb1aa38618"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a675c972ca6b81b253f1cb1cb1aa38618"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a675c972ca6b81b253f1cb1cb1aa38618">::grpc::internal::CallbackClientStreamingHandler</a></td></tr>
+<tr class="separator:a675c972ca6b81b253f1cb1cb1aa38618"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a058f4c461b9d3d00f8b749aab1012e21"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a058f4c461b9d3d00f8b749aab1012e21"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a058f4c461b9d3d00f8b749aab1012e21">::grpc::internal::CallbackServerStreamingHandler</a></td></tr>
+<tr class="separator:a058f4c461b9d3d00f8b749aab1012e21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61576dbc949f40d86a4bb1c970da94d5"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a61576dbc949f40d86a4bb1c970da94d5"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a61576dbc949f40d86a4bb1c970da94d5">::grpc::internal::CallbackBidiHandler</a></td></tr>
+<tr class="separator:a61576dbc949f40d86a4bb1c970da94d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplParams" colspan="2">template&lt;StatusCode code&gt; </td></tr>
 <tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a91a3296cb8faa9b7afad2f0db836df4d">internal::ErrorMethodHandler</a></td></tr>
 <tr class="separator:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -267,10 +276,11 @@ Friends</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">key</td><td>The metadata key. If <em>value</em> is binary data, it must end in "-bin". </td></tr>
-    <tr><td class="paramname">value</td><td>The metadata value. If its value is binary, the key name must end in "-bin". </td></tr>
+    <tr><td class="paramname">value</td><td>The metadata value. If its value is binary, the key name must end in "-bin".</td></tr>
   </table>
   </dd>
 </dl>
+<p>Metadata must conform to the following format: Custom-Metadata -&gt; Binary-Header / ASCII-Header Binary-Header -&gt; {Header-Name "-bin" } {binary value} ASCII-Header -&gt; Header-Name ASCII-Value Header-Name -&gt; 1*( x30-39 / x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - . ASCII-Value -&gt; 1*( x20-x7E ) ; space and printable ASCII </p>
 
 </div>
 </div>
@@ -306,10 +316,11 @@ Friends</h2></td></tr>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">key</td><td>The metadata key. If <em>value</em> is binary data, it must end in "-bin". </td></tr>
-    <tr><td class="paramname">value</td><td>The metadata value. If its value is binary, the key name must end in "-bin". </td></tr>
+    <tr><td class="paramname">value</td><td>The metadata value. If its value is binary, the key name must end in "-bin".</td></tr>
   </table>
   </dd>
 </dl>
+<p>Metadata must conform to the following format: Custom-Metadata -&gt; Binary-Header / ASCII-Header Binary-Header -&gt; {Header-Name "-bin" } {binary value} ASCII-Header -&gt; Header-Name ASCII-Value Header-Name -&gt; 1*( x30-39 / x61-7A / "_" / "-" / ".") ; 0-9 a-z _ - . ASCII-Value -&gt; 1*( x20-x7E ) ; space and printable ASCII </p>
 
 </div>
 </div>
@@ -748,13 +759,85 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="aa338f99365bb9921a529358ad243041d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa338f99365bb9921a529358ad243041d">&#9670;&nbsp;</a></span>::grpc::internal::CallbackUnaryHandler</h2>
+<a id="a61576dbc949f40d86a4bb1c970da94d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a61576dbc949f40d86a4bb1c970da94d5">&#9670;&nbsp;</a></span>::grpc::internal::CallbackBidiHandler</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+template&lt;class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_callback_bidi_handler.html">grpc::internal::CallbackBidiHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a675c972ca6b81b253f1cb1cb1aa38618"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a675c972ca6b81b253f1cb1cb1aa38618">&#9670;&nbsp;</a></span>::grpc::internal::CallbackClientStreamingHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_callback_client_streaming_handler.html">grpc::internal::CallbackClientStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a058f4c461b9d3d00f8b749aab1012e21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a058f4c461b9d3d00f8b749aab1012e21">&#9670;&nbsp;</a></span>::grpc::internal::CallbackServerStreamingHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_callback_server_streaming_handler.html">grpc::internal::CallbackServerStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a99744cb5f50c9b27c792d3dad982843d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99744cb5f50c9b27c792d3dad982843d">&#9670;&nbsp;</a></span>::grpc::internal::CallbackUnaryHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class RequestType , class ResponseType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1154,7 +1237,7 @@ template&lt;StatusCode code&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

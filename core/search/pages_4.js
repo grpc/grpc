@@ -12,6 +12,7 @@ var searchData=
   ['grpc_20c_2b_2b_20style_20guide',['GRPC C++ STYLE GUIDE',['../md_doc_cpp-style-guide.html',1,'']]],
   ['grpc_20environment_20variables',['gRPC environment variables',['../md_doc_environment_variables.html',1,'']]],
   ['g_5fstands_5ffor',['g_stands_for',['../md_doc_g_stands_for.html',1,'']]],
+  ['grpc_20release_20schedule',['gRPC Release Schedule',['../md_doc_grpc_release_schedule.html',1,'']]],
   ['grpc_20health_20checking_20protocol',['GRPC Health Checking Protocol',['../md_doc_health-checking.html',1,'']]],
   ['grpc_20internationalization',['gRPC Internationalization',['../md_doc_internationalization.html',1,'']]],
   ['grpc_20name_20resolution',['gRPC Name Resolution',['../md_doc_naming.html',1,'']]],

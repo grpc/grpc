@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -297,8 +297,8 @@ Functions</h2></td></tr>
 <tr class="separator:a4581bf691bc258f4280c1da8c79f817d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab0f2e2c55348873010ee6cbe25a1a288"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab0f2e2c55348873010ee6cbe25a1a288">grpc_channelz_get_server</a> (intptr_t server_id)</td></tr>
 <tr class="separator:ab0f2e2c55348873010ee6cbe25a1a288"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa77175d74575442ab2fdb76861beb0e2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa77175d74575442ab2fdb76861beb0e2">grpc_channelz_get_server_sockets</a> (intptr_t server_id, intptr_t start_socket_id)</td></tr>
-<tr class="separator:aa77175d74575442ab2fdb76861beb0e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ad7342a04c28c6a16f0256cfc007032"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a4ad7342a04c28c6a16f0256cfc007032">grpc_channelz_get_server_sockets</a> (intptr_t server_id, intptr_t start_socket_id, intptr_t max_results)</td></tr>
+<tr class="separator:a4ad7342a04c28c6a16f0256cfc007032"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab7254f9b17f4efa3d5111b928bd78d3c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c">grpc_channelz_get_channel</a> (intptr_t channel_id)</td></tr>
 <tr class="separator:ab7254f9b17f4efa3d5111b928bd78d3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3e4a297b24f0e9b4ec59f3098b29ff0a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a">grpc_channelz_get_subchannel</a> (intptr_t subchannel_id)</td></tr>
@@ -1130,8 +1130,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aa77175d74575442ab2fdb76861beb0e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa77175d74575442ab2fdb76861beb0e2">&#9670;&nbsp;</a></span>grpc_channelz_get_server_sockets()</h2>
+<a id="a4ad7342a04c28c6a16f0256cfc007032"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ad7342a04c28c6a16f0256cfc007032">&#9670;&nbsp;</a></span>grpc_channelz_get_server_sockets()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1146,7 +1146,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">intptr_t&#160;</td>
-          <td class="paramname"><em>start_socket_id</em>&#160;</td>
+          <td class="paramname"><em>start_socket_id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">intptr_t&#160;</td>
+          <td class="paramname"><em>max_results</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -2408,7 +2414,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

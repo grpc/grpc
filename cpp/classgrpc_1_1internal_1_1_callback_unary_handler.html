@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.13"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>GRPC C++: grpc::internal::CallbackUnaryHandler&lt; ServiceType, RequestType, ResponseType &gt; Class Template Reference</title>
+<title>GRPC C++: grpc::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,7 @@ $(function() {
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
-<div class="title">grpc::internal::CallbackUnaryHandler&lt; ServiceType, RequestType, ResponseType &gt; Class Template Reference</div>  </div>
+<div class="title">grpc::internal::CallbackUnaryHandler&lt; RequestType, ResponseType &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -75,44 +75,34 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a00b3bafcc1b66249da2bdc1df9f559d8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a00b3bafcc1b66249da2bdc1df9f559d8">CallbackUnaryHandler</a> (std::function&lt; void(<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, const RequestType *, ResponseType *, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html">experimental::ServerCallbackRpcController</a> *)&gt; func, ServiceType *service)</td></tr>
-<tr class="separator:a00b3bafcc1b66249da2bdc1df9f559d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41ded2aa0c9018e3e608ffe277c3986e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a41ded2aa0c9018e3e608ffe277c3986e">RunHandler</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a> &amp;param) final</td></tr>
-<tr class="separator:a41ded2aa0c9018e3e608ffe277c3986e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a81b29e17de2f6d5e384c392932931659"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a81b29e17de2f6d5e384c392932931659">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> *status) final</td></tr>
-<tr class="separator:a81b29e17de2f6d5e384c392932931659"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ac1b43d46002670db62cddef2031212"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a4ac1b43d46002670db62cddef2031212">CallbackUnaryHandler</a> (std::function&lt; void(<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, const RequestType *, ResponseType *, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html">experimental::ServerCallbackRpcController</a> *)&gt; func)</td></tr>
+<tr class="separator:a4ac1b43d46002670db62cddef2031212"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bb34f069e1fba2e4073afb74bc1a133"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a1bb34f069e1fba2e4073afb74bc1a133">RunHandler</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a> &amp;param) final</td></tr>
+<tr class="separator:a1bb34f069e1fba2e4073afb74bc1a133"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a07eec5105941c0548f232ce23414f9b5"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a07eec5105941c0548f232ce23414f9b5">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> *status) final</td></tr>
+<tr class="separator:a07eec5105941c0548f232ce23414f9b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_method_handler"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_method_handler')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_method_handler.html">grpc::internal::MethodHandler</a></td></tr>
 <tr class="memitem:a6c9896af1ffd8b22d0bc197fbd946a33 inherit pub_methods_classgrpc_1_1internal_1_1_method_handler"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a6c9896af1ffd8b22d0bc197fbd946a33">~MethodHandler</a> ()</td></tr>
 <tr class="separator:a6c9896af1ffd8b22d0bc197fbd946a33 inherit pub_methods_classgrpc_1_1internal_1_1_method_handler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a00b3bafcc1b66249da2bdc1df9f559d8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a00b3bafcc1b66249da2bdc1df9f559d8">&#9670;&nbsp;</a></span>CallbackUnaryHandler()</h2>
+<a id="a4ac1b43d46002670db62cddef2031212"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ac1b43d46002670db62cddef2031212">&#9670;&nbsp;</a></span>CallbackUnaryHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+template&lt;class RequestType , class ResponseType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; ServiceType, RequestType, ResponseType &gt;::<a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">CallbackUnaryHandler</a> </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; RequestType, ResponseType &gt;::<a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">CallbackUnaryHandler</a> </td>
           <td>(</td>
           <td class="paramtype">std::function&lt; void(<a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *, const RequestType *, ResponseType *, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html">experimental::ServerCallbackRpcController</a> *)&gt;&#160;</td>
-          <td class="paramname"><em>func</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>func</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">ServiceType *&#160;</td>
-          <td class="paramname"><em>service</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -125,19 +115,19 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a81b29e17de2f6d5e384c392932931659"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a81b29e17de2f6d5e384c392932931659">&#9670;&nbsp;</a></span>Deserialize()</h2>
+<a id="a07eec5105941c0548f232ce23414f9b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a07eec5105941c0548f232ce23414f9b5">&#9670;&nbsp;</a></span>Deserialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+template&lt;class RequestType , class ResponseType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void* <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; ServiceType, RequestType, ResponseType &gt;::Deserialize </td>
+          <td class="memname">void* <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; RequestType, ResponseType &gt;::Deserialize </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
           <td class="paramname"><em>call</em>, </td>
@@ -171,19 +161,19 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 
 </div>
 </div>
-<a id="a41ded2aa0c9018e3e608ffe277c3986e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a41ded2aa0c9018e3e608ffe277c3986e">&#9670;&nbsp;</a></span>RunHandler()</h2>
+<a id="a1bb34f069e1fba2e4073afb74bc1a133"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1bb34f069e1fba2e4073afb74bc1a133">&#9670;&nbsp;</a></span>RunHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+template&lt;class RequestType , class ResponseType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; ServiceType, RequestType, ResponseType &gt;::RunHandler </td>
+          <td class="memname">void <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_handler.html">grpc::internal::CallbackUnaryHandler</a>&lt; RequestType, ResponseType &gt;::RunHandler </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a> &amp;&#160;</td>
           <td class="paramname"><em>param</em></td><td>)</td>
@@ -208,7 +198,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

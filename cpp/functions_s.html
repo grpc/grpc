@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -85,7 +85,10 @@ $(function() {
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d">grpc_op::grpc_op_data</a>
 </li>
 <li>SendInitialMetadata()
-: <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#aae47dc9b51d25654f3bc5bf36e91c91d">grpc::experimental::ServerCallbackRpcController</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader.html#a4327d21a36c001811f1a43fa8ca31621">grpc::experimental::ServerCallbackReader&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader_writer.html#acab58ec5199508778c010a07aa08c00a">grpc::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html#aae47dc9b51d25654f3bc5bf36e91c91d">grpc::experimental::ServerCallbackRpcController</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_writer.html#adc54677f18369cb73d7d258c8dc90df0">grpc::experimental::ServerCallbackWriter&lt; Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a30a1fb7816a99c49fcec52f473f72a65">grpc::internal::CallOpSendInitialMetadata</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#ac55759faf2283db8bf716183881efe01">grpc::internal::ServerAsyncStreamingInterface</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html#a65f17fbf56344687cdbb80699d2f3b3f">grpc::internal::ServerReaderWriterBody&lt; W, R &gt;</a>
@@ -102,6 +105,9 @@ $(function() {
 </li>
 <li>SendMessage()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ac33bee02bc0b6e0892365dc5f50f7f43">grpc::internal::CallOpSendMessage</a>
+</li>
+<li>SendMessagePtr()
+: <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a4b590dbe3faae7c82243d533cae71d1e">grpc::internal::CallOpSendMessage</a>
 </li>
 <li>SerializationTraits&lt; ByteBuffer, void &gt;
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ab90fe50537dd6fe009b7b913652420f0">grpc::ByteBuffer</a>
@@ -159,6 +165,15 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_server_builder.html#a208346e343cd01351492f0cace59b242">grpc::ServerBuilder</a>
 , <a class="el" href="classgrpc_1_1_server_completion_queue.html#a8c2db91f514d534f06396d90c1b1f2c4">grpc::ServerCompletionQueue</a>
 </li>
+<li>ServerCallbackReader&lt; Request &gt;
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a07a17206f02027eb9b10cfc3174e0476">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>
+</li>
+<li>ServerCallbackReaderWriter&lt; Request, Response &gt;
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a7c37735f41590c54ad5948d348e63864">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+</li>
+<li>ServerCallbackWriter&lt; Response &gt;
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a87a27438db283c324791f49cf59b6e69">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+</li>
 <li>ServerCompletionQueue()
 : <a class="el" href="classgrpc_1_1_server_completion_queue.html#a1706983733b2a91c8df6712729cd6721">grpc::ServerCompletionQueue</a>
 </li>
@@ -178,7 +193,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html#a99e0c1eba155a2d2aba23101f4d53165">grpc::internal::ServerReaderWriterBody&lt; W, R &gt;</a>
 </li>
 <li>ServerRpcInfo()
-: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a042417a50a5dea43061b2228fe544867">grpc::experimental::ServerRpcInfo</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a31eae368f0da0d46d9378f3deb15f143">grpc::experimental::ServerRpcInfo</a>
 </li>
 <li>ServerSendStatus()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_server_send_status.html#ae6ca2a79bc5acabbb0c2c81473cd1c8a">grpc::internal::CallOpServerSendStatus</a>
@@ -200,9 +215,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder.html#a4799eec87ef7d336d0f5db95d273e432">grpc::ServerBuilder</a>
 </li>
 <li>Set()
-: <a class="el" href="classgrpc_1_1_alarm_1_1experimental__type.html#a44d38dda62537eedafcd453a04e2d274">grpc::Alarm::experimental_type</a>
-, <a class="el" href="classgrpc_1_1_alarm.html#a2cfc8a72d77c446e909c9747cd852cfa">grpc::Alarm</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#abd94589fea063e1e8f04d34c2f4ad5cb">grpc::internal::CallbackWithSuccessTag</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#abd94589fea063e1e8f04d34c2f4ad5cb">grpc::internal::CallbackWithSuccessTag</a>
+, <a class="el" href="classgrpc__impl_1_1_alarm_1_1experimental__type.html#a1362ffbf23ddeea794c94a676e17c554">grpc_impl::Alarm::experimental_type</a>
+, <a class="el" href="classgrpc__impl_1_1_alarm.html#a4b6abc2040ec07dd2450d0b143a55de0">grpc_impl::Alarm</a>
 </li>
 <li>set_authority()
 : <a class="el" href="classgrpc_1_1_client_context.html#a43bb17bbd6ab49face3793e8883c5682">grpc::ClientContext</a>
@@ -384,7 +399,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#abb08150248632e05ee06ad1895dbe820">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>SetRecvMessage()
-: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aabb8532a8130b92e3184256935f372bb">grpc::internal::InterceptorBatchMethodsImpl</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aeedcb9154f4ff041f43e202631d22f6b">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>SetRecvStatus()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#aec1e6573512e16533d1647b4d1535d6b">grpc::internal::InterceptorBatchMethodsImpl</a>
@@ -403,7 +418,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a0c57b57b445fbc760b1d1befc56ec403">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>SetSendMessage()
-: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a264bdc0384c22b69f5042dac25710ac8">grpc::internal::InterceptorBatchMethodsImpl</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#ab8dcf880ad44d45f65c491827404530a">grpc::internal::InterceptorBatchMethodsImpl</a>
 </li>
 <li>SetSendStatus()
 : <a class="el" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html#a503d0dd5237da0db8eff500ad2b839b4">grpc::internal::InterceptorBatchMethodsImpl</a>
@@ -446,10 +461,15 @@ $(function() {
 </li>
 <li>shutdown()
 : <a class="el" href="classgrpc_1_1_grpc_library_interface.html#a012f005b6db4bf82a691d738ebe59fd7">grpc::GrpcLibraryInterface</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_grpc_library.html#a3877ce7da09f9be689733ae32db2c331">grpc::internal::GrpcLibrary</a>
 </li>
 <li>Shutdown()
-: <a class="el" href="classgrpc_1_1_server_interface.html#a6a1d337270116c95f387e0abf01f6c6c">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a520a6c15acec341dc65a638e55b0798b">grpc::HealthCheckServiceInterface</a>
+</li>
+<li>shutdown()
+: <a class="el" href="classgrpc_1_1internal_1_1_grpc_library.html#a3877ce7da09f9be689733ae32db2c331">grpc::internal::GrpcLibrary</a>
+</li>
+<li>Shutdown()
+: <a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">grpc::ServerInterface</a>
 </li>
 <li>ShutdownInternal()
 : <a class="el" href="classgrpc_1_1_server_interface.html#a862fd9a2d64e66447d41d0aba40af2f9">grpc::ServerInterface</a>
@@ -465,7 +485,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#a5e3c4a94b5de9e66f2328039233e3873">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#aa015b3afa75bc3238c5e68147e4e3020">grpc::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
@@ -490,10 +510,50 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_client_async_response_reader.html#aa6bb324b380b1389e38f89f7a0b85c64">grpc::ClientAsyncResponseReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#a1f0a98a8d6e2ee06236a7ecb971a2ac5">grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_async_writer.html#a42b8329c9a8bf18528fee8a3776db3d6">grpc::ClientAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a3eca586289f9b4020a7fb67d3c3b3ae7">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html#af0ca5c52e2459067bef4f0cd1a0d0ddf">grpc::experimental::ClientCallbackReader&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#aff636f0d65daccf22dad30e235c4239d">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#abae6cc931afdb704e51316b7b25fdf8f">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html#ad9c3af45e540b4d5f03650ed579a3c11">grpc::experimental::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#ad30bc39d239bb82e67374cb19845b9ee">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#a2bd65338b34000980fa048911c577637">grpc::internal::ClientAsyncStreamingInterface</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a91670b2eaffb5a7f2fcd2463a74df482">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a280b84393872fc41fad3bdd44dade1c8">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a4225670e06c65a6ca057f114dc5c64d5">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
+</li>
+<li>StartRead()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a666e0c0ff30021ba2e7849b20cbca8bc">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html#a1f3ce5bb8a138ab2068dad2a00ba65e7">grpc::experimental::ClientReadReactor&lt; Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a7859342cfac832581e314f62fa2f1eff">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#a30ccd2964a82326dec23de70aefa201d">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>
 </li>
 <li>starts_with()
 : <a class="el" href="classgrpc_1_1string__ref.html#ad74918bb3a98d24e75a4514859a70d77">grpc::string_ref</a>
+</li>
+<li>StartSendInitialMetadata()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#ad2d647cd1871657391dabb9e958ef03d">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html#add19c9d33e31deb9e755566259a85018">grpc::experimental::ServerReadReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a25a7dc2c76c1a0b23ef58b77a5e2bcab">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+</li>
+<li>StartWrite()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#ae66d15a840686c9d78afb049915f3422">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a5ff94a3d3d0e5122165c22fad46f19e1">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#aeaffec1d01b6c74f8387f1d607f23aca">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#ac36a295f82179e32be5f8d732e569de5">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+</li>
+<li>StartWriteAndFinish()
+: <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a549a2964e906ba456bc5be1fce35d312">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#add0dc81b22bd0d373cfdcb4670f302da">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+</li>
+<li>StartWriteLast()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#ac3ab866ac48739092e6741910752fbf2">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a256646bb2c5584b1a8ad55217ef515e9">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html#a49972b6742f5417e096149fa594edf3a">grpc::experimental::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html#a063ced865fb7473b64b7391e9fd21dec">grpc::experimental::ServerWriteReactor&lt; Request, Response &gt;</a>
+</li>
+<li>StartWritesDone()
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html#a1a4c575cd25e2ff102be9fe890e29d75">grpc::experimental::ClientBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html#a6c6530e17157efc345c98dd590e7a0b8">grpc::experimental::ClientWriteReactor&lt; Request &gt;</a>
 </li>
 <li>state
 : <a class="el" href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">gpr_event</a>
@@ -510,7 +570,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a50b5c353ac2d915b09e68bf9c1f7136e">grpc::ProtoBufferReader</a>
 </li>
 <li>Status()
-: <a class="el" href="classgrpc_1_1_status.html#a3b224f643a5a4bb1fb4244abe3bd48ab">grpc::Status</a>
+: <a class="el" href="classgrpc_1_1_status.html#a46537b45349a95126a16dcd67b5cf54c">grpc::Status</a>
 </li>
 <li>status
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a2118d693bf827b6098f6963ffedc0758">grpc_op::grpc_op_data::grpc_op_recv_status_on_client</a>
@@ -539,7 +599,7 @@ $(function() {
 : <a class="el" href="uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2">grpc_arg::grpc_arg_value</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a10c3455e679004ab4c61708ce0403601">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
 </li>
 <li>sub_refcount
 : <a class="el" href="structgrpc__slice__refcount.html#a113ae62eac88e4180feb9ecc80e0f2f9">grpc_slice_refcount</a>
@@ -564,7 +624,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -70,16 +70,23 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="interceptor_8h_source.html">interceptor.h</a>&gt;</code></p>
+<p>Interface for an interceptor.  
+ <a href="classgrpc_1_1experimental_1_1_interceptor.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2interceptor_8h_source.html">interceptor.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a6bf6f97f95c4e8ec2c9da1bc7134394e"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html#a6bf6f97f95c4e8ec2c9da1bc7134394e">~Interceptor</a> ()</td></tr>
 <tr class="separator:a6bf6f97f95c4e8ec2c9da1bc7134394e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a19ed7b8e299ab0c50cc88174f28ecf55"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html#a19ed7b8e299ab0c50cc88174f28ecf55">Intercept</a> (<a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html">InterceptorBatchMethods</a> *methods)=0</td></tr>
+<tr class="memdesc:a19ed7b8e299ab0c50cc88174f28ecf55"><td class="mdescLeft">&#160;</td><td class="mdescRight">The one public method of an <a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a> interface.  <a href="#a19ed7b8e299ab0c50cc88174f28ecf55">More...</a><br /></td></tr>
 <tr class="separator:a19ed7b8e299ab0c50cc88174f28ecf55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Interface for an interceptor. </p>
+<p><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a> authors must create a class that derives from this parent class. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a6bf6f97f95c4e8ec2c9da1bc7134394e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6bf6f97f95c4e8ec2c9da1bc7134394e">&#9670;&nbsp;</a></span>~Interceptor()</h2>
 
@@ -130,15 +137,18 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>The one public method of an <a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a> interface. </p>
+<p>Override this to trigger the desired actions at the hook points described above. </p>
+
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="interceptor_8h_source.html">interceptor.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="impl_2codegen_2interceptor_8h_source.html">interceptor.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">7.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -98,7 +98,7 @@ Macros</h2></td></tr>
 <tr class="separator:ae337dc477a6a45ac3d91e41e8f3f2f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abada8771b338845e4c6ef93c8392582c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">gpr_atm_full_fetch_add</a>(p,  delta)</td></tr>
 <tr class="separator:abada8771b338845e4c6ef93c8392582c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a724691b6d48f35bbd9f575c82fdfb526"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg</a>(p,  n)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td></tr>
+<tr class="memitem:a724691b6d48f35bbd9f575c82fdfb526"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#a724691b6d48f35bbd9f575c82fdfb526">gpr_atm_full_xchg</a>(p,  n)&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__windows_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td></tr>
 <tr class="separator:a724691b6d48f35bbd9f575c82fdfb526"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -192,7 +192,7 @@ Typedefs</h2></td></tr>
         <tr>
           <td></td>
           <td>)</td>
-          <td></td><td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__gcc__atomic_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td>
+          <td></td><td>&#160;&#160;&#160;<a class="el" href="impl_2codegen_2atm__windows_8h.html#af498a174edbc5b41c4d972480f892eac">GPR_ATM_INC_CAS_THEN</a>(__atomic_exchange_n((p), (n), __ATOMIC_ACQ_REL))</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -384,7 +384,7 @@ Typedefs</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:24 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

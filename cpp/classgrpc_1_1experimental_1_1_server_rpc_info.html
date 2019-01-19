@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -64,6 +64,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
@@ -71,21 +72,41 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="server__interceptor_8h_source.html">server_interceptor.h</a>&gt;</code></p>
+<p><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html" title="ServerRpcInfo represents the state of a particular RPC as it appears to an interceptor. ">ServerRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor.  
+ <a href="classgrpc_1_1experimental_1_1_server_rpc_info.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="impl_2codegen_2server__interceptor_8h_source.html">server_interceptor.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a4df831c9dd3e41b6a028dd08a145e57b"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">Type</a> { <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57ba8ca44f46ef1f04b2113678603c3800b4">Type::UNARY</a>, 
+<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57ba1350d72153c5dd5e5cbaffc22da1cfdc">Type::CLIENT_STREAMING</a>, 
+<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57baeb1bcff53747fbcc6c2ded49b5724257">Type::SERVER_STREAMING</a>, 
+<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57ba3d5d45305541e3b49d87d4c34ddc6617">Type::BIDI_STREAMING</a>
+ }<tr class="memdesc:a4df831c9dd3e41b6a028dd08a145e57b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type categorizes RPCs by unary or streaming type.  <a href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:a4df831c9dd3e41b6a028dd08a145e57b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a99076441026a17a86ea0a57b025f3e1f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a99076441026a17a86ea0a57b025f3e1f">~ServerRpcInfo</a> ()</td></tr>
 <tr class="separator:a99076441026a17a86ea0a57b025f3e1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a042417a50a5dea43061b2228fe544867"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a042417a50a5dea43061b2228fe544867">ServerRpcInfo</a> (const <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;)=delete</td></tr>
 <tr class="separator:a042417a50a5dea43061b2228fe544867"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96048ce3d5dd32242046f01e0332c3e8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a96048ce3d5dd32242046f01e0332c3e8">ServerRpcInfo</a> (<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&amp;)=default</td></tr>
-<tr class="separator:a96048ce3d5dd32242046f01e0332c3e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a412596091d54cc96eb8d670d17fab601"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a412596091d54cc96eb8d670d17fab601">operator=</a> (<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&amp;)=default</td></tr>
-<tr class="separator:a412596091d54cc96eb8d670d17fab601"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29233f33642f229c417a7d529a4a9312"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a29233f33642f229c417a7d529a4a9312">method</a> ()</td></tr>
-<tr class="separator:a29233f33642f229c417a7d529a4a9312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c928dcd7e5ad0843aa3477e25cdea8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a38c928dcd7e5ad0843aa3477e25cdea8">operator=</a> (const <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;)=delete</td></tr>
+<tr class="separator:a38c928dcd7e5ad0843aa3477e25cdea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a31eae368f0da0d46d9378f3deb15f143"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a31eae368f0da0d46d9378f3deb15f143">ServerRpcInfo</a> (<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&amp;)=delete</td></tr>
+<tr class="separator:a31eae368f0da0d46d9378f3deb15f143"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a208b8173bf59e0fa4f0017bb5b233318"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a208b8173bf59e0fa4f0017bb5b233318">operator=</a> (<a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&amp;)=delete</td></tr>
+<tr class="separator:a208b8173bf59e0fa4f0017bb5b233318"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a631b9a283605b13935a7a080d07f98ef"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a631b9a283605b13935a7a080d07f98ef">method</a> () const</td></tr>
+<tr class="memdesc:a631b9a283605b13935a7a080d07f98ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the fully-specified method name.  <a href="#a631b9a283605b13935a7a080d07f98ef">More...</a><br /></td></tr>
+<tr class="separator:a631b9a283605b13935a7a080d07f98ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">Type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a0bd7f7e15b2e081d7f9f138bb98d8bf7">type</a> () const</td></tr>
+<tr class="memdesc:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the type of the RPC (unary or a streaming flavor)  <a href="#a0bd7f7e15b2e081d7f9f138bb98d8bf7">More...</a><br /></td></tr>
+<tr class="separator:a0bd7f7e15b2e081d7f9f138bb98d8bf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cd300afa2cc1dac5b4048b9217776c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a2cd300afa2cc1dac5b4048b9217776c0">server_context</a> ()</td></tr>
+<tr class="memdesc:a2cd300afa2cc1dac5b4048b9217776c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the underlying <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> structure associated with the RPC to support features that apply to it.  <a href="#a2cd300afa2cc1dac5b4048b9217776c0">More...</a><br /></td></tr>
 <tr class="separator:a2cd300afa2cc1dac5b4048b9217776c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -95,6 +116,40 @@ Friends</h2></td></tr>
 <tr class="memitem:a126374990f90927736f4efdcce92c569"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a126374990f90927736f4efdcce92c569">grpc::ServerContext</a></td></tr>
 <tr class="separator:a126374990f90927736f4efdcce92c569"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html" title="ServerRpcInfo represents the state of a particular RPC as it appears to an interceptor. ">ServerRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
+<p>It is created and owned by the library and passed to the CreateServerInterceptor method of the application's <a class="el" href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html">ServerInterceptorFactoryInterface</a> implementation </p>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+<a id="a4df831c9dd3e41b6a028dd08a145e57b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4df831c9dd3e41b6a028dd08a145e57b">&#9670;&nbsp;</a></span>Type</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">grpc::experimental::ServerRpcInfo::Type</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Type categorizes RPCs by unary or streaming type. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a4df831c9dd3e41b6a028dd08a145e57ba8ca44f46ef1f04b2113678603c3800b4"></a>UNARY&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a4df831c9dd3e41b6a028dd08a145e57ba1350d72153c5dd5e5cbaffc22da1cfdc"></a>CLIENT_STREAMING&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a4df831c9dd3e41b6a028dd08a145e57baeb1bcff53747fbcc6c2ded49b5724257"></a>SERVER_STREAMING&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a4df831c9dd3e41b6a028dd08a145e57ba3d5d45305541e3b49d87d4c34ddc6617"></a>BIDI_STREAMING&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a99076441026a17a86ea0a57b025f3e1f"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a99076441026a17a86ea0a57b025f3e1f">&#9670;&nbsp;</a></span>~ServerRpcInfo()</h2>
@@ -147,8 +202,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a96048ce3d5dd32242046f01e0332c3e8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a96048ce3d5dd32242046f01e0332c3e8">&#9670;&nbsp;</a></span>ServerRpcInfo() <span class="overload">[2/2]</span></h2>
+<a id="a31eae368f0da0d46d9378f3deb15f143"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a31eae368f0da0d46d9378f3deb15f143">&#9670;&nbsp;</a></span>ServerRpcInfo() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -166,7 +221,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -174,8 +229,8 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a29233f33642f229c417a7d529a4a9312"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a29233f33642f229c417a7d529a4a9312">&#9670;&nbsp;</a></span>method()</h2>
+<a id="a631b9a283605b13935a7a080d07f98ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a631b9a283605b13935a7a080d07f98ef">&#9670;&nbsp;</a></span>method()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -187,7 +242,7 @@ Friends</h2></td></tr>
           <td class="memname">const char* grpc::experimental::ServerRpcInfo::method </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
-          <td></td>
+          <td> const</td>
         </tr>
       </table>
   </td>
@@ -197,10 +252,38 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Return the fully-specified method name. </p>
+
 </div>
 </div>
-<a id="a412596091d54cc96eb8d670d17fab601"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a412596091d54cc96eb8d670d17fab601">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="a38c928dcd7e5ad0843aa3477e25cdea8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38c928dcd7e5ad0843aa3477e25cdea8">&#9670;&nbsp;</a></span>operator=() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a>&amp; grpc::experimental::ServerRpcInfo::operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a> &amp;&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a208b8173bf59e0fa4f0017bb5b233318"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a208b8173bf59e0fa4f0017bb5b233318">&#9670;&nbsp;</a></span>operator=() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -218,7 +301,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+<span class="mlabels"><span class="mlabel">delete</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -247,6 +330,35 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Return a pointer to the underlying <a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a> structure associated with the RPC to support features that apply to it. </p>
+
+</div>
+</div>
+<a id="a0bd7f7e15b2e081d7f9f138bb98d8bf7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0bd7f7e15b2e081d7f9f138bb98d8bf7">&#9670;&nbsp;</a></span>type()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a4df831c9dd3e41b6a028dd08a145e57b">Type</a> grpc::experimental::ServerRpcInfo::type </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return the type of the RPC (unary or a streaming flavor) </p>
 
 </div>
 </div>
@@ -296,12 +408,12 @@ Friends</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpcpp/impl/codegen/<a class="el" href="server__interceptor_8h_source.html">server_interceptor.h</a></li>
+<li>include/grpcpp/impl/codegen/<a class="el" href="impl_2codegen_2server__interceptor_8h_source.html">server_interceptor.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

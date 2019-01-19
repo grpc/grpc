@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a2db64a471c343d96f4e8e191efce8c08"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">SetServingStatus</a> (bool serving)=0</td></tr>
 <tr class="memdesc:a2db64a471c343d96f4e8e191efce8c08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Apply to all registered service names.  <a href="#a2db64a471c343d96f4e8e191efce8c08">More...</a><br /></td></tr>
 <tr class="separator:a2db64a471c343d96f4e8e191efce8c08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a520a6c15acec341dc65a638e55b0798b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html#a520a6c15acec341dc65a638e55b0798b">Shutdown</a> ()</td></tr>
+<tr class="memdesc:a520a6c15acec341dc65a638e55b0798b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set all registered service names to not serving and prevent future state changes.  <a href="#a520a6c15acec341dc65a638e55b0798b">More...</a><br /></td></tr>
+<tr class="separator:a520a6c15acec341dc65a638e55b0798b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The gRPC server uses this interface to expose the health checking service without depending on protobuf. </p>
@@ -181,13 +184,40 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a520a6c15acec341dc65a638e55b0798b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a520a6c15acec341dc65a638e55b0798b">&#9670;&nbsp;</a></span>Shutdown()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::HealthCheckServiceInterface::Shutdown </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set all registered service names to not serving and prevent future state changes. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/<a class="el" href="grpcpp_2health__check__service__interface_8h_source.html">health_check_service_interface.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

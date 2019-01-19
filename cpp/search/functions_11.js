@@ -5,5 +5,6 @@ var searchData=
   ['timepoint2timespec',['Timepoint2Timespec',['../namespacegrpc.html#a4e160d3739280d51ec130ab1bb1c549c',1,'grpc']]],
   ['timepointhr2timespec',['TimepointHR2Timespec',['../namespacegrpc.html#a8b3b542af97e1ae35f327c7095d98369',1,'grpc']]],
   ['timespec2timepoint',['Timespec2Timepoint',['../namespacegrpc.html#a12896f279762d0100669da708d466ec1',1,'grpc']]],
-  ['trycancel',['TryCancel',['../classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984',1,'grpc::ClientContext::TryCancel()'],['../classgrpc_1_1_server_context.html#a8569c71704f03f3b1089745228c70e3b',1,'grpc::ServerContext::TryCancel()']]]
+  ['trycancel',['TryCancel',['../classgrpc_1_1_client_context.html#abd0f6715c30287b75288015eee628984',1,'grpc::ClientContext::TryCancel()'],['../classgrpc_1_1_server_context.html#a8569c71704f03f3b1089745228c70e3b',1,'grpc::ServerContext::TryCancel()']]],
+  ['type',['type',['../classgrpc_1_1experimental_1_1_client_rpc_info.html#a6d97a409fc9d22ec20ede8e1b9bc11c9',1,'grpc::experimental::ClientRpcInfo::type()'],['../classgrpc_1_1experimental_1_1_server_rpc_info.html#a0bd7f7e15b2e081d7f9f138bb98d8bf7',1,'grpc::experimental::ServerRpcInfo::type()']]]
 ];

@@ -121,7 +121,7 @@ var searchData=
   ['grpc_5fchannel_5fwatch_5fconnectivity_5fstate',['grpc_channel_watch_connectivity_state',['../grpc_8h.html#a568bac9fe4004c1dd790e6569b918d2f',1,'grpc.h']]],
   ['grpc_5fchannelz_5fget_5fchannel',['grpc_channelz_get_channel',['../grpc_8h.html#ab7254f9b17f4efa3d5111b928bd78d3c',1,'grpc.h']]],
   ['grpc_5fchannelz_5fget_5fserver',['grpc_channelz_get_server',['../grpc_8h.html#ab0f2e2c55348873010ee6cbe25a1a288',1,'grpc.h']]],
-  ['grpc_5fchannelz_5fget_5fserver_5fsockets',['grpc_channelz_get_server_sockets',['../grpc_8h.html#aa77175d74575442ab2fdb76861beb0e2',1,'grpc.h']]],
+  ['grpc_5fchannelz_5fget_5fserver_5fsockets',['grpc_channelz_get_server_sockets',['../grpc_8h.html#a4ad7342a04c28c6a16f0256cfc007032',1,'grpc.h']]],
   ['grpc_5fchannelz_5fget_5fservers',['grpc_channelz_get_servers',['../grpc_8h.html#a4581bf691bc258f4280c1da8c79f817d',1,'grpc.h']]],
   ['grpc_5fchannelz_5fget_5fsocket',['grpc_channelz_get_socket',['../grpc_8h.html#aa3c7622a98ff25d48db43ef2871aa37f',1,'grpc.h']]],
   ['grpc_5fchannelz_5fget_5fsubchannel',['grpc_channelz_get_subchannel',['../grpc_8h.html#a3e4a297b24f0e9b4ec59f3098b29ff0a',1,'grpc.h']]],
