@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.19.0-dev</span>
+   &#160;<span id="projectnumber">1.18.0</span>
    </div>
   </td>
  </tr>
@@ -84,14 +84,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a52db0710a21166b732bf5af66a69ca1f"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
 <tr class="memitem:a52db0710a21166b732bf5af66a69ca1f"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a52db0710a21166b732bf5af66a69ca1f">SendMessage</a> (const M &amp;message) <a class="el" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
 <tr class="separator:a52db0710a21166b732bf5af66a69ca1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b590dbe3faae7c82243d533cae71d1e"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:a4b590dbe3faae7c82243d533cae71d1e"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#a4b590dbe3faae7c82243d533cae71d1e">SendMessagePtr</a> (const M *message, <a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> options) <a class="el" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="memdesc:a4b590dbe3faae7c82243d533cae71d1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send <em>message</em> using <em>options</em> for the write.  <a href="#a4b590dbe3faae7c82243d533cae71d1e">More...</a><br /></td></tr>
-<tr class="separator:a4b590dbe3faae7c82243d533cae71d1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6bc347158d5afdc9885ebf9ed396096"><td class="memTemplParams" colspan="2">template&lt;class M &gt; </td></tr>
-<tr class="memitem:ab6bc347158d5afdc9885ebf9ed396096"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_op_send_message.html#ab6bc347158d5afdc9885ebf9ed396096">SendMessagePtr</a> (const M *message) <a class="el" href="impl_2codegen_2port__platform_8h.html#aef49047a3be38448a61332117b306686">GRPC_MUST_USE_RESULT</a></td></tr>
-<tr class="memdesc:ab6bc347158d5afdc9885ebf9ed396096"><td class="mdescLeft">&#160;</td><td class="mdescRight">This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage.  <a href="#ab6bc347158d5afdc9885ebf9ed396096">More...</a><br /></td></tr>
-<tr class="separator:ab6bc347158d5afdc9885ebf9ed396096"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -248,61 +240,6 @@ template&lt;class M &gt; </div>
 
 </div>
 </div>
-<a id="a4b590dbe3faae7c82243d533cae71d1e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4b590dbe3faae7c82243d533cae71d1e">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class M &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessagePtr </td>
-          <td>(</td>
-          <td class="paramtype">const M *&#160;</td>
-          <td class="paramname"><em>message</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&#160;</td>
-          <td class="paramname"><em>options</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Send <em>message</em> using <em>options</em> for the write. </p>
-<p>The <em>options</em> are cleared after use. This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
-
-</div>
-</div>
-<a id="ab6bc347158d5afdc9885ebf9ed396096"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab6bc347158d5afdc9885ebf9ed396096">&#9670;&nbsp;</a></span>SendMessagePtr() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class M &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::internal::CallOpSendMessage::SendMessagePtr </td>
-          <td>(</td>
-          <td class="paramtype">const M *&#160;</td>
-          <td class="paramname"><em>message</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>This form of SendMessage allows gRPC to reference <em>message</em> beyond the lifetime of SendMessage. </p>
-
-</div>
-</div>
 <a id="a1465562f9011a998e85b0d4631aaeeea"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1465562f9011a998e85b0d4631aaeeea">&#9670;&nbsp;</a></span>SetFinishInterceptionHookPoint()</h2>
 
@@ -387,7 +324,7 @@ template&lt;class M &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:38:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
