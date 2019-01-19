@@ -57,6 +57,7 @@ ClientContext::ClientContext()
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       census_context_(nullptr),
       propagate_from_call_(nullptr),
+      compression_algorithm_(GRPC_COMPRESS_NONE),
       initial_metadata_corked_(false) {
   g_client_callbacks->DefaultConstructor(this);
 }

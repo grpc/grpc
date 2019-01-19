@@ -80,7 +80,6 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -905,7 +904,6 @@ XdsLb::XdsLb(const LoadBalancingPolicy::Args& args)
               .set_max_backoff(GRPC_XDS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
   // Initialization.
   gpr_mu_init(&lb_channel_mu_);
-  grpc_subchannel_index_ref();
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &XdsLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
@@ -949,7 +947,6 @@ XdsLb::~XdsLb() {
   if (serverlist_ != nullptr) {
     xds_grpclb_destroy_serverlist(serverlist_);
   }
-  grpc_subchannel_index_unref();
 }
 
 void XdsLb::ShutdownLocked() {
@@ -1526,6 +1523,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
+    lb_policy_args.subchannel_pool = subchannel_pool();
     lb_policy_args.args = args;
     CreateChildPolicyLocked(lb_policy_args);
     if (grpc_lb_xds_trace.enabled()) {

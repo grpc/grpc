@@ -154,3 +154,13 @@ sh_library(
     name = "run_with_poller_sh",
     srcs = ["run_with_poller.sh"],
 )
+
+grpc_cc_library(
+    name = "test_lb_policies",
+    testonly = 1,
+    srcs = ["test_lb_policies.cc"],
+    hdrs = ["test_lb_policies.h"],
+    deps = [
+        "//:grpc",
+    ],
+)

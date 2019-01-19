@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -38,7 +39,6 @@
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
-typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -161,10 +161,6 @@ void grpc_subchannel_notify_on_state_change(
  * */
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
-
-/** return the subchannel index key for \a subchannel */
-const grpc_subchannel_key* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel);
 
 // Resets the connection backoff of the subchannel.
 // TODO(roth): Move connection backoff out of subchannels and up into LB

@@ -26,7 +26,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -164,7 +163,6 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
     gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
   UpdateLocked(*args.args, args.lb_config);
-  grpc_subchannel_index_ref();
 }
 
 PickFirst::~PickFirst() {
@@ -176,7 +174,6 @@ PickFirst::~PickFirst() {
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
-  grpc_subchannel_index_unref();
 }
 
 void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {

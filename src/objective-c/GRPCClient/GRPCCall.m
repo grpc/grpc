@@ -599,7 +599,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_async(_callQueue, ^{
     __weak GRPCCall *weakSelf = self;
     [self startReadWithHandler:^(grpc_byte_buffer *message) {
-      NSLog(@"message received");
       if (message == NULL) {
         // No more messages from the server
         return;
@@ -773,7 +772,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   __weak GRPCCall *weakSelf = self;
   [self invokeCallWithHeadersHandler:^(NSDictionary *headers) {
     // Response headers received.
-    NSLog(@"response received");
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       strongSelf.responseHeaders = headers;
@@ -781,7 +779,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
     }
   }
       completionHandler:^(NSError *error, NSDictionary *trailers) {
-        NSLog(@"completion received");
         __strong GRPCCall *strongSelf = weakSelf;
         if (strongSelf) {
           strongSelf.responseTrailers = trailers;
