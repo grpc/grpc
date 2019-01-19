@@ -43,6 +43,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -963,6 +964,10 @@ void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
 static grpc_closure_scheduler* write_scheduler(grpc_chttp2_transport* t,
                                                bool early_results_scheduled,
                                                bool partial_write) {
+  // If we're already in a background poller, don't offload this to an executor
+  if (grpc_iomgr_is_any_background_poller_thread()) {
+    return grpc_schedule_on_exec_ctx;
+  }
   /* if it's not the first write in a batch, always offload to the executor:
      we'll probably end up queuing against the kernel anyway, so we'll likely
      get better latency overall if we switch writing work elsewhere and continue
