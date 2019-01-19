@@ -968,19 +968,19 @@ static grpc_closure_scheduler* write_scheduler(grpc_chttp2_transport* t,
      get better latency overall if we switch writing work elsewhere and continue
      with application work above */
   if (!t->is_first_write_in_batch) {
-    return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+    return grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
   }
   /* equivalently, if it's a partial write, we *know* we're going to be taking a
      thread jump to write it because of the above, may as well do so
      immediately */
   if (partial_write) {
-    return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+    return grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
   }
   switch (t->opt_target) {
     case GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT:
       /* executor gives us the largest probability of being able to batch a
        * write with others on this transport */
-      return grpc_executor_scheduler(GRPC_EXECUTOR_SHORT);
+      return grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
     case GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY:
       return grpc_schedule_on_exec_ctx;
   }
