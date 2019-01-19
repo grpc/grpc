@@ -93,8 +93,11 @@ struct Timestamps {
   Timestamp sent_time;
   Timestamp acked_time;
 
-  uint32_t byte_offset;     /* byte offset relative to the start of the RPC */
+  uint32_t byte_offset; /* byte offset relative to the start of the RPC */
+
+#ifdef GRPC_LINUX_ERRQUEUE
   grpc_core::tcp_info info; /* tcp_info collected on sendmsg */
+#endif                      /* GRPC_LINUX_ERRQUEUE */
 };
 
 /** TracedBuffer is a class to keep track of timestamps for a specific buffer in
