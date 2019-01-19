@@ -106,7 +106,6 @@ var searchData=
   ['grpc_5fdefault_5fssl_5froots_5ffile_5fpath_5fenv_5fvar',['GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR',['../grpc__security__constants_8h.html#a48565da473b7c82fa2453798f620fd59',1,'grpc_security_constants.h']]],
   ['grpc_5ffinal',['GRPC_FINAL',['../grpcpp_2impl_2codegen_2config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9',1,'config.h']]],
   ['grpc_5fgoogle_5fcredentials_5fenv_5fvar',['GRPC_GOOGLE_CREDENTIALS_ENV_VAR',['../grpc__security__constants_8h.html#a3874f70577fc9fe15fd2c4ce68a36ecd',1,'grpc_security_constants.h']]],
-  ['grpc_5fif_5fnametoindex',['GRPC_IF_NAMETOINDEX',['../impl_2codegen_2port__platform_8h.html#aa642fae320ed450c1979f5f707402b3c',1,'port_platform.h']]],
   ['grpc_5finitial_5fmetadata_5fcacheable_5frequest',['GRPC_INITIAL_METADATA_CACHEABLE_REQUEST',['../grpc__types_8h.html#a7978c09a9933e7b858c65c1b03eb5b2b',1,'grpc_types.h']]],
   ['grpc_5finitial_5fmetadata_5fcorked',['GRPC_INITIAL_METADATA_CORKED',['../grpc__types_8h.html#a1175f30479912922d006387536d2c46c',1,'grpc_types.h']]],
   ['grpc_5finitial_5fmetadata_5fidempotent_5frequest',['GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST',['../grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01',1,'grpc_types.h']]],
