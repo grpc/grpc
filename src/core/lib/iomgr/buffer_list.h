@@ -36,7 +36,7 @@ struct ConnectionMetrics {
   /* Delivery rate in Bytes/s. */
   Optional<uint64_t> delivery_rate;
   /* If the delivery rate is limited by the application, this is set to true. */
-  Optional<uint64_t> is_delivery_rate_app_limited;
+  Optional<bool> is_delivery_rate_app_limited;
   /* Total packets retransmitted. */
   Optional<uint32_t> packet_retx;
   /* Total packets retransmitted spuriously. This metric is smaller than or

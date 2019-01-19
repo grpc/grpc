@@ -36,6 +36,8 @@ class Optional {
   void reset() { set_ = false; }
 
   T value() { return value_; }
+
+ private:
   T value_;
   bool set_ = false;
 };
