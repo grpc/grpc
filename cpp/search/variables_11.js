@@ -7,5 +7,6 @@ var searchData=
   ['trailing_5fmetadata_5fcount',['trailing_metadata_count',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#aa33b27b5379b47e32202ccb420d1f87b',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server']]],
   ['tv_5fnsec',['tv_nsec',['../structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0',1,'gpr_timespec']]],
   ['tv_5fsec',['tv_sec',['../structgpr__timespec.html#a6c4506fc66a7ee0a6bc87a9ae73a70cb',1,'gpr_timespec']]],
-  ['type',['type',['../structgrpc__byte__buffer.html#aa7357d67e401d5bc9d10d8fed008dec8',1,'grpc_byte_buffer::type()'],['../structgrpc__arg.html#aa26f2d3c4b1649c9eb061d24a8c10fd4',1,'grpc_arg::type()'],['../structgrpc__event.html#a8e7f571b759f55db4f6bebc2a4f56ad7',1,'grpc_event::type()']]]
+  ['type',['type',['../structgrpc__byte__buffer.html#aa7357d67e401d5bc9d10d8fed008dec8',1,'grpc_byte_buffer::type()'],['../structgrpc__arg.html#aa26f2d3c4b1649c9eb061d24a8c10fd4',1,'grpc_arg::type()'],['../structgrpc__event.html#a8e7f571b759f55db4f6bebc2a4f56ad7',1,'grpc_event::type()']]],
+  ['type_5f',['type_',['../classgrpc_1_1_server_interface_1_1_registered_async_request.html#ac7ca2c363da519ce7acf1dc2c57c43e4',1,'grpc::ServerInterface::RegisteredAsyncRequest']]]
 ];

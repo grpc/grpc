@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -72,12 +72,15 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 
+<p><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html" title="RegisteredAsyncRequest is not part of the C++ API. ">RegisteredAsyncRequest</a> is not part of the C++ API.  
+ <a href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2server__interface_8h_source.html">server_interface.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a18769b18d98e6e2c2023a53bf01fe748"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#a18769b18d98e6e2c2023a53bf01fe748">RegisteredAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, const char *name)</td></tr>
-<tr class="separator:a18769b18d98e6e2c2023a53bf01fe748"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab346b5990ac6b21df9359cc82549f88c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#ab346b5990ac6b21df9359cc82549f88c">RegisteredAsyncRequest</a> (<a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, const char *name, <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">internal::RpcMethod::RpcType</a> type)</td></tr>
+<tr class="separator:ab346b5990ac6b21df9359cc82549f88c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1ab16861c90e11a1347605632d91c4aa"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#a1ab16861c90e11a1347605632d91c4aa">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
 <tr class="memdesc:a1ab16861c90e11a1347605632d91c4aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">FinalizeResult must be called before informing user code that the operation bound to the underlying core completion queue tag has completed.  <a href="#a1ab16861c90e11a1347605632d91c4aa">More...</a><br /></td></tr>
 <tr class="separator:a1ab16861c90e11a1347605632d91c4aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,6 +102,8 @@ Protected Member Functions</h2></td></tr>
 Protected Attributes</h2></td></tr>
 <tr class="memitem:a1537a99e04bf83024dff6165e17e59d4"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#a1537a99e04bf83024dff6165e17e59d4">name_</a></td></tr>
 <tr class="separator:a1537a99e04bf83024dff6165e17e59d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7ca2c363da519ce7acf1dc2c57c43e4"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">internal::RpcMethod::RpcType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#ac7ca2c363da519ce7acf1dc2c57c43e4">type_</a></td></tr>
+<tr class="separator:ac7ca2c363da519ce7acf1dc2c57c43e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html">grpc::ServerInterface::BaseAsyncRequest</a></td></tr>
 <tr class="memitem:aacf318c2080831d73f7f02469fa045dc inherit pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *const&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#aacf318c2080831d73f7f02469fa045dc">server_</a></td></tr>
 <tr class="separator:aacf318c2080831d73f7f02469fa045dc inherit pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,9 +128,11 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:a6e2125fceb15e9c6673b02ad870a0025 inherit pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_base_async_request.html#a6e2125fceb15e9c6673b02ad870a0025">done_intercepting_</a></td></tr>
 <tr class="separator:a6e2125fceb15e9c6673b02ad870a0025 inherit pro_attribs_classgrpc_1_1_server_interface_1_1_base_async_request"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a18769b18d98e6e2c2023a53bf01fe748"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a18769b18d98e6e2c2023a53bf01fe748">&#9670;&nbsp;</a></span>RegisteredAsyncRequest()</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html" title="RegisteredAsyncRequest is not part of the C++ API. ">RegisteredAsyncRequest</a> is not part of the C++ API. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="ab346b5990ac6b21df9359cc82549f88c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab346b5990ac6b21df9359cc82549f88c">&#9670;&nbsp;</a></span>RegisteredAsyncRequest()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -170,7 +177,13 @@ Protected Attributes</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>name</em>&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">internal::RpcMethod::RpcType</a>&#160;</td>
+          <td class="paramname"><em>type</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -298,13 +311,35 @@ Protected Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="ac7ca2c363da519ce7acf1dc2c57c43e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac7ca2c363da519ce7acf1dc2c57c43e4">&#9670;&nbsp;</a></span>type_</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1">internal::RpcMethod::RpcType</a> grpc::ServerInterface::RegisteredAsyncRequest::type_</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/impl/codegen/<a class="el" href="grpcpp_2impl_2codegen_2server__interface_8h_source.html">server_interface.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">7.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -91,7 +91,7 @@ $(function() {
 <div class="fragment"><div class="line">grpc_cq_end_op(cq, tag) {</div><div class="line">  \\ 1. Queue the tag in the event queue</div><div class="line"></div><div class="line">  \\ 2. Find the pollset corresponding to the completion queue</div><div class="line">  \\     (i)  If the cq is of type GRPC_CQ_NEXT, then KICK ANY worker</div><div class="line">  \\          i.e., call grpc_pollset_kick(pollset, nullptr)</div><div class="line">  \\     (ii) If the cq is of type GRPC_CQ_PLUCK, then search the tag&lt;-&gt;worker</div><div class="line">  \\          map on the completion queue to find the worker. Then specifically</div><div class="line">  \\          kick that worker i.e  call grpc_pollset_kick(pollset, worker)</div><div class="line">}</div></div><!-- fragment --> </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:17 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:24 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

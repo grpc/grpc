@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -75,36 +75,123 @@ $(function() {
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ab5efa6c1ab93ca3a5ee46cff63f87b76"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ab5efa6c1ab93ca3a5ee46cff63f87b76">QueryInterceptionHookPoint</a> (<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1">experimental::InterceptionHookPoints</a> type) override</td></tr>
+<tr class="memdesc:ab5efa6c1ab93ca3a5ee46cff63f87b76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Determine whether the current batch has an interception hook point of type <em>type</em>.  <a href="#ab5efa6c1ab93ca3a5ee46cff63f87b76">More...</a><br /></td></tr>
 <tr class="separator:ab5efa6c1ab93ca3a5ee46cff63f87b76"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae54b9b17705512879fd05fa7c6ca57db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ae54b9b17705512879fd05fa7c6ca57db">Proceed</a> () override</td></tr>
+<tr class="memdesc:ae54b9b17705512879fd05fa7c6ca57db"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal that the interceptor is done intercepting the current batch of the RPC.  <a href="#ae54b9b17705512879fd05fa7c6ca57db">More...</a><br /></td></tr>
 <tr class="separator:ae54b9b17705512879fd05fa7c6ca57db"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ffe4ff4ddbecd1f3b735d25fc99b028"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4ffe4ff4ddbecd1f3b735d25fc99b028">Hijack</a> () override</td></tr>
+<tr class="memdesc:a4ffe4ff4ddbecd1f3b735d25fc99b028"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the interceptor has hijacked the RPC (only valid if the batch contains send_initial_metadata on the client side).  <a href="#a4ffe4ff4ddbecd1f3b735d25fc99b028">More...</a><br /></td></tr>
 <tr class="separator:a4ffe4ff4ddbecd1f3b735d25fc99b028"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ababe0a8a54704e1556403ac8d1a848e1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ababe0a8a54704e1556403ac8d1a848e1">GetSendMessage</a> () override</td></tr>
-<tr class="separator:ababe0a8a54704e1556403ac8d1a848e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3368ae4a100d210716414bf1dc57f5cd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a3368ae4a100d210716414bf1dc57f5cd">GetSerializedSendMessage</a> () override</td></tr>
+<tr class="memdesc:a3368ae4a100d210716414bf1dc57f5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifable <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a> holding the serialized form of the message that is going to be sent.  <a href="#a3368ae4a100d210716414bf1dc57f5cd">More...</a><br /></td></tr>
+<tr class="separator:a3368ae4a100d210716414bf1dc57f5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a683bb3299153d8f662c0ac8ebfce8024"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a683bb3299153d8f662c0ac8ebfce8024">GetSendMessageStatus</a> () override</td></tr>
+<tr class="memdesc:a683bb3299153d8f662c0ac8ebfce8024"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks whether the SEND MESSAGE op succeeded.  <a href="#a683bb3299153d8f662c0ac8ebfce8024">More...</a><br /></td></tr>
+<tr class="separator:a683bb3299153d8f662c0ac8ebfce8024"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82b2071f39325cee162a7e98cf384c7f"><td class="memItemLeft" align="right" valign="top">const void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a82b2071f39325cee162a7e98cf384c7f">GetSendMessage</a> () override</td></tr>
+<tr class="memdesc:a82b2071f39325cee162a7e98cf384c7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a non-modifiable pointer to the non-serialized form of the message to be sent.  <a href="#a82b2071f39325cee162a7e98cf384c7f">More...</a><br /></td></tr>
+<tr class="separator:a82b2071f39325cee162a7e98cf384c7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae38346053d5cd82f077af2b286861bc3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ae38346053d5cd82f077af2b286861bc3">ModifySendMessage</a> (const void *message) override</td></tr>
+<tr class="memdesc:ae38346053d5cd82f077af2b286861bc3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the message to be sent with <em>message</em>.  <a href="#ae38346053d5cd82f077af2b286861bc3">More...</a><br /></td></tr>
+<tr class="separator:ae38346053d5cd82f077af2b286861bc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aeb89be1a0a160c39a1e6bf94429d5b10">GetSendInitialMetadata</a> () override</td></tr>
+<tr class="memdesc:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the initial metadata to be sent.  <a href="#aeb89be1a0a160c39a1e6bf94429d5b10">More...</a><br /></td></tr>
 <tr class="separator:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a847d3514928d17070c30430fcbf9630c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a847d3514928d17070c30430fcbf9630c">GetSendStatus</a> () override</td></tr>
+<tr class="memdesc:a847d3514928d17070c30430fcbf9630c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the status to be sent. Valid for PRE_SEND_STATUS interceptions.  <a href="#a847d3514928d17070c30430fcbf9630c">More...</a><br /></td></tr>
 <tr class="separator:a847d3514928d17070c30430fcbf9630c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05b4170713f592382e8008bc0a9c5f06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a05b4170713f592382e8008bc0a9c5f06">ModifySendStatus</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status) override</td></tr>
+<tr class="memdesc:a05b4170713f592382e8008bc0a9c5f06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the status with <em>status</em>.  <a href="#a05b4170713f592382e8008bc0a9c5f06">More...</a><br /></td></tr>
 <tr class="separator:a05b4170713f592382e8008bc0a9c5f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4d1a0a5461cbc9173cffd81fe0c8b80d">GetSendTrailingMetadata</a> () override</td></tr>
+<tr class="memdesc:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the trailing metadata to be sent.  <a href="#a4d1a0a5461cbc9173cffd81fe0c8b80d">More...</a><br /></td></tr>
 <tr class="separator:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a12909a13d7cecdceeffc794c06ff6896"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a12909a13d7cecdceeffc794c06ff6896">GetRecvMessage</a> () override</td></tr>
+<tr class="memdesc:a12909a13d7cecdceeffc794c06ff6896"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a pointer to the modifiable received message.  <a href="#a12909a13d7cecdceeffc794c06ff6896">More...</a><br /></td></tr>
 <tr class="separator:a12909a13d7cecdceeffc794c06ff6896"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f7cb8407197de0a0d179ed94d1d5b25"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a1f7cb8407197de0a0d179ed94d1d5b25">GetRecvInitialMetadata</a> () override</td></tr>
+<tr class="memdesc:a1f7cb8407197de0a0d179ed94d1d5b25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the received initial metadata.  <a href="#a1f7cb8407197de0a0d179ed94d1d5b25">More...</a><br /></td></tr>
 <tr class="separator:a1f7cb8407197de0a0d179ed94d1d5b25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ce51320fa84af6b2a00815305257b4e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a3ce51320fa84af6b2a00815305257b4e">GetRecvStatus</a> () override</td></tr>
+<tr class="memdesc:a3ce51320fa84af6b2a00815305257b4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable view of the received status on POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a3ce51320fa84af6b2a00815305257b4e">More...</a><br /></td></tr>
 <tr class="separator:a3ce51320fa84af6b2a00815305257b4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4dc85e0f1a3cdb0c95f04994d443f81f">GetRecvTrailingMetadata</a> () override</td></tr>
+<tr class="memdesc:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the received trailing metadata on POST_RECV_STATUS interceptions; nullptr if not valid.  <a href="#a4dc85e0f1a3cdb0c95f04994d443f81f">More...</a><br /></td></tr>
 <tr class="separator:a4dc85e0f1a3cdb0c95f04994d443f81f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5103bca2f3826d43182436e3e736bd7b"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a5103bca2f3826d43182436e3e736bd7b">GetInterceptedChannel</a> () override</td></tr>
+<tr class="memdesc:a5103bca2f3826d43182436e3e736bd7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets an intercepted channel.  <a href="#a5103bca2f3826d43182436e3e736bd7b">More...</a><br /></td></tr>
 <tr class="separator:a5103bca2f3826d43182436e3e736bd7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52b92d9e8e32f32ce97b4a8f235f595d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a52b92d9e8e32f32ce97b4a8f235f595d">FailHijackedRecvMessage</a> () override</td></tr>
+<tr class="memdesc:a52b92d9e8e32f32ce97b4a8f235f595d"><td class="mdescLeft">&#160;</td><td class="mdescRight">On a hijacked RPC, an interceptor can decide to fail a PRE_RECV_MESSAGE op.  <a href="#a52b92d9e8e32f32ce97b4a8f235f595d">More...</a><br /></td></tr>
+<tr class="separator:a52b92d9e8e32f32ce97b4a8f235f595d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a08cd8fac7808b9a392a5382a13e8e01e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a08cd8fac7808b9a392a5382a13e8e01e">FailHijackedSendMessage</a> () override</td></tr>
+<tr class="memdesc:a08cd8fac7808b9a392a5382a13e8e01e"><td class="mdescLeft">&#160;</td><td class="mdescRight">On a hijacked RPC/ to-be hijacked RPC, this can be called to fail a SEND MESSAGE op.  <a href="#a08cd8fac7808b9a392a5382a13e8e01e">More...</a><br /></td></tr>
+<tr class="separator:a08cd8fac7808b9a392a5382a13e8e01e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1experimental_1_1_interceptor_batch_methods"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1experimental_1_1_interceptor_batch_methods')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html">grpc::experimental::InterceptorBatchMethods</a></td></tr>
 <tr class="memitem:a55f28c464881763e44c003ad945395a5 inherit pub_methods_classgrpc_1_1experimental_1_1_interceptor_batch_methods"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a55f28c464881763e44c003ad945395a5">~InterceptorBatchMethods</a> ()</td></tr>
 <tr class="separator:a55f28c464881763e44c003ad945395a5 inherit pub_methods_classgrpc_1_1experimental_1_1_interceptor_batch_methods"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a52b92d9e8e32f32ce97b4a8f235f595d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a52b92d9e8e32f32ce97b4a8f235f595d">&#9670;&nbsp;</a></span>FailHijackedRecvMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CancelInterceptorBatchMethods::FailHijackedRecvMessage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>On a hijacked RPC, an interceptor can decide to fail a PRE_RECV_MESSAGE op. </p>
+<p>This would be a signal to the reader that there will be no more messages, or the stream has failed or been cancelled. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a4d26f52897117e3ea5b6c609a3d4bf91">grpc::experimental::InterceptorBatchMethods</a>.</p>
+
+</div>
+</div>
+<a id="a08cd8fac7808b9a392a5382a13e8e01e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a08cd8fac7808b9a392a5382a13e8e01e">&#9670;&nbsp;</a></span>FailHijackedSendMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CancelInterceptorBatchMethods::FailHijackedSendMessage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>On a hijacked RPC/ to-be hijacked RPC, this can be called to fail a SEND MESSAGE op. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a7c129ea7ec110d1c9f5e1c7b8f274fe7">grpc::experimental::InterceptorBatchMethods</a>.</p>
+
+</div>
+</div>
 <a id="a5103bca2f3826d43182436e3e736bd7b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5103bca2f3826d43182436e3e736bd7b">&#9670;&nbsp;</a></span>GetInterceptedChannel()</h2>
 
@@ -127,6 +214,9 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Gets an intercepted channel. </p>
+<p>When a call is started on this interceptor, only interceptors after the current interceptor are created from the factory objects registered with the channel. This allows calls to be started from interceptors without infinite regress through the interceptor list. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a993f12c0d1a9e5dce038b66c58728e82">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -155,6 +245,9 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Returns a modifiable multimap of the received initial metadata. </p>
+<p>Valid for POST_RECV_INITIAL_METADATA interceptions; nullptr if not valid </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a8f123307653591e63ded55d8cea9ad8b">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
@@ -181,6 +274,9 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Returns a pointer to the modifiable received message. </p>
+<p>Note that the message is already deserialized but the type is not set; the interceptor should static_cast to the appropriate type before using it. This is valid for POST_RECV_MESSAGE interceptions; nullptr for not valid </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a3b267515d6afd29afadba454aa913505">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -209,6 +305,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Returns a modifiable view of the received status on POST_RECV_STATUS interceptions; nullptr if not valid. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#ac60304da4f2c2737bcc259bac19e858d">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
@@ -235,6 +333,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Returns a modifiable multimap of the received trailing metadata on POST_RECV_STATUS interceptions; nullptr if not valid. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a661e6372647f1639783b046d728599fa">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -263,12 +363,15 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Returns a modifiable multimap of the initial metadata to be sent. </p>
+<p>Valid for PRE_SEND_INITIAL_METADATA interceptions. A value of nullptr indicates that this field is not valid. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a0ccf0466aa5e7827ba465e8e23aee89b">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
 </div>
-<a id="ababe0a8a54704e1556403ac8d1a848e1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ababe0a8a54704e1556403ac8d1a848e1">&#9670;&nbsp;</a></span>GetSendMessage()</h2>
+<a id="a82b2071f39325cee162a7e98cf384c7f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a82b2071f39325cee162a7e98cf384c7f">&#9670;&nbsp;</a></span>GetSendMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -277,7 +380,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>* grpc::internal::CancelInterceptorBatchMethods::GetSendMessage </td>
+          <td class="memname">const void* grpc::internal::CancelInterceptorBatchMethods::GetSendMessage </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -290,7 +393,40 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a15b93c5fc95a699f52eb98dcb5e7e36e">grpc::experimental::InterceptorBatchMethods</a>.</p>
+<p>Returns a non-modifiable pointer to the non-serialized form of the message to be sent. </p>
+<p>Valid for PRE_SEND_MESSAGE interceptions. A return value of nullptr indicates that this field is not valid. Also note that this is only supported for sync and callback APIs at the present moment. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a416033d4bab32f333d54f3da9a21b68b">grpc::experimental::InterceptorBatchMethods</a>.</p>
+
+</div>
+</div>
+<a id="a683bb3299153d8f662c0ac8ebfce8024"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a683bb3299153d8f662c0ac8ebfce8024">&#9670;&nbsp;</a></span>GetSendMessageStatus()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool grpc::internal::CancelInterceptorBatchMethods::GetSendMessageStatus </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checks whether the SEND MESSAGE op succeeded. </p>
+<p>Valid for POST_SEND_MESSAGE interceptions. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a9381ac548c5ac6ae17af025f9261f9ef">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
 </div>
@@ -316,6 +452,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Returns the status to be sent. Valid for PRE_SEND_STATUS interceptions. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a2792ab543f8b46262ee6e69289b436ab">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -344,7 +482,40 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Returns a modifiable multimap of the trailing metadata to be sent. </p>
+<p>Valid for PRE_SEND_STATUS interceptions. A value of nullptr indicates that this field is not valid. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#aa6ae91237f0ab16e1bbf7e748cf7cf42">grpc::experimental::InterceptorBatchMethods</a>.</p>
+
+</div>
+</div>
+<a id="a3368ae4a100d210716414bf1dc57f5cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3368ae4a100d210716414bf1dc57f5cd">&#9670;&nbsp;</a></span>GetSerializedSendMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a>* grpc::internal::CancelInterceptorBatchMethods::GetSerializedSendMessage </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns a modifable <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a> holding the serialized form of the message that is going to be sent. </p>
+<p>Valid for PRE_SEND_MESSAGE interceptions. A return value of nullptr indicates that this <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">ByteBuffer</a> is not valid. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a1fa1f2c7437b6d49ef68af8e772625e4">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
 </div>
@@ -371,7 +542,41 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Indicate that the interceptor has hijacked the RPC (only valid if the batch contains send_initial_metadata on the client side). </p>
+<p>Later interceptors in the interceptor list will not be called. Later batches on the same RPC will go through interception, but only up to the point of the hijacking interceptor. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#aea0a9629eb5c5aa8760d5a02fd2ef37f">grpc::experimental::InterceptorBatchMethods</a>.</p>
+
+</div>
+</div>
+<a id="ae38346053d5cd82f077af2b286861bc3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae38346053d5cd82f077af2b286861bc3">&#9670;&nbsp;</a></span>ModifySendMessage()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CancelInterceptorBatchMethods::ModifySendMessage </td>
+          <td>(</td>
+          <td class="paramtype">const void *&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Overwrites the message to be sent with <em>message</em>. </p>
+<p><em>message</em> should be in the non-serialized form expected by the method. Valid for PRE_SEND_MESSAGE interceptions. Note that the interceptor is responsible for maintaining the life of the message for the duration on the send operation, i.e., till POST_SEND_MESSAGE. </p>
+
+<p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a6be8b4eecdd2ddf3913369dd3b275d43">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
 </div>
@@ -399,6 +604,9 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Overwrites the status with <em>status</em>. </p>
+<p>Valid for PRE_SEND_STATUS interceptions. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a541b5d8a424e703d562a32c27488ccf2">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
@@ -425,6 +633,9 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Signal that the interceptor is done intercepting the current batch of the RPC. </p>
+<p>Every interceptor must either call Proceed or Hijack on each interception. In most cases, only Proceed will be used. Explicit use of Proceed is what enables interceptors to delay the processing of RPCs while they perform other work. Proceed is a no-op if the batch contains PRE_SEND_CANCEL. Simply returning from the Intercept method does the job of continuing the RPC in this case. This is because PRE_SEND_CANCEL is always in a separate batch and is not allowed to be delayed. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a640e84ae950a57b875b38de6ef9d87fe">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
@@ -454,6 +665,8 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Determine whether the current batch has an interception hook point of type <em>type</em>. </p>
+
 <p>Implements <a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#a68758f2d57120220e53bcc6ad1bc8c71">grpc::experimental::InterceptorBatchMethods</a>.</p>
 
 </div>
@@ -464,7 +677,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

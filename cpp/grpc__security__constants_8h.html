@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -118,8 +118,9 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a29ffe63a8bb3b4945ecab42d82758f09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> { <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768">UDS</a> = 0
- }<tr class="memdesc:a31d00ce5c064e1fff4261a6d6298dc11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of local connection for which local channel/server credentials will be applied.  <a href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">More...</a><br /></td></tr>
+<tr class="memitem:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> { <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768">UDS</a> = 0, 
+<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11acb07333a9323d16e7e2258fe5bb4aed8">LOCAL_TCP</a>
+ }<tr class="memdesc:a31d00ce5c064e1fff4261a6d6298dc11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type of local connections for which local channel/server credentials will be applied.  <a href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">More...</a><br /></td></tr>
 </td></tr>
 <tr class="separator:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -255,10 +256,11 @@ Enumerations</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Type of local connection for which local channel/server credentials will be applied. </p>
-<p>It only supports UDS for now. </p>
+<p>Type of local connections for which local channel/server credentials will be applied. </p>
+<p>It supports UDS and local TCP connections. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768"></a>UDS&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a31d00ce5c064e1fff4261a6d6298dc11acb07333a9323d16e7e2258fe5bb4aed8"></a>LOCAL_TCP&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
 </div>
@@ -344,7 +346,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

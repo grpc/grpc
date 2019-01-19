@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -71,6 +71,9 @@ $(function() {
 <div class="title">grpc::experimental Namespace Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor.  
+<a href="#details">More...</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
@@ -80,21 +83,46 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html">AltsServerCredentialsOptions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options to create <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a> with ALTS.  <a href="structgrpc_1_1experimental_1_1_alts_server_credentials_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_bidi_reactor.html">ClientBidiReactor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader.html">ClientCallbackReader</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html">ClientCallbackReaderWriter</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html">ClientCallbackWriter</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">ClientInterceptorFactoryInterface</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_read_reactor.html">ClientReadReactor</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_intercepted_message.html">InterceptedMessage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_write_reactor.html">ClientWriteReactor</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html">Interceptor</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface for an interceptor.  <a href="classgrpc_1_1experimental_1_1_interceptor.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html">InterceptorBatchMethods</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Class that is passed as an argument to the <em>Intercept</em> method of the application's <em><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a></em> interface implementation.  <a href="classgrpc_1_1experimental_1_1_interceptor_batch_methods.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_bidi_reactor.html">ServerBidiReactor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader.html">ServerCallbackReader</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader_writer.html">ServerCallbackReaderWriter</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_rpc_controller.html">ServerCallbackRpcController</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_callback_writer.html">ServerCallbackWriter</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_interceptor_factory_interface.html">ServerInterceptorFactoryInterface</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_read_reactor.html">ServerReadReactor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html">ServerRpcInfo</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html" title="ServerRpcInfo represents the state of a particular RPC as it appears to an interceptor. ">ServerRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor.  <a href="classgrpc_1_1experimental_1_1_server_rpc_info.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_server_write_reactor.html">ServerWriteReactor</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
@@ -102,22 +130,24 @@ Enumerations</h2></td></tr>
 <tr class="memitem:a03d3481b2c4146f53e90966d4a0fd8a1"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1">InterceptionHookPoints</a> { <br />
 &#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a68f9cc22793a30bf451f5d94c283f371">InterceptionHookPoints::PRE_SEND_INITIAL_METADATA</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473">InterceptionHookPoints::PRE_SEND_MESSAGE</a>, 
+<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a55a1a0825067b70bab918b67b298f038">InterceptionHookPoints::POST_SEND_MESSAGE</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a787bde31497aaaccd0e780928a34ba3c">InterceptionHookPoints::PRE_SEND_STATUS</a>, 
-<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1aae41c3d206fb78da7ea1baff522fe734">InterceptionHookPoints::PRE_SEND_CLOSE</a>, 
 <br />
-&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2">InterceptionHookPoints::PRE_RECV_INITIAL_METADATA</a>, 
+&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1aae41c3d206fb78da7ea1baff522fe734">InterceptionHookPoints::PRE_SEND_CLOSE</a>, 
+<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2">InterceptionHookPoints::PRE_RECV_INITIAL_METADATA</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1aed5412a55f4c64aab2e6492c79c91422">InterceptionHookPoints::PRE_RECV_MESSAGE</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1aac79efae31b3773d455797286cd0a3c3">InterceptionHookPoints::PRE_RECV_STATUS</a>, 
-<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a294bdaeb2f3c15f0c7529ecdb04daea8">InterceptionHookPoints::POST_RECV_INITIAL_METADATA</a>, 
 <br />
-&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1ab65173742bb81f390a2bbe48279a1d22">InterceptionHookPoints::POST_RECV_MESSAGE</a>, 
+&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a294bdaeb2f3c15f0c7529ecdb04daea8">InterceptionHookPoints::POST_RECV_INITIAL_METADATA</a>, 
+<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1ab65173742bb81f390a2bbe48279a1d22">InterceptionHookPoints::POST_RECV_MESSAGE</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a97b298c9f3aa4e0b5b4865eaa93a5909">InterceptionHookPoints::POST_RECV_STATUS</a>, 
 <a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a28873db230a854864aaf46ce3c7d282a">InterceptionHookPoints::POST_RECV_CLOSE</a>, 
-<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1afeaf95b857178c518bb74d59eb39aa23">InterceptionHookPoints::PRE_SEND_CANCEL</a>, 
 <br />
-&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36">InterceptionHookPoints::NUM_INTERCEPTION_HOOKS</a>
+&#160;&#160;<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1afeaf95b857178c518bb74d59eb39aa23">InterceptionHookPoints::PRE_SEND_CANCEL</a>, 
+<a class="el" href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36">InterceptionHookPoints::NUM_INTERCEPTION_HOOKS</a>
 <br />
- }</td></tr>
+ }<tr class="memdesc:a03d3481b2c4146f53e90966d4a0fd8a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">An enumeration of different possible points at which the <em>Intercept</em> method of the <em>Interceptor</em> interface may be called.  <a href="namespacegrpc_1_1experimental.html#a03d3481b2c4146f53e90966d4a0fd8a1">More...</a><br /></td></tr>
+</td></tr>
 <tr class="separator:a03d3481b2c4146f53e90966d4a0fd8a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
@@ -143,7 +173,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds Local <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server. ">ServerCredentials</a>.  <a href="#a6076d466bcfdcb7d7678c2dcafe01f5f">More...</a><br /></td></tr>
 <tr class="separator:a6076d466bcfdcb7d7678c2dcafe01f5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html">ClientRpcInfo</a> represents the state of a particular RPC as it appears to an interceptor. </p>
+<p>It is created and owned by the library and passed to the CreateClientInterceptor method of the application's <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">ClientInterceptorFactoryInterface</a> implementation </p>
+</div><h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a03d3481b2c4146f53e90966d4a0fd8a1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a03d3481b2c4146f53e90966d4a0fd8a1">&#9670;&nbsp;</a></span>InterceptionHookPoints</h2>
 
@@ -163,19 +196,32 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>An enumeration of different possible points at which the <em>Intercept</em> method of the <em><a class="el" href="classgrpc_1_1experimental_1_1_interceptor.html" title="Interface for an interceptor. ">Interceptor</a></em> interface may be called. </p>
+<p>Any given call to <em>Intercept</em> will include one or more of these hook points, and each hook point makes certain types of information available to the interceptor. In these enumeration names, PRE_SEND means that an interception has taken place between the time the application provided a certain type of data (e.g., initial metadata, status) and the time that that data goes to the other side. POST_SEND means that the data has been committed for going to the other side (even if it has not yet been received at the other side). PRE_RECV means an interception between the time that a certain operation has been requested and it is available. POST_RECV means that a result is available but has not yet been passed back to the application. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a68f9cc22793a30bf451f5d94c283f371"></a>PRE_SEND_INITIAL_METADATA&#160;</td><td class="fielddoc"></td></tr>
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a68f9cc22793a30bf451f5d94c283f371"></a>PRE_SEND_INITIAL_METADATA&#160;</td><td class="fielddoc"><p>The first three in this list are for clients and servers. </p>
+</td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a78e48d97d3b04c3bc07cc5e015bae473"></a>PRE_SEND_MESSAGE&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a55a1a0825067b70bab918b67b298f038"></a>POST_SEND_MESSAGE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a787bde31497aaaccd0e780928a34ba3c"></a>PRE_SEND_STATUS&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1aae41c3d206fb78da7ea1baff522fe734"></a>PRE_SEND_CLOSE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2"></a>PRE_RECV_INITIAL_METADATA&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1ae1edf7ebacfc20d107e332ed0df262d2"></a>PRE_RECV_INITIAL_METADATA&#160;</td><td class="fielddoc"><p>The following three are for hijacked clients only and can only be registered by the global interceptor. </p>
+</td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1aed5412a55f4c64aab2e6492c79c91422"></a>PRE_RECV_MESSAGE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1aac79efae31b3773d455797286cd0a3c3"></a>PRE_RECV_STATUS&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a294bdaeb2f3c15f0c7529ecdb04daea8"></a>POST_RECV_INITIAL_METADATA&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a294bdaeb2f3c15f0c7529ecdb04daea8"></a>POST_RECV_INITIAL_METADATA&#160;</td><td class="fielddoc"><p>The following two are for all clients and servers. </p>
+</td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1ab65173742bb81f390a2bbe48279a1d22"></a>POST_RECV_MESSAGE&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a97b298c9f3aa4e0b5b4865eaa93a5909"></a>POST_RECV_STATUS&#160;</td><td class="fielddoc"></td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a28873db230a854864aaf46ce3c7d282a"></a>POST_RECV_CLOSE&#160;</td><td class="fielddoc"></td></tr>
-<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1afeaf95b857178c518bb74d59eb39aa23"></a>PRE_SEND_CANCEL&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1afeaf95b857178c518bb74d59eb39aa23"></a>PRE_SEND_CANCEL&#160;</td><td class="fielddoc"><p>This is a special hook point available to both clients and servers when TryCancel() is performed. </p>
+<ul>
+<li>No other hook points will be present along with this.</li>
+<li>It is illegal for an interceptor to block/delay this operation.</li>
+<li>ALL interceptors see this hook point irrespective of whether the RPC was hijacked or not. </li>
+</ul>
+</td></tr>
 <tr><td class="fieldname"><a id="a03d3481b2c4146f53e90966d4a0fd8a1a005432205f3c52f3321eab4485d84c36"></a>NUM_INTERCEPTION_HOOKS&#160;</td><td class="fielddoc"></td></tr>
 </table>
 
@@ -355,7 +401,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

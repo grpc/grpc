@@ -10,7 +10,7 @@ var searchData=
   ['server_5fcontext_2eh',['server_context.h',['../grpc_09_09_2impl_2codegen_2server__context_8h.html',1,'(Global Namespace)'],['../grpc_09_09_2server__context_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2codegen_2server__context_8h.html',1,'(Global Namespace)'],['../grpcpp_2server__context_8h.html',1,'(Global Namespace)']]],
   ['server_5fcredentials_2eh',['server_credentials.h',['../grpc_09_09_2security_2server__credentials_8h.html',1,'(Global Namespace)'],['../grpcpp_2security_2server__credentials_8h.html',1,'(Global Namespace)']]],
   ['server_5finitializer_2eh',['server_initializer.h',['../grpc_09_09_2impl_2server__initializer_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2server__initializer_8h.html',1,'(Global Namespace)']]],
-  ['server_5finterceptor_2eh',['server_interceptor.h',['../server__interceptor_8h.html',1,'']]],
+  ['server_5finterceptor_2eh',['server_interceptor.h',['../impl_2codegen_2server__interceptor_8h.html',1,'(Global Namespace)'],['../support_2server__interceptor_8h.html',1,'(Global Namespace)']]],
   ['server_5finterface_2eh',['server_interface.h',['../grpc_09_09_2impl_2codegen_2server__interface_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2codegen_2server__interface_8h.html',1,'(Global Namespace)']]],
   ['server_5fposix_2eh',['server_posix.h',['../grpc_09_09_2server__posix_8h.html',1,'(Global Namespace)'],['../grpcpp_2server__posix_8h.html',1,'(Global Namespace)']]],
   ['server_5freflection_5ftutorial_2emd',['server_reflection_tutorial.md',['../server__reflection__tutorial_8md.html',1,'']]],

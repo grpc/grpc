@@ -6,6 +6,7 @@ var searchData=
   ['performopsoncall',['PerformOpsOnCall',['../classgrpc_1_1internal_1_1_call_hook.html#a1c14655572215f6256fa0dfee7f138bc',1,'grpc::internal::CallHook::PerformOpsOnCall()'],['../classgrpc_1_1_server_interface.html#a490b5a44ccd2d419db19d5c336c93680',1,'grpc::ServerInterface::PerformOpsOnCall()']]],
   ['ports',['ports',['../classgrpc_1_1_server_builder.html#a5826774e7c803998238a74ef43b5c811',1,'grpc::ServerBuilder']]],
   ['postsynchronousrequest',['PostSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a3a20848314924c94c349508e970138e9',1,'grpc::Server::GlobalCallbacks']]],
+  ['preparebidistreamingcall',['PrepareBidiStreamingCall',['../classgrpc_1_1_generic_stub_1_1experimental__type.html#abbf73e9ff66cca3d328bacc2eee593dd',1,'grpc::GenericStub::experimental_type']]],
   ['preparecall',['PrepareCall',['../classgrpc_1_1_generic_stub.html#ae1d079fa84bb70e895fe1a62ac8c0a43',1,'grpc::GenericStub']]],
   ['prepareunarycall',['PrepareUnaryCall',['../classgrpc_1_1_generic_stub.html#a7d7371d16df0f556b4d6d1e5366aebd7',1,'grpc::GenericStub']]],
   ['preserverstart',['PreServerStart',['../classgrpc_1_1_server_1_1_global_callbacks.html#a0700ca2be64da5a8caf318ed99dff165',1,'grpc::Server::GlobalCallbacks']]],

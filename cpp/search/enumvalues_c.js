@@ -1,8 +1,6 @@
 var searchData=
 [
-  ['server_5fstreaming',['SERVER_STREAMING',['../classgrpc_1_1internal_1_1_rpc_method.html#a40ce84e3569f6a327468ae59f04c7dd1a3b3eb41de854898c2481fb454fc8e2f6',1,'grpc::internal::RpcMethod']]],
-  ['shutdown',['SHUTDOWN',['../classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b',1,'grpc::CompletionQueue']]],
-  ['static_5fslice',['STATIC_SLICE',['../classgrpc_1_1_slice.html#a61a6b4f8f10e5b90a99a5d09b8fdc498a162100d1059f54ba91c6803865effe10',1,'grpc::Slice']]],
-  ['steal_5fref',['STEAL_REF',['../classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75aae0777a96d69fe69aec2acd1f0f9cefb7',1,'grpc::Slice']]],
-  ['sync',['SYNC',['../classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea274ccef15a21e829d03293a6fd1974f3',1,'grpc::internal::RpcServiceMethod']]]
+  ['raw',['RAW',['../classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea633d6abff0a3fc22404347728d195059',1,'grpc::internal::RpcServiceMethod']]],
+  ['raw_5fcall_5fback',['RAW_CALL_BACK',['../classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032ea7592a4bd7d3267bd8a9c9d580bf94ce7',1,'grpc::internal::RpcServiceMethod']]],
+  ['resource_5fexhausted',['RESOURCE_EXHAUSTED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba663615dcb59881e3fe4206066666086f',1,'grpc']]]
 ];

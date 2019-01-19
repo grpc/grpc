@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.17.0</span>
+   &#160;<span id="projectnumber">1.19.0-dev</span>
    </div>
   </td>
  </tr>
@@ -91,6 +91,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aeb5dd0045ed262de06481465326bd64a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#aeb5dd0045ed262de06481465326bd64a">~ByteBuffer</a> ()</td></tr>
 <tr class="separator:aeb5dd0045ed262de06481465326bd64a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac17487e1e411f469d653e3c44c873e6d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#ac17487e1e411f469d653e3c44c873e6d">operator=</a> (const <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> &amp;)</td></tr>
+<tr class="memdesc:ac17487e1e411f469d653e3c44c873e6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapper of core function grpc_byte_buffer_copy .  <a href="#ac17487e1e411f469d653e3c44c873e6d">More...</a><br /></td></tr>
 <tr class="separator:ac17487e1e411f469d653e3c44c873e6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe7615cdbd14996a7e82fc84e373a365"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#abe7615cdbd14996a7e82fc84e373a365">Dump</a> (std::vector&lt; <a class="el" href="classgrpc_1_1_slice.html">Slice</a> &gt; *slices) const</td></tr>
 <tr class="memdesc:abe7615cdbd14996a7e82fc84e373a365"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump (read) the buffer contents into <em>slices</em>.  <a href="#abe7615cdbd14996a7e82fc84e373a365">More...</a><br /></td></tr>
@@ -139,9 +140,12 @@ Friends</h2></td></tr>
 <tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
 <tr class="memitem:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a92a457fe95d4f1662f65ed9b47be0f84">internal::ServerStreamingHandler</a></td></tr>
 <tr class="separator:a92a457fe95d4f1662f65ed9b47be0f84"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67ced5520488b04b70a1305844cf4520"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
-<tr class="memitem:a67ced5520488b04b70a1305844cf4520"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a67ced5520488b04b70a1305844cf4520">internal::CallbackUnaryHandler</a></td></tr>
-<tr class="separator:a67ced5520488b04b70a1305844cf4520"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af63af491258d40246cebf3dee6011157"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:af63af491258d40246cebf3dee6011157"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#af63af491258d40246cebf3dee6011157">internal::CallbackUnaryHandler</a></td></tr>
+<tr class="separator:af63af491258d40246cebf3dee6011157"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a058f4c461b9d3d00f8b749aab1012e21"><td class="memTemplParams" colspan="2">template&lt;class RequestType , class ResponseType &gt; </td></tr>
+<tr class="memitem:a058f4c461b9d3d00f8b749aab1012e21"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a058f4c461b9d3d00f8b749aab1012e21">::grpc::internal::CallbackServerStreamingHandler</a></td></tr>
+<tr class="separator:a058f4c461b9d3d00f8b749aab1012e21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplParams" colspan="2">template&lt;StatusCode code&gt; </td></tr>
 <tr class="memitem:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a91a3296cb8faa9b7afad2f0db836df4d">internal::ErrorMethodHandler</a></td></tr>
 <tr class="separator:a91a3296cb8faa9b7afad2f0db836df4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -240,7 +244,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Constuct a byte buffer by referencing elements of existing buffer <em>buf</em>. </p>
-<p>Wrapper of core function grpc_byte_buffer_copy </p>
+<p>Wrapper of core function grpc_byte_buffer_copy . This is not a deep copy; it is just a referencing. As a result, its performance is size-independent. </p>
 
 </div>
 </div>
@@ -341,7 +345,7 @@ Friends</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Make a duplicate copy of the internals of this byte buffer so that we have our own owned version of it. </p>
-<p>bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable </p>
+<p>bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable. This is not a deep copy; it is a referencing and its performance is size-independent. </p>
 
 </div>
 </div>
@@ -387,6 +391,9 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Wrapper of core function grpc_byte_buffer_copy . </p>
+<p>This is not a deep copy; it is just a referencing. As a result, its performance is size-independent. </p>
 
 </div>
 </div>
@@ -473,13 +480,37 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="a67ced5520488b04b70a1305844cf4520"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a67ced5520488b04b70a1305844cf4520">&#9670;&nbsp;</a></span>internal::CallbackUnaryHandler</h2>
+<a id="a058f4c461b9d3d00f8b749aab1012e21"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a058f4c461b9d3d00f8b749aab1012e21">&#9670;&nbsp;</a></span>::grpc::internal::CallbackServerStreamingHandler</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class ServiceType , class RequestType , class ResponseType &gt; </div>
+template&lt;class RequestType , class ResponseType &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_callback_server_streaming_handler.html">grpc::internal::CallbackServerStreamingHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af63af491258d40246cebf3dee6011157"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af63af491258d40246cebf3dee6011157">&#9670;&nbsp;</a></span>internal::CallbackUnaryHandler</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class RequestType , class ResponseType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -825,7 +856,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 5 2018 14:10:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jan 18 2019 16:14:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
