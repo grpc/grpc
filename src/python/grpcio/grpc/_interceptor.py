@@ -17,6 +17,7 @@ import collections
 import sys
 
 import grpc
+from grpc._channel import _Rendezvous
 
 
 class _ServicePipeline(object):
@@ -235,8 +236,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                     credentials=new_credentials,
                     wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
-            except grpc.RpcError as rpc_error:
-                return rpc_error
+            except _Rendezvous as rendezvous:
+                return rendezvous
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
@@ -357,8 +358,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                     credentials=new_credentials,
                     wait_for_ready=new_wait_for_ready)
                 return _UnaryOutcome(response, call)
-            except grpc.RpcError as rpc_error:
-                return rpc_error
+            except _Rendezvous as rendezvous:
+                return rendezvous
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
