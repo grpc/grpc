@@ -69,6 +69,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                                       &response_metadata);
 
   std::vector<grpc_metadata> consumed_md;
+  consumed_md.reserve(consumed_metadata.size());
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
     grpc_metadata md_entry;
@@ -78,6 +79,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
+  response_md.reserve(response_metadata.size());
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
     grpc_metadata md_entry;
@@ -109,6 +111,7 @@ void SecureServerCredentials::SetAuthMetadataProcessor(
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
+  pem_key_cert_pairs.reserve(options.pem_key_cert_pairs.size());
   for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
        key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
     grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
