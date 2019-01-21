@@ -77,13 +77,13 @@ RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
 #=================
-# PHP dependencies
+# PHP Test dependencies
 
 # Install dependencies
 
 RUN apt-get update && apt-get install -y \
     valgrind
-    
+
 
 RUN mkdir /var/local/jenkins
 
