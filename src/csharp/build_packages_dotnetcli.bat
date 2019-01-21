@@ -34,6 +34,7 @@ powershell -Command "cp -r ..\..\input_artifacts\protoc_* protoc_plugins"
 @rem To be able to build, we also need to put grpc_csharp_ext to its normal location
 xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\build\x64\Release\
 
+%DOTNET% pack --configuration Release Grpc.Core.Api --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Core --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Core.Testing --output ..\..\..\artifacts || goto :error
 %DOTNET% pack --configuration Release Grpc.Auth --output ..\..\..\artifacts || goto :error
