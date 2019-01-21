@@ -68,9 +68,9 @@ static void GenerateService(const std::string &module , CodedOutputStream &cos,c
 		}
 		else {
 
-			cos.WriteString("\tStatus " + func + "( " + req + " request , ref "+res+" response)\n");
+			cos.WriteString("\t"+ res + " " + func + "( " + req + " request)\n");
 			cos.WriteString("\t{\n");
-			cos.WriteString("\t\tmixin(CM!(" + service->name() + "Base.SERVICE));\n");
+			cos.WriteString("\t\tmixin(CM!("+ res +" , " + service->name() + "Base.SERVICE));\n");
 			cos.WriteString("\t}\n");
 
 			cos.WriteString("\n");
