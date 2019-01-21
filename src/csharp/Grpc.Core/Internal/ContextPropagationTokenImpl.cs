@@ -39,7 +39,8 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Default propagation mask used by C# - we want to propagate deadline 
-        /// and cancellation token by our own means.
+        /// and cancellation token by our own means, everything else will be propagated
+        /// by C core automatically (according to <c>DefaultCoreMask</c>).
         /// </summary>
         internal const ContextPropagationFlags DefaultMask = DefaultCoreMask
             & ~ContextPropagationFlags.Deadline & ~ContextPropagationFlags.Cancellation;

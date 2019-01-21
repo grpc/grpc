@@ -499,7 +499,6 @@ namespace Grpc.Core.Internal
             var credentials = details.Options.Credentials;
             using (var nativeCredentials = credentials != null ? credentials.ToNativeCredentials() : null)
             {
-                // TODO(jtattermusch): is the "DefaultMask" correct here??
                 var result = details.Channel.Handle.CreateCall(
                              parentCall, ContextPropagationTokenImpl.DefaultMask, cq,
                              details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value), nativeCredentials);
