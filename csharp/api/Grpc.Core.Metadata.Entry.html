@@ -142,7 +142,7 @@
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">key</span></td>
-        <td><p>Metadata key, needs to have suffix indicating a binary valued metadata entry.</p>
+        <td><p>Metadata key. Gets converted to lowercase. Needs to have suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</p>
 </td>
       </tr>
       <tr>
@@ -155,7 +155,7 @@
   </table>
   <a id="Grpc_Core_Metadata_Entry__ctor_" data-uid="Grpc.Core.Metadata.Entry.#ctor*"></a>
   <h4 id="Grpc_Core_Metadata_Entry__ctor_System_String_System_String_" data-uid="Grpc.Core.Metadata.Entry.#ctor(System.String,System.String)">Entry(String, String)</h4>
-  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a> struct holding an ASCII value.</p>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a> struct with an ASCII value.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -175,7 +175,7 @@
       <tr>
         <td><span class="xref">System.String</span></td>
         <td><span class="parametername">key</span></td>
-        <td><p>Metadata key, must not use suffix indicating a binary valued metadata entry.</p>
+        <td><p>Metadata key. Gets converted to lowercase. Must not use suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores, hyphens and dots.</p>
 </td>
       </tr>
       <tr>

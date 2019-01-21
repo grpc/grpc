@@ -462,6 +462,53 @@ all the calls on this channel have finished (successfully or with an error)
 before shutting down the channel to ensure channel shutdown won&apos;t impact
 the outcome of those remote calls.</p>
 </div>
+  <a id="Grpc_Core_Channel_TryWaitForStateChangedAsync_" data-uid="Grpc.Core.Channel.TryWaitForStateChangedAsync*"></a>
+  <h4 id="Grpc_Core_Channel_TryWaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__" data-uid="Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})">TryWaitForStateChangedAsync(ChannelState, Nullable&lt;DateTime&gt;)</h4>
+  <div class="markdown level1 summary"><p>Returned tasks completes once channel state has become different from
+given lastObservedState (<code>true</code> is returned) or if the wait has timed out (<code>false</code> is returned).</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Task&lt;bool&gt; TryWaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = default(DateTime? ))</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelState.html">ChannelState</a></td>
+        <td><span class="parametername">lastObservedState</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.DateTime</span>&gt;</td>
+        <td><span class="parametername">deadline</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_Channel_WaitForStateChangedAsync_" data-uid="Grpc.Core.Channel.WaitForStateChangedAsync*"></a>
   <h4 id="Grpc_Core_Channel_WaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__" data-uid="Grpc.Core.Channel.WaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})">WaitForStateChangedAsync(ChannelState, Nullable&lt;DateTime&gt;)</h4>
   <div class="markdown level1 summary"><p>Returned tasks completes once channel state has become different from 

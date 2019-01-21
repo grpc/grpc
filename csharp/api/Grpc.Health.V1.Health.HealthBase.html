@@ -126,7 +126,9 @@
   </h3>
   <a id="Grpc_Health_V1_Health_HealthBase_Check_" data-uid="Grpc.Health.V1.Health.HealthBase.Check*"></a>
   <h4 id="Grpc_Health_V1_Health_HealthBase_Check_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_ServerCallContext_" data-uid="Grpc.Health.V1.Health.HealthBase.Check(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.ServerCallContext)">Check(HealthCheckRequest, ServerCallContext)</h4>
-  <div class="markdown level1 summary"></div>
+  <div class="markdown level1 summary"><p>If the requested service is unknown, the call will fail with status
+NOT_FOUND.</p>
+</div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
@@ -145,12 +147,14 @@
       <tr>
         <td><a class="xref" href="Grpc.Health.V1.HealthCheckRequest.html">HealthCheckRequest</a></td>
         <td><span class="parametername">request</span></td>
-        <td></td>
+        <td><p>The request received from the client.</p>
+</td>
       </tr>
       <tr>
         <td><a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a></td>
         <td><span class="parametername">context</span></td>
-        <td></td>
+        <td><p>The context of the server-side call handler being invoked.</p>
+</td>
       </tr>
     </tbody>
   </table>
@@ -165,7 +169,75 @@
     <tbody>
       <tr>
         <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Health.V1.HealthCheckResponse.html">HealthCheckResponse</a>&gt;</td>
-        <td></td>
+        <td><p>The response to send back to the client (wrapped by a task).</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Health_V1_Health_HealthBase_Watch_" data-uid="Grpc.Health.V1.Health.HealthBase.Watch*"></a>
+  <h4 id="Grpc_Health_V1_Health_HealthBase_Watch_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_IServerStreamWriter_Grpc_Health_V1_HealthCheckResponse__Grpc_Core_ServerCallContext_" data-uid="Grpc.Health.V1.Health.HealthBase.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.IServerStreamWriter{Grpc.Health.V1.HealthCheckResponse},Grpc.Core.ServerCallContext)">Watch(HealthCheckRequest, IServerStreamWriter&lt;HealthCheckResponse&gt;, ServerCallContext)</h4>
+  <div class="markdown level1 summary"><p>Performs a watch for the serving status of the requested service.
+The server will immediately send back a message indicating the current
+serving status.  It will then subsequently send a new message whenever
+the service&apos;s serving status changes.</p>
+<p>If the requested service is unknown when the call is received, the
+server will send a message setting the serving status to
+SERVICE_UNKNOWN but will <em>not</em> terminate the call.  If at some
+future point, the serving status of the service becomes known, the
+server will send a new message with the service&apos;s serving status.</p>
+<p>If the call terminates with status UNIMPLEMENTED, then clients
+should assume this method is not supported and should not retry the
+call.  If the call terminates with any other status (including OK),
+clients should retry the call with appropriate exponential backoff.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual Task Watch(HealthCheckRequest request, IServerStreamWriter&lt;HealthCheckResponse&gt; responseStream, ServerCallContext context)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Health.V1.HealthCheckRequest.html">HealthCheckRequest</a></td>
+        <td><span class="parametername">request</span></td>
+        <td><p>The request received from the client.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IServerStreamWriter-1.html">IServerStreamWriter</a>&lt;<a class="xref" href="Grpc.Health.V1.HealthCheckResponse.html">HealthCheckResponse</a>&gt;</td>
+        <td><span class="parametername">responseStream</span></td>
+        <td><p>Used for sending responses back to the client.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a></td>
+        <td><span class="parametername">context</span></td>
+        <td><p>The context of the server-side call handler being invoked.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span></td>
+        <td><p>A task indicating completion of the handler.</p>
+</td>
       </tr>
     </tbody>
   </table>

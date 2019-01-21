@@ -84,7 +84,9 @@
   <h1 id="Grpc_Core_ChannelOption" data-uid="Grpc.Core.ChannelOption" class="text-break">Class ChannelOption
   </h1>
   <div class="markdown level0 summary"><p>Channel option specified when creating a channel.
-Corresponds to grpc_channel_args from grpc/grpc.h.</p>
+Corresponds to grpc_channel_args from grpc/grpc.h.
+Commonly used channel option names are defined in <code>ChannelOptions</code>,
+but any of the GRPC_ARG_* channel options names defined in grpc_types.h can be used.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
@@ -92,16 +94,14 @@ Corresponds to grpc_channel_args from grpc/grpc.h.</p>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">ChannelOption</span></div>
   </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IEquatable</span>&lt;<a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a>&gt;</div>
+  </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
       <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
     </div>
     <div>
       <span class="xref">System.Object.GetType()</span>
@@ -120,7 +120,7 @@ Corresponds to grpc_channel_args from grpc/grpc.h.</p>
   <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
   <h5 id="Grpc_Core_ChannelOption_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public sealed class ChannelOption</code></pre>
+    <pre><code class="lang-csharp hljs">public sealed class ChannelOption : IEquatable&lt;ChannelOption&gt;</code></pre>
   </div>
   <h3 id="constructors">Constructors
   </h3>
@@ -288,6 +288,216 @@ Corresponds to grpc_channel_args from grpc/grpc.h.</p>
       </tr>
     </tbody>
   </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_ChannelOption_Equals_" data-uid="Grpc.Core.ChannelOption.Equals*"></a>
+  <h4 id="Grpc_Core_ChannelOption_Equals_Grpc_Core_ChannelOption_" data-uid="Grpc.Core.ChannelOption.Equals(Grpc.Core.ChannelOption)">Equals(ChannelOption)</h4>
+  <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public bool Equals(ChannelOption other)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a></td>
+        <td><span class="parametername">other</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ChannelOption_Equals_" data-uid="Grpc.Core.ChannelOption.Equals*"></a>
+  <h4 id="Grpc_Core_ChannelOption_Equals_System_Object_" data-uid="Grpc.Core.ChannelOption.Equals(System.Object)">Equals(Object)</h4>
+  <div class="markdown level1 summary"><p>Determines whether the specified object is equal to the current object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override bool Equals(object obj)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Object</span></td>
+        <td><span class="parametername">obj</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.Equals(System.Object)</span></div>
+  <a id="Grpc_Core_ChannelOption_GetHashCode_" data-uid="Grpc.Core.ChannelOption.GetHashCode*"></a>
+  <h4 id="Grpc_Core_ChannelOption_GetHashCode" data-uid="Grpc.Core.ChannelOption.GetHashCode">GetHashCode()</h4>
+  <div class="markdown level1 summary"><p>A hash code for the current object.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public override int GetHashCode()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="overrides">Overrides</h5>
+  <div><span class="xref">System.Object.GetHashCode()</span></div>
+  <h3 id="operators">Operators
+  </h3>
+  <a id="Grpc_Core_ChannelOption_op_Equality_" data-uid="Grpc.Core.ChannelOption.op_Equality*"></a>
+  <h4 id="Grpc_Core_ChannelOption_op_Equality_Grpc_Core_ChannelOption_Grpc_Core_ChannelOption_" data-uid="Grpc.Core.ChannelOption.op_Equality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)">Equality(ChannelOption, ChannelOption)</h4>
+  <div class="markdown level1 summary"><p>Equality operator.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator ==(ChannelOption option1, ChannelOption option2)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a></td>
+        <td><span class="parametername">option1</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a></td>
+        <td><span class="parametername">option2</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_ChannelOption_op_Inequality_" data-uid="Grpc.Core.ChannelOption.op_Inequality*"></a>
+  <h4 id="Grpc_Core_ChannelOption_op_Inequality_Grpc_Core_ChannelOption_Grpc_Core_ChannelOption_" data-uid="Grpc.Core.ChannelOption.op_Inequality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)">Inequality(ChannelOption, ChannelOption)</h4>
+  <div class="markdown level1 summary"><p>Inequality operator.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static bool operator !=(ChannelOption option1, ChannelOption option2)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a></td>
+        <td><span class="parametername">option1</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.ChannelOption.html">ChannelOption</a></td>
+        <td><span class="parametername">option2</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IEquatable&lt;T&gt;</span>
+  </div>
 </article>
           </div>
           
