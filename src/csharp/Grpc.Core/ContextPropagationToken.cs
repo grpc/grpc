@@ -23,8 +23,8 @@ namespace Grpc.Core
     /// In situations when a backend is making calls to another backend,
     /// it makes sense to propagate properties like deadline and cancellation 
     /// token of the server call to the child call.
-    /// The gRPC native layer provides some other contexts (like tracing context) that
-    /// are not accessible to explicitly C# layer, but this token still allows propagating them.
+    /// Underlying gRPC implementation may provide other "opaque" contexts (like tracing context) that
+    /// are not explicitly accesible via the public C# API, but this token still allows propagating them.
     /// </summary>
     public abstract class ContextPropagationToken
     {
