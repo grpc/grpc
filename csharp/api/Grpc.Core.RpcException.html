@@ -223,6 +223,45 @@
     </tbody>
   </table>
   <a id="Grpc_Core_RpcException__ctor_" data-uid="Grpc.Core.RpcException.#ctor*"></a>
+  <h4 id="Grpc_Core_RpcException__ctor_Grpc_Core_Status_Grpc_Core_Metadata_System_String_" data-uid="Grpc.Core.RpcException.#ctor(Grpc.Core.Status,Grpc.Core.Metadata,System.String)">RpcException(Status, Metadata, String)</h4>
+  <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status, message and trailing response metadata.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public RpcException(Status status, Metadata trailers, string message)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Status.html">Status</a></td>
+        <td><span class="parametername">status</span></td>
+        <td><p>Resulting status of a call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="parametername">trailers</span></td>
+        <td><p>Response trailing metadata.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">message</span></td>
+        <td><p>The exception message.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_RpcException__ctor_" data-uid="Grpc.Core.RpcException.#ctor*"></a>
   <h4 id="Grpc_Core_RpcException__ctor_Grpc_Core_Status_System_String_" data-uid="Grpc.Core.RpcException.#ctor(Grpc.Core.Status,System.String)">RpcException(Status, String)</h4>
   <div class="markdown level1 summary"><p>Creates a new <code>RpcException</code> associated with given status and message.</p>
 </div>

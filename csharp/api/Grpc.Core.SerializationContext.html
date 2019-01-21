@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class Health
+    <title>Class SerializationContext
    | gRPC C# </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class Health
+    <meta name="title" content="Class SerializationContext
    | gRPC C# ">
     <meta name="generator" content="docfx 2.36.0.0">
     
@@ -78,17 +78,18 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Grpc.Health.V1.Health">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.SerializationContext">
   
   
-  <h1 id="Grpc_Health_V1_Health" data-uid="Grpc.Health.V1.Health" class="text-break">Class Health
+  <h1 id="Grpc_Core_SerializationContext" data-uid="Grpc.Core.SerializationContext" class="text-break">Class SerializationContext
   </h1>
-  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 summary"><p>Provides storage for payload when serializing a message.</p>
+</div>
   <div class="markdown level0 conceptual"></div>
   <div class="inheritance">
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">Health</span></div>
+    <div class="level1"><span class="xref">SerializationContext</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -114,49 +115,24 @@
       <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
-  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Health.V1.html">Grpc.Health.V1</a></h6>
-  <h6><strong>Assembly</strong>: Grpc.HealthCheck.dll</h6>
-  <h5 id="Grpc_Health_V1_Health_syntax">Syntax</h5>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h5 id="Grpc_Core_SerializationContext_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static class Health</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract class SerializationContext</code></pre>
   </div>
-  <h3 id="properties">Properties
-  </h3>
-  <a id="Grpc_Health_V1_Health_Descriptor_" data-uid="Grpc.Health.V1.Health.Descriptor*"></a>
-  <h4 id="Grpc_Health_V1_Health_Descriptor" data-uid="Grpc.Health.V1.Health.Descriptor">Descriptor</h4>
-  <div class="markdown level1 summary"><p>Service descriptor</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static Google.Protobuf.Reflection.ServiceDescriptor Descriptor { get; }</code></pre>
-  </div>
-  <h5 class="propertyValue">Property Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">Google.Protobuf.Reflection.ServiceDescriptor</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
   <h3 id="methods">Methods
   </h3>
-  <a id="Grpc_Health_V1_Health_BindService_" data-uid="Grpc.Health.V1.Health.BindService*"></a>
-  <h4 id="Grpc_Health_V1_Health_BindService_Grpc_Core_ServiceBinderBase_Grpc_Health_V1_Health_HealthBase_" data-uid="Grpc.Health.V1.Health.BindService(Grpc.Core.ServiceBinderBase,Grpc.Health.V1.Health.HealthBase)">BindService(ServiceBinderBase, Health.HealthBase)</h4>
-  <div class="markdown level1 summary"><p>Register service method implementations with a service binder. Useful when customizing the service binding logic.
-Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
+  <a id="Grpc_Core_SerializationContext_Complete_" data-uid="Grpc.Core.SerializationContext.Complete*"></a>
+  <h4 id="Grpc_Core_SerializationContext_Complete_System_Byte___" data-uid="Grpc.Core.SerializationContext.Complete(System.Byte[])">Complete(Byte[])</h4>
+  <div class="markdown level1 summary"><p>Use the byte array as serialized form of current message and mark serialization process as complete.
+Complete() can only be called once. By calling this method the caller gives up the ownership of the
+payload which must not be accessed afterwards.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static void BindService(ServiceBinderBase serviceBinder, Health.HealthBase serviceImpl)</code></pre>
+    <pre><code class="lang-csharp hljs">public virtual void Complete(byte[] payload)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -169,58 +145,10 @@ Note: this method is part of an experimental API that can change or be removed w
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.ServiceBinderBase.html">ServiceBinderBase</a></td>
-        <td><span class="parametername">serviceBinder</span></td>
-        <td><p>Service methods will be bound by calling <code>AddMethod</code> on this object.</p>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><span class="parametername">payload</span></td>
+        <td><p>the serialized form of current message</p>
 </td>
-      </tr>
-      <tr>
-        <td><a class="xref" href="Grpc.Health.V1.Health.HealthBase.html">Health.HealthBase</a></td>
-        <td><span class="parametername">serviceImpl</span></td>
-        <td><p>An object implementing the server-side handling logic.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <a id="Grpc_Health_V1_Health_BindService_" data-uid="Grpc.Health.V1.Health.BindService*"></a>
-  <h4 id="Grpc_Health_V1_Health_BindService_Grpc_Health_V1_Health_HealthBase_" data-uid="Grpc.Health.V1.Health.BindService(Grpc.Health.V1.Health.HealthBase)">BindService(Health.HealthBase)</h4>
-  <div class="markdown level1 summary"><p>Creates service definition that can be registered with a server</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static ServerServiceDefinition BindService(Health.HealthBase serviceImpl)</code></pre>
-  </div>
-  <h5 class="parameters">Parameters</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Name</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="Grpc.Health.V1.Health.HealthBase.html">Health.HealthBase</a></td>
-        <td><span class="parametername">serviceImpl</span></td>
-        <td><p>An object implementing the server-side handling logic.</p>
-</td>
-      </tr>
-    </tbody>
-  </table>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><a class="xref" href="Grpc.Core.ServerServiceDefinition.html">ServerServiceDefinition</a></td>
-        <td></td>
       </tr>
     </tbody>
   </table>

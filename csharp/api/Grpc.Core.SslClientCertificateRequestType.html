@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Class VersionInfo
+    <title>Enum SslClientCertificateRequestType
    | gRPC C# </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Class VersionInfo
+    <meta name="title" content="Enum SslClientCertificateRequestType
    | gRPC C# ">
     <meta name="generator" content="docfx 2.36.0.0">
     
@@ -78,122 +78,86 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Grpc.Core.VersionInfo">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.SslClientCertificateRequestType">
   
   
-  <h1 id="Grpc_Core_VersionInfo" data-uid="Grpc.Core.VersionInfo" class="text-break">Class VersionInfo
+  <h1 id="Grpc_Core_SslClientCertificateRequestType" data-uid="Grpc.Core.SslClientCertificateRequestType" class="text-break">Enum SslClientCertificateRequestType
   </h1>
-  <div class="markdown level0 summary"><p>Provides info about current version of gRPC.
-See <a href="https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/">https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/</a>
-for rationale about assembly versioning.</p>
+  <div class="markdown level0 summary"><p>Modes of requesting client&apos;s SSL certificate by the server.
+Corresponds to <code>grpc_ssl_client_certificate_request_type</code>.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
-  <div class="inheritance">
-    <h5>Inheritance</h5>
-    <div class="level0"><span class="xref">System.Object</span></div>
-    <div class="level1"><span class="xref">VersionInfo</span></div>
-  </div>
-  <div class="inheritedMembers">
-    <h5>Inherited Members</h5>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetHashCode()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.GetType()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.MemberwiseClone()</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
-    </div>
-    <div>
-      <span class="xref">System.Object.ToString()</span>
-    </div>
-  </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
   <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
-  <h5 id="Grpc_Core_VersionInfo_syntax">Syntax</h5>
+  <h5 id="Grpc_Core_SslClientCertificateRequestType_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static class VersionInfo</code></pre>
+    <pre><code class="lang-csharp hljs">public enum SslClientCertificateRequestType</code></pre>
   </div>
   <h3 id="fields">Fields
   </h3>
-  <h4 id="Grpc_Core_VersionInfo_CurrentAssemblyFileVersion" data-uid="Grpc.Core.VersionInfo.CurrentAssemblyFileVersion">CurrentAssemblyFileVersion</h4>
-  <div class="markdown level1 summary"><p>Current <code>AssemblyFileVersion</code> of gRPC C# assemblies</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string CurrentAssemblyFileVersion = &quot;1.18.0.0&quot;</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
-        <th>Type</th>
+        <th>Name</th>
         <th>Description</th>
       </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
-  <h4 id="Grpc_Core_VersionInfo_CurrentAssemblyVersion" data-uid="Grpc.Core.VersionInfo.CurrentAssemblyVersion">CurrentAssemblyVersion</h4>
-  <div class="markdown level1 summary"><p>Current <code>AssemblyVersion</code> attribute of gRPC C# assemblies</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string CurrentAssemblyVersion = &quot;1.0.0.0&quot;</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
     <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
+        <td id="Grpc_Core_SslClientCertificateRequestType_DontRequest">DontRequest</td>
+        <td><p>Server does not request client certificate.
+The certificate presented by the client is not checked by the server at
+all. (A client may present a self signed or signed certificate or not
+present a certificate at all and any of those option would be accepted)</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_SslClientCertificateRequestType_RequestAndRequireAndVerify">RequestAndRequireAndVerify</td>
+        <td><p>Server requests client certificate and enforces that the client presents a
+certificate.
+The cerificate presented by the client is verified by the gRPC framework.
+(For a successful connection the client needs to present a certificate that
+can be verified against the root certificate configured by the server)
+The client&apos;s key certificate pair must be valid for the SSL connection to
+be established.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_SslClientCertificateRequestType_RequestAndRequireButDontVerify">RequestAndRequireButDontVerify</td>
+        <td><p>Server requests client certificate and enforces that the client presents a
+certificate.
+If the client presents a certificate, the client authentication is left to
+the application (the necessary metadata will be available to the
+application via authentication context properties, see grpc_auth_context).
+The client&apos;s key certificate pair must be valid for the SSL connection to
+be established.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_SslClientCertificateRequestType_RequestAndVerify">RequestAndVerify</td>
+        <td><p>Server requests client certificate but does not enforce that the client
+presents a certificate.
+If the client presents a certificate, the client authentication is done by
+the gRPC framework. (For a successful connection the client needs to either
+present a certificate that can be verified against the root certificate
+configured by the server or not present a certificate at all)
+The client&apos;s key certificate pair must be valid for the SSL connection to
+be established.</p>
+</td>
+      </tr>
+      <tr>
+        <td id="Grpc_Core_SslClientCertificateRequestType_RequestButDontVerify">RequestButDontVerify</td>
+        <td><p>Server requests client certificate but does not enforce that the client
+presents a certificate.
+If the client presents a certificate, the client authentication is left to
+the application (the necessary metadata will be available to the
+application via authentication context properties, see grpc_auth_context).
+The client&apos;s key certificate pair must be valid for the SSL connection to
+be established.</p>
+</td>
       </tr>
     </tbody>
-  </table>
-  <h4 id="Grpc_Core_VersionInfo_CurrentVersion" data-uid="Grpc.Core.VersionInfo.CurrentVersion">CurrentVersion</h4>
-  <div class="markdown level1 summary"><p>Current version of gRPC C#</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public const string CurrentVersion = &quot;1.18.0&quot;</code></pre>
-  </div>
-  <h5 class="fieldValue">Field Value</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.String</span></td>
-        <td></td>
-      </tr>
-    </tbody>
-  </table>
+  </thead></thead></table>
 </article>
           </div>
           

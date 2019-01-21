@@ -139,8 +139,44 @@
   <h3 id="constructors">Constructors
   </h3>
   <a id="Grpc_Core_Marshaller_1__ctor_" data-uid="Grpc.Core.Marshaller`1.#ctor*"></a>
+  <h4 id="Grpc_Core_Marshaller_1__ctor_System_Action__0_Grpc_Core_SerializationContext__System_Func_Grpc_Core_DeserializationContext__0__" data-uid="Grpc.Core.Marshaller`1.#ctor(System.Action{`0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,`0})">Marshaller(Action&lt;T, SerializationContext&gt;, Func&lt;DeserializationContext, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Initializes a new marshaller from serialize/deserialize fuctions that can access serialization and deserialization
+context. Compared to the simple serializer/deserializer functions, using the contextual version provides more
+flexibility and can lead to increased efficiency (and better performance).
+Note: This constructor is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Marshaller(Action&lt;T, SerializationContext&gt; serializer, Func&lt;DeserializationContext, T&gt; deserializer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;T, <a class="xref" href="Grpc.Core.SerializationContext.html">SerializationContext</a>&gt;</td>
+        <td><span class="parametername">serializer</span></td>
+        <td><p>Function that will be used to serialize messages.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.DeserializationContext.html">DeserializationContext</a>, T&gt;</td>
+        <td><span class="parametername">deserializer</span></td>
+        <td><p>Function that will be used to deserialize messages.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Marshaller_1__ctor_" data-uid="Grpc.Core.Marshaller`1.#ctor*"></a>
   <h4 id="Grpc_Core_Marshaller_1__ctor_System_Func__0_System_Byte____System_Func_System_Byte____0__" data-uid="Grpc.Core.Marshaller`1.#ctor(System.Func{`0,System.Byte[]},System.Func{System.Byte[],`0})">Marshaller(Func&lt;T, Byte[]&gt;, Func&lt;Byte[], T&gt;)</h4>
-  <div class="markdown level1 summary"><p>Initializes a new marshaller.</p>
+  <div class="markdown level1 summary"><p>Initializes a new marshaller from simple serialize/deserialize functions.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -173,6 +209,56 @@
   </table>
   <h3 id="properties">Properties
   </h3>
+  <a id="Grpc_Core_Marshaller_1_ContextualDeserializer_" data-uid="Grpc.Core.Marshaller`1.ContextualDeserializer*"></a>
+  <h4 id="Grpc_Core_Marshaller_1_ContextualDeserializer" data-uid="Grpc.Core.Marshaller`1.ContextualDeserializer">ContextualDeserializer</h4>
+  <div class="markdown level1 summary"><p>Gets the serializer function.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Func&lt;DeserializationContext, T&gt; ContextualDeserializer { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.DeserializationContext.html">DeserializationContext</a>, T&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Marshaller_1_ContextualSerializer_" data-uid="Grpc.Core.Marshaller`1.ContextualSerializer*"></a>
+  <h4 id="Grpc_Core_Marshaller_1_ContextualSerializer" data-uid="Grpc.Core.Marshaller`1.ContextualSerializer">ContextualSerializer</h4>
+  <div class="markdown level1 summary"><p>Gets the serializer function.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public Action&lt;T, SerializationContext&gt; ContextualSerializer { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;T, <a class="xref" href="Grpc.Core.SerializationContext.html">SerializationContext</a>&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_Marshaller_1_Deserializer_" data-uid="Grpc.Core.Marshaller`1.Deserializer*"></a>
   <h4 id="Grpc_Core_Marshaller_1_Deserializer" data-uid="Grpc.Core.Marshaller`1.Deserializer">Deserializer</h4>
   <div class="markdown level1 summary"><p>Gets the deserializer function.</p>

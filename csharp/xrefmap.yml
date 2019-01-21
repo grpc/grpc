@@ -1501,6 +1501,22 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Channel.Target
   nameWithType: Channel.Target
+- uid: Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})
+  name: TryWaitForStateChangedAsync(ChannelState, Nullable<DateTime>)
+  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_TryWaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__
+  commentId: M:Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})
+  name.vb: TryWaitForStateChangedAsync(ChannelState, Nullable(Of DateTime))
+  fullName: Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState, System.Nullable<System.DateTime>)
+  fullName.vb: Grpc.Core.Channel.TryWaitForStateChangedAsync(Grpc.Core.ChannelState, System.Nullable(Of System.DateTime))
+  nameWithType: Channel.TryWaitForStateChangedAsync(ChannelState, Nullable<DateTime>)
+  nameWithType.vb: Channel.TryWaitForStateChangedAsync(ChannelState, Nullable(Of DateTime))
+- uid: Grpc.Core.Channel.TryWaitForStateChangedAsync*
+  name: TryWaitForStateChangedAsync
+  href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_TryWaitForStateChangedAsync_
+  commentId: Overload:Grpc.Core.Channel.TryWaitForStateChangedAsync
+  isSpec: "True"
+  fullName: Grpc.Core.Channel.TryWaitForStateChangedAsync
+  nameWithType: Channel.TryWaitForStateChangedAsync
 - uid: Grpc.Core.Channel.WaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})
   name: WaitForStateChangedAsync(ChannelState, Nullable<DateTime>)
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_WaitForStateChangedAsync_Grpc_Core_ChannelState_System_Nullable_System_DateTime__
@@ -1587,6 +1603,38 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ChannelOption.ChannelOption
   nameWithType: ChannelOption.ChannelOption
+- uid: Grpc.Core.ChannelOption.Equals(Grpc.Core.ChannelOption)
+  name: Equals(ChannelOption)
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_Equals_Grpc_Core_ChannelOption_
+  commentId: M:Grpc.Core.ChannelOption.Equals(Grpc.Core.ChannelOption)
+  fullName: Grpc.Core.ChannelOption.Equals(Grpc.Core.ChannelOption)
+  nameWithType: ChannelOption.Equals(ChannelOption)
+- uid: Grpc.Core.ChannelOption.Equals(System.Object)
+  name: Equals(Object)
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_Equals_System_Object_
+  commentId: M:Grpc.Core.ChannelOption.Equals(System.Object)
+  fullName: Grpc.Core.ChannelOption.Equals(System.Object)
+  nameWithType: ChannelOption.Equals(Object)
+- uid: Grpc.Core.ChannelOption.Equals*
+  name: Equals
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_Equals_
+  commentId: Overload:Grpc.Core.ChannelOption.Equals
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelOption.Equals
+  nameWithType: ChannelOption.Equals
+- uid: Grpc.Core.ChannelOption.GetHashCode
+  name: GetHashCode()
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_GetHashCode
+  commentId: M:Grpc.Core.ChannelOption.GetHashCode
+  fullName: Grpc.Core.ChannelOption.GetHashCode()
+  nameWithType: ChannelOption.GetHashCode()
+- uid: Grpc.Core.ChannelOption.GetHashCode*
+  name: GetHashCode
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_GetHashCode_
+  commentId: Overload:Grpc.Core.ChannelOption.GetHashCode
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelOption.GetHashCode
+  nameWithType: ChannelOption.GetHashCode
 - uid: Grpc.Core.ChannelOption.IntValue
   name: IntValue
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_IntValue
@@ -1613,6 +1661,32 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ChannelOption.Name
   nameWithType: ChannelOption.Name
+- uid: Grpc.Core.ChannelOption.op_Equality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)
+  name: Equality(ChannelOption, ChannelOption)
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_op_Equality_Grpc_Core_ChannelOption_Grpc_Core_ChannelOption_
+  commentId: M:Grpc.Core.ChannelOption.op_Equality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)
+  fullName: Grpc.Core.ChannelOption.Equality(Grpc.Core.ChannelOption, Grpc.Core.ChannelOption)
+  nameWithType: ChannelOption.Equality(ChannelOption, ChannelOption)
+- uid: Grpc.Core.ChannelOption.op_Equality*
+  name: Equality
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_op_Equality_
+  commentId: Overload:Grpc.Core.ChannelOption.op_Equality
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelOption.Equality
+  nameWithType: ChannelOption.Equality
+- uid: Grpc.Core.ChannelOption.op_Inequality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)
+  name: Inequality(ChannelOption, ChannelOption)
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_op_Inequality_Grpc_Core_ChannelOption_Grpc_Core_ChannelOption_
+  commentId: M:Grpc.Core.ChannelOption.op_Inequality(Grpc.Core.ChannelOption,Grpc.Core.ChannelOption)
+  fullName: Grpc.Core.ChannelOption.Inequality(Grpc.Core.ChannelOption, Grpc.Core.ChannelOption)
+  nameWithType: ChannelOption.Inequality(ChannelOption, ChannelOption)
+- uid: Grpc.Core.ChannelOption.op_Inequality*
+  name: Inequality
+  href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_op_Inequality_
+  commentId: Overload:Grpc.Core.ChannelOption.op_Inequality
+  isSpec: "True"
+  fullName: Grpc.Core.ChannelOption.Inequality
+  nameWithType: ChannelOption.Inequality
 - uid: Grpc.Core.ChannelOption.OptionType
   name: ChannelOption.OptionType
   href: api/Grpc.Core.ChannelOption.OptionType.html
@@ -2116,6 +2190,38 @@ references:
   fullName.vb: Grpc.Core.DefaultCallInvoker.CreateCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions)
   nameWithType: DefaultCallInvoker.CreateCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions)
   nameWithType.vb: DefaultCallInvoker.CreateCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions)
+- uid: Grpc.Core.DeserializationContext
+  name: DeserializationContext
+  href: api/Grpc.Core.DeserializationContext.html
+  commentId: T:Grpc.Core.DeserializationContext
+  fullName: Grpc.Core.DeserializationContext
+  nameWithType: DeserializationContext
+- uid: Grpc.Core.DeserializationContext.PayloadAsNewBuffer
+  name: PayloadAsNewBuffer()
+  href: api/Grpc.Core.DeserializationContext.html#Grpc_Core_DeserializationContext_PayloadAsNewBuffer
+  commentId: M:Grpc.Core.DeserializationContext.PayloadAsNewBuffer
+  fullName: Grpc.Core.DeserializationContext.PayloadAsNewBuffer()
+  nameWithType: DeserializationContext.PayloadAsNewBuffer()
+- uid: Grpc.Core.DeserializationContext.PayloadAsNewBuffer*
+  name: PayloadAsNewBuffer
+  href: api/Grpc.Core.DeserializationContext.html#Grpc_Core_DeserializationContext_PayloadAsNewBuffer_
+  commentId: Overload:Grpc.Core.DeserializationContext.PayloadAsNewBuffer
+  isSpec: "True"
+  fullName: Grpc.Core.DeserializationContext.PayloadAsNewBuffer
+  nameWithType: DeserializationContext.PayloadAsNewBuffer
+- uid: Grpc.Core.DeserializationContext.PayloadLength
+  name: PayloadLength
+  href: api/Grpc.Core.DeserializationContext.html#Grpc_Core_DeserializationContext_PayloadLength
+  commentId: P:Grpc.Core.DeserializationContext.PayloadLength
+  fullName: Grpc.Core.DeserializationContext.PayloadLength
+  nameWithType: DeserializationContext.PayloadLength
+- uid: Grpc.Core.DeserializationContext.PayloadLength*
+  name: PayloadLength
+  href: api/Grpc.Core.DeserializationContext.html#Grpc_Core_DeserializationContext_PayloadLength_
+  commentId: Overload:Grpc.Core.DeserializationContext.PayloadLength
+  isSpec: "True"
+  fullName: Grpc.Core.DeserializationContext.PayloadLength
+  nameWithType: DeserializationContext.PayloadLength
 - uid: Grpc.Core.DuplexStreamingServerMethod`2
   name: DuplexStreamingServerMethod<TRequest, TResponse>
   href: api/Grpc.Core.DuplexStreamingServerMethod-2.html
@@ -3462,6 +3568,15 @@ references:
   fullName.vb: Grpc.Core.Marshaller(Of T)
   nameWithType: Marshaller<T>
   nameWithType.vb: Marshaller(Of T)
+- uid: Grpc.Core.Marshaller`1.#ctor(System.Action{`0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,`0})
+  name: Marshaller(Action<T, SerializationContext>, Func<DeserializationContext, T>)
+  href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1__ctor_System_Action__0_Grpc_Core_SerializationContext__System_Func_Grpc_Core_DeserializationContext__0__
+  commentId: M:Grpc.Core.Marshaller`1.#ctor(System.Action{`0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,`0})
+  name.vb: Marshaller(Action(Of T, SerializationContext), Func(Of DeserializationContext, T))
+  fullName: Grpc.Core.Marshaller<T>.Marshaller(System.Action<T, Grpc.Core.SerializationContext>, System.Func<Grpc.Core.DeserializationContext, T>)
+  fullName.vb: Grpc.Core.Marshaller(Of T).Marshaller(System.Action(Of T, Grpc.Core.SerializationContext), System.Func(Of Grpc.Core.DeserializationContext, T))
+  nameWithType: Marshaller<T>.Marshaller(Action<T, SerializationContext>, Func<DeserializationContext, T>)
+  nameWithType.vb: Marshaller(Of T).Marshaller(Action(Of T, SerializationContext), Func(Of DeserializationContext, T))
 - uid: Grpc.Core.Marshaller`1.#ctor(System.Func{`0,System.Byte[]},System.Func{System.Byte[],`0})
   name: Marshaller(Func<T, Byte[]>, Func<Byte[], T>)
   href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1__ctor_System_Func__0_System_Byte____System_Func_System_Byte____0__
@@ -3480,6 +3595,40 @@ references:
   fullName.vb: Grpc.Core.Marshaller(Of T).Marshaller
   nameWithType: Marshaller<T>.Marshaller
   nameWithType.vb: Marshaller(Of T).Marshaller
+- uid: Grpc.Core.Marshaller`1.ContextualDeserializer
+  name: ContextualDeserializer
+  href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_ContextualDeserializer
+  commentId: P:Grpc.Core.Marshaller`1.ContextualDeserializer
+  fullName: Grpc.Core.Marshaller<T>.ContextualDeserializer
+  fullName.vb: Grpc.Core.Marshaller(Of T).ContextualDeserializer
+  nameWithType: Marshaller<T>.ContextualDeserializer
+  nameWithType.vb: Marshaller(Of T).ContextualDeserializer
+- uid: Grpc.Core.Marshaller`1.ContextualDeserializer*
+  name: ContextualDeserializer
+  href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_ContextualDeserializer_
+  commentId: Overload:Grpc.Core.Marshaller`1.ContextualDeserializer
+  isSpec: "True"
+  fullName: Grpc.Core.Marshaller<T>.ContextualDeserializer
+  fullName.vb: Grpc.Core.Marshaller(Of T).ContextualDeserializer
+  nameWithType: Marshaller<T>.ContextualDeserializer
+  nameWithType.vb: Marshaller(Of T).ContextualDeserializer
+- uid: Grpc.Core.Marshaller`1.ContextualSerializer
+  name: ContextualSerializer
+  href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_ContextualSerializer
+  commentId: P:Grpc.Core.Marshaller`1.ContextualSerializer
+  fullName: Grpc.Core.Marshaller<T>.ContextualSerializer
+  fullName.vb: Grpc.Core.Marshaller(Of T).ContextualSerializer
+  nameWithType: Marshaller<T>.ContextualSerializer
+  nameWithType.vb: Marshaller(Of T).ContextualSerializer
+- uid: Grpc.Core.Marshaller`1.ContextualSerializer*
+  name: ContextualSerializer
+  href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_ContextualSerializer_
+  commentId: Overload:Grpc.Core.Marshaller`1.ContextualSerializer
+  isSpec: "True"
+  fullName: Grpc.Core.Marshaller<T>.ContextualSerializer
+  fullName.vb: Grpc.Core.Marshaller(Of T).ContextualSerializer
+  nameWithType: Marshaller<T>.ContextualSerializer
+  nameWithType.vb: Marshaller(Of T).ContextualSerializer
 - uid: Grpc.Core.Marshaller`1.Deserializer
   name: Deserializer
   href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_Deserializer
@@ -3527,6 +3676,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Marshallers.Create
   nameWithType: Marshallers.Create
+- uid: Grpc.Core.Marshallers.Create``1(System.Action{``0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,``0})
+  name: Create<T>(Action<T, SerializationContext>, Func<DeserializationContext, T>)
+  href: api/Grpc.Core.Marshallers.html#Grpc_Core_Marshallers_Create__1_System_Action___0_Grpc_Core_SerializationContext__System_Func_Grpc_Core_DeserializationContext___0__
+  commentId: M:Grpc.Core.Marshallers.Create``1(System.Action{``0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,``0})
+  name.vb: Create(Of T)(Action(Of T, SerializationContext), Func(Of DeserializationContext, T))
+  fullName: Grpc.Core.Marshallers.Create<T>(System.Action<T, Grpc.Core.SerializationContext>, System.Func<Grpc.Core.DeserializationContext, T>)
+  fullName.vb: Grpc.Core.Marshallers.Create(Of T)(System.Action(Of T, Grpc.Core.SerializationContext), System.Func(Of Grpc.Core.DeserializationContext, T))
+  nameWithType: Marshallers.Create<T>(Action<T, SerializationContext>, Func<DeserializationContext, T>)
+  nameWithType.vb: Marshallers.Create(Of T)(Action(Of T, SerializationContext), Func(Of DeserializationContext, T))
 - uid: Grpc.Core.Marshallers.Create``1(System.Func{``0,System.Byte[]},System.Func{System.Byte[],``0})
   name: Create<T>(Func<T, Byte[]>, Func<Byte[], T>)
   href: api/Grpc.Core.Marshallers.html#Grpc_Core_Marshallers_Create__1_System_Func___0_System_Byte____System_Func_System_Byte_____0__
@@ -4044,6 +4202,12 @@ references:
   commentId: M:Grpc.Core.RpcException.#ctor(Grpc.Core.Status,Grpc.Core.Metadata)
   fullName: Grpc.Core.RpcException.RpcException(Grpc.Core.Status, Grpc.Core.Metadata)
   nameWithType: RpcException.RpcException(Status, Metadata)
+- uid: Grpc.Core.RpcException.#ctor(Grpc.Core.Status,Grpc.Core.Metadata,System.String)
+  name: RpcException(Status, Metadata, String)
+  href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException__ctor_Grpc_Core_Status_Grpc_Core_Metadata_System_String_
+  commentId: M:Grpc.Core.RpcException.#ctor(Grpc.Core.Status,Grpc.Core.Metadata,System.String)
+  fullName: Grpc.Core.RpcException.RpcException(Grpc.Core.Status, Grpc.Core.Metadata, System.String)
+  nameWithType: RpcException.RpcException(Status, Metadata, String)
 - uid: Grpc.Core.RpcException.#ctor(Grpc.Core.Status,System.String)
   name: RpcException(Status, String)
   href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException__ctor_Grpc_Core_Status_System_String_
@@ -4096,6 +4260,28 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.RpcException.Trailers
   nameWithType: RpcException.Trailers
+- uid: Grpc.Core.SerializationContext
+  name: SerializationContext
+  href: api/Grpc.Core.SerializationContext.html
+  commentId: T:Grpc.Core.SerializationContext
+  fullName: Grpc.Core.SerializationContext
+  nameWithType: SerializationContext
+- uid: Grpc.Core.SerializationContext.Complete(System.Byte[])
+  name: Complete(Byte[])
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_Complete_System_Byte___
+  commentId: M:Grpc.Core.SerializationContext.Complete(System.Byte[])
+  name.vb: Complete(Byte())
+  fullName: Grpc.Core.SerializationContext.Complete(System.Byte[])
+  fullName.vb: Grpc.Core.SerializationContext.Complete(System.Byte())
+  nameWithType: SerializationContext.Complete(Byte[])
+  nameWithType.vb: SerializationContext.Complete(Byte())
+- uid: Grpc.Core.SerializationContext.Complete*
+  name: Complete
+  href: api/Grpc.Core.SerializationContext.html#Grpc_Core_SerializationContext_Complete_
+  commentId: Overload:Grpc.Core.SerializationContext.Complete
+  isSpec: "True"
+  fullName: Grpc.Core.SerializationContext.Complete
+  nameWithType: SerializationContext.Complete
 - uid: Grpc.Core.Server
   name: Server
   href: api/Grpc.Core.Server.html
@@ -4680,6 +4866,91 @@ references:
   fullName.vb: Grpc.Core.ServerStreamingServerMethod(Of TRequest, TResponse)
   nameWithType: ServerStreamingServerMethod<TRequest, TResponse>
   nameWithType.vb: ServerStreamingServerMethod(Of TRequest, TResponse)
+- uid: Grpc.Core.ServiceBinderBase
+  name: ServiceBinderBase
+  href: api/Grpc.Core.ServiceBinderBase.html
+  commentId: T:Grpc.Core.ServiceBinderBase
+  fullName: Grpc.Core.ServiceBinderBase
+  nameWithType: ServiceBinderBase
+- uid: Grpc.Core.ServiceBinderBase.AddMethod*
+  name: AddMethod
+  href: api/Grpc.Core.ServiceBinderBase.html#Grpc_Core_ServiceBinderBase_AddMethod_
+  commentId: Overload:Grpc.Core.ServiceBinderBase.AddMethod
+  isSpec: "True"
+  fullName: Grpc.Core.ServiceBinderBase.AddMethod
+  nameWithType: ServiceBinderBase.AddMethod
+- uid: Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  name: AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, ClientStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.ServiceBinderBase.html#Grpc_Core_ServiceBinderBase_AddMethod__2_Grpc_Core_Method___0___1__Grpc_Core_ClientStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  name.vb: AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), ClientStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.ServiceBinderBase.AddMethod<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, Grpc.Core.ClientStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), Grpc.Core.ClientStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: ServiceBinderBase.AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), ClientStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  name: AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, DuplexStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.ServiceBinderBase.html#Grpc_Core_ServiceBinderBase_AddMethod__2_Grpc_Core_Method___0___1__Grpc_Core_DuplexStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  name.vb: AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), DuplexStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.ServiceBinderBase.AddMethod<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, Grpc.Core.DuplexStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), Grpc.Core.DuplexStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: ServiceBinderBase.AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), DuplexStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  name: AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, ServerStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.ServiceBinderBase.html#Grpc_Core_ServiceBinderBase_AddMethod__2_Grpc_Core_Method___0___1__Grpc_Core_ServerStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  name.vb: AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), ServerStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.ServiceBinderBase.AddMethod<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, Grpc.Core.ServerStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), Grpc.Core.ServerStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: ServiceBinderBase.AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), ServerStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.UnaryServerMethod{``0,``1})
+  name: AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, UnaryServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.ServiceBinderBase.html#Grpc_Core_ServiceBinderBase_AddMethod__2_Grpc_Core_Method___0___1__Grpc_Core_UnaryServerMethod___0___1__
+  commentId: M:Grpc.Core.ServiceBinderBase.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.UnaryServerMethod{``0,``1})
+  name.vb: AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), UnaryServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.ServiceBinderBase.AddMethod<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, Grpc.Core.UnaryServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), Grpc.Core.UnaryServerMethod(Of TRequest, TResponse))
+  nameWithType: ServiceBinderBase.AddMethod<TRequest, TResponse>(Method<TRequest, TResponse>, UnaryServerMethod<TRequest, TResponse>)
+  nameWithType.vb: ServiceBinderBase.AddMethod(Of TRequest, TResponse)(Method(Of TRequest, TResponse), UnaryServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.SslClientCertificateRequestType
+  name: SslClientCertificateRequestType
+  href: api/Grpc.Core.SslClientCertificateRequestType.html
+  commentId: T:Grpc.Core.SslClientCertificateRequestType
+  fullName: Grpc.Core.SslClientCertificateRequestType
+  nameWithType: SslClientCertificateRequestType
+- uid: Grpc.Core.SslClientCertificateRequestType.DontRequest
+  name: DontRequest
+  href: api/Grpc.Core.SslClientCertificateRequestType.html#Grpc_Core_SslClientCertificateRequestType_DontRequest
+  commentId: F:Grpc.Core.SslClientCertificateRequestType.DontRequest
+  fullName: Grpc.Core.SslClientCertificateRequestType.DontRequest
+  nameWithType: SslClientCertificateRequestType.DontRequest
+- uid: Grpc.Core.SslClientCertificateRequestType.RequestAndRequireAndVerify
+  name: RequestAndRequireAndVerify
+  href: api/Grpc.Core.SslClientCertificateRequestType.html#Grpc_Core_SslClientCertificateRequestType_RequestAndRequireAndVerify
+  commentId: F:Grpc.Core.SslClientCertificateRequestType.RequestAndRequireAndVerify
+  fullName: Grpc.Core.SslClientCertificateRequestType.RequestAndRequireAndVerify
+  nameWithType: SslClientCertificateRequestType.RequestAndRequireAndVerify
+- uid: Grpc.Core.SslClientCertificateRequestType.RequestAndRequireButDontVerify
+  name: RequestAndRequireButDontVerify
+  href: api/Grpc.Core.SslClientCertificateRequestType.html#Grpc_Core_SslClientCertificateRequestType_RequestAndRequireButDontVerify
+  commentId: F:Grpc.Core.SslClientCertificateRequestType.RequestAndRequireButDontVerify
+  fullName: Grpc.Core.SslClientCertificateRequestType.RequestAndRequireButDontVerify
+  nameWithType: SslClientCertificateRequestType.RequestAndRequireButDontVerify
+- uid: Grpc.Core.SslClientCertificateRequestType.RequestAndVerify
+  name: RequestAndVerify
+  href: api/Grpc.Core.SslClientCertificateRequestType.html#Grpc_Core_SslClientCertificateRequestType_RequestAndVerify
+  commentId: F:Grpc.Core.SslClientCertificateRequestType.RequestAndVerify
+  fullName: Grpc.Core.SslClientCertificateRequestType.RequestAndVerify
+  nameWithType: SslClientCertificateRequestType.RequestAndVerify
+- uid: Grpc.Core.SslClientCertificateRequestType.RequestButDontVerify
+  name: RequestButDontVerify
+  href: api/Grpc.Core.SslClientCertificateRequestType.html#Grpc_Core_SslClientCertificateRequestType_RequestButDontVerify
+  commentId: F:Grpc.Core.SslClientCertificateRequestType.RequestButDontVerify
+  fullName: Grpc.Core.SslClientCertificateRequestType.RequestButDontVerify
+  nameWithType: SslClientCertificateRequestType.RequestButDontVerify
 - uid: Grpc.Core.SslCredentials
   name: SslCredentials
   href: api/Grpc.Core.SslCredentials.html
@@ -4752,6 +5023,15 @@ references:
   fullName.vb: Grpc.Core.SslServerCredentials.SslServerCredentials(System.Collections.Generic.IEnumerable(Of Grpc.Core.KeyCertificatePair))
   nameWithType: SslServerCredentials.SslServerCredentials(IEnumerable<KeyCertificatePair>)
   nameWithType.vb: SslServerCredentials.SslServerCredentials(IEnumerable(Of KeyCertificatePair))
+- uid: Grpc.Core.SslServerCredentials.#ctor(System.Collections.Generic.IEnumerable{Grpc.Core.KeyCertificatePair},System.String,Grpc.Core.SslClientCertificateRequestType)
+  name: SslServerCredentials(IEnumerable<KeyCertificatePair>, String, SslClientCertificateRequestType)
+  href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials__ctor_System_Collections_Generic_IEnumerable_Grpc_Core_KeyCertificatePair__System_String_Grpc_Core_SslClientCertificateRequestType_
+  commentId: M:Grpc.Core.SslServerCredentials.#ctor(System.Collections.Generic.IEnumerable{Grpc.Core.KeyCertificatePair},System.String,Grpc.Core.SslClientCertificateRequestType)
+  name.vb: SslServerCredentials(IEnumerable(Of KeyCertificatePair), String, SslClientCertificateRequestType)
+  fullName: Grpc.Core.SslServerCredentials.SslServerCredentials(System.Collections.Generic.IEnumerable<Grpc.Core.KeyCertificatePair>, System.String, Grpc.Core.SslClientCertificateRequestType)
+  fullName.vb: Grpc.Core.SslServerCredentials.SslServerCredentials(System.Collections.Generic.IEnumerable(Of Grpc.Core.KeyCertificatePair), System.String, Grpc.Core.SslClientCertificateRequestType)
+  nameWithType: SslServerCredentials.SslServerCredentials(IEnumerable<KeyCertificatePair>, String, SslClientCertificateRequestType)
+  nameWithType.vb: SslServerCredentials.SslServerCredentials(IEnumerable(Of KeyCertificatePair), String, SslClientCertificateRequestType)
 - uid: Grpc.Core.SslServerCredentials.#ctor(System.Collections.Generic.IEnumerable{Grpc.Core.KeyCertificatePair},System.String,System.Boolean)
   name: SslServerCredentials(IEnumerable<KeyCertificatePair>, String, Boolean)
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials__ctor_System_Collections_Generic_IEnumerable_Grpc_Core_KeyCertificatePair__System_String_System_Boolean_
@@ -4768,6 +5048,19 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.SslServerCredentials.SslServerCredentials
   nameWithType: SslServerCredentials.SslServerCredentials
+- uid: Grpc.Core.SslServerCredentials.ClientCertificateRequest
+  name: ClientCertificateRequest
+  href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_ClientCertificateRequest
+  commentId: P:Grpc.Core.SslServerCredentials.ClientCertificateRequest
+  fullName: Grpc.Core.SslServerCredentials.ClientCertificateRequest
+  nameWithType: SslServerCredentials.ClientCertificateRequest
+- uid: Grpc.Core.SslServerCredentials.ClientCertificateRequest*
+  name: ClientCertificateRequest
+  href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_ClientCertificateRequest_
+  commentId: Overload:Grpc.Core.SslServerCredentials.ClientCertificateRequest
+  isSpec: "True"
+  fullName: Grpc.Core.SslServerCredentials.ClientCertificateRequest
+  nameWithType: SslServerCredentials.ClientCertificateRequest
 - uid: Grpc.Core.SslServerCredentials.ForceClientAuthentication
   name: ForceClientAuthentication
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_ForceClientAuthentication
@@ -5360,6 +5653,12 @@ references:
   commentId: T:Grpc.Health.V1.Health
   fullName: Grpc.Health.V1.Health
   nameWithType: Health
+- uid: Grpc.Health.V1.Health.BindService(Grpc.Core.ServiceBinderBase,Grpc.Health.V1.Health.HealthBase)
+  name: BindService(ServiceBinderBase, Health.HealthBase)
+  href: api/Grpc.Health.V1.Health.html#Grpc_Health_V1_Health_BindService_Grpc_Core_ServiceBinderBase_Grpc_Health_V1_Health_HealthBase_
+  commentId: M:Grpc.Health.V1.Health.BindService(Grpc.Core.ServiceBinderBase,Grpc.Health.V1.Health.HealthBase)
+  fullName: Grpc.Health.V1.Health.BindService(Grpc.Core.ServiceBinderBase, Grpc.Health.V1.Health.HealthBase)
+  nameWithType: Health.BindService(ServiceBinderBase, Health.HealthBase)
 - uid: Grpc.Health.V1.Health.BindService(Grpc.Health.V1.Health.HealthBase)
   name: BindService(Health.HealthBase)
   href: api/Grpc.Health.V1.Health.html#Grpc_Health_V1_Health_BindService_Grpc_Health_V1_Health_HealthBase_
@@ -5405,6 +5704,22 @@ references:
   isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthBase.Check
   nameWithType: Health.HealthBase.Check
+- uid: Grpc.Health.V1.Health.HealthBase.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.IServerStreamWriter{Grpc.Health.V1.HealthCheckResponse},Grpc.Core.ServerCallContext)
+  name: Watch(HealthCheckRequest, IServerStreamWriter<HealthCheckResponse>, ServerCallContext)
+  href: api/Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Watch_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_IServerStreamWriter_Grpc_Health_V1_HealthCheckResponse__Grpc_Core_ServerCallContext_
+  commentId: M:Grpc.Health.V1.Health.HealthBase.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.IServerStreamWriter{Grpc.Health.V1.HealthCheckResponse},Grpc.Core.ServerCallContext)
+  name.vb: Watch(HealthCheckRequest, IServerStreamWriter(Of HealthCheckResponse), ServerCallContext)
+  fullName: Grpc.Health.V1.Health.HealthBase.Watch(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.IServerStreamWriter<Grpc.Health.V1.HealthCheckResponse>, Grpc.Core.ServerCallContext)
+  fullName.vb: Grpc.Health.V1.Health.HealthBase.Watch(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.IServerStreamWriter(Of Grpc.Health.V1.HealthCheckResponse), Grpc.Core.ServerCallContext)
+  nameWithType: Health.HealthBase.Watch(HealthCheckRequest, IServerStreamWriter<HealthCheckResponse>, ServerCallContext)
+  nameWithType.vb: Health.HealthBase.Watch(HealthCheckRequest, IServerStreamWriter(Of HealthCheckResponse), ServerCallContext)
+- uid: Grpc.Health.V1.Health.HealthBase.Watch*
+  name: Watch
+  href: api/Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Watch_
+  commentId: Overload:Grpc.Health.V1.Health.HealthBase.Watch
+  isSpec: "True"
+  fullName: Grpc.Health.V1.Health.HealthBase.Watch
+  nameWithType: Health.HealthBase.Watch
 - uid: Grpc.Health.V1.Health.HealthClient
   name: Health.HealthClient
   href: api/Grpc.Health.V1.Health.HealthClient.html
@@ -5499,6 +5814,28 @@ references:
   isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthClient.NewInstance
   nameWithType: Health.HealthClient.NewInstance
+- uid: Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.CallOptions)
+  name: Watch(HealthCheckRequest, CallOptions)
+  href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_Watch_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_CallOptions_
+  commentId: M:Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.CallOptions)
+  fullName: Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.CallOptions)
+  nameWithType: Health.HealthClient.Watch(HealthCheckRequest, CallOptions)
+- uid: Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken)
+  name: Watch(HealthCheckRequest, Metadata, Nullable<DateTime>, CancellationToken)
+  href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_Watch_Grpc_Health_V1_HealthCheckRequest_Grpc_Core_Metadata_System_Nullable_System_DateTime__System_Threading_CancellationToken_
+  commentId: M:Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken)
+  name.vb: Watch(HealthCheckRequest, Metadata, Nullable(Of DateTime), CancellationToken)
+  fullName: Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.Metadata, System.Nullable<System.DateTime>, System.Threading.CancellationToken)
+  fullName.vb: Grpc.Health.V1.Health.HealthClient.Watch(Grpc.Health.V1.HealthCheckRequest, Grpc.Core.Metadata, System.Nullable(Of System.DateTime), System.Threading.CancellationToken)
+  nameWithType: Health.HealthClient.Watch(HealthCheckRequest, Metadata, Nullable<DateTime>, CancellationToken)
+  nameWithType.vb: Health.HealthClient.Watch(HealthCheckRequest, Metadata, Nullable(Of DateTime), CancellationToken)
+- uid: Grpc.Health.V1.Health.HealthClient.Watch*
+  name: Watch
+  href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_Watch_
+  commentId: Overload:Grpc.Health.V1.Health.HealthClient.Watch
+  isSpec: "True"
+  fullName: Grpc.Health.V1.Health.HealthClient.Watch
+  nameWithType: Health.HealthClient.Watch
 - uid: Grpc.Health.V1.HealthCheckRequest
   name: HealthCheckRequest
   href: api/Grpc.Health.V1.HealthCheckRequest.html
@@ -5850,6 +6187,12 @@ references:
   commentId: F:Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.NotServing
   fullName: Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.NotServing
   nameWithType: HealthCheckResponse.Types.ServingStatus.NotServing
+- uid: Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.ServiceUnknown
+  name: ServiceUnknown
+  href: api/Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.html#Grpc_Health_V1_HealthCheckResponse_Types_ServingStatus_ServiceUnknown
+  commentId: F:Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.ServiceUnknown
+  fullName: Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.ServiceUnknown
+  nameWithType: HealthCheckResponse.Types.ServingStatus.ServiceUnknown
 - uid: Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.Serving
   name: Serving
   href: api/Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.html#Grpc_Health_V1_HealthCheckResponse_Types_ServingStatus_Serving

@@ -150,6 +150,68 @@
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_Marshallers_Create_" data-uid="Grpc.Core.Marshallers.Create*"></a>
+  <h4 id="Grpc_Core_Marshallers_Create__1_System_Action___0_Grpc_Core_SerializationContext__System_Func_Grpc_Core_DeserializationContext___0__" data-uid="Grpc.Core.Marshallers.Create``1(System.Action{``0,Grpc.Core.SerializationContext},System.Func{Grpc.Core.DeserializationContext,``0})">Create&lt;T&gt;(Action&lt;T, SerializationContext&gt;, Func&lt;DeserializationContext, T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Creates a marshaller from specified contextual serializer and deserializer.
+Note: This method is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Marshaller&lt;T&gt; Create&lt;T&gt;(Action&lt;T, SerializationContext&gt; serializer, Func&lt;DeserializationContext, T&gt; deserializer)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Action</span>&lt;T, <a class="xref" href="Grpc.Core.SerializationContext.html">SerializationContext</a>&gt;</td>
+        <td><span class="parametername">serializer</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.DeserializationContext.html">DeserializationContext</a>, T&gt;</td>
+        <td><span class="parametername">deserializer</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.Marshaller-1.html">Marshaller</a>&lt;T&gt;</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="typeParameters">Type Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="parametername">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_Marshallers_Create_" data-uid="Grpc.Core.Marshallers.Create*"></a>
   <h4 id="Grpc_Core_Marshallers_Create__1_System_Func___0_System_Byte____System_Func_System_Byte_____0__" data-uid="Grpc.Core.Marshallers.Create``1(System.Func{``0,System.Byte[]},System.Func{System.Byte[],``0})">Create&lt;T&gt;(Func&lt;T, Byte[]&gt;, Func&lt;Byte[], T&gt;)</h4>
   <div class="markdown level1 summary"><p>Creates a marshaller from specified serializer and deserializer.</p>
 </div>
