@@ -96,12 +96,13 @@ namespace Grpc.Testing {
             "GAcgAygIEhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVlc3RfcmVz",
             "dWx0cxgJIAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQq",
             "VgoKQ2xpZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVO",
-            "VBABEhAKDE9USEVSX0NMSUVOVBACEhMKD0NBTExCQUNLX0NMSUVOVBADKlsK",
+            "VBABEhAKDE9USEVSX0NMSUVOVBACEhMKD0NBTExCQUNLX0NMSUVOVBADKnAK",
             "ClNlcnZlclR5cGUSDwoLU1lOQ19TRVJWRVIQABIQCgxBU1lOQ19TRVJWRVIQ",
             "ARIYChRBU1lOQ19HRU5FUklDX1NFUlZFUhACEhAKDE9USEVSX1NFUlZFUhAD",
-            "KnIKB1JwY1R5cGUSCQoFVU5BUlkQABINCglTVFJFQU1JTkcQARIZChVTVFJF",
-            "QU1JTkdfRlJPTV9DTElFTlQQAhIZChVTVFJFQU1JTkdfRlJPTV9TRVJWRVIQ",
-            "AxIXChNTVFJFQU1JTkdfQk9USF9XQVlTEARiBnByb3RvMw=="));
+            "EhMKD0NBTExCQUNLX1NFUlZFUhAEKnIKB1JwY1R5cGUSCQoFVU5BUlkQABIN",
+            "CglTVFJFQU1JTkcQARIZChVTVFJFQU1JTkdfRlJPTV9DTElFTlQQAhIZChVT",
+            "VFJFQU1JTkdfRlJPTV9TRVJWRVIQAxIXChNTVFJFQU1JTkdfQk9USF9XQVlT",
+            "EARiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -152,6 +153,7 @@ namespace Grpc.Testing {
     /// used for some language-specific variants
     /// </summary>
     [pbr::OriginalName("OTHER_SERVER")] OtherServer = 3,
+    [pbr::OriginalName("CALLBACK_SERVER")] CallbackServer = 4,
   }
 
   public enum RpcType {

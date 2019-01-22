@@ -97,5 +97,19 @@ namespace Grpc.Core
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Adds a method without a handler.
+        /// </summary>
+        /// <typeparam name="TRequest">The request message class.</typeparam>
+        /// <typeparam name="TResponse">The response message class.</typeparam>
+        /// <param name="method">The method.</param>
+        public virtual void AddMethod<TRequest, TResponse>(
+            Method<TRequest, TResponse> method)
+                where TRequest : class
+                where TResponse : class
+        {
+            throw new NotImplementedException();
+        }
     }
 }

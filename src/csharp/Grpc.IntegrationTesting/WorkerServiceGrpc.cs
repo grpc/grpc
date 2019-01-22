@@ -4,13 +4,13 @@
 // </auto-generated>
 // Original file comments:
 // Copyright 2015 gRPC authors.
-//
+// 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+// 
 //     http://www.apache.org/licenses/LICENSE-2.0
-//
+// 
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -331,6 +331,17 @@ namespace Grpc.Testing {
       serviceBinder.AddMethod(__Method_RunClient, serviceImpl.RunClient);
       serviceBinder.AddMethod(__Method_CoreCount, serviceImpl.CoreCount);
       serviceBinder.AddMethod(__Method_QuitWorker, serviceImpl.QuitWorker);
+    }
+
+    /// <summary>Register service method with a service binder without implementation. Useful when customizing the service binding logic.
+    /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
+    /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder)
+    {
+      serviceBinder.AddMethod(__Method_RunServer);
+      serviceBinder.AddMethod(__Method_RunClient);
+      serviceBinder.AddMethod(__Method_CoreCount);
+      serviceBinder.AddMethod(__Method_QuitWorker);
     }
 
   }

@@ -645,6 +645,36 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
   out->Print("\n");
 }
 
+void GenerateBindServiceWithBinderMethodWithoutImplementation(
+    Printer* out, const ServiceDescriptor* service) {
+  out->Print(
+      "/// <summary>Register service method with a service "
+      "binder without implementation. Useful when customizing the service "
+      "binding logic.\n"
+      "/// Note: this method is part of an experimental API that can change or "
+      "be "
+      "removed without any prior notice.</summary>\n");
+  out->Print(
+      "/// <param name=\"serviceBinder\">Service methods will be bound by "
+      "calling <c>AddMethod</c> on this object."
+      "</param>\n");
+  out->Print(
+      "public static void BindService(grpc::ServiceBinderBase "
+      "serviceBinder)\n");
+  out->Print("{\n");
+  out->Indent();
+
+  for (int i = 0; i < service->method_count(); i++) {
+    const MethodDescriptor* method = service->method(i);
+    out->Print("serviceBinder.AddMethod($methodfield$);\n", "methodfield",
+               GetMethodFieldName(method));
+  }
+
+  out->Outdent();
+  out->Print("}\n");
+  out->Print("\n");
+}
+
 void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
                      bool internal_access) {
@@ -674,6 +704,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
   if (generate_server) {
     GenerateBindServiceMethod(out, service);
     GenerateBindServiceWithBinderMethod(out, service);
+    GenerateBindServiceWithBinderMethodWithoutImplementation(out, service);
   }
 
   out->Outdent();
