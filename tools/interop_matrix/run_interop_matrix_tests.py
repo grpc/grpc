@@ -128,23 +128,23 @@ def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
 
 def _read_test_cases_file(lang, runtime, release):
     """Read test cases from a bash-like file and return a list of commands"""
-    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
-    filename_prefix = lang
-    if lang == 'csharp':
-        # TODO(jtattermusch): remove this odd specialcase
-        filename_prefix = runtime
     # Check to see if we need to use a particular version of test cases.
-    lang_version = '%s_%s' % (filename_prefix, release)
-    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
-        testcase_file = os.path.join(
-            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
+    if release_info:
+        testcases_file = release_info.testcases_files
     else:
         # TODO(jtattermusch): remove the double-underscore, it is pointless
-        testcase_file = os.path.join(testcase_dir,
-                                     '%s__master' % filename_prefix)
+        testcases_file = '%s__master' % lang
 
+    # For csharp, the testcases file used depends on the runtime
+    # TODO(jtattermusch): remove this odd specialcase
+    if lang == 'csharp' and runtime == 'csharpcoreclr':
+        testcases_file.replace('csharp_', 'csharpcoreclr_')
+
+    testcases_filepath = os.path.join(
+        os.path.dirname(__file__), 'testcases', testcases_file)
     lines = []
-    with open(testcase_file) as f:
+    with open(testcases_filepath) as f:
         for line in f.readlines():
             line = re.sub('\\#.*$', '', line)  # remove hash comments
             line = line.strip()
