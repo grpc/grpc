@@ -56,10 +56,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     uint32_t* initial_metadata_flags = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
-    /// Closure to run when pick is complete, if not completed synchronously.
-    /// If null, pick will fail if a result is not available synchronously.
-// FIXME: remove
-    grpc_closure* on_complete = nullptr;
     // Callback set by lb policy to be notified of trailing metadata.
     // The callback must be scheduled on grpc_schedule_on_exec_ctx.
     grpc_closure* recv_trailing_metadata_ready = nullptr;
@@ -79,9 +75,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Will be populated with context to pass to the subchannel call, if
     /// needed.
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
-    /// Next pointer.  For internal use by LB policy.
-// FIXME: remove
-    PickState* next = nullptr;
   };
 
   class SubchannelPicker : public RefCounted<SubchannelPicker> {
@@ -145,6 +138,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ChannelControlHelper() = default;
     virtual ~ChannelControlHelper() = default;
 
+// FIXME: maybe do as part of this PR?
     // TODO(roth): In a subsequent PR, change this to also propagate the
     // connectivity state?
     virtual void UpdateState(RefCountedPtr<SubchannelPicker> picker)
@@ -191,41 +185,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
   virtual void UpdateLocked(const grpc_channel_args& args,
                             grpc_json* lb_config) GRPC_ABSTRACT;
-
-// FIXME: remove
-  /// Finds an appropriate subchannel for a call, based on data in \a pick.
-  /// \a pick must remain alive until the pick is complete.
-  ///
-  /// If a result is known immediately, returns true, setting \a *error
-  /// upon failure.  Otherwise, \a pick->on_complete will be invoked once
-  /// the pick is complete with its error argument set to indicate success
-  /// or failure.
-  ///
-  /// If \a pick->on_complete is null and no result is known immediately,
-  /// a synchronous failure will be returned (i.e., \a *error will be
-  /// set and true will be returned).
-  virtual bool PickLocked(PickState* pick, grpc_error** error) GRPC_ABSTRACT;
-
-// FIXME: remove
-  /// Cancels \a pick.
-  /// The \a on_complete callback of the pending pick will be invoked with
-  /// \a pick->connected_subchannel set to null.
-  virtual void CancelPickLocked(PickState* pick,
-                                grpc_error* error) GRPC_ABSTRACT;
-
-// FIXME: remove
-  /// Cancels all pending picks for which their \a initial_metadata_flags (as
-  /// given in the call to \a PickLocked()) matches
-  /// \a initial_metadata_flags_eq when ANDed with
-  /// \a initial_metadata_flags_mask.
-  virtual void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                         uint32_t initial_metadata_flags_eq,
-                                         grpc_error* error) GRPC_ABSTRACT;
-
-// FIXME: remove
-  /// Hands off pending picks to \a new_policy.
-  virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
-      GRPC_ABSTRACT;
 
   /// Requests a notification when the connectivity state of the policy
   /// changes from \a *state.  When that happens, sets \a *state to the

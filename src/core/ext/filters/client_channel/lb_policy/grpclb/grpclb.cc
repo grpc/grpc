@@ -147,16 +147,10 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
-  bool PickLocked(PickState* pick, grpc_error** error) override;
-  void CancelPickLocked(PickState* pick, grpc_error* error) override;
-  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) override;
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
-  void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
@@ -164,31 +158,6 @@ class GrpcLb : public LoadBalancingPolicy {
       channelz::ChildRefsList* child_channels) override;
 
  private:
-  /// Linked list of pending pick requests. It stores all information needed to
-  /// eventually call (Round Robin's) pick() on them. They mainly stay pending
-  /// waiting for the RR policy to be created.
-  ///
-  /// Note that when a pick is sent to the RR policy, we inject our own
-  /// on_complete callback, so that we can intercept the result before
-  /// invoking the original on_complete callback.  This allows us to set the
-  /// LB token metadata and add client_stats to the call context.
-  /// See \a pending_pick_complete() for details.
-  struct PendingPick {
-    // The grpclb instance that created the wrapping. This instance is not
-    // owned; reference counts are untouched. It's used only for logging
-    // purposes.
-    GrpcLb* grpclb_policy;
-    // The original pick.
-    PickState* pick;
-    // Our on_complete closure and the original one.
-    grpc_closure on_complete;
-    grpc_closure* original_on_complete;
-    // Stats for client-side load reporting.
-    RefCountedPtr<GrpcLbClientStats> client_stats;
-    // Next pending pick.
-    PendingPick* next = nullptr;
-  };
-
   /// Contains a call to the LB server and all the data related to the call.
   class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
    public:
@@ -404,18 +373,10 @@ class GrpcLb : public LoadBalancingPolicy {
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
 
-  // Pending pick methods.
-  static void PendingPickSetMetadataAndContext(PendingPick* pp);
-  PendingPick* PendingPickCreate(PickState* pick);
-  void AddPendingPick(PendingPick* pp);
-  static void OnPendingPickComplete(void* arg, grpc_error* error);
-
   // Methods for dealing with the RR policy.
   void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
   void CreateRoundRobinPolicyLocked(const Args& args);
-  bool PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
-                                      grpc_error** error);
   void UpdateConnectivityStateFromRoundRobinPolicyLocked(
       grpc_error* rr_state_error);
   static void OnRoundRobinConnectivityChangedLocked(void* arg,
@@ -476,9 +437,6 @@ class GrpcLb : public LoadBalancingPolicy {
   bool fallback_timer_callback_pending_ = false;
   grpc_timer lb_fallback_timer_;
   grpc_closure lb_on_fallback_;
-
-  // Pending picks that are waiting on the RR policy's connectivity.
-  PendingPick* pending_picks_ = nullptr;
 
   // The RR policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> rr_policy_;
@@ -1158,7 +1116,6 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
 }
 
 GrpcLb::~GrpcLb() {
-  GPR_ASSERT(pending_picks_ == nullptr);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
   grpc_connectivity_state_destroy(&state_tracker_);
@@ -1189,106 +1146,12 @@ void GrpcLb::ShutdownLocked() {
   }
   grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
                               GRPC_ERROR_REF(error), "grpclb_shutdown");
-  // Clear pending picks.
-  PendingPick* pp;
-  while ((pp = pending_picks_) != nullptr) {
-    pending_picks_ = pp->next;
-    pp->pick->connected_subchannel.reset();
-    // Note: pp is deleted in this callback.
-    GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
-  }
   GRPC_ERROR_UNREF(error);
 }
 
 //
 // public methods
 //
-
-void GrpcLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
-  PendingPick* pp;
-  while ((pp = pending_picks_) != nullptr) {
-    pending_picks_ = pp->next;
-    pp->pick->on_complete = pp->original_on_complete;
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (new_policy->PickLocked(pp->pick, &error)) {
-      // Synchronous return; schedule closure.
-      GRPC_CLOSURE_SCHED(pp->pick->on_complete, error);
-    }
-    Delete(pp);
-  }
-}
-
-// Cancel a specific pending pick.
-//
-// A grpclb pick progresses as follows:
-// - If there's a Round Robin policy (rr_policy_) available, it'll be
-//   handed over to the RR policy (in CreateRoundRobinPolicyLocked()). From
-//   that point onwards, it'll be RR's responsibility. For cancellations, that
-//   implies the pick needs also be cancelled by the RR instance.
-// - Otherwise, without an RR instance, picks stay pending at this policy's
-//   level (grpclb), inside the pending_picks_ list. To cancel these,
-//   we invoke the completion closure and set the pick's connected
-//   subchannel to nullptr right here.
-void GrpcLb::CancelPickLocked(PickState* pick, grpc_error* error) {
-  PendingPick* pp = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pp != nullptr) {
-    PendingPick* next = pp->next;
-    if (pp->pick == pick) {
-      pick->connected_subchannel.reset();
-      // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pp->next = pending_picks_;
-      pending_picks_ = pp;
-    }
-    pp = next;
-  }
-  if (rr_policy_ != nullptr) {
-    rr_policy_->CancelPickLocked(pick, GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-// Cancel all pending picks.
-//
-// A grpclb pick progresses as follows:
-// - If there's a Round Robin policy (rr_policy_) available, it'll be
-//   handed over to the RR policy (in CreateRoundRobinPolicyLocked()). From
-//   that point onwards, it'll be RR's responsibility. For cancellations, that
-//   implies the pick needs also be cancelled by the RR instance.
-// - Otherwise, without an RR instance, picks stay pending at this policy's
-//   level (grpclb), inside the pending_picks_ list. To cancel these,
-//   we invoke the completion closure and set the pick's connected
-//   subchannel to nullptr right here.
-void GrpcLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                       uint32_t initial_metadata_flags_eq,
-                                       grpc_error* error) {
-  PendingPick* pp = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pp != nullptr) {
-    PendingPick* next = pp->next;
-    if ((*pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
-        initial_metadata_flags_eq) {
-      // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pp->next = pending_picks_;
-      pending_picks_ = pp;
-    }
-    pp = next;
-  }
-  if (rr_policy_ != nullptr) {
-    rr_policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
-                                          initial_metadata_flags_eq,
-                                          GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
-}
 
 void GrpcLb::ExitIdleLocked() {
   if (!started_picking_) {
@@ -1303,37 +1166,6 @@ void GrpcLb::ResetBackoffLocked() {
   if (rr_policy_ != nullptr) {
     rr_policy_->ResetBackoffLocked();
   }
-}
-
-bool GrpcLb::PickLocked(PickState* pick, grpc_error** error) {
-  PendingPick* pp = PendingPickCreate(pick);
-  bool pick_done = false;
-  if (rr_policy_ != nullptr) {
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO, "[grpclb %p] about to PICK from RR %p", this,
-              rr_policy_.get());
-    }
-    pick_done =
-        PickFromRoundRobinPolicyLocked(false /* force_async */, pp, error);
-  } else {  // rr_policy_ == NULL
-    if (pick->on_complete == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "No pick result available but synchronous result required.");
-      pick_done = true;
-    } else {
-      if (grpc_lb_glb_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
-                this);
-      }
-      AddPendingPick(pp);
-      if (!started_picking_) {
-        StartPickingLocked();
-      }
-      pick_done = false;
-    }
-  }
-  return pick_done;
 }
 
 void GrpcLb::FillChildRefsForChannelz(
@@ -1589,125 +1421,8 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 }
 
 //
-// PendingPick
-//
-
-void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
-  // If connected_subchannel is nullptr, no pick has been made by the RR
-  // policy (e.g., all addresses failed to connect). There won't be any
-  // LB token available.
-  if (pp->pick->connected_subchannel != nullptr) {
-    const grpc_arg* arg =
-        grpc_channel_args_find(pp->pick->connected_subchannel->args(),
-                               GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
-    if (arg != nullptr) {
-      grpc_mdelem lb_token = {
-          reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
-      AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
-                                  &pp->pick->lb_token_mdelem_storage,
-                                  pp->pick->initial_metadata);
-    } else {
-      gpr_log(GPR_ERROR,
-              "[grpclb %p] No LB token for connected subchannel pick %p",
-              pp->grpclb_policy, pp->pick);
-      abort();
-    }
-    // Pass on client stats via context. Passes ownership of the reference.
-    if (pp->client_stats != nullptr) {
-      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-          pp->client_stats.release();
-      pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-          DestroyClientStats;
-    }
-  } else {
-    pp->client_stats.reset();
-  }
-}
-
-/* The \a on_complete closure passed as part of the pick requires keeping a
- * reference to its associated round robin instance. We wrap this closure in
- * order to unref the round robin instance upon its invocation */
-void GrpcLb::OnPendingPickComplete(void* arg, grpc_error* error) {
-  PendingPick* pp = static_cast<PendingPick*>(arg);
-  PendingPickSetMetadataAndContext(pp);
-  GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_REF(error));
-  Delete(pp);
-}
-
-GrpcLb::PendingPick* GrpcLb::PendingPickCreate(PickState* pick) {
-  PendingPick* pp = New<PendingPick>();
-  pp->grpclb_policy = this;
-  pp->pick = pick;
-  GRPC_CLOSURE_INIT(&pp->on_complete, &GrpcLb::OnPendingPickComplete, pp,
-                    grpc_schedule_on_exec_ctx);
-  pp->original_on_complete = pick->on_complete;
-  pick->on_complete = &pp->on_complete;
-  return pp;
-}
-
-void GrpcLb::AddPendingPick(PendingPick* pp) {
-  pp->next = pending_picks_;
-  pending_picks_ = pp;
-}
-
-//
 // code for interacting with the RR policy
 //
-
-// Performs a pick over \a rr_policy_. Given that a pick can return
-// immediately (ignoring its completion callback), we need to perform the
-// cleanups this callback would otherwise be responsible for.
-// If \a force_async is true, then we will manually schedule the
-// completion callback even if the pick is available immediately.
-bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp,
-                                            grpc_error** error) {
-  // Check for drops if we are not using fallback backend addresses.
-  if (serverlist_ != nullptr && serverlist_->num_servers > 0) {
-    // Look at the index into the serverlist to see if we should drop this call.
-    grpc_grpclb_server* server = serverlist_->servers[serverlist_index_++];
-    if (serverlist_index_ == serverlist_->num_servers) {
-      serverlist_index_ = 0;  // Wrap-around.
-    }
-    if (server->drop) {
-      // Update client load reporting stats to indicate the number of
-      // dropped calls.  Note that we have to do this here instead of in
-      // the client_load_reporting filter, because we do not create a
-      // subchannel call (and therefore no client_load_reporting filter)
-      // for dropped calls.
-      if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-        lb_calld_->client_stats()->AddCallDroppedLocked(
-            server->load_balance_token);
-      }
-      if (force_async) {
-        GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
-        Delete(pp);
-        return false;
-      }
-      Delete(pp);
-      return true;
-    }
-  }
-  // Set client_stats.
-  if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-    pp->client_stats = lb_calld_->client_stats()->Ref();
-  }
-  // Pick via the RR policy.
-  bool pick_done = rr_policy_->PickLocked(pp->pick, error);
-  if (pick_done) {
-    PendingPickSetMetadataAndContext(pp);
-    if (force_async) {
-      GRPC_CLOSURE_SCHED(pp->original_on_complete, *error);
-      *error = GRPC_ERROR_NONE;
-      pick_done = false;
-    }
-    Delete(pp);
-  }
-  // else, the pending pick will be registered and taken care of by the
-  // pending pick list inside the RR policy.  Eventually,
-  // OnPendingPickComplete() will be called, which will (among other
-  // things) add the LB token to the call's initial metadata.
-  return pick_done;
-}
 
 void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
   GPR_ASSERT(rr_policy_ == nullptr);
@@ -1739,18 +1454,6 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
   rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
                                         &on_rr_connectivity_changed_);
   rr_policy_->ExitIdleLocked();
-  // Send pending picks to RR policy.
-  PendingPick* pp;
-  while ((pp = pending_picks_)) {
-    pending_picks_ = pp->next;
-    if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "[grpclb %p] Pending pick about to (async) PICK from RR %p", this,
-              rr_policy_.get());
-    }
-    grpc_error* error = GRPC_ERROR_NONE;
-    PickFromRoundRobinPolicyLocked(true /* force_async */, pp, &error);
-  }
 }
 
 grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {

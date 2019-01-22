@@ -52,16 +52,10 @@ class PickFirst : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
-  bool PickLocked(PickState* pick, grpc_error** error) override;
-  void CancelPickLocked(PickState* pick, grpc_error* error) override;
-  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) override;
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
-  void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
@@ -156,8 +150,6 @@ class PickFirst : public LoadBalancingPolicy {
   bool started_picking_ = false;
   // Are we shut down?
   bool shutdown_ = false;
-  // List of picks that are waiting on connectivity.
-  PickState* pending_picks_ = nullptr;
   // Our connectivity state tracker.
   grpc_connectivity_state_tracker state_tracker_;
 
@@ -188,20 +180,7 @@ PickFirst::~PickFirst() {
   gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
-  GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
-}
-
-void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
-  PickState* pick;
-  while ((pick = pending_picks_) != nullptr) {
-    pending_picks_ = pick->next;
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (new_policy->PickLocked(pick, &error)) {
-      // Synchronous return, schedule closure.
-      GRPC_CLOSURE_SCHED(pick->on_complete, error);
-    }
-  }
 }
 
 void PickFirst::ShutdownLocked() {
@@ -211,56 +190,10 @@ void PickFirst::ShutdownLocked() {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
   }
   shutdown_ = true;
-  PickState* pick;
-  while ((pick = pending_picks_) != nullptr) {
-    pending_picks_ = pick->next;
-    pick->connected_subchannel.reset();
-    GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_REF(error));
-  }
   grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
                               GRPC_ERROR_REF(error), "shutdown");
   subchannel_list_.reset();
   latest_pending_subchannel_list_.reset();
-  GRPC_ERROR_UNREF(error);
-}
-
-void PickFirst::CancelPickLocked(PickState* pick, grpc_error* error) {
-  PickState* pp = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pp != nullptr) {
-    PickState* next = pp->next;
-    if (pp == pick) {
-      pick->connected_subchannel.reset();
-      GRPC_CLOSURE_SCHED(pick->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pp->next = pending_picks_;
-      pending_picks_ = pp;
-    }
-    pp = next;
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
-void PickFirst::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                          uint32_t initial_metadata_flags_eq,
-                                          grpc_error* error) {
-  PickState* pick = pending_picks_;
-  pending_picks_ = nullptr;
-  while (pick != nullptr) {
-    PickState* next = pick->next;
-    if ((*pick->initial_metadata_flags & initial_metadata_flags_mask) ==
-        initial_metadata_flags_eq) {
-      GRPC_CLOSURE_SCHED(pick->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
-    } else {
-      pick->next = pending_picks_;
-      pending_picks_ = pick;
-    }
-    pick = next;
-  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -283,26 +216,6 @@ void PickFirst::ResetBackoffLocked() {
   if (latest_pending_subchannel_list_ != nullptr) {
     latest_pending_subchannel_list_->ResetBackoffLocked();
   }
-}
-
-bool PickFirst::PickLocked(PickState* pick, grpc_error** error) {
-  // If we have a selected subchannel already, return synchronously.
-  if (selected_ != nullptr) {
-    pick->connected_subchannel = selected_->connected_subchannel()->Ref();
-    return true;
-  }
-  // No subchannel selected yet, so handle asynchronously.
-  if (pick->on_complete == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No pick result available but synchronous result required.");
-    return true;
-  }
-  pick->next = pending_picks_;
-  pending_picks_ = pick;
-  if (!started_picking_) {
-    StartPickingLocked();
-  }
-  return false;
 }
 
 grpc_connectivity_state PickFirst::CheckConnectivityLocked(grpc_error** error) {
@@ -607,17 +520,6 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
       MakeRefCounted<Picker>(connected_subchannel()->Ref()));
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p, subchannel());
-  }
-  // Update any calls that were waiting for a pick.
-  PickState* pick;
-  while ((pick = p->pending_picks_)) {
-    p->pending_picks_ = pick->next;
-    pick->connected_subchannel = p->selected_->connected_subchannel()->Ref();
-    if (grpc_lb_pick_first_trace.enabled()) {
-      gpr_log(GPR_INFO, "Servicing pending pick with selected subchannel %p",
-              p->selected_->subchannel());
-    }
-    GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
   }
 }
 

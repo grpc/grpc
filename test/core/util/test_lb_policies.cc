@@ -48,14 +48,15 @@ namespace {
 // A minimal forwarding class to avoid implementing a standalone test LB.
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  ForwardingLoadBalancingPolicy(Args args,
-                                const std::string& delegate_policy_name)
+  ForwardingLoadBalancingPolicy(
+      RefCountedPtr<ChannelControlHelper> delegating_helper,
+      Args args, const std::string& delegate_policy_name)
       : LoadBalancingPolicy(std::move(args)) {
     Args delegate_args;
     delegate_args.combiner = args.combiner;
     delegate_args.client_channel_factory = args.client_channel_factory;
     delegate_args.subchannel_pool = args.subchannel_pool;
-    delegate_args.channel_control_helper = channel_control_helper()->Ref();
+    delegate_args.channel_control_helper = std::move(delegating_helper);
     delegate_args.channelz_node = channelz_node()->Ref();
     delegate_args.args = args.args;
     delegate_args.lb_config = args.lb_config;
@@ -72,21 +73,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
     delegate_->UpdateLocked(args, lb_config);
   }
 
-  bool PickLocked(PickState* pick, grpc_error** error) override {
-    return delegate_->PickLocked(pick, error);
-  }
-
-  void CancelPickLocked(PickState* pick, grpc_error* error) override {
-    delegate_->CancelPickLocked(pick, error);
-  }
-
-  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) override {
-    delegate_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
-                                         initial_metadata_flags_eq, error);
-  }
-
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override {
     delegate_->NotifyOnStateChangeLocked(state, closure);
@@ -95,10 +81,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override {
     return delegate_->CheckConnectivityLocked(connectivity_error);
-  }
-
-  void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override {
-    delegate_->HandOffPendingPicksLocked(new_policy);
   }
 
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
@@ -130,12 +112,12 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      const Args& args, InterceptRecvTrailingMetadataCallback cb,
+      Args args, InterceptRecvTrailingMetadataCallback cb,
       void* user_data)
-      : ForwardingLoadBalancingPolicy(args,
-                                      /*delegate_lb_policy_name=*/"pick_first"),
-        cb_(cb),
-        user_data_(user_data) {}
+      : ForwardingLoadBalancingPolicy(
+            MakeRefCounted<Helper>(args.channel_control_helper->Ref(), cb,
+                                   user_data),
+            std::move(args), /*delegate_lb_policy_name=*/"pick_first") {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
@@ -143,17 +125,51 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     return kInterceptRecvTrailingMetadataLbPolicyName;
   }
 
-  bool PickLocked(PickState* pick, grpc_error** error) override {
-    bool ret = ForwardingLoadBalancingPolicy::PickLocked(pick, error);
-    // Note: This assumes that the delegate policy does not
-    // intercepting recv_trailing_metadata.  If we ever need to use
-    // this with a delegate policy that does, then we'll need to
-    // handle async pick returns separately.
-    New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
-    return ret;
-  }
-
  private:
+  class Picker : public SubchannelPicker {
+   public:
+    explicit Picker(RefCountedPtr<SubchannelPicker> delegate_picker,
+                    InterceptRecvTrailingMetadataCallback cb, void* user_data)
+        : delegate_picker_(std::move(delegate_picker)),
+          cb_(cb),
+          user_data_(user_data) {}
+
+    PickResult Pick(PickState* pick, grpc_error** error) override {
+      PickResult result = delegate_picker_->Pick(pick, error);
+      New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+      return result;
+    }
+
+   private:
+    RefCountedPtr<SubchannelPicker> delegate_picker_;
+    InterceptRecvTrailingMetadataCallback cb_;
+    void* user_data_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    Helper(
+        RefCountedPtr<ChannelControlHelper> parent_helper,
+        InterceptRecvTrailingMetadataCallback cb, void* user_data)
+        : parent_helper_(std::move(parent_helper)),
+          cb_(cb),
+          user_data_(user_data) {}
+
+    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override {
+      parent_helper_->UpdateState(
+          MakeRefCounted<Picker>(std::move(picker), cb_, user_data_));
+    }
+
+    void RequestReresolution() override {
+      parent_helper_->RequestReresolution();
+    }
+
+   private:
+    RefCountedPtr<ChannelControlHelper> parent_helper_;
+    InterceptRecvTrailingMetadataCallback cb_;
+    void* user_data_;
+  };
+
   class TrailingMetadataHandler {
    public:
     TrailingMetadataHandler(PickState* pick,
@@ -186,9 +202,6 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
     grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   };
-
-  InterceptRecvTrailingMetadataCallback cb_;
-  void* user_data_;
 };
 
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
