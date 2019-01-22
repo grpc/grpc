@@ -48,7 +48,8 @@ def _jwt_token():
 
 def _access_token():
     global _ACCESS_TOKEN_CACHE
-    if _ACCESS_TOKEN_CACHE is None or _ACCESS_TOKEN_CACHE.get('exp') < time.time():
+    if _ACCESS_TOKEN_CACHE is None or _ACCESS_TOKEN_CACHE.get(
+            'exp') < time.time():
         resp = requests.post(
             url='https://api.github.com/app/installations/%s/access_tokens' %
             _INSTALLATION_ID,
@@ -127,10 +128,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Post Github Check on pull request.')
     parser.add_argument(
-        '--name', nargs=1, help='The name of the item listed in Github CHeck.', required=True)
+        '--name',
+        nargs=1,
+        help='The name of the item listed in Github Check.',
+        required=True)
     args = parser.parse_args()
 
-    check_on_pr(
-        name=args.name,
-        summary=sys.stdin.read()
-    )
+    check_on_pr(name=args.name, summary=sys.stdin.read())

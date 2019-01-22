@@ -15,10 +15,13 @@
 
 set -ex
 
-if [ "$CONFIG" != "gcov" ] ; then exit ; fi
+# change to directory of project root
+cd "$(dirname "$0")/../../.."
 
-# change to directory of Python coverage files
-cd "$(dirname "$0")/../../../src/python/grpcio_tests/"
+pip install pyjwt cryptography requests
 
-coverage combine .
-coverage html -i -d ./../../../reports/python
+coverage combine "$ROOT/src/python/grpcio_tests"
+coverage html --rcfile=.coveragerc -d ./../../../reports/python
+coverage report --rcfile=.coveragerc | \
+    "$ROOT/tools/run_tests/python_utils/check_on_pr.py" \
+      --name "python coverage"

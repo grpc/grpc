@@ -746,10 +746,7 @@ class PythonLanguage(object):
         return [config.build for config in self.pythons]
 
     def post_tests_steps(self):
-        if self.config.build_config != 'gcov':
-            return []
-        else:
-            return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
+        return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
 
     def makefile_name(self):
         return 'Makefile'
