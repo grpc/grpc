@@ -16,6 +16,8 @@
  *
  */
 
+// FIXME: rename this module to resolving_lb_policy.{h,cc}
+
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_REQUEST_ROUTING_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_REQUEST_ROUTING_H
 
