@@ -2529,6 +2529,11 @@ static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Only get service config data on the first attempt and only if we
   // haven't already done so.
+// FIXME: need explicit state here to record whether we've already tried
+// to apply the service config, or else we might add service config to a
+// call if it gets created after the call has already started (i.e., if
+// the service config appears after a re-resolution but the call has
+// already started)
   if (GPR_LIKELY(calld->num_attempts_completed == 0) &&
       calld->retry_throttle_data == nullptr &&
       calld->method_params == nullptr) {
@@ -2558,7 +2563,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
           ? &calld->send_initial_metadata
           : calld->pending_batches[0]
                 .batch->payload->send_initial_metadata.send_initial_metadata;
-  calld->pick.pick.initial_metadata_flags =
+  uint32_t* send_initial_metadata_flags =
       calld->seen_send_initial_metadata
           ? &calld->send_initial_metadata_flags
           : &calld->pending_batches[0]
@@ -2584,9 +2589,9 @@ static void start_pick_locked(void* arg, grpc_error* error) {
   case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
     // If wait_for_ready is false, then the error indicates the RPC
     // attempt's final status.
-    if ((*calld->pick.pick.initial_metadata_flags &
+    if ((*send_initial_metadata_flags &
          GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
-      // Retry if appropriate.
+      // Retry if appropriate; otherwise, fail.
       grpc_status_code status = GRPC_STATUS_OK;
       grpc_error_get_status(error, calld->deadline, &status, nullptr, nullptr,
                             nullptr);

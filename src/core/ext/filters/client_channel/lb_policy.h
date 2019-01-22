@@ -49,11 +49,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   struct PickState {
     /// Initial metadata associated with the picking call.
     grpc_metadata_batch* initial_metadata = nullptr;
-    /// Pointer to bitmask used for selective cancelling. See
-    /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
-    /// grpc_types.h.
-// FIXME: can this go back to not being a pointer?
-    uint32_t* initial_metadata_flags = nullptr;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     // Callback set by lb policy to be notified of trailing metadata.
