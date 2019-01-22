@@ -15,7 +15,6 @@
 import os
 import pkg_resources
 import sys
-import tempfile
 
 import setuptools
 
@@ -67,7 +66,5 @@ class BuildPackageProtos(setuptools.Command):
         # directory is provided as an 'include' directory. We assume it's the '' key
         # to `self.distribution.package_dir` (and get a key error if it's not
         # there).
-        if self.strict_mode:
-            self.announce('Building Package Protos in Strict Mode')
         build_package_protos(self.distribution.package_dir[''],
                              self.strict_mode)
