@@ -154,8 +154,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Used to create channels and subchannels.
     grpc_client_channel_factory* client_channel_factory = nullptr;
     /// Subchannel pool.
-// FIXME: remove unnecessary indirection
-    RefCountedPtr<SubchannelPoolInterface>* subchannel_pool;
+    RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
     /// Channel control helper.
     RefCountedPtr<ChannelControlHelper> channel_control_helper;
     /// Channelz node.
@@ -224,10 +223,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return channelz_node_.get();
   }
 
-  /// Returns a pointer to the subchannel pool of type
-  /// RefCountedPtr<SubchannelPoolInterface>.
-  RefCountedPtr<SubchannelPoolInterface>* subchannel_pool() {
-    return &subchannel_pool_;
+  // Callers that need their own reference can call the returned
+  // object's Ref() method.
+  SubchannelPoolInterface* subchannel_pool() const {
+    return subchannel_pool_.get();
   }
 
   GRPC_ABSTRACT_BASE_CLASS

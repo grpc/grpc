@@ -329,7 +329,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.client_channel_factory = client_channel_factory();
-  lb_policy_args.subchannel_pool = subchannel_pool();
+  lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   lb_policy_args.channel_control_helper =

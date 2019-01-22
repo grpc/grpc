@@ -515,7 +515,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     GPR_ASSERT(!addresses[i].IsBalancer());
     InlinedVector<grpc_arg, 4> args_to_add;
     args_to_add.emplace_back(SubchannelPoolInterface::CreateChannelArg(
-        policy_->subchannel_pool()->get()));
+        policy_->subchannel_pool()));
     const size_t subchannel_address_arg_index = args_to_add.size();
     args_to_add.emplace_back(
         grpc_create_subchannel_address_arg(&addresses[i].address()));

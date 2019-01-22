@@ -376,7 +376,7 @@ class GrpcLb : public LoadBalancingPolicy {
   // Methods for dealing with the RR policy.
   void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
-  void CreateRoundRobinPolicyLocked(const Args& args);
+  void CreateRoundRobinPolicyLocked(Args args);
   void UpdateConnectivityStateFromRoundRobinPolicyLocked(
       grpc_error* rr_state_error);
   static void OnRoundRobinConnectivityChangedLocked(void* arg,
@@ -1424,10 +1424,10 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 // code for interacting with the RR policy
 //
 
-void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
+void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
   GPR_ASSERT(rr_policy_ == nullptr);
   rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", args);
+      "round_robin", std::move(args));
   if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
             this);
@@ -1512,7 +1512,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
-    lb_policy_args.subchannel_pool = subchannel_pool();
+    lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.channel_control_helper =
         MakeRefCounted<RoundRobinChannelControlHelper>(Ref());
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));

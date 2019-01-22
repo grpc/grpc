@@ -299,7 +299,7 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
-  void CreateChildPolicyLocked(const Args& args);
+  void CreateChildPolicyLocked(Args args);
   void UpdateConnectivityStateFromChildPolicyLocked(
       grpc_error* child_state_error);
   static void OnChildPolicyConnectivityChangedLocked(void* arg,
@@ -1256,10 +1256,10 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 // code for interacting with the child policy
 //
 
-void XdsLb::CreateChildPolicyLocked(const Args& args) {
+void XdsLb::CreateChildPolicyLocked(Args args) {
   GPR_ASSERT(child_policy_ == nullptr);
   child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", args);
+      "round_robin", std::move(args));
   if (GPR_UNLIKELY(child_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
     return;
@@ -1325,7 +1325,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
-    lb_policy_args.subchannel_pool = subchannel_pool();
+    lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.args = args;
     lb_policy_args.channel_control_helper =
         MakeRefCounted<XdsChannelControlHelper>(Ref());
