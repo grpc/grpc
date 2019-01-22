@@ -20,8 +20,8 @@ cd "$(dirname "$0")/../../.."
 
 pip install pyjwt cryptography requests
 
-coverage combine "$ROOT/src/python/grpcio_tests"
-coverage html --rcfile=.coveragerc -d ./../../../reports/python
+coverage combine "./src/python/grpcio_tests"
+coverage html --rcfile=.coveragerc -d ./reports/python
 coverage report --rcfile=.coveragerc | \
-    "$ROOT/tools/run_tests/python_utils/check_on_pr.py" \
+    "./tools/run_tests/python_utils/check_on_pr.py" \
       --name "python coverage"
