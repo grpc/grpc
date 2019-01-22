@@ -31,11 +31,11 @@ class Optional {
     set_ = true;
   }
 
-  bool has_value() { return set_; }
+  bool has_value() const { return set_; }
 
   void reset() { set_ = false; }
 
-  T value() { return value_; }
+  T value() const { return value_; }
 
  private:
   T value_;
