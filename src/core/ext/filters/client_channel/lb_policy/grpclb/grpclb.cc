@@ -484,7 +484,6 @@ class GrpcLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> rr_policy_;
   grpc_connectivity_state rr_connectivity_state_;
   grpc_closure on_rr_connectivity_changed_;
-  grpc_closure on_rr_request_reresolution_;
 };
 
 //
@@ -993,7 +992,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  grpclb_policy->TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_NONE);
+  grpclb_policy->channel_control_helper()->RequestReresolution();
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
@@ -1131,9 +1130,6 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   GRPC_CLOSURE_INIT(&on_rr_connectivity_changed_,
                     &GrpcLb::OnRoundRobinConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_request_reresolution_,
-                    &GrpcLb::OnRoundRobinRequestReresolutionLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -1182,7 +1178,6 @@ void GrpcLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
   rr_policy_.reset();
-  TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_CANCELLED);
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
@@ -1727,11 +1722,6 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
     gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
             rr_policy_.get());
   }
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_rr_reresolution_requested");
-  self.release();
-  rr_policy_->SetReresolutionClosureLocked(&on_rr_request_reresolution_);
   grpc_error* rr_state_error = nullptr;
   rr_connectivity_state_ = rr_policy_->CheckConnectivityLocked(&rr_state_error);
   // Connectivity state is a function of the RR policy updated/created.
@@ -1744,7 +1734,7 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
   // Subscribe to changes to the connectivity of the new RR.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_rr_connectivity_changed");
+  auto self = Ref(DEBUG_LOCATION, "on_rr_connectivity_changed");
   self.release();
   rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
                                         &on_rr_connectivity_changed_);
@@ -1825,32 +1815,6 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);
-}
-
-void GrpcLb::OnRoundRobinRequestReresolutionLocked(void* arg,
-                                                   grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  if (grpclb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_reresolution_requested");
-    return;
-  }
-  if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[grpclb %p] Re-resolution requested from the internal RR policy (%p).",
-        grpclb_policy, grpclb_policy->rr_policy_.get());
-  }
-  // If we are talking to a balancer, we expect to get updated addresses form
-  // the balancer, so we can ignore the re-resolution request from the RR
-  // policy. Otherwise, handle the re-resolution request using the
-  // grpclb policy's original re-resolution closure.
-  if (grpclb_policy->lb_calld_ == nullptr ||
-      !grpclb_policy->lb_calld_->seen_initial_response()) {
-    grpclb_policy->TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_NONE);
-  }
-  // Give back the wrapper closure to the RR policy.
-  grpclb_policy->rr_policy_->SetReresolutionClosureLocked(
-      &grpclb_policy->on_rr_request_reresolution_);
 }
 
 void GrpcLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(

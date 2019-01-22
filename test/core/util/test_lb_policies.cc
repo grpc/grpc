@@ -48,19 +48,21 @@ namespace {
 // A minimal forwarding class to avoid implementing a standalone test LB.
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  ForwardingLoadBalancingPolicy(const Args& args,
+  ForwardingLoadBalancingPolicy(Args args,
                                 const std::string& delegate_policy_name)
-      : LoadBalancingPolicy(args) {
+      : LoadBalancingPolicy(std::move(args)) {
+    Args delegate_args;
+    delegate_args.combiner = args.combiner;
+    delegate_args.client_channel_factory = args.client_channel_factory;
+    delegate_args.subchannel_pool = args.subchannel_pool;
+    delegate_args.channel_control_helper = channel_control_helper()->Ref();
+    delegate_args.channelz_node = channelz_node()->Ref();
+    delegate_args.args = args.args;
+    delegate_args.lb_config = args.lb_config;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-        delegate_policy_name.c_str(), args);
+        delegate_policy_name.c_str(), std::move(delegate_args));
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
                                      interested_parties());
-    // Give re-resolution closure to delegate.
-    GRPC_CLOSURE_INIT(&on_delegate_request_reresolution_,
-                      OnDelegateRequestReresolutionLocked, this,
-                      grpc_combiner_scheduler(combiner()));
-    Ref().release();  // held by callback.
-    delegate_->SetReresolutionClosureLocked(&on_delegate_request_reresolution_);
   }
 
   ~ForwardingLoadBalancingPolicy() override = default;
@@ -112,24 +114,9 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  private:
   void ShutdownLocked() override {
     delegate_.reset();
-    TryReresolutionLocked(&grpc_trace_forwarding_lb, GRPC_ERROR_CANCELLED);
-  }
-
-  static void OnDelegateRequestReresolutionLocked(void* arg,
-                                                  grpc_error* error) {
-    ForwardingLoadBalancingPolicy* self =
-        static_cast<ForwardingLoadBalancingPolicy*>(arg);
-    if (error != GRPC_ERROR_NONE || self->delegate_ == nullptr) {
-      self->Unref();
-      return;
-    }
-    self->TryReresolutionLocked(&grpc_trace_forwarding_lb, GRPC_ERROR_NONE);
-    self->delegate_->SetReresolutionClosureLocked(
-        &self->on_delegate_request_reresolution_);
   }
 
   OrphanablePtr<LoadBalancingPolicy> delegate_;
-  grpc_closure on_delegate_request_reresolution_;
 };
 
 //

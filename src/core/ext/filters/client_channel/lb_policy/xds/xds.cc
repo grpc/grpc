@@ -404,7 +404,6 @@ class XdsLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
   grpc_connectivity_state child_connectivity_state_;
   grpc_closure on_child_connectivity_changed_;
-  grpc_closure on_child_request_reresolution_;
 };
 
 //
@@ -851,7 +850,7 @@ void XdsLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
+  xdslb_policy->channel_control_helper()->RequestReresolution();
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
@@ -981,9 +980,6 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   GRPC_CLOSURE_INIT(&on_child_connectivity_changed_,
                     &XdsLb::OnChildPolicyConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_child_request_reresolution_,
-                    &XdsLb::OnChildPolicyRequestReresolutionLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "xds");
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
@@ -1033,7 +1029,6 @@ void XdsLb::ShutdownLocked() {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
   child_policy_.reset();
-  TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_CANCELLED);
   // We destroy the LB channel here instead of in our destructor because
   // destroying the channel triggers a last callback to
   // OnBalancerChannelConnectivityChangedLocked(), and we need to be
@@ -1512,11 +1507,6 @@ void XdsLb::CreateChildPolicyLocked(const Args& args) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
     return;
   }
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
-  self.release();
-  child_policy_->SetReresolutionClosureLocked(&on_child_request_reresolution_);
   grpc_error* child_state_error = nullptr;
   child_connectivity_state_ =
       child_policy_->CheckConnectivityLocked(&child_state_error);
@@ -1530,7 +1520,7 @@ void XdsLb::CreateChildPolicyLocked(const Args& args) {
   // Subscribe to changes to the connectivity of the new child policy.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
+  auto self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
   self.release();
   child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
                                            &on_child_connectivity_changed_);
@@ -1602,33 +1592,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     }
   }
   grpc_channel_args_destroy(args);
-}
-
-void XdsLb::OnChildPolicyRequestReresolutionLocked(void* arg,
-                                                   grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  if (xdslb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_reresolution_requested");
-    return;
-  }
-  if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Re-resolution requested from child policy "
-            "(%p).",
-            xdslb_policy, xdslb_policy->child_policy_.get());
-  }
-  // If we are talking to a balancer, we expect to get updated addresses form
-  // the balancer, so we can ignore the re-resolution request from the child
-  // policy.
-  // Otherwise, handle the re-resolution request using the xds policy's
-  // original re-resolution closure.
-  if (xdslb_policy->lb_calld_ == nullptr ||
-      !xdslb_policy->lb_calld_->seen_initial_response()) {
-    xdslb_policy->TryReresolutionLocked(&grpc_lb_xds_trace, GRPC_ERROR_NONE);
-  }
-  // Give back the wrapper closure to the child policy.
-  xdslb_policy->child_policy_->SetReresolutionClosureLocked(
-      &xdslb_policy->on_child_request_reresolution_);
 }
 
 void XdsLb::UpdateConnectivityStateFromChildPolicyLocked(

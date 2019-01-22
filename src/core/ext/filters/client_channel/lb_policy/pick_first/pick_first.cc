@@ -221,7 +221,6 @@ void PickFirst::ShutdownLocked() {
                               GRPC_ERROR_REF(error), "shutdown");
   subchannel_list_.reset();
   latest_pending_subchannel_list_.reset();
-  TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -509,7 +508,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                                     GRPC_ERROR_NONE,
                                     "selected_changed+reresolve");
         p->started_picking_ = false;
-        p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+        p->channel_control_helper()->RequestReresolution();
         // In transient failure. Rely on re-resolution to recover.
         p->selected_ = nullptr;
         StopConnectivityWatchLocked();
@@ -550,7 +549,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Case 1: Only set state to TRANSIENT_FAILURE if we've tried
       // all subchannels.
       if (sd->Index() == 0 && subchannel_list() == p->subchannel_list_.get()) {
-        p->TryReresolutionLocked(&grpc_lb_pick_first_trace, GRPC_ERROR_NONE);
+        p->channel_control_helper()->RequestReresolution();
         grpc_connectivity_state_set(
             &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "exhausted_subchannels");

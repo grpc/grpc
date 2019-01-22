@@ -262,13 +262,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
         GRPC_ERROR_NONE);
   }
 
-// FIXME: remove
-  /// Sets the re-resolution closure to \a request_reresolution.
-  void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
-    GPR_ASSERT(request_reresolution_ == nullptr);
-    request_reresolution_ = request_reresolution;
-  }
-
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
@@ -301,11 +294,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// failed.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
-// FIXME: remove
-  /// Tries to request a re-resolution.
-  void TryReresolutionLocked(grpc_core::TraceFlag* grpc_lb_trace,
-                             grpc_error* error);
-
  private:
   static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
     LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
@@ -324,9 +312,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
-// FIXME: remove
-  /// Callback to force a re-resolution.
-  grpc_closure* request_reresolution_;
   /// Channel control helper.
   RefCountedPtr<ChannelControlHelper> channel_control_helper_;
   /// Channelz node.

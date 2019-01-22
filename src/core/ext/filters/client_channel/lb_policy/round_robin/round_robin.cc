@@ -328,7 +328,6 @@ void RoundRobin::ShutdownLocked() {
                               GRPC_ERROR_REF(error), "rr_shutdown");
   subchannel_list_.reset();
   latest_pending_subchannel_list_.reset();
-  TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -637,7 +636,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
               "Requesting re-resolution",
               p, subchannel());
     }
-    p->TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
+    p->channel_control_helper()->RequestReresolution();
   }
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state, error);
