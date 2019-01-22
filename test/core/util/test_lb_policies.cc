@@ -48,9 +48,9 @@ namespace {
 // A minimal forwarding class to avoid implementing a standalone test LB.
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  ForwardingLoadBalancingPolicy(const Args& args,
+  ForwardingLoadBalancingPolicy(Args args,
                                 const std::string& delegate_policy_name)
-      : LoadBalancingPolicy(args) {
+      : LoadBalancingPolicy(std::move(args)) {
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
         delegate_policy_name.c_str(), args);
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
@@ -143,9 +143,9 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      const Args& args, InterceptRecvTrailingMetadataCallback cb,
+      Args args, InterceptRecvTrailingMetadataCallback cb,
       void* user_data)
-      : ForwardingLoadBalancingPolicy(args,
+      : ForwardingLoadBalancingPolicy(std::move(args),
                                       /*delegate_lb_policy_name=*/"pick_first"),
         cb_(cb),
         user_data_(user_data) {}
@@ -212,10 +212,10 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
   CreateLoadBalancingPolicy(
-      const grpc_core::LoadBalancingPolicy::Args& args) const override {
+      grpc_core::LoadBalancingPolicy::Args args) const override {
     return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
         grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-            args, cb_, user_data_));
+            std::move(args), cb_, user_data_));
   }
 
   const char* name() const override {

@@ -27,11 +27,11 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
 
 namespace grpc_core {
 
-LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
+LoadBalancingPolicy::LoadBalancingPolicy(Args args)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
-      subchannel_pool_(*args.subchannel_pool),
+      subchannel_pool_(std::move(args.subchannel_pool)),
       interested_parties_(grpc_pollset_set_create()),
       request_reresolution_(nullptr) {}
 
