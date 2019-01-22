@@ -331,8 +331,8 @@ void HealthCheckClient::CallState::StartCall() {
       &call_combiner_,
       0,  // parent_data_size
   };
-  grpc_error* error =
-      health_check_client_->connected_subchannel_->CreateCall(args, &call_);
+  grpc_error* error;
+  call_ = health_check_client_->connected_subchannel_->CreateCall(args, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "HealthCheckClient %p CallState %p: error creating health "

@@ -90,8 +90,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  grpc_error* CreateCall(const CallArgs& args,
-                         RefCountedPtr<SubchannelCall>* call);
+  RefCountedPtr<SubchannelCall> CreateCall(const CallArgs& args,
+                                           grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const grpc_channel_args* args() const { return args_; }
@@ -112,15 +112,13 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   const intptr_t socket_uuid_;
 };
 
-// Although this class is deriving RefCounted<>, it only destructs but doesn't
-// free itself when refcount reaches 0.
-class SubchannelCall : public RefCounted<SubchannelCall> {
+// Implements the interface of RefCounted<>.
+class SubchannelCall {
  public:
   SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                  const ConnectedSubchannel::CallArgs& args)
       : connected_subchannel_(std::move(connected_subchannel)),
         deadline_(args.deadline) {}
-  ~SubchannelCall();
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -139,17 +137,30 @@ class SubchannelCall : public RefCounted<SubchannelCall> {
 
   grpc_closure* after_call_stack_destroy() { return after_call_stack_destroy_; }
 
-  // Overrides RefCounted's methods to avoid freeing itself.
+  // Interface of RefCounted<>.
+  RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
+  RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
+                                    const char* reason) GRPC_MUST_USE_RESULT;
+  // When refcount drops to 0, only destroys (without freeing) itself and the
+  // associated call stack.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
 
  private:
+  // Allow RefCountedPtr<> to access IncrementRefCount().
+  template <typename T>
+  friend class RefCountedPtr;
+
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.
   void MaybeInterceptRecvTrailingMetadata(
       grpc_transport_stream_op_batch* batch);
 
   static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
+
+  // Interface of RefCounted<>.
+  void IncrementRefCount() {}
+  void IncrementRefCount(const DebugLocation& location, const char* reason) {}
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_closure* after_call_stack_destroy_ = nullptr;
@@ -166,8 +177,7 @@ class Subchannel {
  public:
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
-             BackOff::Options backoff_option,
-             grpc_millis min_connect_timeout_ms, const grpc_channel_args* args);
+             const grpc_channel_args* args);
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
@@ -191,7 +201,7 @@ class Subchannel {
   // happen before it initially connects or during transient failures).
   RefCountedPtr<ConnectedSubchannel> connected_subchannel();
 
-  channelz::SubchannelNode* get_channelz_node();
+  channelz::SubchannelNode* channelz_node();
 
   // Polls the current connectivity state of the subchannel.
   grpc_connectivity_state CheckConnectivity(grpc_error** error,
@@ -260,7 +270,7 @@ class Subchannel {
   gpr_atm ref_pair_;
 
   // Connection states.
-  grpc_connector* connector_;
+  grpc_connector* connector_ = nullptr;
   // Set during connection.
   grpc_connect_out_args connecting_result_;
   grpc_closure on_connecting_finished_;
@@ -274,7 +284,7 @@ class Subchannel {
   grpc_connectivity_state_tracker state_tracker_;
   grpc_connectivity_state_tracker state_and_health_tracker_;
   UniquePtr<char> health_check_service_name_;
-  ExternalStateWatcher* root_external_state_watcher_;
+  ExternalStateWatcher* root_external_state_watcher_ = nullptr;
 
   // Backoff state.
   BackOff backoff_;

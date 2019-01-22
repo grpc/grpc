@@ -203,7 +203,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
     for (size_t i = 0; i < subchannels_.size(); ++i) {
       if (subchannels_[i].subchannel() != nullptr) {
         grpc_core::channelz::SubchannelNode* subchannel_node =
-            subchannels_[i].subchannel()->get_channelz_node();
+            subchannels_[i].subchannel()->channelz_node();
         if (subchannel_node != nullptr) {
           refs_list->push_back(subchannel_node->uuid());
         }

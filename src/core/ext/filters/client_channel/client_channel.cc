@@ -2222,9 +2222,10 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       calld->call_combiner,                             // call_combiner
       parent_data_size                                  // parent_data_size
   };
-  grpc_error* new_error =
-      calld->request->pick()->connected_subchannel->CreateCall(
-          call_args, &calld->subchannel_call);
+  grpc_error* new_error;
+  calld->subchannel_call =
+      calld->request->pick()->connected_subchannel->CreateCall(call_args,
+                                                               &new_error);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, calld, calld->subchannel_call.get(),

@@ -118,28 +118,24 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 
 namespace {
 
-struct call_stack_destroy_args {
-  grpc_call_stack* call_stack;
-  grpc_closure* after_destroy;
-};
-
-void call_stack_destroy(void* arg, grpc_error* error) {
-  call_stack_destroy_args* destroy_args =
-      static_cast<call_stack_destroy_args*>(arg);
-  grpc_call_stack_destroy(destroy_args->call_stack, nullptr,
-                          destroy_args->after_destroy);
+void subchannel_call_destroy(void* arg, grpc_error* error) {
+  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
+  SubchannelCall* call = static_cast<SubchannelCall*>(arg);
+  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(call), nullptr,
+                          call->after_call_stack_destroy());
+  call->~SubchannelCall();
 }
 
 }  // namespace
 
-grpc_error* ConnectedSubchannel::CreateCall(
-    const CallArgs& args, RefCountedPtr<SubchannelCall>* call) {
+RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
+    const CallArgs& args, grpc_error** error) {
   const size_t allocation_size =
       GetInitialCallSizeEstimate(args.parent_data_size);
-  *call = RefCountedPtr<SubchannelCall>(
+  RefCountedPtr<SubchannelCall> call = RefCountedPtr<SubchannelCall>(
       new (gpr_arena_alloc(args.arena, allocation_size))
           SubchannelCall(Ref(DEBUG_LOCATION, "subchannel_call"), args));
-  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call->get());
+  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call.get());
   const grpc_call_element_args call_args = {
       callstk,           /* call_stack */
       nullptr,           /* server_transport_data */
@@ -150,22 +146,18 @@ grpc_error* ConnectedSubchannel::CreateCall(
       args.arena,        /* arena */
       args.call_combiner /* call_combiner */
   };
-  call_stack_destroy_args* destroy_args = static_cast<call_stack_destroy_args*>(
-      gpr_arena_alloc(args.arena, sizeof(*destroy_args)));
-  destroy_args->call_stack = callstk;
-  destroy_args->after_destroy = (*call)->after_call_stack_destroy();
-  grpc_error* error = grpc_call_stack_init(
-      channel_stack_, 1, call_stack_destroy, destroy_args, &call_args);
-  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
-    const char* error_string = grpc_error_string(error);
+  *error = grpc_call_stack_init(channel_stack_, 1, subchannel_call_destroy,
+                                call.get(), &call_args);
+  if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
+    const char* error_string = grpc_error_string(*error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-    return error;
+    return nullptr;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   if (channelz_subchannel_ != nullptr) {
     channelz_subchannel_->RecordCallStarted();
   }
-  return GRPC_ERROR_NONE;
+  return call;
 }
 
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
@@ -185,15 +177,6 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 //
 // SubchannelCall
 //
-
-SubchannelCall::~SubchannelCall() {
-  GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
-#ifndef NDEBUG
-  const char* reason = "subchannel_call_destroy";
-#endif
-  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this),
-                        GRPC_SUBCHANNEL_REF_REASON);
-}
 
 void SubchannelCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
@@ -220,16 +203,23 @@ void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
   after_call_stack_destroy_ = closure;
 }
 
+RefCountedPtr<SubchannelCall> SubchannelCall::Ref() {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+  return RefCountedPtr<SubchannelCall>(this);
+}
+
+RefCountedPtr<SubchannelCall> SubchannelCall::Ref(
+    const grpc_core::DebugLocation& location, const char* reason) {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
+  return RefCountedPtr<SubchannelCall>(this);
+}
+
 void SubchannelCall::Unref() {
-  if (refs_.Unref()) {
-    this->~SubchannelCall();
-  }
+  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
 void SubchannelCall::Unref(const DebugLocation& location, const char* reason) {
-  if (refs_.Unref(location, reason)) {
-    this->~SubchannelCall();
-  }
+  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
 void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
@@ -487,16 +477,61 @@ struct HealthCheckParams {
   }
 };
 
+BackOff::Options ParseArgsForBackoffValues(
+    const grpc_channel_args* args, grpc_millis* min_connect_timeout_ms) {
+  grpc_millis initial_backoff_ms =
+      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
+  *min_connect_timeout_ms =
+      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
+  grpc_millis max_backoff_ms =
+      GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+  bool fixed_reconnect_backoff = false;
+  if (args != nullptr) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(args->args[i].key,
+                      "grpc.testing.fixed_reconnect_backoff_ms")) {
+        fixed_reconnect_backoff = true;
+        initial_backoff_ms = *min_connect_timeout_ms = max_backoff_ms =
+            grpc_channel_arg_get_integer(
+                &args->args[i],
+                {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        *min_connect_timeout_ms = grpc_channel_arg_get_integer(
+            &args->args[i],
+            {static_cast<int>(*min_connect_timeout_ms), 100, INT_MAX});
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        max_backoff_ms = grpc_channel_arg_get_integer(
+            &args->args[i], {static_cast<int>(max_backoff_ms), 100, INT_MAX});
+      } else if (0 == strcmp(args->args[i].key,
+                             GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
+        fixed_reconnect_backoff = false;
+        initial_backoff_ms = grpc_channel_arg_get_integer(
+            &args->args[i],
+            {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+      }
+    }
+  }
+  return BackOff::Options()
+      .set_initial_backoff(initial_backoff_ms)
+      .set_multiplier(fixed_reconnect_backoff
+                          ? 1.0
+                          : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
+      .set_jitter(fixed_reconnect_backoff ? 0.0
+                                          : GRPC_SUBCHANNEL_RECONNECT_JITTER)
+      .set_max_backoff(max_backoff_ms);
+}
+
 }  // namespace
 
 Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
-                       BackOff::Options backoff_option,
-                       grpc_millis min_connect_timeout_ms,
                        const grpc_channel_args* args)
     : key_(key),
       connector_(connector),
-      backoff_(backoff_option),
-      min_connect_timeout_ms_(min_connect_timeout_ms) {
+      backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   gpr_atm_no_barrier_store(&ref_pair_, 1 << INTERNAL_REF_BITS);
   grpc_connector_ref(connector_);
@@ -565,9 +600,7 @@ Subchannel::~Subchannel() {
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
     channelz_node_->MarkSubchannelDestroyed();
-    channelz_node_.reset();
   }
-  health_check_service_name_.reset();
   grpc_channel_args_destroy(args_);
   grpc_connectivity_state_destroy(&state_tracker_);
   grpc_connectivity_state_destroy(&state_and_health_tracker_);
@@ -577,58 +610,6 @@ Subchannel::~Subchannel() {
   Delete(root_external_state_watcher_);
   gpr_mu_destroy(&mu_);
 }
-
-namespace {
-
-void ParseArgsForBackoffValues(const grpc_channel_args* args,
-                               BackOff::Options* backoff_options,
-                               grpc_millis* min_connect_timeout_ms) {
-  grpc_millis initial_backoff_ms =
-      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  *min_connect_timeout_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
-  grpc_millis max_backoff_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
-  bool fixed_reconnect_backoff = false;
-  if (args != nullptr) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(args->args[i].key,
-                      "grpc.testing.fixed_reconnect_backoff_ms")) {
-        fixed_reconnect_backoff = true;
-        initial_backoff_ms = *min_connect_timeout_ms = max_backoff_ms =
-            grpc_channel_arg_get_integer(
-                &args->args[i],
-                {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
-      } else if (0 ==
-                 strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
-        fixed_reconnect_backoff = false;
-        *min_connect_timeout_ms = grpc_channel_arg_get_integer(
-            &args->args[i],
-            {static_cast<int>(*min_connect_timeout_ms), 100, INT_MAX});
-      } else if (0 ==
-                 strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
-        fixed_reconnect_backoff = false;
-        max_backoff_ms = grpc_channel_arg_get_integer(
-            &args->args[i], {static_cast<int>(max_backoff_ms), 100, INT_MAX});
-      } else if (0 == strcmp(args->args[i].key,
-                             GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
-        fixed_reconnect_backoff = false;
-        initial_backoff_ms = grpc_channel_arg_get_integer(
-            &args->args[i],
-            {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
-      }
-    }
-  }
-  backoff_options->set_initial_backoff(initial_backoff_ms)
-      .set_multiplier(fixed_reconnect_backoff
-                          ? 1.0
-                          : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
-      .set_jitter(fixed_reconnect_backoff ? 0.0
-                                          : GRPC_SUBCHANNEL_RECONNECT_JITTER)
-      .set_max_backoff(max_backoff_ms);
-}
-
-}  // namespace
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
@@ -641,11 +622,7 @@ Subchannel* Subchannel::Create(grpc_connector* connector,
     Delete(key);
     return c;
   }
-  BackOff::Options backoff_options;
-  grpc_millis min_connect_timeout_ms;
-  ParseArgsForBackoffValues(args, &backoff_options, &min_connect_timeout_ms);
-  c = New<Subchannel>(key, connector, backoff_options, min_connect_timeout_ms,
-                      args);
+  c = New<Subchannel>(key, connector, args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -738,7 +715,7 @@ RefCountedPtr<ConnectedSubchannel> Subchannel::connected_subchannel() {
   return copy;
 }
 
-channelz::SubchannelNode* Subchannel::get_channelz_node() {
+channelz::SubchannelNode* Subchannel::channelz_node() {
   return channelz_node_.get();
 }
 

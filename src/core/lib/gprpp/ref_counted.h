@@ -227,9 +227,9 @@ class RefCounted : public Impl {
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 
+ private:
   RefCount refs_;
 
- private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
