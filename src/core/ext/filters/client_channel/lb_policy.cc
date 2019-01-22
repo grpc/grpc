@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+
 #include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
@@ -31,6 +32,7 @@ LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
       lb_config_(args.lb_config),
+      subchannel_pool_(*args.subchannel_pool),
       interested_parties_(grpc_pollset_set_create()),
       request_reresolution_(nullptr) {}
 

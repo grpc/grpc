@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -38,8 +39,6 @@
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
-typedef struct grpc_subchannel_args grpc_subchannel_args;
-typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
@@ -163,10 +162,6 @@ void grpc_subchannel_notify_on_state_change(
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
 
-/** return the subchannel index key for \a subchannel */
-const grpc_subchannel_key* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel);
-
 // Resets the connection backoff of the subchannel.
 // TODO(roth): Move connection backoff out of subchannels and up into LB
 // policy code (probably by adding a SubchannelGroup between
@@ -186,21 +181,9 @@ void grpc_subchannel_call_set_cleanup_closure(
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);
 
-struct grpc_subchannel_args {
-  /* When updating this struct, also update subchannel_index.c */
-
-  /** Channel filters for this channel - wrapped factories will likely
-      want to mutate this */
-  const grpc_channel_filter** filters;
-  /** The number of filters in the above array */
-  size_t filter_count;
-  /** Channel arguments to be supplied to the newly created channel */
-  const grpc_channel_args* args;
-};
-
 /** create a subchannel given a connector */
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args);
+                                        const grpc_channel_args* args);
 
 /// Sets \a addr from \a args.
 void grpc_get_subchannel_address_arg(const grpc_channel_args* args,

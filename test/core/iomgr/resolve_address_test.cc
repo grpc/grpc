@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
       test_invalid_ip_addresses();
       test_unparseable_hostports();
     }
-    grpc_executor_shutdown();
+    grpc_core::Executor::ShutdownAll();
   }
   gpr_cmdline_destroy(cl);
 

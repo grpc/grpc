@@ -43,7 +43,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_executor_set_threading(false);
+    grpc_core::Executor::SetThreadingAll(false);
 
     grpc_resource_quota* resource_quota =
         grpc_resource_quota_create("server_fuzzer");

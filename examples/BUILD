@@ -38,6 +38,11 @@ grpc_proto_library(
     srcs = ["protos/route_guide.proto"],
 )
 
+grpc_proto_library(
+    name = "keyvaluestore",
+    srcs = ["protos/keyvaluestore.proto"],
+)
+
 cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
@@ -92,4 +97,19 @@ cc_binary(
     srcs = ["cpp/compression/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [":helloworld", "//:grpc++"],
+)
+
+cc_binary(
+    name = "keyvaluestore_client",
+    srcs = ["cpp/keyvaluestore/caching_interceptor.h",
+            "cpp/keyvaluestore/client.cc"],    
+    defines = ["BAZEL_BUILD"],
+    deps = [":keyvaluestore", "//:grpc++"],
+)
+
+cc_binary(
+    name = "keyvaluestore_server",
+    srcs = ["cpp/keyvaluestore/server.cc"],
+    defines = ["BAZEL_BUILD"],
+    deps = [":keyvaluestore", "//:grpc++"],
 )

@@ -509,13 +509,14 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
                                          GRPC_ARG_SERVER_ADDRESS_LIST,
                                          GRPC_ARG_INHIBIT_HEALTH_CHECKING};
   // Create a subchannel for each address.
-  grpc_subchannel_args sc_args;
   for (size_t i = 0; i < addresses.size(); i++) {
     // If there were any balancer addresses, we would have chosen grpclb
     // policy, which does not use a SubchannelList.
     GPR_ASSERT(!addresses[i].IsBalancer());
-    memset(&sc_args, 0, sizeof(grpc_subchannel_args));
     InlinedVector<grpc_arg, 4> args_to_add;
+    args_to_add.emplace_back(SubchannelPoolInterface::CreateChannelArg(
+        policy_->subchannel_pool()->get()));
+    const size_t subchannel_address_arg_index = args_to_add.size();
     args_to_add.emplace_back(
         grpc_create_subchannel_address_arg(&addresses[i].address()));
     if (addresses[i].args() != nullptr) {
@@ -526,10 +527,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
         &args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove),
         args_to_add.data(), args_to_add.size());
-    gpr_free(args_to_add[0].value.string);
-    sc_args.args = new_args;
+    gpr_free(args_to_add[subchannel_address_arg_index].value.string);
     grpc_subchannel* subchannel = grpc_client_channel_factory_create_subchannel(
-        client_channel_factory, &sc_args);
+        client_channel_factory, new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) {
       // Subchannel could not be created.

@@ -25,6 +25,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -126,7 +127,7 @@ class RequestRouter {
   LoadBalancingPolicy* lb_policy() const { return lb_policy_.get(); }
 
  private:
-  using TraceStringVector = grpc_core::InlinedVector<char*, 3>;
+  using TraceStringVector = InlinedVector<char*, 3>;
 
   class ReresolutionRequestHandler;
   class LbConnectivityWatcher;
@@ -168,6 +169,9 @@ class RequestRouter {
   // LB policy and associated state.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   bool exit_idle_when_lb_policy_arrives_ = false;
+
+  // Subchannel pool to pass to LB policy.
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
 
   grpc_connectivity_state_tracker state_tracker_;
 };

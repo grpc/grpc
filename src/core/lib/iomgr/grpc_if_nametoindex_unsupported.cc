@@ -16,17 +16,23 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#define GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/port.h"
 
-void grpc_network_status_init(void);
-void grpc_network_status_shutdown(void);
+#if GRPC_IF_NAMETOINDEX == 0 || !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
 
-void grpc_network_status_register_endpoint(grpc_endpoint* ep);
-void grpc_network_status_unregister_endpoint(grpc_endpoint* ep);
-void grpc_network_status_shutdown_all_endpoints();
+#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 
-#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H */
+#include <grpc/support/log.h>
+
+uint32_t grpc_if_nametoindex(char* name) {
+  gpr_log(GPR_DEBUG,
+          "Not attempting to convert interface name %s to index for current "
+          "platform.",
+          name);
+  return 0;
+}
+
+#endif /* GRPC_IF_NAMETOINDEX == 0 || \
+          !defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX) */

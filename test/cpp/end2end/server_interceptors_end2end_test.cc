@@ -142,29 +142,68 @@ class LoggingInterceptorFactory
   }
 };
 
-// Test if GetSendMessage works as expected
-class GetSendMessageTester : public experimental::Interceptor {
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageTester : public experimental::Interceptor {
  public:
-  GetSendMessageTester(experimental::ServerRpcInfo* info) {}
+  SyncSendMessageTester(experimental::ServerRpcInfo* info) {}
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
-      EXPECT_EQ(static_cast<const EchoRequest*>(methods->GetSendMessage())
-                    ->message()
-                    .find("Hello"),
-                0u);
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("Hello"), 0u);
+      new_msg_.set_message("World" + old_msg);
+      methods->ModifySendMessage(&new_msg_);
     }
     methods->Proceed();
   }
+
+ private:
+  EchoRequest new_msg_;
 };
 
-class GetSendMessageTesterFactory
+class SyncSendMessageTesterFactory
     : public experimental::ServerInterceptorFactoryInterface {
  public:
   virtual experimental::Interceptor* CreateServerInterceptor(
       experimental::ServerRpcInfo* info) override {
-    return new GetSendMessageTester(info);
+    return new SyncSendMessageTester(info);
+  }
+};
+
+// Test if SendMessage function family works as expected for sync/callback apis
+class SyncSendMessageVerifier : public experimental::Interceptor {
+ public:
+  SyncSendMessageVerifier(experimental::ServerRpcInfo* info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_MESSAGE)) {
+      // Make sure that the changes made in SyncSendMessageTester persisted
+      string old_msg =
+          static_cast<const EchoRequest*>(methods->GetSendMessage())->message();
+      EXPECT_EQ(old_msg.find("World"), 0u);
+
+      // Remove the "World" part of the string that we added earlier
+      new_msg_.set_message(old_msg.erase(0, 5));
+      methods->ModifySendMessage(&new_msg_);
+
+      // LoggingInterceptor verifies that changes got reverted
+    }
+    methods->Proceed();
+  }
+
+ private:
+  EchoRequest new_msg_;
+};
+
+class SyncSendMessageVerifierFactory
+    : public experimental::ServerInterceptorFactoryInterface {
+ public:
+  virtual experimental::Interceptor* CreateServerInterceptor(
+      experimental::ServerRpcInfo* info) override {
+    return new SyncSendMessageVerifier(info);
   }
 };
 
@@ -201,10 +240,13 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
         creators;
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
-            new LoggingInterceptorFactory()));
+            new SyncSendMessageTesterFactory()));
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
-            new GetSendMessageTesterFactory()));
+            new SyncSendMessageVerifierFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new LoggingInterceptorFactory()));
     // Add 20 dummy interceptor factories and null interceptor factories
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
@@ -244,10 +286,13 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
         creators;
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
-            new LoggingInterceptorFactory()));
+            new SyncSendMessageTesterFactory()));
     creators.push_back(
         std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
-            new GetSendMessageTesterFactory()));
+            new SyncSendMessageVerifierFactory()));
+    creators.push_back(
+        std::unique_ptr<experimental::ServerInterceptorFactoryInterface>(
+            new LoggingInterceptorFactory()));
     for (auto i = 0; i < 20; i++) {
       creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
           new DummyInterceptorFactory()));

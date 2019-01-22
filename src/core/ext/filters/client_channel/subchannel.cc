@@ -33,7 +33,7 @@
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -64,18 +64,6 @@
 #define GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_SUBCHANNEL_RECONNECT_JITTER 0.2
 
-namespace {
-struct state_watcher {
-  grpc_closure closure;
-  grpc_subchannel* subchannel;
-  grpc_connectivity_state connectivity_state;
-  grpc_connectivity_state last_connectivity_state;
-  grpc_core::OrphanablePtr<grpc_core::HealthCheckClient> health_check_client;
-  grpc_closure health_check_closure;
-  grpc_connectivity_state health_state;
-};
-}  // namespace
-
 typedef struct external_state_watcher {
   grpc_subchannel* subchannel;
   grpc_pollset_set* pollset_set;
@@ -92,6 +80,9 @@ class ConnectedSubchannelStateWatcher;
 }  // namespace grpc_core
 
 struct grpc_subchannel {
+  /** The subchannel pool this subchannel is in */
+  grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
+
   grpc_connector* connector;
 
   /** refcount
@@ -101,13 +92,10 @@ struct grpc_subchannel {
         keep the subchannel open */
   gpr_atm ref_pair;
 
-  /** non-transport related channel filters */
-  const grpc_channel_filter** filters;
-  size_t num_filters;
   /** channel arguments */
   grpc_channel_args* args;
 
-  grpc_subchannel_key* key;
+  grpc_core::SubchannelKey* key;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -384,14 +372,13 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
     c->channelz_subchannel->MarkSubchannelDestroyed();
     c->channelz_subchannel.reset();
   }
-  gpr_free((void*)c->filters);
   c->health_check_service_name.reset();
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
   grpc_connectivity_state_destroy(&c->state_and_health_tracker);
   grpc_connector_unref(c->connector);
   grpc_pollset_set_destroy(c->pollset_set);
-  grpc_subchannel_key_destroy(c->key);
+  grpc_core::Delete(c->key);
   gpr_mu_destroy(&c->mu);
   gpr_free(c);
 }
@@ -444,7 +431,12 @@ grpc_subchannel* grpc_subchannel_ref_from_weak_ref(
 }
 
 static void disconnect(grpc_subchannel* c) {
-  grpc_subchannel_index_unregister(c->key, c);
+  // The subchannel_pool is only used once here in this subchannel, so the
+  // access can be outside of the lock.
+  if (c->subchannel_pool != nullptr) {
+    c->subchannel_pool->UnregisterSubchannel(c->key);
+    c->subchannel_pool.reset();
+  }
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(!c->disconnected);
   c->disconnected = true;
@@ -553,37 +545,31 @@ struct HealthCheckParams {
 }  // namespace grpc_core
 
 grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
-                                        const grpc_subchannel_args* args) {
-  grpc_subchannel_key* key = grpc_subchannel_key_create(args);
-  grpc_subchannel* c = grpc_subchannel_index_find(key);
-  if (c) {
-    grpc_subchannel_key_destroy(key);
+                                        const grpc_channel_args* args) {
+  grpc_core::SubchannelKey* key =
+      grpc_core::New<grpc_core::SubchannelKey>(args);
+  grpc_core::SubchannelPoolInterface* subchannel_pool =
+      grpc_core::SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
+          args);
+  GPR_ASSERT(subchannel_pool != nullptr);
+  grpc_subchannel* c = subchannel_pool->FindSubchannel(key);
+  if (c != nullptr) {
+    grpc_core::Delete(key);
     return c;
   }
-
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = static_cast<grpc_subchannel*>(gpr_zalloc(sizeof(*c)));
   c->key = key;
   gpr_atm_no_barrier_store(&c->ref_pair, 1 << INTERNAL_REF_BITS);
   c->connector = connector;
   grpc_connector_ref(c->connector);
-  c->num_filters = args->filter_count;
-  if (c->num_filters > 0) {
-    c->filters = static_cast<const grpc_channel_filter**>(
-        gpr_malloc(sizeof(grpc_channel_filter*) * c->num_filters));
-    memcpy((void*)c->filters, args->filters,
-           sizeof(grpc_channel_filter*) * c->num_filters);
-  } else {
-    c->filters = nullptr;
-  }
   c->pollset_set = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
-  grpc_get_subchannel_address_arg(args->args, addr);
+  grpc_get_subchannel_address_arg(args, addr);
   grpc_resolved_address* new_address = nullptr;
   grpc_channel_args* new_args = nullptr;
-  if (grpc_proxy_mappers_map_address(addr, args->args, &new_address,
-                                     &new_args)) {
+  if (grpc_proxy_mappers_map_address(addr, args, &new_address, &new_args)) {
     GPR_ASSERT(new_address != nullptr);
     gpr_free(addr);
     addr = new_address;
@@ -592,7 +578,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_arg new_arg = grpc_create_subchannel_address_arg(addr);
   gpr_free(addr);
   c->args = grpc_channel_args_copy_and_add_and_remove(
-      new_args != nullptr ? new_args : args->args, keys_to_remove,
+      new_args != nullptr ? new_args : args, keys_to_remove,
       GPR_ARRAY_SIZE(keys_to_remove), &new_arg, 1);
   gpr_free(new_arg.value.string);
   if (new_args != nullptr) grpc_channel_args_destroy(new_args);
@@ -605,7 +591,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_connectivity_state_init(&c->state_and_health_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
   grpc_core::BackOff::Options backoff_options;
-  parse_args_for_backoff_values(args->args, &backoff_options,
+  parse_args_for_backoff_values(args, &backoff_options,
                                 &c->min_connect_timeout_ms);
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
@@ -642,8 +628,13 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));
   }
-
-  return grpc_subchannel_index_register(key, c);
+  // Try to register the subchannel before setting the subchannel pool.
+  // Otherwise, in case of a registration race, unreffing c in
+  // RegisterSubchannel() will cause c to be tried to be unregistered, while its
+  // key maps to a different subchannel.
+  grpc_subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
+  if (registered == c) c->subchannel_pool = subchannel_pool->Ref();
+  return registered;
 }
 
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
@@ -1007,11 +998,6 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c) {
   auto copy = c->connected_subchannel;
   gpr_mu_unlock(&c->mu);
   return copy;
-}
-
-const grpc_subchannel_key* grpc_subchannel_get_key(
-    const grpc_subchannel* subchannel) {
-  return subchannel->key;
 }
 
 void* grpc_connected_subchannel_call_get_parent_data(

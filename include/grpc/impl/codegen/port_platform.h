@@ -121,6 +121,7 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#include <linux/version.h>
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
@@ -463,6 +464,10 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef GRPC_ARES
 #define GRPC_ARES 1
+#endif
+
+#ifndef GRPC_IF_NAMETOINDEX
+#define GRPC_IF_NAMETOINDEX 1
 #endif
 
 #ifndef GRPC_MUST_USE_RESULT

@@ -19,7 +19,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core;
 
 namespace Grpc.Core.Testing
 {
@@ -36,23 +35,73 @@ namespace Grpc.Core.Testing
             string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
             Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
         {
-            return new ServerCallContext(null, method, host, deadline, requestHeaders, cancellationToken,
-                writeHeadersFunc, new WriteOptionsHolder(writeOptionsGetter, writeOptionsSetter),
-                () => peer, () => authContext, () => contextPropagationToken);
+            return new TestingServerCallContext(method, host, deadline, requestHeaders, cancellationToken, peer,
+                authContext, contextPropagationToken, writeHeadersFunc, writeOptionsGetter, writeOptionsSetter);
         }
 
-        private class WriteOptionsHolder : IHasWriteOptions
+        private class TestingServerCallContext : ServerCallContext
         {
-            Func<WriteOptions> writeOptionsGetter;
-            Action<WriteOptions> writeOptionsSetter;
+            private readonly string method;
+            private readonly string host;
+            private readonly DateTime deadline;
+            private readonly Metadata requestHeaders;
+            private readonly CancellationToken cancellationToken;
+            private readonly Metadata responseTrailers = new Metadata();
+            private Status status;
+            private readonly string peer;
+            private readonly AuthContext authContext;
+            private readonly ContextPropagationToken contextPropagationToken;
+            private readonly Func<Metadata, Task> writeHeadersFunc;
+            private readonly Func<WriteOptions> writeOptionsGetter;
+            private readonly Action<WriteOptions> writeOptionsSetter;
 
-            public WriteOptionsHolder(Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
+            public TestingServerCallContext(string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+                string peer, AuthContext authContext, ContextPropagationToken contextPropagationToken,
+                Func<Metadata, Task> writeHeadersFunc, Func<WriteOptions> writeOptionsGetter, Action<WriteOptions> writeOptionsSetter)
             {
+                this.method = method;
+                this.host = host;
+                this.deadline = deadline;
+                this.requestHeaders = requestHeaders;
+                this.cancellationToken = cancellationToken;
+                this.responseTrailers = new Metadata();
+                this.status = Status.DefaultSuccess;
+                this.peer = peer;
+                this.authContext = authContext;
+                this.contextPropagationToken = contextPropagationToken;
+                this.writeHeadersFunc = writeHeadersFunc;
                 this.writeOptionsGetter = writeOptionsGetter;
                 this.writeOptionsSetter = writeOptionsSetter;
             }
 
-            public WriteOptions WriteOptions { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+            protected override string MethodCore => method;
+
+            protected override string HostCore => host;
+
+            protected override string PeerCore => peer;
+
+            protected override DateTime DeadlineCore => deadline;
+
+            protected override Metadata RequestHeadersCore => requestHeaders;
+
+            protected override CancellationToken CancellationTokenCore => cancellationToken;
+
+            protected override Metadata ResponseTrailersCore => responseTrailers;
+
+            protected override Status StatusCore { get => status; set => status = value; }
+            protected override WriteOptions WriteOptionsCore { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+
+            protected override AuthContext AuthContextCore => authContext;
+
+            protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
+            {
+                return contextPropagationToken;
+            }
+
+            protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
+            {
+                return writeHeadersFunc(responseHeaders);
+            }
         }
     }
 }

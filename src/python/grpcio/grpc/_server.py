@@ -25,7 +25,6 @@ import grpc
 from grpc import _common
 from grpc import _interceptor
 from grpc._cython import cygrpc
-from grpc.framework.foundation import callable_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -748,8 +747,10 @@ def _process_event_and_continue(state, event):
     else:
         rpc_state, callbacks = event.tag(event)
         for callback in callbacks:
-            callable_util.call_logging_exceptions(callback,
-                                                  'Exception calling callback!')
+            try:
+                callback()
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception('Exception calling callback!')
         if rpc_state is not None:
             with state.lock:
                 state.rpc_states.remove(rpc_state)
@@ -860,9 +861,10 @@ class _Server(grpc.Server):
         return _stop(self._state, grace)
 
     def __del__(self):
-        # We can not grab a lock in __del__(), so set a flag to signal the
-        # serving daemon thread (if it exists) to initiate shutdown.
-        self._state.server_deallocated = True
+        if hasattr(self, '_state'):
+            # We can not grab a lock in __del__(), so set a flag to signal the
+            # serving daemon thread (if it exists) to initiate shutdown.
+            self._state.server_deallocated = True
 
 
 def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
