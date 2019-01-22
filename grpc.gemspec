@@ -332,6 +332,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/stats_data.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
   s.files += %w( src/core/lib/gprpp/inlined_vector.h )
+  s.files += %w( src/core/lib/gprpp/optional.h )
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )

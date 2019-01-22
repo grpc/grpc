@@ -384,9 +384,9 @@ void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
                          grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(ts->sendmsg_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->scheduled_time.clock_type == GPR_CLOCK_REALTIME);
-  GPR_ASSERT(ts->acked_time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
+  GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   gpr_atm* done_timestamps = (gpr_atm*)arg;
   gpr_atm_rel_store(done_timestamps, static_cast<gpr_atm>(1));
 }
