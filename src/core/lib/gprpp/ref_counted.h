@@ -228,8 +228,6 @@ class RefCounted : public Impl {
   ~RefCounted() = default;
 
  private:
-  RefCount refs_;
-
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
@@ -238,6 +236,8 @@ class RefCounted : public Impl {
   void IncrementRefCount(const DebugLocation& location, const char* reason) {
     refs_.Ref(location, reason);
   }
+
+  RefCount refs_;
 };
 
 }  // namespace grpc_core

@@ -2222,7 +2222,7 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       calld->call_combiner,                             // call_combiner
       parent_data_size                                  // parent_data_size
   };
-  grpc_error* new_error;
+  grpc_error* new_error = GRPC_ERROR_NONE;
   calld->subchannel_call =
       calld->request->pick()->connected_subchannel->CreateCall(call_args,
                                                                &new_error);

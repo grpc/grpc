@@ -119,6 +119,7 @@ class SubchannelCall {
                  const ConnectedSubchannel::CallArgs& args)
       : connected_subchannel_(std::move(connected_subchannel)),
         deadline_(args.deadline) {}
+  ~SubchannelCall();
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -135,14 +136,12 @@ class SubchannelCall {
   // Must be called once per call.
   void SetAfterCallStackDestroy(grpc_closure* closure);
 
-  grpc_closure* after_call_stack_destroy() { return after_call_stack_destroy_; }
-
   // Interface of RefCounted<>.
   RefCountedPtr<SubchannelCall> Ref() GRPC_MUST_USE_RESULT;
   RefCountedPtr<SubchannelCall> Ref(const DebugLocation& location,
                                     const char* reason) GRPC_MUST_USE_RESULT;
-  // When refcount drops to 0, only destroys (without freeing) itself and the
-  // associated call stack.
+  // When refcount drops to 0, destroys itself and the associated call stack,
+  // but does NOT free the memory because it's in the call arena.
   void Unref();
   void Unref(const DebugLocation& location, const char* reason);
 
@@ -284,7 +283,7 @@ class Subchannel {
   grpc_connectivity_state_tracker state_tracker_;
   grpc_connectivity_state_tracker state_and_health_tracker_;
   UniquePtr<char> health_check_service_name_;
-  ExternalStateWatcher* root_external_state_watcher_ = nullptr;
+  ExternalStateWatcher* external_state_watcher_list_ = nullptr;
 
   // Backoff state.
   BackOff backoff_;
