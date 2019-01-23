@@ -32,9 +32,14 @@
 
 struct grpc_call;
 
+namespace grpc_impl {
+
+class Channel;
+
+}
+
 namespace grpc {
 class ChannelArguments;
-class Channel;
 class SecureChannelCredentials;
 class CallCredentials;
 class SecureCallCredentials;
@@ -42,7 +47,7 @@ class SecureCallCredentials;
 class ChannelCredentials;
 
 namespace experimental {
-std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
+std::shared_ptr<::grpc_impl::Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args,
@@ -70,12 +75,12 @@ class ChannelCredentials : private GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<Channel> CreateCustomChannel(
+  friend std::shared_ptr<::grpc_impl::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
       const ChannelArguments& args);
 
-  friend std::shared_ptr<Channel>
+  friend std::shared_ptr<::grpc_impl::Channel>
   experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
@@ -84,12 +89,12 @@ class ChannelCredentials : private GrpcLibraryCodegen {
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<Channel> CreateChannel(
+  virtual std::shared_ptr<::grpc_impl::Channel> CreateChannel(
       const grpc::string& target, const ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
-  virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
+  virtual std::shared_ptr<::grpc_impl::Channel> CreateChannelWithInterceptors(
       const grpc::string& target, const ChannelArguments& args,
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>

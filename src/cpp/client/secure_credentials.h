@@ -27,6 +27,12 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
+namespace grpc_impl {
+
+class Channel;
+
+}
+
 namespace grpc {
 
 class SecureChannelCredentials final : public ChannelCredentials {
@@ -37,13 +43,13 @@ class SecureChannelCredentials final : public ChannelCredentials {
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
-  std::shared_ptr<grpc::Channel> CreateChannel(
+  std::shared_ptr<::grpc_impl::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) override;
 
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
-  std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
+  std::shared_ptr<::grpc_impl::Channel> CreateChannelWithInterceptors(
       const string& target, const grpc::ChannelArguments& args,
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>

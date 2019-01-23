@@ -26,10 +26,15 @@
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
+namespace grpc_impl {
+
+class Channel;
+
+}
+
 namespace grpc {
 
 class ClientContext;
-class Channel;
 
 namespace internal {
 class InterceptorBatchMethodsImpl;

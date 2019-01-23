@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <grpc/compression.h>
+#include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
