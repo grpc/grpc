@@ -72,6 +72,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT] = {};
   };
 
+// FIXME: document
   class SubchannelPicker : public RefCounted<SubchannelPicker> {
    public:
     enum PickResult {
@@ -99,12 +100,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  // A picker that returns PICK_QUEUE for all picks.
+  // Also calls the parent LB policy's ExitIdleLocked() method.
   class QueuePicker : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
+// FIXME: need to grab the combiner here?
       parent_->ExitIdleLocked();
       return PICK_QUEUE;
     }
@@ -113,6 +117,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     RefCountedPtr<LoadBalancingPolicy> parent_;
   };
 
+  // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
   class TransientFailurePicker : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(grpc_error* error)
@@ -128,6 +133,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
+// FIXME: document
   class ChannelControlHelper : public RefCounted<ChannelControlHelper> {
    public:
     ChannelControlHelper() = default;
@@ -157,8 +163,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     RefCountedPtr<SubchannelPoolInterface> subchannel_pool;
     /// Channel control helper.
     RefCountedPtr<ChannelControlHelper> channel_control_helper;
-    /// Channelz node.
-    RefCountedPtr<channelz::ClientChannelNode> channelz_node;
     /// Channel args from the resolver.
     /// Note that the LB policy gets the set of addresses from the
     /// GRPC_ARG_SERVER_ADDRESS_LIST channel arg.
@@ -216,17 +220,20 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   }
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
+
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
   }
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
-  }
-
-  // Callers that need their own reference can call the returned
-  // object's Ref() method.
   SubchannelPoolInterface* subchannel_pool() const {
     return subchannel_pool_.get();
+  }
+
+  void set_channelz_node(
+      RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
+    channelz_node_ = std::move(channelz_node);
+  }
+  channelz::ClientChannelNode* channelz_node() const {
+    return channelz_node_.get();
   }
 
   GRPC_ABSTRACT_BASE_CLASS

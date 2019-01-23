@@ -109,8 +109,6 @@ typedef struct client_channel_channel_data {
   grpc_pollset_set* interested_parties;
   // Subchannel pool.
   grpc_core::RefCountedPtr<grpc_core::SubchannelPoolInterface> subchannel_pool;
-  // Channelz node.
-  grpc_core::channelz::ClientChannelNode* channelz_node;
 
   // Resolving LB policy.
   grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
@@ -371,12 +369,9 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   lb_args.combiner = chand->combiner;
   grpc_client_channel_factory_ref(client_channel_factory);
   lb_args.client_channel_factory = client_channel_factory;
-  lb_args.subchannel_pool = &chand->subchannel_pool;
+  lb_args.subchannel_pool = chand->subchannel_pool;
   lb_args.channel_control_helper =
       grpc_core::MakeRefCounted<grpc_core::ClientChannelControlHelper>(chand);
-  if (chand->channelz_node != nullptr) {
-    lb_args.channelz_node = chand->channelz_node->Ref();
-  }
   lb_args.args = new_args != nullptr ? new_args : args->channel_args;
   grpc_error* error = GRPC_ERROR_NONE;
   chand->resolving_lb_policy.reset(
@@ -2761,7 +2756,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
 void grpc_client_channel_set_channelz_node(
     grpc_channel_element* elem, grpc_core::channelz::ClientChannelNode* node) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  chand->channelz_node = node;
+  chand->resolving_lb_policy->set_channelz_node(node->Ref());
 }
 
 void grpc_client_channel_populate_child_refs(

@@ -329,14 +329,14 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.client_channel_factory = client_channel_factory();
+  lb_policy_args.channel_control_helper =
+      MakeRefCounted<ResolvingControlHelper>(Ref());
   lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
-  lb_policy_args.channel_control_helper =
-      MakeRefCounted<ResolvingControlHelper>(Ref());
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
-                                                             lb_policy_args);
+      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          lb_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
     if (channelz_node() != nullptr) {

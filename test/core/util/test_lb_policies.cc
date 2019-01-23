@@ -53,11 +53,10 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
       Args args, const std::string& delegate_policy_name)
       : LoadBalancingPolicy(std::move(args)) {
     Args delegate_args;
-    delegate_args.combiner = args.combiner;
-    delegate_args.client_channel_factory = args.client_channel_factory;
-    delegate_args.subchannel_pool = args.subchannel_pool;
+    delegate_args.combiner = combiner();
+    delegate_args.client_channel_factory = client_channel_factory();
+    delegate_args.subchannel_pool = subchannel_pool()->Ref();
     delegate_args.channel_control_helper = std::move(delegating_helper);
-    delegate_args.channelz_node = channelz_node()->Ref();
     delegate_args.args = args.args;
     delegate_args.lb_config = args.lb_config;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
@@ -117,7 +116,9 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       : ForwardingLoadBalancingPolicy(
             MakeRefCounted<Helper>(args.channel_control_helper->Ref(), cb,
                                    user_data),
-            std::move(args), /*delegate_lb_policy_name=*/"pick_first") {}
+            // Note: can't use std::move() here, since that will prevent
+            // us from taking a ref to the helper immediately above.
+            args, /*delegate_lb_policy_name=*/"pick_first") {}
 
   ~InterceptRecvTrailingMetadataLoadBalancingPolicy() override = default;
 
