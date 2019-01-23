@@ -56,7 +56,7 @@ constexpr char kRoundRobin[] = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
-  explicit RoundRobin(const Args& args);
+  explicit RoundRobin(Args args);
 
   const char* name() const override { return kRoundRobin; }
 
@@ -210,7 +210,7 @@ class RoundRobin : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
+RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
@@ -697,8 +697,8 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(std::move(args)));
   }
 
   const char* name() const override { return kRoundRobin; }
