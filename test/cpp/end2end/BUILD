@@ -219,6 +219,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "end2end_test",
+    timeout = "long",
     deps = [
         ":end2end_test_lib",
     ],
