@@ -158,8 +158,8 @@ class SubchannelCall {
   static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
 
   // Interface of RefCounted<>.
-  void IncrementRefCount() {}
-  void IncrementRefCount(const DebugLocation& location, const char* reason) {}
+  void IncrementRefCount();
+  void IncrementRefCount(const DebugLocation& location, const char* reason);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_closure* after_call_stack_destroy_ = nullptr;

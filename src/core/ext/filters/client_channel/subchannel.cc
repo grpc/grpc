@@ -207,13 +207,13 @@ void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
 }
 
 RefCountedPtr<SubchannelCall> SubchannelCall::Ref() {
-  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+  IncrementRefCount();
   return RefCountedPtr<SubchannelCall>(this);
 }
 
 RefCountedPtr<SubchannelCall> SubchannelCall::Ref(
     const grpc_core::DebugLocation& location, const char* reason) {
-  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
+  IncrementRefCount(location, reason);
   return RefCountedPtr<SubchannelCall>(this);
 }
 
@@ -283,6 +283,15 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   }
   GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata_,
                    GRPC_ERROR_REF(error));
+}
+
+void SubchannelCall::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+}
+
+void SubchannelCall::IncrementRefCount(const grpc_core::DebugLocation& location,
+                                       const char* reason) {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
 //
