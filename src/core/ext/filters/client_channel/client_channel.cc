@@ -256,6 +256,7 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
         chand->resolving_lb_policy->interested_parties(),
         chand->interested_parties);
     chand->resolving_lb_policy.reset();
+    chand->picker.reset();
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
 

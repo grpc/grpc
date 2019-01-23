@@ -114,6 +114,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     }
 
    private:
+// FIXME: instead of holding this ref, maybe just hold a callback that gets
+// invoked once in the combiner to start picking?
     RefCountedPtr<LoadBalancingPolicy> parent_;
   };
 

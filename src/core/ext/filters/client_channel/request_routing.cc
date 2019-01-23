@@ -82,6 +82,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
   }
 
   void RequestReresolution() override {
+// FIXME: need to hop into combiner here?
     if (parent_->tracer_->enabled()) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
@@ -104,6 +105,7 @@ class ResolvingLoadBalancingPolicy::Picker
       : parent_(std::move(parent)) {}
 
   PickResult Pick(PickState* pick, grpc_error** error) override {
+// FIXME: need to pop into combiner here?
 // FIXME: is this check needed?
     if (parent_->resolver_ == nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected");
@@ -182,10 +184,10 @@ ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down");
   if (resolver_ != nullptr) {
-    SetConnectivityStateLocked(GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
-                               "disconnect");
+    SetConnectivityStateLocked(
+        GRPC_CHANNEL_SHUTDOWN,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down"), "disconnect");
     resolver_.reset();
     if (lb_policy_ != nullptr) {
       grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
@@ -193,7 +195,6 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
       lb_policy_.reset();
     }
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 grpc_connectivity_state ResolvingLoadBalancingPolicy::CheckConnectivityLocked(
@@ -515,6 +516,8 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   }
 // FIXME: if we are in TRANSIENT_FAILURE due to a resolver failure and
 // no LB policy exists, use the helper to return a TransientFailurePicker
+  self->resolver_->NextLocked(&self->resolver_result_,
+                              &self->on_resolver_result_changed_);
 }
 
 }  // namespace grpc_core

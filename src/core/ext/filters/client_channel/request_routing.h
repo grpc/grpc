@@ -52,6 +52,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
                                                 const char** lb_policy_name,
                                                 grpc_json** lb_policy_config);
 
+// FIXME: split this into 2 ctors and make the one for client_channel
+// private, with access via friendship
   ResolvingLoadBalancingPolicy(
       Args args, TraceFlag* tracer,
       ProcessResolverResultCallback process_resolver_result,
@@ -59,11 +61,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
       UniquePtr<char> child_policy_name, grpc_json* child_lb_config,
       grpc_error** error);
 
-  virtual const char* name() const override {
-// FIXME: is this thread-safe?
-    if (lb_policy_ != nullptr) return lb_policy_->name();
-    return "resolving_lb";
-  }
+  virtual const char* name() const override { return "resolving_lb"; }
 
   // No-op -- should never get updates from the channel.
   void UpdateLocked(const grpc_channel_args& args,
