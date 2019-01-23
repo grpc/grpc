@@ -22,10 +22,10 @@ SCENARIOS_FILE=src/python/grpcio_tests/tests/qps/scenarios.json
 function join { local IFS="$1"; shift; echo "$*"; }
 
 if [[ -e "${SCENARIOS_FILE}" ]]; then
-    echo "Running against scenarios.json:"
+    echo "Running against ${SCENARIOS_FILE}:"
     cat "${SCENARIOS_FILE}"
 else
-    echo "Failed to find scenarios.json!"
+    echo "Failed to find ${SCENARIOS_FILE}!"
     exit 1
 fi
 

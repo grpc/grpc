@@ -21,7 +21,7 @@ Here I picked the top 2 most representative scenarios of them, and reduce their 
 
 ## Why keep the scenario file if it can be generated?
 
-Well... The `tools/run_tests/performance/scenario_config.py` is 1274 lines long. The intention of building these benchmark tools is reducing the complexity of existing infrastructure code. Depending on something that is 
+Well... The `tools/run_tests/performance/scenario_config.py` is 1274 lines long. The intention of building these benchmark tools is reducing the complexity of existing infrastructure code. So, instead of calling layers of abstraction to generate the scenario file, keeping a valid static copy is more preferable.
 
 ## How to run it?
 
