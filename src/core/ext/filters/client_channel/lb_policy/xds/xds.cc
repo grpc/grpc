@@ -1562,15 +1562,20 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
-  grpc_json* child_policy_config =
+  const char* child_policy_name = nullptr;
+  grpc_json* child_policy_config = nullptr;
+  grpc_json* child_policy_json =
       grpc_json_parse_string(child_policy_json_string_.get());
   // TODO(juanlishen): If the child policy is not configured via service config,
   // use whatever algorithm is specified by the balancer.
-  if (child_policy_config == nullptr) {
+  if (child_policy_json != nullptr) {
+    child_policy_name = child_policy_json->key;
+    child_policy_config = child_policy_json->child;
+  } else {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] No valid child policy LB config", this);
     }
-    return;
+    child_policy_name = "round_robin";
   }
   // TODO(juanlishen): Switch policy according to child_policy_config->key.
   if (child_policy_ != nullptr) {
@@ -1578,22 +1583,22 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
               child_policy_.get());
     }
-    child_policy_->UpdateLocked(*args, child_policy_config->child);
+    child_policy_->UpdateLocked(*args, child_policy_config);
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.subchannel_pool = subchannel_pool();
     lb_policy_args.args = args;
-    lb_policy_args.lb_config = child_policy_config->child;
-    CreateChildPolicyLocked(child_policy_config->key, lb_policy_args);
+    lb_policy_args.lb_config = child_policy_config;
+    CreateChildPolicyLocked(child_policy_name, lb_policy_args);
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
               child_policy_.get());
     }
   }
   grpc_channel_args_destroy(args);
-  grpc_json_destroy(child_policy_config);
+  grpc_json_destroy(child_policy_json);
 }
 
 void XdsLb::OnChildPolicyRequestReresolutionLocked(void* arg,

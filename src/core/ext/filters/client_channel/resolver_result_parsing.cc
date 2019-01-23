@@ -146,17 +146,10 @@ void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
       field->type != GRPC_JSON_ARRAY) {
     return;  // Not valid lb config array.
   }
-  // Find the first LB policy that this client supports.
-  for (grpc_json* lb_config = field->child; lb_config != nullptr;
-       lb_config = lb_config->next) {
-    grpc_json* policy = ServiceConfig::ParseLoadBalancingConfig(lb_config);
-    // If we support this policy, then select it.
-    if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            policy->key)) {
-      lb_policy_name_.reset(gpr_strdup(policy->key));
-      lb_policy_config_ = policy->child;
-      return;
-    }
+  const grpc_json* policy = ServiceConfig::ParseLoadBalancingConfig(field);
+  if (policy != nullptr) {
+    lb_policy_name_.reset(gpr_strdup(policy->key));
+    lb_policy_config_ = policy->child;
   }
 }
 

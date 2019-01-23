@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_hash_table.h"
@@ -103,19 +104,31 @@ UniquePtr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json) {
   return UniquePtr<char>(path);
 }
 
-grpc_json* ServiceConfig::ParseLoadBalancingConfig(grpc_json* lb_config_json) {
-  if (lb_config_json == nullptr || lb_config_json->type != GRPC_JSON_OBJECT) {
+grpc_json* ServiceConfig::ParseLoadBalancingConfig(
+    const grpc_json* lb_config_array) {
+  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
     return nullptr;
   }
-  grpc_json* policy = nullptr;
-  for (grpc_json* field = lb_config_json->child; field != nullptr;
-       field = field->next) {
-    if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
-      return nullptr;
-    if (policy != nullptr) return nullptr;  // Violate "oneof" type.
-    policy = field;
+  // Find the first LB policy that this client supports.
+  for (const grpc_json* lb_config = lb_config_array->child;
+       lb_config != nullptr; lb_config = lb_config->next) {
+    if (lb_config->type != GRPC_JSON_OBJECT) return nullptr;
+    grpc_json* policy = nullptr;
+    for (grpc_json* field = lb_config->child; field != nullptr;
+         field = field->next) {
+      if (field->key == nullptr || field->type != GRPC_JSON_OBJECT)
+        return nullptr;
+      if (policy != nullptr) return nullptr;  // Violate "oneof" type.
+      policy = field;
+    }
+    if (policy == nullptr) return nullptr;
+    // If we support this policy, then select it.
+    if (grpc_core::LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+            policy->key)) {
+      return policy;
+    }
   }
-  return policy;
+  return nullptr;
 }
 
 }  // namespace grpc_core
