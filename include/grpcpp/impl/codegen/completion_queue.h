@@ -44,7 +44,6 @@ struct grpc_completion_queue;
 namespace grpc_impl {
 
 class Channel;
-
 }
 
 namespace grpc {

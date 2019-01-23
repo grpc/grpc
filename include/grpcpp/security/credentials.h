@@ -35,7 +35,6 @@ struct grpc_call;
 namespace grpc_impl {
 
 class Channel;
-
 }
 
 namespace grpc {

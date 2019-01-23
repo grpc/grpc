@@ -49,18 +49,18 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-void grpc::experimental::ChannelResetConnectionBackoff(::grpc::Channel* channel) {
+void grpc::experimental::ChannelResetConnectionBackoff(
+    ::grpc::Channel* channel) {
   ChannelResetConnectionBackoff(channel);
 }
 
 namespace grpc_impl {
 
 static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-Channel::Channel(
-    const grpc::string& host, grpc_channel* channel,
-    std::vector<
-        std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators)
+Channel::Channel(const grpc::string& host, grpc_channel* channel,
+                 std::vector<std::unique_ptr<
+                     ::grpc::experimental::ClientInterceptorFactoryInterface>>
+                     interceptor_creators)
     : host_(host), c_channel_(channel) {
   interceptor_creators_ = std::move(interceptor_creators);
   g_gli_initializer.summon();
@@ -76,7 +76,8 @@ Channel::~Channel() {
 namespace {
 
 inline grpc_slice SliceFromArray(const char* arr, size_t len) {
-  return ::grpc::g_core_codegen_interface->grpc_slice_from_copied_buffer(arr, len);
+  return ::grpc::g_core_codegen_interface->grpc_slice_from_copied_buffer(arr,
+                                                                         len);
 }
 
 grpc::string GetChannelInfoField(grpc_channel* channel,
@@ -114,10 +115,9 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 }  // namespace experimental
 
-::grpc::internal::Call Channel::CreateCallInternal(const ::grpc::internal::RpcMethod& method,
-                                           ::grpc::ClientContext* context,
-                                           ::grpc::CompletionQueue* cq,
-                                           size_t interceptor_pos) {
+::grpc::internal::Call Channel::CreateCallInternal(
+    const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+    ::grpc::CompletionQueue* cq, size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -161,9 +161,9 @@ void ChannelResetConnectionBackoff(Channel* channel) {
   return ::grpc::internal::Call(c_call, this, cq, info);
 }
 
-::grpc::internal::Call Channel::CreateCall(const ::grpc::internal::RpcMethod& method,
-                                   ::grpc::ClientContext* context,
-                                   ::grpc::CompletionQueue* cq) {
+::grpc::internal::Call Channel::CreateCall(
+    const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+    ::grpc::CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
 
@@ -256,4 +256,4 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   return callback_cq_;
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

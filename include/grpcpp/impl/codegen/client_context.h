@@ -59,7 +59,6 @@ struct grpc_call;
 namespace grpc_impl {
 
 class Channel;
-
 }
 
 namespace grpc {
@@ -428,7 +427,8 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel);
+  void set_call(grpc_call* call,
+                const std::shared_ptr<::grpc_impl::Channel>& channel);
 
   experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, internal::RpcMethod::RpcType type,

@@ -30,7 +30,6 @@
 namespace grpc_impl {
 
 class Channel;
-
 }
 
 namespace grpc {
