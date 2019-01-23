@@ -749,12 +749,12 @@ struct grpc_tls_server_authorization_check_arg {
       that works for all channels created with a credential using the config.
     - schedule is a pointer to an application-provided callback used to invoke
       server authorization check API. The implementation of this method has to
-      be non-blocking, but can be performed synchronously or asynchronously. 1)
-      If processing occurs synchronously, it populates arg->result, arg->status,
-      and arg->error_details and returns zero. 2) If processing occurs
-      asynchronously, it returns a non-zero value. The application then invokes
-      arg->cb when processing is completed. Note that arg->cb cannot be invoked
-      before schedule API returns.
+      be non-blocking, but can be performed synchronously or asynchronously.
+      1)If processing occurs synchronously, it populates arg->result, arg->status,
+      and arg->error_details and returns zero.
+      2) If processing occurs asynchronously, it returns a non-zero value.
+      The application then invokes arg->cb when processing is completed.
+      Note that arg->cb cannot be invoked before schedule API returns.
     - cancel is a pointer to an application-provided callback used to cancel a
       server authorization check request scheduled via an asynchronous schedule
       API. arg is used to pinpoint an exact check request to be cancelled. The
