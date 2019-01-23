@@ -128,23 +128,23 @@ def _get_test_images_for_lang(lang, release_arg, image_path_prefix):
 
 def _read_test_cases_file(lang, runtime, release):
     """Read test cases from a bash-like file and return a list of commands"""
-    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
-    filename_prefix = lang
-    if lang == 'csharp':
-        # TODO(jtattermusch): remove this odd specialcase
-        filename_prefix = runtime
     # Check to see if we need to use a particular version of test cases.
-    lang_version = '%s_%s' % (filename_prefix, release)
-    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
-        testcase_file = os.path.join(
-            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
-    else:
+    release_info = client_matrix.LANG_RELEASE_MATRIX[lang].get(release)
+    if release_info:
+        testcases_file = release_info.testcases_file
+    if not testcases_file:
         # TODO(jtattermusch): remove the double-underscore, it is pointless
-        testcase_file = os.path.join(testcase_dir,
-                                     '%s__master' % filename_prefix)
+        testcases_file = '%s__master' % lang
 
+    # For csharp, the testcases file used depends on the runtime
+    # TODO(jtattermusch): remove this odd specialcase
+    if lang == 'csharp' and runtime == 'csharpcoreclr':
+        testcases_file = testcases_file.replace('csharp_', 'csharpcoreclr_')
+
+    testcases_filepath = os.path.join(
+        os.path.dirname(__file__), 'testcases', testcases_file)
     lines = []
-    with open(testcase_file) as f:
+    with open(testcases_filepath) as f:
         for line in f.readlines():
             line = re.sub('\\#.*$', '', line)  # remove hash comments
             line = line.strip()
@@ -171,25 +171,35 @@ def _generate_test_case_jobspecs(lang, runtime, release, suite_name):
     for line in testcase_lines:
         # TODO(jtattermusch): revisit the logic for updating test case commands
         # what it currently being done seems fragile.
-        m = re.search('--test_case=(.*)"', line)
-        shortname = m.group(1) if m else 'unknown_test'
-        m = re.search('--server_host_override=(.*).sandbox.googleapis.com',
-                      line)
-        server = m.group(1) if m else 'unknown_server'
 
-        # If server_host arg is not None, replace the original
-        # server_host with the one provided or append to the end of
-        # the command if server_host does not appear originally.
-        if args.server_host:
-            if line.find('--server_host=') > -1:
-                line = re.sub('--server_host=[^ ]*',
-                              '--server_host=%s' % args.server_host, line)
-            else:
-                line = '%s --server_host=%s"' % (line[:-1], args.server_host)
+        # Extract test case name from the command line
+        m = re.search(r'--test_case=(\w+)', line)
+        testcase_name = m.group(1) if m else 'unknown_test'
+
+        # Extract the server name from the command line
+        if '--server_host_override=' in line:
+            m = re.search(
+                r'--server_host_override=((.*).sandbox.googleapis.com)', line)
+        else:
+            m = re.search(r'--server_host=((.*).sandbox.googleapis.com)', line)
+        server = m.group(1) if m else 'unknown_server'
+        server_short = m.group(2) if m else 'unknown_server'
+
+        # replace original server_host argument
+        assert '--server_host=' in line
+        line = re.sub(r'--server_host=[^ ]*',
+                      r'--server_host=%s' % args.server_host, line)
+
+        # some interop tests don't set server_host_override (see #17407),
+        # but we need to use it if different host is set via cmdline args.
+        if args.server_host != server and not '--server_host_override=' in line:
+            line = re.sub(r'(--server_host=[^ ]*)',
+                          r'\1 --server_host_override=%s' % server, line)
 
         spec = jobset.JobSpec(
             cmdline=line,
-            shortname='%s:%s:%s:%s' % (suite_name, lang, server, shortname),
+            shortname='%s:%s:%s:%s' % (suite_name, lang, server_short,
+                                       testcase_name),
             timeout_seconds=_TEST_TIMEOUT_SECONDS,
             shell=True,
             flake_retries=5 if args.allow_flakes else 0)

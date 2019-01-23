@@ -165,7 +165,7 @@ void grpc_shutdown(void) {
       {
         grpc_timer_manager_set_threading(
             false);  // shutdown timer_manager thread
-        grpc_executor_shutdown();
+        grpc_core::Executor::ShutdownAll();
         for (i = g_number_of_plugins; i >= 0; i--) {
           if (g_all_of_the_plugins[i].destroy != nullptr) {
             g_all_of_the_plugins[i].destroy();
