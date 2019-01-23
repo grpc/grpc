@@ -25,7 +25,9 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 
-typedef struct {
+namespace grpc_core {
+
+struct ThreadState {
   gpr_mu mu;
   size_t id;         // For debugging purposes
   const char* name;  // Thread state name
@@ -35,17 +37,24 @@ typedef struct {
   bool shutdown;
   bool queued_long_job;
   grpc_core::Thread thd;
-} ThreadState;
+};
 
-typedef enum {
-  GRPC_EXECUTOR_SHORT = 0,
-  GRPC_EXECUTOR_LONG,
-  GRPC_NUM_EXECUTOR_JOB_TYPES  // Add new values above this
-} GrpcExecutorJobType;
+enum class ExecutorType {
+  DEFAULT = 0,
+  RESOLVER,
 
-class GrpcExecutor {
+  NUM_EXECUTORS  // Add new values above this
+};
+
+enum class ExecutorJobType {
+  SHORT = 0,
+  LONG,
+  NUM_JOB_TYPES  // Add new values above this
+};
+
+class Executor {
  public:
-  GrpcExecutor(const char* executor_name);
+  Executor(const char* executor_name);
 
   void Init();
 
@@ -62,6 +71,40 @@ class GrpcExecutor {
    * a short job (i.e expected to not block and complete quickly) */
   void Enqueue(grpc_closure* closure, grpc_error* error, bool is_short);
 
+  // TODO(sreek): Currently we have two executors (available globally): The
+  // default executor and the resolver executor.
+  //
+  // Some of the functions below operate on the DEFAULT executor only while some
+  // operate of ALL the executors. This is a bit confusing and should be cleaned
+  // up in future (where we make all the following functions take ExecutorType
+  // and/or JobType)
+
+  // Initialize ALL the executors
+  static void InitAll();
+
+  // Shutdown ALL the executors
+  static void ShutdownAll();
+
+  // Set the threading mode for ALL the executors
+  static void SetThreadingAll(bool enable);
+
+  // Set the threading mode for ALL the executors
+  static void SetThreadingDefault(bool enable);
+
+  // Get the DEFAULT executor scheduler for the given job_type
+  static grpc_closure_scheduler* Scheduler(ExecutorJobType job_type);
+
+  // Get the executor scheduler for a given executor_type and a job_type
+  static grpc_closure_scheduler* Scheduler(ExecutorType executor_type,
+                                           ExecutorJobType job_type);
+
+  // Return if a given executor is running in threaded mode (i.e if
+  // SetThreading(true) was called previously on that executor)
+  static bool IsThreaded(ExecutorType executor_type);
+
+  // Return if the DEFAULT executor is threaded
+  static bool IsThreadedDefault();
+
  private:
   static size_t RunClosures(const char* executor_name, grpc_closure_list list);
   static void ThreadMain(void* arg);
@@ -73,44 +116,6 @@ class GrpcExecutor {
   gpr_spinlock adding_thread_lock_;
 };
 
-// == Global executor functions ==
-
-typedef enum {
-  GRPC_DEFAULT_EXECUTOR = 0,
-  GRPC_RESOLVER_EXECUTOR,
-
-  GRPC_NUM_EXECUTORS  // Add new values above this
-} GrpcExecutorType;
-
-// TODO(sreek): Currently we have two executors (available globally): The
-// default executor and the resolver executor.
-//
-// Some of the functions below operate on the DEFAULT executor only while some
-// operate of ALL the executors. This is a bit confusing and should be cleaned
-// up in future (where we make all the following functions take executor_type
-// and/or job_type)
-
-// Initialize ALL the executors
-void grpc_executor_init();
-
-// Shutdown ALL the executors
-void grpc_executor_shutdown();
-
-// Set the threading mode for ALL the executors
-void grpc_executor_set_threading(bool enable);
-
-// Get the DEFAULT executor scheduler for the given job_type
-grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type);
-
-// Get the executor scheduler for a given executor_type and a job_type
-grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorType executor_type,
-                                                GrpcExecutorJobType job_type);
-
-// Return if a given executor is running in threaded mode (i.e if
-// grpc_executor_set_threading(true) was called previously on that executor)
-bool grpc_executor_is_threaded(GrpcExecutorType executor_type);
-
-// Return if the DEFAULT executor is threaded
-bool grpc_executor_is_threaded();
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

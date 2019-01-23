@@ -56,7 +56,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // Make them read-write.
 @property(atomic, strong) NSDictionary *responseHeaders;
 @property(atomic, strong) NSDictionary *responseTrailers;
-@property(atomic) BOOL isWaitingForToken;
 
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
@@ -425,9 +424,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // queue
   dispatch_queue_t _responseQueue;
 
-  // Whether the call is finished. If it is, should not call finishWithError again.
-  BOOL _finished;
-
   // The OAuth2 token fetched from a token provider.
   NSString *_fetchedOauth2AccessToken;
 }
@@ -448,24 +444,28 @@ const char *kCFStreamVarName = "grpc_cfstream";
     return;
   }
   NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
-  switch (callSafety) {
-    case GRPCCallSafetyDefault:
-      callFlags[hostAndPath] = @0;
-      break;
-    case GRPCCallSafetyIdempotentRequest:
-      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-      break;
-    case GRPCCallSafetyCacheableRequest:
-      callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      break;
-    default:
-      break;
+  @synchronized(callFlags) {
+    switch (callSafety) {
+      case GRPCCallSafetyDefault:
+        callFlags[hostAndPath] = @0;
+        break;
+      case GRPCCallSafetyIdempotentRequest:
+        callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
+        break;
+      case GRPCCallSafetyCacheableRequest:
+        callFlags[hostAndPath] = @GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
+        break;
+      default:
+        break;
+    }
   }
 }
 
 + (uint32_t)callFlagsForHost:(NSString *)host path:(NSString *)path {
   NSString *hostAndPath = [NSString stringWithFormat:@"%@/%@", host, path];
-  return [callFlags[hostAndPath] intValue];
+  @synchronized(callFlags) {
+    return [callFlags[hostAndPath] intValue];
+  }
 }
 
 // Designated initializer
@@ -506,7 +506,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _callOptions = [callOptions copy];
 
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
-    _callQueue = dispatch_queue_create("io.grpc.call", NULL);
+    _callQueue = dispatch_queue_create("io.grpc.call", DISPATCH_QUEUE_SERIAL);
 
     _requestWriter = requestWriter;
 
@@ -523,66 +523,48 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)setResponseDispatchQueue:(dispatch_queue_t)queue {
-  if (_state != GRXWriterStateNotStarted) {
-    return;
+  @synchronized(self) {
+    if (_state != GRXWriterStateNotStarted) {
+      return;
+    }
+    _responseQueue = queue;
   }
-  _responseQueue = queue;
 }
 
 #pragma mark Finish
 
+// This function should support being called within a @synchronized(self) block in another function
+// Should not manipulate _requestWriter for deadlock prevention.
 - (void)finishWithError:(NSError *)errorOrNil {
   @synchronized(self) {
+    if (_state == GRXWriterStateFinished) {
+      return;
+    }
     _state = GRXWriterStateFinished;
-  }
 
-  // If there were still request messages coming, stop them.
-  @synchronized(_requestWriter) {
-    _requestWriter.state = GRXWriterStateFinished;
-  }
+    if (errorOrNil) {
+      [_responseWriteable cancelWithError:errorOrNil];
+    } else {
+      [_responseWriteable enqueueSuccessfulCompletion];
+    }
 
-  if (errorOrNil) {
-    [_responseWriteable cancelWithError:errorOrNil];
-  } else {
-    [_responseWriteable enqueueSuccessfulCompletion];
-  }
-
-  [GRPCConnectivityMonitor unregisterObserver:self];
-
-  // If the call isn't retained anywhere else, it can be deallocated now.
-  _retainSelf = nil;
-}
-
-- (void)cancelCall {
-  // Can be called from any thread, any number of times.
-  @synchronized(self) {
-    [_wrappedCall cancel];
+    // If the call isn't retained anywhere else, it can be deallocated now.
+    _retainSelf = nil;
   }
 }
 
 - (void)cancel {
   @synchronized(self) {
-    [self cancelCall];
-    self.isWaitingForToken = NO;
-  }
-  [self
-      maybeFinishWithError:[NSError
-                               errorWithDomain:kGRPCErrorDomain
-                                          code:GRPCErrorCodeCancelled
-                                      userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
-}
-
-- (void)maybeFinishWithError:(NSError *)errorOrNil {
-  BOOL toFinish = NO;
-  @synchronized(self) {
-    if (_finished == NO) {
-      _finished = YES;
-      toFinish = YES;
+    if (_state == GRXWriterStateFinished) {
+      return;
     }
+    [self finishWithError:[NSError
+                              errorWithDomain:kGRPCErrorDomain
+                                         code:GRPCErrorCodeCancelled
+                                     userInfo:@{NSLocalizedDescriptionKey : @"Canceled by app"}]];
+    [_wrappedCall cancel];
   }
-  if (toFinish == YES) {
-    [self finishWithError:errorOrNil];
-  }
+  _requestWriter.state = GRXWriterStateFinished;
 }
 
 - (void)dealloc {
@@ -609,19 +591,21 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
 - (void)startNextRead {
   @synchronized(self) {
-    if (self.state == GRXWriterStatePaused) {
+    if (_state != GRXWriterStateStarted) {
       return;
     }
   }
 
   dispatch_async(_callQueue, ^{
     __weak GRPCCall *weakSelf = self;
-    __weak GRXConcurrentWriteable *weakWriteable = self->_responseWriteable;
     [self startReadWithHandler:^(grpc_byte_buffer *message) {
-      __strong GRPCCall *strongSelf = weakSelf;
-      __strong GRXConcurrentWriteable *strongWriteable = weakWriteable;
       if (message == NULL) {
         // No more messages from the server
+        return;
+      }
+      __strong GRPCCall *strongSelf = weakSelf;
+      if (strongSelf == nil) {
+        grpc_byte_buffer_destroy(message);
         return;
       }
       NSData *data = [NSData grpc_dataWithByteBuffer:message];
@@ -631,21 +615,26 @@ const char *kCFStreamVarName = "grpc_cfstream";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
-        [strongSelf cancelCall];
-        [strongSelf
-            maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                     code:GRPCErrorCodeResourceExhausted
-                                                 userInfo:@{
-                                                   NSLocalizedDescriptionKey :
-                                                       @"Client does not have enough memory to "
-                                                       @"hold the server response."
-                                                 }]];
-        return;
+        @synchronized(strongSelf) {
+          [strongSelf
+              finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                  code:GRPCErrorCodeResourceExhausted
+                                              userInfo:@{
+                                                NSLocalizedDescriptionKey :
+                                                    @"Client does not have enough memory to "
+                                                    @"hold the server response."
+                                              }]];
+          [strongSelf->_wrappedCall cancel];
+        }
+        strongSelf->_requestWriter.state = GRXWriterStateFinished;
+      } else {
+        @synchronized(strongSelf) {
+          [strongSelf->_responseWriteable enqueueValue:data
+                                     completionHandler:^{
+                                       [strongSelf startNextRead];
+                                     }];
+        }
       }
-      [strongWriteable enqueueValue:data
-                  completionHandler:^{
-                    [strongSelf startNextRead];
-                  }];
     }];
   });
 }
@@ -684,11 +673,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
       initWithMetadata:headers
                  flags:callSafetyFlags
                handler:nil];  // No clean-up needed after SEND_INITIAL_METADATA
-  if (!_unaryCall) {
-    [_wrappedCall startBatchWithOperations:@[ op ]];
-  } else {
-    [_unaryOpBatch addObject:op];
-  }
+  dispatch_async(_callQueue, ^{
+    if (!self->_unaryCall) {
+      [self->_wrappedCall startBatchWithOperations:@[ op ]];
+    } else {
+      [self->_unaryOpBatch addObject:op];
+    }
+  });
 }
 
 #pragma mark GRXWriteable implementation
@@ -703,9 +694,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Resume the request writer.
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      @synchronized(strongSelf->_requestWriter) {
-        strongSelf->_requestWriter.state = GRXWriterStateStarted;
-      }
+      strongSelf->_requestWriter.state = GRXWriterStateStarted;
     }
   };
 
@@ -721,13 +710,17 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)writeValue:(id)value {
-  // TODO(jcanizales): Throw/assert if value isn't NSData.
+  NSAssert([value isKindOfClass:[NSData class]], @"value must be of type NSData");
+
+  @synchronized(self) {
+    if (_state == GRXWriterStateFinished) {
+      return;
+    }
+  }
 
   // Pause the input and only resume it when the C layer notifies us that writes
   // can proceed.
-  @synchronized(_requestWriter) {
-    _requestWriter.state = GRXWriterStatePaused;
-  }
+  _requestWriter.state = GRXWriterStatePaused;
 
   dispatch_async(_callQueue, ^{
     // Write error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
@@ -766,11 +759,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // The second one (completionHandler), whenever the RPC finishes for any reason.
 - (void)invokeCallWithHeadersHandler:(void (^)(NSDictionary *))headersHandler
                    completionHandler:(void (^)(NSError *, NSDictionary *))completionHandler {
-  // TODO(jcanizales): Add error handlers for async failures
-  [_wrappedCall
-      startBatchWithOperations:@[ [[GRPCOpRecvMetadata alloc] initWithHandler:headersHandler] ]];
-  [_wrappedCall
-      startBatchWithOperations:@[ [[GRPCOpRecvStatus alloc] initWithHandler:completionHandler] ]];
+  dispatch_async(_callQueue, ^{
+    // TODO(jcanizales): Add error handlers for async failures
+    [self->_wrappedCall
+        startBatchWithOperations:@[ [[GRPCOpRecvMetadata alloc] initWithHandler:headersHandler] ]];
+    [self->_wrappedCall
+        startBatchWithOperations:@[ [[GRPCOpRecvStatus alloc] initWithHandler:completionHandler] ]];
+  });
 }
 
 - (void)invokeCall {
@@ -794,111 +789,117 @@ const char *kCFStreamVarName = "grpc_cfstream";
               [userInfo addEntriesFromDictionary:error.userInfo];
             }
             userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
-            // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
-            // called before this one, so an error might end up with trailers but no headers. We
-            // shouldn't call finishWithError until ater both blocks are called. It is also when
-            // this is done that we can provide a merged view of response headers and trailers in a
-            // thread-safe way.
-            if (strongSelf.responseHeaders) {
-              userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
-            }
+            // Since gRPC core does not guarantee the headers block being called before this block,
+            // responseHeaders might be nil.
+            userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
             error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
           }
-          [strongSelf maybeFinishWithError:error];
+          [strongSelf finishWithError:error];
+          strongSelf->_requestWriter.state = GRXWriterStateFinished;
         }
       }];
-  // Now that the RPC has been initiated, request writes can start.
-  @synchronized(_requestWriter) {
-    [_requestWriter startWithWriteable:self];
-  }
 }
 
 #pragma mark GRXWriter implementation
 
+// Lock acquired inside startWithWriteable:
 - (void)startCallWithWriteable:(id<GRXWriteable>)writeable {
-  _responseWriteable =
-      [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
-
-  GRPCPooledChannel *channel =
-      [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
-  GRPCWrappedCall *wrappedCall = [channel wrappedCallWithPath:_path
-                                              completionQueue:[GRPCCompletionQueue completionQueue]
-                                                  callOptions:_callOptions];
-
-  if (wrappedCall == nil) {
-    [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                   code:GRPCErrorCodeUnavailable
-                                               userInfo:@{
-                                                 NSLocalizedDescriptionKey :
-                                                     @"Failed to create call or channel."
-                                               }]];
-    return;
-  }
-
   @synchronized(self) {
-    _wrappedCall = wrappedCall;
+    if (_state == GRXWriterStateFinished) {
+      return;
+    }
+
+    _responseWriteable =
+        [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
+
+    GRPCPooledChannel *channel =
+        [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
+    _wrappedCall = [channel wrappedCallWithPath:_path
+                                completionQueue:[GRPCCompletionQueue completionQueue]
+                                    callOptions:_callOptions];
+
+    if (_wrappedCall == nil) {
+      [self finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                code:GRPCErrorCodeUnavailable
+                                            userInfo:@{
+                                              NSLocalizedDescriptionKey :
+                                                  @"Failed to create call or channel."
+                                            }]];
+      return;
+    }
+
+    [self sendHeaders];
+    [self invokeCall];
+
+    // Connectivity monitor is not required for CFStream
+    char *enableCFStream = getenv(kCFStreamVarName);
+    if (enableCFStream == nil || enableCFStream[0] != '1') {
+      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+    }
   }
 
-  [self sendHeaders];
-  [self invokeCall];
-
-  // Connectivity monitor is not required for CFStream
-  char *enableCFStream = getenv(kCFStreamVarName);
-  if (enableCFStream == nil || enableCFStream[0] != '1') {
-    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-  }
+  // Now that the RPC has been initiated, request writes can start.
+  [_requestWriter startWithWriteable:self];
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
+  id<GRPCAuthorizationProtocol> tokenProvider = nil;
   @synchronized(self) {
     _state = GRXWriterStateStarted;
-  }
 
-  // Create a retain cycle so that this instance lives until the RPC finishes (or is cancelled).
-  // This makes RPCs in which the call isn't externally retained possible (as long as it is started
-  // before being autoreleased).
-  // Care is taken not to retain self strongly in any of the blocks used in this implementation, so
-  // that the life of the instance is determined by this retain cycle.
-  _retainSelf = self;
+    // Create a retain cycle so that this instance lives until the RPC finishes (or is cancelled).
+    // This makes RPCs in which the call isn't externally retained possible (as long as it is
+    // started before being autoreleased). Care is taken not to retain self strongly in any of the
+    // blocks used in this implementation, so that the life of the instance is determined by this
+    // retain cycle.
+    _retainSelf = self;
 
-  if (_callOptions == nil) {
-    GRPCMutableCallOptions *callOptions = [[GRPCHost callOptionsForHost:_host] mutableCopy];
-    if (_serverName.length != 0) {
-      callOptions.serverAuthority = _serverName;
-    }
-    if (_timeout > 0) {
-      callOptions.timeout = _timeout;
-    }
-    uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
-    if (callFlags != 0) {
-      if (callFlags == GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-        _callSafety = GRPCCallSafetyIdempotentRequest;
-      } else if (callFlags == GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
-        _callSafety = GRPCCallSafetyCacheableRequest;
+    if (_callOptions == nil) {
+      GRPCMutableCallOptions *callOptions = [[GRPCHost callOptionsForHost:_host] mutableCopy];
+      if (_serverName.length != 0) {
+        callOptions.serverAuthority = _serverName;
       }
+      if (_timeout > 0) {
+        callOptions.timeout = _timeout;
+      }
+      uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
+      if (callFlags != 0) {
+        if (callFlags == GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
+          _callSafety = GRPCCallSafetyIdempotentRequest;
+        } else if (callFlags == GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
+          _callSafety = GRPCCallSafetyCacheableRequest;
+        }
+      }
+
+      id<GRPCAuthorizationProtocol> tokenProvider = self.tokenProvider;
+      if (tokenProvider != nil) {
+        callOptions.authTokenProvider = tokenProvider;
+      }
+      _callOptions = callOptions;
     }
 
-    id<GRPCAuthorizationProtocol> tokenProvider = self.tokenProvider;
-    if (tokenProvider != nil) {
-      callOptions.authTokenProvider = tokenProvider;
-    }
-    _callOptions = callOptions;
+    NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
+             @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
+
+    tokenProvider = _callOptions.authTokenProvider;
   }
 
-  NSAssert(_callOptions.authTokenProvider == nil || _callOptions.oauth2AccessToken == nil,
-           @"authTokenProvider and oauth2AccessToken cannot be set at the same time");
-  if (_callOptions.authTokenProvider != nil) {
-    @synchronized(self) {
-      self.isWaitingForToken = YES;
-    }
-    [_callOptions.authTokenProvider getTokenWithHandler:^(NSString *token) {
-      @synchronized(self) {
-        if (self.isWaitingForToken) {
-          if (token) {
-            self->_fetchedOauth2AccessToken = [token copy];
+  if (tokenProvider != nil) {
+    __weak typeof(self) weakSelf = self;
+    [tokenProvider getTokenWithHandler:^(NSString *token) {
+      __strong typeof(self) strongSelf = weakSelf;
+      if (strongSelf) {
+        BOOL startCall = NO;
+        @synchronized(strongSelf) {
+          if (strongSelf->_state != GRXWriterStateFinished) {
+            startCall = YES;
+            if (token) {
+              strongSelf->_fetchedOauth2AccessToken = [token copy];
+            }
           }
-          [self startCallWithWriteable:writeable];
-          self.isWaitingForToken = NO;
+        }
+        if (startCall) {
+          [strongSelf startCallWithWriteable:writeable];
         }
       }
     }];
@@ -938,16 +939,21 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)connectivityChanged:(NSNotification *)note {
-  // Cancel underlying call upon this notification
+  // Cancel underlying call upon this notification.
+
+  // Retain because connectivity manager only keeps weak reference to GRPCCall.
   __strong GRPCCall *strongSelf = self;
   if (strongSelf) {
-    [self cancelCall];
-    [self
-        maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                 code:GRPCErrorCodeUnavailable
-                                             userInfo:@{
-                                               NSLocalizedDescriptionKey : @"Connectivity lost."
-                                             }]];
+    @synchronized(strongSelf) {
+      [_wrappedCall cancel];
+      [strongSelf
+          finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                              code:GRPCErrorCodeUnavailable
+                                          userInfo:@{
+                                            NSLocalizedDescriptionKey : @"Connectivity lost."
+                                          }]];
+    }
+    strongSelf->_requestWriter.state = GRXWriterStateFinished;
   }
 }
 

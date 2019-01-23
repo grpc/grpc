@@ -1782,6 +1782,8 @@ static void global_cv_fd_table_shutdown() {
  * event engine binding
  */
 
+static bool is_any_background_poller_thread(void) { return false; }
+
 static void shutdown_background_closure(void) {}
 
 static void shutdown_engine(void) {
@@ -1828,6 +1830,7 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_add_fd,
     pollset_set_del_fd,
 
+    is_any_background_poller_thread,
     shutdown_background_closure,
     shutdown_engine,
 };

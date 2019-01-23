@@ -63,13 +63,4 @@ void grpc_subchannel_index_ref(void);
     to zero, unref the subchannel index and destroy its mutex. */
 void grpc_subchannel_index_unref(void);
 
-/** \em TEST ONLY.
- * If \a force_creation is true, all keys are regarded different, resulting in
- * new subchannels always being created. Otherwise, the keys will be compared as
- * usual.
- *
- * Tests using this function \em MUST run tests with and without \a
- * force_creation set. */
-void grpc_subchannel_index_test_only_set_force_creation(bool force_creation);
-
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INDEX_H */

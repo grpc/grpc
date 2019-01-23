@@ -41,8 +41,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rake-compiler-dock', '~> 0.5.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
-  s.add_development_dependency 'signet',             '~> 0.7.0'
-  s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.7'
+  s.add_development_dependency 'signet',             '~> 0.7'
+  s.add_development_dependency 'googleauth',         '>= 0.5.1', '< 0.10'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
@@ -276,12 +276,14 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/client_channel_channelz.h )
   s.files += %w( src/core/ext/filters/client_channel/client_channel_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/connector.h )
+  s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.h )
   s.files += %w( src/core/ext/filters/client_channel/http_connect_handshaker.h )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_factory.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_registry.h )
+  s.files += %w( src/core/ext/filters/client_channel/local_subchannel_pool.h )
   s.files += %w( src/core/ext/filters/client_channel/parse_address.h )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper.h )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.h )
@@ -293,7 +295,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.h )
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
-  s.files += %w( src/core/ext/filters/client_channel/subchannel_index.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health.pb.h )
   s.files += %w( src/core/tsi/fake_transport_security.h )
@@ -330,6 +332,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/stats_data.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
   s.files += %w( src/core/lib/gprpp/inlined_vector.h )
+  s.files += %w( src/core/lib/gprpp/optional.h )
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
@@ -364,7 +367,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )
   s.files += %w( src/core/lib/iomgr/nameser.h )
-  s.files += %w( src/core/lib/iomgr/network_status_tracker.h )
   s.files += %w( src/core/lib/iomgr/polling_entity.h )
   s.files += %w( src/core/lib/iomgr/pollset.h )
   s.files += %w( src/core/lib/iomgr/pollset_custom.h )
@@ -521,7 +523,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/is_epollexclusive_available.cc )
   s.files += %w( src/core/lib/iomgr/load_file.cc )
   s.files += %w( src/core/lib/iomgr/lockfree_event.cc )
-  s.files += %w( src/core/lib/iomgr/network_status_tracker.cc )
   s.files += %w( src/core/lib/iomgr/polling_entity.cc )
   s.files += %w( src/core/lib/iomgr/pollset.cc )
   s.files += %w( src/core/lib/iomgr/pollset_custom.cc )
@@ -726,11 +727,13 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/client_channel_factory.cc )
   s.files += %w( src/core/ext/filters/client_channel/client_channel_plugin.cc )
   s.files += %w( src/core/ext/filters/client_channel/connector.cc )
+  s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.cc )
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_connect_handshaker.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy_registry.cc )
+  s.files += %w( src/core/ext/filters/client_channel/local_subchannel_pool.cc )
   s.files += %w( src/core/ext/filters/client_channel/parse_address.cc )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper.cc )
   s.files += %w( src/core/ext/filters/client_channel/proxy_mapper_registry.cc )
@@ -741,7 +744,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/retry_throttle.cc )
   s.files += %w( src/core/ext/filters/client_channel/server_address.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
-  s.files += %w( src/core/ext/filters/client_channel/subchannel_index.cc )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
   s.files += %w( src/core/ext/filters/client_channel/health/health.pb.c )
   s.files += %w( src/core/tsi/fake_transport_security.cc )

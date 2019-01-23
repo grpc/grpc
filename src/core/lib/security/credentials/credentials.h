@@ -123,6 +123,14 @@ struct grpc_channel_credentials
     return Ref();
   }
 
+  // Allows credentials to optionally modify a parent channel's args.
+  // By default, leave channel args as is. The callee takes ownership
+  // of the passed-in channel args, and the caller takes ownership
+  // of the returned channel args.
+  virtual grpc_channel_args* update_arguments(grpc_channel_args* args) {
+    return args;
+  }
+
   const char* type() const { return type_; }
 
   GRPC_ABSTRACT_BASE_CLASS
