@@ -205,6 +205,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
         grpc_channel_credentials_to_arg(creds)};
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
+    new_args = creds->update_arguments(new_args);
     // Create channel.
     channel = client_channel_factory_create_channel(
         &client_channel_factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR,

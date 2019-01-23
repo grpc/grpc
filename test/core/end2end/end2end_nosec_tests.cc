@@ -98,8 +98,6 @@ extern void max_message_length(grpc_end2end_test_config config);
 extern void max_message_length_pre_init(void);
 extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
-extern void network_status_change(grpc_end2end_test_config config);
-extern void network_status_change_pre_init(void);
 extern void no_error_on_hotpath(grpc_end2end_test_config config);
 extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
@@ -223,7 +221,6 @@ void grpc_end2end_tests_pre_init(void) {
   max_connection_idle_pre_init();
   max_message_length_pre_init();
   negative_deadline_pre_init();
-  network_status_change_pre_init();
   no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
@@ -309,7 +306,6 @@ void grpc_end2end_tests(int argc, char **argv,
     max_connection_idle(config);
     max_message_length(config);
     negative_deadline(config);
-    network_status_change(config);
     no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
@@ -490,10 +486,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("negative_deadline", argv[i])) {
       negative_deadline(config);
-      continue;
-    }
-    if (0 == strcmp("network_status_change", argv[i])) {
-      network_status_change(config);
       continue;
     }
     if (0 == strcmp("no_error_on_hotpath", argv[i])) {

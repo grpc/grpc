@@ -20,54 +20,18 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core.Internal;
-
 namespace Grpc.Core
 {
     /// <summary>
     /// Context for a server-side call.
     /// </summary>
-    public class ServerCallContext
+    public abstract class ServerCallContext
     {
-        private readonly CallSafeHandle callHandle;
-        private readonly string method;
-        private readonly string host;
-        private readonly DateTime deadline;
-        private readonly Metadata requestHeaders;
-        private readonly CancellationToken cancellationToken;
-        private readonly Metadata responseTrailers = new Metadata();
-        private readonly Func<Metadata, Task> writeHeadersFunc;
-        private readonly IHasWriteOptions writeOptionsHolder;
-        private readonly Lazy<AuthContext> authContext;
-        private readonly Func<string> testingOnlyPeerGetter;
-        private readonly Func<AuthContext> testingOnlyAuthContextGetter;
-        private readonly Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory;
-
-        private Status status = Status.DefaultSuccess;
-
-        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
-            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
-            : this(callHandle, method, host, deadline, requestHeaders, cancellationToken, writeHeadersFunc, writeOptionsHolder, null, null, null)
+        /// <summary>
+        /// Creates a new instance of <c>ServerCallContext</c>.
+        /// </summary>
+        protected ServerCallContext()
         {
-        }
-
-        // Additional constructor params should be used for testing only
-        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
-            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder,
-            Func<string> testingOnlyPeerGetter, Func<AuthContext> testingOnlyAuthContextGetter, Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory)
-        {
-            this.callHandle = callHandle;
-            this.method = method;
-            this.host = host;
-            this.deadline = deadline;
-            this.requestHeaders = requestHeaders;
-            this.cancellationToken = cancellationToken;
-            this.writeHeadersFunc = writeHeadersFunc;
-            this.writeOptionsHolder = writeOptionsHolder;
-            this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
-            this.testingOnlyPeerGetter = testingOnlyPeerGetter;
-            this.testingOnlyAuthContextGetter = testingOnlyAuthContextGetter;
-            this.testingOnlyContextPropagationTokenFactory = testingOnlyContextPropagationTokenFactory;
         }
 
         /// <summary>
@@ -79,7 +43,7 @@ namespace Grpc.Core
         /// <returns>The task that finished once response headers have been written.</returns>
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
-            return writeHeadersFunc(responseHeaders);
+            return WriteResponseHeadersAsyncCore(responseHeaders);
         }
 
         /// <summary>
@@ -87,94 +51,41 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
         {
-            if (testingOnlyContextPropagationTokenFactory != null)
-            {
-                return testingOnlyContextPropagationTokenFactory();
-            }
-            return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
+            return CreatePropagationTokenCore(options);
         }
-            
+
         /// <summary>Name of method called in this RPC.</summary>
-        public string Method
-        {
-            get
-            {
-                return this.method;
-            }
-        }
+        public string Method => MethodCore;
 
         /// <summary>Name of host called in this RPC.</summary>
-        public string Host
-        {
-            get
-            {
-                return this.host;
-            }
-        }
+        public string Host => HostCore;
 
         /// <summary>Address of the remote endpoint in URI format.</summary>
-        public string Peer
-        {
-            get
-            {
-                if (testingOnlyPeerGetter != null)
-                {
-                    return testingOnlyPeerGetter();
-                }
-                // Getting the peer lazily is fine as the native call is guaranteed
-                // not to be disposed before user-supplied server side handler returns.
-                // Most users won't need to read this field anyway.
-                return this.callHandle.GetPeer();
-            }
-        }
+        public string Peer => PeerCore;
 
         /// <summary>Deadline for this RPC.</summary>
-        public DateTime Deadline
-        {
-            get
-            {
-                return this.deadline;
-            }
-        }
+        public DateTime Deadline => DeadlineCore;
 
         /// <summary>Initial metadata sent by client.</summary>
-        public Metadata RequestHeaders
-        {
-            get
-            {
-                return this.requestHeaders;
-            }
-        }
+        public Metadata RequestHeaders => RequestHeadersCore;
 
         /// <summary>Cancellation token signals when call is cancelled.</summary>
-        public CancellationToken CancellationToken
-        {
-            get
-            {
-                return this.cancellationToken;
-            }
-        }
+        public CancellationToken CancellationToken => CancellationTokenCore;
 
         /// <summary>Trailers to send back to client after RPC finishes.</summary>
-        public Metadata ResponseTrailers
-        {
-            get
-            {
-                return this.responseTrailers;
-            }
-        }
+        public Metadata ResponseTrailers => ResponseTrailersCore;
 
         /// <summary> Status to send back to client after RPC finishes.</summary>
         public Status Status
         {
             get
             {
-                return this.status;
+                return StatusCore;
             }
 
             set
             {
-                status = value;
+                StatusCore = value;
             }
         }
 
@@ -187,12 +98,12 @@ namespace Grpc.Core
         {
             get
             {
-                return writeOptionsHolder.WriteOptions;
+                return WriteOptionsCore;
             }
 
             set
             {
-                writeOptionsHolder.WriteOptions = value;
+                WriteOptionsCore = value;
             }
         }
 
@@ -200,35 +111,31 @@ namespace Grpc.Core
         /// Gets the <c>AuthContext</c> associated with this call.
         /// Note: Access to AuthContext is an experimental API that can change without any prior notice.
         /// </summary>
-        public AuthContext AuthContext
-        {
-            get
-            {
-                if (testingOnlyAuthContextGetter != null)
-                {
-                    return testingOnlyAuthContextGetter();
-                }
-                return authContext.Value;
-            }
-        }
+        public AuthContext AuthContext => AuthContextCore;
 
-        private AuthContext GetAuthContextEager()
-        {
-            using (var authContextNative = callHandle.GetAuthContext())
-            {
-                return authContextNative.ToAuthContext();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Allows sharing write options between ServerCallContext and other objects.
-    /// </summary>
-    internal interface IHasWriteOptions
-    {
-        /// <summary>
-        /// Gets or sets the write options.
-        /// </summary>
-        WriteOptions WriteOptions { get; set; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Task WriteResponseHeadersAsyncCore(Metadata responseHeaders);
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options);
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string MethodCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string HostCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract string PeerCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract DateTime DeadlineCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Metadata RequestHeadersCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract CancellationToken CancellationTokenCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Metadata ResponseTrailersCore { get; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract Status StatusCore { get; set; }
+        /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract WriteOptions WriteOptionsCore { get; set; }
+          /// <summary>Provides implementation of a non-virtual public member.</summary>
+        protected abstract AuthContext AuthContextCore { get; }
     }
 }

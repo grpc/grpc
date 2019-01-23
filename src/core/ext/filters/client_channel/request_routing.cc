@@ -32,8 +32,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -517,6 +519,14 @@ RequestRouter::RequestRouter(
       tracer_(tracer),
       process_resolver_result_(process_resolver_result),
       process_resolver_result_user_data_(process_resolver_result_user_data) {
+  // Get subchannel pool.
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL);
+  if (grpc_channel_arg_get_bool(arg, false)) {
+    subchannel_pool_ = MakeRefCounted<LocalSubchannelPool>();
+  } else {
+    subchannel_pool_ = GlobalSubchannelPool::instance();
+  }
   GRPC_CLOSURE_INIT(&on_resolver_result_changed_,
                     &RequestRouter::OnResolverResultChangedLocked, this,
                     grpc_combiner_scheduler(combiner));
@@ -666,6 +676,7 @@ void RequestRouter::CreateNewLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner_;
   lb_policy_args.client_channel_factory = client_channel_factory_;
+  lb_policy_args.subchannel_pool = subchannel_pool_;
   lb_policy_args.args = resolver_result_;
   lb_policy_args.lb_config = lb_config;
   OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
@@ -751,9 +762,8 @@ void RequestRouter::ConcatenateAndAddChannelTraceLocked(
     char* flat;
     size_t flat_len = 0;
     flat = gpr_strvec_flatten(&v, &flat_len);
-    channelz_node_->AddTraceEvent(
-        grpc_core::channelz::ChannelTrace::Severity::Info,
-        grpc_slice_new(flat, flat_len, gpr_free));
+    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                                  grpc_slice_new(flat, flat_len, gpr_free));
     gpr_strvec_destroy(&v);
   }
 }

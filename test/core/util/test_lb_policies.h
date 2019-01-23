@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,19 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#define GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
+#define GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 
-#include "src/core/lib/iomgr/endpoint.h"
+namespace grpc_core {
 
-void grpc_network_status_init(void);
-void grpc_network_status_shutdown(void);
+typedef void (*InterceptRecvTrailingMetadataCallback)(void*);
 
-void grpc_network_status_register_endpoint(grpc_endpoint* ep);
-void grpc_network_status_unregister_endpoint(grpc_endpoint* ep);
-void grpc_network_status_shutdown_all_endpoints();
+// Registers an LB policy called "intercept_trailing_metadata_lb" that
+// invokes cb with argument user_data when trailing metadata is received
+// for each call.
+void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
+    InterceptRecvTrailingMetadataCallback cb, void* user_data);
 
-#endif /* GRPC_CORE_LIB_IOMGR_NETWORK_STATUS_TRACKER_H */
+}  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H

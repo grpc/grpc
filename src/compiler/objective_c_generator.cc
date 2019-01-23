@@ -353,20 +353,23 @@ void PrintMethodImplementations(Printer* printer,
 
     printer.Print(vars,
                   "@implementation $service_class$\n\n"
+                  "#pragma clang diagnostic push\n"
+                  "#pragma clang diagnostic ignored "
+                  "\"-Wobjc-designated-initializers\"\n\n"
                   "// Designated initializer\n"
                   "- (instancetype)initWithHost:(NSString *)host "
                   "callOptions:(GRPCCallOptions *_Nullable)callOptions {\n"
-                  "  self = [super initWithHost:host\n"
+                  "  return [super initWithHost:host\n"
                   "                 packageName:@\"$package$\"\n"
                   "                 serviceName:@\"$service_name$\"\n"
                   "                 callOptions:callOptions];\n"
-                  "  return self;\n"
                   "}\n\n"
                   "- (instancetype)initWithHost:(NSString *)host {\n"
                   "  return [super initWithHost:host\n"
                   "                 packageName:@\"$package$\"\n"
                   "                 serviceName:@\"$service_name$\"];\n"
-                  "}\n\n");
+                  "}\n\n"
+                  "#pragma clang diagnostic pop\n\n");
 
     printer.Print(
         "// Override superclass initializer to disallow different"
@@ -375,6 +378,12 @@ void PrintMethodImplementations(Printer* printer,
         "                 packageName:(NSString *)packageName\n"
         "                 serviceName:(NSString *)serviceName {\n"
         "  return [self initWithHost:host];\n"
+        "}\n\n"
+        "- (instancetype)initWithHost:(NSString *)host\n"
+        "                 packageName:(NSString *)packageName\n"
+        "                 serviceName:(NSString *)serviceName\n"
+        "                 callOptions:(GRPCCallOptions *)callOptions {\n"
+        "  return [self initWithHost:host callOptions:callOptions];\n"
         "}\n\n");
 
     printer.Print(

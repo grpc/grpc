@@ -40,9 +40,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/cpp/server/secure_server_credentials.h"
-
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/server/secure_server_credentials.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"

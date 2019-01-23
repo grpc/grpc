@@ -33,7 +33,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/mutex_lock.h"
@@ -57,7 +56,7 @@ constexpr char kRoundRobin[] = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
-  explicit RoundRobin(const Args& args);
+  explicit RoundRobin(Args args);
 
   const char* name() const override { return kRoundRobin; }
 
@@ -211,7 +210,7 @@ class RoundRobin : public LoadBalancingPolicy {
   channelz::ChildRefsList child_channels_;
 };
 
-RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
+RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
   gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
@@ -221,7 +220,6 @@ RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
     gpr_log(GPR_INFO, "[RR %p] Created with %" PRIuPTR " subchannels", this,
             subchannel_list_->num_subchannels());
   }
-  grpc_subchannel_index_ref();
 }
 
 RoundRobin::~RoundRobin() {
@@ -233,7 +231,6 @@ RoundRobin::~RoundRobin() {
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
   grpc_connectivity_state_destroy(&state_tracker_);
-  grpc_subchannel_index_unref();
 }
 
 void RoundRobin::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
@@ -700,8 +697,8 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args,
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const LoadBalancingPolicy::Args& args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
+      LoadBalancingPolicy::Args args) const override {
+    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(std::move(args)));
   }
 
   const char* name() const override { return kRoundRobin; }
