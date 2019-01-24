@@ -179,6 +179,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
         GRPC_ERROR_NONE);
   }
 
+  /// Returns the JSON node of policy (with both policy name and config content)
+  /// given the JSON node of a LoadBalancingConfig array.
+  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
+
   /// Sets the re-resolution closure to \a request_reresolution.
   void SetReresolutionClosureLocked(grpc_closure* request_reresolution) {
     GPR_ASSERT(request_reresolution_ == nullptr);
