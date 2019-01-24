@@ -328,10 +328,6 @@ class GrpcLb : public LoadBalancingPolicy {
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
   grpc_grpclb_serverlist* serverlist_ = nullptr;
-  // Index into serverlist for next pick.
-  // If the server at this index is a drop, we return a drop.
-  // Otherwise, we delegate to the RR policy.
-  size_t serverlist_index_ = 0;
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
@@ -877,10 +873,14 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
               " servers received",
               grpclb_policy, lb_calld, serverlist->num_servers);
       for (size_t i = 0; i < serverlist->num_servers; ++i) {
-        grpc_resolved_address addr;
-        ParseServer(serverlist->servers[i], &addr);
         char* ipport;
-        grpc_sockaddr_to_string(&ipport, &addr, false);
+        if (serverlist->servers[i]->drop) {
+          ipport = gpr_strdup("(drop)");
+        } else {
+          grpc_resolved_address addr;
+          ParseServer(serverlist->servers[i], &addr);
+          grpc_sockaddr_to_string(&ipport, &addr, false);
+        }
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Serverlist[%" PRIuPTR "]: %s",
                 grpclb_policy, lb_calld, i, ipport);
@@ -923,7 +923,6 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       // instance will be destroyed either upon the next update or when the
       // GrpcLb instance is destroyed.
       grpclb_policy->serverlist_ = serverlist;
-      grpclb_policy->serverlist_index_ = 0;
       grpclb_policy->CreateOrUpdateRoundRobinPolicyLocked();
     }
   } else {
@@ -970,13 +969,13 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
-  grpclb_policy->channel_control_helper()->RequestReresolution();
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
   if (lb_calld == grpclb_policy->lb_calld_.get()) {
     grpclb_policy->lb_calld_.reset();
     GPR_ASSERT(!grpclb_policy->shutting_down_);
+    grpclb_policy->channel_control_helper()->RequestReresolution();
     if (lb_calld->seen_initial_response_) {
       // If we lose connection to the LB server, reset the backoff and restart
       // the LB call immediately.

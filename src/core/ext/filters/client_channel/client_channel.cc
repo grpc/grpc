@@ -2373,9 +2373,8 @@ static void pick_done(void* arg, grpc_error* error) {
               "chand=%p calld=%p: failed to create subchannel: error=%s",
               chand, calld, grpc_error_string(error));
     }
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "Failed to create subchannel", &error, 1);
-    pending_batches_fail(elem, error, true /* yield_call_combiner */);
+    pending_batches_fail(elem, GRPC_ERROR_REF(error),
+                         true /* yield_call_combiner */);
     return;
   }
   create_subchannel_call(elem);
@@ -2586,7 +2585,11 @@ static void start_pick_locked(void* arg, grpc_error* error) {
       if (!calld->enable_retries ||
           !maybe_retry(elem, nullptr /* batch_data */, status,
                        nullptr /* server_pushback_md */)) {
-        GRPC_CLOSURE_SCHED(&calld->pick_closure, error);
+        grpc_error* new_error =
+            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "Failed to create subchannel", &error, 1);
+        GRPC_ERROR_UNREF(error);
+        GRPC_CLOSURE_SCHED(&calld->pick_closure, new_error);
       }
       if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
       break;
