@@ -2321,7 +2321,7 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
 // LB pick
 //
 
-static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
+static void create_subchannel_call(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   const size_t parent_data_size =
@@ -2336,16 +2336,15 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
       calld->call_combiner,                             // call_combiner
       parent_data_size                                  // parent_data_size
   };
-  grpc_error* new_error =
+  grpc_error* error =
       calld->pick.pick.connected_subchannel->CreateCall(
           call_args, &calld->subchannel_call);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
-            chand, calld, calld->subchannel_call, grpc_error_string(new_error));
+            chand, calld, calld->subchannel_call, grpc_error_string(error));
   }
-  if (GPR_UNLIKELY(new_error != GRPC_ERROR_NONE)) {
-    new_error = grpc_error_add_child(new_error, error);
-    pending_batches_fail(elem, new_error, true /* yield_call_combiner */);
+  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
+    pending_batches_fail(elem, error, true /* yield_call_combiner */);
   } else {
     if (parent_data_size > 0) {
       new (grpc_connected_subchannel_call_get_parent_data(
@@ -2355,7 +2354,6 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
     }
     pending_batches_resume(elem);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 // Invoked when a pick is completed, on both success or failure.
@@ -2374,7 +2372,7 @@ static void pick_done(void* arg, grpc_error* error) {
     pending_batches_fail(elem, error, true /* yield_call_combiner */);
     return;
   }
-  create_subchannel_call(elem, GRPC_ERROR_REF(error));
+  create_subchannel_call(elem);
 }
 
 namespace grpc_core {
@@ -2409,7 +2407,7 @@ class QueuedPickCanceller {
         // Remove pick from list of pending picks.
         remove_call_from_pending_picks_locked(self->elem_);
         // Fail pending batches on the call.
-        pending_batches_fail(self->elem_, error,
+        pending_batches_fail(self->elem_, GRPC_ERROR_REF(error),
                              true /* yield_call_combiner */);
       }
       calld->pick_canceller = nullptr;
@@ -2600,6 +2598,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
       break;
     }
     // If wait_for_ready is true, then queue to retry when we get a new picker.
+    GRPC_ERROR_UNREF(error);
     // Fallthrough
   case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
     if (!calld->pick_queued) add_call_to_pending_picks_locked(elem);
