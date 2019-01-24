@@ -1211,10 +1211,10 @@ void XdsLb::ParseLbConfig(grpc_json* xds_config_json) {
       balancer_name = field->value;
     } else if (strcmp(field->key, "childPolicy") == 0) {
       if (child_policy != nullptr) return;  // Duplicate.
-      child_policy = ServiceConfig::ParseLoadBalancingConfig(field);
+      child_policy = ParseLoadBalancingConfig(field);
     } else if (strcmp(field->key, "fallbackPolicy") == 0) {
       if (fallback_policy != nullptr) return;  // Duplicate.
-      fallback_policy = ServiceConfig::ParseLoadBalancingConfig(field);
+      fallback_policy = ParseLoadBalancingConfig(field);
     }
   }
   if (balancer_name == nullptr) return;  // Required field.

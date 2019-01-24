@@ -94,10 +94,6 @@ class ServiceConfig {
   static RefCountedPtr<T> MethodConfigTableLookup(
       const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path);
 
-  /// Returns the JSON node of policy (with both policy name and config content)
-  /// given the JSON node of a LoadBalancingConfig array.
-  static grpc_json* ParseLoadBalancingConfig(const grpc_json* lb_config_array);
-
  private:
   // So New() can call our private ctor.
   template <typename T, typename... Args>

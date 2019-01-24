@@ -141,12 +141,10 @@ void ProcessedResolverResult::ParseServiceConfig(
 void ProcessedResolverResult::ParseLbConfigFromServiceConfig(
     const grpc_json* field) {
   if (lb_policy_config_ != nullptr) return;  // Already found.
-  // Find the LB config global parameter.
-  if (field->key == nullptr || strcmp(field->key, "loadBalancingConfig") != 0 ||
-      field->type != GRPC_JSON_ARRAY) {
-    return;  // Not valid lb config array.
+  if (field->key == nullptr || strcmp(field->key, "loadBalancingConfig") != 0) {
+    return; // Not the LB config global parameter.
   }
-  const grpc_json* policy = ServiceConfig::ParseLoadBalancingConfig(field);
+  const grpc_json* policy = LoadBalancingPolicy::ParseLoadBalancingConfig(field);
   if (policy != nullptr) {
     lb_policy_name_.reset(gpr_strdup(policy->key));
     lb_policy_config_ = policy->child;
