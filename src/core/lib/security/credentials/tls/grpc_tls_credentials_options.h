@@ -30,27 +30,25 @@
 struct grpc_tls_key_materials_config
     : public grpc_core::RefCounted<grpc_tls_key_materials_config> {
  public:
-  typedef grpc_core::InlinedVector<grpc_core::UniquePtr<char>, 1>
-      PemRootCertList;
+  typedef grpc_core::InlinedVector<grpc_ssl_pem_key_cert_pair*, 1>
+      PemKeyCertPairList;
 
   ~grpc_tls_key_materials_config();
 
   /** Getters for member fields. **/
-  const grpc_ssl_pem_key_cert_pair* GetPemKeyCertPairs() const {
-    return pem_key_cert_pairs_;
+  const char* pem_root_certs() const { return pem_root_certs_.get(); }
+  const PemKeyCertPairList* pem_key_cert_pair_list() const {
+    return pem_key_cert_pair_list_.get();
   }
-  size_t GetNumKeyCertPairs() const { return num_key_cert_pairs_; }
-  const char* GetPemRootCerts() const { return pem_root_certs_[0].get(); }
 
   /** Setters for member fields. **/
-  void SetKeyMaterials(PemRootCertList root_cert_list,
-                       const grpc_ssl_pem_key_cert_pair* key_cert_pairs,
-                       size_t num);
+  void set_key_materials(
+      grpc_core::UniquePtr<char> pem_root_certs,
+      grpc_core::UniquePtr<PemKeyCertPairList> pem_key_cert_pair_list);
 
  private:
-  grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs_;
-  size_t num_key_cert_pairs_;
-  PemRootCertList pem_root_certs_;
+  grpc_core::UniquePtr<PemKeyCertPairList> pem_key_cert_pair_list_;
+  grpc_core::UniquePtr<char> pem_root_certs_;
 };
 
 /** TLS credential reload config. **/
@@ -168,36 +166,37 @@ struct grpc_tls_credentials_options
   }
 
   /* Getters for member fields. */
-  grpc_ssl_client_certificate_request_type GetCertRequestType() const {
+  grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
-  const grpc_tls_key_materials_config* GetKeyMaterialsConfig() const {
+  const grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
-  const grpc_tls_credential_reload_config* GetCredentialReloadConfig() const {
+  const grpc_tls_credential_reload_config* credential_reload_config() const {
     return credential_reload_config_.get();
   }
   const grpc_tls_server_authorization_check_config*
-  GetServerAuthorizationCheckConfig() const {
+  server_authorization_check_config() const {
     return server_authorization_check_config_.get();
   }
-  grpc_tls_key_materials_config* GetMutableKeyMaterialsConfig() {
+  grpc_tls_key_materials_config* mutable_key_materials_config() {
     return key_materials_config_.get();
   }
 
   /* Setters for member fields. */
-  void SetCertRequestType(const grpc_ssl_client_certificate_request_type type) {
+  void set_cert_request_type(
+      const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
   }
-  void SetKeyMaterialsConfig(
+  void set_key_materials_config(
       grpc_core::RefCountedPtr<grpc_tls_key_materials_config> config) {
     key_materials_config_ = std::move(config);
   }
-  void SetCredentialReloadConfig(
+  void set_credential_reload_config(
       grpc_core::RefCountedPtr<grpc_tls_credential_reload_config> config) {
     credential_reload_config_ = std::move(config);
   }
-  void SetServerAuthorizationCheckConfig(
+  void set_server_authorization_check_config(
       grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
           config) {
     server_authorization_check_config_ = std::move(config);

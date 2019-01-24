@@ -29,40 +29,37 @@
 
 /** -- gRPC TLS key materials config API implementation. -- **/
 namespace {
-void FreeKeyCertPairs(grpc_ssl_pem_key_cert_pair* key_cert_pairs, size_t num) {
-  for (size_t i = 0; i < num; i++) {
-    gpr_free((void*)key_cert_pairs[i].private_key);
-    gpr_free((void*)key_cert_pairs[i].cert_chain);
+void FreeKeyCertPairs(
+    grpc_core::UniquePtr<grpc_tls_key_materials_config::PemKeyCertPairList>
+        pem_key_cert_pair_list) {
+  grpc_tls_key_materials_config::PemKeyCertPairList* key_cert_pairs =
+      pem_key_cert_pair_list.release();
+  for (size_t i = 0; i < key_cert_pairs->size(); i++) {
+    gpr_free((void*)key_cert_pairs->data()[i]->private_key);
+    gpr_free((void*)key_cert_pairs->data()[i]->cert_chain);
   }
-  gpr_free(key_cert_pairs);
+  key_cert_pairs->clear();
 }
 }  // namespace
 
-void grpc_tls_key_materials_config::SetKeyMaterials(
-    PemRootCertList root_cert_list,
-    const grpc_ssl_pem_key_cert_pair* key_cert_pairs, size_t num) {
-  if (key_cert_pairs == nullptr || num == 0) {
+void grpc_tls_key_materials_config::set_key_materials(
+    grpc_core::UniquePtr<char> pem_root_certs,
+    grpc_core::UniquePtr<PemKeyCertPairList> pem_key_cert_pair_list) {
+  if (pem_key_cert_pair_list.get() == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to set_key_materials()");
     return;
   }
-  FreeKeyCertPairs(pem_key_cert_pairs_, num_key_cert_pairs_);
-  pem_key_cert_pairs_ = static_cast<grpc_ssl_pem_key_cert_pair*>(
-      gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair) * num));
-  for (size_t i = 0; i < num; i++) {
-    pem_key_cert_pairs_[i].private_key =
-        gpr_strdup(key_cert_pairs[i].private_key);
-    pem_key_cert_pairs_[i].cert_chain =
-        gpr_strdup(key_cert_pairs[i].cert_chain);
+  FreeKeyCertPairs(std::move(pem_key_cert_pair_list_));
+  pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
+  if (pem_root_certs.get() != nullptr) {
+    gpr_free(pem_root_certs_.release());
+    pem_root_certs_ = std::move(pem_root_certs);
   }
-  if (!root_cert_list.empty()) {
-    pem_root_certs_.clear();
-    pem_root_certs_.push_back(std::move(root_cert_list[0]));
-  }
-  num_key_cert_pairs_ = num;
 }
 
 grpc_tls_key_materials_config::~grpc_tls_key_materials_config() {
-  FreeKeyCertPairs(pem_key_cert_pairs_, num_key_cert_pairs_);
+  FreeKeyCertPairs(std::move(pem_key_cert_pair_list_));
+  gpr_free(pem_root_certs_.release());
 }
 
 /** -- gRPC TLS credential reload config API implementation. -- **/
@@ -118,7 +115,7 @@ void grpc_tls_credentials_options_set_cert_request_type(
             "grpc_tls_credentials_options_set_cert_request_type()");
     return;
   }
-  options->SetCertRequestType(type);
+  options->set_cert_request_type(type);
 }
 
 void grpc_tls_credentials_options_set_key_materials_config(
@@ -130,7 +127,7 @@ void grpc_tls_credentials_options_set_key_materials_config(
             "grpc_tls_credentials_options_set_key_materials_config()");
     return;
   }
-  options->SetKeyMaterialsConfig(config->Ref());
+  options->set_key_materials_config(config->Ref());
 }
 
 void grpc_tls_credentials_options_set_credential_reload_config(
@@ -142,8 +139,7 @@ void grpc_tls_credentials_options_set_credential_reload_config(
             "grpc_tls_credentials_options_set_credential_reload_config()");
     return;
   }
-
-  options->SetCredentialReloadConfig(config->Ref());
+  options->set_credential_reload_config(config->Ref());
 }
 
 void grpc_tls_credentials_options_set_server_authorization_check_config(
@@ -156,7 +152,7 @@ void grpc_tls_credentials_options_set_server_authorization_check_config(
         "grpc_tls_credentials_options_set_server_authorization_check_config()");
     return;
   }
-  options->SetServerAuthorizationCheckConfig(config->Ref());
+  options->set_server_authorization_check_config(config->Ref());
 }
 
 grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
@@ -173,9 +169,18 @@ void grpc_tls_key_materials_config_set_key_materials(
     return;
   }
   grpc_core::UniquePtr<char> pem_root(gpr_strdup(root_certs));
-  grpc_tls_key_materials_config::PemRootCertList root_cert_list;
-  root_cert_list.push_back(std::move(pem_root));
-  config->SetKeyMaterials(std::move(root_cert_list), key_cert_pairs, num);
+  grpc_core::UniquePtr<grpc_tls_key_materials_config::PemKeyCertPairList>
+      key_cert_pair_list = grpc_core::MakeUnique<
+          grpc_tls_key_materials_config::PemKeyCertPairList>();
+  for (size_t i = 0; i < num; i++) {
+    grpc_ssl_pem_key_cert_pair* key_cert_pair =
+        static_cast<grpc_ssl_pem_key_cert_pair*>(
+            gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    key_cert_pair->private_key = gpr_strdup(key_cert_pairs[i].private_key);
+    key_cert_pair->cert_chain = gpr_strdup(key_cert_pairs[i].cert_chain);
+    key_cert_pair_list.get()->push_back(key_cert_pair);
+  }
+  config->set_key_materials(std::move(pem_root), std::move(key_cert_pair_list));
 }
 
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
