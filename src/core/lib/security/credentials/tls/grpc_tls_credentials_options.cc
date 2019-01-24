@@ -36,7 +36,9 @@ void grpc_tls_key_materials_config::set_key_materials(
     return;
   }
   pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
-  pem_root_certs_ = std::move(pem_root_certs);
+  if (pem_root_certs.get() != nullptr) {
+    pem_root_certs_ = std::move(pem_root_certs);
+  }
 }
 
 /** -- gRPC TLS credential reload config API implementation. -- **/
