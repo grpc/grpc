@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 gRPC Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,13 +19,11 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
 LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
 
 
 class Preprocess(setuptools.Command):
-    """Command to copy proto modules from grpc/src/proto and LICENSE from
-    the root directory"""
+    """Command to copy LICENSE from root directory."""
 
     description = ''
     user_options = []
@@ -37,30 +35,5 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
-        if os.path.isfile(HEALTH_PROTO):
-            shutil.copyfile(HEALTH_PROTO,
-                            os.path.join(ROOT_DIR,
-                                         'grpc_health/v1/health.proto'))
         if os.path.isfile(LICENSE):
             shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
-
-
-class BuildPackageProtos(setuptools.Command):
-    """Command to generate project *_pb2.py modules from proto files."""
-
-    description = 'build grpc protobuf modules'
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        # due to limitations of the proto generator, we require that only *one*
-        # directory is provided as an 'include' directory. We assume it's the '' key
-        # to `self.distribution.package_dir` (and get a key error if it's not
-        # there).
-        from grpc_tools import command
-        command.build_package_protos(self.distribution.package_dir[''])
