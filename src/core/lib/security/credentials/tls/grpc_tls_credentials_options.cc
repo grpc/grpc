@@ -31,10 +31,6 @@
 void grpc_tls_key_materials_config::set_key_materials(
     grpc_core::UniquePtr<char> pem_root_certs,
     PemKeyCertPairList pem_key_cert_pair_list) {
-  if (pem_key_cert_pair_list.empty()) {
-    gpr_log(GPR_ERROR, "Invalid arguments to set_key_materials()");
-    return;
-  }
   pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
   if (pem_root_certs.get() != nullptr) {
     pem_root_certs_ = std::move(pem_root_certs);
@@ -140,7 +136,7 @@ grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
 
 void grpc_tls_key_materials_config_set_key_materials(
     grpc_tls_key_materials_config* config, const char* root_certs,
-    const grpc_ssl_pem_key_cert_pair* key_cert_pairs, size_t num) {
+    const grpc_ssl_pem_key_cert_pair** key_cert_pairs, size_t num) {
   if (config == nullptr || key_cert_pairs == nullptr || num == 0) {
     gpr_log(GPR_ERROR,
             "Invalid arguments to "
@@ -151,10 +147,11 @@ void grpc_tls_key_materials_config_set_key_materials(
   grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
   for (size_t i = 0; i < num; i++) {
     grpc_core::PemKeyCertPair key_cert_pair(
-        const_cast<grpc_ssl_pem_key_cert_pair*>(&key_cert_pairs[i]));
+        const_cast<grpc_ssl_pem_key_cert_pair*>(key_cert_pairs[i]));
     cert_pair_list.emplace_back(std::move(key_cert_pair));
   }
   config->set_key_materials(std::move(pem_root), std::move(cert_pair_list));
+  gpr_free(key_cert_pairs);
 }
 
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(

@@ -658,10 +658,11 @@ GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
 GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create();
 
 /** Set grpc_tls_key_materials_config instance with provided a TLS certificate.
+    config will take the ownership of pem_root_certs and pem_key_cert_pairs.
  */
 GRPCAPI void grpc_tls_key_materials_config_set_key_materials(
     grpc_tls_key_materials_config* config, const char* pem_root_certs,
-    const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
+    const grpc_ssl_pem_key_cert_pair** pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 
 /** --- TLS credential reload config. --- */
