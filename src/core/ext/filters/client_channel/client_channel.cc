@@ -90,10 +90,10 @@ grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 
 struct external_connectivity_watcher;
 
-struct PendingPick {
+struct QueuedPick {
   LoadBalancingPolicy::PickState pick;
   grpc_call_element* elem;
-  PendingPick* next = nullptr;
+  QueuedPick* next = nullptr;
 };
 
 typedef struct client_channel_channel_data {
@@ -114,8 +114,8 @@ typedef struct client_channel_channel_data {
   grpc_core::OrphanablePtr<LoadBalancingPolicy> resolving_lb_policy;
   // Subchannel picker from LB policy.
   grpc_core::RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
-  // Linked list of pending picks.
-  PendingPick* pending_picks;
+  // Linked list of queued picks.
+  QueuedPick* queued_picks;
 
   /** retry throttle data from service config */
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
@@ -162,8 +162,8 @@ class ClientChannelControlHelper
               chand_, picker.get());
     }
     chand_->picker = std::move(picker);
-    // Re-process pending picks.
-    for (PendingPick* pick = chand_->pending_picks; pick != nullptr;
+    // Re-process queued picks.
+    for (QueuedPick* pick = chand_->queued_picks; pick != nullptr;
          pick = pick->next) {
       start_pick_locked(pick->elem, GRPC_ERROR_NONE);
     }
@@ -210,8 +210,8 @@ static bool process_resolver_result_locked(void* arg,
   // Return results.
   *lb_policy_name = chand->info_lb_policy_name.get();
   *lb_policy_config = resolver_result.lb_policy_config();
-  // Apply service config to pending picks.
-  for (PendingPick* pick = chand->pending_picks; pick != nullptr;
+  // Apply service config to queued picks.
+  for (QueuedPick* pick = chand->queued_picks; pick != nullptr;
        pick = pick->next) {
     maybe_apply_service_config_to_call_locked(pick->elem);
   }
@@ -634,7 +634,7 @@ struct call_data {
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error = GRPC_ERROR_NONE;
 
-  PendingPick pick;
+  QueuedPick pick;
   bool pick_queued = false;
   grpc_core::QueuedPickCanceller* pick_canceller = nullptr;
   grpc_closure pick_closure;
@@ -698,7 +698,7 @@ static void retry_commit(grpc_call_element* elem,
 static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
 static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
-static void remove_call_from_pending_picks_locked(grpc_call_element* elem);
+static void remove_call_from_queued_picks_locked(grpc_call_element* elem);
 
 //
 // send op data caching
@@ -2379,7 +2379,7 @@ namespace grpc_core {
 namespace {
 
 // A class to handle the call combiner cancellation callback for a
-// pending pick.
+// queued pick.
 class QueuedPickCanceller {
  public:
   explicit QueuedPickCanceller(grpc_call_element* elem)
@@ -2392,43 +2392,33 @@ class QueuedPickCanceller {
     grpc_call_combiner_set_notify_on_cancel(calld->call_combiner, &closure_);
   }
 
-  void MarkFinishedLocked() {
-    auto* calld = static_cast<call_data*>(elem_->call_data);
-    GRPC_CALL_STACK_UNREF(calld->owning_call, "QueuedPickCanceller");
-    finished_ = true;
-  }
-
  private:
   static void CancelLocked(void* arg, grpc_error* error) {
     auto* self = static_cast<QueuedPickCanceller*>(arg);
-    if (!self->finished_) {
-      auto* calld = static_cast<call_data*>(self->elem_->call_data);
-      if (error != GRPC_ERROR_NONE) {
-        // Remove pick from list of pending picks.
-        remove_call_from_pending_picks_locked(self->elem_);
-        // Fail pending batches on the call.
-        pending_batches_fail(self->elem_, GRPC_ERROR_REF(error),
-                             true /* yield_call_combiner */);
-      }
-      calld->pick_canceller = nullptr;
-      GRPC_CALL_STACK_UNREF(calld->owning_call, "QueuedPickCanceller");
+    auto* calld = static_cast<call_data*>(self->elem_->call_data);
+    if (calld->pick_canceller == self && error != GRPC_ERROR_NONE) {
+      // Remove pick from list of queued picks.
+      remove_call_from_queued_picks_locked(self->elem_);
+      // Fail pending batches on the call.
+      pending_batches_fail(self->elem_, GRPC_ERROR_REF(error),
+                           true /* yield_call_combiner */);
     }
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "QueuedPickCanceller");
     Delete(self);
   }
 
   grpc_call_element* elem_;
   grpc_closure closure_;
-  bool finished_ = false;
 };
 
 }  // namespace
 }  // namespace grpc_core
 
-// Removes the call from the channel's list of pending picks.
-static void remove_call_from_pending_picks_locked(grpc_call_element* elem) {
+// Removes the call from the channel's list of queued picks.
+static void remove_call_from_queued_picks_locked(grpc_call_element* elem) {
   auto* chand = static_cast<channel_data*>(elem->channel_data);
   auto* calld = static_cast<call_data*>(elem->call_data);
-  for (PendingPick** pick = &chand->pending_picks; *pick != nullptr;
+  for (QueuedPick** pick = &chand->queued_picks; *pick != nullptr;
        pick = &(*pick)->next) {
     if (*pick == &calld->pick) {
       calld->pick_queued = false;
@@ -2437,23 +2427,21 @@ static void remove_call_from_pending_picks_locked(grpc_call_element* elem) {
       grpc_polling_entity_del_from_pollset_set(calld->pollent,
                                                chand->interested_parties);
       // Lame the call combiner canceller.
-      if (calld->pick_canceller != nullptr) {
-        calld->pick_canceller->MarkFinishedLocked();
-      }
+      calld->pick_canceller = nullptr;
       break;
     }
   }
 }
 
-// Adds the call to the channel's list of pending picks.
-static void add_call_to_pending_picks_locked(grpc_call_element* elem) {
+// Adds the call to the channel's list of queued picks.
+static void add_call_to_queued_picks_locked(grpc_call_element* elem) {
   auto* chand = static_cast<channel_data*>(elem->channel_data);
   auto* calld = static_cast<call_data*>(elem->call_data);
   calld->pick_queued = true;
-  // Add call to pending picks list.
+  // Add call to queued picks list.
   calld->pick.elem = elem;
-  calld->pick.next = chand->pending_picks;
-  chand->pending_picks = &calld->pick;
+  calld->pick.next = chand->queued_picks;
+  chand->queued_picks = &calld->pick;
   // Add call's pollent to channel's interested_parties, so that I/O
   // can be done under the call's CQ.
   grpc_polling_entity_add_to_pollset_set(calld->pollent,
@@ -2594,14 +2582,14 @@ static void start_pick_locked(void* arg, grpc_error* error) {
                        nullptr /* server_pushback_md */)) {
         GRPC_CLOSURE_SCHED(&calld->pick_closure, error);
       }
-      if (calld->pick_queued) remove_call_from_pending_picks_locked(elem);
+      if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
       break;
     }
     // If wait_for_ready is true, then queue to retry when we get a new picker.
     GRPC_ERROR_UNREF(error);
     // Fallthrough
   case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
-    if (!calld->pick_queued) add_call_to_pending_picks_locked(elem);
+    if (!calld->pick_queued) add_call_to_queued_picks_locked(elem);
     break;
   default:  // PICK_COMPLETE
     // Handle drops.
@@ -2610,7 +2598,7 @@ static void start_pick_locked(void* arg, grpc_error* error) {
           "Call dropped by load balancing policy");
     }
     GRPC_CLOSURE_SCHED(&calld->pick_closure, error);
-    if (calld->pick_queued) remove_call_from_pending_picks_locked(elem);
+    if (calld->pick_queued) remove_call_from_queued_picks_locked(elem);
   }
 }
 
