@@ -395,19 +395,18 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
     const grpc_arg* arg =
         grpc_channel_args_find(pick->connected_subchannel->args(),
                                GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
-    if (arg != nullptr) {
-      grpc_mdelem lb_token = {
-          reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
-      AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
-                                  &pick->lb_token_mdelem_storage,
-                                  pick->initial_metadata);
-    } else {
+    if (arg == nullptr) {
       gpr_log(GPR_ERROR,
               "[grpclb %p picker %p] No LB token for connected subchannel "
               "pick %p",
               parent_, this, pick);
       abort();
     }
+    grpc_mdelem lb_token = {
+        reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
+    AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
+                                &pick->lb_token_mdelem_storage,
+                                pick->initial_metadata);
     // Pass on client stats via context. Passes ownership of the reference.
     if (client_stats_ != nullptr) {
       pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
@@ -424,6 +423,8 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
 //
 
 void GrpcLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
+// FIXME: don't inject our own picker if RR is not in state READY, since
+// that will break drop accounting
   // Fallback mode.
   if (parent_->serverlist_ == nullptr) {
     parent_->channel_control_helper()->UpdateState(std::move(picker));
