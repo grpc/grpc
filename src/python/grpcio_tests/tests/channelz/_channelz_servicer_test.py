@@ -91,7 +91,6 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
-@unittest.skip('https://github.com/pypa/warehouse/issues/5196')
 class ChannelzServicerTest(unittest.TestCase):
 
     def _send_successful_unary_unary(self, idx):
