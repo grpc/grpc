@@ -137,7 +137,9 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
       PickResult result = delegate_picker_->Pick(pick, error);
-      New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+      if (result == PICK_COMPLETE && pick->connected_subchannel != nullptr) {
+        New<TrailingMetadataHandler>(pick, cb_, user_data_);  // deletes itself
+      }
       return result;
     }
 

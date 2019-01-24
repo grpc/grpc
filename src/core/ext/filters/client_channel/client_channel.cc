@@ -609,6 +609,12 @@ struct call_data {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches); ++i) {
       GPR_ASSERT(pending_batches[i].batch == nullptr);
     }
+    for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
+      if (pick.pick.subchannel_call_context[i].destroy != nullptr) {
+        pick.pick.subchannel_call_context[i].destroy(
+            pick.pick.subchannel_call_context[i].value);
+      }
+    }
   }
 
   // State for handling deadlines.
