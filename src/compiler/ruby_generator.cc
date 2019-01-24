@@ -40,42 +40,40 @@ namespace {
 
 // returns the full canonical message name
 grpc::string GetCanonicalMessageType(const Descriptor* msg) {
-  const Descriptor* top_level_msg;
-  const FileDescriptor* file_containing_msg;
-  grpc::string resolved_namespace;
-
   // If msg is nested, find the topmost message
-  top_level_msg = msg;
+  const Descriptor* top_level_msg = msg;
   while (top_level_msg->containing_type()) {
     top_level_msg = top_level_msg->containing_type();
   }
-  file_containing_msg = top_level_msg->file();
+  const FileDescriptor* file_containing_msg = top_level_msg->file();
 
-  grpc::string msg_full_name;
-  grpc::string msg_name;
-  grpc::string msg_proto_pkg;
-
-  msg_full_name = top_level_msg->full_name();
-  msg_name = top_level_msg->name();
-  msg_proto_pkg =
-      msg_full_name.substr(0, msg_full_name.length() - msg_name.length());
-
-  if (file_containing_msg->options().has_ruby_package()) {
-    resolved_namespace = file_containing_msg->options().ruby_package();
-  } else {
+  // no ruby package, full name fully defines the msg
+  if (!file_containing_msg->options().has_ruby_package()) {
     return msg->full_name();
   }
 
-  // remove trailing period
-  if (msg_proto_pkg.length() > 0) {
-    msg_proto_pkg.pop_back();
-  } else if (resolved_namespace.length() > 0) {
-    resolved_namespace += '.';
-  }
+  grpc::string msg_full_name = top_level_msg->full_name();
+  grpc::string msg_name = top_level_msg->name();
+  grpc::string msg_proto_pkg =
+      msg_full_name.substr(0, msg_full_name.length() - msg_name.length());
 
-  grpc::string res(msg->full_name());
-  ReplacePrefix(&res, msg_proto_pkg, resolved_namespace);
-  return res;
+  grpc::string resolved_namespace =
+      file_containing_msg->options().ruby_package();
+
+  if (msg_proto_pkg.length() > 0) {
+    // remove trailing period only if there is something to replace with
+    if (!resolved_namespace.empty()) {
+      assert(msg_proto_pkg.back() == '.');
+      msg_proto_pkg.pop_back();
+    }
+    grpc::string res(msg->full_name());
+    ReplacePrefix(&res, msg_proto_pkg, resolved_namespace);
+    return res;
+  } else if (resolved_namespace.length() > 0) {
+    return resolved_namespace + '.' + msg->full_name();
+  } else {
+    return msg->full_name();
+  }
 }
 
 // Prints out the method using the ruby gRPC DSL.
