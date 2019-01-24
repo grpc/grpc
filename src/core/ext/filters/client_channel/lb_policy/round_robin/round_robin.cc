@@ -222,8 +222,11 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
       subchannel_list_(subchannel_list),
       last_ready_index_(last_ready_index) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-    subchannels_.push_back(
-        subchannel_list->subchannel(i)->connected_subchannel()->Ref());
+    auto* connected_subchannel =
+        subchannel_list->subchannel(i)->connected_subchannel();
+    if (connected_subchannel != nullptr) {
+      subchannels_.push_back(connected_subchannel->Ref());
+    }
   }
 }
 
