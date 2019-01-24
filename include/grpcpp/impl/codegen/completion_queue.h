@@ -367,7 +367,12 @@ class CompletionQueue : private GrpcLibraryCodegen {
     gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
                                  static_cast<gpr_atm>(1));
   }
-  void CompleteAvalanching();
+  void CompleteAvalanching() {
+    if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
+                                     static_cast<gpr_atm>(-1)) == 1) {
+      g_core_codegen_interface->grpc_completion_queue_shutdown(cq_);
+    }
+  }
 
   grpc_completion_queue* cq_;  // owned
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,14 +40,6 @@ CompletionQueue::CompletionQueue(grpc_completion_queue* take)
 void CompletionQueue::Shutdown() {
   g_gli_initializer.summon();
   CompleteAvalanching();
-}
-
-void CompletionQueue::CompleteAvalanching() {
-  // Check if this was the last avalanching operation
-  if (gpr_atm_no_barrier_fetch_add(&avalanches_in_flight_,
-                                   static_cast<gpr_atm>(-1)) == 1) {
-    grpc_completion_queue_shutdown(cq_);
-  }
 }
 
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(

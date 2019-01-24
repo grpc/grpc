@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,10 @@ grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_next(
 grpc_completion_queue* CoreCodegen::grpc_completion_queue_create_for_pluck(
     void* reserved) {
   return ::grpc_completion_queue_create_for_pluck(reserved);
+}
+
+void CoreCodegen::grpc_completion_queue_shutdown(grpc_completion_queue* cq) {
+  ::grpc_completion_queue_shutdown(cq);
 }
 
 void CoreCodegen::grpc_completion_queue_destroy(grpc_completion_queue* cq) {

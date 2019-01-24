@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ class CoreCodegen final : public CoreCodegenInterface {
       void* reserved) override;
   grpc_completion_queue* grpc_completion_queue_create_for_pluck(
       void* reserved) override;
+  void grpc_completion_queue_shutdown(grpc_completion_queue* cq) override;
   void grpc_completion_queue_destroy(grpc_completion_queue* cq) override;
   grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
                                          gpr_timespec deadline,
