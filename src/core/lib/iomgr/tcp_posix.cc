@@ -714,7 +714,7 @@ static void process_errors(grpc_tcp* tcp) {
 
     // Allocate aligned space for cmsgs received along with a timestamps
     union {
-      char rbuf[CMSG_SPACE(sizeof(scm_timestamping)) +
+      char rbuf[CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) +
                 CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in)) +
                 CMSG_SPACE(16 * NLA_ALIGN(NLA_HDRLEN + sizeof(uint64_t)))];
       struct cmsghdr align;
