@@ -269,10 +269,13 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args,
   if (addresses == nullptr) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
+      grpc_error* error =
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args");
       grpc_connectivity_state_set(
           &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing update in args"),
-          "pf_update_missing");
+          GRPC_ERROR_REF(error), "pf_update_missing");
+      channel_control_helper()->UpdateState(
+          MakeRefCounted<TransientFailurePicker>(error));
     } else {
       // otherwise, keep using the current subchannel list (ignore this update).
       gpr_log(GPR_ERROR,
@@ -430,6 +433,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       } else {
         grpc_connectivity_state_set(&p->state_tracker_, connectivity_state,
                                     GRPC_ERROR_REF(error), "selected_changed");
+// FIXME: reset picker?
         // Renew notification.
         RenewConnectivityWatchLocked();
       }
@@ -466,6 +470,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         grpc_connectivity_state_set(
             &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "exhausted_subchannels");
+        p->channel_control_helper()->UpdateState(
+            MakeRefCounted<TransientFailurePicker>(GRPC_ERROR_REF(error)));
       }
       sd->CheckConnectivityStateAndStartWatchingLocked();
       break;
@@ -477,6 +483,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_CONNECTING,
                                     GRPC_ERROR_REF(error),
                                     "connecting_changed");
+        p->channel_control_helper()->UpdateState(
+            MakeRefCounted<QueuePicker>(p->Ref()));
       }
       // Renew notification.
       RenewConnectivityWatchLocked();
