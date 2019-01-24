@@ -238,7 +238,7 @@ namespace Grpc.Core
             var newOptions = this;
             // silently ignore the context propagation token if it wasn't produced by "us"
             var propagationTokenImpl = propagationToken.AsImplOrNull();
-            if (propagationToken != null)
+            if (propagationTokenImpl != null)
             {
                 if (propagationTokenImpl.Options.IsPropagateDeadline)
                 {
