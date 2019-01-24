@@ -30,7 +30,7 @@ To build gRPC from source, you may need to install the following
 packages from [Homebrew](https://brew.sh):
 
 ```sh
- $ brew install autoconf automake libtool shtool
+ $ brew install autoconf automake libtool shtool c-ares
 ```
 
 If you plan to build from source and run tests, install the following as well:
