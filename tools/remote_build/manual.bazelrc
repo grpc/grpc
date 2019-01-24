@@ -37,9 +37,5 @@ build --project_id=grpc-testing
 
 build --jobs=100
 
-# TODO(jtattermusch): this should be part of the common config
-# but currently sanitizers use different test_timeout values
-build --test_timeout=300,450,1200,3600
-
 # print output for tests that fail (default is "summary")
 build --test_output=errors
