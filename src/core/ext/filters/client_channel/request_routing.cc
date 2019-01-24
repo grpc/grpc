@@ -125,6 +125,59 @@ class ResolvingLoadBalancingPolicy::Picker
 };
 
 //
+// ResolvingLoadBalancingPolicy::LbConnectivityWatcher
+//
+
+class ResolvingLoadBalancingPolicy::LbConnectivityWatcher {
+ public:
+  LbConnectivityWatcher(RefCountedPtr<ResolvingLoadBalancingPolicy> parent,
+                        grpc_connectivity_state state,
+                        LoadBalancingPolicy* lb_policy)
+      : parent_(std::move(parent)),
+        state_(state),
+        lb_policy_(lb_policy) {
+    GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
+                      grpc_combiner_scheduler(parent_->combiner()));
+    lb_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
+  }
+
+ private:
+  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
+    LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
+    // If the notification is not for the current policy, we're stale,
+    // so delete ourselves.
+    if (self->lb_policy_ != self->parent_->lb_policy_.get()) {
+      Delete(self);
+      return;
+    }
+    // Otherwise, process notification.
+    if (self->parent_->tracer_->enabled()) {
+      gpr_log(GPR_INFO,
+              "resolving_lb_policy=%p: lb_policy=%p state changed to %s",
+              self->parent_.get(), self->lb_policy_,
+              grpc_connectivity_state_name(self->state_));
+    }
+    self->parent_->SetConnectivityStateLocked(
+        self->state_, GRPC_ERROR_REF(error), "lb_changed");
+    // If shutting down, terminate watch.
+    if (self->state_ == GRPC_CHANNEL_SHUTDOWN) {
+      Delete(self);
+      return;
+    }
+    // Renew watch.
+    self->lb_policy_->NotifyOnStateChangeLocked(&self->state_,
+                                                &self->on_changed_);
+  }
+
+  RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
+  grpc_connectivity_state state_;
+  // LB policy address. No ref held, so not safe to dereference unless
+  // it happens to match request_router->lb_policy_.
+  LoadBalancingPolicy* lb_policy_;
+  grpc_closure on_changed_;
+};
+
+//
 // ResolvingLoadBalancingPolicy
 //
 
@@ -378,6 +431,8 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
       lb_policy_->ExitIdleLocked();
       exit_idle_when_lb_policy_arrives_ = false;
     }
+    // Create new watcher.  It will delete itself when done.
+    New<LbConnectivityWatcher>(Ref(), *connectivity_state, lb_policy_.get());
   }
 }
 

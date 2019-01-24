@@ -86,6 +86,7 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   class ResolvingControlHelper;
   class Picker;
+  class LbConnectivityWatcher;
 
   ~ResolvingLoadBalancingPolicy();
 
