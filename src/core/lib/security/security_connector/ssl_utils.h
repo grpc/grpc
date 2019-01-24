@@ -89,6 +89,39 @@ class DefaultSslRootStore {
   static grpc_slice default_pem_root_certs_;
 };
 
+class PemKeyCertPair {
+ public:
+  // Construct from the C struct.  We steal its members and then immediately
+  // free it.
+  explicit PemKeyCertPair(grpc_ssl_pem_key_cert_pair* pair)
+      : private_key_(const_cast<char*>(pair->private_key)),
+        cert_chain_(const_cast<char*>(pair->cert_chain)) {
+    gpr_free(pair);
+  }
+
+  // Movable.
+  PemKeyCertPair(PemKeyCertPair&& other) {
+    private_key_ = std::move(other.private_key_);
+    cert_chain_ = std::move(other.cert_chain_);
+  }
+  PemKeyCertPair& operator=(PemKeyCertPair&& other) {
+    private_key_ = std::move(other.private_key_);
+    cert_chain_ = std::move(other.cert_chain_);
+    return *this;
+  }
+
+  // Not copyable.
+  PemKeyCertPair(const PemKeyCertPair&) = delete;
+  PemKeyCertPair& operator=(const PemKeyCertPair&) = delete;
+
+  char* private_key() const { return private_key_.get(); }
+  char* cert_chain() const { return cert_chain_.get(); }
+
+ private:
+  grpc_core::UniquePtr<char> private_key_;
+  grpc_core::UniquePtr<char> cert_chain_;
+};
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_H \
