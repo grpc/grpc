@@ -183,7 +183,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.2'
+    ss.dependency 'BoringSSL-GRPC', '0.0.3'
     ss.dependency 'nanopb', '~> 0.3'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
