@@ -372,7 +372,7 @@ void DestroyClientStats(void* arg) {
 GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
                                                 grpc_error** error) {
   // Check for drops if we are not using fallback backend addresses.
-  if (serverlist_ != nullptr && serverlist_->num_servers > 0) {
+  if (serverlist_->num_servers > 0) {
     // Look at the index into the serverlist to see if we should drop
     // this call.
     grpc_grpclb_server* server = serverlist_->servers[serverlist_index_++];
@@ -428,6 +428,12 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
 //
 
 void GrpcLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
+  // Fallback mode.
+  if (parent_->serverlist_ == nullptr) {
+    parent_->channel_control_helper()->UpdateState(std::move(picker));
+    return;
+  }
+  // Non-fallback mode.
   RefCountedPtr<GrpcLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
       parent_->lb_calld_->client_stats() != nullptr) {
