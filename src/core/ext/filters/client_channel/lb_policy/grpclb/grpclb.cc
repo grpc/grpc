@@ -123,22 +123,6 @@ namespace {
 
 constexpr char kGrpclb[] = "grpclb";
 
-// Adds lb_token of selected subchannel (address) to the call's initial
-// metadata.
-grpc_error* AddLbTokenToInitialMetadata(
-    grpc_mdelem lb_token, grpc_linked_mdelem* lb_token_mdelem_storage,
-    grpc_metadata_batch* initial_metadata) {
-  GPR_ASSERT(lb_token_mdelem_storage != nullptr);
-  GPR_ASSERT(!GRPC_MDISNULL(lb_token));
-  return grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
-                                      lb_token);
-}
-
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<GrpcLbClientStats*>(arg)->Unref();
-}
-
 class GrpcLb : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(Args args);
@@ -247,58 +231,7 @@ class GrpcLb : public LoadBalancingPolicy {
       grpc_grpclb_destroy_serverlist(serverlist_);
     }
 
-    PickResult Pick(PickState* pick, grpc_error** error) override {
-      // Check for drops if we are not using fallback backend addresses.
-      if (serverlist_ != nullptr && serverlist_->num_servers > 0) {
-        // Look at the index into the serverlist to see if we should drop
-        // this call.
-        grpc_grpclb_server* server = serverlist_->servers[serverlist_index_++];
-        if (serverlist_index_ == serverlist_->num_servers) {
-          serverlist_index_ = 0;  // Wrap-around.
-        }
-        if (server->drop) {
-          // Update client load reporting stats to indicate the number of
-          // dropped calls.  Note that we have to do this here instead of in
-          // the client_load_reporting filter, because we do not create a
-          // subchannel call (and therefore no client_load_reporting filter)
-          // for dropped calls.
-          if (client_stats_ != nullptr) {
-            client_stats_->AddCallDroppedLocked(server->load_balance_token);
-          }
-          return PICK_COMPLETE;
-        }
-      }
-      // Forward pick to child policy.
-      PickResult result = child_picker_->Pick(pick, error);
-      // If pick succeeded, add LB token to initial metadata.
-      if (result == PickResult::PICK_COMPLETE &&
-          pick->connected_subchannel != nullptr) {
-        const grpc_arg* arg =
-            grpc_channel_args_find(pick->connected_subchannel->args(),
-                                   GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
-        if (arg != nullptr) {
-          grpc_mdelem lb_token = {
-              reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
-          AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
-                                      &pick->lb_token_mdelem_storage,
-                                      pick->initial_metadata);
-        } else {
-          gpr_log(GPR_ERROR,
-                  "[grpclb %p picker %p] No LB token for connected subchannel "
-                  "pick %p",
-                  parent_, this, pick);
-          abort();
-        }
-        // Pass on client stats via context. Passes ownership of the reference.
-        if (client_stats_ != nullptr) {
-          pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-              client_stats_->Ref().release();
-          pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-              DestroyClientStats;
-        }
-      }
-      return result;
-    }
+    PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
     // Storing the address for logging, but not holding a ref.
@@ -317,41 +250,13 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class RoundRobinChannelControlHelper : public ChannelControlHelper {
+  class Helper : public ChannelControlHelper {
    public:
-    explicit RoundRobinChannelControlHelper(RefCountedPtr<GrpcLb> parent)
+    explicit Helper(RefCountedPtr<GrpcLb> parent)
         : parent_(std::move(parent)) {}
 
-    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override {
-      RefCountedPtr<GrpcLbClientStats> client_stats;
-      if (parent_->lb_calld_ != nullptr &&
-          parent_->lb_calld_->client_stats() != nullptr) {
-        client_stats = parent_->lb_calld_->client_stats()->Ref();
-      }
-      parent_->channel_control_helper()->UpdateState(
-          MakeRefCounted<Picker>(
-              parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
-              std::move(picker), std::move(client_stats)));
-    }
-
-    void RequestReresolution() override {
-      if (parent_->shutting_down_) return;
-      if (grpc_lb_glb_trace.enabled()) {
-        gpr_log(
-            GPR_INFO,
-            "[grpclb %p] Re-resolution requested from the internal RR policy "
-            "(%p).",
-            parent_.get(), parent_->rr_policy_.get());
-      }
-      // If we are talking to a balancer, we expect to get updated addresses
-      // from the balancer, so we can ignore the re-resolution request from
-      // the RR policy. Otherwise, pass the re-resolution request up to the
-      // channel.
-      if (parent_->lb_calld_ == nullptr ||
-          !parent_->lb_calld_->seen_initial_response()) {
-        parent_->channel_control_helper()->RequestReresolution();
-      }
-    }
+    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override;
+    void RequestReresolution() override;
 
    private:
     RefCountedPtr<GrpcLb> parent_;
@@ -443,6 +348,115 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_connectivity_state rr_connectivity_state_;
   grpc_closure on_rr_connectivity_changed_;
 };
+
+//
+// GrpcLb::Picker
+//
+
+// Adds lb_token of selected subchannel (address) to the call's initial
+// metadata.
+grpc_error* AddLbTokenToInitialMetadata(
+    grpc_mdelem lb_token, grpc_linked_mdelem* lb_token_mdelem_storage,
+    grpc_metadata_batch* initial_metadata) {
+  GPR_ASSERT(lb_token_mdelem_storage != nullptr);
+  GPR_ASSERT(!GRPC_MDISNULL(lb_token));
+  return grpc_metadata_batch_add_tail(initial_metadata, lb_token_mdelem_storage,
+                                      lb_token);
+}
+
+// Destroy function used when embedding client stats in call context.
+void DestroyClientStats(void* arg) {
+  static_cast<GrpcLbClientStats*>(arg)->Unref();
+}
+
+GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
+                                                grpc_error** error) {
+  // Check for drops if we are not using fallback backend addresses.
+  if (serverlist_ != nullptr && serverlist_->num_servers > 0) {
+    // Look at the index into the serverlist to see if we should drop
+    // this call.
+    grpc_grpclb_server* server = serverlist_->servers[serverlist_index_++];
+    if (serverlist_index_ == serverlist_->num_servers) {
+      serverlist_index_ = 0;  // Wrap-around.
+    }
+    if (server->drop) {
+      // Update client load reporting stats to indicate the number of
+      // dropped calls.  Note that we have to do this here instead of in
+      // the client_load_reporting filter, because we do not create a
+      // subchannel call (and therefore no client_load_reporting filter)
+      // for dropped calls.
+      if (client_stats_ != nullptr) {
+        client_stats_->AddCallDroppedLocked(server->load_balance_token);
+      }
+      return PICK_COMPLETE;
+    }
+  }
+  // Forward pick to child policy.
+  PickResult result = child_picker_->Pick(pick, error);
+  // If pick succeeded, add LB token to initial metadata.
+  if (result == PickResult::PICK_COMPLETE &&
+      pick->connected_subchannel != nullptr) {
+    const grpc_arg* arg =
+        grpc_channel_args_find(pick->connected_subchannel->args(),
+                               GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+    if (arg != nullptr) {
+      grpc_mdelem lb_token = {
+          reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
+      AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(lb_token),
+                                  &pick->lb_token_mdelem_storage,
+                                  pick->initial_metadata);
+    } else {
+      gpr_log(GPR_ERROR,
+              "[grpclb %p picker %p] No LB token for connected subchannel "
+              "pick %p",
+              parent_, this, pick);
+      abort();
+    }
+    // Pass on client stats via context. Passes ownership of the reference.
+    if (client_stats_ != nullptr) {
+      pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
+          client_stats_->Ref().release();
+      pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
+          DestroyClientStats;
+    }
+  }
+  return result;
+}
+
+//
+// GrpcLb::Helper
+//
+
+void GrpcLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
+  RefCountedPtr<GrpcLbClientStats> client_stats;
+  if (parent_->lb_calld_ != nullptr &&
+      parent_->lb_calld_->client_stats() != nullptr) {
+    client_stats = parent_->lb_calld_->client_stats()->Ref();
+  }
+  parent_->channel_control_helper()->UpdateState(
+      MakeRefCounted<Picker>(
+          parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
+          std::move(picker), std::move(client_stats)));
+}
+
+void GrpcLb::Helper::RequestReresolution() {
+  if (parent_->shutting_down_) return;
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(
+        GPR_INFO,
+        "[grpclb %p] Re-resolution requested from the internal RR policy "
+        "(%p).",
+        parent_.get(), parent_->rr_policy_.get());
+  }
+  // If we are talking to a balancer, we expect to get updated addresses
+  // from the balancer, so we can ignore the re-resolution request from
+  // the RR policy. Otherwise, pass the re-resolution request up to the
+  // channel.
+  if (parent_->lb_calld_ == nullptr ||
+      !parent_->lb_calld_->seen_initial_response()) {
+    parent_->channel_control_helper()->RequestReresolution();
+  }
+}
 
 //
 // serverlist parsing code
@@ -1513,8 +1527,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.args = args;
     lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
-    lb_policy_args.channel_control_helper =
-        MakeRefCounted<RoundRobinChannelControlHelper>(Ref());
+    lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);

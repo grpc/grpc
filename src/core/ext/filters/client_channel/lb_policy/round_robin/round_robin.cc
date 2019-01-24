@@ -160,58 +160,9 @@ class RoundRobin : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list,
-           size_t last_ready_index)
-        : parent_(parent), subchannel_list_(subchannel_list),
-          last_ready_index_(last_ready_index) {
-      for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
-        subchannels_.push_back(
-            subchannel_list->subchannel(i)->connected_subchannel()->Ref());
-      }
-    }
+           size_t last_ready_index);
 
-    PickResult Pick(PickState* pick, grpc_error** error) override {
-      if (grpc_lb_round_robin_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "[RR %p picker %p] getting next ready subchannel (out of %"
-                PRIuPTR "), last_ready_index=%" PRIuPTR,
-                parent_, this, subchannels_.size(), last_ready_index_);
-      }
-      for (size_t i = 0; i < subchannels_.size(); ++i) {
-        const size_t index =
-            (i + last_ready_index_ + 1) % subchannels_.size();
-        if (grpc_lb_round_robin_trace.enabled()) {
-          gpr_log(
-              GPR_INFO,
-              "[RR %p picker %p] checking subchannel index %" PRIuPTR
-              ", subchannel_list %p: connected_subchannel=%p",
-              parent_, this, index, subchannel_list_,
-              subchannels_[index].get());
-        }
-        if (subchannels_[index].get() != nullptr) {
-          if (grpc_lb_round_robin_trace.enabled()) {
-            gpr_log(GPR_INFO,
-                    "[RR %p picker %p] found next ready connected subchannel "
-                    "(%p) at index %" PRIuPTR " of subchannel_list %p",
-                    parent_, this, subchannels_[index].get(), index,
-                    subchannel_list_);
-          }
-          last_ready_index_ = index;
-          pick->connected_subchannel = subchannels_[index];
-          return PICK_COMPLETE;
-        }
-      }
-      if (grpc_lb_round_robin_trace.enabled()) {
-        gpr_log(GPR_INFO, "[RR %p picker %p] no subchannels in ready state",
-                parent_, this);
-      }
-      *error =
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no subchannels in READY state");
-      return PICK_TRANSIENT_FAILURE;
-    }
-
-    RoundRobinSubchannelList* subchannel_list() const {
-      return subchannel_list_;
-    }
+    PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
     // Using pointer values only, no refs held -- do not dereference!
@@ -259,6 +210,67 @@ class RoundRobin : public LoadBalancingPolicy {
   channelz::ChildRefsList child_subchannels_;
   channelz::ChildRefsList child_channels_;
 };
+
+//
+// RoundRobin::Picker
+//
+
+RoundRobin::Picker::Picker(RoundRobin* parent,
+                           RoundRobinSubchannelList* subchannel_list,
+                           size_t last_ready_index)
+    : parent_(parent),
+      subchannel_list_(subchannel_list),
+      last_ready_index_(last_ready_index) {
+  for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
+    subchannels_.push_back(
+        subchannel_list->subchannel(i)->connected_subchannel()->Ref());
+  }
+}
+
+RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
+                                                        grpc_error** error) {
+  if (grpc_lb_round_robin_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[RR %p picker %p] getting next ready subchannel (out of %"
+            PRIuPTR "), last_ready_index=%" PRIuPTR,
+            parent_, this, subchannels_.size(), last_ready_index_);
+  }
+  for (size_t i = 0; i < subchannels_.size(); ++i) {
+    const size_t index =
+        (i + last_ready_index_ + 1) % subchannels_.size();
+    if (grpc_lb_round_robin_trace.enabled()) {
+      gpr_log(
+          GPR_INFO,
+          "[RR %p picker %p] checking subchannel index %" PRIuPTR
+          ", subchannel_list %p: connected_subchannel=%p",
+          parent_, this, index, subchannel_list_,
+          subchannels_[index].get());
+    }
+    if (subchannels_[index].get() != nullptr) {
+      if (grpc_lb_round_robin_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "[RR %p picker %p] found next ready connected subchannel "
+                "(%p) at index %" PRIuPTR " of subchannel_list %p",
+                parent_, this, subchannels_[index].get(), index,
+                subchannel_list_);
+      }
+      last_ready_index_ = index;
+      pick->connected_subchannel = subchannels_[index];
+      return PICK_COMPLETE;
+    }
+  }
+  if (grpc_lb_round_robin_trace.enabled()) {
+    gpr_log(GPR_INFO, "[RR %p picker %p] no subchannels in ready state",
+            parent_, this);
+  }
+  *error =
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("no subchannels in READY state");
+  return PICK_TRANSIENT_FAILURE;
+}
+
+//
+// RoundRobin
+//
 
 RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
   GPR_ASSERT(args.client_channel_factory != nullptr);

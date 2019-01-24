@@ -511,11 +511,11 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   if (set_connectivity_state) {
     self->SetConnectivityStateLocked(connectivity_state, connectivity_error,
                                      "resolver_result");
+// FIXME: if we are in TRANSIENT_FAILURE due to a resolver failure and
+// no LB policy exists, use the helper to return a TransientFailurePicker
   } else {
     GRPC_ERROR_UNREF(connectivity_error);
   }
-// FIXME: if we are in TRANSIENT_FAILURE due to a resolver failure and
-// no LB policy exists, use the helper to return a TransientFailurePicker
   self->resolver_->NextLocked(&self->resolver_result_,
                               &self->on_resolver_result_changed_);
 }

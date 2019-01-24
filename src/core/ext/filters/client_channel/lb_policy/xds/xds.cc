@@ -116,11 +116,6 @@ namespace {
 
 constexpr char kXds[] = "xds_experimental";
 
-// Destroy function used when embedding client stats in call context.
-void DestroyClientStats(void* arg) {
-  static_cast<XdsLbClientStats*>(arg)->Unref();
-}
-
 class XdsLb : public LoadBalancingPolicy {
  public:
   explicit XdsLb(Args args);
@@ -221,60 +216,20 @@ class XdsLb : public LoadBalancingPolicy {
         : child_picker_(std::move(child_picker)),
           client_stats_(std::move(client_stats)) {}
 
-    PickResult Pick(PickState* pick, grpc_error** error) override {
-      // TODO(roth): Add support for drop handling.
-      // Forward pick to child policy.
-      PickResult result = child_picker_->Pick(pick, error);
-      // If pick succeeded, add client stats.
-      if (result == PickResult::PICK_COMPLETE &&
-          pick->connected_subchannel != nullptr &&
-          client_stats_ != nullptr) {
-        pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-            client_stats_->Ref().release();
-        pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
-            DestroyClientStats;
-      }
-      return result;
-    }
+    PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
     RefCountedPtr<SubchannelPicker> child_picker_;
     RefCountedPtr<XdsLbClientStats> client_stats_;
   };
 
-  class XdsChannelControlHelper : public ChannelControlHelper {
+  class Helper : public ChannelControlHelper {
    public:
-    explicit XdsChannelControlHelper(RefCountedPtr<XdsLb> parent)
+    explicit Helper(RefCountedPtr<XdsLb> parent)
         : parent_(std::move(parent)) {}
 
-    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override {
-      RefCountedPtr<XdsLbClientStats> client_stats;
-      if (parent_->lb_calld_ != nullptr &&
-          parent_->lb_calld_->client_stats() != nullptr) {
-        client_stats = parent_->lb_calld_->client_stats()->Ref();
-      }
-      parent_->channel_control_helper()->UpdateState(
-          MakeRefCounted<Picker>(std::move(picker), std::move(client_stats)));
-    }
-
-    void RequestReresolution() override {
-      if (parent_->shutting_down_) return;
-      if (grpc_lb_xds_trace.enabled()) {
-        gpr_log(
-            GPR_INFO,
-            "[xdslb %p] Re-resolution requested from the internal RR policy "
-            "(%p).",
-            parent_.get(), parent_->child_policy_.get());
-      }
-      // If we are talking to a balancer, we expect to get updated addresses
-      // from the balancer, so we can ignore the re-resolution request from
-      // the RR policy. Otherwise, pass the re-resolution request up to the
-      // channel.
-      if (parent_->lb_calld_ == nullptr ||
-          !parent_->lb_calld_->seen_initial_response()) {
-        parent_->channel_control_helper()->RequestReresolution();
-      }
-    }
+    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override;
+    void RequestReresolution() override;
 
    private:
     RefCountedPtr<XdsLb> parent_;
@@ -363,6 +318,65 @@ class XdsLb : public LoadBalancingPolicy {
   grpc_connectivity_state child_connectivity_state_;
   grpc_closure on_child_connectivity_changed_;
 };
+
+//
+// XdsLb::Picker
+//
+
+// Destroy function used when embedding client stats in call context.
+void DestroyClientStats(void* arg) {
+  static_cast<XdsLbClientStats*>(arg)->Unref();
+}
+
+XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
+                                              grpc_error** error) {
+  // TODO(roth): Add support for drop handling.
+  // Forward pick to child policy.
+  PickResult result = child_picker_->Pick(pick, error);
+  // If pick succeeded, add client stats.
+  if (result == PickResult::PICK_COMPLETE &&
+      pick->connected_subchannel != nullptr &&
+      client_stats_ != nullptr) {
+    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
+        client_stats_->Ref().release();
+    pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
+        DestroyClientStats;
+  }
+  return result;
+}
+
+//
+// XdsLb::Helper
+//
+
+void XdsLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
+  RefCountedPtr<XdsLbClientStats> client_stats;
+  if (parent_->lb_calld_ != nullptr &&
+      parent_->lb_calld_->client_stats() != nullptr) {
+    client_stats = parent_->lb_calld_->client_stats()->Ref();
+  }
+  parent_->channel_control_helper()->UpdateState(
+      MakeRefCounted<Picker>(std::move(picker), std::move(client_stats)));
+}
+
+void XdsLb::Helper::RequestReresolution() {
+  if (parent_->shutting_down_) return;
+  if (grpc_lb_xds_trace.enabled()) {
+    gpr_log(
+        GPR_INFO,
+        "[xdslb %p] Re-resolution requested from the internal RR policy "
+        "(%p).",
+        parent_.get(), parent_->child_policy_.get());
+  }
+  // If we are talking to a balancer, we expect to get updated addresses
+  // from the balancer, so we can ignore the re-resolution request from
+  // the RR policy. Otherwise, pass the re-resolution request up to the
+  // channel.
+  if (parent_->lb_calld_ == nullptr ||
+      !parent_->lb_calld_->seen_initial_response()) {
+    parent_->channel_control_helper()->RequestReresolution();
+  }
+}
 
 //
 // serverlist parsing code
@@ -1327,8 +1341,7 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.args = args;
-    lb_policy_args.channel_control_helper =
-        MakeRefCounted<XdsChannelControlHelper>(Ref());
+    lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
     CreateChildPolicyLocked(std::move(lb_policy_args));
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
