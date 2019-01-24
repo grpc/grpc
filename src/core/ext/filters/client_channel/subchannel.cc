@@ -202,6 +202,7 @@ class ConnectedSubchannelStateWatcher
   // Must be instantiated while holding c->mu.
   explicit ConnectedSubchannelStateWatcher(grpc_subchannel* c)
       : subchannel_(c) {
+    gpr_mu_init(&mu_);
     // Steal subchannel ref for connecting.
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "state_watcher");
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "connecting");
@@ -234,9 +235,13 @@ class ConnectedSubchannelStateWatcher
 
   ~ConnectedSubchannelStateWatcher() {
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
+    gpr_mu_destroy(&mu_);
   }
 
-  void Orphan() override { health_check_client_.reset(); }
+  void Orphan() override {
+    MutexLock lock(&mu_);
+    health_check_client_.reset();
+  }
 
  private:
   static void OnConnectivityChanged(void* arg, grpc_error* error) {
@@ -302,6 +307,7 @@ class ConnectedSubchannelStateWatcher
 
   static void OnHealthChanged(void* arg, grpc_error* error) {
     auto* self = static_cast<ConnectedSubchannelStateWatcher*>(arg);
+    MutexLock health_state_lock(&self->mu_);
     if (self->health_state_ == GRPC_CHANNEL_SHUTDOWN) {
       self->Unref();
       return;
@@ -324,6 +330,8 @@ class ConnectedSubchannelStateWatcher
   grpc_core::OrphanablePtr<grpc_core::HealthCheckClient> health_check_client_;
   grpc_closure on_health_changed_;
   grpc_connectivity_state health_state_ = GRPC_CHANNEL_CONNECTING;
+  // Ensure atomic change to health_check_client_ and health_state_.
+  gpr_mu mu_;
 };
 
 }  // namespace grpc_core
