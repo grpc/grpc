@@ -32,6 +32,7 @@
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -870,6 +871,9 @@ class CallOpSet : public CallOpSetInterface,
     if (RunInterceptors()) {
       ContinueFillOpsAfterInterception();
     } else {
+      // This call is going to go through interceptors and would need to
+      // schedule new batches, so delay completion queue shutdown
+      call_.cq()->RegisterAvalanching();
       // After the interceptors are run, ContinueFillOpsAfterInterception will
       // be run
     }
@@ -947,6 +951,8 @@ class CallOpSet : public CallOpSetInterface,
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
                            call_.call(), nullptr, 0, core_cq_tag(), nullptr));
+    // Complete the avalanching since we are done with this batch of ops
+    call_.cq()->CompleteAvalanching();
   }
 
  private:

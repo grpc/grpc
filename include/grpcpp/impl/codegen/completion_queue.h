@@ -84,6 +84,8 @@ template <StatusCode code>
 class ErrorMethodHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
+class CallOpSet;
 }  // namespace internal
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -277,6 +279,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   // Friends that need access to constructor for callback CQ
   friend class ::grpc::Channel;
+
+  // For access to Register/CompleteAvalanching
+  template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
+  friend class ::grpc::internal::CallOpSet;
 
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
