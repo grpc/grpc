@@ -36,6 +36,13 @@ rm -f Podfile.lock
 
 pod install
 
+# If building on Kokoro, use /tmpfs to store derived data
+if [ "$KOKORO_BUILD" -eq 1 ]; then
+  DERIVED_DIR="/tmpfs/Build/Build"
+else
+  DERIVED_DIR="Build/Build"
+fi
+
 set -o pipefail
 XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 xcodebuild \
@@ -43,7 +50,7 @@ xcodebuild \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
     -destination generic/platform=iOS \
-    -derivedDataPath Build/Build \
+    -derivedDataPath $DERIVED_DIR \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \

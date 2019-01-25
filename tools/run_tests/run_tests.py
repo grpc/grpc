@@ -1076,7 +1076,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'HelloWorld',
-                    'EXAMPLE_PATH': 'examples/objective-c/helloworld'
+                    'EXAMPLE_PATH': 'examples/objective-c/helloworld',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1085,7 +1086,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'RouteGuideClient',
-                    'EXAMPLE_PATH': 'examples/objective-c/route_guide'
+                    'EXAMPLE_PATH': 'examples/objective-c/route_guide',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1094,7 +1096,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'AuthSample',
-                    'EXAMPLE_PATH': 'examples/objective-c/auth_sample'
+                    'EXAMPLE_PATH': 'examples/objective-c/auth_sample',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1103,7 +1106,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1113,7 +1117,8 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'YES'
+                    'FRAMEWORKS': 'YES',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1122,7 +1127,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'SwiftSample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
+                    'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample',
+                    'KOKORO_BUILD': '1'
                 }),
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
