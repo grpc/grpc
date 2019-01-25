@@ -59,7 +59,15 @@ namespace {
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
 // How many callback requests of each method should we pre-register at start
-#define DEFAULT_CALLBACK_REQS_PER_METHOD 32
+#define DEFAULT_CALLBACK_REQS_PER_METHOD 512
+
+// What is the (soft) limit for outstanding requests in the server
+#define SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING 30000
+
+// If the number of unmatched requests for a method drops below this amount, try
+// to allocate extra unless it pushes the total number of callbacks above the
+// soft maximum
+#define SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD 128
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -177,11 +185,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (method_tag_) {
-      if (GRPC_CALL_OK !=
-          grpc_server_request_registered_call(
+      if (grpc_server_request_registered_call(
               server, method_tag_, &call_, &deadline_, &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
-              notify_cq, this)) {
+              notify_cq, this) != GRPC_CALL_OK) {
         TeardownRequest();
         return;
       }
@@ -343,9 +350,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
 
 class Server::CallbackRequest final : public internal::CompletionQueueTag {
  public:
-  CallbackRequest(Server* server, internal::RpcServiceMethod* method,
-                  void* method_tag)
+  CallbackRequest(Server* server, Server::MethodReqList* list,
+                  internal::RpcServiceMethod* method, void* method_tag)
       : server_(server),
+        req_list_(list),
         method_(method),
         method_tag_(method_tag),
         has_request_payload_(
@@ -353,12 +361,22 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
             method->method_type() == internal::RpcMethod::SERVER_STREAMING),
         cq_(server->CallbackCQ()),
         tag_(this) {
+    server_->callback_reqs_outstanding_++;
     Setup();
   }
 
-  ~CallbackRequest() { Clear(); }
+  ~CallbackRequest() {
+    Clear();
 
-  void Request() {
+    // The counter of outstanding requests must be decremented
+    // under a lock in case it causes the server shutdown.
+    std::lock_guard<std::mutex> l(server_->callback_reqs_mu_);
+    if (--server_->callback_reqs_outstanding_ == 0) {
+      server_->callback_reqs_done_cv_.notify_one();
+    }
+  }
+
+  bool Request() {
     if (method_tag_) {
       if (GRPC_CALL_OK !=
           grpc_server_request_registered_call(
@@ -366,7 +384,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
               &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_->cq(),
               cq_->cq(), static_cast<void*>(&tag_))) {
-        return;
+        return false;
       }
     } else {
       if (!call_details_) {
@@ -376,9 +394,10 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       if (grpc_server_request_call(server_->c_server(), &call_, call_details_,
                                    &request_metadata_, cq_->cq(), cq_->cq(),
                                    static_cast<void*>(&tag_)) != GRPC_CALL_OK) {
-        return;
+        return false;
       }
     }
+    return true;
   }
 
   bool FinalizeResult(void** tag, bool* status) override { return false; }
@@ -409,10 +428,48 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
       GPR_ASSERT(!req_->FinalizeResult(&ignored, &new_ok));
       GPR_ASSERT(ignored == req_);
 
-      if (!ok) {
-        // The call has been shutdown
-        req_->Clear();
-        return;
+      bool spawn_new = false;
+      {
+        std::unique_lock<std::mutex> l(req_->req_list_->reqs_mu);
+        req_->req_list_->reqs_list.erase(req_->req_list_iterator_);
+        req_->req_list_->reqs_list_sz--;
+        if (!ok) {
+          // The call has been shutdown.
+          // Delete its contents to free up the request.
+          // First release the lock in case the deletion of the request
+          // completes the full server shutdown and allows the destructor
+          // of the req_list to proceed.
+          l.unlock();
+          delete req_;
+          return;
+        }
+
+        // If this was the last request in the list or it is below the soft
+        // minimum and there are spare requests available, set up a new one, but
+        // do it outside the lock since the Request could otherwise deadlock
+        if (req_->req_list_->reqs_list_sz == 0 ||
+            (req_->req_list_->reqs_list_sz <
+                 SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
+             req_->server_->callback_reqs_outstanding_ <
+                 SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
+          spawn_new = true;
+        }
+      }
+      if (spawn_new) {
+        auto* new_req = new CallbackRequest(req_->server_, req_->req_list_,
+                                            req_->method_, req_->method_tag_);
+        if (!new_req->Request()) {
+          // The server must have just decided to shutdown. Erase
+          // from the list under lock but release the lock before
+          // deleting the new_req (in case that request was what
+          // would allow the destruction of the req_list)
+          {
+            std::lock_guard<std::mutex> l(new_req->req_list_->reqs_mu);
+            new_req->req_list_->reqs_list.erase(new_req->req_list_iterator_);
+            new_req->req_list_->reqs_list_sz--;
+          }
+          delete new_req;
+        }
       }
 
       // Bind the call, deadline, and metadata from what we got
@@ -462,16 +519,29 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
           internal::MethodHandler::HandlerParameter(
               call_, &req_->ctx_, req_->request_, req_->request_status_,
               [this] {
-                req_->Reset();
-                req_->Request();
+                // Recycle this request if there aren't too many outstanding.
+                // Note that we don't have to worry about a case where there
+                // are no requests waiting to match for this method since that
+                // is already taken care of when binding a request to a call.
+                // TODO(vjpai): Also don't recycle this request if the dynamic
+                //              load no longer justifies it. Consider measuring
+                //              dynamic load and setting a target accordingly.
+                if (req_->server_->callback_reqs_outstanding_ <
+                    SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
+                  req_->Clear();
+                  req_->Setup();
+                } else {
+                  // We can free up this request because there are too many
+                  delete req_;
+                  return;
+                }
+                if (!req_->Request()) {
+                  // The server must have just decided to shutdown.
+                  delete req_;
+                }
               }));
     }
   };
-
-  void Reset() {
-    Clear();
-    Setup();
-  }
 
   void Clear() {
     if (call_details_) {
@@ -492,9 +562,15 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
     request_payload_ = nullptr;
     request_ = nullptr;
     request_status_ = Status();
+    std::lock_guard<std::mutex> l(req_list_->reqs_mu);
+    req_list_->reqs_list.push_front(this);
+    req_list_->reqs_list_sz++;
+    req_list_iterator_ = req_list_->reqs_list.begin();
   }
 
   Server* const server_;
+  Server::MethodReqList* req_list_;
+  Server::MethodReqList::iterator req_list_iterator_;
   internal::RpcServiceMethod* const method_;
   void* const method_tag_;
   const bool has_request_payload_;
@@ -715,6 +791,13 @@ Server::~Server() {
   }
 
   grpc_server_destroy(server_);
+  for (auto* method_list : callback_reqs_) {
+    // The entries of the method_list should have already been emptied
+    // during Shutdown as each request is failed by Shutdown. Check that
+    // this actually happened.
+    GPR_ASSERT(method_list->reqs_list.empty());
+    delete method_list;
+  }
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
@@ -794,10 +877,12 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       }
     } else {
       // a callback method. Register at least some callback requests
+      callback_reqs_.push_back(new Server::MethodReqList);
+      auto* method_req_list = callback_reqs_.back();
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
-        auto* req = new CallbackRequest(this, method, method_registration_tag);
-        callback_reqs_.emplace_back(req);
+        new CallbackRequest(this, method_req_list, method,
+                            method_registration_tag);
       }
       // Enqueue it so that it will be Request'ed later once
       // all request matchers are created at core server startup
@@ -889,8 +974,10 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
     (*it)->Start();
   }
 
-  for (auto& cbreq : callback_reqs_) {
-    cbreq->Request();
+  for (auto* cbmethods : callback_reqs_) {
+    for (auto* cbreq : cbmethods->reqs_list) {
+      GPR_ASSERT(cbreq->Request());
+    }
   }
 
   if (default_health_check_service_impl != nullptr) {
@@ -900,49 +987,69 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
 
 void Server::ShutdownInternal(gpr_timespec deadline) {
   std::unique_lock<std::mutex> lock(mu_);
-  if (!shutdown_) {
-    shutdown_ = true;
-
-    /// The completion queue to use for server shutdown completion notification
-    CompletionQueue shutdown_cq;
-    ShutdownTag shutdown_tag;  // Dummy shutdown tag
-    grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
-
-    shutdown_cq.Shutdown();
-
-    void* tag;
-    bool ok;
-    CompletionQueue::NextStatus status =
-        shutdown_cq.AsyncNext(&tag, &ok, deadline);
-
-    // If this timed out, it means we are done with the grace period for a clean
-    // shutdown. We should force a shutdown now by cancelling all inflight calls
-    if (status == CompletionQueue::NextStatus::TIMEOUT) {
-      grpc_server_cancel_all_calls(server_);
-    }
-    // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
-    // successfully shutdown
-
-    // Shutdown all ThreadManagers. This will try to gracefully stop all the
-    // threads in the ThreadManagers (once they process any inflight requests)
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Shutdown();  // ThreadManager's Shutdown()
-    }
-
-    // Wait for threads in all ThreadManagers to terminate
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->Wait();
-    }
-
-    // Drain the shutdown queue (if the previous call to AsyncNext() timed out
-    // and we didn't remove the tag from the queue yet)
-    while (shutdown_cq.Next(&tag, &ok)) {
-      // Nothing to be done here. Just ignore ok and tag values
-    }
-
-    shutdown_notified_ = true;
-    shutdown_cv_.notify_all();
+  if (shutdown_) {
+    return;
   }
+
+  shutdown_ = true;
+
+  /// The completion queue to use for server shutdown completion notification
+  CompletionQueue shutdown_cq;
+  ShutdownTag shutdown_tag;  // Dummy shutdown tag
+  grpc_server_shutdown_and_notify(server_, shutdown_cq.cq(), &shutdown_tag);
+
+  shutdown_cq.Shutdown();
+
+  void* tag;
+  bool ok;
+  CompletionQueue::NextStatus status =
+      shutdown_cq.AsyncNext(&tag, &ok, deadline);
+
+  // If this timed out, it means we are done with the grace period for a clean
+  // shutdown. We should force a shutdown now by cancelling all inflight calls
+  if (status == CompletionQueue::NextStatus::TIMEOUT) {
+    grpc_server_cancel_all_calls(server_);
+  }
+  // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
+  // successfully shutdown
+
+  // Shutdown all ThreadManagers. This will try to gracefully stop all the
+  // threads in the ThreadManagers (once they process any inflight requests)
+  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+    (*it)->Shutdown();  // ThreadManager's Shutdown()
+  }
+
+  // Wait for threads in all ThreadManagers to terminate
+  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
+    (*it)->Wait();
+  }
+
+  // Wait for all outstanding callback requests to complete
+  // (whether waiting for a match or already active).
+  // We know that no new requests will be created after this point
+  // because they are only created at server startup time or when
+  // we have a successful match on a request. During the shutdown phase,
+  // requests that have not yet matched will be failed rather than
+  // allowed to succeed, which will cause the server to delete the
+  // request and decrement the count. Possibly a request will match before
+  // the shutdown but then find that shutdown has already started by the
+  // time it tries to register a new request. In that case, the registration
+  // will report a failure, indicating a shutdown and again we won't end
+  // up incrementing the counter.
+  {
+    std::unique_lock<std::mutex> cblock(callback_reqs_mu_);
+    callback_reqs_done_cv_.wait(
+        cblock, [this] { return callback_reqs_outstanding_ == 0; });
+  }
+
+  // Drain the shutdown queue (if the previous call to AsyncNext() timed out
+  // and we didn't remove the tag from the queue yet)
+  while (shutdown_cq.Next(&tag, &ok)) {
+    // Nothing to be done here. Just ignore ok and tag values
+  }
+
+  shutdown_notified_ = true;
+  shutdown_cv_.notify_all();
 }
 
 void Server::Wait() {
