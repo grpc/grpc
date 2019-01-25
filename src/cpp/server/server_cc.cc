@@ -62,11 +62,11 @@ namespace {
 #define DEFAULT_CALLBACK_REQS_PER_METHOD 512
 
 // What is the (soft) limit for outstanding requests in the server
-#define MAXIMUM_CALLBACK_REQS_OUTSTANDING 30000
+#define SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING 30000
 
-// If the number of unmatched requests for a method drops below this amount,
-// try to allocate extra unless it pushes the total number of callbacks above
-// the soft maximum
+// If the number of unmatched requests for a method drops below this amount, try
+// to allocate extra unless it pushes the total number of callbacks above the
+// soft maximum
 #define SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD 128
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
@@ -185,11 +185,10 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
     GPR_ASSERT(cq_ && !in_flight_);
     in_flight_ = true;
     if (method_tag_) {
-      if (GRPC_CALL_OK !=
-          grpc_server_request_registered_call(
+      if (grpc_server_request_registered_call(
               server, method_tag_, &call_, &deadline_, &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_,
-              notify_cq, this)) {
+              notify_cq, this) != GRPC_CALL_OK) {
         TeardownRequest();
         return;
       }
@@ -452,7 +451,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
             (req_->req_list_->reqs_list_sz <
                  SOFT_MINIMUM_SPARE_CALLBACK_REQS_PER_METHOD &&
              req_->server_->callback_reqs_outstanding_ <
-                 MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
+                 SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING)) {
           spawn_new = true;
         }
       }
@@ -528,7 +527,7 @@ class Server::CallbackRequest final : public internal::CompletionQueueTag {
                 //              load no longer justifies it. Consider measuring
                 //              dynamic load and setting a target accordingly.
                 if (req_->server_->callback_reqs_outstanding_ <
-                    MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
+                    SOFT_MAXIMUM_CALLBACK_REQS_OUTSTANDING) {
                   req_->Clear();
                   req_->Setup();
                 } else {

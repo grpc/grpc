@@ -248,11 +248,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-  // Outstanding callback requests. The vector is indexed by method with a
-  // list per method. Each element should store its own iterator
-  // in the list and should erase it when the request is actually bound to
-  // an RPC. Synchronize this list with its own mu_ (not the server mu_) since
-  // these must be active at Shutdown when the server mu_ is locked
+  // Outstanding callback requests. The vector is indexed by method with a list
+  // per method. Each element should store its own iterator in the list and
+  // should erase it when the request is actually bound to an RPC. Synchronize
+  // this list with its own mu_ (not the server mu_) since these must be active
+  // at Shutdown when the server mu_ is locked.
   // TODO(vjpai): Merge with the core request matcher to avoid duplicate work
   struct MethodReqList {
     std::mutex reqs_mu;
@@ -274,13 +274,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   std::condition_variable shutdown_cv_;
 
   // It is ok (but not required) to nest callback_reqs_mu_ under mu_ .
-  // Incrementing callback_reqs_outstanding_ is ok without a lock
-  // but it should only be decremented under the lock in case it is the
-  // last request and enables the server shutdown. The increment is
-  // performance-critical since it happens during periods of increasing
-  // load; the decrement happens only when memory is maxed out, during server
-  // shutdown, or (possibly in a future version) during decreasing load, so
-  // it is less performance-critical.
+  // Incrementing callback_reqs_outstanding_ is ok without a lock but it must be
+  // decremented under the lock in case it is the last request and enables the
+  // server shutdown. The increment is performance-critical since it happens
+  // during periods of increasing load; the decrement happens only when memory
+  // is maxed out, during server shutdown, or (possibly in a future version)
+  // during decreasing load, so it is less performance-critical.
   std::mutex callback_reqs_mu_;
   std::condition_variable callback_reqs_done_cv_;
   std::atomic_int callback_reqs_outstanding_{0};
