@@ -5558,6 +5558,22 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: time_change_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/time_change_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: transport_pid_controller_test
   build: test
   language: c++
