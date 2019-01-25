@@ -149,7 +149,7 @@ RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
   if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
     const char* error_string = grpc_error_string(*error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
-    return nullptr;
+    return call;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   if (channelz_subchannel_ != nullptr) {
