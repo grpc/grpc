@@ -100,6 +100,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -239,6 +240,12 @@ class XdsLb : public LoadBalancingPolicy {
   // Helper function used in ctor and UpdateLocked().
   void ProcessChannelArgsLocked(const grpc_channel_args& args);
 
+  // Parses the xds config given the JSON node of the first child of XdsConfig.
+  // If parsing succeeds, updates \a balancer_name, and updates \a
+  // child_policy_json_dump_ and \a fallback_policy_json_dump_ if they are also
+  // found. Does nothing upon failure.
+  void ParseLbConfig(grpc_json* xds_config_json);
+
   // Methods for dealing with the balancer channel and call.
   void StartPickingLocked();
   void StartBalancerCallLocked();
@@ -251,10 +258,13 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
-  void CreateChildPolicyLocked(Args args);
+  void CreateChildPolicyLocked(const char* name, Args args);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
+
+  // Name of the balancer to connect to.
+  UniquePtr<char> balancer_name_;
 
   // Current channel args from the resolver.
   grpc_channel_args* args_ = nullptr;
@@ -295,6 +305,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
+  UniquePtr<char> fallback_policy_json_string_;
   int lb_fallback_timeout_ms_ = 0;
   // The backend addresses from the resolver.
   UniquePtr<ServerAddressList> fallback_backend_addresses_;
@@ -305,6 +316,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  UniquePtr<char> child_policy_json_string_;
 };
 
 //
@@ -960,6 +972,8 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS);
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
+  // Parse the LB config.
+  ParseLbConfig(args.lb_config);
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
@@ -1071,8 +1085,44 @@ void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   grpc_channel_args_destroy(lb_channel_args);
 }
 
-// TODO(vishalpowar): Use lb_config to configure LB policy.
+void XdsLb::ParseLbConfig(grpc_json* xds_config_json) {
+  const char* balancer_name = nullptr;
+  grpc_json* child_policy = nullptr;
+  grpc_json* fallback_policy = nullptr;
+  for (grpc_json* field = xds_config_json; field != nullptr;
+       field = field->next) {
+    if (field->key == nullptr) return;
+    if (strcmp(field->key, "balancerName") == 0) {
+      if (balancer_name != nullptr) return;  // Duplicate.
+      if (field->type != GRPC_JSON_STRING) return;
+      balancer_name = field->value;
+    } else if (strcmp(field->key, "childPolicy") == 0) {
+      if (child_policy != nullptr) return;  // Duplicate.
+      child_policy = ParseLoadBalancingConfig(field);
+    } else if (strcmp(field->key, "fallbackPolicy") == 0) {
+      if (fallback_policy != nullptr) return;  // Duplicate.
+      fallback_policy = ParseLoadBalancingConfig(field);
+    }
+  }
+  if (balancer_name == nullptr) return;  // Required field.
+  if (child_policy != nullptr) {
+    child_policy_json_string_ =
+        UniquePtr<char>(grpc_json_dump_to_string(child_policy, 0 /* indent */));
+  }
+  if (fallback_policy != nullptr) {
+    fallback_policy_json_string_ = UniquePtr<char>(
+        grpc_json_dump_to_string(fallback_policy, 0 /* indent */));
+  }
+  balancer_name_ = UniquePtr<char>(gpr_strdup(balancer_name));
+}
+
 void XdsLb::UpdateLocked(const grpc_channel_args& args, grpc_json* lb_config) {
+  ParseLbConfig(lb_config);
+  // TODO(juanlishen): Pass fallback policy config update after fallback policy
+  // is added.
+  if (balancer_name_ == nullptr) {
+    gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
+  }
   ProcessChannelArgsLocked(args);
   // Update the existing child policy.
   // Note: We have disabled fallback mode in the code, so this child policy must
@@ -1243,10 +1293,10 @@ void XdsLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
 // code for interacting with the child policy
 //
 
-void XdsLb::CreateChildPolicyLocked(Args args) {
+void XdsLb::CreateChildPolicyLocked(const char* name, Args args) {
   GPR_ASSERT(child_policy_ == nullptr);
   child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      "round_robin", std::move(args));
+      name, std::move(args));
   if (GPR_UNLIKELY(child_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
     return;
@@ -1289,13 +1339,28 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
   GPR_ASSERT(args != nullptr);
+  const char* child_policy_name = nullptr;
+  grpc_json* child_policy_config = nullptr;
+  grpc_json* child_policy_json =
+      grpc_json_parse_string(child_policy_json_string_.get());
+  // TODO(juanlishen): If the child policy is not configured via service config,
+  // use whatever algorithm is specified by the balancer.
+  if (child_policy_json != nullptr) {
+    child_policy_name = child_policy_json->key;
+    child_policy_config = child_policy_json->child;
+  } else {
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(GPR_INFO, "[xdslb %p] No valid child policy LB config", this);
+    }
+    child_policy_name = "round_robin";
+  }
+  // TODO(juanlishen): Switch policy according to child_policy_config->key.
   if (child_policy_ != nullptr) {
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
               child_policy_.get());
     }
-    // TODO(vishalpowar): Pass the correct LB config.
-    child_policy_->UpdateLocked(*args, nullptr);
+    child_policy_->UpdateLocked(*args, child_policy_config);
   } else {
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
@@ -1303,13 +1368,15 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.args = args;
     lb_policy_args.channel_control_helper = MakeRefCounted<Helper>(Ref());
-    CreateChildPolicyLocked(std::move(lb_policy_args));
+    lb_policy_args.lb_config = child_policy_config;
+    CreateChildPolicyLocked(child_policy_name, std::move(lb_policy_args));
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
               child_policy_.get());
     }
   }
   grpc_channel_args_destroy(args);
+  grpc_json_destroy(child_policy_json);
 }
 
 //
