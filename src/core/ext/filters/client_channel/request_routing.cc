@@ -75,10 +75,12 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
  public:
   explicit ResolvingControlHelper(
       RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
-      : parent_(std::move(parent)) {}
+      : parent_(std::move(parent)),
+        helper_(parent_->channel_control_helper()->Ref()) {}
 
-  void UpdateState(RefCountedPtr<SubchannelPicker> picker) override {
-    parent_->channel_control_helper()->UpdateState(std::move(picker));
+  void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+                   RefCountedPtr<SubchannelPicker> picker) override {
+    helper_->UpdateState(state, state_error, std::move(picker));
   }
 
   void RequestReresolution() override {
@@ -92,6 +94,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
  private:
   RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
+  RefCountedPtr<ChannelControlHelper> helper_;
 };
 
 //
@@ -125,59 +128,6 @@ class ResolvingLoadBalancingPolicy::Picker
 };
 
 //
-// ResolvingLoadBalancingPolicy::LbConnectivityWatcher
-//
-
-class ResolvingLoadBalancingPolicy::LbConnectivityWatcher {
- public:
-  LbConnectivityWatcher(RefCountedPtr<ResolvingLoadBalancingPolicy> parent,
-                        grpc_connectivity_state state,
-                        LoadBalancingPolicy* lb_policy)
-      : parent_(std::move(parent)),
-        state_(state),
-        lb_policy_(lb_policy) {
-    GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
-                      grpc_combiner_scheduler(parent_->combiner()));
-    lb_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
-  }
-
- private:
-  static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error) {
-    LbConnectivityWatcher* self = static_cast<LbConnectivityWatcher*>(arg);
-    // If the notification is not for the current policy, we're stale,
-    // so delete ourselves.
-    if (self->lb_policy_ != self->parent_->lb_policy_.get()) {
-      Delete(self);
-      return;
-    }
-    // Otherwise, process notification.
-    if (self->parent_->tracer_->enabled()) {
-      gpr_log(GPR_INFO,
-              "resolving_lb_policy=%p: lb_policy=%p state changed to %s",
-              self->parent_.get(), self->lb_policy_,
-              grpc_connectivity_state_name(self->state_));
-    }
-    self->parent_->SetConnectivityStateLocked(
-        self->state_, GRPC_ERROR_REF(error), "lb_changed");
-    // If shutting down, terminate watch.
-    if (self->state_ == GRPC_CHANNEL_SHUTDOWN) {
-      Delete(self);
-      return;
-    }
-    // Renew watch.
-    self->lb_policy_->NotifyOnStateChangeLocked(&self->state_,
-                                                &self->on_changed_);
-  }
-
-  RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
-  grpc_connectivity_state state_;
-  // LB policy address. No ref held, so not safe to dereference unless
-  // it happens to match request_router->lb_policy_.
-  LoadBalancingPolicy* lb_policy_;
-  grpc_closure on_changed_;
-};
-
-//
 // ResolvingLoadBalancingPolicy
 //
 
@@ -199,8 +149,6 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
       &on_resolver_result_changed_,
       &ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked, this,
       grpc_combiner_scheduler(combiner()));
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
-                               "request_router");
   grpc_channel_args* new_args = nullptr;
   if (process_resolver_result == nullptr) {
     grpc_arg arg = grpc_channel_arg_integer_create(
@@ -215,12 +163,12 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
   // Return our picker to the channel.
-  channel_control_helper()->UpdateState(MakeRefCounted<Picker>(Ref()));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                        MakeRefCounted<Picker>(Ref()));
 }
 
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
   if (resolver_ != nullptr) {
-// FIXME: this is probably not true anymore...
     // The only way we can get here is if we never started resolving,
     // because we take a ref to the channel stack when we start
     // resolving and do not release it until the resolver callback is
@@ -232,15 +180,11 @@ ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
                                      interested_parties());
     lb_policy_.reset();
   }
-  grpc_connectivity_state_destroy(&state_tracker_);
   if (child_lb_config_ != nullptr) grpc_json_destroy(child_lb_config_);
 }
 
 void ResolvingLoadBalancingPolicy::ShutdownLocked() {
   if (resolver_ != nullptr) {
-    SetConnectivityStateLocked(
-        GRPC_CHANNEL_SHUTDOWN,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down"), "disconnect");
     resolver_.reset();
     if (lb_policy_ != nullptr) {
       grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
@@ -250,22 +194,10 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
   }
 }
 
-grpc_connectivity_state ResolvingLoadBalancingPolicy::CheckConnectivityLocked(
-    grpc_error** connectivity_error) {
-  return grpc_connectivity_state_get(&state_tracker_, connectivity_error);
-}
-
-void ResolvingLoadBalancingPolicy::NotifyOnStateChangeLocked(
-    grpc_connectivity_state* state, grpc_closure* closure) {
-  grpc_connectivity_state_notify_on_state_change(&state_tracker_, state,
-                                                 closure);
-}
-
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
   } else {
-    exit_idle_when_lb_policy_arrives_ = true;
     if (!started_resolving_ && resolver_ != nullptr) {
       StartResolvingLocked();
     }
@@ -288,42 +220,6 @@ void ResolvingLoadBalancingPolicy::FillChildRefsForChannelz(
   if (lb_policy_ != nullptr) {
     lb_policy_->FillChildRefsForChannelz(child_subchannels, child_channels);
   }
-}
-
-namespace {
-
-const char* GetChannelConnectivityStateChangeString(
-    grpc_connectivity_state state) {
-  switch (state) {
-    case GRPC_CHANNEL_IDLE:
-      return "Channel state change to IDLE";
-    case GRPC_CHANNEL_CONNECTING:
-      return "Channel state change to CONNECTING";
-    case GRPC_CHANNEL_READY:
-      return "Channel state change to READY";
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      return "Channel state change to TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_SHUTDOWN:
-      return "Channel state change to SHUTDOWN";
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
-}
-
-}  // namespace
-
-void ResolvingLoadBalancingPolicy::SetConnectivityStateLocked(
-    grpc_connectivity_state state, grpc_error* error, const char* reason) {
-  if (tracer_->enabled()) {
-    gpr_log(GPR_INFO, "resolving_lb=%p: setting connectivity state to %s",
-            this, grpc_connectivity_state_name(state));
-  }
-  if (channelz_node() != nullptr) {
-    channelz_node()->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            GetChannelConnectivityStateChangeString(state)));
-  }
-  grpc_connectivity_state_set(&state_tracker_, state, error, reason);
 }
 
 void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
@@ -361,10 +257,11 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
               resolver_.get());
     }
     resolver_.reset();
-    SetConnectivityStateLocked(GRPC_CHANNEL_SHUTDOWN,
-                               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                                   "Resolver spontaneous shutdown", &error, 1),
-                               "resolver_spontaneous_shutdown");
+    grpc_error *error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Resolver spontaneous shutdown", &error, 1);
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_SHUTDOWN, GRPC_ERROR_REF(error),
+        MakeRefCounted<TransientFailurePicker>(error));
   }
   grpc_channel_args_destroy(resolver_result_);
   resolver_result_ = nullptr;
@@ -378,8 +275,7 @@ void ResolvingLoadBalancingPolicy::OnResolverShutdownLocked(grpc_error* error) {
 // leaves them unchanged.
 void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     const char* lb_policy_name, grpc_json* lb_config,
-    grpc_connectivity_state* connectivity_state,
-    grpc_error** connectivity_error, TraceStringVector* trace_strings) {
+    TraceStringVector* trace_strings) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.client_channel_factory = client_channel_factory();
@@ -420,19 +316,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     lb_policy_ = std::move(new_lb_policy);
     grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
                                      interested_parties());
-// FIXME: should we initialize this here or just wait for the LB policy
-// to set it via the helper?
-    // Get the new LB policy's initial connectivity state and start a
-    // connectivity watch.
-    GRPC_ERROR_UNREF(*connectivity_error);
-    *connectivity_state =
-        lb_policy_->CheckConnectivityLocked(connectivity_error);
-    if (exit_idle_when_lb_policy_arrives_) {
-      lb_policy_->ExitIdleLocked();
-      exit_idle_when_lb_policy_arrives_ = false;
-    }
-    // Create new watcher.  It will delete itself when done.
-    New<LbConnectivityWatcher>(Ref(), *connectivity_state, lb_policy_.get());
+    lb_policy_->ExitIdleLocked();
   }
 }
 
@@ -494,8 +378,6 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     self->OnResolverShutdownLocked(GRPC_ERROR_REF(error));
     return;
   }
-  // Data used to set the channel's connectivity state.
-  bool set_connectivity_state = true;
   // We only want to trace the address resolution in the follow cases:
   // (a) Address resolution resulted in service config change.
   // (b) Address resolution that causes number of backends to go from
@@ -506,9 +388,6 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
   //
   // we track a list of strings to eventually be concatenated and traced.
   TraceStringVector trace_strings;
-  grpc_connectivity_state connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
-  grpc_error* connectivity_error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
   // resolver_result_ will be null in the case of a transient
   // resolution error.  In that case, we don't have any new result to
   // process, which means that we keep using the previous result (if any).
@@ -516,8 +395,17 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     if (self->tracer_->enabled()) {
       gpr_log(GPR_INFO, "resolving_lb=%p: resolver transient failure", self);
     }
-    // Don't override connectivity state if we already have an LB policy.
-    if (self->lb_policy_ != nullptr) set_connectivity_state = false;
+    // If we already have an LB policy from a previous resolution
+    // result, then we continue to let it set the connectivity state.
+    // Otherwise, we go into TRANSIENT_FAILURE.
+    if (self->lb_policy_ == nullptr) {
+      grpc_error* state_error =
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Resolver transient failure", &error, 1);
+      self->channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(state_error),
+          MakeRefCounted<TransientFailurePicker>(state_error));
+    }
   } else {
 // FIXME: skip a lot of this if we're not fetching service config?
     // Parse the resolver result.
@@ -539,13 +427,9 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
                 self, lb_policy_name, self->lb_policy_.get());
       }
       self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
-      // No need to set the channel's connectivity state; the existing
-      // watch on the LB policy will take care of that.
-      set_connectivity_state = false;
     } else {
       // Instantiate new LB policy.
       self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                    &connectivity_state, &connectivity_error,
                                     &trace_strings);
     }
     // Add channel trace event.
@@ -562,15 +446,7 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     grpc_channel_args_destroy(self->resolver_result_);
     self->resolver_result_ = nullptr;
   }
-  // Set the channel's connectivity state if needed.
-  if (set_connectivity_state) {
-    self->SetConnectivityStateLocked(connectivity_state, connectivity_error,
-                                     "resolver_result");
-// FIXME: if we are in TRANSIENT_FAILURE due to a resolver failure and
-// no LB policy exists, use the helper to return a TransientFailurePicker
-  } else {
-    GRPC_ERROR_UNREF(connectivity_error);
-  }
+  // Renew resolver callback.
   self->resolver_->NextLocked(&self->resolver_result_,
                               &self->on_resolver_result_changed_);
 }

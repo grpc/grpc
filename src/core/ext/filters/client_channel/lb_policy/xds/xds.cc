@@ -124,10 +124,6 @@ class XdsLb : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override;
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
@@ -228,7 +224,8 @@ class XdsLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<XdsLb> parent)
         : parent_(std::move(parent)) {}
 
-    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override;
+    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
    private:
@@ -255,12 +252,6 @@ class XdsLb : public LoadBalancingPolicy {
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
   void CreateChildPolicyLocked(Args args);
-  void UpdateConnectivityStateFromChildPolicyLocked(
-      grpc_error* child_state_error);
-  static void OnChildPolicyConnectivityChangedLocked(void* arg,
-                                                     grpc_error* error);
-  static void OnChildPolicyRequestReresolutionLocked(void* arg,
-                                                     grpc_error* error);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -271,7 +262,6 @@ class XdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool started_picking_ = false;
   bool shutting_down_ = false;
-  grpc_connectivity_state_tracker state_tracker_;
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
@@ -315,8 +305,6 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
-  grpc_connectivity_state child_connectivity_state_;
-  grpc_closure on_child_connectivity_changed_;
 };
 
 //
@@ -349,13 +337,16 @@ XdsLb::Picker::PickResult XdsLb::Picker::Pick(PickState* pick,
 // XdsLb::Helper
 //
 
-void XdsLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
+void XdsLb::Helper::UpdateState(grpc_connectivity_state state,
+                                grpc_error* state_error,
+                                RefCountedPtr<SubchannelPicker> picker) {
   RefCountedPtr<XdsLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
       parent_->lb_calld_->client_stats() != nullptr) {
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
+      state, state_error,
       MakeRefCounted<Picker>(std::move(picker), std::move(client_stats)));
 }
 
@@ -949,10 +940,6 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &XdsLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_child_connectivity_changed_,
-                    &XdsLb::OnChildPolicyConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "xds");
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -976,21 +963,20 @@ XdsLb::XdsLb(LoadBalancingPolicy::Args args)
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                        MakeRefCounted<QueuePicker>(Ref()));
 }
 
 XdsLb::~XdsLb() {
   gpr_mu_destroy(&lb_channel_mu_);
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
-  grpc_connectivity_state_destroy(&state_tracker_);
   if (serverlist_ != nullptr) {
     xds_grpclb_destroy_serverlist(serverlist_);
   }
 }
 
 void XdsLb::ShutdownLocked() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   shutting_down_ = true;
   lb_calld_.reset();
   if (retry_timer_callback_pending_) {
@@ -1010,8 +996,6 @@ void XdsLb::ShutdownLocked() {
     lb_channel_ = nullptr;
     gpr_mu_unlock(&lb_channel_mu_);
   }
-  grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
-                              error, "xds_shutdown");
 }
 
 //
@@ -1045,17 +1029,6 @@ void XdsLb::FillChildRefsForChannelz(channelz::ChildRefsList* child_subchannels,
       child_channels->push_back(channel_node->uuid());
     }
   }
-}
-
-grpc_connectivity_state XdsLb::CheckConnectivityLocked(
-    grpc_error** connectivity_error) {
-  return grpc_connectivity_state_get(&state_tracker_, connectivity_error);
-}
-
-void XdsLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
-                                      grpc_closure* closure) {
-  grpc_connectivity_state_notify_on_state_change(&state_tracker_, current,
-                                                 closure);
 }
 
 void XdsLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
@@ -1278,23 +1251,11 @@ void XdsLb::CreateChildPolicyLocked(Args args) {
     gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
     return;
   }
-  grpc_error* child_state_error = nullptr;
-  child_connectivity_state_ =
-      child_policy_->CheckConnectivityLocked(&child_state_error);
-  // Connectivity state is a function of the child policy updated/created.
-  UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on
   // xDS LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                    interested_parties());
-  // Subscribe to changes to the connectivity of the new child policy.
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
-  self.release();
-  child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
-                                           &on_child_connectivity_changed_);
   child_policy_->ExitIdleLocked();
 }
 
@@ -1349,75 +1310,6 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     }
   }
   grpc_channel_args_destroy(args);
-}
-
-void XdsLb::UpdateConnectivityStateFromChildPolicyLocked(
-    grpc_error* child_state_error) {
-  const grpc_connectivity_state curr_glb_state =
-      grpc_connectivity_state_check(&state_tracker_);
-  /* The new connectivity status is a function of the previous one and the new
-   * input coming from the status of the child policy.
-   *
-   *  current state (xds's)
-   *  |
-   *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (child policy's)
-   *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  | [I]  | [I]  |
-   *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  | [C]  | [C]  |
-   *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  | [R]  | [R]  |
-   *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  | [TF] | [TF] |
-   *  ---++----+-----+-----+------+------+
-   *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
-   *  ---++----+-----+-----+------+------+
-   *
-   * A [STATE] indicates that the old child policy is kept. In those cases,
-   * STATE is the current state of xds, which is left untouched.
-   *
-   *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
-   *  the previous child policy instance.
-   *
-   *  Note that the status is never updated to SHUTDOWN as a result of calling
-   *  this function. Only glb_shutdown() has the power to set that state.
-   *
-   *  (*) This function mustn't be called during shutting down. */
-  GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
-  switch (child_connectivity_state_) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_ASSERT(child_state_error != GRPC_ERROR_NONE);
-      break;
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_READY:
-      GPR_ASSERT(child_state_error == GRPC_ERROR_NONE);
-  }
-  if (grpc_lb_xds_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Setting xds's state to %s from child policy %p state.",
-            this, grpc_connectivity_state_name(child_connectivity_state_),
-            child_policy_.get());
-  }
-  grpc_connectivity_state_set(&state_tracker_, child_connectivity_state_,
-                              child_state_error,
-                              "update_lb_connectivity_status_locked");
-}
-
-void XdsLb::OnChildPolicyConnectivityChangedLocked(void* arg,
-                                                   grpc_error* error) {
-  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
-  if (xdslb_policy->shutting_down_) {
-    xdslb_policy->Unref(DEBUG_LOCATION, "on_child_connectivity_changed");
-    return;
-  }
-  xdslb_policy->UpdateConnectivityStateFromChildPolicyLocked(
-      GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "on_child_connectivity_changed" ref.
-  xdslb_policy->child_policy_->NotifyOnStateChangeLocked(
-      &xdslb_policy->child_connectivity_state_,
-      &xdslb_policy->on_child_connectivity_changed_);
 }
 
 //

@@ -67,12 +67,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override {}
 
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override;
-
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override;
-
   void ExitIdleLocked() override;
 
   void ResetBackoffLocked() override;
@@ -86,7 +80,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   class ResolvingControlHelper;
   class Picker;
-  class LbConnectivityWatcher;
 
   ~ResolvingLoadBalancingPolicy();
 
@@ -95,17 +88,12 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
   void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
-                               grpc_connectivity_state* connectivity_state,
-                               grpc_error** connectivity_error,
                                TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
       TraceStringVector* trace_strings) const;
   static void OnResolverResultChangedLocked(void* arg, grpc_error* error);
-
-  void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  grpc_error* error, const char* reason);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
@@ -125,9 +113,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   // Child LB policy and associated state.
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  bool exit_idle_when_lb_policy_arrives_ = false;
-
-  grpc_connectivity_state_tracker state_tracker_;
 };
 
 }  // namespace grpc_core

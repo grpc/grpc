@@ -105,18 +105,42 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   class QueuePicker : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
-        : parent_(std::move(parent)) {}
+        : parent_(std::move(parent)) {
+      GRPC_CLOSURE_INIT(&exit_idle_closure_, &CallExitIdle, this,
+                        grpc_combiner_scheduler(parent_->combiner()));
+    }
 
     PickResult Pick(PickState* pick, grpc_error** error) override {
-// FIXME: need to grab the combiner here?
-      parent_->ExitIdleLocked();
+      // We invoke the parent's ExitIdleLocked() via a closure instead
+      // of doing it directly here, for two reasons:
+      // 1. ExitIdleLocked() may cause the policy's state to change and
+      //    a new picker to be delivered to the channel.  If that new
+      //    picker is delivered before ExitIdleLocked() returns, then by
+      //    the time this function returns, the pick will already have
+      //    been processed, and we'll be trying to re-process the same
+      //    pick again, leading to a crash.
+      // 2. In a subsequent PR, we will split the data plane and control
+      //    plane synchronization into separate combiners, at which
+      //    point this will need to hop from the data plane combiner into
+      //    the control plane combiner.
+      if (!exit_idle_called_) {
+        exit_idle_called_ = true;
+        Ref().release();  // ref held by closure.
+        GRPC_CLOSURE_SCHED(&exit_idle_closure_, GRPC_ERROR_NONE);
+      }
       return PICK_QUEUE;
     }
 
    private:
-// FIXME: instead of holding this ref, maybe just hold a callback that gets
-// invoked once in the combiner to start picking?
+    static void CallExitIdle(void* arg, grpc_error* error) {
+      QueuePicker* self = static_cast<QueuePicker*>(arg);
+      self->parent_->ExitIdleLocked();
+      self->Unref();
+    }
+
     RefCountedPtr<LoadBalancingPolicy> parent_;
+    bool exit_idle_called_ = false;
+    grpc_closure exit_idle_closure_;
   };
 
   // A picker that returns PICK_TRANSIENT_FAILURE for all picks.
@@ -141,11 +165,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     ChannelControlHelper() = default;
     virtual ~ChannelControlHelper() = default;
 
-// FIXME: maybe do as part of this PR?
-    // TODO(roth): In a subsequent PR, change this to also propagate the
-    // connectivity state?
-    virtual void UpdateState(RefCountedPtr<SubchannelPicker> picker)
-        GRPC_ABSTRACT;
+    virtual void UpdateState(
+        grpc_connectivity_state state, grpc_error* state_error,
+        RefCountedPtr<SubchannelPicker> picker) GRPC_ABSTRACT;
 
     virtual void RequestReresolution() GRPC_ABSTRACT;
 
@@ -186,17 +208,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void UpdateLocked(const grpc_channel_args& args,
                             grpc_json* lb_config) GRPC_ABSTRACT;
 
-  /// Requests a notification when the connectivity state of the policy
-  /// changes from \a *state.  When that happens, sets \a *state to the
-  /// new state and schedules \a closure.
-  virtual void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                         grpc_closure* closure) GRPC_ABSTRACT;
-
-  /// Returns the policy's current connectivity state.  Sets \a error to
-  /// the associated error, if any.
-  virtual grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) GRPC_ABSTRACT;
-
   /// Tries to enter a READY connectivity state.
   /// TODO(roth): As part of restructuring how we handle IDLE state,
   /// consider whether this method is still needed.
@@ -223,19 +234,13 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
-  ChannelControlHelper* channel_control_helper() const {
-    return channel_control_helper_.get();
-  }
-  SubchannelPoolInterface* subchannel_pool() const {
-    return subchannel_pool_.get();
-  }
-
   void set_channelz_node(
       RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
     channelz_node_ = std::move(channelz_node);
   }
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
+
+  SubchannelPoolInterface* subchannel_pool() const {
+    return subchannel_pool_.get();
   }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -251,6 +256,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return client_channel_factory_;
   }
 
+  // Note: This will return null after ShutdownLocked() has been called.
+  ChannelControlHelper* channel_control_helper() const {
+    return channel_control_helper_.get();
+  }
+
+  channelz::ClientChannelNode* channelz_node() const {
+    return channelz_node_.get();
+  }
+
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
   /// failed.
@@ -260,8 +274,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
     LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
     policy->ShutdownLocked();
-// FIXME: will this cause crashes for LB policies that try to access the
-// helper after shutdown is triggered (while cleaning up)?
     policy->channel_control_helper_.reset();
     policy->Unref();
   }

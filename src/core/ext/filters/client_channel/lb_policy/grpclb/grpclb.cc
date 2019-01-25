@@ -131,10 +131,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args,
                     grpc_json* lb_config) override;
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override;
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
   void FillChildRefsForChannelz(
@@ -255,7 +251,8 @@ class GrpcLb : public LoadBalancingPolicy {
     explicit Helper(RefCountedPtr<GrpcLb> parent)
         : parent_(std::move(parent)) {}
 
-    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override;
+    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+                     RefCountedPtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
 
    private:
@@ -282,12 +279,6 @@ class GrpcLb : public LoadBalancingPolicy {
   void CreateOrUpdateRoundRobinPolicyLocked();
   grpc_channel_args* CreateRoundRobinPolicyArgsLocked();
   void CreateRoundRobinPolicyLocked(Args args);
-  void UpdateConnectivityStateFromRoundRobinPolicyLocked(
-      grpc_error* rr_state_error);
-  static void OnRoundRobinConnectivityChangedLocked(void* arg,
-                                                    grpc_error* error);
-  static void OnRoundRobinRequestReresolutionLocked(void* arg,
-                                                    grpc_error* error);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -298,7 +289,6 @@ class GrpcLb : public LoadBalancingPolicy {
   // Internal state.
   bool started_picking_ = false;
   bool shutting_down_ = false;
-  grpc_connectivity_state_tracker state_tracker_;
 
   // The channel for communicating with the LB server.
   grpc_channel* lb_channel_ = nullptr;
@@ -341,8 +331,6 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // The RR policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> rr_policy_;
-  grpc_connectivity_state rr_connectivity_state_;
-  grpc_closure on_rr_connectivity_changed_;
 };
 
 //
@@ -422,21 +410,62 @@ GrpcLb::Picker::PickResult GrpcLb::Picker::Pick(PickState* pick,
 // GrpcLb::Helper
 //
 
-void GrpcLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
-// FIXME: don't inject our own picker if RR is not in state READY, since
-// that will break drop accounting
-  // Fallback mode.
-  if (parent_->serverlist_ == nullptr) {
-    parent_->channel_control_helper()->UpdateState(std::move(picker));
+// Returns true if the serverlist contains at least one drop entry and
+// no backend address entries.
+bool ServerlistContainsAllDropEntries(
+    const grpc_grpclb_serverlist& serverlist) {
+  if (serverlist.num_servers == 0) return false;
+  for (size_t i = 0; i < serverlist.num_servers; ++i) {
+    if (!serverlist.servers[i]->drop) return false;
+  }
+  return true;
+}
+
+void GrpcLb::Helper::UpdateState(
+    grpc_connectivity_state state, grpc_error* state_error,
+    RefCountedPtr<SubchannelPicker> picker) {
+  // There are three cases to consider here:
+  // 1. We're in fallback mode.  In this case, we're always going to use
+  //    RR's result, so we pass its picker through as-is.
+  // 2. The serverlist contains only drop entries.  In this case, we
+  //    want to use our own picker so that we can return the drops.
+  // 3. Not in fallback mode and serverlist is not all drops (i.e., it
+  //    may be empty or contain at least one backend address).  There are
+  //    two sub-cases:
+  //    a. RR is reporting state READY.  In this case, we wrap RR's
+  //       picker in our own, so that we can handle drops and LB token
+  //       metadata for each pick.
+  //    b. RR is reporting a state other than READY.  In this case, we
+  //       don't want to use our own picker, because we don't want to
+  //       process drops for picks that yield a QUEUE result; this would
+  //       result in dropping too many calls, since we will see the
+  //       queued picks multiple times, and we'd consider each one a
+  //       separate call for the drop calculation.
+  //
+  // Cases 1 and 3b: return picker from RR as-is.
+  if (parent_->serverlist_ == nullptr ||
+      (!ServerlistContainsAllDropEntries(*parent_->serverlist_) &&
+       state != GRPC_CHANNEL_READY)) {
+    if (grpc_lb_glb_trace.enabled()) {
+      gpr_log(GPR_INFO, "[grpclb %p helper %p] passing RR picker %p as-is",
+              parent_.get(), this, picker.get());
+    }
+    parent_->channel_control_helper()->UpdateState(state, state_error,
+                                                   std::move(picker));
     return;
   }
-  // Non-fallback mode.
+  // Cases 2 and 3a: wrap picker from RR in our own picker.
+  if (grpc_lb_glb_trace.enabled()) {
+    gpr_log(GPR_INFO, "[grpclb %p helper %p] wrapping RR picker %p",
+            parent_.get(), this, picker.get());
+  }
   RefCountedPtr<GrpcLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&
       parent_->lb_calld_->client_stats() != nullptr) {
     client_stats = parent_->lb_calld_->client_stats()->Ref();
   }
   parent_->channel_control_helper()->UpdateState(
+      state, state_error,
       MakeRefCounted<Picker>(
           parent_.get(), grpc_grpclb_serverlist_copy(parent_->serverlist_),
           std::move(picker), std::move(client_stats)));
@@ -445,11 +474,10 @@ void GrpcLb::Helper::UpdateState(RefCountedPtr<SubchannelPicker> picker) {
 void GrpcLb::Helper::RequestReresolution() {
   if (parent_->shutting_down_) return;
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[grpclb %p] Re-resolution requested from the internal RR policy "
-        "(%p).",
-        parent_.get(), parent_->rr_policy_.get());
+    gpr_log(GPR_INFO,
+            "[grpclb %p] Re-resolution requested from the internal RR policy "
+            "(%p).",
+            parent_.get(), parent_->rr_policy_.get());
   }
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
@@ -1105,10 +1133,6 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
                     &GrpcLb::OnBalancerChannelConnectivityChangedLocked, this,
                     grpc_combiner_scheduler(args.combiner));
-  GRPC_CLOSURE_INIT(&on_rr_connectivity_changed_,
-                    &GrpcLb::OnRoundRobinConnectivityChangedLocked, this,
-                    grpc_combiner_scheduler(args.combiner));
-  grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1132,20 +1156,19 @@ GrpcLb::GrpcLb(LoadBalancingPolicy::Args args)
   // Process channel args.
   ProcessChannelArgsLocked(*args.args);
   // Initialize channel with a picker that will start us connecting.
-  channel_control_helper()->UpdateState(MakeRefCounted<QueuePicker>(Ref()));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+                                        MakeRefCounted<QueuePicker>(Ref()));
 }
 
 GrpcLb::~GrpcLb() {
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
-  grpc_connectivity_state_destroy(&state_tracker_);
   if (serverlist_ != nullptr) {
     grpc_grpclb_destroy_serverlist(serverlist_);
   }
 }
 
 void GrpcLb::ShutdownLocked() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   shutting_down_ = true;
   lb_calld_.reset();
   if (retry_timer_callback_pending_) {
@@ -1164,9 +1187,6 @@ void GrpcLb::ShutdownLocked() {
     lb_channel_ = nullptr;
     gpr_atm_no_barrier_store(&lb_channel_uuid_, 0);
   }
-  grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
-                              GRPC_ERROR_REF(error), "grpclb_shutdown");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -1199,17 +1219,6 @@ void GrpcLb::FillChildRefsForChannelz(
   if (uuid != 0) {
     child_channels->push_back(uuid);
   }
-}
-
-grpc_connectivity_state GrpcLb::CheckConnectivityLocked(
-    grpc_error** connectivity_error) {
-  return grpc_connectivity_state_get(&state_tracker_, connectivity_error);
-}
-
-void GrpcLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
-                                       grpc_closure* notify) {
-  grpc_connectivity_state_notify_on_state_change(&state_tracker_, current,
-                                                 notify);
 }
 
 // Returns the backend addresses extracted from the given addresses.
@@ -1457,22 +1466,11 @@ void GrpcLb::CreateRoundRobinPolicyLocked(Args args) {
     gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
             rr_policy_.get());
   }
-  grpc_error* rr_state_error = nullptr;
-  rr_connectivity_state_ = rr_policy_->CheckConnectivityLocked(&rr_state_error);
-  // Connectivity state is a function of the RR policy updated/created.
-  UpdateConnectivityStateFromRoundRobinPolicyLocked(rr_state_error);
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created RR policy. This will make the RR policy progress upon activity on
   // gRPC LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(rr_policy_->interested_parties(),
                                    interested_parties());
-  // Subscribe to changes to the connectivity of the new RR.
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_rr_connectivity_changed");
-  self.release();
-  rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
-                                        &on_rr_connectivity_changed_);
   rr_policy_->ExitIdleLocked();
 }
 
@@ -1537,76 +1535,6 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     CreateRoundRobinPolicyLocked(std::move(lb_policy_args));
   }
   grpc_channel_args_destroy(args);
-}
-
-void GrpcLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
-    grpc_error* rr_state_error) {
-  const grpc_connectivity_state curr_glb_state =
-      grpc_connectivity_state_check(&state_tracker_);
-  /* The new connectivity status is a function of the previous one and the new
-   * input coming from the status of the RR policy.
-   *
-   *  current state (grpclb's)
-   *  |
-   *  v  || I  |  C  |  R  |  TF  |  SD  |  <- new state (RR's)
-   *  ===++====+=====+=====+======+======+
-   *   I || I  |  C  |  R  | [I]  | [I]  |
-   *  ---++----+-----+-----+------+------+
-   *   C || I  |  C  |  R  | [C]  | [C]  |
-   *  ---++----+-----+-----+------+------+
-   *   R || I  |  C  |  R  | [R]  | [R]  |
-   *  ---++----+-----+-----+------+------+
-   *  TF || I  |  C  |  R  | [TF] | [TF] |
-   *  ---++----+-----+-----+------+------+
-   *  SD || NA |  NA |  NA |  NA  |  NA  | (*)
-   *  ---++----+-----+-----+------+------+
-   *
-   * A [STATE] indicates that the old RR policy is kept. In those cases, STATE
-   * is the current state of grpclb, which is left untouched.
-   *
-   *  In summary, if the new state is TRANSIENT_FAILURE or SHUTDOWN, stick to
-   *  the previous RR instance.
-   *
-   *  Note that the status is never updated to SHUTDOWN as a result of calling
-   *  this function. Only glb_shutdown() has the power to set that state.
-   *
-   *  (*) This function mustn't be called during shutting down. */
-  GPR_ASSERT(curr_glb_state != GRPC_CHANNEL_SHUTDOWN);
-  switch (rr_connectivity_state_) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_ASSERT(rr_state_error != GRPC_ERROR_NONE);
-      break;
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_READY:
-      GPR_ASSERT(rr_state_error == GRPC_ERROR_NONE);
-  }
-  if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[grpclb %p] Setting grpclb's state to %s from new RR policy %p state.",
-        this, grpc_connectivity_state_name(rr_connectivity_state_),
-        rr_policy_.get());
-  }
-  grpc_connectivity_state_set(&state_tracker_, rr_connectivity_state_,
-                              rr_state_error,
-                              "update_lb_connectivity_status_locked");
-}
-
-void GrpcLb::OnRoundRobinConnectivityChangedLocked(void* arg,
-                                                   grpc_error* error) {
-  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
-  if (grpclb_policy->shutting_down_) {
-    grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_connectivity_changed");
-    return;
-  }
-  grpclb_policy->UpdateConnectivityStateFromRoundRobinPolicyLocked(
-      GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "on_rr_connectivity_changed" ref.
-  grpclb_policy->rr_policy_->NotifyOnStateChangeLocked(
-      &grpclb_policy->rr_connectivity_state_,
-      &grpclb_policy->on_rr_connectivity_changed_);
 }
 
 //

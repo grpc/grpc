@@ -72,16 +72,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
     delegate_->UpdateLocked(args, lb_config);
   }
 
-  void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
-                                 grpc_closure* closure) override {
-    delegate_->NotifyOnStateChangeLocked(state, closure);
-  }
-
-  grpc_connectivity_state CheckConnectivityLocked(
-      grpc_error** connectivity_error) override {
-    return delegate_->CheckConnectivityLocked(connectivity_error);
-  }
-
   void ExitIdleLocked() override { delegate_->ExitIdleLocked(); }
 
   void ResetBackoffLocked() override { delegate_->ResetBackoffLocked(); }
@@ -158,8 +148,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
           cb_(cb),
           user_data_(user_data) {}
 
-    void UpdateState(RefCountedPtr<SubchannelPicker> picker) override {
+    void UpdateState(grpc_connectivity_state state, grpc_error* state_error,
+                     RefCountedPtr<SubchannelPicker> picker) override {
       parent_helper_->UpdateState(
+          state, state_error,
           MakeRefCounted<Picker>(std::move(picker), cb_, user_data_));
     }
 
