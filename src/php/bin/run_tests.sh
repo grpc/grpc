@@ -32,9 +32,8 @@ php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
 export ZEND_DONT_UNLOAD_MODULES=1
 export USE_ZEND_ALLOC=0
 # Detect whether valgrind is executable
-if ! [ -x "$(command -v valgrind)" ]; then
-  echo 'Error: valgrind is not installed and is not executable' >&2
-  exit 1
-fi
-valgrind --error-exitcode=10 --leak-check=yes php $extension_dir -d max_execution_time=300 \
+if [ -x "$(command -v valgrind)" ]; then
+  valgrind --error-exitcode=10 --leak-check=yes php $extension_dir -d max_execution_time=300 \
 	../tests/MemoryLeakTest/MemoryLeakTest.php
+  exit 0
+fi
