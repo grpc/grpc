@@ -35,5 +35,4 @@ export USE_ZEND_ALLOC=0
 if [ -x "$(command -v valgrind)" ]; then
   valgrind --error-exitcode=10 --leak-check=yes php $extension_dir -d max_execution_time=300 \
 	../tests/MemoryLeakTest/MemoryLeakTest.php
-  exit 0
 fi
