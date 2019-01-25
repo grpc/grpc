@@ -227,10 +227,10 @@ static void cover_self(grpc_tcp* tcp) {
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     gpr_atm_rel_store(&g_backup_poller, (gpr_atm)p);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
-                          grpc_executor_scheduler(GRPC_EXECUTOR_LONG)),
-        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
+                                         grpc_core::Executor::Scheduler(
+                                             grpc_core::ExecutorJobType::LONG)),
+                       GRPC_ERROR_NONE);
   } else {
     while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
            nullptr) {
@@ -593,6 +593,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
 
 #ifdef GRPC_LINUX_ERRQUEUE
+
 static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       size_t sending_length,
                                       ssize_t* sent_length) {
@@ -631,7 +632,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     gpr_mu_lock(&tcp->tb_mu);
     grpc_core::TracedBuffer::AddNewEntry(
         &tcp->tb_head, static_cast<uint32_t>(tcp->bytes_counter + length),
-        tcp->outgoing_buffer_arg);
+        tcp->fd, tcp->outgoing_buffer_arg);
     gpr_mu_unlock(&tcp->tb_mu);
     tcp->outgoing_buffer_arg = nullptr;
   }
@@ -648,11 +649,25 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
 struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
                                   struct cmsghdr* cmsg) {
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
+  cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_ERROR, "Received timestamp without extended error");
     }
     return cmsg;
+  }
+
+  /* Check if next_cmsg is an OPT_STATS msg */
+  if (next_cmsg->cmsg_level == SOL_SOCKET &&
+      next_cmsg->cmsg_type == SCM_TIMESTAMPING_OPT_STATS) {
+    opt_stats = next_cmsg;
+    next_cmsg = CMSG_NXTHDR(msg, opt_stats);
+    if (next_cmsg == nullptr) {
+      if (grpc_tcp_trace.enabled()) {
+        gpr_log(GPR_ERROR, "Received timestamp without extended error");
+      }
+      return opt_stats;
+    }
   }
 
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
@@ -676,7 +691,8 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
    * to protect the traced buffer list. A lock free list might be better. Using
    * a simple mutex for now. */
   gpr_mu_lock(&tcp->tb_mu);
-  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, tss);
+  grpc_core::TracedBuffer::ProcessTimestamp(&tcp->tb_head, serr, opt_stats,
+                                            tss);
   gpr_mu_unlock(&tcp->tb_mu);
   return next_cmsg;
 }
@@ -696,10 +712,11 @@ static void process_errors(grpc_tcp* tcp) {
     msg.msg_iovlen = 0;
     msg.msg_flags = 0;
 
+    // Allocate aligned space for cmsgs received along with a timestamps
     union {
-      char rbuf[1024 /*CMSG_SPACE(sizeof(scm_timestamping)) +
-                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in))*/
-      ];
+      char rbuf[CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) +
+                CMSG_SPACE(sizeof(sock_extended_err) + sizeof(sockaddr_in)) +
+                CMSG_SPACE(16 * NLA_ALIGN(NLA_HDRLEN + sizeof(uint64_t)))];
       struct cmsghdr align;
     } aligned_buf;
     memset(&aligned_buf, 0, sizeof(aligned_buf));

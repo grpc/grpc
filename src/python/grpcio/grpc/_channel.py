@@ -22,7 +22,6 @@ import grpc
 from grpc import _common
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
-from grpc.framework.foundation import callable_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -499,7 +498,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def _prepare(self, request, timeout, metadata, wait_for_ready):
         deadline, serialized_request, rendezvous = _start_unary_request(
@@ -590,7 +589,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def __call__(self,
                  request,
@@ -637,7 +636,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def _blocking(self, request_iterator, timeout, metadata, credentials,
                   wait_for_ready):
@@ -714,7 +713,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
-        self._context = cygrpc.build_context()
+        self._context = cygrpc.build_census_context()
 
     def __call__(self,
                  request_iterator,
@@ -871,9 +870,11 @@ def _deliver(state, initial_connectivity, initial_callbacks):
     while True:
         for callback in callbacks:
             cygrpc.block_if_fork_in_progress(state)
-            callable_util.call_logging_exceptions(
-                callback, _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE,
-                connectivity)
+            try:
+                callback(connectivity)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception(
+                    _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE)
         with state.lock:
             callbacks = _deliveries(state)
             if callbacks:

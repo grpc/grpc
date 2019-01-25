@@ -25,7 +25,6 @@ import grpc
 from grpc import _common
 from grpc import _interceptor
 from grpc._cython import cygrpc
-from grpc.framework.foundation import callable_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -484,7 +483,7 @@ def _status(rpc_event, state, serialized_response):
 
 def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
                             request_deserializer, response_serializer):
-    cygrpc.install_census_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_call(rpc_event.call)
     try:
         argument = argument_thunk()
         if argument is not None:
@@ -501,7 +500,7 @@ def _unary_response_in_pool(rpc_event, state, behavior, argument_thunk,
 
 def _stream_response_in_pool(rpc_event, state, behavior, argument_thunk,
                              request_deserializer, response_serializer):
-    cygrpc.install_census_context_from_call(rpc_event.call)
+    cygrpc.install_context_from_call(rpc_event.call)
     try:
         argument = argument_thunk()
         if argument is not None:
@@ -748,8 +747,10 @@ def _process_event_and_continue(state, event):
     else:
         rpc_state, callbacks = event.tag(event)
         for callback in callbacks:
-            callable_util.call_logging_exceptions(callback,
-                                                  'Exception calling callback!')
+            try:
+                callback()
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception('Exception calling callback!')
         if rpc_state is not None:
             with state.lock:
                 state.rpc_states.remove(rpc_state)

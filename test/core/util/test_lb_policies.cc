@@ -48,11 +48,17 @@ namespace {
 // A minimal forwarding class to avoid implementing a standalone test LB.
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  ForwardingLoadBalancingPolicy(const Args& args,
+  ForwardingLoadBalancingPolicy(Args args,
                                 const std::string& delegate_policy_name)
-      : LoadBalancingPolicy(args) {
+      : LoadBalancingPolicy(std::move(args)) {
+    Args delegate_args;
+    delegate_args.combiner = combiner();
+    delegate_args.client_channel_factory = client_channel_factory();
+    delegate_args.subchannel_pool = subchannel_pool()->Ref();
+    delegate_args.args = args.args;
+    delegate_args.lb_config = args.lb_config;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-        delegate_policy_name.c_str(), args);
+        delegate_policy_name.c_str(), std::move(delegate_args));
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
                                      interested_parties());
     // Give re-resolution closure to delegate.
@@ -143,9 +149,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     : public ForwardingLoadBalancingPolicy {
  public:
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
-      const Args& args, InterceptRecvTrailingMetadataCallback cb,
-      void* user_data)
-      : ForwardingLoadBalancingPolicy(args,
+      Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
+      : ForwardingLoadBalancingPolicy(std::move(args),
                                       /*delegate_lb_policy_name=*/"pick_first"),
         cb_(cb),
         user_data_(user_data) {}
@@ -212,10 +217,10 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>
   CreateLoadBalancingPolicy(
-      const grpc_core::LoadBalancingPolicy::Args& args) const override {
+      grpc_core::LoadBalancingPolicy::Args args) const override {
     return grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy>(
         grpc_core::New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
-            args, cb_, user_data_));
+            std::move(args), cb_, user_data_));
   }
 
   const char* name() const override {

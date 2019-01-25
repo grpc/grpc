@@ -1134,8 +1134,9 @@ void grpc_server_start(grpc_server* server) {
   server_ref(server);
   server->starting = true;
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(start_listeners, server,
-                          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)),
+      GRPC_CLOSURE_CREATE(
+          start_listeners, server,
+          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
       GRPC_ERROR_NONE);
 }
 
@@ -1301,6 +1302,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   listener* l;
   shutdown_tag* sdt;
   channel_broadcaster broadcaster;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
@@ -1368,6 +1370,7 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
   channel_broadcaster broadcaster;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
@@ -1383,6 +1386,7 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
 
 void grpc_server_destroy(grpc_server* server) {
   listener* l;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
@@ -1468,6 +1472,7 @@ grpc_call_error grpc_server_request_call(
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
   grpc_call_error error;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   requested_call* rc = static_cast<requested_call*>(gpr_malloc(sizeof(*rc)));
   GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
@@ -1514,11 +1519,11 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_metadata_array* initial_metadata, grpc_byte_buffer** optional_payload,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
-  grpc_call_error error;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   requested_call* rc = static_cast<requested_call*>(gpr_malloc(sizeof(*rc)));
   registered_method* rm = static_cast<registered_method*>(rmp);
-  GRPC_STATS_INC_SERVER_REQUESTED_CALLS();
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
       "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "
@@ -1536,19 +1541,17 @@ grpc_call_error grpc_server_request_registered_call(
   }
   if (cq_idx == server->cq_count) {
     gpr_free(rc);
-    error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
-    goto done;
+    return GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
   }
   if ((optional_payload == nullptr) !=
       (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)) {
     gpr_free(rc);
-    error = GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
-    goto done;
+    return GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
   }
+
   if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
     gpr_free(rc);
-    error = GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
-    goto done;
+    return GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
   }
   rc->cq_idx = cq_idx;
   rc->type = REGISTERED_CALL;
@@ -1560,10 +1563,7 @@ grpc_call_error grpc_server_request_registered_call(
   rc->data.registered.deadline = deadline;
   rc->initial_metadata = initial_metadata;
   rc->data.registered.optional_payload = optional_payload;
-  error = queue_call_request(server, cq_idx, rc);
-done:
-
-  return error;
+  return queue_call_request(server, cq_idx, rc);
 }
 
 static void fail_call(grpc_server* server, size_t cq_idx, requested_call* rc,

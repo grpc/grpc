@@ -23,6 +23,8 @@
 
 #include <grpcpp/grpcpp.h>
 
+#include "caching_interceptor.h"
+
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"
 #else
@@ -77,9 +79,20 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
-  KeyValueStoreClient client(grpc::CreateChannel(
-      "localhost:50051", grpc::InsecureChannelCredentials()));
-  std::vector<std::string> keys = {"key1", "key2", "key3", "key4", "key5"};
+  // In this example, we are using a cache which has been added in as an
+  // interceptor.
+  grpc::ChannelArguments args;
+  std::vector<
+      std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+      interceptor_creators;
+  interceptor_creators.push_back(std::unique_ptr<CachingInterceptorFactory>(
+      new CachingInterceptorFactory()));
+  auto channel = grpc::experimental::CreateCustomChannelWithInterceptors(
+      "localhost:50051", grpc::InsecureChannelCredentials(), args,
+      std::move(interceptor_creators));
+  KeyValueStoreClient client(channel);
+  std::vector<std::string> keys = {"key1", "key2", "key3", "key4",
+                                   "key5", "key1", "key2", "key4"};
   client.GetValues(keys);
 
   return 0;
