@@ -34,8 +34,6 @@ struct grpc_tls_key_materials_config
   typedef grpc_core::InlinedVector<grpc_core::PemKeyCertPair, 1>
       PemKeyCertPairList;
 
-  ~grpc_tls_key_materials_config();
-
   /** Getters for member fields. **/
   const char* pem_root_certs() const { return pem_root_certs_.get(); }
   const PemKeyCertPairList& pem_key_cert_pair_list() const {
