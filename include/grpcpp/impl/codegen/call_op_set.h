@@ -871,9 +871,6 @@ class CallOpSet : public CallOpSetInterface,
     if (RunInterceptors()) {
       ContinueFillOpsAfterInterception();
     } else {
-      // This call is going to go through interceptors and would need to
-      // schedule new batches, so delay completion queue shutdown
-      call_.cq()->RegisterAvalanching();
       // After the interceptors are run, ContinueFillOpsAfterInterception will
       // be run
     }
@@ -881,6 +878,8 @@ class CallOpSet : public CallOpSetInterface,
 
   bool FinalizeResult(void** tag, bool* status) override {
     if (done_intercepting_) {
+      // Complete the avalanching since we are done with this batch of ops
+      call_.cq()->CompleteAvalanching();
       // We have already finished intercepting and filling in the results. This
       // round trip from the core needed to be made because interceptors were
       // run
@@ -951,8 +950,6 @@ class CallOpSet : public CallOpSetInterface,
     GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
                        g_core_codegen_interface->grpc_call_start_batch(
                            call_.call(), nullptr, 0, core_cq_tag(), nullptr));
-    // Complete the avalanching since we are done with this batch of ops
-    call_.cq()->CompleteAvalanching();
   }
 
  private:
@@ -967,6 +964,12 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op5::SetInterceptionHookPoint(&interceptor_methods_);
     this->Op6::SetInterceptionHookPoint(&interceptor_methods_);
+    if (interceptor_methods_.InterceptorsListEmpty()) {
+      return true;
+    }
+    // This call will go through interceptors and would need to
+    // schedule new batches, so delay completion queue shutdown
+    call_.cq()->RegisterAvalanching();
     return interceptor_methods_.RunInterceptors();
   }
   // Returns true if no interceptors need to be run
