@@ -15,13 +15,15 @@ All Python related benchmark scenarios are:
 * python_protobuf_sync_streaming_qps_unconstrained
 * python_protobuf_sync_unary_ping_pong_1MB
 
-Here I picked the top 2 most representative scenarios of them, and reduce their benchmark duration from 30 seconds to 10 seconds:
+Here we picked a small but representative subset, and reduce their benchmark duration from 30 seconds to 10 seconds:
 * python_protobuf_async_unary_ping_pong
 * python_protobuf_sync_streaming_ping_pong
 
 ## Why keep the scenario file if it can be generated?
 
-Well... The `tools/run_tests/performance/scenario_config.py` is 1274 lines long. The intention of building these benchmark tools is reducing the complexity of existing infrastructure code. So, instead of calling layers of abstraction to generate the scenario file, keeping a valid static copy is more preferable.
+Well... The `tools/run_tests/performance/scenario_config.py` is 1274 lines long. The intention of building these benchmark tools is reducing the complexity of existing infrastructure code. So, instead of calling layers of abstraction to generate the scenario file, keeping a valid static copy is preferable.
+
+Also, if the use case for this tool grows beyond simple static scenarios, we can incorporate automatic generation and selection of scenarios into the tool.
 
 ## How to run it?
 
@@ -29,7 +31,7 @@ Well... The `tools/run_tests/performance/scenario_config.py` is 1274 lines long.
 bazel test --test_output=streamed src/python/grpcio_tests/tests/qps:basic_benchmark_test
 ```
 
-## How is the output look like?
+## What does the output look like?
 
 ```
 RUNNING SCENARIO: python_protobuf_async_unary_ping_pong
