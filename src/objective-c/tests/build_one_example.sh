@@ -43,6 +43,8 @@ else
   DERIVED_DIR="Build/Build"
 fi
 
+rm -rf $DERIVED_DIR
+
 set -o pipefail
 XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
 xcodebuild \
