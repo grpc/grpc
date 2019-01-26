@@ -520,6 +520,35 @@ typedef unsigned __int64 uint64_t;
 #define CENSUSAPI GRPCAPI
 #endif
 
+#ifndef GPR_HAS_ATTRIBUTE
+#ifdef __has_attribute
+#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
+#else
+#define GPR_HAS_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_ATTRIBUTE */
+
+#ifndef GPR_ATTRIBUTE_NOINLINE
+#if GPR_HAS_ATTRIBUTE(noinline) || (defined(__GNUC__) && !defined(__clang__))
+#define GPR_ATTRIBUTE_NOINLINE __attribute__((noinline))
+#define GPR_HAS_ATTRIBUTE_NOINLINE 1
+#else
+#define GPR_ATTRIBUTE_NOINLINE
+#endif
+#endif /* GPR_ATTRIBUTE_NOINLINE */
+
+#ifndef GPR_ATTRIBUTE_WEAK
+/* Attribute weak is broken on LLVM/windows:
+ * https://bugs.llvm.org/show_bug.cgi?id=37598 */
+#if (GPR_HAS_ATTRIBUTE(weak) || (defined(__GNUC__) && !defined(__clang__))) && \
+    !(defined(__llvm__) && defined(_WIN32))
+#define GPR_ATTRIBUTE_WEAK __attribute__((weak))
+#define GPR_HAS_ATTRIBUTE_WEAK 1
+#else
+#define GPR_ATTRIBUTE_WEAK
+#endif
+#endif /* GPR_ATTRIBUTE_WEAK */
+
 #ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
