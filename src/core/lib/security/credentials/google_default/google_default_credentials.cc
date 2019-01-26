@@ -305,7 +305,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create() {
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
-    g_is_on_gce = g_gce_tenancy_checker();
     g_metadata_server_available = g_is_on_gce;
   }
   /* TODO: Add a platform-provided hint for GAE. */
@@ -366,6 +365,7 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
   g_metadata_server_available = 0;
+  g_is_on_gce = g_gce_tenancy_checker();
   gpr_mu_unlock(&g_state_mu);
 }
 
