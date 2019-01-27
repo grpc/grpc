@@ -88,8 +88,28 @@ namespace Grpc.Core.Testing
 
             protected override Metadata ResponseTrailersCore => responseTrailers;
 
-            protected override Status StatusCore { get => status; set => status = value; }
-            protected override WriteOptions WriteOptionsCore { get => writeOptionsGetter(); set => writeOptionsSetter(value); }
+            protected override Status StatusCore { 
+                get 
+                {
+                    return status;
+                } 
+                
+                set 
+                { 
+                    status = value; 
+                }
+            }
+            protected override WriteOptions WriteOptionsCore { 
+                get 
+                {
+                    return writeOptionsGetter();
+                }
+                
+                set 
+                {
+                    writeOptionsSetter(value); 
+                }
+            }
 
             protected override AuthContext AuthContextCore => authContext;
 

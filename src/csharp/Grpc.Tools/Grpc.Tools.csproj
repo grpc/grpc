@@ -6,6 +6,7 @@
     <AssemblyName>Protobuf.MSBuild</AssemblyName>
     <Version>$(GrpcCsharpVersion)</Version>
     <!-- If changing targets, change also paths in Google.Protobuf.Tools.targets. -->
+    <LangVersion>6</LangVersion>
     <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
   </PropertyGroup>
 

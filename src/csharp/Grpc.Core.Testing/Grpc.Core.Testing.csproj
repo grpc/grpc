@@ -7,6 +7,7 @@
     <Copyright>Copyright 2017, Google Inc.</Copyright>
     <AssemblyTitle>gRPC C# Core Testing</AssemblyTitle>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <LangVersion>6</LangVersion>
     <Authors>Google Inc.</Authors>
     <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

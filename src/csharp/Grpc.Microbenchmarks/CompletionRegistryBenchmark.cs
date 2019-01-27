@@ -51,7 +51,7 @@ namespace Grpc.Microbenchmarks
 
         private void ThreadBody(int iterations, CompletionRegistry optionalSharedRegistry)
         {
-            var completionRegistry = optionalSharedRegistry ?? new CompletionRegistry(environment, () => throw new NotImplementedException(), () => throw new NotImplementedException());
+            var completionRegistry = optionalSharedRegistry ?? new CompletionRegistry(environment, () => { throw new NotImplementedException(); }, () => { throw new NotImplementedException(); });
             var ctx = BatchContextSafeHandle.Create();
   
             var stopwatch = Stopwatch.StartNew();

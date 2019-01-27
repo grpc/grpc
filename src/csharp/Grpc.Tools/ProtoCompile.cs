@@ -348,6 +348,14 @@ namespace Grpc.Tools
             return trim;
         }
 
+        internal void PrintQuoting(StringBuilder printer, string str, char[] quotable, int start, int count)
+        {
+            bool wrap = count == 0 || str.IndexOfAny(quotable, start, count) >= 0;
+            if (wrap) printer.Append('"');
+            printer.Append(str, start, count);
+            if (wrap) printer.Append('"');
+        }
+
         // Called by the base class to log tool's command line.
         //
         // Protoc command file is peculiar, with one argument per line, separated
@@ -363,13 +371,6 @@ namespace Grpc.Tools
             // characters requiring quoting is not by any means exhaustive; we are
             // just striving to be nice, not guaranteeing to be nice.
             var quotable = new[] { ' ', '!', '$', '&', '\'', '^' };
-            void PrintQuoting(string str, int start, int count)
-            {
-                bool wrap = count == 0 || str.IndexOfAny(quotable, start, count) >= 0;
-                if (wrap) printer.Append('"');
-                printer.Append(str, start, count);
-                if (wrap) printer.Append('"');
-            }
 
             for (int ib = 0, ie; (ie = cmd.IndexOf('\n', ib)) >= 0; ib = ie + 1)
             {
@@ -380,7 +381,7 @@ namespace Grpc.Tools
                     int iep = cmd.IndexOf(" --");
                     if (iep > 0)
                     {
-                        PrintQuoting(cmd, 0, iep);
+                        PrintQuoting(printer, cmd, quotable, 0, iep);
                         ib = iep + 1;
                     }
                 }
@@ -399,7 +400,7 @@ namespace Grpc.Tools
                     ib = iarg + 1;
                 }
                 // A positional argument or switch value.
-                PrintQuoting(cmd, ib, ie - ib);
+                PrintQuoting(printer, cmd, quotable, ib, ie - ib);
             }
 
             base.LogToolCommand(printer.ToString());

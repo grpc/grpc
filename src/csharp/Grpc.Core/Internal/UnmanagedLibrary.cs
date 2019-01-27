@@ -50,8 +50,9 @@ namespace Grpc.Core.Internal
             this.libraryPath = FirstValidLibraryPath(libraryPathAlternatives);
 
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
-
-            this.handle = PlatformSpecificLoadLibrary(this.libraryPath, out string loadLibraryErrorDetail);
+            
+            string loadLibraryErrorDetail;
+            this.handle = PlatformSpecificLoadLibrary(this.libraryPath, out loadLibraryErrorDetail);
 
             if (this.handle == IntPtr.Zero)
             {

@@ -87,14 +87,28 @@ namespace Grpc.Core
 
         protected override Status StatusCore
         {
-            get => status;
-            set => status = value;
+            get 
+            {
+                return status;
+            }
+            
+            set 
+            {
+                status = value;
+            }
         }
 
         protected override WriteOptions WriteOptionsCore
         {
-            get => serverResponseStream.WriteOptions;
-            set => serverResponseStream.WriteOptions = value;
+            get 
+            { 
+                return serverResponseStream.WriteOptions;
+            }
+
+            set 
+            {
+                serverResponseStream.WriteOptions = value;
+            }
         }
 
         protected override AuthContext AuthContextCore => authContext.Value;

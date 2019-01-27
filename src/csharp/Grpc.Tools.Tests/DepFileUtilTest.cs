@@ -47,12 +47,13 @@ namespace Grpc.Tools.Tests
                 DepFileUtil.GetDepFilenameForProto("", "foo.proto"));
         }
 
+        internal static string PickHash(string fname) {
+            return DepFileUtil.GetDepFilenameForProto("", fname).Substring(0, 16);
+        }
+
         [Test]
         public void GetDepFilenameForProto_HashesDir()
         {
-            string PickHash(string fname) =>
-                DepFileUtil.GetDepFilenameForProto("", fname).Substring(0, 16);
-
             string same1 = PickHash("dir1/dir2/foo.proto");
             string same2 = PickHash("dir1/dir2/proto.foo");
             string same3 = PickHash("dir1/dir2/proto");

@@ -8,6 +8,7 @@
     <AssemblyTitle>gRPC C# Reflection</AssemblyTitle>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
+    <LangVersion>6</LangVersion>
     <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
     <AssemblyName>Grpc.Reflection</AssemblyName>
     <PackageId>Grpc.Reflection</PackageId>

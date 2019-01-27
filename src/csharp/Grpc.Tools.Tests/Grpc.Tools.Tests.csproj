@@ -3,6 +3,7 @@
   <Import Project="..\Grpc.Core\Version.csproj.include" />
 
   <PropertyGroup>
+    <LangVersion>6</LangVersion>
     <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
   </PropertyGroup>

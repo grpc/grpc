@@ -4,6 +4,7 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
+    <LangVersion>6</LangVersion>
     <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
     <AssemblyName>Grpc.IntegrationTesting</AssemblyName>
     <OutputType>Exe</OutputType>
