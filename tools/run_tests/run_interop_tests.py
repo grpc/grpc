@@ -65,6 +65,12 @@ _SKIP_ADVANCED = [
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
 
+_GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
+
+_SKIP_GOOGLE_DEFAULT_CREDS = [
+    _GOOGLE_DEFAULT_CREDS_TEST_CASE,
+]
+
 _TEST_TIMEOUT = 3 * 60
 
 # disable this test on core-based languages,
@@ -129,7 +135,7 @@ class CSharpLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -158,7 +164,7 @@ class CSharpCoreCLRLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -188,7 +194,7 @@ class DartLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
@@ -223,7 +229,7 @@ class JavaLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return []
+        return _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -248,7 +254,7 @@ class JavaOkHttpClient:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def __str__(self):
         return 'javaokhttp'
@@ -279,7 +285,7 @@ class GoLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -309,7 +315,7 @@ class Http2Server:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _TEST_CASES + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -339,7 +345,7 @@ class Http2Client:
         return {}
 
     def unimplemented_test_cases(self):
-        return _TEST_CASES + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _TEST_CASES + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _TEST_CASES
@@ -376,7 +382,7 @@ class NodeLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -406,7 +412,7 @@ class NodePureJSLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return []
@@ -431,7 +437,7 @@ class PHPLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return []
@@ -456,7 +462,7 @@ class PHP7Language:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return []
@@ -491,7 +497,7 @@ class ObjcLanguage:
         # cmdline argument. Here we return all but one test cases as unimplemented,
         # and depend upon ObjC test's behavior that it runs all cases even when
         # we tell it to run just one.
-        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _TEST_CASES[1:] + _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -526,7 +532,7 @@ class RubyLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_SERVER_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_SPECIAL_STATUS_MESSAGE + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -571,7 +577,7 @@ class PythonLanguage:
         }
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _SKIP_GOOGLE_DEFAULT_CREDS
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -614,8 +620,11 @@ _TEST_CASES = [
 ]
 
 _AUTH_TEST_CASES = [
-    'compute_engine_creds', 'jwt_token_creds', 'oauth2_auth_token',
-    'per_rpc_creds'
+    'compute_engine_creds',
+    'jwt_token_creds',
+    'oauth2_auth_token',
+    'per_rpc_creds',
+    _GOOGLE_DEFAULT_CREDS_TEST_CASE,
 ]
 
 _HTTP2_TEST_CASES = ['tls', 'framing']
@@ -714,7 +723,7 @@ def compute_engine_creds_required(language, test_case):
     return False
 
 
-def auth_options(language, test_case, service_account_key_file=None):
+def auth_options(language, test_case, on_gce, service_account_key_file=None):
     """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
     language = str(language)
@@ -728,9 +737,6 @@ def auth_options(language, test_case, service_account_key_file=None):
     key_file_arg = '--service_account_key_file=%s' % service_account_key_file
     default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
-    # TODO: When using google_default_credentials outside of cloud-to-prod, the environment variable
-    # 'GOOGLE_APPLICATION_CREDENTIALS' needs to be set for the test case
-    # 'jwt_token_creds' to work.
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
                 'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
@@ -750,6 +756,11 @@ def auth_options(language, test_case, service_account_key_file=None):
     if test_case == 'compute_engine_creds':
         cmdargs += [oauth_scope_arg, default_account_arg]
 
+    if test_case == _GOOGLE_DEFAULT_CREDS_TEST_CASE:
+        if not on_gce:
+            env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
+        cmdargs += [default_account_arg]
+
     return (cmdargs, env)
 
 
@@ -767,6 +778,7 @@ def cloud_to_prod_jobspec(language,
                           test_case,
                           server_host_nickname,
                           server_host,
+                          on_gce,
                           docker_image=None,
                           auth=False,
                           manual_cmd_log=None,
@@ -792,7 +804,7 @@ def cloud_to_prod_jobspec(language,
     cmdargs = cmdargs + transport_security_options
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
-        auth_cmdargs, auth_env = auth_options(language, test_case,
+        auth_cmdargs, auth_env = auth_options(language, test_case, on_gce,
                                               service_account_key_file)
         cmdargs += auth_cmdargs
         environ.update(auth_env)
@@ -1071,6 +1083,12 @@ argp.add_argument(
     const=True,
     help='Run cloud_to_prod_auth tests.')
 argp.add_argument(
+    '--on_gce',
+    default=True,
+    action='store_const',
+    const=True,
+    help='Whether or not this test script is running on GCE.')
+argp.add_argument(
     '--prod_servers',
     choices=prod_servers.keys(),
     default=['default'],
@@ -1325,6 +1343,7 @@ try:
                                 test_case,
                                 server_host_nickname,
                                 prod_servers[server_host_nickname],
+                                on_gce=args.on_gce,
                                 docker_image=docker_images.get(str(language)),
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
@@ -1339,6 +1358,7 @@ try:
                                     test_case,
                                     server_host_nickname,
                                     prod_servers[server_host_nickname],
+                                    on_gce=args.on_gce,
                                     docker_image=docker_images.get(
                                         str(language)),
                                     manual_cmd_log=client_manual_cmd_log,
@@ -1355,6 +1375,7 @@ try:
                         test_case,
                         server_host_nickname,
                         prod_servers[server_host_nickname],
+                        on_gce=args.on_gce,
                         docker_image=docker_images.get(str(http2Interop)),
                         manual_cmd_log=client_manual_cmd_log,
                         service_account_key_file=args.service_account_key_file,
@@ -1373,36 +1394,22 @@ try:
                             not compute_engine_creds_required(
                                 language, test_case)):
                         if not test_case in language.unimplemented_test_cases():
-                            tls_test_job = cloud_to_prod_jobspec(
+                            transport_security = 'tls'
+                            if test_case == _GOOGLE_DEFAULT_CREDS_TEST_CASE:
+                                transport_security = 'google_default_credentials'
+                            test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
                                 server_host_nickname,
                                 prod_servers[server_host_nickname],
+                                on_gce=args.on_gce,
                                 docker_image=docker_images.get(str(language)),
                                 auth=True,
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
                                 service_account_key_file,
-                                transport_security='tls')
-                            jobs.append(tls_test_job)
-                            if str(language) in [
-                                    'go'
-                            ]:  # Add more languages to the list to turn on tests.
-                                google_default_creds_test_job = cloud_to_prod_jobspec(
-                                    language,
-                                    test_case,
-                                    server_host_nickname,
-                                    prod_servers[server_host_nickname],
-                                    docker_image=docker_images.get(
-                                        str(language)),
-                                    auth=True,
-                                    manual_cmd_log=client_manual_cmd_log,
-                                    service_account_key_file=args.
-                                    service_account_key_file,
-                                    transport_security=
-                                    'google_default_credentials')
-                                jobs.append(google_default_creds_test_job)
-
+                                transport_security=transport_security)
+                            jobs.append(test_job)
     for server in args.override_server:
         server_name = server[0]
         (server_host, server_port) = server[1].split(':')
