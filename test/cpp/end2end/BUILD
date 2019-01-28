@@ -223,6 +223,7 @@ grpc_cc_test(
         ":end2end_test_lib",
     ],
     size = "large",  # with poll-cv this takes long, see #17493
+    timeout = "long",
 )
 
 grpc_cc_test(
