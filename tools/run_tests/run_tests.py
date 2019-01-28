@@ -1062,7 +1062,9 @@ class ObjCLanguage(object):
                 timeout_seconds=60 * 60,
                 shortname='objc-tests',
                 cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
+                environ={
+                    'KOKORO_BUILD': '1'
+                }),
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
                 timeout_seconds=60 * 60,

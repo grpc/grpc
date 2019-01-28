@@ -41,6 +41,13 @@ set -o pipefail
 # TODO(jcanizales): Use xctool instead? Issue #2540.
 XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
 
+# If building on Kokoro, use /tmpfs to store derived data
+if [ "$KOKORO_BUILD" -eq 1 ]; then
+  DERIVED_DIR="/tmpfs/Build/Build"
+else
+  DERIVED_DIR="Build/Build"
+fi
+
 echo "TIME:  $(date)"
 
 # Retry the test for up to 3 times when return code is 65, due to Xcode issue:
@@ -54,6 +61,7 @@ while [ $retries -lt 3 ]; do
         -workspace Tests.xcworkspace \
         -scheme AllTests \
         -destination name="iPhone 8" \
+        -derivedDataPath $DERIVED_DIR \
         HOST_PORT_LOCALSSL=localhost:5051 \
         HOST_PORT_LOCAL=localhost:5050 \
         HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
@@ -84,6 +92,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -94,6 +103,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests_Asan \
     -destination name="iPhone 6" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -104,6 +114,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CoreCronetEnd2EndTests_Tsan \
     -destination name="iPhone 6" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -114,6 +125,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -124,6 +136,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteWithCronet \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -135,6 +148,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsRemoteCFStream \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -146,6 +160,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsLocalCleartextCFStream \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     HOST_PORT_LOCAL=localhost:5050 \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -157,6 +172,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme InteropTestsLocalSSLCFStream \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     HOST_PORT_LOCALSSL=localhost:5051 \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
@@ -168,6 +184,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme UnitTests \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -178,6 +195,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme ChannelTests \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
@@ -188,6 +206,7 @@ xcodebuild \
     -workspace Tests.xcworkspace \
     -scheme APIv2Tests \
     -destination name="iPhone 8" \
+    -derivedDataPath $DERIVED_DIR \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
