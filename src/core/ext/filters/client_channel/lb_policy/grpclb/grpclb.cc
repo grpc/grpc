@@ -424,6 +424,7 @@ bool ServerlistContainsAllDropEntries(
 void GrpcLb::Helper::UpdateState(
     grpc_connectivity_state state, grpc_error* state_error,
     RefCountedPtr<SubchannelPicker> picker) {
+  if (parent_->shutting_down_) return;
   // There are three cases to consider here:
   // 1. We're in fallback mode.  In this case, we're always going to use
   //    RR's result, so we pass its picker through as-is.
