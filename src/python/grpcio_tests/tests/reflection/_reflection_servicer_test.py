@@ -50,10 +50,10 @@ def _file_descriptor_to_proto(descriptor):
 
 class ReflectionServicerTest(unittest.TestCase):
 
-    # NOTE(lidiz) Bazel + Python 3 will result in creating two different
-    # instance of DESCRIPTOR for each message. So, the equal comparision
-    # between protobuf returned by stub and manually crafted protobuf will
-    # always fail.
+    # TODO(https://github.com/grpc/grpc/issues/17844)
+    # Bazel + Python 3 will result in creating two different instance of
+    # DESCRIPTOR for each message. So, the equal comparision between protobuf
+    # returned by stub and manually crafted protobuf will always fail.
     def _assert_sequence_of_proto_equal(self, x, y):
         self.assertSequenceEqual(
             list(map(lambda x: x.SerializeToString(), x)),
