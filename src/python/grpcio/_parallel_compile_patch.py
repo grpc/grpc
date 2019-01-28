@@ -19,6 +19,7 @@ Enabling parallel build helps a lot.
 
 import distutils.ccompiler
 import os
+import six
 
 try:
     BUILD_EXT_COMPILER_JOBS = int(
@@ -37,6 +38,8 @@ def _parallel_compile(self,
                       extra_preargs=None,
                       extra_postargs=None,
                       depends=None):
+    if isinstance(output_dir, six.text_type):
+        output_dir = str(output_dir)
     # setup the same way as distutils.ccompiler.CCompiler
     # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
     macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
