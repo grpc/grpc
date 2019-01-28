@@ -29,7 +29,7 @@ Status code definitions can be seen in [StatusCode.cs](https://github.com/grpc/g
 | Response cardinality violation (method requires exactly one response but server sent some other number of responses) | UNIMPLEMENTED | 12 | Client|
 | Server shutting down	| UNAVAILABLE | 14 | Server|
 | Keepalive watchdog times out | UNAVAILABLE | 14 | Both |
-| Some data transmitted (e.g., request metadata written to TCP connection) before connection breaks |	UNAVAILABLE | Client |
+| Some data transmitted (e.g., request metadata written to TCP connection) before connection breaks |	UNAVAILABLE | 14 | Client |
 | Server side application throws an exception (or does something other than returning a Status code to terminate an RPC) |	UNKNOWN | 2 | Server|
 | Error parsing returned status	| UNKNOWN | 2 | Client |
 | Could not decompress, but compression algorithm supported (Client -> Server)	| INTERNAL | 13 | Server |
