@@ -29,7 +29,7 @@ py_library(
     srcs = ["methods.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests:bazel_patch",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/proto/grpc/testing:py_empty_proto",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",

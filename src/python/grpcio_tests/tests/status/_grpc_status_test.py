@@ -13,8 +13,8 @@
 # limitations under the License.
 """Tests of grpc_status."""
 
-from tests.bazel_patch import bazel_patch
-bazel_patch()
+from tests import bazel_namespace_package_hack
+bazel_namespace_package_hack.sys_path_to_site_dir_hack()
 
 import unittest
 

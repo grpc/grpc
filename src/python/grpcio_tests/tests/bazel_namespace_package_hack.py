@@ -22,7 +22,7 @@ import sys
 # Python process to parse the .pth file in the sys.path to resolve namespace
 # package in the right place.
 # Analysis in depth: https://github.com/bazelbuild/rules_python/issues/55
-def bazel_patch():
+def sys_path_to_site_dir_hack():
     """Add valid sys.path item to site directory to parse the .pth files."""
     for item in sys.path:
         if os.path.exists(item):
