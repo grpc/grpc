@@ -714,6 +714,7 @@ class PythonLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        self.platform = platform_string()
         self.pythons = self._get_pythons(self.args)
 
     def test_specs(self):
