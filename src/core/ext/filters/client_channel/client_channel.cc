@@ -119,6 +119,7 @@ typedef struct client_channel_channel_data {
   // Linked list of queued picks.
   QueuedPick* queued_picks;
 
+  bool have_service_config;
   /** retry throttle data from service config */
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   /** per-method service config data */
@@ -234,6 +235,7 @@ static bool process_resolver_result_locked(void* arg,
                                            const char** lb_policy_name,
                                            grpc_json** lb_policy_config) {
   channel_data* chand = static_cast<channel_data*>(arg);
+  chand->have_service_config = true;
   ProcessedResolverResult resolver_result(args, chand->enable_retries);
   grpc_core::UniquePtr<char> service_config_json =
       resolver_result.service_config_json();
@@ -704,6 +706,7 @@ struct call_data {
 
   QueuedPick pick;
   bool pick_queued = false;
+  bool service_config_applied = false;
   grpc_core::QueuedPickCanceller* pick_canceller = nullptr;
   grpc_closure pick_closure;
 
@@ -2583,17 +2586,13 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
 
 // Invoked once resolver results are available.
 static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Only get service config data on the first attempt and only if we
-  // haven't already done so.
-// FIXME: need explicit state here to record whether we've already tried
-// to apply the service config, or else we might add service config to a
-// call if it gets created after the call has already started (i.e., if
-// the service config appears after a re-resolution but the call has
-// already started)
-  if (GPR_LIKELY(calld->num_attempts_completed == 0) &&
-      calld->retry_throttle_data == nullptr &&
-      calld->method_params == nullptr) {
+  // Apply service config data to the call only once, and only if the
+  // channel has the data available.
+  if (GPR_LIKELY(chand->have_service_config &&
+                 !calld->service_config_applied)) {
+    calld->service_config_applied = true;
     apply_service_config_to_call_locked(elem);
   }
   return true;
