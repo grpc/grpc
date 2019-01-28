@@ -2465,13 +2465,21 @@ class QueuedPickCanceller {
  private:
   static void CancelLocked(void* arg, grpc_error* error) {
     auto* self = static_cast<QueuedPickCanceller*>(arg);
+    auto* chand = static_cast<channel_data*>(self->elem_->channel_data);
     auto* calld = static_cast<call_data*>(self->elem_->call_data);
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: cancelling queued pick: "
+              "error=%s self=%p calld->pick_canceller=%p",
+              chand, calld, grpc_error_string(error), self,
+              calld->pick_canceller);
+    }
     if (calld->pick_canceller == self && error != GRPC_ERROR_NONE) {
       // Remove pick from list of queued picks.
       remove_call_from_queued_picks_locked(self->elem_);
       // Fail pending batches on the call.
       pending_batches_fail(self->elem_, GRPC_ERROR_REF(error),
-                           true /* yield_call_combiner */);
+                           false /* yield_call_combiner */);
     }
     GRPC_CALL_STACK_UNREF(calld->owning_call, "QueuedPickCanceller");
     Delete(self);
