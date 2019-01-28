@@ -14,11 +14,25 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
-grpc_package(name = "core", visibility = "public")
+grpc_package(
+    name = "core",
+    visibility = "public",
+)
 
 grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
+)
+
+py_proto_library(
+    name = "py_stats_proto",
+    protos = ["stats.proto"],
+    with_grpc = True,
+    deps = [
+        requirement("protobuf"),
+    ],
 )

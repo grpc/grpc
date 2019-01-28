@@ -89,6 +89,8 @@ class InteropClient {
                          const grpc::string& oauth_scope);
   // username is a string containing the user email
   bool DoPerRpcCreds(const grpc::string& json_key);
+  // username is the GCE default service account email
+  bool DoGoogleDefaultCredentials(const grpc::string& username);
 
  private:
   class ServiceStub {

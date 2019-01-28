@@ -556,6 +556,7 @@ void grpc_call_unref(grpc_call* c) {
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
   child_call* cc = c->child;
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (c));
@@ -597,6 +598,7 @@ void grpc_call_unref(grpc_call* c) {
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(!reserved);
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   cancel_with_error(call, GRPC_ERROR_CANCELLED);
   return GRPC_CALL_OK;
@@ -646,6 +648,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
                                              grpc_status_code status,
                                              const char* description,
                                              void* reserved) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_call_cancel_with_status("
@@ -1894,7 +1897,6 @@ done_with_error:
 
 grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
                                       size_t nops, void* tag, void* reserved) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_call_error err;
 
   GRPC_API_TRACE(
@@ -1905,6 +1907,8 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
   if (reserved != nullptr) {
     err = GRPC_CALL_ERROR;
   } else {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
     err = call_start_batch(call, ops, nops, tag, 0);
   }
 

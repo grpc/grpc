@@ -236,6 +236,7 @@ class ConnectedSubchannelStateWatcher
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
   }
 
+  // Must be called while holding subchannel_->mu.
   void Orphan() override { health_check_client_.reset(); }
 
  private:
@@ -302,12 +303,12 @@ class ConnectedSubchannelStateWatcher
 
   static void OnHealthChanged(void* arg, grpc_error* error) {
     auto* self = static_cast<ConnectedSubchannelStateWatcher*>(arg);
+    grpc_subchannel* c = self->subchannel_;
+    MutexLock lock(&c->mu);
     if (self->health_state_ == GRPC_CHANNEL_SHUTDOWN) {
       self->Unref();
       return;
     }
-    grpc_subchannel* c = self->subchannel_;
-    MutexLock lock(&c->mu);
     if (self->last_connectivity_state_ == GRPC_CHANNEL_READY) {
       grpc_connectivity_state_set(&c->state_and_health_tracker,
                                   self->health_state_, GRPC_ERROR_REF(error),

@@ -15,5 +15,5 @@
 
 set -ex
 
-EXTRA_FLAGS="--config=opt --test_timeout=300,450,1200,3600"
+EXTRA_FLAGS="--config=opt"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"

@@ -63,7 +63,7 @@ namespace Grpc.Core
 
         protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
         {
-            return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
+            return new ContextPropagationTokenImpl(callHandle, deadline, cancellationToken, options);
         }
 
         protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders)
