@@ -86,6 +86,16 @@ class CallTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($result->send_metadata);
     }
 
+    public function testAddMultiAndMultiValueMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],
+                                              'key2' => ['value3', 'value4'],],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
+    }
+
     public function testGetPeer()
     {
         $this->assertTrue(is_string($this->call->getPeer()));

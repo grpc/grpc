@@ -107,6 +107,24 @@ class InterceptorBatchMethods {
   /// of the hijacking interceptor.
   virtual void Hijack() = 0;
 
+  /// Send Message Methods
+  /// GetSerializedSendMessage and GetSendMessage/ModifySendMessage are the
+  /// available methods to view and modify the request payload. An interceptor
+  /// can access the payload in either serialized form or non-serialized form
+  /// but not both at the same time.
+  /// gRPC performs serialization in a lazy manner, which means
+  /// that a call to GetSerializedSendMessage will result in a serialization
+  /// operation if the payload stored is not in the serialized form already; the
+  /// non-serialized form will be lost and GetSendMessage will no longer return
+  /// a valid pointer, and this will remain true for later interceptors too.
+  /// This can change however if ModifySendMessage is used to replace the
+  /// current payload. Note that ModifySendMessage requires a new payload
+  /// message in the non-serialized form. This will overwrite the existing
+  /// payload irrespective of whether it had been serialized earlier. Also note
+  /// that gRPC Async API requires early serialization of the payload which
+  /// means that the payload would be available in the serialized form only
+  /// unless an interceptor replaces the payload with ModifySendMessage.
+
   /// Returns a modifable ByteBuffer holding the serialized form of the message
   /// that is going to be sent. Valid for PRE_SEND_MESSAGE interceptions.
   /// A return value of nullptr indicates that this ByteBuffer is not valid.
@@ -114,15 +132,16 @@ class InterceptorBatchMethods {
 
   /// Returns a non-modifiable pointer to the non-serialized form of the message
   /// to be sent. Valid for PRE_SEND_MESSAGE interceptions. A return value of
-  /// nullptr indicates that this field is not valid. Also note that this is
-  /// only supported for sync and callback APIs at the present moment.
+  /// nullptr indicates that this field is not valid.
   virtual const void* GetSendMessage() = 0;
 
   /// Overwrites the message to be sent with \a message. \a message should be in
   /// the non-serialized form expected by the method. Valid for PRE_SEND_MESSAGE
   /// interceptions. Note that the interceptor is responsible for maintaining
-  /// the life of the message for the duration on the send operation, i.e., till
-  /// POST_SEND_MESSAGE.
+  /// the life of the message till it is serialized or it receives the
+  /// POST_SEND_MESSAGE interception point, whichever happens earlier. The
+  /// modifying interceptor may itself force early serialization by calling
+  /// GetSerializedSendMessage.
   virtual void ModifySendMessage(const void* message) = 0;
 
   /// Checks whether the SEND MESSAGE op succeeded. Valid for POST_SEND_MESSAGE

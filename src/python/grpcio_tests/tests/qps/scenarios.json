@@ -1,0 +1,96 @@
+{
+	"scenarios": [
+		{
+			"name": "python_protobuf_async_unary_ping_pong",
+			"clientConfig": {
+				"clientType": "ASYNC_CLIENT",
+				"securityParams": {
+					"useTestCa": true,
+					"serverHostOverride": "foo.test.google.fr"
+				},
+				"outstandingRpcsPerChannel": 1,
+				"clientChannels": 1,
+				"asyncClientThreads": 1,
+				"loadParams": {
+					"closedLoop": {}
+				},
+				"payloadConfig": {
+					"simpleParams": {}
+				},
+				"histogramParams": {
+					"resolution": 0.01,
+					"maxPossible": 60000000000
+				},
+				"channelArgs": [
+					{
+						"name": "grpc.optimization_target",
+						"strValue": "latency"
+					}
+				]
+			},
+			"numClients": 1,
+			"serverConfig": {
+				"serverType": "ASYNC_SERVER",
+				"securityParams": {
+					"useTestCa": true,
+					"serverHostOverride": "foo.test.google.fr"
+				},
+				"channelArgs": [
+					{
+						"name": "grpc.optimization_target",
+						"strValue": "latency"
+					}
+				]
+			},
+			"numServers": 1,
+			"warmupSeconds": 2,
+			"benchmarkSeconds": 10
+		},
+		{
+			"name": "python_protobuf_sync_streaming_ping_pong",
+			"clientConfig": {
+				"securityParams": {
+					"useTestCa": true,
+					"serverHostOverride": "foo.test.google.fr"
+				},
+				"outstandingRpcsPerChannel": 1,
+				"clientChannels": 1,
+				"asyncClientThreads": 1,
+				"rpcType": "STREAMING",
+				"loadParams": {
+					"closedLoop": {}
+				},
+				"payloadConfig": {
+					"simpleParams": {}
+				},
+				"histogramParams": {
+					"resolution": 0.01,
+					"maxPossible": 60000000000
+				},
+				"channelArgs": [
+					{
+						"name": "grpc.optimization_target",
+						"strValue": "latency"
+					}
+				]
+			},
+			"numClients": 1,
+			"serverConfig": {
+				"serverType": "ASYNC_SERVER",
+				"securityParams": {
+					"useTestCa": true,
+					"serverHostOverride": "foo.test.google.fr"
+				},
+				"channelArgs": [
+					{
+						"name": "grpc.optimization_target",
+						"strValue": "latency"
+					}
+				]
+			},
+			"numServers": 1,
+			"warmupSeconds": 2,
+			"benchmarkSeconds": 10
+		}
+	]
+}
