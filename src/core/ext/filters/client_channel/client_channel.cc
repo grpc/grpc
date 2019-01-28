@@ -2599,6 +2599,19 @@ static bool maybe_apply_service_config_to_call_locked(grpc_call_element* elem) {
   return true;
 }
 
+static const char* pick_result_name(
+    LoadBalancingPolicy::SubchannelPicker::PickResult result) {
+  switch (result) {
+    case LoadBalancingPolicy::SubchannelPicker::PICK_COMPLETE:
+      return "COMPLETE";
+    case LoadBalancingPolicy::SubchannelPicker::PICK_QUEUE:
+      return "QUEUE";
+    case LoadBalancingPolicy::SubchannelPicker::PICK_TRANSIENT_FAILURE:
+      return "TRANSIENT_FAILURE";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 static void start_pick_locked(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -2636,9 +2649,9 @@ static void start_pick_locked(void* arg, grpc_error* error) {
   auto pick_result = chand->picker->Pick(&calld->pick.pick, &error);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "chand=%p calld=%p: LB pick returned %d (connected_subchannel=%p, "
+            "chand=%p calld=%p: LB pick returned %s (connected_subchannel=%p, "
             "error=%s)",
-            chand, calld, pick_result,
+            chand, calld, pick_result_name(pick_result),
             calld->pick.pick.connected_subchannel.get(),
             grpc_error_string(error));
   }

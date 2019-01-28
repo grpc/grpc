@@ -84,7 +84,6 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
   }
 
   void RequestReresolution() override {
-// FIXME: need to hop into combiner here?
     if (parent_->tracer_->enabled()) {
       gpr_log(GPR_INFO, "resolving_lb=%p: started name re-resolving",
               parent_.get());
@@ -101,6 +100,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 // ResolvingLoadBalancingPolicy::Picker
 //
 
+// FIXME: just use QueuePicker instead of this class?
 class ResolvingLoadBalancingPolicy::Picker
     : public LoadBalancingPolicy::SubchannelPicker {
  public:
@@ -108,7 +108,6 @@ class ResolvingLoadBalancingPolicy::Picker
       : parent_(std::move(parent)) {}
 
   PickResult Pick(PickState* pick, grpc_error** error) override {
-// FIXME: need to pop into combiner here?
 // FIXME: is this check needed?
     if (parent_->resolver_ == nullptr) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected");
@@ -291,7 +290,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
     if (channelz_node() != nullptr) {
       char* str;
-      gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
+      gpr_asprintf(&str, "Could not create LB policy \"%s\"", lb_policy_name);
       trace_strings->push_back(str);
     }
   } else {
@@ -301,7 +300,7 @@ void ResolvingLoadBalancingPolicy::CreateNewLbPolicyLocked(
     }
     if (channelz_node() != nullptr) {
       char* str;
-      gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
+      gpr_asprintf(&str, "Created new LB policy \"%s\"", lb_policy_name);
       trace_strings->push_back(str);
     }
     // Swap out the LB policy and update the fds in interested_parties_.
@@ -429,6 +428,10 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
       self->lb_policy_->UpdateLocked(*self->resolver_result_, lb_policy_config);
     } else {
       // Instantiate new LB policy.
+      if (self->tracer_->enabled()) {
+        gpr_log(GPR_INFO, "resolving_lb=%p: creating new LB policy \"%s\"",
+                self, lb_policy_name);
+      }
       self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
                                     &trace_strings);
     }

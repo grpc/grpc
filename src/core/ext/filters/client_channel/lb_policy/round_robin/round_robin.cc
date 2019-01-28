@@ -232,6 +232,8 @@ RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
             PRIuPTR "), last_ready_index=%" PRIuPTR,
             parent_, this, subchannels_.size(), last_ready_index_);
   }
+// FIXME: either remove the code to check for the subchannel != null, or
+// change the ctor to add the null entries too
   for (size_t i = 0; i < subchannels_.size(); ++i) {
     const size_t index =
         (i + last_ready_index_ + 1) % subchannels_.size();
