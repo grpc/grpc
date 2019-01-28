@@ -271,6 +271,12 @@ class ApplicationCallbackExecCtx {
     ctx->tail_ = functor;
   }
 
+  /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
+  static void GlobalInit(void) { gpr_tls_init(&callback_exec_ctx_); }
+
+  /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
+  static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
+
  private:
   grpc_experimental_completion_queue_functor* head_{nullptr};
   grpc_experimental_completion_queue_functor* tail_{nullptr};
