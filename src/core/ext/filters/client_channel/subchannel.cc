@@ -1006,7 +1006,7 @@ void* grpc_connected_subchannel_call_get_parent_data(
   grpc_channel_stack* chanstk = subchannel_call->connection->channel_stack();
   return (char*)subchannel_call +
          GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_subchannel_call)) +
-         chanstk->call_stack_size;
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
