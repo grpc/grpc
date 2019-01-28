@@ -176,7 +176,19 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 // SubchannelCall
 //
 
+SubchannelCall::SubchannelCall(
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel,
+    const ConnectedSubchannel::CallArgs& args)
+    : deadline_(args.deadline) {
+  connected_subchannel_.Init(std::move(connected_subchannel));
+}
+
 SubchannelCall::~SubchannelCall() {
+  connected_subchannel_->reset();
+  // after_call_stack_destroy_, if not null, will free the call arena, where
+  // this subchannel call was allocated from. To avoid accessing this subchannel
+  // call's memory once after_call_stack_destroy_ starts running, no member
+  // variable of SubchannelCall can have dtor.
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(this), nullptr,
                           after_call_stack_destroy_);
 }
@@ -192,7 +204,7 @@ void SubchannelCall::StartTransportStreamOpBatch(
 }
 
 void* SubchannelCall::GetParentData() {
-  grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
+  grpc_channel_stack* chanstk = (*connected_subchannel_)->channel_stack();
   return (char*)this + sizeof(SubchannelCall) + chanstk->call_stack_size;
 }
 
@@ -232,7 +244,7 @@ void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
     return;
   }
   // only add interceptor is channelz is enabled.
-  if (connected_subchannel_->channelz_subchannel() == nullptr) {
+  if ((*connected_subchannel_)->channelz_subchannel() == nullptr) {
     return;
   }
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
@@ -274,7 +286,7 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_,
                 GRPC_ERROR_REF(error));
   channelz::SubchannelNode* channelz_subchannel =
-      call->connected_subchannel_->channelz_subchannel();
+      (*call->connected_subchannel_)->channelz_subchannel();
   GPR_ASSERT(channelz_subchannel != nullptr);
   if (status == GRPC_STATUS_OK) {
     channelz_subchannel->RecordCallSucceeded();

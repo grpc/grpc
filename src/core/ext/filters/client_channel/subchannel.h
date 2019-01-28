@@ -116,9 +116,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 class SubchannelCall {
  public:
   SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                 const ConnectedSubchannel::CallArgs& args)
-      : connected_subchannel_(std::move(connected_subchannel)),
-        deadline_(args.deadline) {}
+                 const ConnectedSubchannel::CallArgs& args);
   ~SubchannelCall();
 
   // Continues processing a transport stream op batch.
@@ -161,7 +159,8 @@ class SubchannelCall {
   void IncrementRefCount();
   void IncrementRefCount(const DebugLocation& location, const char* reason);
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  // See ~SubchannelCall() for why this should be of type ManualConstructor.
+  ManualConstructor<RefCountedPtr<ConnectedSubchannel>> connected_subchannel_;
   grpc_closure* after_call_stack_destroy_ = nullptr;
   // State needed to support channelz interception of recv trailing metadata.
   grpc_closure recv_trailing_metadata_ready_;
