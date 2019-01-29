@@ -408,13 +408,15 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "read: error=%s", str);
+    gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp, tcp->peer_string, str);
 
-    for (i = 0; i < tcp->incoming_buffer->count; i++) {
-      char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
-                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
-      gpr_free(dump);
+    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      for (i = 0; i < tcp->incoming_buffer->count; i++) {
+        char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
+                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_DEBUG, "DATA: %s", dump);
+        gpr_free(dump);
+      }
     }
   }
 
@@ -976,10 +978,13 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
-      char* data =
-          grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, data);
-      gpr_free(data);
+      gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string);
+      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+        char* data =
+            grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_DEBUG, "DATA: %s", data);
+        gpr_free(data);
+      }
     }
   }
 
