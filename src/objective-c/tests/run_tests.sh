@@ -43,8 +43,10 @@ XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^
 
 # If building on Kokoro, use /tmpfs to store derived data
 if [ "$KOKORO_BUILD" -eq 1 ]; then
+  echo "Kokoro build; use /tmpfs"
   DERIVED_DIR="/tmpfs/Build/Build"
 else
+  echo "Local build"
   DERIVED_DIR="Build/Build"
 fi
 
