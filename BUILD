@@ -63,6 +63,11 @@ config_setting(
     values = {"cpu": "x64_windows_msvc"},
 )
 
+config_setting(
+    name = "python3",
+    values = {"python_path": "python3"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "gold"
 

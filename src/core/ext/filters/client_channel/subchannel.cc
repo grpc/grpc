@@ -192,7 +192,8 @@ void SubchannelCall::StartTransportStreamOpBatch(
 
 void* SubchannelCall::GetParentData() {
   grpc_channel_stack* chanstk = connected_subchannel_->channel_stack();
-  return (char*)this + sizeof(SubchannelCall) + chanstk->call_stack_size;
+  return (char*)this + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(chanstk->call_stack_size);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {

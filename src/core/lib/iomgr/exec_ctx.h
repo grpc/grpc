@@ -28,7 +28,6 @@
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 
 typedef int64_t grpc_millis;
@@ -271,6 +270,12 @@ class ApplicationCallbackExecCtx {
     }
     ctx->tail_ = functor;
   }
+
+  /** Global initialization for ApplicationCallbackExecCtx. Called by init. */
+  static void GlobalInit(void) { gpr_tls_init(&callback_exec_ctx_); }
+
+  /** Global shutdown for ApplicationCallbackExecCtx. Called by init. */
+  static void GlobalShutdown(void) { gpr_tls_destroy(&callback_exec_ctx_); }
 
  private:
   grpc_experimental_completion_queue_functor* head_{nullptr};

@@ -504,7 +504,8 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
         new DummyInterceptorFactory()));
   }
   builder.experimental().SetInterceptorCreators(std::move(creators));
-  auto cq = builder.AddCompletionQueue();
+  auto srv_cq = builder.AddCompletionQueue();
+  CompletionQueue cli_cq;
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;
@@ -527,28 +528,28 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   cli_ctx.AddMetadata("testkey", "testvalue");
 
   std::unique_ptr<GenericClientAsyncReaderWriter> call =
-      generic_stub.PrepareCall(&cli_ctx, kMethodName, cq.get());
+      generic_stub.PrepareCall(&cli_ctx, kMethodName, &cli_cq);
   call->StartCall(tag(1));
-  Verifier().Expect(1, true).Verify(cq.get());
+  Verifier().Expect(1, true).Verify(&cli_cq);
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
   call->Write(*send_buffer, tag(2));
   // Send ByteBuffer can be destroyed after calling Write.
   send_buffer.reset();
-  Verifier().Expect(2, true).Verify(cq.get());
+  Verifier().Expect(2, true).Verify(&cli_cq);
   call->WritesDone(tag(3));
-  Verifier().Expect(3, true).Verify(cq.get());
+  Verifier().Expect(3, true).Verify(&cli_cq);
 
-  service.RequestCall(&srv_ctx, &stream, cq.get(), cq.get(), tag(4));
+  service.RequestCall(&srv_ctx, &stream, srv_cq.get(), srv_cq.get(), tag(4));
 
-  Verifier().Expect(4, true).Verify(cq.get());
+  Verifier().Expect(4, true).Verify(srv_cq.get());
   EXPECT_EQ(kMethodName, srv_ctx.method());
   EXPECT_TRUE(CheckMetadata(srv_ctx.client_metadata(), "testkey", "testvalue"));
   srv_ctx.AddTrailingMetadata("testkey", "testvalue");
 
   ByteBuffer recv_buffer;
   stream.Read(&recv_buffer, tag(5));
-  Verifier().Expect(5, true).Verify(cq.get());
+  Verifier().Expect(5, true).Verify(srv_cq.get());
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
@@ -556,18 +557,23 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   send_buffer = SerializeToByteBuffer(&send_response);
   stream.Write(*send_buffer, tag(6));
   send_buffer.reset();
-  Verifier().Expect(6, true).Verify(cq.get());
+  Verifier().Expect(6, true).Verify(srv_cq.get());
 
   stream.Finish(Status::OK, tag(7));
-  Verifier().Expect(7, true).Verify(cq.get());
+  // Shutdown srv_cq before we try to get the tag back, to verify that the
+  // interception API handles completion queue shutdowns that take place before
+  // all the tags are returned
+  srv_cq->Shutdown();
+  Verifier().Expect(7, true).Verify(srv_cq.get());
 
   recv_buffer.Clear();
   call->Read(&recv_buffer, tag(8));
-  Verifier().Expect(8, true).Verify(cq.get());
+  Verifier().Expect(8, true).Verify(&cli_cq);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
 
   call->Finish(&recv_status, tag(9));
-  Verifier().Expect(9, true).Verify(cq.get());
+  cli_cq.Shutdown();
+  Verifier().Expect(9, true).Verify(&cli_cq);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
@@ -578,10 +584,11 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
 
   server->Shutdown();
-  cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
-  while (cq->Next(&ignored_tag, &ignored_ok))
+  while (cli_cq.Next(&ignored_tag, &ignored_ok))
+    ;
+  while (srv_cq->Next(&ignored_tag, &ignored_ok))
     ;
   grpc_recycle_unused_port(port);
 }
