@@ -202,8 +202,7 @@ static void chttp2_connector_connect(grpc_connector* con,
                                      grpc_closure* notify) {
   chttp2_connector* c = reinterpret_cast<chttp2_connector*>(con);
   grpc_resolved_address addr;
-  grpc_core::Subchannel::GetAddressFromSubchannelAddressArg(args->channel_args,
-                                                            &addr);
+  grpc_get_subchannel_address_arg(args->channel_args, &addr);
   gpr_mu_lock(&c->mu);
   GPR_ASSERT(c->notify == nullptr);
   c->notify = notify;
