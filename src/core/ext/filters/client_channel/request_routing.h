@@ -79,7 +79,6 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   using TraceStringVector = InlinedVector<char*, 3>;
 
   class ResolvingControlHelper;
-  class Picker;
 
   ~ResolvingLoadBalancingPolicy();
 

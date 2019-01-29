@@ -101,36 +101,6 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 };
 
 //
-// ResolvingLoadBalancingPolicy::Picker
-//
-
-// FIXME: just use QueuePicker instead of this class?
-class ResolvingLoadBalancingPolicy::Picker
-    : public LoadBalancingPolicy::SubchannelPicker {
- public:
-  explicit Picker(RefCountedPtr<ResolvingLoadBalancingPolicy> parent)
-      : parent_(std::move(parent)) {}
-
-  PickResult Pick(PickState* pick, grpc_error** error) override {
-// FIXME: is this check needed?
-    if (parent_->resolver_ == nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected");
-      return PICK_TRANSIENT_FAILURE;
-    }
-    // If we haven't yet started resolving, do so.
-    if (!parent_->started_resolving_) {
-      parent_->StartResolvingLocked();
-    }
-    // Tell channel to queue the pick until we create an LB policy and
-    // return its picker to the channel.
-    return PICK_QUEUE;
-  }
-
- private:
-  RefCountedPtr<ResolvingLoadBalancingPolicy> parent_;
-};
-
-//
 // ResolvingLoadBalancingPolicy
 //
 
@@ -167,22 +137,12 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   }
   // Return our picker to the channel.
   channel_control_helper()->UpdateState(GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-                                        MakeRefCounted<Picker>(Ref()));
+                                        MakeRefCounted<QueuePicker>(Ref()));
 }
 
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
-  if (resolver_ != nullptr) {
-    // The only way we can get here is if we never started resolving,
-    // because we take a ref to the channel stack when we start
-    // resolving and do not release it until the resolver callback is
-    // invoked after the resolver shuts down.
-    resolver_.reset();
-  }
-  if (lb_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                     interested_parties());
-    lb_policy_.reset();
-  }
+  GPR_ASSERT(resolver_ == nullptr);
+  GPR_ASSERT(lb_policy_ == nullptr);
   if (child_lb_config_ != nullptr) grpc_json_destroy(child_lb_config_);
 }
 
