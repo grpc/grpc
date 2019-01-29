@@ -609,8 +609,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceWithBinderMethod(
-    Printer* out, const ServiceDescriptor* service) {
+void GenerateBindServiceWithBinderMethod(Printer* out,
+                                         const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Register service method with a service "
       "binder without implementation. Useful when customizing the service "
