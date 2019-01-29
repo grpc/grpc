@@ -10,6 +10,7 @@ py_test(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
         "//src/python/grpcio_tests/tests/unit:test_common",
         "//src/python/grpcio_tests/tests/unit/framework/common:common",
         requirement('protobuf'),
