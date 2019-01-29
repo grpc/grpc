@@ -361,7 +361,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   if (p->selected_ == this) {
     if (grpc_lb_pick_first_trace.enabled()) {
       gpr_log(GPR_INFO,
-              "Pick First %p connectivity changed for selected subchannel", p);
+              "Pick First %p selected subchannel connectivity changed to %s",
+              p, grpc_connectivity_state_name(connectivity_state));
     }
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.
@@ -387,20 +388,34 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(error),
           MakeRefCounted<TransientFailurePicker>(error));
     } else {
-      GPR_ASSERT(connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE);
-      // If the selected subchannel goes bad, request a re-resolution. We also
-      // set the channel state to IDLE and reset started_picking_. The reason
-      // is that if the new state is TRANSIENT_FAILURE due to a GOAWAY
-      // reception we don't want to connect to the re-resolved backends until
-      // we leave the IDLE state.
-      p->started_picking_ = false;
-      p->channel_control_helper()->RequestReresolution();
-      // In transient failure. Rely on re-resolution to recover.
-      p->selected_ = nullptr;
-      StopConnectivityWatchLocked();
-      p->channel_control_helper()->UpdateState(
-          GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
-          MakeRefCounted<QueuePicker>(p->Ref()));
+      if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // If the selected subchannel goes bad, request a re-resolution. We also
+        // set the channel state to IDLE and reset started_picking_. The reason
+        // is that if the new state is TRANSIENT_FAILURE due to a GOAWAY
+        // reception we don't want to connect to the re-resolved backends until
+        // we leave the IDLE state.
+        p->started_picking_ = false;
+        p->channel_control_helper()->RequestReresolution();
+        // In transient failure. Rely on re-resolution to recover.
+        p->selected_ = nullptr;
+        StopConnectivityWatchLocked();
+        p->channel_control_helper()->UpdateState(
+            GRPC_CHANNEL_IDLE, GRPC_ERROR_NONE,
+            MakeRefCounted<QueuePicker>(p->Ref()));
+      } else {
+        // This is unlikely but can happen when a subchannel has been asked
+        // to reconnect by a different channel and this channel has dropped
+        // some connectivity state notifications.
+        if (connectivity_state == GRPC_CHANNEL_READY) {
+          p->channel_control_helper()->UpdateState(
+              GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
+              MakeRefCounted<Picker>(connected_subchannel()->Ref()));
+        } else {  // CONNECTING
+          p->channel_control_helper()->UpdateState(
+              connectivity_state, GRPC_ERROR_REF(error),
+              MakeRefCounted<QueuePicker>(p->Ref()));
+        }
+      }
     }
     GRPC_ERROR_UNREF(error);
     return;
