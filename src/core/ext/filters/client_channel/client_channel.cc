@@ -453,12 +453,27 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
           nullptr /* child_policy_name */, nullptr /* child_lb_config */,
           &error));
   grpc_channel_args_destroy(new_args);
-  grpc_pollset_set_add_pollset_set(
-      chand->resolving_lb_policy->interested_parties(),
-      chand->interested_parties);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p",
-            chand, chand->resolving_lb_policy.get());
+  if (error != GRPC_ERROR_NONE) {
+    // Orphan the resolving LB policy and flush the exec_ctx to ensure
+    // that it finishes shutting down.  This ensures that if we are
+    // failing, we destroy the ClientChannelControlHelper (and thus
+    // unref the channel stack) before we return.
+    // TODO(roth): This is not a complete solution, because it only
+    // catches the case where channel stack initialization fails in this
+    // particular filter.  If there is a failure in a different filter, we
+    // will leave a dangling ref here, which can cause a crash.  Fortunately,
+    // in practice, there are no other filters that can cause failures in
+    // channel stack initialization, so this works for now.
+    chand->resolving_lb_policy.reset();
+    grpc_core::ExecCtx::Get()->Flush();
+  } else {
+    grpc_pollset_set_add_pollset_set(
+        chand->resolving_lb_policy->interested_parties(),
+        chand->interested_parties);
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p",
+              chand, chand->resolving_lb_policy.get());
+    }
   }
   return error;
 }
