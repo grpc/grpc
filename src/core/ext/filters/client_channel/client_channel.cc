@@ -268,6 +268,28 @@ static bool process_resolver_result_locked(void* arg,
   return service_config_changed;
 }
 
+static grpc_error* do_ping_locked(channel_data* chand, grpc_transport_op* op) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_connectivity_state state =
+      grpc_connectivity_state_get(&chand->state_tracker, &error);
+  if (state != GRPC_CHANNEL_READY) {
+    return GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "channel not connected", &error, 1);
+  }
+  LoadBalancingPolicy::PickState pick;
+  chand->picker->Pick(&pick, &error);
+  if (pick.connected_subchannel != nullptr) {
+    pick.connected_subchannel->Ping(op->send_ping.on_initiate,
+                                    op->send_ping.on_ack);
+  } else {
+    if (error == GRPC_ERROR_NONE) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "LB policy dropped call on ping");
+    }
+  }
+  return error;
+}
+
 static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
   grpc_transport_op* op = static_cast<grpc_transport_op*>(arg);
   grpc_channel_element* elem =
@@ -283,17 +305,8 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
   }
 
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
-    LoadBalancingPolicy::PickState pick;
-    grpc_error* error;
-    chand->picker->Pick(&pick, &error);
-    if (pick.connected_subchannel != nullptr) {
-      pick.connected_subchannel->Ping(op->send_ping.on_initiate,
-                                      op->send_ping.on_ack);
-    } else {
-      if (error == GRPC_ERROR_NONE) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "LB policy dropped call on ping");
-      }
+    grpc_error* error = do_ping_locked(chand, op);
+    if (error != GRPC_ERROR_NONE) {
       GRPC_CLOSURE_SCHED(op->send_ping.on_initiate, GRPC_ERROR_REF(error));
       GRPC_CLOSURE_SCHED(op->send_ping.on_ack, error);
     }
