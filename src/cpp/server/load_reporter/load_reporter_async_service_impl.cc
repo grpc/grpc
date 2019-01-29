@@ -211,8 +211,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
                                           load_key_);
       const auto& load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
-          static_cast<uint64_t>(load_report_interval.seconds() * 1000 +
-                                load_report_interval.nanos() / 1000);
+          static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
+                                     load_report_interval.nanos() / 1000);
       gpr_log(
           GPR_INFO,
           "[LRS %p] Initial request received. Start load reporting (load "

@@ -54,12 +54,6 @@ build:asan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:asan --test_timeout=3600
 build:asan --test_tag_filters=-qps_json_driver
-build:asan --host_platform_remote_properties_override='''
-  properties: {
-      name: "dockerDropCapabilities"
-      value: ""
-  }
-'''
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

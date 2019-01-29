@@ -13,6 +13,9 @@
 # limitations under the License.
 """Implementations of interoperability test methods."""
 
+from tests import bazel_namespace_package_hack
+bazel_namespace_package_hack.sys_path_to_site_dir_hack()
+
 import enum
 import json
 import os

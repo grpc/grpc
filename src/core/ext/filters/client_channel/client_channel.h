@@ -60,7 +60,7 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_closure* watcher_timer_init);
 
 /* Debug helper: pull the subchannel call from a call stack element */
-grpc_subchannel_call* grpc_client_channel_get_subchannel_call(
-    grpc_call_element* elem);
+grpc_core::RefCountedPtr<grpc_core::SubchannelCall>
+grpc_client_channel_get_subchannel_call(grpc_call_element* elem);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_CLIENT_CHANNEL_H */

@@ -56,6 +56,14 @@ platform(
             name: "dockerNetwork"
             value: "off"
         }
+        properties: {
+            name: "dockerAddCapabilities"
+            value: "SYS_PTRACE"
+        }
+        properties: {
+            name: "dockerPrivileged"
+            value: "true"
+        }
         """,
 )
 
@@ -86,6 +94,14 @@ platform(
         properties: {
             name: "dockerNetwork"
             value: "off"
+        }
+        properties: {
+            name: "dockerAddCapabilities"
+            value: "SYS_PTRACE"
+        }
+        properties: {
+            name: "dockerPrivileged"
+            value: "true"
         }
     """,
 )

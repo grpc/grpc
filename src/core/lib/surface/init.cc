@@ -130,6 +130,7 @@ void grpc_init(void) {
     grpc_channel_init_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_security_pre_init();
+    grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
@@ -183,6 +184,7 @@ void grpc_shutdown(void) {
       grpc_core::Fork::GlobalShutdown();
     }
     grpc_core::ExecCtx::GlobalShutdown();
+    grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   }
   gpr_mu_unlock(&g_init_mu);
 }
