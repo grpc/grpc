@@ -52,7 +52,7 @@ class ReflectionServicerTest(unittest.TestCase):
 
     # TODO(https://github.com/grpc/grpc/issues/17844)
     # Bazel + Python 3 will result in creating two different instance of
-    # DESCRIPTOR for each message. So, the equal comparision between protobuf
+    # DESCRIPTOR for each message. So, the equal comparison between protobuf
     # returned by stub and manually crafted protobuf will always fail.
     def _assert_sequence_of_proto_equal(self, x, y):
         self.assertSequenceEqual(
