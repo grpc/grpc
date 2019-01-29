@@ -1015,10 +1015,25 @@ static void fail_pending_batch_in_call_combiner(void* arg, grpc_error* error) {
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-// If yield_call_combiner is true, assumes responsibility for yielding
-// the call combiner.
-static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
-                                 bool yield_call_combiner) {
+// If yield_call_combiner_predicate returns true, assumes responsibility for
+// yielding the call combiner.
+typedef bool (*YieldCallCombinerPredicate)(
+    const grpc_core::CallCombinerClosureList& closures);
+static bool yield_call_combiner(
+   const grpc_core::CallCombinerClosureList& closures) {
+ return true;
+}
+static bool no_yield_call_combiner(
+   const grpc_core::CallCombinerClosureList& closures) {
+ return false;
+}
+static bool yield_call_combiner_if_pending_batches_found(
+   const grpc_core::CallCombinerClosureList& closures) {
+ return closures.size() > 0;
+}
+static void pending_batches_fail(
+    grpc_call_element* elem, grpc_error* error,
+    YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (grpc_client_channel_trace.enabled()) {
@@ -1048,7 +1063,7 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
       pending_batch_clear(calld, pending);
     }
   }
-  if (yield_call_combiner) {
+  if (yield_call_combiner_predicate(closures)) {
     closures.RunClosures(calld->call_combiner);
   } else {
     closures.RunClosuresWithoutYielding(calld->call_combiner);
@@ -2415,7 +2430,7 @@ static void create_subchannel_call(grpc_call_element* elem) {
             chand, calld, calld->subchannel_call, grpc_error_string(error));
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
-    pending_batches_fail(elem, error, true /* yield_call_combiner */);
+    pending_batches_fail(elem, error, yield_call_combiner);
   } else {
     if (parent_data_size > 0) {
       new (grpc_connected_subchannel_call_get_parent_data(
@@ -2438,8 +2453,7 @@ static void pick_done(void* arg, grpc_error* error) {
               "chand=%p calld=%p: failed to create subchannel: error=%s",
               chand, calld, grpc_error_string(error));
     }
-    pending_batches_fail(elem, GRPC_ERROR_REF(error),
-                         true /* yield_call_combiner */);
+    pending_batches_fail(elem, GRPC_ERROR_REF(error), yield_call_combiner);
     return;
   }
   create_subchannel_call(elem);
@@ -2479,7 +2493,7 @@ class QueuedPickCanceller {
       remove_call_from_queued_picks_locked(self->elem_);
       // Fail pending batches on the call.
       pending_batches_fail(self->elem_, GRPC_ERROR_REF(error),
-                           false /* yield_call_combiner */);
+                           yield_call_combiner_if_pending_batches_found);
     }
     GRPC_CALL_STACK_UNREF(calld->owning_call, "QueuedPickCanceller");
     Delete(self);
@@ -2751,7 +2765,7 @@ static void cc_start_transport_stream_op_batch(
       // TODO(roth): If there is a pending retry callback, do we need to
       // cancel it here?
       pending_batches_fail(elem, GRPC_ERROR_REF(calld->cancel_error),
-                           false /* yield_call_combiner */);
+                           no_yield_call_combiner);
       // Note: This will release the call combiner.
       grpc_transport_stream_op_batch_finish_with_failure(
           batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
