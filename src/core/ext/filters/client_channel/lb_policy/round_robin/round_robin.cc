@@ -155,15 +155,13 @@ class RoundRobin : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
-    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list,
-           size_t last_ready_index);
+    Picker(RoundRobin* parent, RoundRobinSubchannelList* subchannel_list);
 
     PickResult Pick(PickState* pick, grpc_error** error) override;
 
    private:
-    // Using pointer values only, no refs held -- do not dereference!
+    // Using pointer value only, no ref held -- do not dereference!
     RoundRobin* parent_;
-    RoundRobinSubchannelList* subchannel_list_;
 
     size_t last_ready_index_;
     InlinedVector<RefCountedPtr<ConnectedSubchannel>, 10> subchannels_;
@@ -210,11 +208,10 @@ class RoundRobin : public LoadBalancingPolicy {
 //
 
 RoundRobin::Picker::Picker(RoundRobin* parent,
-                           RoundRobinSubchannelList* subchannel_list,
-                           size_t last_ready_index)
+                           RoundRobinSubchannelList* subchannel_list)
     : parent_(parent),
-      subchannel_list_(subchannel_list),
-      last_ready_index_(last_ready_index) {
+// FIXME: randomize
+      last_ready_index_(0) {
   for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
     auto* connected_subchannel =
         subchannel_list->subchannel(i)->connected_subchannel();
@@ -222,49 +219,27 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
       subchannels_.push_back(connected_subchannel->Ref());
     }
   }
+  if (grpc_lb_round_robin_trace.enabled()) {
+    gpr_log(GPR_INFO,
+            "[RR %p picker %p] created picker from subchannel_list=%p "
+            "with %" PRIuPTR " READY subchannels; last_ready_index_=%" PRIuPTR,
+            parent_, this, subchannel_list, subchannels_.size(),
+            last_ready_index_);
+  }
 }
 
 RoundRobin::Picker::PickResult RoundRobin::Picker::Pick(PickState* pick,
                                                         grpc_error** error) {
+  last_ready_index_ = (last_ready_index_ + 1) % subchannels_.size();
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "[RR %p picker %p] getting next ready subchannel (out of %"
-            PRIuPTR "), last_ready_index=%" PRIuPTR,
-            parent_, this, subchannels_.size(), last_ready_index_);
+            "[RR %p picker %p] returning index %" PRIuPTR
+            ", connected_subchannel=%p",
+            parent_, this, last_ready_index_,
+            subchannels_[last_ready_index_].get());
   }
-// FIXME: either remove the code to check for the subchannel != null, or
-// change the ctor to add the null entries too
-  for (size_t i = 0; i < subchannels_.size(); ++i) {
-    const size_t index =
-        (i + last_ready_index_ + 1) % subchannels_.size();
-    if (grpc_lb_round_robin_trace.enabled()) {
-      gpr_log(
-          GPR_INFO,
-          "[RR %p picker %p] checking subchannel index %" PRIuPTR
-          ", subchannel_list %p: connected_subchannel=%p",
-          parent_, this, index, subchannel_list_,
-          subchannels_[index].get());
-    }
-    if (subchannels_[index].get() != nullptr) {
-      if (grpc_lb_round_robin_trace.enabled()) {
-        gpr_log(GPR_INFO,
-                "[RR %p picker %p] found next ready connected subchannel "
-                "(%p) at index %" PRIuPTR " of subchannel_list %p",
-                parent_, this, subchannels_[index].get(), index,
-                subchannel_list_);
-      }
-      last_ready_index_ = index;
-      pick->connected_subchannel = subchannels_[index];
-      return PICK_COMPLETE;
-    }
-  }
-  if (grpc_lb_round_robin_trace.enabled()) {
-    gpr_log(GPR_INFO, "[RR %p picker %p] no subchannels in ready state",
-            parent_, this);
-  }
-  *error =
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("no subchannels in READY state");
-  return PICK_TRANSIENT_FAILURE;
+  pick->connected_subchannel = subchannels_[last_ready_index_];
+  return PICK_COMPLETE;
 }
 
 //
@@ -428,9 +403,7 @@ void RoundRobin::RoundRobinSubchannelList::
     /* 1) READY */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, GRPC_ERROR_NONE,
-        MakeRefCounted<Picker>(p, this,
-// FIXME: randomize index?
-        0));
+        MakeRefCounted<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
