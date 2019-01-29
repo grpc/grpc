@@ -402,9 +402,14 @@ void ResolvingLoadBalancingPolicy::OnResolverResultChangedLocked(
     // result, then we continue to let it set the connectivity state.
     // Otherwise, we go into TRANSIENT_FAILURE.
     if (self->lb_policy_ == nullptr) {
-      grpc_error* state_error =
+      // TODO(roth): When we change the resolver API to be able to
+      // return transient errors in a cleaner way, we should make it the
+      // resolver's responsibility to attach a status to the error,
+      // rather than doing it centrally here.
+      grpc_error* state_error = grpc_error_set_int(
           GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-              "Resolver transient failure", &error, 1);
+              "Resolver transient failure", &error, 1),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       self->channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, GRPC_ERROR_REF(state_error),
           MakeRefCounted<TransientFailurePicker>(state_error));
