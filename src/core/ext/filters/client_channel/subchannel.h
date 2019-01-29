@@ -119,7 +119,6 @@ class SubchannelCall {
                  const ConnectedSubchannel::CallArgs& args)
       : connected_subchannel_(std::move(connected_subchannel)),
         deadline_(args.deadline) {}
-  ~SubchannelCall();
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -131,6 +130,10 @@ class SubchannelCall {
 
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
+
+  grpc_closure* after_call_stack_destroy() const {
+    return after_call_stack_destroy_;
+  }
 
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.

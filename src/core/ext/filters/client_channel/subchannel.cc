@@ -122,6 +122,10 @@ void SubchannelCallDestroy(void* arg, grpc_error* error) {
   GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
   call->~SubchannelCall();
+  // This should be the last step to destroy the subchannel call, because
+  // call->after_call_stack_destroy(), if not null, will free the call arena.
+  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(call), nullptr,
+                          call->after_call_stack_destroy());
 }
 
 }  // namespace
@@ -175,11 +179,6 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 //
 // SubchannelCall
 //
-
-SubchannelCall::~SubchannelCall() {
-  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(this), nullptr,
-                          after_call_stack_destroy_);
-}
 
 void SubchannelCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
