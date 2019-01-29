@@ -14,14 +14,11 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_library")
 
-grpc_package(
-    name = "testing",
-    visibility = "public",
-)
+grpc_package(name = "testing", visibility = "public")
 
 exports_files([
     "echo.proto",
@@ -53,11 +50,9 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
+    deps = ["echo_messages_proto",
+            "simple_messages_proto"],
     generate_mocks = True,
-    deps = [
-        "echo_messages_proto",
-        "simple_messages_proto",
-    ],
 )
 
 grpc_proto_library(
@@ -68,10 +63,10 @@ grpc_proto_library(
 
 py_proto_library(
     name = "py_empty_proto",
-    protos = ["empty.proto"],
+    protos = ["empty.proto",],
     with_grpc = True,
     deps = [
-        requirement("protobuf"),
+        requirement('protobuf'),
     ],
 )
 
@@ -83,10 +78,10 @@ grpc_proto_library(
 
 py_proto_library(
     name = "py_messages_proto",
-    protos = ["messages.proto"],
+    protos = ["messages.proto",],
     with_grpc = True,
     deps = [
-        requirement("protobuf"),
+        requirement('protobuf'),
     ],
 )
 
@@ -105,7 +100,7 @@ grpc_proto_library(
     name = "benchmark_service_proto",
     srcs = ["benchmark_service.proto"],
     deps = [
-        "messages_proto",
+      "messages_proto",
     ],
 )
 
@@ -113,7 +108,7 @@ grpc_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
     deps = [
-        "control_proto",
+      "control_proto",
     ],
 )
 
@@ -121,7 +116,7 @@ grpc_proto_library(
     name = "worker_service_proto",
     srcs = ["worker_service.proto"],
     deps = [
-        "control_proto",
+      "control_proto",
     ],
 )
 
@@ -137,7 +132,7 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//src/proto/grpc/core:stats_proto",
-    ],
+    ]
 )
 
 grpc_proto_library(
@@ -151,71 +146,14 @@ grpc_proto_library(
 
 py_proto_library(
     name = "py_test_proto",
+    protos = ["test.proto",],
+    with_grpc = True,
+    deps = [
+        requirement('protobuf'),
+    ],
     proto_deps = [
         ":py_empty_proto",
         ":py_messages_proto",
-    ],
-    protos = ["test.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
+    ]
 )
 
-py_proto_library(
-    name = "py_benchmark_service_proto",
-    proto_deps = [
-        ":py_messages_proto",
-    ],
-    protos = ["benchmark_service.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
-)
-
-py_proto_library(
-    name = "py_payloads_proto",
-    protos = ["payloads.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
-)
-
-py_proto_library(
-    name = "py_stats_proto",
-    proto_deps = [
-        "//src/proto/grpc/core:py_stats_proto",
-    ],
-    protos = ["stats.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
-)
-
-py_proto_library(
-    name = "py_control_proto",
-    proto_deps = [
-        ":py_payloads_proto",
-        ":py_stats_proto",
-    ],
-    protos = ["control.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
-)
-
-py_proto_library(
-    name = "py_worker_service_proto",
-    proto_deps = [
-        ":py_control_proto",
-    ],
-    protos = ["worker_service.proto"],
-    with_grpc = True,
-    deps = [
-        requirement("protobuf"),
-    ],
-)
