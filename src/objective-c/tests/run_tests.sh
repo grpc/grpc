@@ -24,6 +24,10 @@ cd $(dirname $0)
 
 BINDIR=../../../bins/$CONFIG
 
+clean_build_dir () {
+  rm -rf "$1"
+}
+
 [ -f $BINDIR/interop_server ] || {
     echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
              "interop_server before calling this script."
@@ -100,6 +104,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -110,6 +116,8 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+clean_build_dir "$DERIVED_DIR"
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -122,6 +130,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -132,6 +142,8 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+clean_build_dir "$DERIVED_DIR"
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -145,6 +157,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -156,6 +170,8 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+clean_build_dir "$DERIVED_DIR"
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -169,6 +185,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -181,6 +199,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -192,6 +212,8 @@ xcodebuild \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
 
+clean_build_dir "$DERIVED_DIR"
+
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
@@ -202,6 +224,8 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+clean_build_dir "$DERIVED_DIR"
 
 echo "TIME:  $(date)"
 xcodebuild \
@@ -215,5 +239,7 @@ xcodebuild \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+clean_build_dir "$DERIVED_DIR"
 
 exit 0
