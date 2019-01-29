@@ -28,7 +28,6 @@
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/closure.h"
 
 typedef int64_t grpc_millis;
