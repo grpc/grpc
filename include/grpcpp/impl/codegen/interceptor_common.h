@@ -219,6 +219,7 @@ class InterceptorBatchMethodsImpl
   // Alternatively, RunInterceptors(std::function<void(void)> f) can be used.
   void SetCallOpSetInterface(CallOpSetInterface* ops) { ops_ = ops; }
 
+  // SetCall should have been called before this.
   // Returns true if the interceptors list is empty
   bool InterceptorsListEmpty() {
     auto* client_rpc_info = call_->client_rpc_info();
