@@ -45,10 +45,10 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
-                                      grpc_subchannel* constructed) override;
+  Subchannel* RegisterSubchannel(SubchannelKey* key,
+                                 Subchannel* constructed) override;
   void UnregisterSubchannel(SubchannelKey* key) override;
-  grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
+  Subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:
   // The singleton instance. (It's a pointer to RefCountedPtr so that this

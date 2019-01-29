@@ -26,9 +26,10 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 
-typedef struct grpc_subchannel grpc_subchannel;
-
 namespace grpc_core {
+
+class Subchannel;
+
 namespace channelz {
 
 // Subtype of ChannelNode that overrides and provides client_channel specific
@@ -59,7 +60,7 @@ class ClientChannelNode : public ChannelNode {
 // Handles channelz bookkeeping for sockets
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(grpc_subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
   void MarkSubchannelDestroyed() {
@@ -84,7 +85,7 @@ class SubchannelNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  grpc_subchannel* subchannel_;
+  Subchannel* subchannel_;
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
