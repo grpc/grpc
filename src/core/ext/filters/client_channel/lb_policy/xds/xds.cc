@@ -272,7 +272,7 @@ class XdsLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   void CreateOrUpdateChildPolicyLocked();
   grpc_channel_args* CreateChildPolicyArgsLocked();
-  void CreateChildPolicyLocked(const char* name, Args args);
+  //  void CreateChildPolicyLocked(const char* name, Args args);
   bool PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
                                  grpc_error** error);
   void UpdateConnectivityStateFromChildPolicyLocked(
@@ -281,6 +281,14 @@ class XdsLb : public LoadBalancingPolicy {
                                                      grpc_error* error);
   static void OnChildPolicyRequestReresolutionLocked(void* arg,
                                                      grpc_error* error);
+
+  //  static void AfterChildSwapLocked(void* arg);
+  //  class ChildSwapper : public LoadBalancingPolicy::Swapper {
+  //   public:
+  //    void AfterSwapLocked(void* arg) override;
+  //  };
+
+  static void AfterSwapLocked(void* arg);
 
   // Who the client is trying to communicate with.
   const char* server_name_ = nullptr;
@@ -342,6 +350,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // The policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
+  OrphanablePtr<LoadBalancingPolicy::Swapper> child_policy_swapper_;
   UniquePtr<char> child_policy_json_string_;
   grpc_connectivity_state child_connectivity_state_;
   grpc_closure on_child_connectivity_changed_;
@@ -1486,51 +1495,51 @@ bool XdsLb::PickFromChildPolicyLocked(bool force_async, PendingPick* pp,
   return pick_done;
 }
 
-void XdsLb::CreateChildPolicyLocked(const char* name, Args args) {
-  GPR_ASSERT(child_policy_ == nullptr);
-  child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-      name, std::move(args));
-  if (GPR_UNLIKELY(child_policy_ == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
-    return;
-  }
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
-  self.release();
-  child_policy_->SetReresolutionClosureLocked(&on_child_request_reresolution_);
-  grpc_error* child_state_error = nullptr;
-  child_connectivity_state_ =
-      child_policy_->CheckConnectivityLocked(&child_state_error);
-  // Connectivity state is a function of the child policy updated/created.
-  UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
-  // Add the xDS's interested_parties pollset_set to that of the newly created
-  // child policy. This will make the child policy progress upon activity on
-  // xDS LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
-                                   interested_parties());
-  // Subscribe to changes to the connectivity of the new child policy.
-  // TODO(roth): We currently track this ref manually.  Once the new
-  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
-  self.release();
-  child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
-                                           &on_child_connectivity_changed_);
-  child_policy_->ExitIdleLocked();
-  // Send pending picks to child policy.
-  PendingPick* pp;
-  while ((pp = pending_picks_)) {
-    pending_picks_ = pp->next;
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(
-          GPR_INFO,
-          "[xdslb %p] Pending pick about to (async) PICK from child policy %p",
-          this, child_policy_.get());
-    }
-    grpc_error* error = GRPC_ERROR_NONE;
-    PickFromChildPolicyLocked(true /* force_async */, pp, &error);
-  }
-}
+// void XdsLb::CreateChildPolicyLocked(const char* name, Args args) {
+//  GPR_ASSERT(child_policy_ == nullptr);
+//  child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+//      name, std::move(args));
+//  if (GPR_UNLIKELY(child_policy_ == nullptr)) {
+//    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating a child policy", this);
+//    return;
+//  }
+//  // TODO(roth): We currently track this ref manually.  Once the new
+//  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
+//  auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
+//  self.release();
+//  child_policy_->SetReresolutionClosureLocked(&on_child_request_reresolution_);
+//  grpc_error* child_state_error = nullptr;
+//  child_connectivity_state_ =
+//      child_policy_->CheckConnectivityLocked(&child_state_error);
+//  // Connectivity state is a function of the child policy updated/created.
+//  UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
+//  // Add the xDS's interested_parties pollset_set to that of the newly created
+//  // child policy. This will make the child policy progress upon activity on
+//  // xDS LB, which in turn is tied to the application's call.
+//  grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
+//                                   interested_parties());
+//  // Subscribe to changes to the connectivity of the new child policy.
+//  // TODO(roth): We currently track this ref manually.  Once the new
+//  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
+//  self = Ref(DEBUG_LOCATION, "on_child_connectivity_changed");
+//  self.release();
+//  child_policy_->NotifyOnStateChangeLocked(&child_connectivity_state_,
+//                                           &on_child_connectivity_changed_);
+//  child_policy_->ExitIdleLocked();
+//  // Send pending picks to child policy.
+//  PendingPick* pp;
+//  while ((pp = pending_picks_)) {
+//    pending_picks_ = pp->next;
+//    if (grpc_lb_xds_trace.enabled()) {
+//      gpr_log(
+//          GPR_INFO,
+//          "[xdslb %p] Pending pick about to (async) PICK from child policy
+//          %p", this, child_policy_.get());
+//    }
+//    grpc_error* error = GRPC_ERROR_NONE;
+//    PickFromChildPolicyLocked(true /* force_async */, pp, &error);
+//  }
+//}
 
 grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
   bool is_backend_from_grpclb_load_balancer = false;
@@ -1558,6 +1567,35 @@ grpc_channel_args* XdsLb::CreateChildPolicyArgsLocked() {
   return args;
 }
 
+void XdsLb::AfterSwapLocked(void* arg) {
+  XdsLb* self = static_cast<XdsLb*>(arg);
+  grpc_error* child_state_error = nullptr;
+  self->child_connectivity_state_ =
+      self->child_policy_->CheckConnectivityLocked(&child_state_error);
+  // Connectivity state is a function of the child policy updated/created.
+  self->UpdateConnectivityStateFromChildPolicyLocked(child_state_error);
+
+  // Subscribe to changes to the connectivity of the new child policy.
+  // TODO(roth): We currently track this ref manually.  Once the new
+  // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
+  self->Ref(DEBUG_LOCATION, "on_child_connectivity_changed").release();
+  self->child_policy_->NotifyOnStateChangeLocked(
+      &self->child_connectivity_state_, &self->on_child_connectivity_changed_);
+  // Send pending picks to child policy.
+  PendingPick* pp;
+  while ((pp = self->pending_picks_)) {
+    self->pending_picks_ = pp->next;
+    if (grpc_lb_xds_trace.enabled()) {
+      gpr_log(
+          GPR_INFO,
+          "[xdslb %p] Pending pick about to (async) PICK from child policy %p",
+          self, self->child_policy_.get());
+    }
+    grpc_error* error = GRPC_ERROR_NONE;
+    self->PickFromChildPolicyLocked(true /* force_async */, pp, &error);
+  }
+}
+
 void XdsLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   grpc_channel_args* args = CreateChildPolicyArgsLocked();
@@ -1577,24 +1615,49 @@ void XdsLb::CreateOrUpdateChildPolicyLocked() {
     }
     child_policy_name = "round_robin";
   }
-  // TODO(juanlishen): Switch policy according to child_policy_config->key.
-  if (child_policy_ != nullptr) {
+
+  // Check to see if we're already using the right child LB policy.
+  const bool child_policy_name_changed =
+      child_policy_ == nullptr ||
+      strcmp(child_policy_->name(), child_policy_name) != 0;
+  if (child_policy_ != nullptr && !child_policy_name_changed) {
+    // Continue using the same LB policy.  Update with new addresses.
     if (grpc_lb_xds_trace.enabled()) {
       gpr_log(GPR_INFO, "[xdslb %p] Updating the child policy %p", this,
               child_policy_.get());
     }
     child_policy_->UpdateLocked(*args, child_policy_config);
   } else {
+    // Creates a new LB policy, replacing any previous one once it's READY.
     LoadBalancingPolicy::Args lb_policy_args;
     lb_policy_args.combiner = combiner();
     lb_policy_args.client_channel_factory = client_channel_factory();
     lb_policy_args.subchannel_pool = subchannel_pool()->Ref();
     lb_policy_args.args = args;
     lb_policy_args.lb_config = child_policy_config;
-    CreateChildPolicyLocked(child_policy_name, std::move(lb_policy_args));
-    if (grpc_lb_xds_trace.enabled()) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created a new child policy %p", this,
-              child_policy_.get());
+    LoadBalancingPolicy* lb_policy = nullptr;
+    LoadBalancingPolicy::Swapper::Args lb_swapper_args;
+    lb_swapper_args.old_policy = &child_policy_;
+    lb_swapper_args.new_name = child_policy_name;
+    lb_swapper_args.new_args = std::move(lb_policy_args);
+    lb_swapper_args.new_policy = &lb_policy;
+    lb_swapper_args.combiner = combiner();
+    lb_swapper_args.interested_parties = interested_parties();
+    lb_swapper_args.exit_idle = true;
+    lb_swapper_args.tracer = &grpc_lb_xds_trace;
+    //      lb_swapper_args.before_swap = &self->before_swap_;
+    lb_swapper_args.after_swap = AfterSwapLocked;
+    child_policy_swapper_ =
+        LoadBalancingPolicy::Swapper::Create(std::move(lb_swapper_args));
+    // Create re-resolution request handler for the new LB policy.  It
+    // will delete itself when no longer needed.
+    if (lb_policy != nullptr) {
+      // TODO(roth): We currently track this ref manually.  Once the new
+      // ClosureRef API is done, pass the RefCountedPtr<> along with the
+      // closure.
+      auto self = Ref(DEBUG_LOCATION, "on_child_reresolution_requested");
+      self.release();
+      lb_policy->SetReresolutionClosureLocked(&on_child_request_reresolution_);
     }
   }
   grpc_channel_args_destroy(args);

@@ -134,10 +134,6 @@ class RequestRouter {
 
   void StartResolvingLocked();
   void OnResolverShutdownLocked(grpc_error* error);
-  void CreateNewLbPolicyLocked(const char* lb_policy_name, grpc_json* lb_config,
-                               grpc_connectivity_state* connectivity_state,
-                               grpc_error** connectivity_error,
-                               TraceStringVector* trace_strings);
   void MaybeAddTraceMessagesForAddressChangesLocked(
       TraceStringVector* trace_strings);
   void ConcatenateAndAddChannelTraceLocked(
@@ -146,6 +142,11 @@ class RequestRouter {
 
   void SetConnectivityStateLocked(grpc_connectivity_state state,
                                   grpc_error* error, const char* reason);
+
+  //  static void BeforeSwapLocked(void* arg);
+  static void AfterSwapLocked(void* arg);
+
+  OrphanablePtr<LoadBalancingPolicy::Swapper> lb_swapper_;
 
   // Passed in from caller at construction time.
   grpc_channel_stack* owning_stack_;

@@ -137,7 +137,8 @@ class RequestRouter::Request::ResolverResultWaiter {
       }
       GRPC_CLOSURE_RUN(request->on_route_done_,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
-    } else if (GPR_UNLIKELY(request_router->lb_policy_ == nullptr)) {
+    } else if (GPR_UNLIKELY(request_router->lb_policy_ == nullptr &&
+                            request_router->lb_swapper_ == nullptr)) {
       // Transient resolver failure.
       // If call has wait_for_ready=true, try again; otherwise, fail.
       if (*request->pick_.initial_metadata_flags &
@@ -169,7 +170,7 @@ class RequestRouter::Request::ResolverResultWaiter {
       if (self->tracer_enabled_) {
         gpr_log(GPR_INFO,
                 "request_router=%p request=%p: resolver returned, doing LB "
-                "pick",
+                "pick, maybe on pending one",
                 request_router, request);
       }
       request->ProcessServiceConfigAndStartLbPickLocked();
@@ -336,18 +337,22 @@ void RequestRouter::Request::MaybeRemoveCallFromInterestedPartiesLocked() {
 
 // Starts a pick on the LB policy.
 void RequestRouter::Request::StartLbPickLocked() {
+  LoadBalancingPolicy* lb_policy =
+      request_router_->lb_policy_ != nullptr
+          ? request_router_->lb_policy_.get()
+          : request_router_->lb_swapper_->new_policy();
+
   if (request_router_->tracer_->enabled()) {
     gpr_log(GPR_INFO,
             "request_router=%p request=%p: starting pick on lb_policy=%p",
-            request_router_, this, request_router_->lb_policy_.get());
+            request_router_, this, lb_policy);
   }
   GRPC_CLOSURE_INIT(&on_pick_done_, &LbPickDoneLocked, this,
                     grpc_combiner_scheduler(request_router_->combiner_));
   pick_.on_complete = &on_pick_done_;
   GRPC_CALL_STACK_REF(owning_call_, "pick_callback");
   grpc_error* error = GRPC_ERROR_NONE;
-  const bool pick_done =
-      request_router_->lb_policy_->PickLocked(&pick_, &error);
+  const bool pick_done = lb_policy->PickLocked(&pick_, &error);
   if (pick_done) {
     // Pick completed synchronously.
     if (request_router_->tracer_->enabled()) {
@@ -477,7 +482,9 @@ class RequestRouter::ReresolutionRequestHandler {
     RequestRouter* request_router = self->request_router_;
     // If this invocation is for a stale LB policy, treat it as an LB shutdown
     // signal.
-    if (self->lb_policy_ != request_router->lb_policy_.get() ||
+    if ((self->lb_policy_ != request_router->lb_policy_.get() &&
+         (request_router->lb_swapper_ == nullptr ||
+          self->lb_policy_ != request_router->lb_swapper_->new_policy())) ||
         error != GRPC_ERROR_NONE || request_router->resolver_ == nullptr) {
       GRPC_CHANNEL_STACK_UNREF(request_router->owning_stack_,
                                "ReresolutionRequestHandler");
@@ -545,6 +552,10 @@ RequestRouter::RequestRouter(
   if (resolver_ == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
   }
+  //  GRPC_CLOSURE_INIT(&before_swap_, &RequestRouter::BeforeSwapLocked, this,
+  //                    grpc_combiner_scheduler(combiner));
+  //  GRPC_CLOSURE_INIT(&after_swap_, &RequestRouter::AfterSwapLocked, this,
+  //                    grpc_combiner_scheduler(combiner));
 }
 
 RequestRouter::~RequestRouter() {
@@ -665,70 +676,21 @@ void RequestRouter::OnResolverShutdownLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// Creates a new LB policy, replacing any previous one.
-// If the new policy is created successfully, sets *connectivity_state and
-// *connectivity_error to its initial connectivity state; otherwise,
-// leaves them unchanged.
-void RequestRouter::CreateNewLbPolicyLocked(
-    const char* lb_policy_name, grpc_json* lb_config,
-    grpc_connectivity_state* connectivity_state,
-    grpc_error** connectivity_error, TraceStringVector* trace_strings) {
-  LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = combiner_;
-  lb_policy_args.client_channel_factory = client_channel_factory_;
-  lb_policy_args.subchannel_pool = subchannel_pool_;
-  lb_policy_args.args = resolver_result_;
-  lb_policy_args.lb_config = lb_config;
-  OrphanablePtr<LoadBalancingPolicy> new_lb_policy =
-      LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(lb_policy_name,
-                                                             lb_policy_args);
-  if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", lb_policy_name);
-    if (channelz_node_ != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Could not create LB policy \'%s\'", lb_policy_name);
-      trace_strings->push_back(str);
-    }
-  } else {
-    if (tracer_->enabled()) {
-      gpr_log(GPR_INFO, "request_router=%p: created new LB policy \"%s\" (%p)",
-              this, lb_policy_name, new_lb_policy.get());
-    }
-    if (channelz_node_ != nullptr) {
-      char* str;
-      gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
-      trace_strings->push_back(str);
-    }
-    // Swap out the LB policy and update the fds in interested_parties_.
-    if (lb_policy_ != nullptr) {
-      if (tracer_->enabled()) {
-        gpr_log(GPR_INFO, "request_router=%p: shutting down lb_policy=%p", this,
-                lb_policy_.get());
-      }
-      grpc_pollset_set_del_pollset_set(lb_policy_->interested_parties(),
-                                       interested_parties_);
-      lb_policy_->HandOffPendingPicksLocked(new_lb_policy.get());
-    }
-    lb_policy_ = std::move(new_lb_policy);
-    grpc_pollset_set_add_pollset_set(lb_policy_->interested_parties(),
-                                     interested_parties_);
-    // Create re-resolution request handler for the new LB policy.  It
-    // will delete itself when no longer needed.
-    New<ReresolutionRequestHandler>(this, lb_policy_.get(), owning_stack_,
-                                    combiner_);
-    // Get the new LB policy's initial connectivity state and start a
-    // connectivity watch.
-    GRPC_ERROR_UNREF(*connectivity_error);
-    *connectivity_state =
-        lb_policy_->CheckConnectivityLocked(connectivity_error);
-    if (exit_idle_when_lb_policy_arrives_) {
-      lb_policy_->ExitIdleLocked();
-      exit_idle_when_lb_policy_arrives_ = false;
-    }
-    // Create new watcher.  It will delete itself when done.
-    New<LbConnectivityWatcher>(this, *connectivity_state, lb_policy_.get(),
-                               owning_stack_, combiner_);
-  }
+void RequestRouter::AfterSwapLocked(void* arg) {
+  RequestRouter* self = static_cast<RequestRouter*>(arg);
+  // Get the new LB policy's initial connectivity state and start a
+  // connectivity watch.
+  grpc_error* connectivity_error;
+  grpc_connectivity_state connectivity_state =
+      self->lb_policy_->CheckConnectivityLocked(&connectivity_error);
+  // FIXME
+  //  GPR_ASSERT(connectivity_state == GRPC_CHANNEL_READY);
+  self->SetConnectivityStateLocked(connectivity_state, connectivity_error,
+                                   "lb policy swapped");
+  // Create new watcher.  It will delete itself when done.
+  New<LbConnectivityWatcher>(self, connectivity_state, self->lb_policy_.get(),
+                             self->owning_stack_, self->combiner_);
+  self->lb_swapper_.reset();
 }
 
 void RequestRouter::MaybeAddTraceMessagesForAddressChangesLocked(
@@ -821,6 +783,7 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
         self->process_resolver_result_user_data_, *self->resolver_result_,
         &lb_policy_name, &lb_policy_config);
     GPR_ASSERT(lb_policy_name != nullptr);
+
     // Check to see if we're already using the right LB policy.
     const bool lb_policy_name_changed =
         self->lb_policy_ == nullptr ||
@@ -837,10 +800,51 @@ void RequestRouter::OnResolverResultChangedLocked(void* arg,
       // watch on the LB policy will take care of that.
       set_connectivity_state = false;
     } else {
-      // Instantiate new LB policy.
-      self->CreateNewLbPolicyLocked(lb_policy_name, lb_policy_config,
-                                    &connectivity_state, &connectivity_error,
-                                    &trace_strings);
+      // Creates a new LB policy, replacing any previous one once it's READY.
+      LoadBalancingPolicy::Args lb_policy_args;
+      lb_policy_args.combiner = self->combiner_;
+      lb_policy_args.client_channel_factory = self->client_channel_factory_;
+      lb_policy_args.subchannel_pool = self->subchannel_pool_;
+      lb_policy_args.args = self->resolver_result_;
+      lb_policy_args.lb_config = lb_policy_config;
+      LoadBalancingPolicy* lb_policy = nullptr;
+      LoadBalancingPolicy::Swapper::Args lb_swapper_args;
+      lb_swapper_args.old_policy = &self->lb_policy_;
+      lb_swapper_args.new_name = lb_policy_name;
+      lb_swapper_args.new_args = std::move(lb_policy_args);
+      lb_swapper_args.new_policy = &lb_policy;
+      lb_swapper_args.combiner = self->combiner_;
+      lb_swapper_args.interested_parties = self->interested_parties_;
+      lb_swapper_args.exit_idle = self->exit_idle_when_lb_policy_arrives_;
+      lb_swapper_args.after_swap = AfterSwapLocked;
+      lb_swapper_args.pre_post_swap_arg = self;
+      lb_swapper_args.tracer = self->tracer_;
+      self->lb_swapper_ =
+          LoadBalancingPolicy::Swapper::Create(std::move(lb_swapper_args));
+
+      // Create re-resolution request handler for the new LB policy.  It
+      // will delete itself when no longer needed.
+      if (lb_policy != nullptr) {
+        if (self->channelz_node_ != nullptr) {
+          char* str;
+          gpr_asprintf(&str, "Created new LB policy \'%s\'", lb_policy_name);
+          trace_strings.push_back(str);
+        }
+        New<ReresolutionRequestHandler>(self, lb_policy, self->owning_stack_,
+                                        self->combiner_);
+        // FIXME: reset?
+        if (self->lb_swapper_ != nullptr)
+          self->exit_idle_when_lb_policy_arrives_ = false;
+        // FIXME: not set state
+        set_connectivity_state = false;
+      } else {
+        if (self->channelz_node_ != nullptr) {
+          char* str;
+          gpr_asprintf(&str, "Could not create LB policy \'%s\'",
+                       lb_policy_name);
+          trace_strings.push_back(str);
+        }
+      }
     }
     // Add channel trace event.
     if (self->channelz_node_ != nullptr) {

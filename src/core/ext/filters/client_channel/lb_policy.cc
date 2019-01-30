@@ -54,6 +54,89 @@ grpc_json* LoadBalancingPolicy::ParseLoadBalancingConfig(
   return nullptr;
 }
 
+OrphanablePtr<LoadBalancingPolicy::Swapper>
+LoadBalancingPolicy::Swapper::Create(LoadBalancingPolicy::Swapper::Args args) {
+  auto swapper = MakeOrphanable<Swapper>(std::move(args));
+  if (swapper->new_policy_ == nullptr) return nullptr;
+  return swapper;
+}
+
+void LoadBalancingPolicy::Swapper::DoSwap() {
+  // Swap out the LB policy and update the fds in interested_parties_.
+  if (*old_policy_ != nullptr) {
+    if (tracer_->enabled()) {
+      gpr_log(GPR_INFO, "lb_swapper=%p: shutting down old lb_policy=%p", this,
+              (*old_policy_).get());
+    }
+    grpc_pollset_set_del_pollset_set((*old_policy_)->interested_parties(),
+                                     interested_parties_);
+    (*old_policy_)->HandOffPendingPicksLocked(new_policy_.get());
+  }
+  *old_policy_ = std::move(new_policy_);
+  after_swap_(pre_after_swap_arg_);
+  swap_done = true;
+}
+
+LoadBalancingPolicy::Swapper::Swapper(LoadBalancingPolicy::Swapper::Args args)
+    : old_policy_(args.old_policy),
+      new_policy_(LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+          args.new_name, std::move(args.new_args))),
+      interested_parties_(args.interested_parties),
+      after_swap_(args.after_swap),
+      pre_after_swap_arg_(args.pre_post_swap_arg),
+      tracer_(args.tracer) {
+  *args.new_policy = new_policy_.get();
+  if (GPR_UNLIKELY(new_policy_ == nullptr)) {
+    gpr_log(GPR_ERROR, "could not create LB policy \"%s\"", args.new_name);
+    return;
+  } else {
+    if (tracer_->enabled()) {
+      gpr_log(GPR_INFO,
+              "lb_swapper=%p: created new pending LB policy \"%s\" (%p)", this,
+              args.new_name, new_policy_.get());
+    }
+    if (args.exit_idle) {
+      new_policy_->ExitIdleLocked();
+    }
+    grpc_pollset_set_add_pollset_set(new_policy_->interested_parties(),
+                                     args.interested_parties);
+  }
+  if (*args.old_policy == nullptr) {
+    DoSwap();
+    return;
+  }
+  GRPC_CLOSURE_INIT(&on_changed_, &OnLbPolicyStateChangedLocked, this,
+                    grpc_combiner_scheduler(args.combiner));
+  new_policy_->NotifyOnStateChangeLocked(&state_, &on_changed_);
+}
+
+void LoadBalancingPolicy::Swapper::Orphan() {
+  // If swap is already done, it's safe to delete self.
+  if (swap_done) {
+    Delete(this);
+    return;
+  }
+  // Otherwise, set the shutdown flag and cancel the state watch.
+  shutdown = true;
+  new_policy_->NotifyOnStateChangeLocked(nullptr, &on_changed_);
+}
+
+void LoadBalancingPolicy::Swapper::OnLbPolicyStateChangedLocked(
+    void* arg, grpc_error* error) {
+  Swapper* self = static_cast<Swapper*>(arg);
+  if (self->shutdown) {
+    Delete(self);
+    return;
+  }
+  if (self->state_ == GRPC_CHANNEL_READY && error == GRPC_ERROR_NONE) {
+    self->DoSwap();
+    return;
+  }
+  // Retry.
+  self->new_policy_->NotifyOnStateChangeLocked(&self->state_,
+                                               &self->on_changed_);
+}
+
 LoadBalancingPolicy::LoadBalancingPolicy(Args args)
     : InternallyRefCounted(&grpc_trace_lb_policy_refcount),
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),

@@ -100,6 +100,56 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     PickState* next = nullptr;
   };
 
+  /// Handles the LB policy transition, so that the new LB policy is not swapped
+  /// in until it's ready.
+  class Swapper : public Orphanable {
+   public:
+    using PostSwapCallback = void (*)(void* arg);
+
+    struct Args {
+      OrphanablePtr<LoadBalancingPolicy>* old_policy = nullptr;
+      const char* new_name = nullptr;
+      LoadBalancingPolicy::Args new_args;
+      LoadBalancingPolicy** new_policy = nullptr;
+      grpc_combiner* combiner = nullptr;
+      grpc_pollset_set* interested_parties = nullptr;
+      bool exit_idle;
+      PostSwapCallback after_swap = nullptr;
+      void* pre_post_swap_arg = nullptr;
+      TraceFlag* tracer = nullptr;
+    };
+
+    /// Creates a swapper. If failed to create a new policy, or the new policy
+    /// is already swapped in, returns null.
+    static OrphanablePtr<Swapper> Create(
+        LoadBalancingPolicy::Swapper::Args args);
+
+    Swapper(LoadBalancingPolicy::Swapper::Args args);
+
+    void Orphan() override;
+
+    LoadBalancingPolicy* new_policy() const { return new_policy_.get(); }
+
+   private:
+    static void OnLbPolicyStateChangedLocked(void* arg, grpc_error* error);
+
+    void DoSwap();
+
+    OrphanablePtr<LoadBalancingPolicy>* old_policy_ = nullptr;
+    OrphanablePtr<LoadBalancingPolicy> new_policy_;
+
+    grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+    grpc_closure on_changed_;
+
+    grpc_pollset_set* interested_parties_ = nullptr;
+    PostSwapCallback after_swap_ = nullptr;
+    void* pre_after_swap_arg_ = nullptr;
+    TraceFlag* tracer_;
+
+    bool shutdown = false;
+    bool swap_done = false;
+  };
+
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
