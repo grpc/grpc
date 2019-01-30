@@ -94,7 +94,7 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobinSubchannelData(
         SubchannelList<RoundRobinSubchannelList, RoundRobinSubchannelData>*
             subchannel_list,
-        const ServerAddress& address, Subchannel* subchannel,
+        const ServerAddress& address, grpc_subchannel* subchannel,
         grpc_combiner* combiner)
         : SubchannelData(subchannel_list, address, subchannel, combiner) {}
 

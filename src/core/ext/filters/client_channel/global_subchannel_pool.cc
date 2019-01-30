@@ -54,9 +54,9 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   return *instance_;
 }
 
-Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
-                                                     Subchannel* constructed) {
-  Subchannel* c = nullptr;
+grpc_subchannel* GlobalSubchannelPool::RegisterSubchannel(
+    SubchannelKey* key, grpc_subchannel* constructed) {
+  grpc_subchannel* c = nullptr;
   // Compare and swap (CAS) loop:
   while (c == nullptr) {
     // Ref the shared map to have a local copy.
@@ -64,7 +64,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
     grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
     gpr_mu_unlock(&mu_);
     // Check to see if a subchannel already exists.
-    c = static_cast<Subchannel*>(grpc_avl_get(old_map, key, nullptr));
+    c = static_cast<grpc_subchannel*>(grpc_avl_get(old_map, key, nullptr));
     if (c != nullptr) {
       // The subchannel already exists. Reuse it.
       c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "subchannel_register+reuse");
@@ -121,14 +121,15 @@ void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
   }
 }
 
-Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
+grpc_subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   // Lock, and take a reference to the subchannel map.
   // We don't need to do the search under a lock as AVL's are immutable.
   gpr_mu_lock(&mu_);
   grpc_avl index = grpc_avl_ref(subchannel_map_, nullptr);
   gpr_mu_unlock(&mu_);
-  Subchannel* c = static_cast<Subchannel*>(grpc_avl_get(index, key, nullptr));
-  if (c != nullptr) GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "found_from_pool");
+  grpc_subchannel* c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
+      static_cast<grpc_subchannel*>(grpc_avl_get(index, key, nullptr)),
+      "found_from_pool");
   grpc_avl_unref(index, nullptr);
   return c;
 }
@@ -155,11 +156,11 @@ long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 void scv_avl_destroy(void* p, void* user_data) {
-  GRPC_SUBCHANNEL_WEAK_UNREF((Subchannel*)p, "global_subchannel_pool");
+  GRPC_SUBCHANNEL_WEAK_UNREF((grpc_subchannel*)p, "global_subchannel_pool");
 }
 
 void* scv_avl_copy(void* p, void* unused) {
-  GRPC_SUBCHANNEL_WEAK_REF((Subchannel*)p, "global_subchannel_pool");
+  GRPC_SUBCHANNEL_WEAK_REF((grpc_subchannel*)p, "global_subchannel_pool");
   return p;
 }
 
