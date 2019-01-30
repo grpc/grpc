@@ -28,6 +28,7 @@ BINDIR=../../../bins/$CONFIG
 
 clean_build_dir () {
   rm -rf "$1"
+  mkdir -p "$1"
 }
 
 [ -f $BINDIR/interop_server ] || {
@@ -57,6 +58,8 @@ else
 fi
 
 echo "TIME:  $(date)"
+
+clean_build_dir "$DERIVED_DIR"
 
 # Retry the test for up to 3 times when return code is 65, due to Xcode issue:
 # http://www.openradar.me/29785686
