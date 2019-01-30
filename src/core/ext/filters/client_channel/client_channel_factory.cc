@@ -29,7 +29,7 @@ void grpc_client_channel_factory_unref(grpc_client_channel_factory* factory) {
   factory->vtable->unref(factory);
 }
 
-grpc_subchannel* grpc_client_channel_factory_create_subchannel(
+grpc_core::Subchannel* grpc_client_channel_factory_create_subchannel(
     grpc_client_channel_factory* factory, const grpc_channel_args* args) {
   return factory->vtable->create_subchannel(factory, args);
 }

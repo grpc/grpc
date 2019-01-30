@@ -39,10 +39,10 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
 
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel combiner.
-  grpc_subchannel* RegisterSubchannel(SubchannelKey* key,
-                                      grpc_subchannel* constructed) override;
+  Subchannel* RegisterSubchannel(SubchannelKey* key,
+                                 Subchannel* constructed) override;
   void UnregisterSubchannel(SubchannelKey* key) override;
-  grpc_subchannel* FindSubchannel(SubchannelKey* key) override;
+  Subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:
   // The vtable for subchannel operations in an AVL tree.
