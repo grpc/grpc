@@ -731,10 +731,10 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 grpc_connectivity_state Subchannel::CheckConnectivity(
-    grpc_error** error, bool inhibit_health_checks) {
+    grpc_error** error, bool inhibit_health_checking) {
   MutexLock lock(&mu_);
   grpc_connectivity_state_tracker* tracker =
-      inhibit_health_checks ? &state_tracker_ : &state_and_health_tracker_;
+      inhibit_health_checking ? &state_tracker_ : &state_and_health_tracker_;
   grpc_connectivity_state state = grpc_connectivity_state_get(tracker, error);
   return state;
 }
@@ -742,9 +742,9 @@ grpc_connectivity_state Subchannel::CheckConnectivity(
 void Subchannel::NotifyOnStateChange(grpc_pollset_set* interested_parties,
                                      grpc_connectivity_state* state,
                                      grpc_closure* notify,
-                                     bool inhibit_health_checks) {
+                                     bool inhibit_health_checking) {
   grpc_connectivity_state_tracker* tracker =
-      inhibit_health_checks ? &state_tracker_ : &state_and_health_tracker_;
+      inhibit_health_checking ? &state_tracker_ : &state_and_health_tracker_;
   ExternalStateWatcher* w;
   if (state == nullptr) {
     MutexLock lock(&mu_);
