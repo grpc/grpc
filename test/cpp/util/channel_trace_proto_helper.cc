@@ -56,7 +56,7 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
   EXPECT_EQ(google::protobuf::util::MessageToJsonString(msg, &proto_json_str,
                                                         print_options),
             google::protobuf::util::Status::OK);
-  // uncomment these to compare the the json strings.
+  // uncomment these to compare the json strings.
   // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
   EXPECT_EQ(json_str, proto_json_str);
