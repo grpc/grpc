@@ -97,5 +97,8 @@ bool grpc_ares_maybe_resolve_localhost_manually_locked(
 void grpc_cares_wrapper_address_sorting_sort(
     grpc_core::ServerAddressList* addresses);
 
+/* Destroys an ares request */
+void grpc_ares_request_destroy(grpc_ares_request* r);
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H \
         */

@@ -322,7 +322,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   grpc_channel_args* result = nullptr;
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
-  gpr_free(r->pending_request_);
+  grpc_ares_request_destroy(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->addresses_ != nullptr) {
     static const char* args_to_remove[1];
