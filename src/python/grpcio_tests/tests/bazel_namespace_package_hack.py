@@ -24,6 +24,9 @@ import sys
 # Analysis in depth: https://github.com/bazelbuild/rules_python/issues/55
 def sys_path_to_site_dir_hack():
     """Add valid sys.path item to site directory to parse the .pth files."""
+    # If not running under Bazel, return.
+    if 'RUN_UNDER_RUNFILES' not in os.environ:
+        return
     for item in sys.path:
         if os.path.exists(item):
             # The only difference between sys.path and site-directory is
