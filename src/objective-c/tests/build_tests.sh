@@ -16,6 +16,8 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
+echo "Running build_tests.sh"
+
 set -e
 
 # CocoaPods requires the terminal to be using UTF-8 encoding.

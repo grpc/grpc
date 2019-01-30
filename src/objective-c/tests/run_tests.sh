@@ -16,6 +16,8 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
+echo "Running run_tests.py"
+
 set -ev
 
 cd $(dirname $0)
