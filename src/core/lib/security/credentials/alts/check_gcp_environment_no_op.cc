@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 
 bool grpc_alts_is_running_on_gcp() {
-  gpr_log(GPR_ERROR,
-          "Platforms other than Linux and Windows are not supported");
+  gpr_log(GPR_INFO,
+          "ALTS: Platforms other than Linux and Windows are not supported");
   return false;
 }
 
