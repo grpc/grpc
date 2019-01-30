@@ -80,10 +80,11 @@ namespace Grpc.Testing {
       return grpc::ServerServiceDefinition.CreateBuilder().Build();
     }
 
-    /// <summary>Register service method with a service binder without implementation. Useful when customizing the service binding logic.
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
     /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
     /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
-    public static void BindService(grpc::ServiceBinderBase serviceBinder)
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, EmptyServiceBase serviceImpl)
     {
     }
 

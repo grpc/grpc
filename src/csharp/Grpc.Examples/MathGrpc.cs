@@ -287,15 +287,16 @@ namespace Math {
           .AddMethod(__Method_Sum, serviceImpl.Sum).Build();
     }
 
-    /// <summary>Register service method with a service binder without implementation. Useful when customizing the service binding logic.
+    /// <summary>Register service method with a service binder with or without implementation. Useful when customizing the  service binding logic.
     /// Note: this method is part of an experimental API that can change or be removed without any prior notice.</summary>
     /// <param name="serviceBinder">Service methods will be bound by calling <c>AddMethod</c> on this object.</param>
-    public static void BindService(grpc::ServiceBinderBase serviceBinder)
+    /// <param name="serviceImpl">An object implementing the server-side handling logic.</param>
+    public static void BindService(grpc::ServiceBinderBase serviceBinder, MathBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_Div);
-      serviceBinder.AddMethod(__Method_DivMany);
-      serviceBinder.AddMethod(__Method_Fib);
-      serviceBinder.AddMethod(__Method_Sum);
+      serviceBinder.AddMethod(__Method_Div, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Math.DivArgs, global::Math.DivReply>(serviceImpl.Div));
+      serviceBinder.AddMethod(__Method_DivMany, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::Math.DivArgs, global::Math.DivReply>(serviceImpl.DivMany));
+      serviceBinder.AddMethod(__Method_Fib, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Math.FibArgs, global::Math.Num>(serviceImpl.Fib));
+      serviceBinder.AddMethod(__Method_Sum, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::Math.Num, global::Math.Num>(serviceImpl.Sum));
     }
 
   }
