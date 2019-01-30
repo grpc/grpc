@@ -32,11 +32,11 @@ LocalSubchannelPool::~LocalSubchannelPool() {
   grpc_avl_unref(subchannel_map_, nullptr);
 }
 
-grpc_subchannel* LocalSubchannelPool::RegisterSubchannel(
-    SubchannelKey* key, grpc_subchannel* constructed) {
+Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
+                                                    Subchannel* constructed) {
   // Check to see if a subchannel already exists.
-  grpc_subchannel* c = static_cast<grpc_subchannel*>(
-      grpc_avl_get(subchannel_map_, key, nullptr));
+  Subchannel* c =
+      static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
   if (c != nullptr) {
     // The subchannel already exists. Reuse it.
     c = GRPC_SUBCHANNEL_REF(c, "subchannel_register+reuse");
@@ -54,9 +54,9 @@ void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
   subchannel_map_ = grpc_avl_remove(subchannel_map_, key, nullptr);
 }
 
-grpc_subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
-  grpc_subchannel* c = static_cast<grpc_subchannel*>(
-      grpc_avl_get(subchannel_map_, key, nullptr));
+Subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
+  Subchannel* c =
+      static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
   return c == nullptr ? c : GRPC_SUBCHANNEL_REF(c, "found_from_pool");
 }
 
