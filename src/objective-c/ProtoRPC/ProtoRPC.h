@@ -57,6 +57,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
 
+/**
+ * Issued when a write action is completed. To get a correct flow control behavior, the user of a
+ * call should not make more than one writeMessage: call before receiving this callback.
+ */
+- (void)didWriteMessage;
+
 @end
 
 /** A unary-request RPC call with Protobuf. */
@@ -129,6 +135,8 @@ NS_ASSUME_NONNULL_BEGIN
  * trailers to the client.
  */
 - (void)finish;
+
+- (void)receiveNextMessage;
 
 @end
 

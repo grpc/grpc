@@ -63,6 +63,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
               requestsWriter:(GRXWriter *)requestsWriter
                  callOptions:(GRPCCallOptions *)callOptions;
 
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
+
+- (void)receiveNextMessage;
+
 @end
 
 @implementation GRPCRequestOptions
@@ -190,7 +199,14 @@ const char *kCFStreamVarName = "grpc_cfstream";
                                       path:_requestOptions.path
                                 callSafety:_requestOptions.safety
                             requestsWriter:_pipe
-                               callOptions:_callOptions];
+                               callOptions:_callOptions
+                                 writeDone:^{
+                                   @synchronized(self) {
+                                     if (self->_handler) {
+                                       [self issueDidWriteData];
+                                     }
+                                   }
+                                 }];
     if (_callOptions.initialMetadata) {
       [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
     }
@@ -363,6 +379,28 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 }
 
+- (void)issueDidWriteData {
+  @synchronized(self) {
+    if (_callOptions.enableFlowControl && [_handler respondsToSelector:@selector(didWriteData)]) {
+      dispatch_async(_dispatchQueue, ^{
+        id<GRPCResponseHandler> copiedHandler = nil;
+        @synchronized(self) {
+          copiedHandler = self->_handler;
+        };
+        [copiedHandler didWriteData];
+      });
+    }
+  }
+}
+
+- (void)receiveNextMessage {
+  GRPCCall *copiedCall = nil;
+  @synchronized(self) {
+    copiedCall = _call;
+  }
+  [copiedCall receiveNextMessage];
+}
+
 @end
 
 // The following methods of a C gRPC call object aren't reentrant, and thus
@@ -426,6 +464,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   // The OAuth2 token fetched from a token provider.
   NSString *_fetchedOauth2AccessToken;
+
+  // The callback to be called when a write message op is done.
+  void (^_writeDone)(void);
+
+  // Indicate a read request to core is pending.
+  BOOL _pendingCoreRead;
+
+  // Indicate a read message request from user.
+  BOOL _pendingReceiveNextMessage;
 }
 
 @synthesize state = _state;
@@ -482,12 +529,26 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                   callSafety:(GRPCCallSafety)safety
-              requestsWriter:(GRXWriter *)requestWriter
+              requestsWriter:(GRXWriter *)requestsWriter
                  callOptions:(GRPCCallOptions *)callOptions {
+  return [self initWithHost:host
+                       path:path
+                 callSafety:safety
+             requestsWriter:requestsWriter
+                callOptions:callOptions
+                  writeDone:nil];
+}
+
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone {
   // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
   NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
-  NSAssert(requestWriter.state == GRXWriterStateNotStarted,
+  NSAssert(requestsWriter.state == GRXWriterStateNotStarted,
            @"The requests writer can't be already started.");
   if (!host || !path) {
     return nil;
@@ -495,7 +556,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if (safety > GRPCCallSafetyCacheableRequest) {
     return nil;
   }
-  if (requestWriter.state != GRXWriterStateNotStarted) {
+  if (requestsWriter.state != GRXWriterStateNotStarted) {
     return nil;
   }
 
@@ -508,16 +569,20 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("io.grpc.call", DISPATCH_QUEUE_SERIAL);
 
-    _requestWriter = requestWriter;
-
+    _requestWriter = requestsWriter;
     _requestHeaders = [[GRPCRequestHeaders alloc] initWithCall:self];
+    _writeDone = writeDone;
 
-    if ([requestWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
+    if ([requestsWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
       _unaryCall = YES;
       _unaryOpBatch = [NSMutableArray arrayWithCapacity:kMaxClientBatch];
     }
 
     _responseQueue = dispatch_get_main_queue();
+
+    // do not start a read until initial metadata is received
+    _pendingReceiveNextMessage = NO;
+    _pendingCoreRead = YES;
   }
   return self;
 }
@@ -589,9 +654,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // If the call is currently paused, this is a noop. Restarting the call will invoke this
 // method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
-- (void)startNextRead {
+- (void)maybeStartNextRead {
   @synchronized(self) {
     if (_state != GRXWriterStateStarted) {
+      return;
+    }
+    if (_callOptions.enableFlowControl && (_pendingCoreRead || !_pendingReceiveNextMessage)) {
       return;
     }
   }
@@ -599,13 +667,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
   dispatch_async(_callQueue, ^{
     __weak GRPCCall *weakSelf = self;
     [self startReadWithHandler:^(grpc_byte_buffer *message) {
-      if (message == NULL) {
-        // No more messages from the server
-        return;
-      }
       __strong GRPCCall *strongSelf = weakSelf;
       if (strongSelf == nil) {
         grpc_byte_buffer_destroy(message);
+        return;
+      }
+      if (message == NULL) {
+        // No more messages from the server
         return;
       }
       NSData *data = [NSData grpc_dataWithByteBuffer:message];
@@ -616,6 +684,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
         @synchronized(strongSelf) {
+          strongSelf->_pendingReceiveNextMessage = NO;
           [strongSelf
               finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                   code:GRPCErrorCodeResourceExhausted
@@ -631,7 +700,8 @@ const char *kCFStreamVarName = "grpc_cfstream";
         @synchronized(strongSelf) {
           [strongSelf->_responseWriteable enqueueValue:data
                                      completionHandler:^{
-                                       [strongSelf startNextRead];
+                                       strongSelf->_pendingCoreRead = NO;
+                                       [strongSelf maybeStartNextRead];
                                      }];
         }
       }
@@ -682,6 +752,17 @@ const char *kCFStreamVarName = "grpc_cfstream";
   });
 }
 
+- (void)receiveNextMessage {
+  @synchronized(self) {
+    // Duplicate invocation of this method. Return
+    if (_pendingReceiveNextMessage) {
+      return;
+    }
+    _pendingReceiveNextMessage = YES;
+    [self maybeStartNextRead];
+  }
+}
+
 #pragma mark GRXWriteable implementation
 
 // Only called from the call queue. The error handler will be called from the
@@ -695,6 +776,9 @@ const char *kCFStreamVarName = "grpc_cfstream";
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       strongSelf->_requestWriter.state = GRXWriterStateStarted;
+      if (strongSelf->_writeDone) {
+        strongSelf->_writeDone();
+      }
     }
   };
 
@@ -774,8 +858,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Response headers received.
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      strongSelf.responseHeaders = headers;
-      [strongSelf startNextRead];
+      @synchronized(self) {
+        strongSelf.responseHeaders = headers;
+        strongSelf->_pendingCoreRead = NO;
+        [strongSelf maybeStartNextRead];
+      }
     }
   }
       completionHandler:^(NSError *error, NSDictionary *trailers) {
@@ -929,7 +1016,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
       case GRXWriterStateStarted:
         if (_state == GRXWriterStatePaused) {
           _state = newState;
-          [self startNextRead];
+          [self maybeStartNextRead];
         }
         return;
       case GRXWriterStateNotStarted:

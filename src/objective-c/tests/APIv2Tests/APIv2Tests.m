@@ -44,6 +44,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 static const int kSimpleDataLength = 100;
 
 static const NSTimeInterval kTestTimeout = 16;
+static const NSTimeInterval kInvertedTimeout = 2;
 
 // Reveal the _class ivar for testing access
 @interface GRPCCall2 () {
@@ -58,6 +59,11 @@ static const NSTimeInterval kTestTimeout = 16;
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
+                              writeDataCallback:(void (^)(void))writeDataCallback;
+
+- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
+                                messageCallback:(void (^)(id))messageCallback
                                   closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback;
 
 @end
@@ -66,19 +72,31 @@ static const NSTimeInterval kTestTimeout = 16;
   void (^_initialMetadataCallback)(NSDictionary *);
   void (^_messageCallback)(id);
   void (^_closeCallback)(NSDictionary *, NSError *);
+  void (^_writeDataCallback)(void);
   dispatch_queue_t _dispatchQueue;
 }
 
 - (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
                                 messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback {
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
+                              writeDataCallback:(void (^)(void))writeDataCallback {
   if ((self = [super init])) {
     _initialMetadataCallback = initialMetadataCallback;
     _messageCallback = messageCallback;
     _closeCallback = closeCallback;
+    _writeDataCallback = writeDataCallback;
     _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
   }
   return self;
+}
+
+- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
+                                messageCallback:(void (^)(id))messageCallback
+                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback {
+  return [self initWithInitialMetadataCallback:initialMetadataCallback
+                               messageCallback:messageCallback
+                                 closeCallback:closeCallback
+                             writeDataCallback:nil];
 }
 
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
@@ -96,6 +114,12 @@ static const NSTimeInterval kTestTimeout = 16;
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   if (self->_closeCallback) {
     self->_closeCallback(trailingMetadata, error);
+  }
+}
+
+- (void)didWriteData {
+  if (self->_writeDataCallback) {
+    self->_writeDataCallback();
   }
 }
 
@@ -470,6 +494,221 @@ static const NSTimeInterval kTestTimeout = 16;
 
   [call start];
   [call writeData:[request data]];
+  [call finish];
+
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testWriteFlowControl {
+  __weak XCTestExpectation *expectWriteData =
+      [self expectationWithDescription:@"Reported write data"];
+
+  RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+  RMTResponseParameters *parameters = [RMTResponseParameters message];
+  parameters.size = kSimpleDataLength;
+  [request.responseParametersArray addObject:parameters];
+  request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
+
+  GRPCRequestOptions *callRequest =
+      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+  options.enableFlowControl = YES;
+  GRPCCall2 *call =
+      [[GRPCCall2 alloc] initWithRequestOptions:callRequest
+                                responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                                    initWithInitialMetadataCallback:nil
+                                                                    messageCallback:nil
+                                                                      closeCallback:nil
+                                                                  writeDataCallback:^{
+                                                                    [expectWriteData fulfill];
+                                                                  }]
+                                    callOptions:options];
+
+  [call start];
+  [call receiveNextMessage];
+  [call writeData:[request data]];
+
+  // Wait for 3 seconds and make sure we do not receive the response
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+
+  [call finish];
+}
+
+- (void)testReadFlowControl {
+  __weak __block XCTestExpectation *expectBlockedMessage =
+      [self expectationWithDescription:@"Message not delivered without recvNextMessage"];
+  __weak __block XCTestExpectation *expectPassedMessage = nil;
+  __weak __block XCTestExpectation *expectBlockedClose =
+      [self expectationWithDescription:@"Call not closed with pending message"];
+  __weak __block XCTestExpectation *expectPassedClose = nil;
+  expectBlockedMessage.inverted = YES;
+  expectBlockedClose.inverted = YES;
+
+  RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+  RMTResponseParameters *parameters = [RMTResponseParameters message];
+  parameters.size = kSimpleDataLength;
+  [request.responseParametersArray addObject:parameters];
+  request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
+
+  GRPCRequestOptions *callRequest =
+      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+  options.enableFlowControl = YES;
+  __block int unblocked = NO;
+  GRPCCall2 *call = [[GRPCCall2 alloc]
+      initWithRequestOptions:callRequest
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *message) {
+                                   if (!unblocked) {
+                                     [expectBlockedMessage fulfill];
+                                   } else {
+                                     [expectPassedMessage fulfill];
+                                   }
+                                 }
+                                 closeCallback:^(NSDictionary *trailers, NSError *error) {
+                                   if (!unblocked) {
+                                     [expectBlockedClose fulfill];
+                                   } else {
+                                     [expectPassedClose fulfill];
+                                   }
+                                 }]
+                 callOptions:options];
+
+  [call start];
+  [call writeData:[request data]];
+  [call finish];
+
+  // Wait to make sure we do not receive the response
+  [self waitForExpectationsWithTimeout:kInvertedTimeout handler:nil];
+
+  expectPassedMessage =
+      [self expectationWithDescription:@"Message delivered with receiveNextMessage"];
+  expectPassedClose = [self expectationWithDescription:@"Close delivered after receiveNextMessage"];
+
+  unblocked = YES;
+  [call receiveNextMessage];
+
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testReadFlowControlReadyBeforeStart {
+  __weak XCTestExpectation *expectBlockedMessage =
+      [self expectationWithDescription:@"Message delivered with receiveNextMessage"];
+  expectBlockedMessage.inverted = YES;
+
+  RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+  RMTResponseParameters *parameters = [RMTResponseParameters message];
+  parameters.size = kSimpleDataLength;
+  [request.responseParametersArray addObject:parameters];
+  request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
+
+  GRPCRequestOptions *callRequest =
+      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+  options.enableFlowControl = YES;
+  __block BOOL closed = NO;
+  GRPCCall2 *call = [[GRPCCall2 alloc]
+      initWithRequestOptions:callRequest
+             responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                 initWithInitialMetadataCallback:nil
+                                                 messageCallback:^(NSData *message) {
+                                                   [expectBlockedMessage fulfill];
+                                                   XCTAssertFalse(closed);
+                                                 }
+                                                   closeCallback:nil]
+                 callOptions:options];
+
+  [call receiveNextMessage];
+  [call start];
+  [call writeData:[request data]];
+  [call finish];
+
+  [self waitForExpectationsWithTimeout:kInvertedTimeout handler:nil];
+}
+
+- (void)testReadFlowControlReadyAfterStart {
+  __weak XCTestExpectation *expectPassedMessage =
+      [self expectationWithDescription:@"Message delivered with receiveNextMessage"];
+  __weak XCTestExpectation *expectPassedClose =
+      [self expectationWithDescription:@"Close delivered with receiveNextMessage"];
+
+  RMTStreamingOutputCallRequest *request = [RMTStreamingOutputCallRequest message];
+  RMTResponseParameters *parameters = [RMTResponseParameters message];
+  parameters.size = kSimpleDataLength;
+  [request.responseParametersArray addObject:parameters];
+  request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
+
+  GRPCRequestOptions *callRequest =
+      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = GRPCTransportTypeInsecure;
+  options.enableFlowControl = YES;
+  __block BOOL closed = NO;
+  GRPCCall2 *call = [[GRPCCall2 alloc]
+      initWithRequestOptions:callRequest
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *message) {
+                                   [expectPassedMessage fulfill];
+                                   XCTAssertFalse(closed);
+                                 }
+                                 closeCallback:^(NSDictionary *trailers, NSError *error) {
+                                   closed = YES;
+                                   [expectPassedClose fulfill];
+                                 }]
+                 callOptions:options];
+
+  [call start];
+  [call receiveNextMessage];
+  [call writeData:[request data]];
+  [call finish];
+
+  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
+}
+
+- (void)testReadFlowControlNonBlockingFailure {
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
+
+  GRPCRequestOptions *requestOptions =
+      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.enableFlowControl = YES;
+  options.transportType = GRPCTransportTypeInsecure;
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.payload.body = [NSMutableData dataWithLength:options.responseSizeLimit];
+
+  RMTEchoStatus *status = [RMTEchoStatus message];
+  status.code = 2;
+  status.message = @"test";
+  request.responseStatus = status;
+
+  GRPCCall2 *call = [[GRPCCall2 alloc]
+      initWithRequestOptions:requestOptions
+             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                                 messageCallback:^(NSData *data) {
+                                   XCTFail(@"Received unexpected message");
+                                 }
+                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                                   XCTAssertNotNil(error, @"Expecting non-nil error");
+                                   XCTAssertEqual(error.code, 2);
+                                   [completion fulfill];
+                                 }]
+                 callOptions:options];
+  [call writeData:[request data]];
+  [call start];
   [call finish];
 
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];

@@ -183,6 +183,8 @@ extern NSString *const kGRPCTrailersKey;
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
 
+- (void)didWriteData;
+
 @end
 
 /**
@@ -262,6 +264,8 @@ extern NSString *const kGRPCTrailersKey;
  * trailers to the client. The method must only be called once and after start is called.
  */
 - (void)finish;
+
+- (void)receiveNextMessage;
 
 /**
  * Get a copy of the original call options.
