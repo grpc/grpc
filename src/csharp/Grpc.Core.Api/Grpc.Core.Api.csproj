@@ -4,7 +4,7 @@
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
+    <Copyright>Copyright 2019, Google Inc.</Copyright>
     <AssemblyTitle>gRPC C# Surface API</AssemblyTitle>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
     <Authors>Google Inc.</Authors>
